@@ -1,0 +1,61 @@
+name: Pull Request Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate build and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Verify Gradle version
+        run: ./gradlew --version
+
+      - name: Verify project structure
+        run: ./gradlew projects
+
+      - name: Build all modules
+        run: ./gradlew build --configuration-cache
+
+      - name: Run verification tasks
+        run: ./gradlew check --configuration-cache
+
+      - name: Run module tests
+        run: ./gradlew :dataloom-api:allTests :dataloom-core:allTests :dataloom-runtime:allTests :dataloom-testing:allTests
+
+      - name: Inspect runtime dependencies
+        run: ./gradlew :dataloom-runtime:dependencies --configuration jvmRuntimeClasspath
