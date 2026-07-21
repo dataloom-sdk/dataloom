@@ -11,3 +11,7 @@
 plugins {
     id("io.dataloom.kotlin.multiplatform-library")
 }
+
+kotlin {
+    explicitApi()
+}
