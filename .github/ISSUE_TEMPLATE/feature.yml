@@ -1,0 +1,49 @@
+name: Feature request
+description: Propose a new capability or improvement for DataLoom.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please provide enough detail for technical review and planning.
+  - type: input
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem are you trying to solve?
+      placeholder: Describe the user or developer pain point
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the behavior, interfaces, and expected outcomes.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: List alternatives and trade-offs.
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope and impact
+      description: Describe affected modules, APIs, docs, and tests.
+      placeholder: |
+        Modules:
+        API impact:
+        Documentation impact:
+        Testing plan:
+    validations:
+      required: true
+  - type: checkboxes
+    id: ack
+    attributes:
+      label: Acknowledgements
+      options:
+        - label: I confirm this request does not include credentials, tokens, keys, or private data.
+          required: true
