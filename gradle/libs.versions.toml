@@ -1,0 +1,12 @@
+[versions]
+kotlin = "2.4.10"
+
+[libraries]
+# Kotlin test library used in common test source sets
+kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlin" }
+
+# Kotlin Gradle plugin dependency used by build-logic convention plugins
+kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
+
+[plugins]
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
