@@ -65,6 +65,8 @@ On Windows:
 - [Error Model (DL-004)](./docs/api/error-model.md)
 - [Execution Context (DL-005)](./docs/api/execution-context.md)
 - [Synchronization Request (DL-005)](./docs/api/synchronization-request.md)
+- [Payload Contracts (DL-008)](./docs/api/payload-contracts.md)
+- [Change Model (DL-008)](./docs/api/change-model.md)
 - [Provider SPI (DL-007)](./docs/api/provider-spi.md)
 - [Provider Lifecycle and Health (DL-007)](./docs/api/provider-lifecycle.md)
 - [Contributing Guide](./CONTRIBUTING.md)
