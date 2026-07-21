@@ -9,6 +9,8 @@ planned SDK architecture.
 - API
   - [Foundational Contracts](./api/foundational-contracts.md)
   - [Error Model](./api/error-model.md)
+  - [Provider SPI](./api/provider-spi.md)
+  - [Provider Lifecycle and Health](./api/provider-lifecycle.md)
 - [Architecture Decision Records (ADRs)](./adr/README.md)
   - [ADR-0001: Android-first and Kotlin Multiplatform-ready core architecture](./adr/ADR-0001-android-first-kmp-core.md)
 - [Specifications](./specifications/README.md)
