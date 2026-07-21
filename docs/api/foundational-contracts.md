@@ -1,7 +1,7 @@
-# DataLoom Foundational Public Contracts (DL-004)
+# DataLoom Foundational Public Contracts (DL-004, DL-005)
 
-This document defines the first stable, platform-independent public contracts
-introduced in `dataloom-api`.
+This document defines stable, platform-independent public contracts introduced
+in `dataloom-api`.
 
 These contracts define names and semantics only. Runtime behavior such as
 workflow transitions, queueing, retry, scheduling, and synchronization
@@ -38,6 +38,13 @@ Validation rules:
 | `EntityType` | Host application/domain |
 | `CorrelationId` | Request initiator or integration boundary |
 | `TraceId` | Observability integration |
+| `ExecutionId` | DataLoom runtime or host integration |
+| `RequestId` | Request initiator or host integration |
+| `TenantId` | Host application or enterprise integration |
+| `UserId` | Host authentication/domain layer |
+| `RuntimeVersion` | DataLoom runtime |
+| `ConfigurationVersion` | Configuration source or host integration |
+| `LocaleTag` | Host application or request initiator |
 | `ErrorCode` | DataLoom error catalogue |
 
 ### Placeholder examples
@@ -51,7 +58,26 @@ val entityId = EntityId("entity-42")
 val entityType = EntityType("invoice")
 val correlationId = CorrelationId("corr-001")
 val traceId = TraceId("trace-001")
+val executionId = ExecutionId("execution-001")
+val requestId = RequestId("request-001")
+val tenantId = TenantId("tenant-001")
+val userId = UserId("user-001")
+val runtimeVersion = RuntimeVersion("runtime-1.0.0")
+val configurationVersion = ConfigurationVersion("config-2026-07-21")
+val localeTag = LocaleTag("en-US")
 ```
+
+## Execution context and synchronization request contracts
+
+DL-005 introduces additional immutable public contracts:
+
+- [`ExecutionContext`](./execution-context.md)
+- [`SynchronizationRequest`](./synchronization-request.md)
+- [`DataLoomMetadata`](./execution-context.md#metadata-rules)
+
+These contracts carry synchronization context and request intent only.
+Runtime execution, queueing, retry, transport, persistence, and state
+transitions are intentionally not implemented in this scope.
 
 ## Workflow lifecycle state
 

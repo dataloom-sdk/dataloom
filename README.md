@@ -57,8 +57,10 @@ On Windows:
 
 - [Module Architecture](./docs/architecture/modules.md)
 - [Local Build Instructions](./docs/development/building.md)
-- [Foundational API Contracts (DL-004)](./docs/api/foundational-contracts.md)
+- [Foundational API Contracts (DL-004, DL-005)](./docs/api/foundational-contracts.md)
 - [Error Model (DL-004)](./docs/api/error-model.md)
+- [Execution Context (DL-005)](./docs/api/execution-context.md)
+- [Synchronization Request (DL-005)](./docs/api/synchronization-request.md)
 - [Contributing Guide](./CONTRIBUTING.md)
 - [Security Policy](./SECURITY.md)
 - [Code of Conduct](./CODE_OF_CONDUCT.md)
