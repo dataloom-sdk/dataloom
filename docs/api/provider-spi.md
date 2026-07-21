@@ -149,7 +149,6 @@ The following contracts are planned follow-up issues and are not implemented in
 DL-007:
 
 - Implement storage-provider contracts
-- Implement transport-provider contracts
 - Implement scheduler and connectivity-provider contracts
 - Implement provider registry
 - Implement provider lifecycle orchestration

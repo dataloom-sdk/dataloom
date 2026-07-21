@@ -192,4 +192,3 @@ compression.
 
 - Serialization-provider contracts
 - Storage-provider contracts
-- Transport-provider contracts
