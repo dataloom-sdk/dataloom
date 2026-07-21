@@ -120,6 +120,12 @@ To confirm the active Gradle and Kotlin versions:
 The configuration cache is enabled by default in `gradle.properties`. This
 command confirms that the build graph is fully configuration-cache compatible.
 
+### Run verification tasks with configuration-cache validation
+
+```bash
+./gradlew check --configuration-cache
+```
+
 ### Run all tests
 
 ```bash
@@ -145,6 +151,35 @@ To view the resolved runtime classpath for a specific module:
 
 Replace `:dataloom-runtime` with any module name to inspect its dependency
 tree.
+
+---
+
+## Pull request validation in GitHub Actions
+
+DataLoom pull requests targeting `main`, pushes to `main`, and manual workflow
+runs are validated in GitHub Actions by the **Pull Request Validation**
+workflow.
+
+The workflow uses:
+
+- JDK 17 (Temurin)
+- The committed Gradle Wrapper
+- `gradle/actions/setup-gradle` with the `basic` cache provider
+
+Validation executes:
+
+- `./gradlew --version`
+- `./gradlew projects`
+- `./gradlew build --configuration-cache`
+- `./gradlew check --configuration-cache`
+- `./gradlew :dataloom-api:allTests :dataloom-core:allTests :dataloom-runtime:allTests :dataloom-testing:allTests`
+- `./gradlew :dataloom-runtime:dependencies --configuration jvmRuntimeClasspath`
+
+Before requesting review, run the same commands locally to confirm your branch
+matches CI expectations.
+
+This workflow validates build and verification only. It does not publish
+artifacts, create releases, or deploy services.
 
 ---
 
