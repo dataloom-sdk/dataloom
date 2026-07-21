@@ -144,3 +144,15 @@ protocol.
 - `CRITICAL`
 
 Priority interpretation by the scheduler is deferred to a later issue.
+
+## Payload and change contracts
+
+DL-008 introduces payload and change-model contracts:
+
+- [`Payload Contracts`](./payload-contracts.md)
+- [`Change Model`](./change-model.md)
+
+These contracts define opaque payload representation, entity versioning,
+entity references, change events, and change sets. Serialization, storage,
+transport, conflict resolution, queueing, retry, and synchronization execution
+are intentionally not implemented in this scope.

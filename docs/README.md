@@ -9,6 +9,8 @@ planned SDK architecture.
 - API
   - [Foundational Contracts](./api/foundational-contracts.md)
   - [Error Model](./api/error-model.md)
+  - [Payload Contracts (DL-008)](./api/payload-contracts.md)
+  - [Change Model (DL-008)](./api/change-model.md)
   - [Provider SPI](./api/provider-spi.md)
   - [Provider Lifecycle and Health](./api/provider-lifecycle.md)
 - [Architecture Decision Records (ADRs)](./adr/README.md)
