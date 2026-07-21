@@ -1,6 +1,7 @@
 # DataLoom
 
-DataLoom is an enterprise-grade offline-first synchronization SDK project.
+DataLoom is an Android-first, Jetpack-style offline synchronization SDK with a
+Kotlin Multiplatform-ready shared core.
 
 ## Current project status
 
@@ -37,7 +38,9 @@ java -version
 | `dataloom-testing` | Future testing utilities and fake providers |
 
 See [Module Architecture](./docs/architecture/modules.md) for dependency
-rules and boundaries.
+rules and boundaries, and
+[Platform Strategy (DL-006)](./docs/architecture/platform-strategy.md) for
+Android-first and Kotlin Multiplatform architecture direction.
 
 ## Basic build command
 
@@ -56,6 +59,7 @@ On Windows:
 ## Documentation
 
 - [Module Architecture](./docs/architecture/modules.md)
+- [Platform Strategy (DL-006)](./docs/architecture/platform-strategy.md)
 - [Local Build Instructions](./docs/development/building.md)
 - [Foundational API Contracts (DL-004, DL-005)](./docs/api/foundational-contracts.md)
 - [Error Model (DL-004)](./docs/api/error-model.md)
@@ -67,6 +71,7 @@ On Windows:
 - [Documentation Index](./docs/README.md)
   - [Architecture](./docs/architecture/README.md)
   - [Architecture Decision Records](./docs/adr/README.md)
+    - [ADR-0001: Android-first and Kotlin Multiplatform-ready core architecture](./docs/adr/ADR-0001-android-first-kmp-core.md)
   - [Specifications](./docs/specifications/README.md)
 
 ## The problem DataLoom is designed to solve

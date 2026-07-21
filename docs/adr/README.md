@@ -1,11 +1,8 @@
 # Architecture Decision Records (ADRs)
 
-This section is for Architecture Decision Records that capture significant
+This section contains Architecture Decision Records that capture significant
 technical and architectural decisions.
 
-Expected ADR content:
+## ADR Index
 
-- Context
-- Decision
-- Alternatives considered
-- Consequences
+- [ADR-0001: Android-first and Kotlin Multiplatform-ready core architecture](./ADR-0001-android-first-kmp-core.md)
