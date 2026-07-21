@@ -57,6 +57,8 @@ On Windows:
 
 - [Module Architecture](./docs/architecture/modules.md)
 - [Local Build Instructions](./docs/development/building.md)
+- [Foundational API Contracts (DL-004)](./docs/api/foundational-contracts.md)
+- [Error Model (DL-004)](./docs/api/error-model.md)
 - [Contributing Guide](./CONTRIBUTING.md)
 - [Security Policy](./SECURITY.md)
 - [Code of Conduct](./CODE_OF_CONDUCT.md)
