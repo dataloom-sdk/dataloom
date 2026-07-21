@@ -1,15 +1,19 @@
 # DataLoom Module Architecture
 
-This document describes the DataLoom library module structure, module
-responsibilities, allowed and prohibited dependencies, and rules governing
-platform independence and future module expansion.
+This document describes the DataLoom module structure, responsibilities, and
+dependency rules for current shared modules and planned platform modules.
+
+Product positioning:
+
+> DataLoom is an Android-first, Jetpack-style offline synchronization SDK with
+> a Kotlin Multiplatform-ready shared core.
 
 ---
 
 ## Module Overview
 
-DataLoom is organized into four library modules and one build-infrastructure
-included build.
+DataLoom is currently organized into four shared library modules and one
+build-infrastructure included build.
 
 | Component | Type | Purpose |
 |---|---|---|
@@ -20,6 +24,8 @@ included build.
 | `build-logic` | Build infrastructure | Gradle convention plugins (not a published library) |
 
 All four library modules use Kotlin Multiplatform with an initial JVM target.
+Android-specific functionality is intentionally deferred to dedicated Android
+integration modules.
 
 ---
 
@@ -148,6 +154,22 @@ Circular project dependencies are prohibited.
 
 ---
 
+## Platform Strategy Summary
+
+- Android is the primary reference and adoption platform.
+- Shared contracts and runtime foundations use Kotlin Multiplatform where
+  technically appropriate.
+- Shared modules must not depend on Android APIs.
+- Platform-specific behavior belongs in dedicated platform modules or provider
+  interfaces.
+- KMP compatibility must not delay the first complete Android vertical slice.
+- New platform targets require an approved issue and compatibility testing.
+- Support is not claimed until adapter and qualification tests exist.
+- Prefer provider interfaces over `expect`/`actual` when interfaces provide a
+  clearer extension boundary.
+
+---
+
 ## Platform Independence Rules
 
 - All common source sets (`commonMain`, `commonTest`) must remain
@@ -158,6 +180,31 @@ Circular project dependencies are prohibited.
   (for example `jvmMain`).
 - Do not add iOS, JavaScript, Wasm, Kotlin/Native, Compose, desktop
   application, or server application targets without an approved issue.
+
+---
+
+## Planned Android-First Modules (not implemented in this issue)
+
+| Module | Planned responsibilities | Boundaries |
+|---|---|---|
+| `dataloom-android` | Android initialization, app/process lifecycle integration, connectivity integration, Android runtime configuration, diagnostics, and DI hooks where useful | Must not contain Room, Retrofit, or WorkManager implementations directly |
+| `dataloom-workmanager` | Optional WorkManager scheduling, durable background execution, constraints mapping, worker/runtime integration, process restart recovery coordination | Optional Android integration artifact |
+| `dataloom-room` | Optional Room-backed storage provider, queue/checkpoint persistence support, migration guidance | Room must not be mandatory for shared core/runtime |
+| `dataloom-retrofit` | Optional Retrofit transport integration, request/response adaptation, DataLoom error mapping | Retrofit must not be mandatory for shared core/runtime |
+| `sample-android` | Reference integration sample: offline-first flow, scheduling, providers, state observation, failure/retry demonstration | Reference app only, not a shared runtime dependency |
+
+---
+
+## Planned Future KMP Modules (roadmap only)
+
+| Module | Planned responsibilities | Status |
+|---|---|---|
+| `dataloom-ktor` | Future multiplatform transport provider | Roadmap only |
+| `dataloom-sqldelight` | Future multiplatform storage provider | Roadmap only |
+| `dataloom-apple` | Future Apple lifecycle, connectivity, and scheduling integration | Roadmap only |
+| `sample-kmp` | Future shared Android and iOS reference application | Roadmap only |
+
+These modules are not part of the current release scope.
 
 ---
 
@@ -173,5 +220,6 @@ Before adding a module:
 5. Create the module using the approved `io.dataloom.kotlin.multiplatform-library`
    convention plugin or an appropriate successor.
 
-Planned future modules include Android-platform integration modules (to be
-introduced in a dedicated approved issue).
+Planned future modules are documented in
+[Platform Strategy](./platform-strategy.md) and require dedicated approved
+implementation issues.

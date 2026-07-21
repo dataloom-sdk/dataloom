@@ -38,6 +38,17 @@ The initial implementation targets:
 Do not introduce iOS, JavaScript, WebAssembly, cloud services, or other
 platforms unless an approved GitHub issue explicitly requires them.
 
+## Platform Strategy
+
+- Android is the primary reference and adoption platform.
+- Shared contracts and runtime foundations use Kotlin Multiplatform where
+  appropriate.
+- Android-specific functionality belongs in dedicated Android modules.
+- Shared modules must not depend on Android APIs.
+- KMP compatibility must not delay the first complete Android vertical slice.
+- Do not add new platform targets without an approved issue.
+- Provider interfaces are preferred for infrastructure integrations.
+
 ## Source of Truth
 
 Use this precedence:

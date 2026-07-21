@@ -9,3 +9,8 @@ Planned content includes:
 - Module responsibilities and boundaries
 - Dependency direction rules
 - Integration patterns
+
+Current documents:
+
+- [Module Architecture](./modules.md)
+- [Platform Strategy (DL-006)](./platform-strategy.md)
