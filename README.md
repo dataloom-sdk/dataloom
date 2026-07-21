@@ -1,119 +1,56 @@
 # DataLoom
 
-Enterprise-grade offline-first synchronization SDK for Kotlin, Android, JVM, and Kotlin Multiplatform.
+DataLoom is an enterprise-grade offline-first synchronization SDK project.
 
----
+## The problem DataLoom is designed to solve
 
-## What Is DataLoom?
+Offline-first applications must continue to work while networks are slow,
+unavailable, or intermittent. DataLoom is intended to provide shared
+synchronization capabilities such as durable queueing, retry handling,
+conflict management, policy evaluation, and recovery checkpoints so host
+applications can focus on product-specific business logic.
 
-DataLoom is an SDK that gives mobile and JVM applications a reliable, durable synchronization layer
-between local storage and remote backends. Applications stay fully functional without a network
-connection. When connectivity is restored, DataLoom reconciles changes automatically according to
-configurable conflict-resolution policies.
+## Current project status
 
-DataLoom is not a database, not a backend, and not a UI framework. It is a synchronization
-orchestration layer that the host application plugs into its own infrastructure.
+DataLoom is in the repository foundation stage. Governance, contribution
+rules, and architecture documentation are being established before SDK
+implementation begins.
 
-## The Problem DataLoom Solves
+## Planned platforms
 
-Most applications treat network connectivity as a precondition for correct operation. When the
-network is unavailable, writes are lost, reads stale, and error handling is ad hoc. DataLoom
-inverts this model: the local device is the source of truth, and the remote backend is synchronized
-to it, not the reverse.
+- Kotlin
+- Android
+- Kotlin/JVM
+- Kotlin Multiplatform (where appropriate)
 
-DataLoom addresses:
+## High-level architecture (planned)
 
-- Durable local write queuing that survives process restarts
-- Ordered, at-least-once delivery of operations to remote backends
-- Configurable retry and backoff policies
-- Deterministic conflict detection and resolution
-- Checkpoint-based recovery after partial failures
-- Observable sync state for UI integration
+- Core synchronization orchestration and state management
+- Durable operation queue and retry coordination
+- Conflict resolution and policy evaluation
+- Provider and plugin extensibility points
+- Observability and integration layers
 
-## Current Project Status
+## Documentation structure
 
-> **This project is in its foundation stage. No production SDK code has been published. No
-> releases are available. The API is not stable and is subject to change without notice.**
+- [Contributing Guide](./CONTRIBUTING.md)
+- [Security Policy](./SECURITY.md)
+- [Code of Conduct](./CODE_OF_CONDUCT.md)
+- [Documentation Index](./docs/README.md)
+  - [Architecture](./docs/architecture/README.md)
+  - [Architecture Decision Records](./docs/adr/README.md)
+  - [Specifications](./docs/specifications/README.md)
 
-The repository currently contains:
+## Contribution status
 
-- Project governance documentation
-- Contribution guidelines
-- Architecture documentation stubs
+Contributions are welcome through approved issues and pull requests that follow
+the repository governance documents.
 
-Production SDK code will be introduced in subsequent issues.
+## Security reporting
 
-## Planned Platforms
-
-| Platform | Status |
-|---|---|
-| Kotlin/JVM | Planned |
-| Android | Planned |
-| Kotlin Multiplatform | Under evaluation |
-
-iOS, JavaScript, WebAssembly, and cloud services are out of scope unless explicitly approved.
-
-## High-Level Architecture
-
-DataLoom is organized into layered modules with strict boundaries:
-
-```
-┌─────────────────────────────────────────────┐
-│              Host Application               │
-│  (UI · Business Logic · Domain Models)      │
-└───────────────────┬─────────────────────────┘
-                    │ SDK API
-┌───────────────────▼─────────────────────────┐
-│           dataloom-core                     │
-│  Sync Orchestration · Queue · Retry         │
-│  Conflict Resolution · Policy Evaluation    │
-│  Checkpoint Recovery · Observability        │
-└───────┬───────────────────────┬─────────────┘
-        │ Provider API          │ Plugin API
-┌───────▼──────────┐   ┌────────▼────────────┐
-│ dataloom-android │   │  dataloom-plugins   │
-│ Storage · Net    │   │  (extensibility)    │
-└──────────────────┘   └─────────────────────┘
-```
-
-Key principles:
-
-- Core modules must not depend on Android APIs
-- Platform modules may depend on core modules
-- Public contracts are separate from implementation
-- No third-party types are exposed through public APIs
-- Infrastructure integrations use provider interfaces
-
-## Documentation
-
-| Document | Description |
-|---|---|
-| [docs/README.md](docs/README.md) | Documentation index |
-| [docs/architecture/README.md](docs/architecture/README.md) | Architecture overview |
-| [docs/adr/README.md](docs/adr/README.md) | Architecture Decision Records |
-| [docs/specifications/README.md](docs/specifications/README.md) | Specifications index |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
-| [SECURITY.md](SECURITY.md) | Security policy and reporting |
-| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards |
-
-## Contributing
-
-Contributions are not yet open to the general public. The project is in its foundation stage and
-the contribution process, architecture, and API contracts are still being established.
-
-When contributions open, all pull requests will require:
-
-- One approved GitHub issue per pull request
-- Tests for production-code changes
-- Architecture approval for module-boundary or public-API changes
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for full requirements.
-
-## Security
-
-Do not report security vulnerabilities through public GitHub issues. See [SECURITY.md](SECURITY.md)
-for the responsible disclosure process.
+Please report vulnerabilities privately following the process in
+[SECURITY.md](./SECURITY.md).
 
 ## License
 
-License to be finalized. All rights reserved until a license is published.
+License status: **To be finalized**.

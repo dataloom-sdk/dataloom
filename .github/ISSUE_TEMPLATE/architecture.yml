@@ -1,0 +1,52 @@
+name: Architecture proposal
+description: Propose a module-boundary or public API architecture change.
+title: "[Architecture]: "
+labels:
+  - architecture
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for architecture-level decisions and trade-offs.
+  - type: input
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why is this architectural change needed?
+    validations:
+      required: true
+  - type: textarea
+    id: current-state
+    attributes:
+      label: Current state
+      description: Describe the existing architecture and constraints.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-change
+    attributes:
+      label: Proposed architecture
+      description: Describe boundaries, dependencies, and API implications.
+    validations:
+      required: true
+  - type: textarea
+    id: trade-offs
+    attributes:
+      label: Trade-offs and alternatives
+      description: Include alternatives considered and consequences.
+    validations:
+      required: true
+  - type: textarea
+    id: validation-plan
+    attributes:
+      label: Validation plan
+      description: Testing, migration, rollout, and rollback strategy.
+    validations:
+      required: true
+  - type: checkboxes
+    id: ack
+    attributes:
+      label: Acknowledgements
+      options:
+        - label: I confirm this proposal does not include credentials, tokens, keys, or private data.
+          required: true
