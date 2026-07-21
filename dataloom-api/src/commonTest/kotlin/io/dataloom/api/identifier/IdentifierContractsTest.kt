@@ -89,6 +89,76 @@ class IdentifierContractsTest {
     }
 
     @Test
+    fun `execution id satisfies canonical identifier behavior`() {
+        assertIdentifierBehavior(
+            create = ::ExecutionId,
+            extract = ExecutionId::value,
+            valid = "execution-001",
+            different = "execution-002",
+        )
+    }
+
+    @Test
+    fun `request id satisfies canonical identifier behavior`() {
+        assertIdentifierBehavior(
+            create = ::RequestId,
+            extract = RequestId::value,
+            valid = "request-001",
+            different = "request-002",
+        )
+    }
+
+    @Test
+    fun `tenant id satisfies canonical identifier behavior`() {
+        assertIdentifierBehavior(
+            create = ::TenantId,
+            extract = TenantId::value,
+            valid = "tenant-001",
+            different = "tenant-002",
+        )
+    }
+
+    @Test
+    fun `user id satisfies canonical identifier behavior`() {
+        assertIdentifierBehavior(
+            create = ::UserId,
+            extract = UserId::value,
+            valid = "user-001",
+            different = "user-002",
+        )
+    }
+
+    @Test
+    fun `runtime version satisfies canonical identifier behavior`() {
+        assertIdentifierBehavior(
+            create = ::RuntimeVersion,
+            extract = RuntimeVersion::value,
+            valid = "runtime-1.0.0",
+            different = "runtime-1.1.0",
+        )
+    }
+
+    @Test
+    fun `configuration version satisfies canonical identifier behavior`() {
+        assertIdentifierBehavior(
+            create = ::ConfigurationVersion,
+            extract = ConfigurationVersion::value,
+            valid = "config-2026-07-21",
+            different = "config-2026-07-22",
+        )
+    }
+
+    @Test
+    fun `locale tag satisfies canonical identifier behavior`() {
+        assertIdentifierBehavior(
+            create = ::LocaleTag,
+            extract = LocaleTag::value,
+            valid = "en-US",
+            different = "fr-FR",
+        )
+    }
+
+    @Test
     fun `error code satisfies canonical identifier behavior`() {
         assertIdentifierBehavior(
             create = ::ErrorCode,
