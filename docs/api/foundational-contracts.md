@@ -1,4 +1,4 @@
-# DataLoom Foundational Public Contracts (DL-004, DL-005)
+# DataLoom Foundational Public Contracts (DL-004, DL-005, DL-007)
 
 This document defines stable, platform-independent public contracts introduced
 in `dataloom-api`.
@@ -78,6 +78,18 @@ DL-005 introduces additional immutable public contracts:
 These contracts carry synchronization context and request intent only.
 Runtime execution, queueing, retry, transport, persistence, and state
 transitions are intentionally not implemented in this scope.
+
+## Provider SPI contracts
+
+DL-007 introduces foundational provider contracts:
+
+- [`Provider SPI`](./provider-spi.md)
+- [`Provider Lifecycle and Health`](./provider-lifecycle.md)
+
+These contracts define provider identity, descriptor metadata, lifecycle labels,
+health labels, initialization context, and operation result semantics.
+Concrete providers, provider registry/discovery, and lifecycle orchestration
+remain out of scope in this issue.
 
 ## Workflow lifecycle state
 
