@@ -77,7 +77,8 @@ DL-005 introduces additional immutable public contracts:
 
 These contracts carry synchronization context and request intent only.
 Runtime execution, queueing, retry, transport, persistence, and state
-transitions are intentionally not implemented in this scope.
+transitions are intentionally not implemented in this scope, except for the
+transport SPI contracts documented separately.
 
 ## Provider SPI contracts
 
@@ -85,6 +86,7 @@ DL-007 introduces foundational provider contracts:
 
 - [`Provider SPI`](./provider-spi.md)
 - [`Provider Lifecycle and Health`](./provider-lifecycle.md)
+- [`Transport Provider`](./transport-provider.md)
 
 These contracts define provider identity, descriptor metadata, lifecycle labels,
 health labels, initialization context, and operation result semantics.

@@ -1,0 +1,259 @@
+# DataLoom Transport Provider (DL-010)
+
+`dataloom-api` defines a platform-independent transport-provider SPI for moving
+synchronization changes between DataLoom runtime coordination and
+application-controlled remote integrations.
+
+This issue introduces contract surfaces only. It does **not** implement
+Retrofit, Ktor, GraphQL, Apollo, gRPC, WebSocket, MQTT, HTTP,
+authentication, serialization, encryption, compression, retries,
+synchronization execution, acknowledgements, checkpoints, or concrete
+transport providers.
+
+## Purpose of `TransportProvider`
+
+`TransportProvider` is the adapter boundary between DataLoom and the host
+application's remote communication architecture.
+
+```text
+DataLoom Runtime
+      ↓
+TransportProvider
+      ↓
+Application-controlled transport adapter
+      ↓
+REST / GraphQL / gRPC / WebSocket / custom protocol
+```
+
+The shared SPI remains protocol-independent. Concrete providers may adapt
+DataLoom change contracts to application-owned protocol clients and DTOs.
+
+## Push operations
+
+Push synchronization uses:
+
+```text
+StorageProvider.readOutboundChanges()
+        ↓
+TransportProvider.pushChanges()
+```
+
+`PushChangesRequest` contains:
+
+- `request: SynchronizationRequest`
+- `changeSet: ChangeSet`
+
+Construction is declarative only. It does not perform transport I/O,
+serialization, authentication, payload inspection, or retries.
+
+A successful `pushChanges()` result means the configured transport operation
+completed successfully. It does **not** define durable local acknowledgement,
+per-event remote acceptance, remote business completion, queue deletion, or
+checkpoint advancement.
+
+## Pull operations
+
+Pull synchronization uses:
+
+```text
+TransportProvider.pullChanges()
+        ↓
+StorageProvider.applyInboundChanges()
+```
+
+`PullChangesRequest` contains:
+
+- `request: SynchronizationRequest`
+- `entityTypes: Set<EntityType>`
+- `maxEvents: Int?`
+
+Rules:
+
+- `entityTypes` defaults to an empty set.
+- An empty set means no explicit entity-type restriction.
+- `entityTypes` is defensively copied.
+- `maxEvents`, when supplied, must be greater than zero.
+
+`TransportProvider` must not decide synchronization direction on its own. The
+DataLoom runtime coordinates push, pull, or bidirectional workflows according
+to policy.
+
+## Pull result and no-change result
+
+`PullChangesResult` is a sealed result contract:
+
+- `NoChanges`
+- `Changes(changeSet, hasMore)`
+
+`NoChanges` represents a successful remote response containing no inbound
+changes.
+
+`Changes` contains:
+
+- `changeSet: ChangeSet` — a non-empty inbound change set
+- `hasMore: Boolean` — `true` when another pull may return more changes
+
+The result does not expose response bodies, status codes, headers, sockets,
+streams, cursors, continuation tokens, or other protocol-specific details.
+It also does not automatically apply inbound changes.
+
+## Batching through `maxEvents` and `hasMore`
+
+`maxEvents` is an optional caller hint for pull batching. It lets a provider ask
+for a limited number of events from the remote system without requiring a
+protocol-specific pagination contract in the shared API.
+
+`hasMore` lets a provider report that another pull may return additional
+changes.
+
+Continuation tokens, delta tokens, transport cursors, and remote checkpoints
+are deferred to later issues.
+
+## Protocol independence
+
+Concrete transport providers may adapt DataLoom changes to technologies such as:
+
+- REST
+- GraphQL
+- gRPC
+- WebSocket
+- MQTT
+- Bluetooth
+- NFC
+- Local IPC
+- Custom enterprise protocols
+
+The shared SPI must not expose technology-specific APIs, client types,
+annotations, request builders, headers, HTTP methods, query documents, service
+definitions, topics, frames, or sockets.
+
+## Error mapping
+
+Provider implementations must map protocol-specific failures into
+`DataLoomError`.
+
+Examples include:
+
+- Connectivity failure
+- Authentication failure
+- Authorization failure
+- Serialization failure
+- Validation failure
+- Provider failure
+- Security failure
+
+The public contract must not expose Retrofit, Ktor, HTTP, GraphQL, gRPC,
+socket, or platform exceptions directly.
+
+## Thread-safety expectations
+
+`TransportProvider` does not impose a threading model or dispatcher choice.
+Implementations are responsible for their own thread-safety guarantees and any
+additional concurrency constraints.
+
+## Coroutine-cancellation expectations
+
+Transport operations are `suspend` functions. Implementations must preserve
+coroutine cancellation and must not swallow cancellation signals.
+
+## Authentication boundary
+
+Authentication remains application-owned.
+
+- Transport providers may integrate with application-controlled token sources
+  and authentication systems.
+- `SynchronizationRequest`, `ExecutionContext`, and `DataLoomMetadata` must not
+  contain raw credentials or access tokens.
+- DataLoom does not refresh tokens automatically in DL-010.
+- Authentication failures must be mapped to `DataLoomError`.
+- Credentials must not be logged.
+
+## Serialization boundary
+
+`DataLoomPayload` remains opaque.
+
+- Transport providers may use application-controlled serializers.
+- DataLoom shared APIs do not assume JSON, XML, protobuf, CBOR, or any other
+  format.
+- Payload content type describes the caller-declared representation only.
+- Content type does not prove that payload bytes are valid.
+
+Serialization-provider contracts are deferred to a later issue.
+
+## TLS and encryption boundary
+
+Transport security remains outside the shared SPI.
+
+- TLS, certificate pinning, and mTLS are configured by the application or a
+  concrete transport provider.
+- Payload-level encryption may be added later through a dedicated
+  `EncryptionProvider`.
+- Transport providers must not assume payloads are plaintext.
+- DataLoom core does not manage certificates or private keys.
+- Secrets, credentials, and key material must not be placed in metadata.
+
+## Placeholder provider example
+
+```kotlin
+private class ExampleTransportProvider(
+    override val descriptor: ProviderDescriptor = ProviderDescriptor(
+        id = ProviderId("provider.transport.example"),
+        name = ProviderName("Example Transport Provider"),
+        type = ProviderType.TRANSPORT,
+        version = ProviderVersion("1.0.0"),
+    ),
+) : TransportProvider {
+    override suspend fun initialize(
+        context: ProviderInitializationContext,
+    ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+    override suspend fun health(): ProviderOperationResult<ProviderHealth> {
+        return ProviderOperationResult.Success(
+            ProviderHealth(status = ProviderHealthStatus.HEALTHY),
+        )
+    }
+
+    override suspend fun close(): ProviderOperationResult<Unit> =
+        ProviderOperationResult.Success(Unit)
+
+    override suspend fun pushChanges(
+        request: PushChangesRequest,
+    ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+    override suspend fun pullChanges(
+        request: PullChangesRequest,
+    ): ProviderOperationResult<PullChangesResult> {
+        return ProviderOperationResult.Success(PullChangesResult.NoChanges)
+    }
+}
+```
+
+This example is illustrative only. It is not a concrete network provider.
+
+## Deferred acknowledgement and checkpoint semantics
+
+The following transport semantics are deferred to follow-up issues:
+
+- Durable acknowledgement
+- Per-event acknowledgement
+- Partial acceptance
+- Queue deletion rules
+- Checkpoint advancement
+- Remote checkpoints
+- Continuation tokens
+- Delta tokens
+- Transport cursors
+- Remote idempotency keys
+- Streaming subscriptions
+- Persistent connections
+- Upload progress
+- Download progress
+- Large-file transfer
+- Multipart transfer
+- Resumable transfer
+- Rate-limit contracts
+- Server-directed retry timing
+- Authentication-provider contracts
+- Serialization-provider contracts
+- Encryption-provider contracts
+- Compression-provider contracts

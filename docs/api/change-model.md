@@ -235,7 +235,6 @@ payload content in metadata. See
 The following concerns are intentionally deferred to future issues:
 
 - Storage-provider contracts
-- Transport-provider contracts
 - Synchronization-result contracts
 - Conflict models and conflict resolution
 - Durable queue models
@@ -248,7 +247,6 @@ The following concerns are intentionally deferred to future issues:
 
 ```
 Implement storage-provider contracts
-Implement transport-provider contracts
 Implement synchronization-result contracts
 Implement scheduler and connectivity-provider contracts
 Implement durable queue models

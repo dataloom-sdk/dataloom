@@ -14,3 +14,4 @@ Current documents:
 
 - [Module Architecture](./modules.md)
 - [Platform Strategy (DL-006)](./platform-strategy.md)
+- [Transport Boundaries](./transport-boundaries.md)
