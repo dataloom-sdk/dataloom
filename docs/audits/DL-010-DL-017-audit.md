@@ -159,7 +159,7 @@ the agent's initial planning commit, which added no production code.
 | All operations return `ProviderOperationResult` | ✅ | |
 | Pull entity types are defensively copied | ✅ | Verified in `PullChangesRequest` |
 | No mutable collection exposed | ✅ | |
-| `maxEvents` rejects non-positive values | ✅ | `require(maxEvents == null \|\| maxEvents > 0)` |
+| `maxEvents` rejects non-positive values | ✅ | `require(maxEvents == null || maxEvents > 0)` |
 | Value-based equality | ✅ | |
 | Protocol-independent | ✅ | No HTTP, GraphQL, gRPC, or Retrofit types |
 | No external dependency | ✅ | |
