@@ -110,15 +110,15 @@ These are illustrative only and must not be treated as an exhaustive list.
 
 **Package:** `io.dataloom.api.retry`
 
-Immutable counter representing the retry attempt number.
+Immutable value class representing the retry attempt number.
 
 ```kotlin
 val attempt = RetryAttempt(1) // first retry evaluation
 ```
 
-| Member  | Type  | Description                                      |
-|---------|-------|--------------------------------------------------|
-| `number` | `Int` | Attempt number. Must be greater than zero.       |
+| Member   | Type  | Description                                       |
+|----------|-------|---------------------------------------------------|
+| `number` | `Int` | Attempt number. Must be greater than zero.        |
 
 - `number` must be greater than zero. Zero and negative values are rejected.
 - Attempt number `1` represents the first retry evaluation after the original
