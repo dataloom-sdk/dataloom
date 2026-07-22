@@ -69,6 +69,7 @@ On Windows:
 - [Change Model (DL-008)](./docs/api/change-model.md)
 - [Provider SPI (DL-007)](./docs/api/provider-spi.md)
 - [Provider Lifecycle and Health (DL-007)](./docs/api/provider-lifecycle.md)
+- [Conflict Contracts (DL-014)](./docs/api/conflict-contracts.md)
 - [Contributing Guide](./CONTRIBUTING.md)
 - [Security Policy](./SECURITY.md)
 - [Code of Conduct](./CODE_OF_CONDUCT.md)

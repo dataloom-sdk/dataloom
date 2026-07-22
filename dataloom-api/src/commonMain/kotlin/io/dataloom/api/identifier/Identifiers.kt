@@ -254,3 +254,105 @@ public value class LocaleTag(
 
     override fun toString(): String = value
 }
+
+/**
+ * Canonical identifier for a detected synchronization conflict.
+ *
+ * Wrap a non-blank application-supplied conflict identifier. DataLoom does not
+ * generate conflict identifiers automatically; the caller is responsible for
+ * supplying a meaningful value.
+ *
+ * Ownership: conflict producer (application or integration).
+ *
+ * Constraints:
+ * - Value must not be blank or whitespace-only.
+ * - Valid input is preserved exactly as supplied.
+ * - No normalization or automatic generation is applied.
+ * - `toString()` returns the underlying value.
+ *
+ * Example placeholder values:
+ * ```
+ * conflict-001
+ * inv-conflict-2026-07-01
+ * order-conflict-batch-3
+ * ```
+ */
+@JvmInline
+public value class ConflictId(
+    /** Underlying conflict identifier value. */
+    public val value: String,
+) {
+    init {
+        require(value.isNotBlank()) { "ConflictId must not be blank." }
+    }
+
+    override fun toString(): String = value
+}
+
+/**
+ * Canonical identifier for a [io.dataloom.api.conflict.ConflictDetector] implementation.
+ *
+ * Wrap a non-blank application-supplied detector identifier. DataLoom does not
+ * generate detector identifiers automatically; the caller is responsible for
+ * supplying a meaningful value.
+ *
+ * Ownership: conflict-detector implementor or host application.
+ *
+ * Constraints:
+ * - Value must not be blank or whitespace-only.
+ * - Valid input is preserved exactly as supplied.
+ * - No normalization or automatic generation is applied.
+ * - `toString()` returns the underlying value.
+ *
+ * Example placeholder values:
+ * ```
+ * entity-version-detector
+ * application-order-detector
+ * default-conflict-detector
+ * ```
+ */
+@JvmInline
+public value class ConflictDetectorId(
+    /** Underlying detector identifier value. */
+    public val value: String,
+) {
+    init {
+        require(value.isNotBlank()) { "ConflictDetectorId must not be blank." }
+    }
+
+    override fun toString(): String = value
+}
+
+/**
+ * Canonical identifier for a [io.dataloom.api.conflict.ConflictResolver] implementation.
+ *
+ * Wrap a non-blank application-supplied resolver identifier. DataLoom does not
+ * generate resolver identifiers automatically; the caller is responsible for
+ * supplying a meaningful value.
+ *
+ * Ownership: conflict-resolver implementor or host application.
+ *
+ * Constraints:
+ * - Value must not be blank or whitespace-only.
+ * - Valid input is preserved exactly as supplied.
+ * - No normalization or automatic generation is applied.
+ * - `toString()` returns the underlying value.
+ *
+ * Example placeholder values:
+ * ```
+ * client-preferred-resolver
+ * server-preferred-resolver
+ * application-merge-resolver
+ * ```
+ */
+@JvmInline
+public value class ConflictResolverId(
+    /** Underlying resolver identifier value. */
+    public val value: String,
+) {
+    init {
+        require(value.isNotBlank()) { "ConflictResolverId must not be blank." }
+    }
+
+    override fun toString(): String = value
+}
