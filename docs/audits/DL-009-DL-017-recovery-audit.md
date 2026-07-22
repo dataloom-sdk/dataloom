@@ -134,7 +134,7 @@ All `toString()` overrides checked:
 - `SynchronizationEvent.Completed` uses `data class` default toString on
   `result`; the `SynchronizationResult` sealed types do not contain payload
   bytes in their `toString()` paths. ✅
-- `SynchronizationCheckpoint.toString()` is the data-class default and
+- `SynchronizationCheckpoint.toString()` is the data class default and
   exposes the `CheckpointToken` value. **See finding F-001.**
 
 ---
@@ -663,7 +663,7 @@ exposed in public APIs. ✅
 **File:** `dataloom-api/src/commonMain/kotlin/io/dataloom/api/synchronization/SynchronizationCheckpoint.kt`  
 **Symbol:** `SynchronizationCheckpoint` (data class default `toString()`)  
 **Violated requirement:** KDoc states "A transport provider may redact
-checkpoint tokens from diagnostics." The data-class default `toString()`
+checkpoint tokens from diagnostics." The data class default `toString()`
 renders `token=CheckpointToken(value=<actual-token>)`, which exposes the token
 value in logs.  
 **Evidence:** `SynchronizationCheckpoint` is declared `data class`; Kotlin
