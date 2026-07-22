@@ -168,6 +168,36 @@ class IdentifierContractsTest {
         )
     }
 
+    @Test
+    fun `conflict id satisfies canonical identifier behavior`() {
+        assertIdentifierBehavior(
+            create = ::ConflictId,
+            extract = ConflictId::value,
+            valid = "conflict-001",
+            different = "conflict-002",
+        )
+    }
+
+    @Test
+    fun `conflict detector id satisfies canonical identifier behavior`() {
+        assertIdentifierBehavior(
+            create = ::ConflictDetectorId,
+            extract = ConflictDetectorId::value,
+            valid = "entity-version-detector",
+            different = "application-order-detector",
+        )
+    }
+
+    @Test
+    fun `conflict resolver id satisfies canonical identifier behavior`() {
+        assertIdentifierBehavior(
+            create = ::ConflictResolverId,
+            extract = ConflictResolverId::value,
+            valid = "client-preferred-resolver",
+            different = "server-preferred-resolver",
+        )
+    }
+
     private fun <T> assertIdentifierBehavior(
         create: (String) -> T,
         extract: (T) -> String,
