@@ -19,3 +19,4 @@ Current documents:
 - [Queue Boundaries (DL-015)](./queue-boundaries.md)
 - [Background Execution Boundaries (DL-012)](./background-execution-boundaries.md)
 - [Conflict Boundaries (DL-014)](./conflict-boundaries.md)
+- [Observation Boundaries (DL-016)](./observation-boundaries.md)

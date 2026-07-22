@@ -565,3 +565,75 @@ public value class QueueConsumerId(
 
     override fun toString(): String = value
 }
+
+/**
+ * Canonical identifier for a synchronization lifecycle event.
+ *
+ * A [SynchronizationEventId] uniquely identifies a single
+ * [io.dataloom.api.synchronization.SynchronizationEvent] emitted by the
+ * DataLoom runtime. DataLoom does not generate event identifiers
+ * automatically; the future runtime or host integration is responsible for
+ * supplying a meaningful, unique value per emitted event.
+ *
+ * Ownership: DataLoom runtime or host integration.
+ *
+ * Constraints:
+ * - Value must not be blank or whitespace-only.
+ * - Valid input is preserved exactly as supplied.
+ * - No normalization or automatic generation is applied.
+ * - `toString()` returns the underlying value.
+ *
+ * Example placeholder values:
+ * ```
+ * sync-event-001
+ * event-workflow-daily-customers-started
+ * observation-event-2026-07-22-001
+ * ```
+ */
+@JvmInline
+public value class SynchronizationEventId(
+    /** Underlying synchronization event identifier value. */
+    public val value: String,
+) {
+    init {
+        require(value.isNotBlank()) { "SynchronizationEventId must not be blank." }
+    }
+
+    override fun toString(): String = value
+}
+
+/**
+ * Canonical identifier for a [io.dataloom.api.observation.SynchronizationObserver]
+ * implementation.
+ *
+ * A [SynchronizationObserverId] uniquely identifies an observer registered
+ * with the DataLoom runtime. DataLoom does not generate observer identifiers
+ * automatically; the host application or integration is responsible for
+ * supplying a meaningful, stable value.
+ *
+ * Ownership: host application or integration.
+ *
+ * Constraints:
+ * - Value must not be blank or whitespace-only.
+ * - Valid input is preserved exactly as supplied.
+ * - No normalization or automatic generation is applied.
+ * - `toString()` returns the underlying value.
+ *
+ * Example placeholder values:
+ * ```
+ * analytics-observer
+ * debug-observer-example
+ * ui-progress-observer
+ * ```
+ */
+@JvmInline
+public value class SynchronizationObserverId(
+    /** Underlying observer identifier value. */
+    public val value: String,
+) {
+    init {
+        require(value.isNotBlank()) { "SynchronizationObserverId must not be blank." }
+    }
+
+    override fun toString(): String = value
+}
