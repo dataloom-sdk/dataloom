@@ -190,13 +190,13 @@ class RetryPolicyContractsTest {
     @Test
     fun `retry attempt accepts positive number`() {
         val attempt: RetryAttempt = RetryAttempt(3)
-        assertEquals(3, attempt.count)
+        assertEquals(3, attempt.number)
     }
 
     @Test
     fun `retry attempt accepts number one`() {
         val attempt: RetryAttempt = RetryAttempt(1)
-        assertEquals(1, attempt.count)
+        assertEquals(1, attempt.number)
     }
 
     @Test

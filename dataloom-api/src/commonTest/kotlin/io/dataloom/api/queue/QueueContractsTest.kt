@@ -183,9 +183,9 @@ class QueueContractsTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `RetryAttempt count one is valid`() {
+    fun `RetryAttempt number one is valid`() {
         val attempt = RetryAttempt(1)
-        assertEquals(1, attempt.count)
+        assertEquals(1, attempt.number)
     }
 
     @Test

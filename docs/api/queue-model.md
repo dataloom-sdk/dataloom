@@ -74,11 +74,11 @@ queue entry. Introduced to support `QueueEntry` and `QueueRescheduleRequest`.
 
 | Member | Type | Description |
 |---|---|---|
-| `count` | `Int` | Attempt count, starting at 1 for the first retry. |
+| `number` | `Int` | Attempt number, starting at 1 for the first retry. |
 
 ### Rules
 
-- `count` must be greater than zero. Zero and negative values are rejected.
+- `number` must be greater than zero. Zero and negative values are rejected.
 - Construction does not read the clock, sleep, or schedule work.
 - The DataLoom runtime supplies the value after evaluating retry policy.
 
