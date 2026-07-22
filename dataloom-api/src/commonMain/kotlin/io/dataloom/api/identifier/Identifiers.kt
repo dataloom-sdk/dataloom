@@ -424,3 +424,39 @@ public value class CheckpointToken(
 
     override fun toString(): String = value
 }
+
+/**
+ * Canonical identifier for a scheduled synchronization request.
+ *
+ * A [ScheduleId] identifies a single scheduling entry managed by a
+ * [io.dataloom.api.scheduling.SchedulerProvider]. It may be used by a
+ * platform provider to implement unique scheduling and cancellation. DataLoom
+ * does not generate schedule identifiers automatically; the caller is
+ * responsible for supplying a meaningful, unique value.
+ *
+ * Ownership: DataLoom runtime or host integration.
+ *
+ * Constraints:
+ * - Value must not be blank or whitespace-only.
+ * - Valid input is preserved exactly as supplied.
+ * - No normalization or automatic generation is applied.
+ * - `toString()` returns the underlying value.
+ *
+ * Example placeholder values:
+ * ```
+ * sync-schedule-001
+ * workflow-daily-customers
+ * tenant-example-push
+ * ```
+ */
+@JvmInline
+public value class ScheduleId(
+    /** Underlying schedule identifier value. */
+    public val value: String,
+) {
+    init {
+        require(value.isNotBlank()) { "ScheduleId must not be blank." }
+    }
+
+    override fun toString(): String = value
+}
