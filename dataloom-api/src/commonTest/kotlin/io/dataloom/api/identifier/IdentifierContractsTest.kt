@@ -218,6 +218,36 @@ class IdentifierContractsTest {
         )
     }
 
+    @Test
+    fun `queue consumer id satisfies canonical identifier behavior`() {
+        assertIdentifierBehavior(
+            create = ::QueueConsumerId,
+            extract = QueueConsumerId::value,
+            valid = "consumer-worker-001",
+            different = "consumer-worker-002",
+        )
+    }
+
+    @Test
+    fun `synchronization event id satisfies canonical identifier behavior`() {
+        assertIdentifierBehavior(
+            create = ::SynchronizationEventId,
+            extract = SynchronizationEventId::value,
+            valid = "sync-event-001",
+            different = "sync-event-002",
+        )
+    }
+
+    @Test
+    fun `synchronization observer id satisfies canonical identifier behavior`() {
+        assertIdentifierBehavior(
+            create = ::SynchronizationObserverId,
+            extract = SynchronizationObserverId::value,
+            valid = "analytics-observer",
+            different = "debug-observer-example",
+        )
+    }
+
     private fun <T> assertIdentifierBehavior(
         create: (String) -> T,
         extract: (T) -> String,
