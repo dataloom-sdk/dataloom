@@ -35,4 +35,12 @@ public enum class ProviderType {
 
     /** Provider category for monitoring, metrics, and health reporting concerns. */
     MONITORING,
+
+    /**
+     * Infrastructure provider responsible for durable DataLoom queue records,
+     * leases, recovery, and queue-state persistence.
+     *
+     * This is a pre-release public API addition introduced in DL-015.
+     */
+    QUEUE,
 }

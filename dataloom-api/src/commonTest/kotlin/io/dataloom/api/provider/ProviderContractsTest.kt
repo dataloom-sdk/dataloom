@@ -29,6 +29,7 @@ class ProviderContractsTest {
                 "COMPRESSION",
                 "LOGGING",
                 "MONITORING",
+                "QUEUE",
             ),
             ProviderType.entries.map { it.name }.toSet(),
         )
