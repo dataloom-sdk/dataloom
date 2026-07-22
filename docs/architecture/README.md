@@ -20,3 +20,4 @@ Current documents:
 - [Background Execution Boundaries (DL-012)](./background-execution-boundaries.md)
 - [Conflict Boundaries (DL-014)](./conflict-boundaries.md)
 - [Observation Boundaries (DL-016)](./observation-boundaries.md)
+- [Runtime Dependencies (DL-017)](./runtime-dependencies.md)
