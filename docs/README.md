@@ -27,6 +27,7 @@ planned SDK architecture.
   - [Clock (DL-017)](./api/clock.md)
   - [Identifier Generation (DL-017)](./api/identifier-generation.md)
   - [Provider Bindings (DL-019)](./api/provider-bindings.md)
+  - [Synchronization Execution (DL-020)](./api/synchronization-execution.md)
 - [Architecture](./architecture/README.md)
   - [Module Architecture](./architecture/modules.md)
   - [Platform Strategy (DL-006)](./architecture/platform-strategy.md)
@@ -40,6 +41,7 @@ planned SDK architecture.
   - [Runtime Dependencies (DL-017)](./architecture/runtime-dependencies.md)
   - [Provider Lifecycle Coordinator (DL-018)](./architecture/provider-lifecycle.md)
   - [Provider Resolution (DL-019)](./architecture/provider-resolution.md)
+  - [Execution Coordinator (DL-020)](./architecture/execution-coordinator.md)
 - Testing
   - [Clock and Identifier Test Utilities (DL-017)](./testing/clock-and-identifiers.md)
 - [Architecture Decision Records (ADRs)](./adr/README.md)
