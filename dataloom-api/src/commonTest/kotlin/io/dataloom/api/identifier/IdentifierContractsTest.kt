@@ -198,6 +198,26 @@ class IdentifierContractsTest {
         )
     }
 
+    @Test
+    fun `checkpoint key satisfies canonical identifier behavior`() {
+        assertIdentifierBehavior(
+            create = ::CheckpointKey,
+            extract = CheckpointKey::value,
+            valid = "customers-pull",
+            different = "orders-tenant-example",
+        )
+    }
+
+    @Test
+    fun `checkpoint token satisfies canonical identifier behavior`() {
+        assertIdentifierBehavior(
+            create = ::CheckpointToken,
+            extract = CheckpointToken::value,
+            valid = "token-001",
+            different = "token-002",
+        )
+    }
+
     private fun <T> assertIdentifierBehavior(
         create: (String) -> T,
         extract: (T) -> String,

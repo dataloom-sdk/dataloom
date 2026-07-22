@@ -13,20 +13,39 @@ DataLoom runtime coordinates synchronization direction and workflow policy.
 StorageProvider.readOutboundChanges()
         ↓
 TransportProvider.pushChanges()
+        ↓
+ChangeSetAcknowledgement
+        ↓
+StorageProvider.acknowledgeOutboundChanges()
 ```
 
 ### Pull
 
 ```text
-TransportProvider.pullChanges()
+StorageProvider.readCheckpoint()
         ↓
-StorageProvider.applyInboundChanges()
+TransportProvider.pullChanges(checkpoint)
+        ↓
+StorageProvider.applyInboundChanges()   (when changes are returned)
+        ↓
+StorageProvider.writeCheckpoint()       (only after successful apply)
 ```
 
 ### Bidirectional
 
 The runtime coordinates push and pull according to workflow policy.
 `TransportProvider` must not independently decide synchronization direction.
+
+### Critical checkpoint rule (DL-011)
+
+> A next checkpoint must not be persisted until all inbound changes
+> associated with that checkpoint have been applied successfully.
+
+`TransportProvider` must not modify storage directly, and `StorageProvider`
+must not perform transport. This document describes the sequence only;
+runtime orchestration that enforces this order is deferred to a later issue.
+See [Checkpoint Contracts](../api/checkpoint-contracts.md) and
+[Acknowledgement Contracts](../api/acknowledgement-contracts.md).
 
 ## Application ownership of API contracts
 

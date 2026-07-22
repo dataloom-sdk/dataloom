@@ -1,4 +1,4 @@
-# DataLoom Transport Provider (DL-010)
+# DataLoom Transport Provider (DL-010, DL-011)
 
 `dataloom-api` defines a platform-independent transport-provider SPI for moving
 synchronization changes between DataLoom runtime coordination and
@@ -7,8 +7,21 @@ application-controlled remote integrations.
 This issue introduces contract surfaces only. It does **not** implement
 Retrofit, Ktor, GraphQL, Apollo, gRPC, WebSocket, MQTT, HTTP,
 authentication, serialization, encryption, compression, retries,
-synchronization execution, acknowledgements, checkpoints, or concrete
+synchronization execution, runtime orchestration, or concrete
 transport providers.
+
+## API changes introduced by DL-011
+
+- `pushChanges` return type changed from
+  `ProviderOperationResult<Unit>` to
+  `ProviderOperationResult<ChangeSetAcknowledgement>`.
+- `PullChangesRequest` adds an optional `checkpoint: SynchronizationCheckpoint?`.
+- `PullChangesResult.NoChanges` changed from a `data object` to a
+  `data class` with an optional `nextCheckpoint`.
+- `PullChangesResult.Changes` adds an optional `nextCheckpoint`.
+
+See [Acknowledgement Contracts](./acknowledgement-contracts.md) and
+[Checkpoint Contracts](./checkpoint-contracts.md) for details.
 
 ## Purpose of `TransportProvider`
 
@@ -46,10 +59,15 @@ TransportProvider.pushChanges()
 Construction is declarative only. It does not perform transport I/O,
 serialization, authentication, payload inspection, or retries.
 
-A successful `pushChanges()` result means the configured transport operation
-completed successfully. It does **not** define durable local acknowledgement,
-per-event remote acceptance, remote business completion, queue deletion, or
-checkpoint advancement.
+A successful `pushChanges()` result returns a `ChangeSetAcknowledgement`
+describing how the remote participant responded to each pushed event (see
+[Acknowledgement Contracts](./acknowledgement-contracts.md)). Transport
+success does **not** by itself define durable local acknowledgement,
+remote business completion, or queue deletion; the runtime is expected to
+pass the acknowledgement to
+`StorageProvider.acknowledgeOutboundChanges()` in a later issue. A successful
+provider operation may still contain event-level `RETRY` or `REJECTED`
+statuses within the acknowledgement.
 
 ## Pull operations
 
@@ -66,6 +84,7 @@ StorageProvider.applyInboundChanges()
 - `request: SynchronizationRequest`
 - `entityTypes: Set<EntityType>`
 - `maxEvents: Int?`
+- `checkpoint: SynchronizationCheckpoint?`
 
 Rules:
 
@@ -73,6 +92,9 @@ Rules:
 - An empty set means no explicit entity-type restriction.
 - `entityTypes` is defensively copied.
 - `maxEvents`, when supplied, must be greater than zero.
+- `checkpoint` defaults to `null`, meaning no prior checkpoint is supplied.
+- The transport provider treats the checkpoint's token as opaque unless it
+  owns the token format (see [Checkpoint Contracts](./checkpoint-contracts.md)).
 
 `TransportProvider` must not decide synchronization direction on its own. The
 DataLoom runtime coordinates push, pull, or bidirectional workflows according
@@ -82,20 +104,26 @@ to policy.
 
 `PullChangesResult` is a sealed result contract:
 
-- `NoChanges`
-- `Changes(changeSet, hasMore)`
+- `NoChanges(nextCheckpoint: SynchronizationCheckpoint? = null)`
+- `Changes(changeSet, hasMore, nextCheckpoint: SynchronizationCheckpoint? = null)`
 
 `NoChanges` represents a successful remote response containing no inbound
-changes.
+changes. It may still carry a next checkpoint.
 
 `Changes` contains:
 
 - `changeSet: ChangeSet` — a non-empty inbound change set
 - `hasMore: Boolean` — `true` when another pull may return more changes
+- `nextCheckpoint: SynchronizationCheckpoint?` — optional next checkpoint
 
 The result does not expose response bodies, status codes, headers, sockets,
-streams, cursors, continuation tokens, or other protocol-specific details.
-It also does not automatically apply inbound changes.
+streams, or other protocol-specific details. It also does not automatically
+apply inbound changes or persist the returned checkpoint. See
+[Checkpoint Contracts](./checkpoint-contracts.md) for the critical
+apply-before-advance rule.
+
+> **API change:** `PullChangesResult.NoChanges` changed from a `data object`
+> to a `data class` carrying an optional `nextCheckpoint`.
 
 ## Batching through `maxEvents` and `hasMore`
 
@@ -218,12 +246,23 @@ private class ExampleTransportProvider(
 
     override suspend fun pushChanges(
         request: PushChangesRequest,
-    ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+    ): ProviderOperationResult<ChangeSetAcknowledgement> {
+        val acknowledgement = ChangeSetAcknowledgement(
+            changeSetId = request.changeSet.id,
+            events = request.changeSet.events.map { event ->
+                ChangeEventAcknowledgement(
+                    eventId = event.id,
+                    status = ChangeAcknowledgementStatus.ACCEPTED,
+                )
+            },
+        )
+        return ProviderOperationResult.Success(acknowledgement)
+    }
 
     override suspend fun pullChanges(
         request: PullChangesRequest,
     ): ProviderOperationResult<PullChangesResult> {
-        return ProviderOperationResult.Success(PullChangesResult.NoChanges)
+        return ProviderOperationResult.Success(PullChangesResult.NoChanges())
     }
 }
 ```
@@ -232,17 +271,12 @@ This example is illustrative only. It is not a concrete network provider.
 
 ## Deferred acknowledgement and checkpoint semantics
 
-The following transport semantics are deferred to follow-up issues:
+DL-011 introduces the `ChangeSetAcknowledgement` push return type and the
+optional pull checkpoint. The following transport semantics remain deferred
+to follow-up issues:
 
-- Durable acknowledgement
-- Per-event acknowledgement
-- Partial acceptance
+- Runtime orchestration that records acknowledgements and advances checkpoints
 - Queue deletion rules
-- Checkpoint advancement
-- Remote checkpoints
-- Continuation tokens
-- Delta tokens
-- Transport cursors
 - Remote idempotency keys
 - Streaming subscriptions
 - Persistent connections

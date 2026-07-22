@@ -30,6 +30,15 @@ import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.provider.ProviderId
 import io.dataloom.api.provider.ProviderName
 import io.dataloom.api.provider.ProviderVersion
+import io.dataloom.api.identifier.CheckpointKey
+import io.dataloom.api.identifier.CheckpointToken
+import io.dataloom.api.synchronization.ChangeAcknowledgementStatus
+import io.dataloom.api.synchronization.ChangeEventAcknowledgement
+import io.dataloom.api.synchronization.ChangeSetAcknowledgement
+import io.dataloom.api.synchronization.CheckpointReadRequest
+import io.dataloom.api.synchronization.CheckpointWriteRequest
+import io.dataloom.api.synchronization.OutboundChangeAcknowledgementRequest
+import io.dataloom.api.synchronization.SynchronizationCheckpoint
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
@@ -381,6 +390,146 @@ class StorageContractsTest {
     }
 
     // -------------------------------------------------------------------------
+    // Acknowledgement and checkpoint tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `storage provider can accept outbound acknowledgement`() {
+        val provider: StorageProvider = FakeStorageProvider(
+            readResult = ProviderOperationResult.Success(OutboundChangeReadResult.NoChanges),
+            applyResult = ProviderOperationResult.Success(Unit),
+            acknowledgeResult = ProviderOperationResult.Success(Unit),
+        )
+        val acknowledgement: ChangeSetAcknowledgement = ChangeSetAcknowledgement(
+            changeSetId = ChangeSetId("changeset-001"),
+            events = listOf(
+                ChangeEventAcknowledgement(
+                    eventId = ChangeEventId("event-001"),
+                    status = ChangeAcknowledgementStatus.ACCEPTED,
+                ),
+            ),
+        )
+
+        val result: ProviderOperationResult<Unit> = runSuspend {
+            provider.acknowledgeOutboundChanges(
+                OutboundChangeAcknowledgementRequest(
+                    request = sampleSynchronizationRequest(),
+                    acknowledgement = acknowledgement,
+                ),
+            )
+        }
+
+        assertIs<ProviderOperationResult.Success<Unit>>(result)
+    }
+
+    @Test
+    fun `storage provider returns null when no checkpoint is stored`() {
+        val provider: StorageProvider = FakeStorageProvider(
+            readResult = ProviderOperationResult.Success(OutboundChangeReadResult.NoChanges),
+            applyResult = ProviderOperationResult.Success(Unit),
+            readCheckpointResult = ProviderOperationResult.Success(null),
+        )
+
+        val result: ProviderOperationResult<SynchronizationCheckpoint?> = runSuspend {
+            provider.readCheckpoint(
+                CheckpointReadRequest(
+                    request = sampleSynchronizationRequest(),
+                    key = CheckpointKey("customers-pull"),
+                ),
+            )
+        }
+
+        assertEquals(ProviderOperationResult.Success(null), result)
+    }
+
+    @Test
+    fun `storage provider can read a stored checkpoint`() {
+        val checkpoint: SynchronizationCheckpoint = SynchronizationCheckpoint(
+            key = CheckpointKey("customers-pull"),
+            token = CheckpointToken("token-001"),
+        )
+        val provider: StorageProvider = FakeStorageProvider(
+            readResult = ProviderOperationResult.Success(OutboundChangeReadResult.NoChanges),
+            applyResult = ProviderOperationResult.Success(Unit),
+            readCheckpointResult = ProviderOperationResult.Success(checkpoint),
+        )
+
+        val result: ProviderOperationResult<SynchronizationCheckpoint?> = runSuspend {
+            provider.readCheckpoint(
+                CheckpointReadRequest(
+                    request = sampleSynchronizationRequest(),
+                    key = CheckpointKey("customers-pull"),
+                ),
+            )
+        }
+
+        assertEquals(ProviderOperationResult.Success(checkpoint), result)
+    }
+
+    @Test
+    fun `storage provider can write a checkpoint`() {
+        val checkpoint: SynchronizationCheckpoint = SynchronizationCheckpoint(
+            key = CheckpointKey("customers-pull"),
+            token = CheckpointToken("token-001"),
+        )
+        val provider: StorageProvider = FakeStorageProvider(
+            readResult = ProviderOperationResult.Success(OutboundChangeReadResult.NoChanges),
+            applyResult = ProviderOperationResult.Success(Unit),
+            writeCheckpointResult = ProviderOperationResult.Success(Unit),
+        )
+
+        val result: ProviderOperationResult<Unit> = runSuspend {
+            provider.writeCheckpoint(
+                CheckpointWriteRequest(
+                    request = sampleSynchronizationRequest(),
+                    checkpoint = checkpoint,
+                ),
+            )
+        }
+
+        assertIs<ProviderOperationResult.Success<Unit>>(result)
+    }
+
+    @Test
+    fun `storage provider can return dataloom error failure for acknowledgement`() {
+        val failure: ProviderOperationResult.Failure = ProviderOperationResult.Failure(
+            TestDataLoomError(
+                code = ErrorCode("DL-STORAGE-003"),
+                category = ErrorCategory.PROVIDER,
+                severity = ErrorSeverity.ERROR,
+                recoverability = Recoverability.RECOVERABLE,
+                message = "Acknowledgement failure.",
+                cause = null,
+            ),
+        )
+        val provider: StorageProvider = FakeStorageProvider(
+            readResult = ProviderOperationResult.Success(OutboundChangeReadResult.NoChanges),
+            applyResult = ProviderOperationResult.Success(Unit),
+            acknowledgeResult = failure,
+        )
+        val acknowledgement: ChangeSetAcknowledgement = ChangeSetAcknowledgement(
+            changeSetId = ChangeSetId("changeset-001"),
+            events = listOf(
+                ChangeEventAcknowledgement(
+                    eventId = ChangeEventId("event-001"),
+                    status = ChangeAcknowledgementStatus.ACCEPTED,
+                ),
+            ),
+        )
+
+        val result: ProviderOperationResult<Unit> = runSuspend {
+            provider.acknowledgeOutboundChanges(
+                OutboundChangeAcknowledgementRequest(
+                    request = sampleSynchronizationRequest(),
+                    acknowledgement = acknowledgement,
+                ),
+            )
+        }
+
+        assertEquals(failure, result)
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 
@@ -412,6 +561,10 @@ class StorageContractsTest {
     private class FakeStorageProvider(
         private val readResult: ProviderOperationResult<OutboundChangeReadResult>,
         private val applyResult: ProviderOperationResult<Unit>,
+        private val acknowledgeResult: ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit),
+        private val readCheckpointResult: ProviderOperationResult<SynchronizationCheckpoint?> =
+            ProviderOperationResult.Success(null),
+        private val writeCheckpointResult: ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit),
     ) : StorageProvider {
         override val descriptor: ProviderDescriptor = ProviderDescriptor(
             id = ProviderId("provider.storage.fake"),
@@ -437,6 +590,18 @@ class StorageContractsTest {
         override suspend fun applyInboundChanges(
             request: InboundChangeApplyRequest,
         ): ProviderOperationResult<Unit> = applyResult
+
+        override suspend fun acknowledgeOutboundChanges(
+            request: OutboundChangeAcknowledgementRequest,
+        ): ProviderOperationResult<Unit> = acknowledgeResult
+
+        override suspend fun readCheckpoint(
+            request: CheckpointReadRequest,
+        ): ProviderOperationResult<SynchronizationCheckpoint?> = readCheckpointResult
+
+        override suspend fun writeCheckpoint(
+            request: CheckpointWriteRequest,
+        ): ProviderOperationResult<Unit> = writeCheckpointResult
     }
 
     private data class TestDataLoomError(

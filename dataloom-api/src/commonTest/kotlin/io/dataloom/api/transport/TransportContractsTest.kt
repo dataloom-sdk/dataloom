@@ -29,6 +29,12 @@ import io.dataloom.api.provider.ProviderName
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.provider.ProviderVersion
+import io.dataloom.api.identifier.CheckpointKey
+import io.dataloom.api.identifier.CheckpointToken
+import io.dataloom.api.synchronization.ChangeAcknowledgementStatus
+import io.dataloom.api.synchronization.ChangeEventAcknowledgement
+import io.dataloom.api.synchronization.ChangeSetAcknowledgement
+import io.dataloom.api.synchronization.SynchronizationCheckpoint
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
@@ -36,7 +42,6 @@ import kotlin.coroutines.startCoroutine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
@@ -189,7 +194,22 @@ class TransportContractsTest {
 
     @Test
     fun `no changes result is representable`() {
-        assertEquals(PullChangesResult.NoChanges, PullChangesResult.NoChanges)
+        assertEquals(PullChangesResult.NoChanges(), PullChangesResult.NoChanges())
+    }
+
+    @Test
+    fun `no changes result preserves optional next checkpoint`() {
+        val checkpoint: SynchronizationCheckpoint = sampleCheckpoint()
+        val result: PullChangesResult.NoChanges = PullChangesResult.NoChanges(nextCheckpoint = checkpoint)
+
+        assertEquals(checkpoint, result.nextCheckpoint)
+    }
+
+    @Test
+    fun `no changes result defaults next checkpoint to null`() {
+        val result: PullChangesResult.NoChanges = PullChangesResult.NoChanges()
+
+        assertEquals(null, result.nextCheckpoint)
     }
 
     @Test
@@ -214,8 +234,30 @@ class TransportContractsTest {
     }
 
     @Test
+    fun `changes result preserves optional next checkpoint`() {
+        val checkpoint: SynchronizationCheckpoint = sampleCheckpoint()
+        val result: PullChangesResult.Changes = PullChangesResult.Changes(
+            changeSet = sampleChangeSet(),
+            hasMore = false,
+            nextCheckpoint = checkpoint,
+        )
+
+        assertEquals(checkpoint, result.nextCheckpoint)
+    }
+
+    @Test
+    fun `changes result defaults next checkpoint to null`() {
+        val result: PullChangesResult.Changes = PullChangesResult.Changes(
+            changeSet = sampleChangeSet(),
+            hasMore = false,
+        )
+
+        assertEquals(null, result.nextCheckpoint)
+    }
+
+    @Test
     fun `no changes and changes results remain distinct`() {
-        val noChanges: PullChangesResult = PullChangesResult.NoChanges
+        val noChanges: PullChangesResult = PullChangesResult.NoChanges()
         val changes: PullChangesResult = PullChangesResult.Changes(
             changeSet = sampleChangeSet(),
             hasMore = false,
@@ -225,38 +267,59 @@ class TransportContractsTest {
     }
 
     @Test
+    fun `pull request preserves optional checkpoint`() {
+        val checkpoint: SynchronizationCheckpoint = sampleCheckpoint()
+        val pullRequest: PullChangesRequest = PullChangesRequest(
+            request = sampleSynchronizationRequest(),
+            checkpoint = checkpoint,
+        )
+
+        assertEquals(checkpoint, pullRequest.checkpoint)
+    }
+
+    @Test
+    fun `pull request defaults checkpoint to null`() {
+        val pullRequest: PullChangesRequest = PullChangesRequest(
+            request = sampleSynchronizationRequest(),
+        )
+
+        assertEquals(null, pullRequest.checkpoint)
+    }
+
+    @Test
     fun `transport provider descriptor uses transport type`() {
         val provider: TransportProvider = FakeTransportProvider(
-            pushResult = ProviderOperationResult.Success(Unit),
-            pullResult = ProviderOperationResult.Success(PullChangesResult.NoChanges),
+            pushResult = ProviderOperationResult.Success(sampleAcknowledgement()),
+            pullResult = ProviderOperationResult.Success(PullChangesResult.NoChanges()),
         )
 
         assertEquals(ProviderType.TRANSPORT, provider.descriptor.type)
     }
 
     @Test
-    fun `transport provider can successfully push change set`() {
+    fun `transport provider push returns change set acknowledgement`() {
         val request: PushChangesRequest = PushChangesRequest(
             request = sampleSynchronizationRequest(),
             changeSet = sampleChangeSet(),
         )
+        val acknowledgement: ChangeSetAcknowledgement = sampleAcknowledgement()
         val provider: TransportProvider = FakeTransportProvider(
-            pushResult = ProviderOperationResult.Success(Unit),
-            pullResult = ProviderOperationResult.Success(PullChangesResult.NoChanges),
+            pushResult = ProviderOperationResult.Success(acknowledgement),
+            pullResult = ProviderOperationResult.Success(PullChangesResult.NoChanges()),
         )
 
-        val result: ProviderOperationResult<Unit> = runSuspend {
+        val result: ProviderOperationResult<ChangeSetAcknowledgement> = runSuspend {
             provider.pushChanges(request)
         }
 
-        assertIs<ProviderOperationResult.Success<Unit>>(result)
+        assertEquals(ProviderOperationResult.Success(acknowledgement), result)
     }
 
     @Test
     fun `transport provider can return no changes`() {
         val provider: TransportProvider = FakeTransportProvider(
-            pushResult = ProviderOperationResult.Success(Unit),
-            pullResult = ProviderOperationResult.Success(PullChangesResult.NoChanges),
+            pushResult = ProviderOperationResult.Success(sampleAcknowledgement()),
+            pullResult = ProviderOperationResult.Success(PullChangesResult.NoChanges()),
         )
 
         val result: ProviderOperationResult<PullChangesResult> = runSuspend {
@@ -264,7 +327,7 @@ class TransportContractsTest {
         }
 
         assertEquals(
-            ProviderOperationResult.Success(PullChangesResult.NoChanges),
+            ProviderOperationResult.Success(PullChangesResult.NoChanges()),
             result,
         )
     }
@@ -276,12 +339,37 @@ class TransportContractsTest {
             hasMore = true,
         )
         val provider: TransportProvider = FakeTransportProvider(
-            pushResult = ProviderOperationResult.Success(Unit),
+            pushResult = ProviderOperationResult.Success(sampleAcknowledgement()),
             pullResult = ProviderOperationResult.Success(changes),
         )
 
         val result: ProviderOperationResult<PullChangesResult> = runSuspend {
             provider.pullChanges(PullChangesRequest(request = sampleSynchronizationRequest()))
+        }
+
+        assertEquals(ProviderOperationResult.Success(changes), result)
+    }
+
+    @Test
+    fun `transport provider pull accepts an optional checkpoint`() {
+        val checkpoint: SynchronizationCheckpoint = sampleCheckpoint()
+        val changes: PullChangesResult.Changes = PullChangesResult.Changes(
+            changeSet = sampleChangeSet(),
+            hasMore = false,
+            nextCheckpoint = sampleCheckpoint(token = "token-002"),
+        )
+        val provider: TransportProvider = FakeTransportProvider(
+            pushResult = ProviderOperationResult.Success(sampleAcknowledgement()),
+            pullResult = ProviderOperationResult.Success(changes),
+        )
+
+        val result: ProviderOperationResult<PullChangesResult> = runSuspend {
+            provider.pullChanges(
+                PullChangesRequest(
+                    request = sampleSynchronizationRequest(),
+                    checkpoint = checkpoint,
+                ),
+            )
         }
 
         assertEquals(ProviderOperationResult.Success(changes), result)
@@ -311,6 +399,21 @@ class TransportContractsTest {
         assertEquals(failure, result)
     }
 
+    private fun sampleCheckpoint(token: String = "token-001"): SynchronizationCheckpoint = SynchronizationCheckpoint(
+        key = CheckpointKey("customers-pull"),
+        token = CheckpointToken(token),
+    )
+
+    private fun sampleAcknowledgement(): ChangeSetAcknowledgement = ChangeSetAcknowledgement(
+        changeSetId = ChangeSetId("changeset-001"),
+        events = listOf(
+            ChangeEventAcknowledgement(
+                eventId = ChangeEventId("event-001"),
+                status = ChangeAcknowledgementStatus.ACCEPTED,
+            ),
+        ),
+    )
+
     private fun sampleSynchronizationRequest(): SynchronizationRequest = SynchronizationRequest(
         workflowId = WorkflowId("workflow-001"),
         sessionId = SynchronizationSessionId("session-001"),
@@ -337,7 +440,7 @@ class TransportContractsTest {
     )
 
     private class FakeTransportProvider(
-        private val pushResult: ProviderOperationResult<Unit>,
+        private val pushResult: ProviderOperationResult<ChangeSetAcknowledgement>,
         private val pullResult: ProviderOperationResult<PullChangesResult>,
     ) : TransportProvider {
         override val descriptor: ProviderDescriptor = ProviderDescriptor(
@@ -363,7 +466,7 @@ class TransportContractsTest {
 
         override suspend fun pushChanges(
             request: PushChangesRequest,
-        ): ProviderOperationResult<Unit> = pushResult
+        ): ProviderOperationResult<ChangeSetAcknowledgement> = pushResult
 
         override suspend fun pullChanges(
             request: PullChangesRequest,

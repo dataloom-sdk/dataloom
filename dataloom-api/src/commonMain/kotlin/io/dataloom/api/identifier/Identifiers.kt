@@ -356,3 +356,71 @@ public value class ConflictResolverId(
 
     override fun toString(): String = value
 }
+
+/**
+ * Canonical identifier for a logical synchronization checkpoint stream.
+ *
+ * A [CheckpointKey] identifies the logical synchronization stream whose
+ * progress is being stored, for example a specific entity type, tenant, or
+ * integration channel. The key format is application or integration defined.
+ * DataLoom does not generate checkpoint keys automatically; the caller is
+ * responsible for supplying a meaningful value.
+ *
+ * Ownership: host application or integration.
+ *
+ * Constraints:
+ * - Value must not be blank or whitespace-only.
+ * - Valid input is preserved exactly as supplied.
+ * - No normalization or automatic generation is applied.
+ * - `toString()` returns the underlying value.
+ *
+ * Example placeholder values:
+ * ```
+ * customers-pull
+ * orders-tenant-example
+ * inventory-region-example
+ * ```
+ */
+@JvmInline
+public value class CheckpointKey(
+    /** Underlying checkpoint key value. */
+    public val value: String,
+) {
+    init {
+        require(value.isNotBlank()) { "CheckpointKey must not be blank." }
+    }
+
+    override fun toString(): String = value
+}
+
+/**
+ * Opaque synchronization checkpoint token.
+ *
+ * A [CheckpointToken] may represent a delta token, a continuation cursor, a
+ * remote sequence, an opaque revision, or an application-defined
+ * synchronization marker. DataLoom treats the token as opaque: it does not
+ * interpret its format, compare token ordering, or generate tokens
+ * automatically.
+ *
+ * Ownership: remote system or application-defined synchronization contract.
+ *
+ * Constraints:
+ * - Value must not be blank or whitespace-only.
+ * - Valid input is preserved exactly as supplied.
+ * - No normalization, interpretation, or ordering comparison is applied.
+ * - `toString()` returns the underlying value.
+ *
+ * A transport provider may redact checkpoint tokens from diagnostics.
+ * Checkpoint tokens must not be treated as credentials.
+ */
+@JvmInline
+public value class CheckpointToken(
+    /** Underlying opaque checkpoint token value. */
+    public val value: String,
+) {
+    init {
+        require(value.isNotBlank()) { "CheckpointToken must not be blank." }
+    }
+
+    override fun toString(): String = value
+}
