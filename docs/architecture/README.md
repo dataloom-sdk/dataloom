@@ -16,5 +16,6 @@ Current documents:
 - [Platform Strategy (DL-006)](./platform-strategy.md)
 - [Storage Boundaries (DL-009)](./storage-boundaries.md)
 - [Transport Boundaries](./transport-boundaries.md)
+- [Queue Boundaries (DL-015)](./queue-boundaries.md)
 - [Background Execution Boundaries (DL-012)](./background-execution-boundaries.md)
 - [Conflict Boundaries (DL-014)](./conflict-boundaries.md)

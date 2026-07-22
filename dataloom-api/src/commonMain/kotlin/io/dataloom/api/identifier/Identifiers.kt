@@ -460,3 +460,108 @@ public value class ScheduleId(
 
     override fun toString(): String = value
 }
+
+/**
+ * Canonical identifier for a durable queue entry.
+ *
+ * A [QueueEntryId] uniquely identifies a single entry in the DataLoom durable
+ * synchronization queue. DataLoom does not generate queue entry identifiers
+ * automatically; the caller or host integration is responsible for supplying a
+ * meaningful, unique value.
+ *
+ * Ownership: DataLoom runtime or host integration.
+ *
+ * Constraints:
+ * - Value must not be blank or whitespace-only.
+ * - Valid input is preserved exactly as supplied.
+ * - No normalization or automatic generation is applied.
+ * - `toString()` returns the underlying value.
+ *
+ * Example placeholder values:
+ * ```
+ * queue-entry-001
+ * workflow-sync-entry-2026-07-22
+ * entry-tenant-example-push
+ * ```
+ */
+@JvmInline
+public value class QueueEntryId(
+    /** Underlying queue entry identifier value. */
+    public val value: String,
+) {
+    init {
+        require(value.isNotBlank()) { "QueueEntryId must not be blank." }
+    }
+
+    override fun toString(): String = value
+}
+
+/**
+ * Canonical identifier for an exclusive queue entry lease.
+ *
+ * A [QueueLeaseId] identifies the exclusive lease that a consumer holds over a
+ * queue entry while processing it. DataLoom does not generate lease identifiers
+ * automatically; the DataLoom runtime is responsible for supplying a unique
+ * value per acquisition operation.
+ *
+ * Ownership: DataLoom runtime.
+ *
+ * Constraints:
+ * - Value must not be blank or whitespace-only.
+ * - Valid input is preserved exactly as supplied.
+ * - No normalization or automatic generation is applied.
+ * - `toString()` returns the underlying value.
+ *
+ * Example placeholder values:
+ * ```
+ * lease-001
+ * lease-batch-2026-07-22-001
+ * acquisition-lease-xyz
+ * ```
+ */
+@JvmInline
+public value class QueueLeaseId(
+    /** Underlying queue lease identifier value. */
+    public val value: String,
+) {
+    init {
+        require(value.isNotBlank()) { "QueueLeaseId must not be blank." }
+    }
+
+    override fun toString(): String = value
+}
+
+/**
+ * Canonical identifier for a queue consumer.
+ *
+ * A [QueueConsumerId] identifies the runtime worker or platform integration
+ * that acquires and processes queue entries. DataLoom does not generate consumer
+ * identifiers automatically; the runtime worker or platform integration is
+ * responsible for supplying a meaningful, stable value.
+ *
+ * Ownership: Runtime worker or platform integration.
+ *
+ * Constraints:
+ * - Value must not be blank or whitespace-only.
+ * - Valid input is preserved exactly as supplied.
+ * - No normalization or automatic generation is applied.
+ * - `toString()` returns the underlying value.
+ *
+ * Example placeholder values:
+ * ```
+ * consumer-worker-001
+ * workmanager-consumer-example
+ * sync-consumer-tenant-example
+ * ```
+ */
+@JvmInline
+public value class QueueConsumerId(
+    /** Underlying queue consumer identifier value. */
+    public val value: String,
+) {
+    init {
+        require(value.isNotBlank()) { "QueueConsumerId must not be blank." }
+    }
+
+    override fun toString(): String = value
+}
