@@ -169,13 +169,23 @@ class StorageContractsTest {
     }
 
     @Test
-    fun `changes result preserves hasMore`() {
+    fun `changes result preserves hasMore true`() {
         val result: OutboundChangeReadResult.Changes = OutboundChangeReadResult.Changes(
             changeSet = sampleChangeSet(),
             hasMore = true,
         )
 
         assertTrue(result.hasMore)
+    }
+
+    @Test
+    fun `changes result preserves hasMore false`() {
+        val result: OutboundChangeReadResult.Changes = OutboundChangeReadResult.Changes(
+            changeSet = sampleChangeSet(),
+            hasMore = false,
+        )
+
+        assertEquals(false, result.hasMore)
     }
 
     @Test
@@ -335,6 +345,35 @@ class StorageContractsTest {
         val result: ProviderOperationResult<OutboundChangeReadResult> = runSuspend {
             provider.readOutboundChanges(
                 OutboundChangeReadRequest(request = sampleSynchronizationRequest()),
+            )
+        }
+
+        assertEquals(failure, result)
+    }
+
+    @Test
+    fun `storage provider can return dataloom error failure for inbound apply`() {
+        val failure: ProviderOperationResult.Failure = ProviderOperationResult.Failure(
+            TestDataLoomError(
+                code = ErrorCode("DL-STORAGE-002"),
+                category = ErrorCategory.PROVIDER,
+                severity = ErrorSeverity.ERROR,
+                recoverability = Recoverability.RECOVERABLE,
+                message = "Storage apply failure.",
+                cause = null,
+            ),
+        )
+        val provider: StorageProvider = FakeStorageProvider(
+            readResult = ProviderOperationResult.Success(OutboundChangeReadResult.NoChanges),
+            applyResult = failure,
+        )
+
+        val result: ProviderOperationResult<Unit> = runSuspend {
+            provider.applyInboundChanges(
+                InboundChangeApplyRequest(
+                    request = sampleSynchronizationRequest(),
+                    changeSet = sampleChangeSet(),
+                ),
             )
         }
 
