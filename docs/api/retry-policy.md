@@ -118,9 +118,9 @@ val attempt = RetryAttempt(1) // first retry evaluation
 
 | Member  | Type  | Description                                      |
 |---------|-------|--------------------------------------------------|
-| `count` | `Int` | Attempt count. Must be greater than zero.        |
+| `number` | `Int` | Attempt number. Must be greater than zero.       |
 
-- `count` must be greater than zero. Zero and negative values are rejected.
+- `number` must be greater than zero. Zero and negative values are rejected.
 - Attempt number `1` represents the first retry evaluation after the original
   operation failed. The initial provider operation is not attempt zero.
 - Construction does not read the clock, sleep, or schedule work.

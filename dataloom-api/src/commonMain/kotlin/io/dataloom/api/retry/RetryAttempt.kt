@@ -10,34 +10,34 @@ package io.dataloom.api.retry
  *
  * ## Constraints
  *
- * - [count] must be greater than zero.
+ * - [number] must be greater than zero.
  * - Zero and negative values are rejected at construction.
  * - Construction does not read the clock, sleep, or schedule work.
  *
  * ## Equality
  *
- * Equality compares [count] by value.
+ * Equality compares [number] by value.
  *
- * @param count the number of processing attempts, starting at 1 for the first
+ * @param number the number of processing attempts, starting at 1 for the first
  *   retry. Must be greater than zero.
  */
 public class RetryAttempt(
     /** The number of processing attempts. Must be greater than zero. */
-    public val count: Int,
+    public val number: Int,
 ) {
     init {
-        require(count > 0) {
-            "RetryAttempt count must be greater than zero, but was $count."
+        require(number > 0) {
+            "RetryAttempt number must be greater than zero, but was $number."
         }
     }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is RetryAttempt) return false
-        return count == other.count
+        return number == other.number
     }
 
-    override fun hashCode(): Int = count.hashCode()
+    override fun hashCode(): Int = number.hashCode()
 
-    override fun toString(): String = "RetryAttempt(count=$count)"
+    override fun toString(): String = "RetryAttempt(number=$number)"
 }
