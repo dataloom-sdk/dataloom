@@ -1,4 +1,4 @@
-# DataLoom Storage Provider (DL-009)
+# DataLoom Storage Provider (DL-009, DL-011)
 
 ## Purpose of `StorageProvider`
 
@@ -101,6 +101,9 @@ with application-controlled storage.
 | `descriptor` | `ProviderDescriptor` | Must use `ProviderType.STORAGE`. |
 | `readOutboundChanges(request)` | `suspend` | Reads outbound changes from storage. |
 | `applyInboundChanges(request)` | `suspend` | Applies inbound changes to storage. |
+| `acknowledgeOutboundChanges(request)` | `suspend` | Records a remote acknowledgement in storage (DL-011). |
+| `readCheckpoint(request)` | `suspend` | Reads a stored checkpoint, or `null` when none is stored (DL-011). |
+| `writeCheckpoint(request)` | `suspend` | Persists a checkpoint (DL-011). |
 
 ---
 
@@ -149,6 +152,56 @@ when (val result = storageProvider.applyInboundChanges(applyRequest)) {
 When `readOutboundChanges` returns `OutboundChangeReadResult.NoChanges`, no
 outbound changes are available. The runtime treats this as a clean state for
 the current read cycle. No acknowledgement is required.
+
+---
+
+## Acknowledging Outbound Changes (DL-011)
+
+```kotlin
+val acknowledgementRequest = OutboundChangeAcknowledgementRequest(
+    request = synchronizationRequest,
+    acknowledgement = changeSetAcknowledgement,
+)
+
+when (val result = storageProvider.acknowledgeOutboundChanges(acknowledgementRequest)) {
+    is ProviderOperationResult.Success -> { /* acknowledgement recorded */ }
+    is ProviderOperationResult.Failure -> { /* handle error */ }
+}
+```
+
+Acknowledgement handling is implementation-defined. Accepted events may be
+marked synchronized or removed; retry events must remain eligible for later
+processing; rejected events must remain inspectable according to application
+policy. See [Acknowledgement Contracts](./acknowledgement-contracts.md).
+
+---
+
+## Reading and Writing Checkpoints (DL-011)
+
+```kotlin
+val readRequest = CheckpointReadRequest(
+    request = synchronizationRequest,
+    key = CheckpointKey("customers-pull"),
+)
+
+when (val result = storageProvider.readCheckpoint(readRequest)) {
+    is ProviderOperationResult.Success -> {
+        val checkpoint: SynchronizationCheckpoint? = result.value // null means no checkpoint stored
+    }
+    is ProviderOperationResult.Failure -> { /* handle error */ }
+}
+
+val writeRequest = CheckpointWriteRequest(
+    request = synchronizationRequest,
+    checkpoint = nextCheckpoint,
+)
+
+// Only after associated inbound changes have been applied successfully:
+storageProvider.writeCheckpoint(writeRequest)
+```
+
+See [Checkpoint Contracts](./checkpoint-contracts.md) for the critical
+apply-before-advance rule.
 
 ---
 
@@ -244,6 +297,21 @@ class PlaceholderStorageProvider : StorageProvider {
         request: InboundChangeApplyRequest,
     ): ProviderOperationResult<Unit> =
         ProviderOperationResult.Success(Unit)
+
+    override suspend fun acknowledgeOutboundChanges(
+        request: OutboundChangeAcknowledgementRequest,
+    ): ProviderOperationResult<Unit> =
+        ProviderOperationResult.Success(Unit)
+
+    override suspend fun readCheckpoint(
+        request: CheckpointReadRequest,
+    ): ProviderOperationResult<SynchronizationCheckpoint?> =
+        ProviderOperationResult.Success(null)
+
+    override suspend fun writeCheckpoint(
+        request: CheckpointWriteRequest,
+    ): ProviderOperationResult<Unit> =
+        ProviderOperationResult.Success(Unit)
 }
 ```
 
@@ -253,8 +321,7 @@ class PlaceholderStorageProvider : StorageProvider {
 
 The following are explicitly deferred to later issues:
 
-- Outbound-change acknowledgement
-- Checkpoints and cursors
+- Checkpoint deletion
 - Durable DataLoom queue persistence
 - Queue ordering
 - Retry records
@@ -284,3 +351,7 @@ The following are explicitly deferred to later issues:
   result sealed contract.
 - [`TransportProvider`](./transport-provider.md) — transport adapter contract.
 - [`DataLoomError`](./error-model.md) — canonical error type.
+- [Acknowledgement Contracts](./acknowledgement-contracts.md) — outbound
+  acknowledgement contracts (DL-011).
+- [Checkpoint Contracts](./checkpoint-contracts.md) — checkpoint contracts
+  (DL-011).

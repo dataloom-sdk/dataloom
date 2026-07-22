@@ -4,6 +4,10 @@ import io.dataloom.api.provider.DataLoomProvider
 import io.dataloom.api.provider.ProviderDescriptor
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderType
+import io.dataloom.api.synchronization.CheckpointReadRequest
+import io.dataloom.api.synchronization.CheckpointWriteRequest
+import io.dataloom.api.synchronization.OutboundChangeAcknowledgementRequest
+import io.dataloom.api.synchronization.SynchronizationCheckpoint
 
 /**
  * Platform-independent provider contract for exchanging synchronization
@@ -109,5 +113,66 @@ public interface StorageProvider : DataLoomProvider {
      */
     public suspend fun applyInboundChanges(
         request: InboundChangeApplyRequest,
+    ): ProviderOperationResult<Unit>
+
+    /**
+     * Acknowledges outbound synchronization changes in application-controlled
+     * storage.
+     *
+     * Acknowledgement handling is implementation-defined. Accepted events may
+     * be marked synchronized or removed according to the application
+     * adapter. Events acknowledged with
+     * [io.dataloom.api.synchronization.ChangeAcknowledgementStatus.RETRY] must
+     * remain eligible for later processing. Events acknowledged with
+     * [io.dataloom.api.synchronization.ChangeAcknowledgementStatus.REJECTED]
+     * must remain inspectable according to application policy.
+     *
+     * This contract does not dictate SQL, Room, DataStore, or file
+     * operations.
+     *
+     * @param request immutable acknowledgement request containing the
+     *   synchronization request and the change-set acknowledgement to record.
+     * @return [ProviderOperationResult.Success] when the acknowledgement is
+     *   recorded successfully, or [ProviderOperationResult.Failure] with a
+     *   canonical DataLoom error.
+     */
+    public suspend fun acknowledgeOutboundChanges(
+        request: OutboundChangeAcknowledgementRequest,
+    ): ProviderOperationResult<Unit>
+
+    /**
+     * Reads a previously stored [SynchronizationCheckpoint] from
+     * application-controlled storage.
+     *
+     * A successful result returns `null` when no checkpoint is stored for the
+     * requested [io.dataloom.api.identifier.CheckpointKey]. This contract does
+     * not implement checkpoint deletion.
+     *
+     * @param request immutable read request containing the synchronization
+     *   request and checkpoint key.
+     * @return [ProviderOperationResult.Success] with the stored
+     *   [SynchronizationCheckpoint], or `null` when no checkpoint is stored,
+     *   or [ProviderOperationResult.Failure] with a canonical DataLoom error.
+     */
+    public suspend fun readCheckpoint(
+        request: CheckpointReadRequest,
+    ): ProviderOperationResult<SynchronizationCheckpoint?>
+
+    /**
+     * Persists a [SynchronizationCheckpoint] to application-controlled
+     * storage.
+     *
+     * Checkpoint writes must not happen automatically. The caller must not
+     * invoke this operation until all inbound changes associated with the
+     * supplied checkpoint have been applied successfully.
+     *
+     * @param request immutable write request containing the synchronization
+     *   request and checkpoint to persist.
+     * @return [ProviderOperationResult.Success] when the checkpoint is
+     *   persisted successfully, or [ProviderOperationResult.Failure] with a
+     *   canonical DataLoom error.
+     */
+    public suspend fun writeCheckpoint(
+        request: CheckpointWriteRequest,
     ): ProviderOperationResult<Unit>
 }

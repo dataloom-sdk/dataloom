@@ -91,10 +91,13 @@ concerns, separate from application domain storage. Examples include:
 - Durable synchronization queue persistence
 - Retry records
 - Idempotency records
-- Checkpoint state
 
-These are deferred to later issues and will not share schemas or DAOs with
-application domain storage.
+DL-011 introduces the `readCheckpoint` and `writeCheckpoint` operations on
+`StorageProvider` for persisting opaque `SynchronizationCheckpoint` values,
+but no concrete checkpoint storage implementation is provided. Checkpoint
+deletion, and durable queue/retry-record persistence, remain deferred to
+later issues and will not share schemas or DAOs with application domain
+storage.
 
 ---
 
@@ -189,6 +192,9 @@ application explicitly applies it before passing payloads to DataLoom.
 | Transactions, encryption, key management | Host application |
 | Outbound change-read adapter | `StorageProvider` implementation |
 | Inbound change-apply adapter | `StorageProvider` implementation |
+| Outbound acknowledgement recording | `StorageProvider` implementation |
+| Checkpoint read/write persistence | `StorageProvider` implementation |
+| Checkpoint apply-before-advance timing | DataLoom runtime (deferred) |
 | Synchronization orchestration | DataLoom runtime |
 | Future DataLoom queue persistence | DataLoom (deferred) |
 
@@ -201,3 +207,5 @@ application explicitly applies it before passing payloads to DataLoom.
 - [Transport Boundaries](./transport-boundaries.md)
 - [Platform Strategy](./platform-strategy.md)
 - [Modules](./modules.md)
+- [Acknowledgement Contracts](../api/acknowledgement-contracts.md)
+- [Checkpoint Contracts](../api/checkpoint-contracts.md)
