@@ -637,3 +637,38 @@ public value class SynchronizationObserverId(
 
     override fun toString(): String = value
 }
+
+/**
+ * Canonical identifier for a [io.dataloom.api.retry.RetryPolicy] implementation.
+ *
+ * A [RetryPolicyId] uniquely identifies a retry policy configured or registered
+ * by the host application or DataLoom runtime. DataLoom does not generate policy
+ * identifiers automatically; the host application or runtime configuration is
+ * responsible for supplying a meaningful, stable value.
+ *
+ * Ownership: host application or runtime configuration.
+ *
+ * Constraints:
+ * - Value must not be blank or whitespace-only.
+ * - Valid input is preserved exactly as supplied.
+ * - No normalization or automatic generation is applied.
+ * - `toString()` returns the underlying value.
+ *
+ * Example placeholder values:
+ * ```
+ * default-network-policy
+ * critical-upload-policy
+ * manual-only-policy
+ * ```
+ */
+@JvmInline
+public value class RetryPolicyId(
+    /** Underlying retry-policy identifier value. */
+    public val value: String,
+) {
+    init {
+        require(value.isNotBlank()) { "RetryPolicyId must not be blank." }
+    }
+
+    override fun toString(): String = value
+}

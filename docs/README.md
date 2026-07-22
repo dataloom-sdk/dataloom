@@ -19,6 +19,7 @@ planned SDK architecture.
   - [Checkpoint Contracts (DL-011)](./api/checkpoint-contracts.md)
   - [Scheduler Provider (DL-012)](./api/scheduler-provider.md)
   - [Connectivity Provider (DL-012)](./api/connectivity-provider.md)
+  - [Retry Policy (DL-013)](./api/retry-policy.md)
   - [Synchronization Progress (DL-016)](./api/synchronization-progress.md)
   - [Synchronization Result (DL-016)](./api/synchronization-result.md)
   - [Synchronization Events (DL-016)](./api/synchronization-events.md)
@@ -32,6 +33,7 @@ planned SDK architecture.
   - [Queue Boundaries (DL-015)](./architecture/queue-boundaries.md)
   - [Background Execution Boundaries (DL-012)](./architecture/background-execution-boundaries.md)
   - [Conflict Boundaries (DL-014)](./architecture/conflict-boundaries.md)
+  - [Retry Boundaries (DL-013)](./architecture/retry-boundaries.md)
   - [Observation Boundaries (DL-016)](./architecture/observation-boundaries.md)
   - [Runtime Dependencies (DL-017)](./architecture/runtime-dependencies.md)
 - Testing
