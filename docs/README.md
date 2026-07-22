@@ -6,6 +6,7 @@ planned SDK architecture.
 - [Architecture](./architecture/README.md)
   - [Module Architecture](./architecture/modules.md)
   - [Platform Strategy (DL-006)](./architecture/platform-strategy.md)
+  - [Storage Boundaries (DL-009)](./architecture/storage-boundaries.md)
   - [Transport Boundaries](./architecture/transport-boundaries.md)
 - API
   - [Foundational Contracts](./api/foundational-contracts.md)
@@ -14,6 +15,7 @@ planned SDK architecture.
   - [Change Model (DL-008)](./api/change-model.md)
   - [Provider SPI](./api/provider-spi.md)
   - [Provider Lifecycle and Health](./api/provider-lifecycle.md)
+  - [Storage Provider (DL-009)](./api/storage-provider.md)
   - [Transport Provider (DL-010)](./api/transport-provider.md)
 - [Architecture Decision Records (ADRs)](./adr/README.md)
   - [ADR-0001: Android-first and Kotlin Multiplatform-ready core architecture](./adr/ADR-0001-android-first-kmp-core.md)
