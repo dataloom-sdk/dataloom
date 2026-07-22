@@ -10,6 +10,7 @@ planned SDK architecture.
   - [Change Model (DL-008)](./api/change-model.md)
   - [Provider SPI](./api/provider-spi.md)
   - [Provider Lifecycle and Health](./api/provider-lifecycle.md)
+  - [Provider Registry (DL-018)](./api/provider-registry.md)
   - [Storage Provider (DL-009, DL-011)](./api/storage-provider.md)
   - [Transport Provider (DL-010, DL-011)](./api/transport-provider.md)
   - [Queue Models (DL-015)](./api/queue-model.md)
@@ -36,6 +37,7 @@ planned SDK architecture.
   - [Retry Boundaries (DL-013)](./architecture/retry-boundaries.md)
   - [Observation Boundaries (DL-016)](./architecture/observation-boundaries.md)
   - [Runtime Dependencies (DL-017)](./architecture/runtime-dependencies.md)
+  - [Provider Lifecycle Coordinator (DL-018)](./architecture/provider-lifecycle.md)
 - Testing
   - [Clock and Identifier Test Utilities (DL-017)](./testing/clock-and-identifiers.md)
 - [Architecture Decision Records (ADRs)](./adr/README.md)

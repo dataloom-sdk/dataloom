@@ -21,4 +21,5 @@ Current documents:
 - [Conflict Boundaries (DL-014)](./conflict-boundaries.md)
 - [Observation Boundaries (DL-016)](./observation-boundaries.md)
 - [Runtime Dependencies (DL-017)](./runtime-dependencies.md)
+- [Provider Lifecycle Coordinator (DL-018)](./provider-lifecycle.md)
 - [Retry Boundaries (DL-013)](./retry-boundaries.md)
