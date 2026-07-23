@@ -28,3 +28,4 @@ Current documents:
 - [Outbound Push Flow (DL-021)](./outbound-push-flow.md)
 - [Inbound Pull Flow (DL-022)](./inbound-pull-flow.md)
 - [Bidirectional Flow (DL-023)](./bidirectional-flow.md)
+- [Retry and Rescheduling Flow (DL-024)](./retry-rescheduling-flow.md)
