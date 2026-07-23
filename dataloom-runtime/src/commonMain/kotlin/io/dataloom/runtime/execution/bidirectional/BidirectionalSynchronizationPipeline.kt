@@ -1,6 +1,5 @@
 package io.dataloom.runtime.execution.bidirectional
 
-import io.dataloom.api.context.DataLoomMetadata
 import io.dataloom.api.error.DataLoomError
 import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorCode
