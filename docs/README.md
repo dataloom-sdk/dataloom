@@ -29,6 +29,7 @@ planned SDK architecture.
   - [Provider Bindings (DL-019)](./api/provider-bindings.md)
   - [Synchronization Execution (DL-020)](./api/synchronization-execution.md)
   - [Outbound Push Pipeline (DL-021)](./api/outbound-push-pipeline.md)
+  - [Inbound Pull Pipeline (DL-022)](./api/inbound-pull-pipeline.md)
 - [Architecture](./architecture/README.md)
   - [Module Architecture](./architecture/modules.md)
   - [Platform Strategy (DL-006)](./architecture/platform-strategy.md)
@@ -44,6 +45,7 @@ planned SDK architecture.
   - [Provider Resolution (DL-019)](./architecture/provider-resolution.md)
   - [Execution Coordinator (DL-020)](./architecture/execution-coordinator.md)
   - [Outbound Push Flow (DL-021)](./architecture/outbound-push-flow.md)
+  - [Inbound Pull Flow (DL-022)](./architecture/inbound-pull-flow.md)
 - Testing
   - [Clock and Identifier Test Utilities (DL-017)](./testing/clock-and-identifiers.md)
 - [Architecture Decision Records (ADRs)](./adr/README.md)
