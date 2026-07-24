@@ -362,6 +362,9 @@ responsible for consuming the `ConflictResolutionDecision` and acting on it.
   headers, checkpoint tokens, encryption keys, or personal data.
 - Safe diagnostics include only structural IDs (conflict ID, conflict type,
   detector ID, resolver ID) and result variant names.
+- Local and remote payloads (`DataLoomPayload`) remain **opaque** to the
+  orchestrator. The orchestrator does not inspect, copy, deserialize, or log
+  payload content at any step.
 
 ---
 

@@ -214,6 +214,9 @@ lifecycle coordinator, or any observer.
 - Safe diagnostic output is limited to structural IDs: `ConflictId`,
   `ConflictDetectorId`, `ConflictResolverId`, `ConflictType`,
   `EntityReference`, and result variant names.
+- Local and remote payloads (`DataLoomPayload`) remain **opaque** to the
+  orchestrator at every step of the flow. The orchestrator does not inspect,
+  copy, deserialize, or log payload content.
 
 ---
 
