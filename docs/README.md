@@ -16,6 +16,7 @@ planned SDK architecture.
   - [Queue Models (DL-015)](./api/queue-model.md)
   - [Queue Provider (DL-015)](./api/queue-provider.md)
   - [Conflict Contracts (DL-014)](./api/conflict-contracts.md)
+  - [Conflict Orchestration (DL-025)](./api/conflict-orchestration.md)
   - [Acknowledgement Contracts (DL-011)](./api/acknowledgement-contracts.md)
   - [Checkpoint Contracts (DL-011)](./api/checkpoint-contracts.md)
   - [Scheduler Provider (DL-012)](./api/scheduler-provider.md)
@@ -50,6 +51,7 @@ planned SDK architecture.
   - [Inbound Pull Flow (DL-022)](./architecture/inbound-pull-flow.md)
   - [Bidirectional Flow (DL-023)](./architecture/bidirectional-flow.md)
   - [Retry and Rescheduling Flow (DL-024)](./architecture/retry-rescheduling-flow.md)
+  - [Conflict Detection and Resolution Flow (DL-025)](./architecture/conflict-detection-resolution-flow.md)
 - Testing
   - [Clock and Identifier Test Utilities (DL-017)](./testing/clock-and-identifiers.md)
 - [Architecture Decision Records (ADRs)](./adr/README.md)
