@@ -1,5 +1,6 @@
 package io.dataloom.runtime.execution
 
+import io.dataloom.api.error.DataLoomError
 import io.dataloom.api.synchronization.SynchronizationResult
 import io.dataloom.core.provider.ProviderBindingFailure
 
@@ -67,11 +68,20 @@ public sealed interface SynchronizationExecutionResult {
      * [reason] is [SynchronizationExecutionRejectionReason.PROVIDER_RESOLUTION_FAILED].
      * For all other rejection reasons, [providerBindingFailures] is empty.
      *
+     * [connectivityCheckError] carries the canonical
+     * [io.dataloom.api.error.DataLoomError] returned by the
+     * [io.dataloom.api.connectivity.ConnectivityProvider] when [reason] is
+     * [SynchronizationExecutionRejectionReason.CONNECTIVITY_CHECK_FAILED].
+     * For all other rejection reasons, [connectivityCheckError] is `null`.
+     *
      * ## Constraints
      *
      * - When [reason] is [SynchronizationExecutionRejectionReason.PROVIDER_RESOLUTION_FAILED],
      *   [providerBindingFailures] must be non-empty.
      * - When [reason] is any other value, [providerBindingFailures] must be empty.
+     * - When [reason] is [SynchronizationExecutionRejectionReason.CONNECTIVITY_CHECK_FAILED],
+     *   [connectivityCheckError] must be non-null.
+     * - When [reason] is any other value, [connectivityCheckError] must be null.
      *
      * Construction throws [IllegalArgumentException] when these constraints are
      * violated.
@@ -92,23 +102,39 @@ public sealed interface SynchronizationExecutionResult {
      *
      * ## Value semantics
      *
-     * [Rejected] provides value-based equality based on [reason] and the
-     * ordered [providerBindingFailures] snapshot.
+     * [Rejected] provides value-based equality based on [reason],
+     * the ordered [providerBindingFailures] snapshot, and
+     * [connectivityCheckError].
      *
      * @param reason the [SynchronizationExecutionRejectionReason] classifying
      *   why execution was rejected.
      * @param providerBindingFailures ordered [ProviderBindingFailure] records
      *   when [reason] is [SynchronizationExecutionRejectionReason.PROVIDER_RESOLUTION_FAILED].
      *   Empty for all other reasons. Defaults to empty.
+     * @param connectivityCheckError the canonical [DataLoomError] returned by
+     *   the connectivity provider when [reason] is
+     *   [SynchronizationExecutionRejectionReason.CONNECTIVITY_CHECK_FAILED].
+     *   Null for all other reasons. Defaults to null.
      * @throws IllegalArgumentException when [reason] is
      *   [SynchronizationExecutionRejectionReason.PROVIDER_RESOLUTION_FAILED]
      *   and [providerBindingFailures] is empty, or when [reason] is any other
-     *   value and [providerBindingFailures] is non-empty.
+     *   value and [providerBindingFailures] is non-empty, or when [reason] is
+     *   [SynchronizationExecutionRejectionReason.CONNECTIVITY_CHECK_FAILED]
+     *   and [connectivityCheckError] is null, or when [reason] is any other
+     *   value and [connectivityCheckError] is non-null.
      */
     public class Rejected(
         /** The [SynchronizationExecutionRejectionReason] classifying this rejection. */
         public val reason: SynchronizationExecutionRejectionReason,
         providerBindingFailures: List<ProviderBindingFailure> = emptyList(),
+
+        /**
+         * The exact canonical [DataLoomError] returned by the connectivity
+         * provider when [reason] is
+         * [SynchronizationExecutionRejectionReason.CONNECTIVITY_CHECK_FAILED].
+         * Null for all other rejection reasons.
+         */
+        public val connectivityCheckError: DataLoomError? = null,
     ) : SynchronizationExecutionResult {
 
         private val failuresSnapshot: List<ProviderBindingFailure> =
@@ -124,6 +150,17 @@ public sealed interface SynchronizationExecutionResult {
                 require(failuresSnapshot.isEmpty()) {
                     "SynchronizationExecutionResult.Rejected with reason=$reason " +
                         "must not supply providerBindingFailures (expected empty list)."
+                }
+            }
+            if (reason == SynchronizationExecutionRejectionReason.CONNECTIVITY_CHECK_FAILED) {
+                require(connectivityCheckError != null) {
+                    "SynchronizationExecutionResult.Rejected with CONNECTIVITY_CHECK_FAILED " +
+                        "must supply a non-null connectivityCheckError."
+                }
+            } else {
+                require(connectivityCheckError == null) {
+                    "SynchronizationExecutionResult.Rejected with reason=$reason " +
+                        "must not supply connectivityCheckError (expected null)."
                 }
             }
         }
@@ -143,12 +180,15 @@ public sealed interface SynchronizationExecutionResult {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is Rejected) return false
-            return reason == other.reason && failuresSnapshot == other.failuresSnapshot
+            return reason == other.reason &&
+                failuresSnapshot == other.failuresSnapshot &&
+                connectivityCheckError == other.connectivityCheckError
         }
 
         override fun hashCode(): Int {
             var result = reason.hashCode()
             result = 31 * result + failuresSnapshot.hashCode()
+            result = 31 * result + (connectivityCheckError?.hashCode() ?: 0)
             return result
         }
 
@@ -157,13 +197,18 @@ public sealed interface SynchronizationExecutionResult {
          *
          * Includes rejection reason and the count and content of any binding
          * failures (by provider ID, expected type, and failure reason only).
+         * For [SynchronizationExecutionRejectionReason.CONNECTIVITY_CHECK_FAILED],
+         * includes the error code only.
          * Does not expose provider object references, credentials, payloads,
          * encryption keys, personal data, or stack traces.
          */
-        override fun toString(): String =
-            "SynchronizationExecutionResult.Rejected(" +
+        override fun toString(): String {
+            val connectivityErrorCode = connectivityCheckError?.code?.value
+            return "SynchronizationExecutionResult.Rejected(" +
                 "reason=$reason, " +
                 "providerBindingFailures=$failuresSnapshot" +
+                (if (connectivityErrorCode != null) ", connectivityCheckErrorCode=$connectivityErrorCode" else "") +
                 ")"
+        }
     }
 }

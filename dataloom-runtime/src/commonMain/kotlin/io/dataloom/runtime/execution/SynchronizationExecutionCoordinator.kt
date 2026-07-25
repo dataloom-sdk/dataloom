@@ -7,6 +7,9 @@ import io.dataloom.core.provider.ProviderResolutionResult
 import io.dataloom.core.provider.SynchronizationProviderBindings
 import io.dataloom.core.provider.SynchronizationProviderResolver
 import io.dataloom.core.runtime.RuntimeDependencies
+import io.dataloom.runtime.connectivity.ConnectivityPreflightResult
+import io.dataloom.runtime.connectivity.SynchronizationConnectivityConfiguration
+import io.dataloom.runtime.connectivity.SynchronizationConnectivityPreflight
 import io.dataloom.runtime.execution.lifecycle.SynchronizationLifecycleEventEmitter
 
 /**
@@ -126,6 +129,15 @@ import io.dataloom.runtime.execution.lifecycle.SynchronizationLifecycleEventEmit
  *   [io.dataloom.api.synchronization.SynchronizationEvent.Completed] events.
  *   When `null`, no lifecycle events are emitted. Defaults to `null` for
  *   backward compatibility.
+ * @param connectivityConfiguration the [SynchronizationConnectivityConfiguration]
+ *   that declares the connectivity requirement to evaluate before execution.
+ *   Defaults to [SynchronizationConnectivityConfiguration.NONE] for backward
+ *   compatibility. When the requirement is
+ *   [io.dataloom.api.connectivity.ConnectivityRequirement.NONE], no
+ *   [io.dataloom.api.connectivity.ConnectivityProvider] is invoked.
+ * @param connectivityPreflight the [SynchronizationConnectivityPreflight]
+ *   used to evaluate the connectivity requirement. Defaults to a new
+ *   stateless instance for backward compatibility.
  */
 public class SynchronizationExecutionCoordinator(
     private val lifecycleCoordinator: ProviderLifecycleCoordinator,
@@ -133,6 +145,10 @@ public class SynchronizationExecutionCoordinator(
     private val pipelineRegistry: SynchronizationPipelineRegistry,
     private val runtimeDependencies: RuntimeDependencies,
     private val lifecycleEventEmitter: SynchronizationLifecycleEventEmitter? = null,
+    private val connectivityConfiguration: SynchronizationConnectivityConfiguration =
+        SynchronizationConnectivityConfiguration.NONE,
+    private val connectivityPreflight: SynchronizationConnectivityPreflight =
+        SynchronizationConnectivityPreflight(),
 ) {
 
     /**
@@ -150,9 +166,16 @@ public class SynchronizationExecutionCoordinator(
      * 5. Look up the pipeline for [request] direction.
      * 6. Reject with [SynchronizationExecutionRejectionReason.PIPELINE_NOT_FOUND]
      *    if no pipeline exists.
-     * 7. Construct [SynchronizationExecutionContext].
-     * 8. Invoke the selected pipeline exactly once.
-     * 9. Return [SynchronizationExecutionResult.Executed] with the exact result.
+     * 7. Evaluate the configured connectivity requirement.
+     * 8. Reject with [SynchronizationExecutionRejectionReason.CONNECTIVITY_PROVIDER_NOT_CONFIGURED],
+     *    [SynchronizationExecutionRejectionReason.CONNECTIVITY_REQUIREMENT_NOT_MET], or
+     *    [SynchronizationExecutionRejectionReason.CONNECTIVITY_CHECK_FAILED]
+     *    if connectivity is not satisfied.
+     * 9. Construct [SynchronizationExecutionContext].
+     * 10. Emit [io.dataloom.api.synchronization.SynchronizationEvent.Started].
+     * 11. Invoke pipeline exactly once.
+     * 12. Emit [io.dataloom.api.synchronization.SynchronizationEvent.Completed].
+     * 13. Return [SynchronizationExecutionResult.Executed] with the exact result.
      *
      * Coroutine cancellation propagates normally.
      *
@@ -190,7 +213,37 @@ public class SynchronizationExecutionCoordinator(
                 reason = SynchronizationExecutionRejectionReason.PIPELINE_NOT_FOUND,
             )
 
-        // Step 7: Construct immutable execution context.
+        // Step 7: Evaluate connectivity requirement.
+        // Checked after pipeline lookup, before context construction, Started,
+        // and pipeline execution. CancellationException propagates normally.
+        val preflightResult = connectivityPreflight.evaluate(
+            requirement = connectivityConfiguration.requirement,
+            provider = resolved.connectivityProvider,
+            request = request,
+        )
+        when (preflightResult) {
+            is ConnectivityPreflightResult.NotRequired,
+            is ConnectivityPreflightResult.Satisfied,
+            -> Unit // proceed to execution
+
+            is ConnectivityPreflightResult.ProviderNotConfigured ->
+                return SynchronizationExecutionResult.Rejected(
+                    reason = SynchronizationExecutionRejectionReason.CONNECTIVITY_PROVIDER_NOT_CONFIGURED,
+                )
+
+            is ConnectivityPreflightResult.RequirementNotMet ->
+                return SynchronizationExecutionResult.Rejected(
+                    reason = SynchronizationExecutionRejectionReason.CONNECTIVITY_REQUIREMENT_NOT_MET,
+                )
+
+            is ConnectivityPreflightResult.CheckFailed ->
+                return SynchronizationExecutionResult.Rejected(
+                    reason = SynchronizationExecutionRejectionReason.CONNECTIVITY_CHECK_FAILED,
+                    connectivityCheckError = preflightResult.error,
+                )
+        }
+
+        // Step 8: Construct immutable execution context.
         // Include the lifecycle emitter so pipelines can emit phase events.
         val context = SynchronizationExecutionContext(
             request = request,
@@ -199,24 +252,24 @@ public class SynchronizationExecutionCoordinator(
             lifecycleEventEmitter = lifecycleEventEmitter,
         )
 
-        // Step 8: Dispatch Started before pipeline execution.
+        // Step 9: Dispatch Started before pipeline execution.
         // CancellationException propagates normally; pipeline is not executed.
         // Ordinary observer failures (structured dispatch results) do not
         // prevent pipeline execution.
         lifecycleEventEmitter?.emitStarted(context)
 
-        // Step 9: Invoke pipeline exactly once.
+        // Step 10: Invoke pipeline exactly once.
         // CancellationException or unexpected exceptions propagate without
         // dispatching Completed.
         val pipelineResult = pipeline.execute(context)
 
-        // Step 10: Dispatch Completed with the exact pipeline result.
+        // Step 11: Dispatch Completed with the exact pipeline result.
         // CancellationException propagates; synchronization work is complete
         // but the caller may not receive the result.
         // Ordinary observer failures do not alter the result.
         lifecycleEventEmitter?.emitCompleted(context, pipelineResult)
 
-        // Step 11: Return result unchanged.
+        // Step 12: Return result unchanged.
         return SynchronizationExecutionResult.Executed(result = pipelineResult)
     }
 }
