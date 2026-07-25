@@ -5,11 +5,11 @@ Kotlin Multiplatform-ready shared core.
 
 ## Current project status
 
-DataLoom is in the **Gradle multi-module project foundation** stage (DL-002).
-
-The Gradle build system, Kotlin Multiplatform module structure, convention
-build logic, and dependency direction have been established. No synchronization
-algorithms or production SDK features have been implemented yet.
+DataLoom is in active SDK development.  The synchronization runtime, provider
+contracts, facade, durable queue, retry orchestration, conflict handling,
+observer delivery, and connectivity-aware execution are implemented.
+Apple-platform (iOS) support via Kotlin/Native and XCFramework is established
+in DL-036.
 
 ## Required JDK
 
@@ -26,23 +26,38 @@ java -version
 | Gradle Wrapper | 9.5.0 |
 | Kotlin | 2.4.10 |
 | JVM bytecode target | 17 |
-| Initial platform target | Kotlin Multiplatform JVM |
+| Platform targets | JVM · iosArm64 · iosSimulatorArm64 · iosX64 |
 
-## Module overview
+## Platform Support
+
+| Platform | Target | Status |
+|---|---|---|
+| Kotlin / JVM | `jvm` | ✓ Active |
+| Physical iPhone / iPad | `iosArm64` | ✓ DL-036 |
+| Apple-silicon iOS Simulator | `iosSimulatorArm64` | ✓ DL-036 |
+| Intel iOS Simulator | `iosX64` | ✓ DL-036 |
+| Android | `android` | Planned |
+| Desktop | — | Not planned |
+
+Apple-platform support requires macOS with Xcode.  See
+[docs/apple/README.md](./docs/apple/README.md) for details.
+
+## Module Overview
 
 | Module | Purpose |
 |---|---|
-| `dataloom-api` | Future stable public contracts, models, and error types |
-| `dataloom-core` | Internal platform-independent foundation |
-| `dataloom-runtime` | Future synchronization runtime and engine coordination |
-| `dataloom-testing` | Future testing utilities and fake providers |
+| `dataloom-api` | Stable public contracts, models, provider interfaces |
+| `dataloom-core` | Platform-independent runtime foundations |
+| `dataloom-runtime` | Synchronization runtime, facade, pipelines, queue |
+| `dataloom-testing` | Test utilities and fake providers |
+| `dataloom-apple` | Apple XCFramework umbrella (macOS only) |
 
 See [Module Architecture](./docs/architecture/modules.md) for dependency
 rules and boundaries, and
 [Platform Strategy (DL-006)](./docs/architecture/platform-strategy.md) for
 Android-first and Kotlin Multiplatform architecture direction.
 
-## Basic build command
+## Basic Build Command
 
 Use the Gradle Wrapper (no separate Gradle installation required):
 
@@ -56,11 +71,24 @@ On Windows:
 .\gradlew.bat build
 ```
 
+## Apple XCFramework
+
+To assemble the DataLoom XCFramework (requires macOS with Xcode):
+
+```bash
+./gradlew :dataloom-apple:assembleDataLoomReleaseXCFramework
+```
+
+Output: `dataloom-apple/build/XCFrameworks/release/DataLoom.xcframework`
+
+See [XCFramework Integration](./docs/apple/xcframework-integration.md) for details.
+
 ## Documentation
 
 - [Module Architecture](./docs/architecture/modules.md)
 - [Platform Strategy (DL-006)](./docs/architecture/platform-strategy.md)
 - [Local Build Instructions](./docs/development/building.md)
+- [Apple Platform Support (DL-036)](./docs/apple/README.md)
 - [Foundational API Contracts (DL-004, DL-005)](./docs/api/foundational-contracts.md)
 - [Error Model (DL-004)](./docs/api/error-model.md)
 - [Execution Context (DL-005)](./docs/api/execution-context.md)
@@ -79,22 +107,23 @@ On Windows:
     - [ADR-0001: Android-first and Kotlin Multiplatform-ready core architecture](./docs/adr/ADR-0001-android-first-kmp-core.md)
   - [Specifications](./docs/specifications/README.md)
 
-## The problem DataLoom is designed to solve
+## The Problem DataLoom Is Designed to Solve
 
 Offline-first applications must continue to work while networks are slow,
-unavailable, or intermittent. DataLoom is intended to provide shared
-synchronization capabilities such as durable queueing, retry handling,
-conflict management, policy evaluation, and recovery checkpoints so host
-applications can focus on product-specific business logic.
+unavailable, or intermittent. DataLoom provides shared synchronization
+capabilities such as durable queueing, retry handling, conflict management,
+policy evaluation, and recovery checkpoints so host applications can focus
+on product-specific business logic.
 
-## Planned platforms
+## Planned Platforms
 
 - Kotlin
 - Android
 - Kotlin/JVM
+- iOS via Kotlin/Native and XCFramework (DL-036)
 - Kotlin Multiplatform (where appropriate)
 
-## High-level architecture (planned)
+## High-Level Architecture
 
 - Core synchronization orchestration and state management
 - Durable operation queue and retry coordination
@@ -102,12 +131,12 @@ applications can focus on product-specific business logic.
 - Provider and plugin extensibility points
 - Observability and integration layers
 
-## Contribution status
+## Contribution Status
 
 Contributions are welcome through approved issues and pull requests that follow
 the repository governance documents.
 
-## Security reporting
+## Security Reporting
 
 Please report vulnerabilities privately following the process in
 [SECURITY.md](./SECURITY.md).

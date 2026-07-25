@@ -23,3 +23,16 @@ include(
     ":dataloom-runtime",
     ":dataloom-testing",
 )
+
+// dataloom-apple assembles the DataLoom XCFramework for Apple platforms.
+// It is included only on macOS hosts because XCFramework assembly and
+// Kotlin/Native linking for Apple targets require the Apple SDK and Xcode.
+// The macOS CI job validates Apple compilation, simulator tests, and
+// XCFramework assembly.  See docs/apple/xcframework-integration.md.
+val isAppleHost: Boolean = System.getProperty("os.name")
+    .lowercase()
+    .contains("mac")
+
+if (isAppleHost) {
+    include(":dataloom-apple")
+}
