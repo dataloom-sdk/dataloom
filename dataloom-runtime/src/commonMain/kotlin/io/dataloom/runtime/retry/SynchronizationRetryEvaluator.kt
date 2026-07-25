@@ -42,7 +42,7 @@ import io.dataloom.api.time.DataLoomInstant
  * 6. If no decision requests retry, return
  *    [SynchronizationRetryEvaluation.StopRetry] with the primary error and
  *    the ordered decisions.
- * 7. Determine the maximum [SchedulingDelay] across all retry decisions.
+ * 7. Determine the maximum [io.dataloom.api.scheduling.SchedulingDelay] across all retry decisions.
  * 8. Read the current instant from [clock].
  * 9. Compute [SynchronizationRetryEvaluation.ShouldRetry.availableAt] using
  *    overflow-safe addition of the epoch milliseconds and the delay.

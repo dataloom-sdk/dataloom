@@ -36,8 +36,10 @@ import io.dataloom.api.queue.QueueEntry
  *
  * ## Cancellation
  *
- * [resolve] is a non-suspending function. Coroutine cancellation is not
- * applicable.
+ * [resolve] is a non-suspending function called from within a suspending
+ * execution context. `CancellationException` thrown from the enclosing
+ * coroutine scope propagates normally through the handler and is never
+ * caught or suppressed.
  *
  * ## KMP compatibility
  *
