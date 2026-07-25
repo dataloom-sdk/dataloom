@@ -2,6 +2,8 @@ package io.dataloom.runtime.conflict
 
 import io.dataloom.api.conflict.ConflictDetectionResult
 import io.dataloom.api.conflict.ConflictResolutionRequest
+import io.dataloom.api.model.SynchronizationRequest
+import io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitter
 
 /**
  * Platform-independent orchestrator that coordinates conflict detection and
@@ -92,6 +94,18 @@ import io.dataloom.api.conflict.ConflictResolutionRequest
  * - No serialization or deserialization is performed.
  * - No reflection is used.
  *
+ * ## DL-030 event emission
+ *
+ * When [eventEmitter] is non-null and
+ * [io.dataloom.api.conflict.ConflictDetector.detect] reports an actual
+ * [io.dataloom.api.conflict.ConflictDetectionResult.ConflictDetected],
+ * a [io.dataloom.api.synchronization.SynchronizationEvent.ConflictDetected]
+ * event is emitted before resolver lookup and before
+ * [io.dataloom.api.conflict.ConflictResolver.resolve]. Ordinary observer
+ * failures do not stop resolver selection or resolution. A
+ * [kotlin.coroutines.cancellation.CancellationException] during event delivery
+ * propagates; resolver lookup and resolution must not continue.
+ *
  * ## KMP compatibility
  *
  * Uses Kotlin standard-library and DataLoom API and runtime types only. Safe
@@ -101,10 +115,15 @@ import io.dataloom.api.conflict.ConflictResolutionRequest
  *   [io.dataloom.api.conflict.ConflictDetector] instances.
  * @param resolverRegistry the immutable registry of available
  *   [io.dataloom.api.conflict.ConflictResolver] instances.
+ * @param eventEmitter the optional [SynchronizationRuntimeEventEmitter] used
+ *   to emit [io.dataloom.api.synchronization.SynchronizationEvent.ConflictDetected]
+ *   after a real conflict is detected. When `null`, no event is emitted.
+ *   Defaults to `null` for backward compatibility.
  */
 public class SynchronizationConflictOrchestrator(
     private val detectorRegistry: ConflictDetectorRegistry,
     private val resolverRegistry: ConflictResolverRegistry,
+    private val eventEmitter: SynchronizationRuntimeEventEmitter? = null,
 ) {
 
     /**
@@ -131,12 +150,20 @@ public class SynchronizationConflictOrchestrator(
      * Unexpected exceptions from the detector or resolver propagate normally
      * and are never converted into a result variant.
      *
+     * ## DL-030 event emission
+     *
+     * When a conflict is detected and [eventEmitter] is non-null, a
+     * [io.dataloom.api.synchronization.SynchronizationEvent.ConflictDetected]
+     * event is emitted before resolver lookup. CancellationException during
+     * event delivery propagates; resolver lookup and resolution do not
+     * continue. Ordinary observer failures do not stop resolution.
+     *
      * @param request the [ConflictOrchestrationRequest] carrying the detection
      *   request and bindings.
      * @return the [ConflictOrchestrationResult] describing the terminal outcome
      *   of this orchestration cycle.
      */
-    public fun detectAndResolve(
+    public suspend fun detectAndResolve(
         request: ConflictOrchestrationRequest,
     ): ConflictOrchestrationResult {
         val detectorId = request.bindings.detectorId
@@ -151,6 +178,16 @@ public class SynchronizationConflictOrchestrator(
 
             is ConflictDetectionResult.ConflictDetected -> {
                 val conflict = detectionResult.conflict
+
+                // Emit ConflictDetected before resolver lookup and before
+                // resolver invocation. CancellationException propagates here;
+                // resolver lookup and resolution must not continue.
+                // Ordinary observer failures do not stop resolver selection.
+                eventEmitter?.emitConflictDetected(
+                    request = request.detectionRequest.synchronizationRequest,
+                    conflict = conflict,
+                )
+
                 val resolverId = request.bindings.resolverId
                     ?: return ConflictOrchestrationResult.ResolverNotConfigured(
                         conflict = conflict,
