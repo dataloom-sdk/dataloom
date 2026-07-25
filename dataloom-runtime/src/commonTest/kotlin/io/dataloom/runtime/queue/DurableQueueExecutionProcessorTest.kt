@@ -116,7 +116,7 @@ class DurableQueueExecutionProcessorTest {
     private val sampleSyncRequest = SynchronizationRequest(
         workflowId = WorkflowId("workflow-001"),
         sessionId = SynchronizationSessionId("session-001"),
-        direction = SynchronizationDirection.OUTBOUND,
+        direction = SynchronizationDirection.PUSH,
         mode = SynchronizationMode.FULL,
         context = ExecutionContext(
             executionId = ExecutionId("exec-001"),
@@ -290,10 +290,13 @@ class DurableQueueExecutionProcessorTest {
     // Helpers
     // =========================================================================
 
-    private fun entriesResult(vararg entries: QueueEntry): ProviderOperationResult<QueueAcquireResult> =
+    private fun entriesResult(
+        vararg entries: QueueEntry,
+        lease: QueueLease = sampleLease,
+    ): ProviderOperationResult<QueueAcquireResult> =
         ProviderOperationResult.Success(
             QueueAcquireResult.Entries(
-                lease = sampleLease,
+                lease = lease,
                 entries = entries.toList(),
             ),
         )
@@ -590,7 +593,7 @@ class DurableQueueExecutionProcessorTest {
         )
         val mismatchedEntry = leasedEntry(lease = wrongConsumerLease)
         val provider = FakeQueueProvider(
-            acquireResponse = entriesResult(mismatchedEntry),
+            acquireResponse = entriesResult(mismatchedEntry, lease = wrongConsumerLease),
         )
         val handler = CapturingHandler(QueueEntryExecutionOutcome.Completed(t1))
         val processor = DurableQueueExecutionProcessor(provider, handler)
