@@ -1,10 +1,5 @@
 package io.dataloom.runtime.worker
 
-import io.dataloom.api.error.DataLoomError
-import io.dataloom.api.error.ErrorCategory
-import io.dataloom.api.error.ErrorCode
-import io.dataloom.api.error.ErrorSeverity
-import io.dataloom.api.error.Recoverability
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.QueueProvider
 import io.dataloom.api.scheduling.ScheduleRequest
@@ -200,9 +195,6 @@ public class QueueWorkerCoordinator(
      *
      * Reads the [clock] at most once — only when [processed.earliestRescheduledAt]
      * is non-null.
-     *
-     * Returns a structured [QueueWorkerRunResult.ProcessingCompleted] with a
-     * safe internal error when overflow-safe delay arithmetic fails.
      */
     private fun buildWakeUpPlan(processed: QueueProcessingResult.Processed): QueueWorkerWakeUpPlan {
         val limitReached = processed.acquisitionLimitReached
@@ -323,17 +315,4 @@ public class QueueWorkerCoordinator(
             )
         }
     }
-
-    // =========================================================================
-    // Internal error helpers
-    // =========================================================================
-
-    private data class InternalError(
-        override val message: String,
-        override val code: ErrorCode = ErrorCode("DL-QW-INTERNAL"),
-        override val category: ErrorCategory = ErrorCategory.QUEUE,
-        override val severity: ErrorSeverity = ErrorSeverity.ERROR,
-        override val recoverability: Recoverability = Recoverability.NON_RECOVERABLE,
-        override val cause: Throwable? = null,
-    ) : DataLoomError
 }
