@@ -57,4 +57,49 @@ public enum class SynchronizationExecutionRejectionReason {
      * [SynchronizationExecutionResult.Rejected] with this reason is returned.
      */
     PIPELINE_NOT_FOUND,
+
+    /**
+     * The configured connectivity requirement cannot be evaluated because no
+     * [io.dataloom.api.connectivity.ConnectivityProvider] is registered.
+     *
+     * The connectivity check is attempted only after pipeline lookup succeeds.
+     * When a non-[io.dataloom.api.connectivity.ConnectivityRequirement.NONE]
+     * requirement is configured but the resolved providers do not include a
+     * connectivity provider, a [SynchronizationExecutionResult.Rejected] with
+     * this reason is returned.
+     *
+     * No [io.dataloom.api.synchronization.SynchronizationEvent] is emitted and
+     * no synchronization pipeline is invoked.
+     */
+    CONNECTIVITY_PROVIDER_NOT_CONFIGURED,
+
+    /**
+     * The current connectivity snapshot does not satisfy the configured
+     * [io.dataloom.api.connectivity.ConnectivityRequirement].
+     *
+     * The connectivity check is attempted only after pipeline lookup succeeds.
+     * When the provider reports a state that does not satisfy the requirement,
+     * a [SynchronizationExecutionResult.Rejected] with this reason is returned.
+     *
+     * No [io.dataloom.api.synchronization.SynchronizationEvent] is emitted and
+     * no synchronization pipeline is invoked.
+     *
+     * Queued execution maps this rejection to
+     * [io.dataloom.runtime.queue.QueueEntryExecutionOutcome.Reschedule] using
+     * the configured offline reschedule delay.
+     */
+    CONNECTIVITY_REQUIREMENT_NOT_MET,
+
+    /**
+     * The [io.dataloom.api.connectivity.ConnectivityProvider] returned a
+     * canonical [io.dataloom.api.error.DataLoomError] during the preflight
+     * check.
+     *
+     * The exact error is preserved in
+     * [SynchronizationExecutionResult.Rejected.connectivityCheckError].
+     *
+     * No [io.dataloom.api.synchronization.SynchronizationEvent] is emitted and
+     * no synchronization pipeline is invoked.
+     */
+    CONNECTIVITY_CHECK_FAILED,
 }

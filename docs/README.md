@@ -38,6 +38,7 @@ planned SDK architecture.
   - [Synchronization Event Dispatcher (DL-028)](./api/synchronization-event-dispatcher.md)
   - [Runtime Lifecycle Events (DL-029)](./api/runtime-lifecycle-events.md)
   - [Runtime Operational Events (DL-030)](./api/runtime-operational-events.md)
+  - [Connectivity-Aware Execution (DL-031)](./api/connectivity-aware-execution.md)
 - [Architecture](./architecture/README.md)
   - [Module Architecture](./architecture/modules.md)
   - [Platform Strategy (DL-006)](./architecture/platform-strategy.md)
@@ -62,6 +63,7 @@ planned SDK architecture.
   - [Observer Delivery Flow (DL-028)](./architecture/observer-delivery-flow.md)
   - [Runtime Event Integration Flow (DL-029)](./architecture/runtime-event-integration-flow.md)
   - [Progress, Retry, and Conflict Event Flow (DL-030)](./architecture/progress-retry-conflict-event-flow.md)
+  - [Connectivity Preflight and Offline Deferral (DL-031)](./architecture/connectivity-preflight-offline-deferral.md)
 - Testing
   - [Clock and Identifier Test Utilities (DL-017)](./testing/clock-and-identifiers.md)
 - [Architecture Decision Records (ADRs)](./adr/README.md)

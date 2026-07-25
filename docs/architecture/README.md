@@ -33,3 +33,4 @@ Current documents:
 - [Observer Delivery Flow (DL-028)](./observer-delivery-flow.md)
 - [Runtime Event Integration Flow (DL-029)](./runtime-event-integration-flow.md)
 - [Progress, Retry, and Conflict Event Flow (DL-030)](./progress-retry-conflict-event-flow.md)
+- [Connectivity Preflight and Offline Deferral (DL-031)](./connectivity-preflight-offline-deferral.md)
