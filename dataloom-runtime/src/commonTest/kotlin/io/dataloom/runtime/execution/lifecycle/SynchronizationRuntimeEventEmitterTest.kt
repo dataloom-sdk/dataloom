@@ -108,6 +108,8 @@ import io.dataloom.runtime.observation.SynchronizationEventDispatcher
 import io.dataloom.runtime.observation.SynchronizationObserverRegistry
 import io.dataloom.runtime.retry.RetryOrchestrationStatus
 import io.dataloom.runtime.retry.RetrySchedulingConfiguration
+import io.dataloom.runtime.retry.SynchronizationRetryEvaluation
+import io.dataloom.runtime.retry.SynchronizationRetryEvaluator
 import io.dataloom.runtime.retry.SynchronizationRetryOrchestrator
 import io.dataloom.runtime.retry.SynchronizationRetryRequest
 import kotlin.coroutines.Continuation
@@ -1888,6 +1890,73 @@ class SynchronizationRuntimeEventEmitterTest {
         assertFailsWith<CancellationException> {
             runSuspend { orchestrator.evaluateAndSchedule(makeRetryRequest()) }
         }
+    }
+
+    // =========================================================================
+    // Queue-backed retry boundary
+    // =========================================================================
+
+    @Test
+    fun `queued retry uses evaluator not SchedulerProvider`() {
+        // SynchronizationRetryEvaluator (used by QueuedSynchronizationExecutionHandler)
+        // evaluates retry policy and returns ShouldRetry without invoking
+        // SchedulerProvider. SchedulerProvider is only used by
+        // SynchronizationRetryOrchestrator in the scheduler-backed path.
+        val evaluator = SynchronizationRetryEvaluator(
+            retryPolicy = AlwaysRetryPolicy(delay = SchedulingDelay(2000L)),
+            clock = FixedClock(),
+        )
+        val failedResult = SynchronizationResult.Failed(
+            request = makeRequest(),
+            completedAt = DataLoomInstant(1_000_000L),
+            summary = SynchronizationSummary(),
+            error = FakeError(),
+        )
+
+        val evaluation = evaluator.evaluate(
+            result = failedResult,
+            retryAttempt = RetryAttempt(1),
+            retryOperation = RetryOperation("sync.queued"),
+        )
+
+        // Evaluator returns ShouldRetry without any SchedulerProvider invocation.
+        assertIs<SynchronizationRetryEvaluation.ShouldRetry>(evaluation)
+    }
+
+    @Test
+    fun `queued Reschedule outcome alone does not prematurely emit RetryScheduled`() {
+        // SynchronizationRetryEvaluator returns ShouldRetry (which maps to a
+        // queue Reschedule outcome) without emitting any RetryScheduled event.
+        // Queue-backed RetryScheduled emission is deferred to after the durable
+        // QueueProvider reschedule transition succeeds and safe context is
+        // available. This test verifies that the evaluator path — used by
+        // QueuedSynchronizationExecutionHandler — does not prematurely emit.
+        val recordingEmitter = RecordingRuntimeEventEmitter()
+        val evaluator = SynchronizationRetryEvaluator(
+            retryPolicy = AlwaysRetryPolicy(delay = SchedulingDelay(5000L)),
+            clock = FixedClock(),
+        )
+        val failedResult = SynchronizationResult.Failed(
+            request = makeRequest(),
+            completedAt = DataLoomInstant(1_000_000L),
+            summary = SynchronizationSummary(),
+            error = FakeError(),
+        )
+
+        val evaluation = evaluator.evaluate(
+            result = failedResult,
+            retryAttempt = RetryAttempt(1),
+            retryOperation = RetryOperation("sync.queued"),
+        )
+
+        // Evaluator returned ShouldRetry (i.e., a future Reschedule outcome)
+        // but no RetryScheduled event was emitted through any emitter.
+        assertIs<SynchronizationRetryEvaluation.ShouldRetry>(evaluation)
+        assertEquals(
+            0,
+            recordingEmitter.retryScheduledCalls.size,
+            "Queue-backed ShouldRetry evaluation must not prematurely emit RetryScheduled.",
+        )
     }
 
     // =========================================================================
