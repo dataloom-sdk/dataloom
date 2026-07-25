@@ -1,0 +1,70 @@
+package io.dataloom.runtime.facade
+
+import io.dataloom.api.model.SynchronizationRequest
+import io.dataloom.core.provider.ProviderLifecycleCoordinator
+import io.dataloom.core.provider.ProviderLifecycleCoordinatorState
+import io.dataloom.core.provider.ProviderLifecycleResult
+import io.dataloom.core.provider.SynchronizationProviderBindings
+import io.dataloom.runtime.execution.SynchronizationExecutionCoordinator
+import io.dataloom.runtime.execution.SynchronizationExecutionResult
+
+/**
+ * Internal [DataLoom] implementation assembled by [DataLoomBuilder].
+ *
+ * ## Delegation contract
+ *
+ * Every operation delegates to an existing runtime component. No provider
+ * operation, synchronization logic, queue processing, retry logic, or event
+ * dispatch is duplicated in this class.
+ *
+ * ## Immutability
+ *
+ * All fields are immutable after construction. No provider registry, observer
+ * registry, pipeline registry, or coordinator is replaceable after build.
+ *
+ * ## Concurrency
+ *
+ * Callers must serialize [initialize] and [shutdown]. Concurrent
+ * [synchronize] calls follow existing [SynchronizationExecutionCoordinator]
+ * limitations. This implementation owns no [kotlinx.coroutines.CoroutineScope]
+ * and selects no dispatcher.
+ *
+ * ## KMP compatibility
+ *
+ * Uses Kotlin standard-library and DataLoom API and runtime types only. Safe
+ * for use in Kotlin Multiplatform common code.
+ *
+ * @param lifecycleCoordinator the coordinator that manages provider lifecycle.
+ * @param executionCoordinator the coordinator that executes synchronization.
+ * @param defaultBindings the default provider bindings used by
+ *   [synchronize] without explicit bindings.
+ * @param queueWorker the optional queue-worker capability; `null` when not
+ *   configured.
+ */
+internal class DefaultDataLoom(
+    private val lifecycleCoordinator: ProviderLifecycleCoordinator,
+    private val executionCoordinator: SynchronizationExecutionCoordinator,
+    private val defaultBindings: SynchronizationProviderBindings,
+    override val queueWorker: DataLoomQueueWorker?,
+) : DataLoom {
+
+    override val providerLifecycleState: ProviderLifecycleCoordinatorState
+        get() = lifecycleCoordinator.state
+
+    override suspend fun initialize(): ProviderLifecycleResult =
+        lifecycleCoordinator.initialize()
+
+    override suspend fun synchronize(
+        request: SynchronizationRequest,
+    ): SynchronizationExecutionResult =
+        executionCoordinator.execute(request, defaultBindings)
+
+    override suspend fun synchronize(
+        request: SynchronizationRequest,
+        bindings: SynchronizationProviderBindings,
+    ): SynchronizationExecutionResult =
+        executionCoordinator.execute(request, bindings)
+
+    override suspend fun shutdown(): ProviderLifecycleResult =
+        lifecycleCoordinator.shutdown()
+}
