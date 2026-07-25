@@ -30,6 +30,9 @@ import io.dataloom.runtime.observation.SynchronizationObserverRegistry
 import io.dataloom.runtime.queue.DurableQueueExecutionProcessor
 import io.dataloom.runtime.queue.QueuedSynchronizationExecutionHandler
 import io.dataloom.runtime.retry.SynchronizationRetryEvaluator
+import io.dataloom.runtime.submission.DataLoomQueueSubmission
+import io.dataloom.runtime.submission.DefaultDataLoomQueueSubmission
+import io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder
 import io.dataloom.runtime.worker.QueueWorkerCoordinator
 
 /**
@@ -109,6 +112,7 @@ public class DataLoomBuilder {
     private val observerList: MutableList<SynchronizationObserver> = mutableListOf()
     private val customPipelineList: MutableList<SynchronizationPipeline> = mutableListOf()
     private var queueWorkerSpec: DataLoomQueueWorkerSpec? = null
+    private var queueSubmissionEncoderValue: QueuedSynchronizationWorkEncoder? = null
     private var built: Boolean = false
 
     // =========================================================================
@@ -301,6 +305,35 @@ public class DataLoomBuilder {
         queueWorkerSpec = spec
     }
 
+    /**
+     * Configures the optional queue-submission capability.
+     *
+     * When supplied with a valid queue provider binding in
+     * [defaultProviderBindings], [DataLoom.queueSubmission] will be non-null
+     * after [build]. Otherwise [DataLoom.queueSubmission] is `null`.
+     *
+     * [build] throws [DataLoomBuildException] when this method has been called
+     * but the queue provider binding is absent or refers to an invalid
+     * provider.
+     *
+     * Queue submission and queue worker are independently configurable. Either,
+     * both, or neither capability may be configured.
+     *
+     * [build] performs no encoding, no enqueue operation, no clock read, and
+     * no identifier generation.
+     *
+     * @param encoder the application-owned encoder that converts a
+     *   [io.dataloom.runtime.submission.QueuedSynchronizationSubmission] into
+     *   a [io.dataloom.api.queue.QueueEnqueueRequest]. Required to enable the
+     *   queue-submission capability.
+     * @return this builder for chaining.
+     */
+    public fun queueSubmissionEncoder(
+        encoder: QueuedSynchronizationWorkEncoder,
+    ): DataLoomBuilder = apply {
+        queueSubmissionEncoderValue = encoder
+    }
+
     // =========================================================================
     // Build
     // =========================================================================
@@ -424,11 +457,21 @@ public class DataLoomBuilder {
             )
         }
 
+        // --- 10. Build optional queue submission ---
+        val queueSubmission = queueSubmissionEncoderValue?.let { encoder ->
+            buildQueueSubmission(
+                encoder = encoder,
+                registry = registry,
+                bindings = bindings,
+            )
+        }
+
         return DefaultDataLoom(
             lifecycleCoordinator = lifecycleCoordinator,
             executionCoordinator = executionCoordinator,
             defaultBindings = bindings,
             queueWorker = queueWorker,
+            queueSubmission = queueSubmission,
         )
     }
 
@@ -583,5 +626,51 @@ public class DataLoomBuilder {
         )
 
         return DefaultDataLoomQueueWorker(coordinator)
+    }
+
+    /**
+     * Assembles the queue-submission capability.
+     *
+     * Validates that the default bindings contain a valid QueueProvider ID
+     * that refers to a registered [QueueProvider]. Throws
+     * [DataLoomBuildException] when this requirement is not satisfied.
+     *
+     * Build performs no encoding, no enqueue operation, no clock read, and no
+     * identifier generation.
+     */
+    private fun buildQueueSubmission(
+        encoder: QueuedSynchronizationWorkEncoder,
+        registry: ProviderRegistry,
+        bindings: SynchronizationProviderBindings,
+    ): DataLoomQueueSubmission {
+        val queueProviderId = bindings.queueProviderId
+            ?: throw DataLoomBuildException(
+                "DataLoomBuilder queueSubmissionEncoder requires a queue provider binding. " +
+                    "Set queueProviderId on the defaultProviderBindings before build().",
+            )
+
+        val queueProviderCandidate = registry.findById(queueProviderId)
+            ?: throw DataLoomBuildException(
+                "DataLoomBuilder queueSubmissionEncoder: queue provider '${queueProviderId.value}' " +
+                    "not found in registry.",
+            )
+
+        if (queueProviderCandidate.descriptor.type != ProviderType.QUEUE) {
+            throw DataLoomBuildException(
+                "DataLoomBuilder queueSubmissionEncoder: provider '${queueProviderId.value}' " +
+                    "has type ${queueProviderCandidate.descriptor.type} but expected ${ProviderType.QUEUE}.",
+            )
+        }
+
+        val queueProvider = queueProviderCandidate as? QueueProvider
+            ?: throw DataLoomBuildException(
+                "DataLoomBuilder queueSubmissionEncoder: provider '${queueProviderId.value}' " +
+                    "does not implement the QueueProvider contract.",
+            )
+
+        return DefaultDataLoomQueueSubmission(
+            queueProvider = queueProvider,
+            encoder = encoder,
+        )
     }
 }

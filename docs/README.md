@@ -41,6 +41,7 @@ planned SDK architecture.
   - [Connectivity-Aware Execution (DL-031)](./api/connectivity-aware-execution.md)
   - [Queue Worker Coordinator (DL-032)](./api/queue-worker-coordinator.md)
   - [DataLoom Facade (DL-033)](./api/dataloom-facade.md)
+  - [Queue Submission (DL-034)](./api/queue-submission.md)
 - [Architecture](./architecture/README.md)
   - [Module Architecture](./architecture/modules.md)
   - [Platform Strategy (DL-006)](./architecture/platform-strategy.md)
@@ -68,6 +69,7 @@ planned SDK architecture.
   - [Connectivity Preflight and Offline Deferral (DL-031)](./architecture/connectivity-preflight-offline-deferral.md)
   - [Queue Worker Wake-Up and Recovery Flow (DL-032)](./architecture/queue-worker-wakeup-recovery-flow.md)
   - [Runtime Assembly (DL-033)](./architecture/runtime-assembly.md)
+  - [Application-Owned Queue Encoding (DL-034)](./architecture/application-owned-queue-encoding.md)
 - Testing
   - [Clock and Identifier Test Utilities (DL-017)](./testing/clock-and-identifiers.md)
 - [Architecture Decision Records (ADRs)](./adr/README.md)
