@@ -517,7 +517,7 @@ class SynchronizationConflictOrchestratorTest {
         val requestedId = ConflictDetectorId("my-absent-detector")
         val orchestrator = buildOrchestrator()
         val result = runSuspend {
-    orchestrator.detectAndResolve(
+            orchestrator.detectAndResolve(
                 ConflictOrchestrationRequest(
                     detectionRequest = detectionRequest,
                     bindings = ConflictOrchestrationBindings(requestedId, null),
