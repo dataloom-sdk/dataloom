@@ -279,15 +279,27 @@ when (val result = dataLoom.queueSubmission?.submit(submission)) {
 
 Before calling `QueueProvider.enqueue`, DataLoom validates structural
 correspondence between the `QueuedSynchronizationSubmission` and the
-`QueueEnqueueRequest` produced by the encoder:
+`QueueEnqueueRequest` produced by the encoder.
+
+**Correspondence checks** (performed by `DefaultDataLoomQueueSubmission`):
 
 | Check                                        | Failure result       |
 |----------------------------------------------|----------------------|
 | Encoded `QueueEntryId` matches submission    | `ContractViolation`  |
 | Encoded `availableAt` matches submission     | `ContractViolation`  |
-| Encoded entry state is `PENDING`             | `ContractViolation`  |
-| Encoded entry has no lease                   | `ContractViolation`  |
-| Encoded entry has no retry attempt           | `ContractViolation`  |
+
+**Construction invariants** (enforced by `QueueEnqueueRequest` constructor):
+
+| Constraint                                   | Failure behavior                      |
+|----------------------------------------------|---------------------------------------|
+| Encoded entry state must be `PENDING`        | `IllegalArgumentException` propagates |
+| Encoded entry must have no lease             | `IllegalArgumentException` propagates |
+| Encoded entry must have no retry attempt     | `IllegalArgumentException` propagates |
+
+`QueueEnqueueRequest` enforces the state, lease, and retry-attempt invariants
+at construction time. If the encoder attempts to construct a `QueueEnqueueRequest`
+that violates these invariants, `IllegalArgumentException` is thrown and propagates
+normally from the encoder — the `QueueProvider` is never called.
 
 DataLoom does not inspect, decode, or log encoded payload bytes.
 DataLoom does not silently correct encoder output.

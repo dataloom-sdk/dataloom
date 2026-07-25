@@ -36,6 +36,9 @@ import io.dataloom.api.queue.QueueEntryState
 import io.dataloom.api.queue.QueueFailureRequest
 import io.dataloom.api.queue.QueueLease
 import io.dataloom.api.queue.QueueRescheduleRequest
+import io.dataloom.api.identifier.QueueConsumerId
+import io.dataloom.api.identifier.QueueLeaseId
+import io.dataloom.api.retry.RetryAttempt
 import io.dataloom.api.time.DataLoomInstant
 import io.dataloom.core.provider.SynchronizationProviderBindings
 import io.dataloom.runtime.queue.QueuedSynchronizationWork
@@ -907,6 +910,118 @@ class DataLoomQueueSubmissionTest {
 
         // Encoder was called once (encoding itself), but provider was not.
         assertEquals(1, encoder.callCount)
+        assertEquals(0, provider.enqueueCallCount)
+    }
+
+    // =========================================================================
+    // Invalid queue-state enforcement tests (criteria 15, 16, 17)
+    //
+    // QueueEnqueueRequest enforces that the entry must be in PENDING state,
+    // have no active lease, and have no retry attempt. If the encoder tries to
+    // construct a QueueEnqueueRequest violating these invariants, the
+    // constructor throws IllegalArgumentException — the exception propagates
+    // from the encoder and QueueProvider.enqueue is never called.
+    // =========================================================================
+
+    @Test
+    fun invalidState_encoderAttemptingTerminalStateThrows_providerNotCalled() {
+        // An encoder that tries to create a QueueEnqueueRequest with COMPLETED
+        // state cannot construct it — QueueEnqueueRequest constructor throws
+        // IllegalArgumentException. This propagates from the encoder.
+        val provider = RecordingQueueProvider()
+        val throwingEncoder = QueuedSynchronizationWorkEncoder { _ ->
+            // QueueEnqueueRequest construction throws for non-PENDING state.
+            QueueEnqueueRequest(
+                entry = QueueEntry(
+                    id = entryId,
+                    synchronizationRequest = makeRequest(),
+                    state = QueueEntryState.COMPLETED,
+                    enqueuedAt = fixedInstant,
+                    availableAt = fixedInstant,
+                ),
+            )
+            // unreachable; returned to satisfy type system
+            QueuedSynchronizationWorkEncodingResult.Encoded(makeEnqueueRequest())
+        }
+        val capability = DefaultDataLoomQueueSubmission(
+            queueProvider = provider,
+            encoder = throwingEncoder,
+        )
+
+        assertFailsWith<IllegalArgumentException> {
+            runSuspend { capability.submit(makeSubmission()) }
+        }
+        assertEquals(0, provider.enqueueCallCount)
+    }
+
+    @Test
+    fun invalidState_encoderAttemptingActiveLease_throwsFromConstructor_providerNotCalled() {
+        // An encoder that tries to supply an active lease on a PENDING entry
+        // cannot construct a valid QueueEntry — QueueEntry constructor enforces
+        // that PENDING state must have a null lease. This propagates as
+        // IllegalArgumentException before the encoder can return, and
+        // QueueProvider is never called.
+        val provider = RecordingQueueProvider()
+        val throwingEncoder = QueuedSynchronizationWorkEncoder { _ ->
+            val lease = QueueLease(
+                id = QueueLeaseId("lease-001"),
+                consumerId = QueueConsumerId("consumer-001"),
+                acquiredAt = DataLoomInstant(1_000_000L),
+                expiresAt = DataLoomInstant(2_000_000L),
+            )
+            // QueueEntry constructor throws: PENDING state must have null lease.
+            QueueEnqueueRequest(
+                entry = QueueEntry(
+                    id = entryId,
+                    synchronizationRequest = makeRequest(),
+                    state = QueueEntryState.PENDING,
+                    enqueuedAt = fixedInstant,
+                    availableAt = fixedInstant,
+                    lease = lease,
+                ),
+            )
+            QueuedSynchronizationWorkEncodingResult.Encoded(makeEnqueueRequest())
+        }
+        val capability = DefaultDataLoomQueueSubmission(
+            queueProvider = provider,
+            encoder = throwingEncoder,
+        )
+
+        assertFailsWith<IllegalArgumentException> {
+            runSuspend { capability.submit(makeSubmission()) }
+        }
+        assertEquals(0, provider.enqueueCallCount)
+    }
+
+    @Test
+    fun invalidState_encoderAttemptingRetryAttemptOnPending_throwsFromConstructor_providerNotCalled() {
+        // An encoder that tries to supply a retryAttempt on a PENDING entry
+        // cannot construct a valid QueueEntry — QueueEntry constructor enforces
+        // that PENDING state must have a null retryAttempt. This propagates as
+        // IllegalArgumentException and QueueProvider is never called.
+        val provider = RecordingQueueProvider()
+        val throwingEncoder = QueuedSynchronizationWorkEncoder { _ ->
+            // QueueEntry constructor throws: PENDING state must not have retryAttempt.
+            QueueEnqueueRequest(
+                entry = QueueEntry(
+                    id = entryId,
+                    synchronizationRequest = makeRequest(),
+                    state = QueueEntryState.PENDING,
+                    enqueuedAt = fixedInstant,
+                    availableAt = fixedInstant,
+                    retryAttempt = RetryAttempt(1),
+                ),
+            )
+            QueuedSynchronizationWorkEncodingResult.Encoded(makeEnqueueRequest())
+        }
+        val capability = DefaultDataLoomQueueSubmission(
+            queueProvider = provider,
+            encoder = throwingEncoder,
+        )
+
+        assertFailsWith<IllegalArgumentException> {
+            runSuspend { capability.submit(makeSubmission()) }
+        }
         assertEquals(0, provider.enqueueCallCount)
     }
 }
