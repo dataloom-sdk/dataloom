@@ -34,3 +34,5 @@ Current documents:
 - [Runtime Event Integration Flow (DL-029)](./runtime-event-integration-flow.md)
 - [Progress, Retry, and Conflict Event Flow (DL-030)](./progress-retry-conflict-event-flow.md)
 - [Connectivity Preflight and Offline Deferral (DL-031)](./connectivity-preflight-offline-deferral.md)
+- [Queue Worker Wake-Up and Recovery Flow (DL-032)](./queue-worker-wakeup-recovery-flow.md)
+- [Runtime Assembly (DL-033)](./runtime-assembly.md)
