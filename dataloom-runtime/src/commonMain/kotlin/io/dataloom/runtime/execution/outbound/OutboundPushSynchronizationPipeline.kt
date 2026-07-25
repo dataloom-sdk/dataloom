@@ -16,6 +16,8 @@ import io.dataloom.api.synchronization.ChangeAcknowledgementStatus
 import io.dataloom.api.synchronization.ChangeSetAcknowledgement
 import io.dataloom.api.synchronization.OutboundChangeAcknowledgementRequest
 import io.dataloom.api.synchronization.SynchronizationPhase
+import io.dataloom.api.synchronization.SynchronizationProgress
+import io.dataloom.api.synchronization.SynchronizationProgressUnit
 import io.dataloom.api.synchronization.SynchronizationResult
 import io.dataloom.api.synchronization.SynchronizationSkipReason
 import io.dataloom.api.synchronization.SynchronizationSummary
@@ -23,6 +25,7 @@ import io.dataloom.api.time.DataLoomInstant
 import io.dataloom.api.transport.PushChangesRequest
 import io.dataloom.runtime.execution.SynchronizationExecutionContext
 import io.dataloom.runtime.execution.SynchronizationPipeline
+import io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitter
 
 /**
  * Canonical [SynchronizationPipeline] implementation for the outbound push
@@ -147,6 +150,7 @@ public class OutboundPushSynchronizationPipeline(
         val request: SynchronizationRequest = context.request
         val storageProvider = context.providers.storageProvider
         val transportProvider = context.providers.transportProvider
+        val runtimeEmitter = context.lifecycleEventEmitter as? SynchronizationRuntimeEventEmitter
 
         var outboundEventsRead = 0L
         var outboundEventsAccepted = 0L
@@ -292,6 +296,22 @@ public class OutboundPushSynchronizationPipeline(
                                 )
                             }
                         }
+                    }
+
+                    // Emit ProgressUpdated after this batch is durably completed.
+                    // The acknowledgement has been persisted; the batch is now
+                    // durable. CancellationException propagates; ordinary observer
+                    // failures are not propagated.
+                    // Note: if cancellation occurs here, the batch has already been
+                    // durably acknowledged; durable work is not rolled back.
+                    if (runtimeEmitter != null) {
+                        val progress = SynchronizationProgress(
+                            phase = SynchronizationPhase.PUSHING,
+                            completed = outboundEventsRead,
+                            total = null,
+                            unit = SynchronizationProgressUnit.EVENTS,
+                        )
+                        runtimeEmitter.emitProgressUpdated(request, progress)
                     }
 
                     if (!readResult.hasMore) {

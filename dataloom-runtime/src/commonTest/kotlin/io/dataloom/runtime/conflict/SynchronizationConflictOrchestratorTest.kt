@@ -34,6 +34,10 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.coroutines.startCoroutine
 
 /**
  * Deterministic common tests for DL-025 conflict orchestration.
@@ -193,6 +197,34 @@ class SynchronizationConflictOrchestratorTest {
     // =========================================================================
     // ConflictDetectorRegistry
     // =========================================================================
+
+    // =========================================================================
+    // runSuspend helper (DL-030: detectAndResolve is now suspend)
+    // =========================================================================
+
+    private object Pending
+
+    private fun <T> runSuspend(block: suspend () -> T): T {
+        var rawResult: Any? = Pending
+        var thrown: Throwable? = null
+        block.startCoroutine(
+            object : Continuation<T> {
+                override val context: CoroutineContext = EmptyCoroutineContext
+                override fun resumeWith(result: Result<T>) {
+                    if (result.isSuccess) {
+                        rawResult = result.getOrNull()
+                    } else {
+                        thrown = result.exceptionOrNull()
+                    }
+                }
+            },
+        )
+        thrown?.let { throw it }
+        check(rawResult !== Pending) { "Suspend block did not complete synchronously in test." }
+        @Suppress("UNCHECKED_CAST")
+        return rawResult as T
+    }
+
 
     @Test
     fun `detector registry with empty collection`() {
@@ -476,7 +508,7 @@ class SynchronizationConflictOrchestratorTest {
     @Test
     fun `absent detector returns detector not found`() {
         val orchestrator = buildOrchestrator()
-        val result = orchestrator.detectAndResolve(buildRequest("missing-detector"))
+        val result = runSuspend { orchestrator.detectAndResolve(buildRequest("missing-detector")) }
         assertIs<ConflictOrchestrationResult.DetectorNotFound>(result)
     }
 
@@ -484,12 +516,14 @@ class SynchronizationConflictOrchestratorTest {
     fun `detector not found preserves requested detector id`() {
         val requestedId = ConflictDetectorId("my-absent-detector")
         val orchestrator = buildOrchestrator()
-        val result = orchestrator.detectAndResolve(
-            ConflictOrchestrationRequest(
-                detectionRequest = detectionRequest,
-                bindings = ConflictOrchestrationBindings(requestedId, null),
-            ),
-        )
+        val result = runSuspend {
+    orchestrator.detectAndResolve(
+                ConflictOrchestrationRequest(
+                    detectionRequest = detectionRequest,
+                    bindings = ConflictOrchestrationBindings(requestedId, null),
+                ),
+            )
+        }
         result as ConflictOrchestrationResult.DetectorNotFound
         assertEquals(requestedId, result.detectorId)
     }
@@ -498,7 +532,7 @@ class SynchronizationConflictOrchestratorTest {
     fun `detector not found invokes no detector`() {
         val detector = noConflictDetector("d1")
         val orchestrator = buildOrchestrator(detectors = listOf(detector))
-        orchestrator.detectAndResolve(buildRequest("d2"))
+        runSuspend { orchestrator.detectAndResolve(buildRequest("d2")) }
         assertEquals(0, detector.invokeCount)
     }
 
@@ -509,7 +543,7 @@ class SynchronizationConflictOrchestratorTest {
             detectors = emptyList(),
             resolvers = listOf(resolver),
         )
-        orchestrator.detectAndResolve(buildRequest("missing-d", "r1"))
+        runSuspend { orchestrator.detectAndResolve(buildRequest("missing-d", "r1")) }
         assertEquals(0, resolver.invokeCount)
     }
 
@@ -521,7 +555,7 @@ class SynchronizationConflictOrchestratorTest {
     fun `no conflict result is returned when detector reports no conflict`() {
         val detector = noConflictDetector("d1")
         val orchestrator = buildOrchestrator(detectors = listOf(detector))
-        val result = orchestrator.detectAndResolve(buildRequest("d1"))
+        val result = runSuspend { orchestrator.detectAndResolve(buildRequest("d1")) }
         assertIs<ConflictOrchestrationResult.NoConflict>(result)
     }
 
@@ -530,7 +564,7 @@ class SynchronizationConflictOrchestratorTest {
         val d1 = noConflictDetector("d1")
         val d2 = noConflictDetector("d2")
         val orchestrator = buildOrchestrator(detectors = listOf(d1, d2))
-        orchestrator.detectAndResolve(buildRequest("d1"))
+        runSuspend { orchestrator.detectAndResolve(buildRequest("d1")) }
         assertEquals(1, d1.invokeCount)
         assertEquals(0, d2.invokeCount)
     }
@@ -539,7 +573,7 @@ class SynchronizationConflictOrchestratorTest {
     fun `detector receives exact detection request`() {
         val detector = noConflictDetector("d1")
         val orchestrator = buildOrchestrator(detectors = listOf(detector))
-        orchestrator.detectAndResolve(buildRequest("d1"))
+        runSuspend { orchestrator.detectAndResolve(buildRequest("d1")) }
         assertSame(detectionRequest, detector.lastRequest)
     }
 
@@ -547,7 +581,7 @@ class SynchronizationConflictOrchestratorTest {
     fun `detector executes exactly once on no conflict`() {
         val detector = noConflictDetector("d1")
         val orchestrator = buildOrchestrator(detectors = listOf(detector))
-        orchestrator.detectAndResolve(buildRequest("d1"))
+        runSuspend { orchestrator.detectAndResolve(buildRequest("d1")) }
         assertEquals(1, detector.invokeCount)
     }
 
@@ -556,7 +590,7 @@ class SynchronizationConflictOrchestratorTest {
         val detector = noConflictDetector("d1")
         val resolver = useLocalResolver("r1")
         val orchestrator = buildOrchestrator(listOf(detector), listOf(resolver))
-        orchestrator.detectAndResolve(buildRequest("d1", "r1"))
+        runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "r1")) }
         assertEquals(0, resolver.invokeCount)
     }
 
@@ -564,7 +598,7 @@ class SynchronizationConflictOrchestratorTest {
     fun `no conflict preserves detector id`() {
         val detector = noConflictDetector("my-detector")
         val orchestrator = buildOrchestrator(detectors = listOf(detector))
-        val result = orchestrator.detectAndResolve(buildRequest("my-detector"))
+        val result = runSuspend { orchestrator.detectAndResolve(buildRequest("my-detector")) }
         result as ConflictOrchestrationResult.NoConflict
         assertEquals(ConflictDetectorId("my-detector"), result.detectorId)
     }
@@ -577,7 +611,7 @@ class SynchronizationConflictOrchestratorTest {
     fun `null resolver id returns resolver not configured`() {
         val detector = conflictDetector("d1")
         val orchestrator = buildOrchestrator(detectors = listOf(detector))
-        val result = orchestrator.detectAndResolve(buildRequest("d1", resolverId = null))
+        val result = runSuspend { orchestrator.detectAndResolve(buildRequest("d1", resolverId = null)) }
         assertIs<ConflictOrchestrationResult.ResolverNotConfigured>(result)
     }
 
@@ -585,7 +619,7 @@ class SynchronizationConflictOrchestratorTest {
     fun `resolver not configured preserves exact conflict`() {
         val detector = conflictDetector("d1")
         val orchestrator = buildOrchestrator(detectors = listOf(detector))
-        val result = orchestrator.detectAndResolve(buildRequest("d1", resolverId = null))
+        val result = runSuspend { orchestrator.detectAndResolve(buildRequest("d1", resolverId = null)) }
         result as ConflictOrchestrationResult.ResolverNotConfigured
         assertSame(sampleConflict, result.conflict)
     }
@@ -594,7 +628,7 @@ class SynchronizationConflictOrchestratorTest {
     fun `resolver not configured preserves detector id`() {
         val detector = conflictDetector("my-detector")
         val orchestrator = buildOrchestrator(detectors = listOf(detector))
-        val result = orchestrator.detectAndResolve(buildRequest("my-detector", resolverId = null))
+        val result = runSuspend { orchestrator.detectAndResolve(buildRequest("my-detector", resolverId = null)) }
         result as ConflictOrchestrationResult.ResolverNotConfigured
         assertEquals(ConflictDetectorId("my-detector"), result.detectorId)
     }
@@ -604,7 +638,7 @@ class SynchronizationConflictOrchestratorTest {
         val detector = conflictDetector("d1")
         val resolver = useLocalResolver("r1")
         val orchestrator = buildOrchestrator(listOf(detector), listOf(resolver))
-        orchestrator.detectAndResolve(buildRequest("d1", resolverId = null))
+        runSuspend { orchestrator.detectAndResolve(buildRequest("d1", resolverId = null)) }
         assertEquals(0, resolver.invokeCount)
     }
 
@@ -619,7 +653,7 @@ class SynchronizationConflictOrchestratorTest {
             detectors = listOf(detector),
             resolvers = emptyList(),
         )
-        val result = orchestrator.detectAndResolve(buildRequest("d1", "missing-resolver"))
+        val result = runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "missing-resolver")) }
         assertIs<ConflictOrchestrationResult.ResolverNotFound>(result)
     }
 
@@ -627,7 +661,7 @@ class SynchronizationConflictOrchestratorTest {
     fun `resolver not found preserves exact conflict`() {
         val detector = conflictDetector("d1")
         val orchestrator = buildOrchestrator(detectors = listOf(detector))
-        val result = orchestrator.detectAndResolve(buildRequest("d1", "absent-r"))
+        val result = runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "absent-r")) }
         result as ConflictOrchestrationResult.ResolverNotFound
         assertSame(sampleConflict, result.conflict)
     }
@@ -636,7 +670,7 @@ class SynchronizationConflictOrchestratorTest {
     fun `resolver not found preserves requested resolver id`() {
         val detector = conflictDetector("d1")
         val orchestrator = buildOrchestrator(detectors = listOf(detector))
-        val result = orchestrator.detectAndResolve(buildRequest("d1", "specific-resolver-id"))
+        val result = runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "specific-resolver-id")) }
         result as ConflictOrchestrationResult.ResolverNotFound
         assertEquals(ConflictResolverId("specific-resolver-id"), result.resolverId)
     }
@@ -647,7 +681,7 @@ class SynchronizationConflictOrchestratorTest {
         val resolver = useLocalResolver("r1")
         // Resolve id is "r2" which is absent; r1 should NOT be invoked as fallback
         val orchestrator = buildOrchestrator(listOf(detector), listOf(resolver))
-        orchestrator.detectAndResolve(buildRequest("d1", "r2"))
+        runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "r2")) }
         assertEquals(0, resolver.invokeCount)
     }
 
@@ -661,7 +695,7 @@ class SynchronizationConflictOrchestratorTest {
         val d2 = conflictDetector("d2")
         val resolver = useLocalResolver("r1")
         val orchestrator = buildOrchestrator(listOf(d1, d2), listOf(resolver))
-        orchestrator.detectAndResolve(buildRequest("d1", "r1"))
+        runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "r1")) }
         assertEquals(1, d1.invokeCount)
         assertEquals(0, d2.invokeCount)
     }
@@ -672,7 +706,7 @@ class SynchronizationConflictOrchestratorTest {
         val r1 = useLocalResolver("r1")
         val r2 = useLocalResolver("r2")
         val orchestrator = buildOrchestrator(listOf(detector), listOf(r1, r2))
-        orchestrator.detectAndResolve(buildRequest("d1", "r1"))
+        runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "r1")) }
         assertEquals(1, r1.invokeCount)
         assertEquals(0, r2.invokeCount)
     }
@@ -682,7 +716,7 @@ class SynchronizationConflictOrchestratorTest {
         val detector = conflictDetector("d1")
         val resolver = useLocalResolver("r1")
         val orchestrator = buildOrchestrator(listOf(detector), listOf(resolver))
-        orchestrator.detectAndResolve(buildRequest("d1", "r1"))
+        runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "r1")) }
         assertEquals(1, detector.invokeCount)
     }
 
@@ -691,7 +725,7 @@ class SynchronizationConflictOrchestratorTest {
         val detector = conflictDetector("d1")
         val resolver = useLocalResolver("r1")
         val orchestrator = buildOrchestrator(listOf(detector), listOf(resolver))
-        orchestrator.detectAndResolve(buildRequest("d1", "r1"))
+        runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "r1")) }
         assertEquals(1, resolver.invokeCount)
     }
 
@@ -700,7 +734,7 @@ class SynchronizationConflictOrchestratorTest {
         val detector = conflictDetector("d1")
         val resolver = useLocalResolver("r1")
         val orchestrator = buildOrchestrator(listOf(detector), listOf(resolver))
-        orchestrator.detectAndResolve(buildRequest("d1", "r1"))
+        runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "r1")) }
         assertNotNull(resolver.lastRequest)
         assertSame(sampleConflict, resolver.lastRequest!!.conflict)
     }
@@ -710,7 +744,7 @@ class SynchronizationConflictOrchestratorTest {
         val detector = conflictDetector("d1")
         val resolver = useLocalResolver("r1")
         val orchestrator = buildOrchestrator(listOf(detector), listOf(resolver))
-        val result = orchestrator.detectAndResolve(buildRequest("d1", "r1"))
+        val result = runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "r1")) }
         result as ConflictOrchestrationResult.Resolved
         assertEquals(conflictId, result.conflict.id)
     }
@@ -720,7 +754,7 @@ class SynchronizationConflictOrchestratorTest {
         val detector = conflictDetector("d1")
         val resolver = useLocalResolver("r1")
         val orchestrator = buildOrchestrator(listOf(detector), listOf(resolver))
-        val result = orchestrator.detectAndResolve(buildRequest("d1", "r1"))
+        val result = runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "r1")) }
         result as ConflictOrchestrationResult.Resolved
         assertEquals(entityRef, result.conflict.entity)
     }
@@ -730,7 +764,7 @@ class SynchronizationConflictOrchestratorTest {
         val detector = conflictDetector("d1")
         val resolver = useLocalResolver("r1")
         val orchestrator = buildOrchestrator(listOf(detector), listOf(resolver))
-        val result = orchestrator.detectAndResolve(buildRequest("d1", "r1"))
+        val result = runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "r1")) }
         result as ConflictOrchestrationResult.Resolved
         assertEquals(localEvent, result.conflict.localChange)
         assertEquals(remoteEvent, result.conflict.remoteChange)
@@ -741,7 +775,7 @@ class SynchronizationConflictOrchestratorTest {
         val detector = conflictDetector("d1")
         val resolver = useLocalResolver("r1")
         val orchestrator = buildOrchestrator(listOf(detector), listOf(resolver))
-        val result = orchestrator.detectAndResolve(buildRequest("d1", "r1"))
+        val result = runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "r1")) }
         result as ConflictOrchestrationResult.Resolved
         assertSame(sampleConflict, result.conflict)
     }
@@ -752,7 +786,7 @@ class SynchronizationConflictOrchestratorTest {
         val decision = ConflictResolutionDecision.UseRemote()
         val resolver = FakeResolver(resolverId("r1"), decision)
         val orchestrator = buildOrchestrator(listOf(detector), listOf(resolver))
-        val result = orchestrator.detectAndResolve(buildRequest("d1", "r1"))
+        val result = runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "r1")) }
         result as ConflictOrchestrationResult.Resolved
         assertSame(decision, result.decision)
     }
@@ -762,7 +796,7 @@ class SynchronizationConflictOrchestratorTest {
         val detector = conflictDetector("my-det")
         val resolver = useLocalResolver("my-res")
         val orchestrator = buildOrchestrator(listOf(detector), listOf(resolver))
-        val result = orchestrator.detectAndResolve(buildRequest("my-det", "my-res"))
+        val result = runSuspend { orchestrator.detectAndResolve(buildRequest("my-det", "my-res")) }
         result as ConflictOrchestrationResult.Resolved
         assertEquals(ConflictDetectorId("my-det"), result.detectorId)
     }
@@ -772,7 +806,7 @@ class SynchronizationConflictOrchestratorTest {
         val detector = conflictDetector("my-det")
         val resolver = useLocalResolver("my-res")
         val orchestrator = buildOrchestrator(listOf(detector), listOf(resolver))
-        val result = orchestrator.detectAndResolve(buildRequest("my-det", "my-res"))
+        val result = runSuspend { orchestrator.detectAndResolve(buildRequest("my-det", "my-res")) }
         result as ConflictOrchestrationResult.Resolved
         assertEquals(ConflictResolverId("my-res"), result.resolverId)
     }
@@ -787,7 +821,7 @@ class SynchronizationConflictOrchestratorTest {
             listOf(selectedDetector, otherDetector),
             listOf(selectedResolver, otherResolver),
         )
-        orchestrator.detectAndResolve(buildRequest("d-selected", "r-selected"))
+        runSuspend { orchestrator.detectAndResolve(buildRequest("d-selected", "r-selected")) }
         assertEquals(0, otherDetector.invokeCount)
         assertEquals(0, otherResolver.invokeCount)
     }
@@ -804,7 +838,7 @@ class SynchronizationConflictOrchestratorTest {
         val resolver = useLocalResolver("r1")
         val orchestrator = buildOrchestrator(listOf(d1, d2, d3), listOf(resolver))
         // Select second by ID even though it is registered second
-        orchestrator.detectAndResolve(buildRequest("detector-second", "r1"))
+        runSuspend { orchestrator.detectAndResolve(buildRequest("detector-second", "r1")) }
         assertEquals(0, d1.invokeCount)
         assertEquals(1, d2.invokeCount)
         assertEquals(0, d3.invokeCount)
@@ -817,7 +851,7 @@ class SynchronizationConflictOrchestratorTest {
         val resolver = useLocalResolver("r1")
         val orchestrator = buildOrchestrator(listOf(d1, d2), listOf(resolver))
         // Explicitly bind to d2
-        orchestrator.detectAndResolve(buildRequest("d2", "r1"))
+        runSuspend { orchestrator.detectAndResolve(buildRequest("d2", "r1")) }
         assertEquals(0, d1.invokeCount)
         assertEquals(1, d2.invokeCount)
     }
@@ -829,7 +863,7 @@ class SynchronizationConflictOrchestratorTest {
         val r2 = FakeResolver(resolverId("resolver-second"), ConflictResolutionDecision.UseRemote())
         val r3 = useLocalResolver("resolver-third")
         val orchestrator = buildOrchestrator(listOf(detector), listOf(r1, r2, r3))
-        orchestrator.detectAndResolve(buildRequest("d1", "resolver-second"))
+        runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "resolver-second")) }
         assertEquals(0, r1.invokeCount)
         assertEquals(1, r2.invokeCount)
         assertEquals(0, r3.invokeCount)
@@ -841,7 +875,7 @@ class SynchronizationConflictOrchestratorTest {
         val r1 = useLocalResolver("r1")
         val orchestrator = buildOrchestrator(listOf(detector), listOf(r1))
         // Explicitly do NOT configure a resolver; r1 should NOT be auto-selected by conflict type
-        val result = orchestrator.detectAndResolve(buildRequest("d1", resolverId = null))
+        val result = runSuspend { orchestrator.detectAndResolve(buildRequest("d1", resolverId = null)) }
         assertIs<ConflictOrchestrationResult.ResolverNotConfigured>(result)
         assertEquals(0, r1.invokeCount)
     }
@@ -855,7 +889,7 @@ class SynchronizationConflictOrchestratorTest {
         val exception = RuntimeException("detector exploded")
         val detector = ThrowingDetector(detectorId("d1"), exception)
         val orchestrator = buildOrchestrator(detectors = listOf(detector))
-        val thrown = runCatching { orchestrator.detectAndResolve(buildRequest("d1")) }
+        val thrown = runCatching { runSuspend { orchestrator.detectAndResolve(buildRequest("d1")) } }
             .exceptionOrNull()
         assertSame(exception, thrown)
     }
@@ -866,7 +900,7 @@ class SynchronizationConflictOrchestratorTest {
         val detector = conflictDetector("d1")
         val resolver = ThrowingResolver(resolverId("r1"), exception)
         val orchestrator = buildOrchestrator(listOf(detector), listOf(resolver))
-        val thrown = runCatching { orchestrator.detectAndResolve(buildRequest("d1", "r1")) }
+        val thrown = runCatching { runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "r1")) } }
             .exceptionOrNull()
         assertSame(exception, thrown)
     }
@@ -877,7 +911,7 @@ class SynchronizationConflictOrchestratorTest {
         val orchestrator = buildOrchestrator(detectors = listOf(detector))
         var caught = false
         try {
-            orchestrator.detectAndResolve(buildRequest("d1"))
+            runSuspend { orchestrator.detectAndResolve(buildRequest("d1")) }
         } catch (e: RuntimeException) {
             caught = true
         }
@@ -891,7 +925,7 @@ class SynchronizationConflictOrchestratorTest {
         val orchestrator = buildOrchestrator(listOf(detector), listOf(resolver))
         var caught = false
         try {
-            orchestrator.detectAndResolve(buildRequest("d1", "r1"))
+            runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "r1")) }
         } catch (e: RuntimeException) {
             caught = true
         }
@@ -908,7 +942,7 @@ class SynchronizationConflictOrchestratorTest {
         val decision = ConflictResolutionDecision.UseLocal()
         val resolver = FakeResolver(resolverId("r1"), decision)
         val orchestrator = buildOrchestrator(listOf(detector), listOf(resolver))
-        val result = orchestrator.detectAndResolve(buildRequest("d1", "r1"))
+        val result = runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "r1")) }
         result as ConflictOrchestrationResult.Resolved
         assertSame(decision, result.decision)
         assertIs<ConflictResolutionDecision.UseLocal>(result.decision)
@@ -920,7 +954,7 @@ class SynchronizationConflictOrchestratorTest {
         val decision = ConflictResolutionDecision.UseRemote()
         val resolver = FakeResolver(resolverId("r1"), decision)
         val orchestrator = buildOrchestrator(listOf(detector), listOf(resolver))
-        val result = orchestrator.detectAndResolve(buildRequest("d1", "r1"))
+        val result = runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "r1")) }
         result as ConflictOrchestrationResult.Resolved
         assertSame(decision, result.decision)
     }
@@ -931,7 +965,7 @@ class SynchronizationConflictOrchestratorTest {
         val decision = ConflictResolutionDecision.Defer()
         val resolver = FakeResolver(resolverId("r1"), decision)
         val orchestrator = buildOrchestrator(listOf(detector), listOf(resolver))
-        val result = orchestrator.detectAndResolve(buildRequest("d1", "r1"))
+        val result = runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "r1")) }
         result as ConflictOrchestrationResult.Resolved
         assertSame(decision, result.decision)
     }
@@ -941,7 +975,7 @@ class SynchronizationConflictOrchestratorTest {
         val detector = conflictDetector("d1")
         val resolver = useLocalResolver("r1")
         val orchestrator = buildOrchestrator(listOf(detector), listOf(resolver))
-        orchestrator.detectAndResolve(buildRequest("d1", "r1"))
+        runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "r1")) }
         assertSame(syncRequest, resolver.lastRequest!!.synchronizationRequest)
     }
 
@@ -964,7 +998,7 @@ class SynchronizationConflictOrchestratorTest {
     fun `resolver not configured toString does not expose payload content`() {
         val detector = conflictDetector("d1")
         val orchestrator = buildOrchestrator(detectors = listOf(detector))
-        val result = orchestrator.detectAndResolve(buildRequest("d1"))
+        val result = runSuspend { orchestrator.detectAndResolve(buildRequest("d1")) }
         result as ConflictOrchestrationResult.ResolverNotConfigured
         val diagnostic = result.toString()
         assertTrue(diagnostic.contains("ResolverNotConfigured"))
@@ -975,7 +1009,7 @@ class SynchronizationConflictOrchestratorTest {
     fun `resolver not found toString does not expose payload content`() {
         val detector = conflictDetector("d1")
         val orchestrator = buildOrchestrator(detectors = listOf(detector))
-        val result = orchestrator.detectAndResolve(buildRequest("d1", "absent"))
+        val result = runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "absent")) }
         result as ConflictOrchestrationResult.ResolverNotFound
         val diagnostic = result.toString()
         assertTrue(diagnostic.contains("ResolverNotFound"))
@@ -987,7 +1021,7 @@ class SynchronizationConflictOrchestratorTest {
         val detector = conflictDetector("d1")
         val resolver = useLocalResolver("r1")
         val orchestrator = buildOrchestrator(listOf(detector), listOf(resolver))
-        val result = orchestrator.detectAndResolve(buildRequest("d1", "r1"))
+        val result = runSuspend { orchestrator.detectAndResolve(buildRequest("d1", "r1")) }
         result as ConflictOrchestrationResult.Resolved
         val diagnostic = result.toString()
         assertTrue(diagnostic.contains("Resolved"))

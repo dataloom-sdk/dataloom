@@ -6,6 +6,7 @@ import io.dataloom.api.retry.RetryPolicy
 import io.dataloom.api.scheduling.ScheduleRequest
 import io.dataloom.api.scheduling.SchedulerProvider
 import io.dataloom.api.synchronization.SynchronizationResult
+import io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitter
 
 /**
  * Platform-independent orchestrator that evaluates retry policy for a
@@ -98,6 +99,17 @@ import io.dataloom.api.synchronization.SynchronizationResult
  * Uses Kotlin standard-library and DataLoom API types only. Safe for use in
  * Kotlin Multiplatform common code.
  *
+ * ## DL-030 event emission
+ *
+ * When [eventEmitter] is non-null and the orchestration result is
+ * [RetryOrchestrationStatus.SCHEDULED], a
+ * [io.dataloom.api.synchronization.SynchronizationEvent.RetryScheduled] event
+ * is emitted after the scheduler confirms acceptance. Ordinary observer
+ * failures do not change the [RetryOrchestrationStatus.SCHEDULED] result.
+ * A [kotlin.coroutines.cancellation.CancellationException] during event
+ * delivery propagates. The schedule has already been accepted at that point;
+ * cancellation does not cancel the accepted schedule.
+ *
  * @param retryPolicy the policy evaluated for each canonical error. Required.
  * @param schedulerProvider the optional platform scheduler. When `null`,
  *   [RetryOrchestrationStatus.SCHEDULER_NOT_CONFIGURED] is returned when
@@ -105,11 +117,16 @@ import io.dataloom.api.synchronization.SynchronizationResult
  * @param configuration immutable scheduling configuration providing
  *   [io.dataloom.api.scheduling.ScheduleConstraints] and
  *   [io.dataloom.api.scheduling.ExistingSchedulePolicy]. Required.
+ * @param eventEmitter the optional [SynchronizationRuntimeEventEmitter] used
+ *   to emit [io.dataloom.api.synchronization.SynchronizationEvent.RetryScheduled]
+ *   after a successful schedule. When `null`, no event is emitted. Defaults to
+ *   `null` for backward compatibility.
  */
 public class SynchronizationRetryOrchestrator(
     private val retryPolicy: RetryPolicy,
     private val schedulerProvider: SchedulerProvider?,
     private val configuration: RetrySchedulingConfiguration,
+    private val eventEmitter: SynchronizationRuntimeEventEmitter? = null,
 ) {
     /**
      * Evaluates [RetryPolicy] for the terminal result in [request] and
@@ -178,13 +195,31 @@ public class SynchronizationRetryOrchestrator(
         )
 
         return when (val result = schedulerProvider.schedule(scheduleRequest)) {
-            is ProviderOperationResult.Success -> RetryOrchestrationResult(
-                status = RetryOrchestrationStatus.SCHEDULED,
-                decisions = decisions,
-                selectedDelay = maxDelay,
-                scheduleReceipt = result.value,
-                schedulerError = null,
-            )
+            is ProviderOperationResult.Success -> {
+                val orchestrationResult = RetryOrchestrationResult(
+                    status = RetryOrchestrationStatus.SCHEDULED,
+                    decisions = decisions,
+                    selectedDelay = maxDelay,
+                    scheduleReceipt = result.value,
+                    schedulerError = null,
+                )
+                // Emit RetryScheduled only after scheduler confirms acceptance.
+                // The schedule has been accepted at this point. CancellationException
+                // propagates; the accepted schedule is not automatically cancelled.
+                // Ordinary observer failures do not change the SCHEDULED result.
+                if (eventEmitter != null) {
+                    val primaryError = selectPrimaryRetryError(errors, decisions, maxDelay)
+                    if (primaryError != null) {
+                        eventEmitter.emitRetryScheduled(
+                            request = request.synchronizationRequest,
+                            attempt = request.retryAttempt,
+                            delay = maxDelay,
+                            error = primaryError,
+                        )
+                    }
+                }
+                orchestrationResult
+            }
             is ProviderOperationResult.Failure -> RetryOrchestrationResult(
                 status = RetryOrchestrationStatus.SCHEDULER_FAILED,
                 decisions = decisions,
@@ -195,3 +230,29 @@ public class SynchronizationRetryOrchestrator(
         }
     }
 }
+
+/**
+ * Returns the canonical [io.dataloom.api.error.DataLoomError] that produced
+ * the maximum [io.dataloom.api.scheduling.SchedulingDelay], or the first
+ * retry-eligible error when none matches the maximum delay exactly.
+ *
+ * Used to select the representative error for
+ * [io.dataloom.api.synchronization.SynchronizationEvent.RetryScheduled].
+ *
+ * Returns `null` only when [errors] is empty, which cannot occur for a
+ * SCHEDULED result.
+ */
+private fun selectPrimaryRetryError(
+    errors: List<io.dataloom.api.error.DataLoomError>,
+    decisions: List<io.dataloom.api.retry.RetryDecision>,
+    maxDelay: io.dataloom.api.scheduling.SchedulingDelay,
+): io.dataloom.api.error.DataLoomError? =
+    errors.zip(decisions)
+        .firstOrNull { (_, decision) ->
+            decision is io.dataloom.api.retry.RetryDecision.Retry &&
+                decision.delay.milliseconds == maxDelay.milliseconds
+        }
+        ?.first
+        ?: errors.zip(decisions)
+            .firstOrNull { (_, decision) -> decision is io.dataloom.api.retry.RetryDecision.Retry }
+            ?.first

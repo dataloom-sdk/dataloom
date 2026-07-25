@@ -15,6 +15,8 @@ import io.dataloom.api.synchronization.CheckpointReadRequest
 import io.dataloom.api.synchronization.CheckpointWriteRequest
 import io.dataloom.api.synchronization.SynchronizationCheckpoint
 import io.dataloom.api.synchronization.SynchronizationPhase
+import io.dataloom.api.synchronization.SynchronizationProgress
+import io.dataloom.api.synchronization.SynchronizationProgressUnit
 import io.dataloom.api.synchronization.SynchronizationResult
 import io.dataloom.api.synchronization.SynchronizationSkipReason
 import io.dataloom.api.synchronization.SynchronizationSummary
@@ -23,6 +25,7 @@ import io.dataloom.api.transport.PullChangesRequest
 import io.dataloom.api.transport.PullChangesResult
 import io.dataloom.runtime.execution.SynchronizationExecutionContext
 import io.dataloom.runtime.execution.SynchronizationPipeline
+import io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitter
 
 /**
  * Canonical [SynchronizationPipeline] implementation for the inbound pull
@@ -169,6 +172,7 @@ public class InboundPullSynchronizationPipeline(
         val storageProvider = context.providers.storageProvider
         val transportProvider = context.providers.transportProvider
         val checkpointKey = CheckpointKey(request.workflowId.value)
+        val runtimeEmitter = context.lifecycleEventEmitter as? SynchronizationRuntimeEventEmitter
 
         var inboundEventsReceived = 0L
         var inboundEventsApplied = 0L
@@ -339,6 +343,23 @@ public class InboundPullSynchronizationPipeline(
                     }
 
                     batchesProcessed++
+
+                    // Emit ProgressUpdated after this batch is durably completed.
+                    // Apply has succeeded, and any required next checkpoint has been
+                    // persisted. CancellationException propagates; ordinary observer
+                    // failures are not propagated.
+                    // Note: if cancellation occurs here, inbound application and any
+                    // required checkpoint advancement have already completed; durable
+                    // work is not rolled back.
+                    if (runtimeEmitter != null) {
+                        val progress = SynchronizationProgress(
+                            phase = SynchronizationPhase.APPLYING_INBOUND,
+                            completed = inboundEventsApplied,
+                            total = null,
+                            unit = SynchronizationProgressUnit.EVENTS,
+                        )
+                        runtimeEmitter.emitProgressUpdated(request, progress)
+                    }
 
                     if (!pullResult.hasMore) {
                         // hasMore false: finish after successful apply and
