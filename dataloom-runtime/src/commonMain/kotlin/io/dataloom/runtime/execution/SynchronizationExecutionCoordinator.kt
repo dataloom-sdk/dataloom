@@ -7,6 +7,7 @@ import io.dataloom.core.provider.ProviderResolutionResult
 import io.dataloom.core.provider.SynchronizationProviderBindings
 import io.dataloom.core.provider.SynchronizationProviderResolver
 import io.dataloom.core.runtime.RuntimeDependencies
+import io.dataloom.runtime.execution.lifecycle.SynchronizationLifecycleEventEmitter
 
 /**
  * Coordinator responsible for preparing and delegating synchronization
@@ -119,12 +120,19 @@ import io.dataloom.core.runtime.RuntimeDependencies
  *   directions to pipelines.
  * @param runtimeDependencies the [RuntimeDependencies] instance passed
  *   unchanged into each [SynchronizationExecutionContext].
+ * @param lifecycleEventEmitter the optional
+ *   [SynchronizationLifecycleEventEmitter] used to dispatch
+ *   [io.dataloom.api.synchronization.SynchronizationEvent.Started] and
+ *   [io.dataloom.api.synchronization.SynchronizationEvent.Completed] events.
+ *   When `null`, no lifecycle events are emitted. Defaults to `null` for
+ *   backward compatibility.
  */
 public class SynchronizationExecutionCoordinator(
     private val lifecycleCoordinator: ProviderLifecycleCoordinator,
     private val providerResolver: SynchronizationProviderResolver,
     private val pipelineRegistry: SynchronizationPipelineRegistry,
     private val runtimeDependencies: RuntimeDependencies,
+    private val lifecycleEventEmitter: SynchronizationLifecycleEventEmitter? = null,
 ) {
 
     /**
@@ -183,14 +191,32 @@ public class SynchronizationExecutionCoordinator(
             )
 
         // Step 7: Construct immutable execution context.
+        // Include the lifecycle emitter so pipelines can emit phase events.
         val context = SynchronizationExecutionContext(
             request = request,
             providers = resolved,
             runtimeDependencies = runtimeDependencies,
+            lifecycleEventEmitter = lifecycleEventEmitter,
         )
 
-        // Step 8–9: Invoke pipeline exactly once and return result unchanged.
+        // Step 8: Dispatch Started before pipeline execution.
+        // CancellationException propagates normally; pipeline is not executed.
+        // Ordinary observer failures (structured dispatch results) do not
+        // prevent pipeline execution.
+        lifecycleEventEmitter?.emitStarted(context)
+
+        // Step 9: Invoke pipeline exactly once.
+        // CancellationException or unexpected exceptions propagate without
+        // dispatching Completed.
         val pipelineResult = pipeline.execute(context)
+
+        // Step 10: Dispatch Completed with the exact pipeline result.
+        // CancellationException propagates; synchronization work is complete
+        // but the caller may not receive the result.
+        // Ordinary observer failures do not alter the result.
+        lifecycleEventEmitter?.emitCompleted(context, pipelineResult)
+
+        // Step 11: Return result unchanged.
         return SynchronizationExecutionResult.Executed(result = pipelineResult)
     }
 }
