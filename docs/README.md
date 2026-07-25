@@ -35,6 +35,7 @@ planned SDK architecture.
   - [Retry Orchestration (DL-024)](./api/retry-orchestration.md)
   - [Durable Queue Execution Processor (DL-026)](./api/durable-queue-processor.md)
   - [Queued Synchronization Execution (DL-027)](./api/queued-synchronization-execution.md)
+  - [Synchronization Event Dispatcher (DL-028)](./api/synchronization-event-dispatcher.md)
 - [Architecture](./architecture/README.md)
   - [Module Architecture](./architecture/modules.md)
   - [Platform Strategy (DL-006)](./architecture/platform-strategy.md)
@@ -56,6 +57,7 @@ planned SDK architecture.
   - [Conflict Detection and Resolution Flow (DL-025)](./architecture/conflict-detection-resolution-flow.md)
   - [Durable Queue Processing Flow (DL-026)](./architecture/durable-queue-processing-flow.md)
   - [Queued Synchronization Retry Flow (DL-027)](./architecture/queued-synchronization-retry-flow.md)
+  - [Observer Delivery Flow (DL-028)](./architecture/observer-delivery-flow.md)
 - Testing
   - [Clock and Identifier Test Utilities (DL-017)](./testing/clock-and-identifiers.md)
 - [Architecture Decision Records (ADRs)](./adr/README.md)
