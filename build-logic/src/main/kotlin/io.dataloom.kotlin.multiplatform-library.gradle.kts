@@ -31,10 +31,12 @@ plugins {
 }
 
 // Detect the host operating system to guard Apple-platform target declarations.
-val isAppleHost: Boolean =
-    org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
-        .getCurrentOperatingSystem()
-        .isMacOsX
+// System.getProperty("os.name") is used here (consistent with settings.gradle.kts)
+// because it is available in both settings-phase and build-phase scripts and
+// does not require importing Gradle internal APIs.
+val isAppleHost: Boolean = (System.getProperty("os.name") ?: "")
+    .lowercase()
+    .contains("mac")
 
 kotlin {
     // Use Java toolchain 17 for compilation and tool-chain consistency.

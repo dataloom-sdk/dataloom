@@ -31,7 +31,7 @@ plugins {
 }
 
 kotlin {
-    val xcFramework = org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework("DataLoom")
+    val dataLoomXCFramework = org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework("DataLoom")
 
     // Declare explicit Apple targets.  iosX64 covers the Intel iOS simulator
     // for Rosetta compatibility.  All three targets are required for a
@@ -48,7 +48,7 @@ kotlin {
             // Static linkage: host applications link the framework at build
             // time; no dynamic library embedding is required.
             isStatic = true
-            xcFramework.add(this)
+            dataLoomXCFramework.add(this)
 
             // Export all public API surface required by Swift consumers.
             // dataloom-testing is intentionally absent so that test utilities

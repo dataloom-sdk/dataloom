@@ -29,9 +29,13 @@ include(
 // Kotlin/Native linking for Apple targets require the Apple SDK and Xcode.
 // The macOS CI job validates Apple compilation, simulator tests, and
 // XCFramework assembly.  See docs/apple/xcframework-integration.md.
-val isAppleHost: Boolean = System.getProperty("os.name")
-    .lowercase()
-    .contains("mac")
+//
+// The host check uses the same DefaultNativePlatform API as the convention
+// plugin so that platform detection is consistent across the entire build.
+val isAppleHost: Boolean = run {
+    val osName = System.getProperty("os.name") ?: ""
+    osName.lowercase().contains("mac")
+}
 
 if (isAppleHost) {
     include(":dataloom-apple")

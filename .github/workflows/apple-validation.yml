@@ -118,17 +118,36 @@ jobs:
       - name: Verify XCFramework slices exist
         run: |
           XCFW="dataloom-apple/build/XCFrameworks/release/DataLoom.xcframework"
-          echo "XCFramework path: $XCFW"
+          echo "=== XCFramework path: $XCFW ==="
           ls -la "$XCFW"
           echo ""
-          echo "Slices:"
+          echo "=== Framework slices ==="
           ls -la "$XCFW/"
           echo ""
-          echo "Verifying iosArm64 slice..."
-          ls "$XCFW/ios-arm64/"
+          # Physical device slice: iosArm64
+          echo "=== Physical device slice (iosArm64) ==="
+          ls "$XCFW/ios-arm64/DataLoom.framework/" || {
+            echo "ERROR: Physical device slice not found at ios-arm64/DataLoom.framework/"
+            exit 1
+          }
           echo ""
-          echo "Verifying iosSimulatorArm64 + iosX64 slice..."
-          ls "$XCFW/ios-arm64_x86_64-simulator/" 2>/dev/null || ls "$XCFW/"*simulator*/ 2>/dev/null || echo "Simulator slice present (path may vary)"
+          # Simulator slice: Kotlin/Native merges iosSimulatorArm64 and iosX64
+          # into a single fat slice under ios-arm64_x86_64-simulator
+          echo "=== Simulator slice (iosSimulatorArm64 + iosX64 merged) ==="
+          SIMULATOR_SLICE="$XCFW/ios-arm64_x86_64-simulator/DataLoom.framework/"
+          if [ -d "$SIMULATOR_SLICE" ]; then
+            ls "$SIMULATOR_SLICE"
+            echo "Simulator slice verified: ios-arm64_x86_64-simulator"
+          else
+            echo "Looking for alternative simulator slice paths..."
+            find "$XCFW" -name "*.framework" -type d | grep -i sim || {
+              echo "ERROR: No simulator slice found in XCFramework"
+              exit 1
+            }
+          fi
+          echo ""
+          echo "=== Info.plist ==="
+          cat "$XCFW/Info.plist"
 
       # ---------------------------------------------------------------
       # Swift smoke test
