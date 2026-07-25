@@ -3,6 +3,7 @@ package io.dataloom.runtime.queue
 import io.dataloom.api.error.DataLoomError
 import io.dataloom.api.identifier.QueueEntryId
 import io.dataloom.api.identifier.QueueLeaseId
+import io.dataloom.api.time.DataLoomInstant
 
 /**
  * Sealed result returned by [DurableQueueExecutionProcessor.process].
@@ -49,11 +50,50 @@ public sealed interface QueueProcessingResult {
      *
      * [summary] reflects the full truthful counts of the completed cycle.
      *
+     * ## Continuation evidence
+     *
+     * [acquisitionLimitReached] and [earliestRescheduledAt] expose safe
+     * evidence that a caller — such as [io.dataloom.runtime.worker.QueueWorkerCoordinator]
+     * — can use to decide whether another processing cycle is worth scheduling.
+     *
+     * - [acquisitionLimitReached] is `true` when the number of acquired entries
+     *   equals [io.dataloom.api.queue.QueueAcquireRequest.maxEntries].
+     *   It does not claim the queue is non-empty; it only reports that the
+     *   bounded batch was full.
+     * - [earliestRescheduledAt] is the earliest availability instant from
+     *   entries that were successfully persisted into a rescheduled state.
+     *   Entries whose reschedule transition failed do not contribute a
+     *   timestamp.
+     *
      * @param summary immutable counters describing the completed cycle.
+     * @param acquisitionLimitReached `true` when acquired entry count equalled
+     *   the maximum requested entries. Defaults to `false`.
+     * @param earliestRescheduledAt the earliest [DataLoomInstant] from
+     *   successfully persisted reschedule transitions, or `null` when no entry
+     *   was rescheduled successfully. Defaults to `null`.
      */
     public data class Processed(
         /** Immutable counters describing the completed processing cycle. */
         public val summary: QueueProcessingSummary,
+
+        /**
+         * `true` when the number of acquired entries equalled
+         * [io.dataloom.api.queue.QueueAcquireRequest.maxEntries].
+         *
+         * Does not claim the queue definitely has more work; reports only that
+         * the bounded acquisition batch was full. Defaults to `false`.
+         */
+        public val acquisitionLimitReached: Boolean = false,
+
+        /**
+         * The earliest [DataLoomInstant] from successfully persisted reschedule
+         * transitions, or `null` when no entry was rescheduled successfully in
+         * this cycle.
+         *
+         * Entries whose reschedule transition failed do not contribute a
+         * timestamp. Defaults to `null`.
+         */
+        public val earliestRescheduledAt: DataLoomInstant? = null,
     ) : QueueProcessingResult
 
     /**

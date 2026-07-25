@@ -15,6 +15,7 @@ import io.dataloom.api.queue.QueueFailureRequest
 import io.dataloom.api.queue.QueueRescheduleRequest
 import io.dataloom.api.identifier.QueueEntryId
 import io.dataloom.api.identifier.QueueLeaseId
+import io.dataloom.api.time.DataLoomInstant
 
 /**
  * Platform-independent processor that drives one bounded durable queue
@@ -181,6 +182,7 @@ public class DurableQueueExecutionProcessor(
         var rescheduled = 0
         var failed = 0
         var cancelled = 0
+        var earliestRescheduledAt: DataLoomInstant? = null
 
         for (entry in entries) {
             val outcome = executionHandler.execute(entry)
@@ -191,7 +193,15 @@ public class DurableQueueExecutionProcessor(
                 is TransitionResult.Success -> {
                     when (outcome) {
                         is QueueEntryExecutionOutcome.Completed -> completed++
-                        is QueueEntryExecutionOutcome.Reschedule -> rescheduled++
+                        is QueueEntryExecutionOutcome.Reschedule -> {
+                            rescheduled++
+                            // Track earliest availability only for successfully persisted reschedules.
+                            val availableAt = outcome.availableAt
+                            val current = earliestRescheduledAt
+                            if (current == null || availableAt.epochMilliseconds < current.epochMilliseconds) {
+                                earliestRescheduledAt = availableAt
+                            }
+                        }
                         is QueueEntryExecutionOutcome.Failed -> failed++
                         is QueueEntryExecutionOutcome.Cancelled -> cancelled++
                     }
@@ -224,6 +234,8 @@ public class DurableQueueExecutionProcessor(
                 failed = failed,
                 cancelled = cancelled,
             ),
+            acquisitionLimitReached = acquiredCount >= request.acquireRequest.maxEntries,
+            earliestRescheduledAt = earliestRescheduledAt,
         )
     }
 
