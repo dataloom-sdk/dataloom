@@ -631,6 +631,23 @@ class DataLoomBuilderTest {
         assertEquals(0, queue.initializeCallCount, "Queue must not be initialized during build.")
     }
 
+    @Test
+    fun build_doesNotExecuteAnyPipelineDuringBuild() {
+        val customPush = RecordingPipeline(SynchronizationDirection.PUSH)
+        val customPull = RecordingPipeline(SynchronizationDirection.PULL)
+        val customBidirectional = RecordingPipeline(SynchronizationDirection.BIDIRECTIONAL)
+
+        makeMinimalBuilder()
+            .pipeline(customPush)
+            .pipeline(customPull)
+            .pipeline(customBidirectional)
+            .build()
+
+        assertEquals(0, customPush.executeCallCount, "Push pipeline must not execute during build.")
+        assertEquals(0, customPull.executeCallCount, "Pull pipeline must not execute during build.")
+        assertEquals(0, customBidirectional.executeCallCount, "Bidirectional pipeline must not execute during build.")
+    }
+
     // =========================================================================
     // Default pipeline assembly
     // =========================================================================
@@ -698,6 +715,32 @@ class DataLoomBuilderTest {
         runSuspend { dataLoom.synchronize(makeRequest(SynchronizationDirection.PUSH)) }
 
         assertEquals(2, customPush.executeCallCount, "Same pipeline must be selected on each call.")
+    }
+
+    @Test
+    fun build_defaultBidirectionalUsesSelectedChildPipelines() {
+        val customPush = RecordingPipeline(SynchronizationDirection.PUSH)
+        val customPull = RecordingPipeline(SynchronizationDirection.PULL)
+
+        // No custom BIDIRECTIONAL pipeline — the builder composes one from the custom push and pull.
+        val dataLoom = makeMinimalBuilder()
+            .pipeline(customPush)
+            .pipeline(customPull)
+            .build()
+
+        runSuspend { dataLoom.initialize() }
+        runSuspend { dataLoom.synchronize(makeRequest(SynchronizationDirection.BIDIRECTIONAL)) }
+
+        assertEquals(
+            1,
+            customPush.executeCallCount,
+            "Default bidirectional pipeline must delegate to the selected custom push pipeline.",
+        )
+        assertEquals(
+            1,
+            customPull.executeCallCount,
+            "Default bidirectional pipeline must delegate to the selected custom pull pipeline.",
+        )
     }
 
     // =========================================================================
