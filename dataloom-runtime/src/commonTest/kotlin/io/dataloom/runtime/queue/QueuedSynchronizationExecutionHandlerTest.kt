@@ -398,7 +398,6 @@ class QueuedSynchronizationExecutionHandlerTest {
             executionCoordinator = coordinator,
             retryEvaluator = makeRetryEvaluator(policy = retryPolicy, clock = clock),
             retryOperation = retryOp,
-            clock = clock,
         )
     }
 
@@ -472,7 +471,6 @@ class QueuedSynchronizationExecutionHandlerTest {
             executionCoordinator = coordinator,
             retryEvaluator = makeRetryEvaluator(),
             retryOperation = retryOp,
-            clock = handlerClock,
         )
         val outcome = runSuspend { handler.execute(makeLeasedEntry()) }
         assertIs<QueueEntryExecutionOutcome.Failed>(outcome)
@@ -490,7 +488,6 @@ class QueuedSynchronizationExecutionHandlerTest {
             executionCoordinator = coordinator,
             retryEvaluator = makeRetryEvaluator(),
             retryOperation = retryOp,
-            clock = handlerClock,
         )
         val outcome = runSuspend { handler.execute(makeLeasedEntry()) }
         outcome as QueueEntryExecutionOutcome.Failed
@@ -508,7 +505,6 @@ class QueuedSynchronizationExecutionHandlerTest {
             executionCoordinator = coordinator,
             retryEvaluator = makeRetryEvaluator(),
             retryOperation = retryOp,
-            clock = handlerClock,
         )
         val outcome = runSuspend { handler.execute(makeLeasedEntry()) }
         outcome as QueueEntryExecutionOutcome.Failed
@@ -544,7 +540,6 @@ class QueuedSynchronizationExecutionHandlerTest {
             executionCoordinator = coordinator,
             retryEvaluator = makeRetryEvaluator(),
             retryOperation = retryOp,
-            clock = handlerClock,
         )
 
         val outcome = runSuspend { handler.execute(makeLeasedEntry()) }
@@ -573,7 +568,6 @@ class QueuedSynchronizationExecutionHandlerTest {
             executionCoordinator = coordinator,
             retryEvaluator = makeRetryEvaluator(),
             retryOperation = retryOp,
-            clock = handlerClock,
         )
 
         val outcome = runSuspend { handler.execute(makeLeasedEntry()) }
@@ -594,12 +588,13 @@ class QueuedSynchronizationExecutionHandlerTest {
     }
 
     @Test
-    fun `Succeeded result records completedAt from clock`() {
+    fun `Succeeded result completedAt equals result completedAt`() {
         val (coordinator, bindings) = coordinatorReturning(makeSucceededResult())
-        val handler = makeHandler(coordinator = coordinator, bindings = bindings, clock = handlerClock)
+        val handler = makeHandler(coordinator = coordinator, bindings = bindings)
         val outcome = runSuspend { handler.execute(makeLeasedEntry()) }
         outcome as QueueEntryExecutionOutcome.Completed
-        assertEquals(t0, outcome.completedAt)
+        // completedAt is taken from SynchronizationResult.completedAt, not from the clock
+        assertEquals(t1, outcome.completedAt)
     }
 
     // =========================================================================
@@ -837,7 +832,6 @@ class QueuedSynchronizationExecutionHandlerTest {
             executionCoordinator = coordinator,
             retryEvaluator = makeRetryEvaluator(),
             retryOperation = retryOp,
-            clock = handlerClock,
         )
         assertFailsWith<CancellationException> {
             runSuspend { handler.execute(makeLeasedEntry()) }
@@ -858,7 +852,6 @@ class QueuedSynchronizationExecutionHandlerTest {
             executionCoordinator = coordinator,
             retryEvaluator = makeRetryEvaluator(),
             retryOperation = retryOp,
-            clock = handlerClock,
         )
         assertFailsWith<IllegalStateException> {
             runSuspend { handler.execute(makeLeasedEntry()) }
@@ -886,7 +879,6 @@ class QueuedSynchronizationExecutionHandlerTest {
                 clock = largeClock,
             ),
             retryOperation = retryOp,
-            clock = largeClock,
         )
         val outcome = runSuspend { handler.execute(makeLeasedEntry()) }
         outcome as QueueEntryExecutionOutcome.Reschedule
@@ -913,7 +905,6 @@ class QueuedSynchronizationExecutionHandlerTest {
             executionCoordinator = coordinator,
             retryEvaluator = makeRetryEvaluator(),
             retryOperation = retryOp,
-            clock = handlerClock,
         )
         val entry = makeLeasedEntry()
         runSuspend { handler.execute(entry) }

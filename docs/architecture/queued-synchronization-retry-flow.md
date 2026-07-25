@@ -17,7 +17,9 @@ QueuedSynchronizationExecutionHandler
      -> SynchronizationResult
 
   result is Succeeded or Skipped
-    -> QueueEntryExecutionOutcome.Completed (no retry evaluation)
+    -> QueueEntryExecutionOutcome.Completed(
+         completedAt = result.completedAt,
+       ) (no retry evaluation)
 
   result is Cancelled
     -> QueueEntryExecutionOutcome.Cancelled (no retry evaluation)
@@ -40,7 +42,6 @@ QueuedSynchronizationExecutionHandler
          -> QueueEntryExecutionOutcome.Failed(
               disposition = FAILED,
               error       = primaryError,
-              completedAt = clock.now(),
             )
 ```
 
@@ -113,10 +114,53 @@ Neither function is part of the public API surface.
 
 - `SchedulerProvider` is never invoked during retry evaluation.
 - `QueueProvider` is never invoked directly by the handler or evaluator.
-- The `DataLoomClock` is always injected; no system clock is read.
+- The `DataLoomClock` is injected into `SynchronizationRetryEvaluator`; no
+  system clock is read. `QueuedSynchronizationExecutionHandler` does not read
+  the clock directly.
 - `CancellationException` propagates normally and is not caught.
 - Unexpected exceptions from the resolver or coordinator are not swallowed.
 - No payload or credential is present in any outcome or evaluation result.
+
+---
+
+## Delivery semantics
+
+The `DurableQueueExecutionProcessor → QueuedSynchronizationExecutionHandler`
+pipeline provides **at-least-once** delivery semantics, not exactly-once.
+
+A queue entry may be processed more than once if:
+
+- The consumer crashes or loses its lease after executing the pipeline but
+  before the `QueueProvider` records the outcome transition.
+- The `QueueProvider` transition call fails after the synchronization result
+  is produced.
+
+The `QueueEntryExecutionOutcome.Reschedule` path re-enqueues the entry for
+another execution cycle. When retry is approved, the rescheduled entry carries
+an incremented `retryAttempt` counter so applications and policies can detect
+repeated attempts.
+
+Applications that require idempotent or exactly-once semantics must implement
+deduplication logic in their synchronization pipelines, storage providers, or
+transport providers. DataLoom does not guarantee that the coordinator or
+pipeline is invoked at most once per entry.
+
+---
+
+## Queue rescheduling vs SchedulerProvider scheduling
+
+These are distinct mechanisms:
+
+| Mechanism | Interface | Who initiates | Effect |
+|---|---|---|---|
+| Queue rescheduling | `QueueProvider` (via `QueueRescheduleRequest`) | `DurableQueueExecutionProcessor` | Re-enqueues an entry for future re-acquisition from the durable queue. Driven by `QueueEntryExecutionOutcome.Reschedule`. |
+| Scheduler scheduling | `SchedulerProvider` | `SynchronizationRetryOrchestrator` (DL-024) | Registers a future synchronization trigger through the platform scheduler (e.g. `WorkManager`). Used by DL-024 outside the queue path. |
+
+`QueuedSynchronizationExecutionHandler` (DL-027) uses **queue rescheduling**
+only. It never invokes `SchedulerProvider`.
+
+`SynchronizationRetryOrchestrator` (DL-024) uses **scheduler scheduling** only.
+It never interacts with the durable queue.
 
 ---
 

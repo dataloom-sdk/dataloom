@@ -71,9 +71,13 @@ parameters:
 |---|---|---|
 | `workResolver` | `QueuedSynchronizationWorkResolver` | Resolves work from each entry. |
 | `executionCoordinator` | `SynchronizationExecutionCoordinator` | Runs the synchronization pipeline. |
-| `retryEvaluator` | `SynchronizationRetryEvaluator` | Evaluates retry eligibility. |
+| `retryEvaluator` | `SynchronizationRetryEvaluator` | Evaluates retry eligibility. Contains its own injected `DataLoomClock`. |
 | `retryOperation` | `RetryOperation` | Stable operation name passed to retry policy. |
-| `clock` | `DataLoomClock` | Injected clock for timestamp arithmetic. |
+
+The handler does not read the clock directly. The completion instant for
+`Completed` outcomes is taken from `SynchronizationResult.completedAt`, which
+was recorded by the pipeline. Clock access for retry availability timestamps
+is performed solely by `SynchronizationRetryEvaluator`.
 
 ---
 
@@ -176,10 +180,27 @@ combined with large clock values.
 ## Threading and coroutine safety
 
 - The handler is a pure suspend function with no shared mutable state.
-- The injected clock, resolver, coordinator, and retry evaluator must each be
-  safe for concurrent invocation from structured coroutine scopes.
+- The resolver, coordinator, and retry evaluator must each be safe for
+  concurrent invocation from structured coroutine scopes.
 - `GlobalScope` is never used.
 - `CancellationException` is never swallowed.
+
+---
+
+## Delivery semantics
+
+The `DurableQueueExecutionProcessor → QueuedSynchronizationExecutionHandler`
+pipeline provides **at-least-once** delivery semantics, not exactly-once.
+
+A queue entry may be processed more than once if the consumer crashes or its
+lease expires after executing the pipeline but before the queue outcome
+transition is recorded. Applications requiring idempotent or exactly-once
+semantics must implement deduplication in their pipelines, storage providers,
+or transport providers.
+
+See [Queued Synchronization Retry Flow](../architecture/queued-synchronization-retry-flow.md)
+for the distinction between queue rescheduling and `SchedulerProvider`
+scheduling.
 
 ---
 

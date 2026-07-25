@@ -10,7 +10,6 @@ import io.dataloom.api.queue.QueueFailureDisposition
 import io.dataloom.api.retry.RetryAttempt
 import io.dataloom.api.retry.RetryOperation
 import io.dataloom.api.synchronization.SynchronizationResult
-import io.dataloom.api.time.DataLoomClock
 import io.dataloom.runtime.execution.SynchronizationExecutionCoordinator
 import io.dataloom.runtime.execution.SynchronizationExecutionResult
 import io.dataloom.runtime.retry.SynchronizationRetryEvaluation
@@ -35,7 +34,7 @@ import io.dataloom.runtime.retry.SynchronizationRetryEvaluator
  *    [QueueFailureDisposition.FAILED].
  * 5. If [SynchronizationExecutionResult.Executed]:
  *    - [SynchronizationResult.Succeeded] or [SynchronizationResult.Skipped]
- *      → [QueueEntryExecutionOutcome.Completed] with `clock.now()`.
+ *      → [QueueEntryExecutionOutcome.Completed] with `result.completedAt`.
  *    - [SynchronizationResult.Cancelled] → [QueueEntryExecutionOutcome.Cancelled]
  *      with the request execution context.
  *    - [SynchronizationResult.Failed] or [SynchronizationResult.PartiallySucceeded]
@@ -76,6 +75,15 @@ import io.dataloom.runtime.retry.SynchronizationRetryEvaluator
  * [retryEvaluator] propagate to the caller without modification. This handler
  * does not swallow arbitrary programming errors.
  *
+ * ## Clock access
+ *
+ * This handler does not read any clock directly. The completion instant for
+ * [QueueEntryExecutionOutcome.Completed] is taken from
+ * [io.dataloom.api.synchronization.SynchronizationResult.completedAt], which
+ * was recorded by the synchronization pipeline at the point of completion.
+ * Clock access for retry availability timestamps is performed solely by the
+ * injected [retryEvaluator].
+ *
  * ## Boundaries
  *
  * This handler must not:
@@ -97,19 +105,17 @@ import io.dataloom.runtime.retry.SynchronizationRetryEvaluator
  * @param executionCoordinator the coordinator that executes synchronization
  *   pipelines. Required. Invoked exactly once per entry.
  * @param retryEvaluator the evaluator that assesses retry policy for
- *   terminal failure results. Required.
+ *   terminal failure results. Required. Contains its own [io.dataloom.api.time.DataLoomClock]
+ *   for computing retry availability timestamps.
  * @param retryOperation the logical operation identifier passed to the retry
  *   evaluator and therefore to [io.dataloom.api.retry.RetryPolicy.evaluate].
  *   Required.
- * @param clock the [DataLoomClock] used to record the completion instant when
- *   the result maps to [QueueEntryExecutionOutcome.Completed]. Required.
  */
 public class QueuedSynchronizationExecutionHandler(
     private val workResolver: QueuedSynchronizationWorkResolver,
     private val executionCoordinator: SynchronizationExecutionCoordinator,
     private val retryEvaluator: SynchronizationRetryEvaluator,
     private val retryOperation: RetryOperation,
-    private val clock: DataLoomClock,
 ) : QueueEntryExecutionHandler {
 
     /**
@@ -158,7 +164,7 @@ public class QueuedSynchronizationExecutionHandler(
      * Maps a [SynchronizationResult] to a [QueueEntryExecutionOutcome].
      *
      * - [SynchronizationResult.Succeeded] and [SynchronizationResult.Skipped]
-     *   → [QueueEntryExecutionOutcome.Completed] with `clock.now()`.
+     *   → [QueueEntryExecutionOutcome.Completed] with `result.completedAt`.
      * - [SynchronizationResult.Cancelled] → [QueueEntryExecutionOutcome.Cancelled]
      *   with the request execution context.
      * - [SynchronizationResult.Failed] and [SynchronizationResult.PartiallySucceeded]
@@ -171,7 +177,7 @@ public class QueuedSynchronizationExecutionHandler(
         when (result) {
             is SynchronizationResult.Succeeded,
             is SynchronizationResult.Skipped,
-            -> QueueEntryExecutionOutcome.Completed(completedAt = clock.now())
+            -> QueueEntryExecutionOutcome.Completed(completedAt = result.completedAt)
 
             is SynchronizationResult.Cancelled ->
                 QueueEntryExecutionOutcome.Cancelled(context = result.request.context)
@@ -194,8 +200,8 @@ public class QueuedSynchronizationExecutionHandler(
      * - [SynchronizationRetryEvaluation.StopRetry] →
      *   [QueueEntryExecutionOutcome.Failed].
      * - [SynchronizationRetryEvaluation.NotRequired] → defensive
-     *   [QueueEntryExecutionOutcome.Completed] (should not occur for Failed
-     *   or PartiallySucceeded results).
+     *   [QueueEntryExecutionOutcome.Completed] with `result.completedAt`
+     *   (should not occur for Failed or PartiallySucceeded results).
      */
     private fun evaluateRetry(
         result: SynchronizationResult,
@@ -221,7 +227,7 @@ public class QueuedSynchronizationExecutionHandler(
 
             is SynchronizationRetryEvaluation.NotRequired ->
                 // Defensive: NotRequired should not occur for Failed or PartiallySucceeded.
-                QueueEntryExecutionOutcome.Completed(completedAt = clock.now())
+                QueueEntryExecutionOutcome.Completed(completedAt = result.completedAt)
         }
     }
 
