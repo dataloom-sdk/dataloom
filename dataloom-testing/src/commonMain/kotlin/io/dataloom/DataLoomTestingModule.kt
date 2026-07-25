@@ -1,10 +1,9 @@
 package io.dataloom
 
 /**
- * Build-foundation marker for the dataloom-testing module.
+ * Build-foundation marker for the `dataloom-testing` module.
  *
- * This internal object exists solely to establish the package structure and
- * confirm that the module compiles correctly. Test utilities, fake providers,
- * and controlled schedulers are out of scope for this issue.
+ * The module contains deterministic clocks, identifier generators, in-memory
+ * providers, scripted policies, and recording observers for common tests.
  */
-internal object DataLoomTestingModule
+public object DataLoomTestingModule

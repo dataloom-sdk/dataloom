@@ -72,6 +72,9 @@ planned SDK architecture.
   - [Application-Owned Queue Encoding (DL-034)](./architecture/application-owned-queue-encoding.md)
 - Testing
   - [Clock and Identifier Test Utilities (DL-017)](./testing/clock-and-identifiers.md)
+  - [Testing Toolkit Overview (DL-035)](./testing/testing-toolkit.md)
+  - [In-Memory Providers (DL-035)](./testing/in-memory-providers.md)
+  - [Scripted and Recording Utilities (DL-035)](./testing/scripted-and-recording-utilities.md)
 - [Architecture Decision Records (ADRs)](./adr/README.md)
   - [ADR-0001: Android-first and Kotlin Multiplatform-ready core architecture](./adr/ADR-0001-android-first-kmp-core.md)
 - [Specifications](./specifications/README.md)
