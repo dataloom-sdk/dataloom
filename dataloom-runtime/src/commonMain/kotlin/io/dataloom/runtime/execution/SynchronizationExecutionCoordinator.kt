@@ -252,24 +252,24 @@ public class SynchronizationExecutionCoordinator(
             lifecycleEventEmitter = lifecycleEventEmitter,
         )
 
-        // Step 8: Dispatch Started before pipeline execution.
+        // Step 9: Dispatch Started before pipeline execution.
         // CancellationException propagates normally; pipeline is not executed.
         // Ordinary observer failures (structured dispatch results) do not
         // prevent pipeline execution.
         lifecycleEventEmitter?.emitStarted(context)
 
-        // Step 9: Invoke pipeline exactly once.
+        // Step 10: Invoke pipeline exactly once.
         // CancellationException or unexpected exceptions propagate without
         // dispatching Completed.
         val pipelineResult = pipeline.execute(context)
 
-        // Step 10: Dispatch Completed with the exact pipeline result.
+        // Step 11: Dispatch Completed with the exact pipeline result.
         // CancellationException propagates; synchronization work is complete
         // but the caller may not receive the result.
         // Ordinary observer failures do not alter the result.
         lifecycleEventEmitter?.emitCompleted(context, pipelineResult)
 
-        // Step 11: Return result unchanged.
+        // Step 12: Return result unchanged.
         return SynchronizationExecutionResult.Executed(result = pipelineResult)
     }
 }

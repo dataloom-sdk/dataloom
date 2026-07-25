@@ -566,7 +566,7 @@ class ConnectivityAwareQueuedHandlerTest {
         val outcome = runSuspend { handler.execute(makeLeasedEntry()) }
         assertIs<QueueEntryExecutionOutcome.Reschedule>(outcome)
         // Result should be Long.MAX_VALUE (overflow-safe)
-        assertEquals(Long.MAX_VALUE, (outcome as QueueEntryExecutionOutcome.Reschedule).availableAt.epochMilliseconds)
+        assertEquals(Long.MAX_VALUE, outcome.availableAt.epochMilliseconds)
     }
 
     // =========================================================================
@@ -584,7 +584,7 @@ class ConnectivityAwareQueuedHandlerTest {
         val (handler, _, _) = buildConnectivityScenario(config, null, offlineClock)
         val outcome = runSuspend { handler.execute(makeLeasedEntry()) }
         assertIs<QueueEntryExecutionOutcome.Failed>(outcome)
-        assertEquals(QueueFailureDisposition.FAILED, (outcome as QueueEntryExecutionOutcome.Failed).disposition)
+        assertEquals(QueueFailureDisposition.FAILED, outcome.disposition)
     }
 
     // =========================================================================
