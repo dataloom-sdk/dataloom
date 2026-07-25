@@ -7,6 +7,7 @@ import io.dataloom.core.provider.ProviderLifecycleResult
 import io.dataloom.core.provider.SynchronizationProviderBindings
 import io.dataloom.runtime.execution.SynchronizationExecutionCoordinator
 import io.dataloom.runtime.execution.SynchronizationExecutionResult
+import io.dataloom.runtime.submission.DataLoomQueueSubmission
 
 /**
  * Internal [DataLoom] implementation assembled by [DataLoomBuilder].
@@ -40,12 +41,15 @@ import io.dataloom.runtime.execution.SynchronizationExecutionResult
  *   [synchronize] without explicit bindings.
  * @param queueWorker the optional queue-worker capability; `null` when not
  *   configured.
+ * @param queueSubmission the optional queue-submission capability; `null` when
+ *   not configured.
  */
 internal class DefaultDataLoom(
     private val lifecycleCoordinator: ProviderLifecycleCoordinator,
     private val executionCoordinator: SynchronizationExecutionCoordinator,
     private val defaultBindings: SynchronizationProviderBindings,
     override val queueWorker: DataLoomQueueWorker?,
+    override val queueSubmission: DataLoomQueueSubmission?,
 ) : DataLoom {
 
     override val providerLifecycleState: ProviderLifecycleCoordinatorState

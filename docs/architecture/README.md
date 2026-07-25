@@ -36,3 +36,4 @@ Current documents:
 - [Connectivity Preflight and Offline Deferral (DL-031)](./connectivity-preflight-offline-deferral.md)
 - [Queue Worker Wake-Up and Recovery Flow (DL-032)](./queue-worker-wakeup-recovery-flow.md)
 - [Runtime Assembly (DL-033)](./runtime-assembly.md)
+- [Application-Owned Queue Encoding (DL-034)](./application-owned-queue-encoding.md)

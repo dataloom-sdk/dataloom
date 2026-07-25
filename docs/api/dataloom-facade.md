@@ -25,6 +25,8 @@ during build.
 - `DataLoomQueueWorker` — optional narrow queue-worker capability
 - `DataLoomBuildException` — thrown when `DataLoomBuilder.build()` fails
   validation
+- `DataLoomQueueSubmission` _(DL-034)_ — optional narrow queue-submission
+  capability
 
 ---
 
@@ -34,6 +36,7 @@ during build.
 public interface DataLoom {
     public val providerLifecycleState: ProviderLifecycleCoordinatorState
     public val queueWorker: DataLoomQueueWorker?
+    public val queueSubmission: DataLoomQueueSubmission?
     public suspend fun initialize(): ProviderLifecycleResult
     public suspend fun synchronize(request: SynchronizationRequest): SynchronizationExecutionResult
     public suspend fun synchronize(
@@ -55,6 +58,15 @@ time without side effects.
 `null` when no `DataLoomQueueWorkerSpec` was supplied to the builder. Non-null
 when queue-worker dependencies are fully configured. Queue workers do not start
 automatically.
+
+### queueSubmission
+
+`null` when `DataLoomBuilder.queueSubmissionEncoder` was not supplied or when
+a valid `QueueProvider` binding was absent. Non-null when a
+`QueuedSynchronizationWorkEncoder` and a valid queue provider binding are both
+configured. Queue submission and queue worker are independently configurable.
+
+`QueueProvider` is not exposed through this property.
 
 ### initialize
 
@@ -274,9 +286,20 @@ No queue operation is performed during `build()`.
 
 ## Queue-submission boundary
 
-`DataLoom` does not provide a public enqueue API. Applications may use their
-`QueueProvider` directly to submit work until the public queue-submission API
-is introduced in a subsequent issue.
+`DataLoomQueueSubmission` is exposed through `DataLoom.queueSubmission` when
+`DataLoomBuilder.queueSubmissionEncoder` is supplied with a valid
+`QueueProvider` binding.
+
+Queue submission and queue worker are independently configurable. Either, both,
+or neither capability may be present.
+
+Build fails deterministically when a `QueuedSynchronizationWorkEncoder` is
+supplied but no valid `QueueProvider` binding is found.
+
+No encoding or enqueue operation is performed during `build()`.
+
+See [Queue Submission (DL-034)](./queue-submission.md) for the complete
+submission API reference.
 
 ---
 

@@ -454,6 +454,20 @@ class DataLoomBuilderTest {
         ),
     )
 
+    private fun makeQueueSubmissionEncoder(): io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder =
+        io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder { submission ->
+            val entry = io.dataloom.api.queue.QueueEntry(
+                id = submission.queueEntryId,
+                synchronizationRequest = submission.work.request,
+                state = io.dataloom.api.queue.QueueEntryState.PENDING,
+                enqueuedAt = submission.availableAt,
+                availableAt = submission.availableAt,
+            )
+            io.dataloom.runtime.submission.QueuedSynchronizationWorkEncodingResult.Encoded(
+                io.dataloom.api.queue.QueueEnqueueRequest(entry = entry),
+            )
+        }
+
     // =========================================================================
     // Builder requirements — missing mandatory fields
     // =========================================================================
@@ -1159,6 +1173,144 @@ class DataLoomBuilderTest {
         assertFailsWith<CancellationException> {
             runSuspend { dataLoom.queueWorker!!.run(workerRequest) }
         }
+    }
+
+    // =========================================================================
+    // Queue submission builder integration
+    // =========================================================================
+
+    @Test
+    fun queueSubmission_isNullWhenEncoderNotConfigured() {
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(FakeStorageProvider(), FakeTransportProvider(), FakeQueueProvider())
+            .defaultProviderBindings(makeBindings(queueId = "queue-primary"))
+            .build()
+
+        assertNull(dataLoom.queueSubmission)
+    }
+
+    @Test
+    fun queueSubmission_isNonNullWhenEncoderAndQueueProviderConfigured() {
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(FakeStorageProvider(), FakeTransportProvider(), FakeQueueProvider())
+            .defaultProviderBindings(makeBindings(queueId = "queue-primary"))
+            .queueSubmissionEncoder(makeQueueSubmissionEncoder())
+            .build()
+
+        assertNotNull(dataLoom.queueSubmission)
+    }
+
+    @Test
+    fun queueSubmission_failsWhenEncoderConfiguredButQueueProviderBindingAbsent() {
+        val builder = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(FakeStorageProvider(), FakeTransportProvider())
+            .defaultProviderBindings(makeBindings()) // no queueId
+            .queueSubmissionEncoder(makeQueueSubmissionEncoder())
+
+        assertFailsWith<DataLoomBuildException> {
+            builder.build()
+        }
+    }
+
+    @Test
+    fun queueSubmission_failsWhenEncoderConfiguredAndQueueProviderNotInRegistry() {
+        val builder = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(FakeStorageProvider(), FakeTransportProvider())
+            .defaultProviderBindings(makeBindings(queueId = "queue-missing"))
+            .queueSubmissionEncoder(makeQueueSubmissionEncoder())
+
+        assertFailsWith<DataLoomBuildException> {
+            builder.build()
+        }
+    }
+
+    @Test
+    fun queueSubmission_buildInvokesNoEncoder() {
+        var encoderCallCount = 0
+        val encoder = io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder { _ ->
+            encoderCallCount++
+            error("should not be called during build")
+        }
+
+        DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(FakeStorageProvider(), FakeTransportProvider(), FakeQueueProvider())
+            .defaultProviderBindings(makeBindings(queueId = "queue-primary"))
+            .queueSubmissionEncoder(encoder)
+            .build()
+
+        assertEquals(0, encoderCallCount, "Build must not invoke encoder.")
+    }
+
+    @Test
+    fun queueSubmission_buildInvokesNoQueueProvider() {
+        val queue = FakeQueueProvider()
+
+        DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(FakeStorageProvider(), FakeTransportProvider(), queue)
+            .defaultProviderBindings(makeBindings(queueId = "queue-primary"))
+            .queueSubmissionEncoder(makeQueueSubmissionEncoder())
+            .build()
+
+        assertEquals(0, queue.initializeCallCount, "Build must not initialize queue provider.")
+        assertEquals(0, queue.acquireCallCount, "Build must not call acquire.")
+    }
+
+    @Test
+    fun queueSubmission_workerAndSubmissionAreIndependent_bothNull() {
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(FakeStorageProvider(), FakeTransportProvider(), FakeQueueProvider())
+            .defaultProviderBindings(makeBindings(queueId = "queue-primary"))
+            .build()
+
+        assertNull(dataLoom.queueWorker)
+        assertNull(dataLoom.queueSubmission)
+    }
+
+    @Test
+    fun queueSubmission_workerAndSubmissionAreIndependent_workerOnlyConfigured() {
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(FakeStorageProvider(), FakeTransportProvider(), FakeQueueProvider())
+            .defaultProviderBindings(makeBindings(queueId = "queue-primary"))
+            .queueWorkerConfiguration(makeQueueWorkerSpec())
+            .build()
+
+        assertNotNull(dataLoom.queueWorker)
+        assertNull(dataLoom.queueSubmission)
+    }
+
+    @Test
+    fun queueSubmission_workerAndSubmissionAreIndependent_submissionOnlyConfigured() {
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(FakeStorageProvider(), FakeTransportProvider(), FakeQueueProvider())
+            .defaultProviderBindings(makeBindings(queueId = "queue-primary"))
+            .queueSubmissionEncoder(makeQueueSubmissionEncoder())
+            .build()
+
+        assertNull(dataLoom.queueWorker)
+        assertNotNull(dataLoom.queueSubmission)
+    }
+
+    @Test
+    fun queueSubmission_workerAndSubmissionCanCoexist() {
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(FakeStorageProvider(), FakeTransportProvider(), FakeQueueProvider())
+            .defaultProviderBindings(makeBindings(queueId = "queue-primary"))
+            .queueWorkerConfiguration(makeQueueWorkerSpec())
+            .queueSubmissionEncoder(makeQueueSubmissionEncoder())
+            .build()
+
+        assertNotNull(dataLoom.queueWorker)
+        assertNotNull(dataLoom.queueSubmission)
     }
 
     // =========================================================================
