@@ -55,7 +55,7 @@ Functional interface invoked once per entry to resolve synchronization work.
 
 ```kotlin
 fun interface QueuedSynchronizationWorkResolver {
-    suspend fun resolve(entry: QueueEntry): QueuedSynchronizationWorkResolution
+    fun resolve(entry: QueueEntry): QueuedSynchronizationWorkResolution
 }
 ```
 
