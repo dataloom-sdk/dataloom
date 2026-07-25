@@ -940,8 +940,8 @@ class DataLoomQueueSubmissionTest {
                     availableAt = fixedInstant,
                 ),
             )
-            // unreachable; returned to satisfy type system
-            QueuedSynchronizationWorkEncodingResult.Encoded(makeEnqueueRequest())
+            // QueueEnqueueRequest constructor above always throws; this is never reached.
+            error("QueueEnqueueRequest constructor must have thrown")
         }
         val capability = DefaultDataLoomQueueSubmission(
             queueProvider = provider,
@@ -980,7 +980,8 @@ class DataLoomQueueSubmissionTest {
                     lease = lease,
                 ),
             )
-            QueuedSynchronizationWorkEncodingResult.Encoded(makeEnqueueRequest())
+            // QueueEntry constructor above always throws; this is never reached.
+            error("QueueEntry constructor must have thrown")
         }
         val capability = DefaultDataLoomQueueSubmission(
             queueProvider = provider,
@@ -1012,7 +1013,8 @@ class DataLoomQueueSubmissionTest {
                     retryAttempt = RetryAttempt(1),
                 ),
             )
-            QueuedSynchronizationWorkEncodingResult.Encoded(makeEnqueueRequest())
+            // QueueEntry constructor above always throws; this is never reached.
+            error("QueueEntry constructor must have thrown")
         }
         val capability = DefaultDataLoomQueueSubmission(
             queueProvider = provider,
