@@ -14,6 +14,7 @@ import io.dataloom.api.storage.InboundChangeApplyRequest
 import io.dataloom.api.synchronization.CheckpointReadRequest
 import io.dataloom.api.synchronization.CheckpointWriteRequest
 import io.dataloom.api.synchronization.SynchronizationCheckpoint
+import io.dataloom.api.synchronization.SynchronizationPhase
 import io.dataloom.api.synchronization.SynchronizationResult
 import io.dataloom.api.synchronization.SynchronizationSkipReason
 import io.dataloom.api.synchronization.SynchronizationSummary
@@ -210,6 +211,11 @@ public class InboundPullSynchronizationPipeline(
             )
 
             // Step 3: Pull inbound changes.
+            // Emit PULLING phase immediately before the transport pull call.
+            // CancellationException propagates; ordinary observer failures do
+            // not prevent the pull operation.
+            context.lifecycleEventEmitter?.emitPhaseChanged(context, SynchronizationPhase.PULLING)
+
             val pullResult = when (val outcome = transportProvider.pullChanges(pullRequest)) {
                 is ProviderOperationResult.Success -> outcome.value
                 is ProviderOperationResult.Failure -> {
@@ -227,6 +233,11 @@ public class InboundPullSynchronizationPipeline(
                     // Persist any optional no-change next checkpoint.
                     val noChangeCheckpoint = pullResult.nextCheckpoint
                     if (noChangeCheckpoint != null) {
+                        // Emit WRITING_CHECKPOINT phase immediately before the
+                        // no-change checkpoint write. CancellationException propagates;
+                        // ordinary observer failures do not prevent the write.
+                        context.lifecycleEventEmitter?.emitPhaseChanged(context, SynchronizationPhase.WRITING_CHECKPOINT)
+
                         val writeOutcome = storageProvider.writeCheckpoint(
                             CheckpointWriteRequest(request = request, checkpoint = noChangeCheckpoint),
                         )
@@ -274,6 +285,11 @@ public class InboundPullSynchronizationPipeline(
                     inboundEventsReceived += changeSet.events.size.toLong()
 
                     // Step 5: Apply the inbound change set.
+                    // Emit APPLYING_INBOUND phase immediately before the apply call.
+                    // CancellationException propagates; ordinary observer failures do
+                    // not prevent the apply operation.
+                    context.lifecycleEventEmitter?.emitPhaseChanged(context, SynchronizationPhase.APPLYING_INBOUND)
+
                     val applyOutcome = storageProvider.applyInboundChanges(
                         InboundChangeApplyRequest(request = request, changeSet = changeSet),
                     )
@@ -295,6 +311,11 @@ public class InboundPullSynchronizationPipeline(
                     // apply. Never write checkpoint before apply succeeds.
                     val nextCheckpoint = pullResult.nextCheckpoint
                     if (nextCheckpoint != null) {
+                        // Emit WRITING_CHECKPOINT phase immediately before the
+                        // post-apply checkpoint write. CancellationException propagates;
+                        // ordinary observer failures do not prevent the write.
+                        context.lifecycleEventEmitter?.emitPhaseChanged(context, SynchronizationPhase.WRITING_CHECKPOINT)
+
                         val writeOutcome = storageProvider.writeCheckpoint(
                             CheckpointWriteRequest(request = request, checkpoint = nextCheckpoint),
                         )

@@ -15,6 +15,7 @@ import io.dataloom.api.storage.OutboundChangeReadResult
 import io.dataloom.api.synchronization.ChangeAcknowledgementStatus
 import io.dataloom.api.synchronization.ChangeSetAcknowledgement
 import io.dataloom.api.synchronization.OutboundChangeAcknowledgementRequest
+import io.dataloom.api.synchronization.SynchronizationPhase
 import io.dataloom.api.synchronization.SynchronizationResult
 import io.dataloom.api.synchronization.SynchronizationSkipReason
 import io.dataloom.api.synchronization.SynchronizationSummary
@@ -172,6 +173,11 @@ public class OutboundPushSynchronizationPipeline(
                 maxEvents = configuration.maxEventsPerBatch,
             )
 
+            // Emit READING_OUTBOUND phase immediately before storage read.
+            // CancellationException propagates; ordinary observer failures are
+            // ignored and do not prevent the storage read.
+            context.lifecycleEventEmitter?.emitPhaseChanged(context, SynchronizationPhase.READING_OUTBOUND)
+
             val readResult = when (val outcome = storageProvider.readOutboundChanges(readRequest)) {
                 is ProviderOperationResult.Success -> outcome.value
                 is ProviderOperationResult.Failure -> {
@@ -210,6 +216,11 @@ public class OutboundPushSynchronizationPipeline(
                         )
                     }
 
+                    // Emit PUSHING phase immediately before transport push.
+                    // CancellationException propagates; ordinary observer failures do
+                    // not prevent the push operation.
+                    context.lifecycleEventEmitter?.emitPhaseChanged(context, SynchronizationPhase.PUSHING)
+
                     val pushOutcome = transportProvider.pushChanges(
                         PushChangesRequest(request = request, changeSet = changeSet),
                     )
@@ -234,6 +245,11 @@ public class OutboundPushSynchronizationPipeline(
                             error = validationError,
                         )
                     }
+
+                    // Emit ACKNOWLEDGING_OUTBOUND phase immediately before
+                    // acknowledgement persistence. CancellationException propagates;
+                    // ordinary observer failures do not prevent the acknowledge call.
+                    context.lifecycleEventEmitter?.emitPhaseChanged(context, SynchronizationPhase.ACKNOWLEDGING_OUTBOUND)
 
                     val acknowledgeOutcome = storageProvider.acknowledgeOutboundChanges(
                         OutboundChangeAcknowledgementRequest(request = request, acknowledgement = acknowledgement),

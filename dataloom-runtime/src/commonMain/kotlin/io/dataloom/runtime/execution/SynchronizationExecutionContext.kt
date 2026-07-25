@@ -3,6 +3,7 @@ package io.dataloom.runtime.execution
 import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.core.provider.ResolvedSynchronizationProviders
 import io.dataloom.core.runtime.RuntimeDependencies
+import io.dataloom.runtime.execution.lifecycle.SynchronizationLifecycleEventEmitter
 
 /**
  * Immutable execution context passed to a [SynchronizationPipeline] by the
@@ -10,13 +11,15 @@ import io.dataloom.core.runtime.RuntimeDependencies
  *
  * ## Purpose
  *
- * [SynchronizationExecutionContext] groups the three inputs required by every
+ * [SynchronizationExecutionContext] groups the inputs required by every
  * synchronization pipeline:
  *
  * - The original [SynchronizationRequest] that triggered the execution.
  * - The [ResolvedSynchronizationProviders] container produced by provider
  *   resolution.
  * - The [RuntimeDependencies] instance injected into the coordinator.
+ * - An optional [SynchronizationLifecycleEventEmitter] for emitting phase
+ *   events at deterministic operation boundaries.
  *
  * ## Construction restrictions
  *
@@ -26,8 +29,14 @@ import io.dataloom.core.runtime.RuntimeDependencies
  *
  * ## Immutability
  *
- * All three properties are preserved exactly as supplied. No copy, mutation,
- * or transformation is performed. No mutable collection is exposed.
+ * All properties are preserved exactly as supplied. No copy, mutation, or
+ * transformation is performed. No mutable collection is exposed.
+ *
+ * ## Backward compatibility
+ *
+ * The [lifecycleEventEmitter] parameter defaults to `null`. Existing callers
+ * that construct [SynchronizationExecutionContext] without a lifecycle emitter
+ * continue to work unchanged. When `null`, pipelines skip phase event emission.
  *
  * ## Security restrictions
  *
@@ -39,6 +48,7 @@ import io.dataloom.core.runtime.RuntimeDependencies
  * - The synchronization request identifier (session ID and workflow ID).
  * - The synchronization direction from the request.
  * - Provider IDs or types from the resolved providers.
+ * - Whether a lifecycle emitter is configured.
  *
  * ## KMP compatibility
  *
@@ -50,6 +60,10 @@ import io.dataloom.core.runtime.RuntimeDependencies
  *   [io.dataloom.core.provider.SynchronizationProviderResolver].
  * @param runtimeDependencies the [RuntimeDependencies] instance injected into
  *   the coordinator.
+ * @param lifecycleEventEmitter the optional [SynchronizationLifecycleEventEmitter]
+ *   used to emit phase-changed events at deterministic operation boundaries.
+ *   When `null`, phase events are not emitted. Defaults to `null` for
+ *   backward compatibility.
  */
 public class SynchronizationExecutionContext(
     /** The synchronization request that triggered this execution. */
@@ -60,6 +74,15 @@ public class SynchronizationExecutionContext(
 
     /** The runtime dependencies injected into the coordinator. */
     public val runtimeDependencies: RuntimeDependencies,
+
+    /**
+     * Optional lifecycle event emitter for phase-changed events.
+     *
+     * When `null`, pipelines skip phase event emission. When configured,
+     * pipelines call [SynchronizationLifecycleEventEmitter.emitPhaseChanged]
+     * immediately before each supported provider operation.
+     */
+    public val lifecycleEventEmitter: SynchronizationLifecycleEventEmitter? = null,
 ) {
 
     /**
