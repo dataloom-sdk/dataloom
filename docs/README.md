@@ -33,6 +33,7 @@ planned SDK architecture.
   - [Inbound Pull Pipeline (DL-022)](./api/inbound-pull-pipeline.md)
   - [Bidirectional Pipeline (DL-023)](./api/bidirectional-pipeline.md)
   - [Retry Orchestration (DL-024)](./api/retry-orchestration.md)
+  - [Durable Queue Execution Processor (DL-026)](./api/durable-queue-processor.md)
 - [Architecture](./architecture/README.md)
   - [Module Architecture](./architecture/modules.md)
   - [Platform Strategy (DL-006)](./architecture/platform-strategy.md)
@@ -52,6 +53,7 @@ planned SDK architecture.
   - [Bidirectional Flow (DL-023)](./architecture/bidirectional-flow.md)
   - [Retry and Rescheduling Flow (DL-024)](./architecture/retry-rescheduling-flow.md)
   - [Conflict Detection and Resolution Flow (DL-025)](./architecture/conflict-detection-resolution-flow.md)
+  - [Durable Queue Processing Flow (DL-026)](./architecture/durable-queue-processing-flow.md)
 - Testing
   - [Clock and Identifier Test Utilities (DL-017)](./testing/clock-and-identifiers.md)
 - [Architecture Decision Records (ADRs)](./adr/README.md)
