@@ -30,3 +30,4 @@ Current documents:
 - [Bidirectional Flow (DL-023)](./bidirectional-flow.md)
 - [Retry and Rescheduling Flow (DL-024)](./retry-rescheduling-flow.md)
 - [Durable Queue Processing Flow (DL-026)](./durable-queue-processing-flow.md)
+- [Observer Delivery Flow (DL-028)](./observer-delivery-flow.md)
