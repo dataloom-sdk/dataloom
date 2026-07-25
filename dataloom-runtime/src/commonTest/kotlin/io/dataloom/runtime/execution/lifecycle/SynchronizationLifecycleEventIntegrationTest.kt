@@ -1980,4 +1980,128 @@ class SynchronizationLifecycleEventIntegrationTest {
 
         assertIs<SynchronizationExecutionResult.Executed>(result)
     }
+
+    // =========================================================================
+    // Coordinator: exact request reaches Started (criterion 14)
+    // =========================================================================
+
+    @Test
+    fun `coordinator Started event carries the exact synchronization request`() {
+        // The exact request passed to coordinator.execute must be the same object
+        // identity as the request recorded in the Started context.
+        val recordedContexts = mutableListOf<SynchronizationExecutionContext>()
+        val capturingEmitter = object : SynchronizationLifecycleEventEmitter {
+            override suspend fun emitStarted(context: SynchronizationExecutionContext): SynchronizationEventDispatchResult {
+                recordedContexts.add(context)
+                return noObserversResult("started-id")
+            }
+            override suspend fun emitPhaseChanged(context: SynchronizationExecutionContext, phase: SynchronizationPhase) =
+                noObserversResult("phase-id")
+            override suspend fun emitCompleted(context: SynchronizationExecutionContext, result: SynchronizationResult) =
+                noObserversResult("completed-id")
+        }
+        val request = makeRequest(SynchronizationDirection.PUSH)
+        val pipeline = FakePipeline(SynchronizationDirection.PUSH) { makeSucceededResult(request) }
+        val resolver = makeResolver()
+        val coordinator = SynchronizationExecutionCoordinator(
+            lifecycleCoordinator = makeInitializedLifecycleCoordinator(),
+            providerResolver = resolver,
+            pipelineRegistry = makePipelineRegistry(pipeline),
+            runtimeDependencies = makeRuntimeDependencies(),
+            lifecycleEventEmitter = capturingEmitter,
+        )
+        val bindings = makeBindings()
+
+        runSuspend { coordinator.execute(request, bindings) }
+
+        assertEquals(1, recordedContexts.size, "Started must be emitted exactly once.")
+        assertSame(request, recordedContexts[0].request, "Exact request must reach the Started emission context.")
+    }
+
+    // =========================================================================
+    // Bidirectional coordinator lifecycle event tests (criteria 21–23)
+    // =========================================================================
+
+    private fun makeBidirectionalCoordinatorWithEmitter(
+        emitter: SynchronizationLifecycleEventEmitter,
+        storage: FakeStorageProvider = FakeStorageProvider(),
+        transport: FakeTransportProvider = FakeTransportProvider(),
+    ): Pair<SynchronizationExecutionCoordinator, SynchronizationProviderBindings> {
+        val biPipeline = BidirectionalSynchronizationPipeline(
+            outboundPipeline = makeOutboundPipeline(),
+            inboundPipeline = makeInboundPipeline(),
+            configuration = BidirectionalPipelineConfiguration(BidirectionalExecutionOrder.OUTBOUND_THEN_INBOUND),
+        )
+        val resolver = makeResolver(storage, transport)
+        val coordinator = SynchronizationExecutionCoordinator(
+            lifecycleCoordinator = makeInitializedLifecycleCoordinator(),
+            providerResolver = resolver,
+            pipelineRegistry = makePipelineRegistry(biPipeline),
+            runtimeDependencies = makeRuntimeDependencies(),
+            lifecycleEventEmitter = emitter,
+        )
+        return Pair(coordinator, makeBindings())
+    }
+
+    @Test
+    fun `bidirectional coordinator execution emits Started exactly once`() {
+        // Criterion 21: Bidirectional execution emits one Started only.
+        // The coordinator emits Started once regardless of whether the selected
+        // pipeline is outbound, inbound, or bidirectional.
+        val emitter = RecordingLifecycleEventEmitter()
+        val (coordinator, bindings) = makeBidirectionalCoordinatorWithEmitter(emitter)
+        val request = makeRequest(SynchronizationDirection.BIDIRECTIONAL)
+
+        runSuspend { coordinator.execute(request, bindings) }
+
+        assertEquals(1, emitter.startedContexts.size, "Bidirectional execution must emit Started exactly once.")
+    }
+
+    @Test
+    fun `bidirectional coordinator execution emits Completed exactly once`() {
+        // Criterion 22: Bidirectional execution emits one Completed only.
+        // The coordinator emits Completed once with the combined pipeline result.
+        val emitter = RecordingLifecycleEventEmitter()
+        val (coordinator, bindings) = makeBidirectionalCoordinatorWithEmitter(emitter)
+        val request = makeRequest(SynchronizationDirection.BIDIRECTIONAL)
+
+        runSuspend { coordinator.execute(request, bindings) }
+
+        assertEquals(1, emitter.completedContexts.size, "Bidirectional execution must emit Completed exactly once.")
+    }
+
+    @Test
+    fun `bidirectional coordinator Completed carries the exact combined pipeline result`() {
+        // Criterion 22/29: Completed must contain the exact SynchronizationResult
+        // returned by the bidirectional pipeline — including any combined-result logic.
+        val emitter = RecordingLifecycleEventEmitter()
+        val (coordinator, bindings) = makeBidirectionalCoordinatorWithEmitter(emitter)
+        val request = makeRequest(SynchronizationDirection.BIDIRECTIONAL)
+
+        val executionResult = runSuspend { coordinator.execute(request, bindings) }
+
+        val executed = assertIs<SynchronizationExecutionResult.Executed>(executionResult)
+        assertEquals(1, emitter.completedResults.size, "Completed must be emitted once.")
+        assertSame(
+            executed.result,
+            emitter.completedResults[0],
+            "Completed must carry the exact combined pipeline result returned by the coordinator.",
+        )
+    }
+
+    @Test
+    fun `bidirectional child pipelines do not emit duplicate Started or Completed events`() {
+        // Child pipelines share the lifecycle emitter through the context but
+        // they do not call emitStarted or emitCompleted — only the coordinator does.
+        // This test verifies that the emitter receives exactly one Started and one
+        // Completed regardless of how many child pipelines run.
+        val emitter = RecordingLifecycleEventEmitter()
+        val (coordinator, bindings) = makeBidirectionalCoordinatorWithEmitter(emitter)
+        val request = makeRequest(SynchronizationDirection.BIDIRECTIONAL)
+
+        runSuspend { coordinator.execute(request, bindings) }
+
+        assertEquals(1, emitter.startedContexts.size, "No child pipeline must emit additional Started events.")
+        assertEquals(1, emitter.completedContexts.size, "No child pipeline must emit additional Completed events.")
+    }
 }
