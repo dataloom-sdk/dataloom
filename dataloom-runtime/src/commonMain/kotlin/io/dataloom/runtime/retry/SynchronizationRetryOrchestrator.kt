@@ -1,12 +1,10 @@
 package io.dataloom.runtime.retry
 
 import io.dataloom.api.provider.ProviderOperationResult
-import io.dataloom.api.retry.RetryDecision
 import io.dataloom.api.retry.RetryEvaluationRequest
 import io.dataloom.api.retry.RetryPolicy
 import io.dataloom.api.scheduling.ScheduleRequest
 import io.dataloom.api.scheduling.SchedulerProvider
-import io.dataloom.api.scheduling.SchedulingDelay
 import io.dataloom.api.synchronization.SynchronizationResult
 
 /**
@@ -128,7 +126,8 @@ public class SynchronizationRetryOrchestrator(
     public suspend fun evaluateAndSchedule(
         request: SynchronizationRetryRequest,
     ): RetryOrchestrationResult {
-        val errors = extractErrors(request.synchronizationResult)
+        // Delegate error extraction to shared package utility.
+        val errors = extractRetryErrors(request.synchronizationResult)
             ?: return RetryOrchestrationResult(
                 status = RetryOrchestrationStatus.NOT_REQUIRED,
                 decisions = emptyList(),
@@ -150,7 +149,8 @@ public class SynchronizationRetryOrchestrator(
             )
         }
 
-        val maxDelay = selectMaxDelay(decisions)
+        // Delegate maximum-delay selection to shared package utility.
+        val maxDelay = selectMaxRetryDelay(decisions)
             ?: return RetryOrchestrationResult(
                 status = RetryOrchestrationStatus.STOPPED,
                 decisions = decisions,
@@ -194,38 +194,4 @@ public class SynchronizationRetryOrchestrator(
             )
         }
     }
-
-    /**
-     * Extracts the canonical errors from a [SynchronizationResult] eligible
-     * for retry evaluation, or returns `null` when the result variant is not
-     * evaluable.
-     *
-     * Returns a non-null, non-empty list for [SynchronizationResult.Failed]
-     * and [SynchronizationResult.PartiallySucceeded].
-     *
-     * Returns `null` for [SynchronizationResult.Succeeded],
-     * [SynchronizationResult.Skipped], and [SynchronizationResult.Cancelled].
-     */
-    private fun extractErrors(result: SynchronizationResult): List<io.dataloom.api.error.DataLoomError>? =
-        when (result) {
-            is SynchronizationResult.Failed -> listOf(result.error)
-            is SynchronizationResult.PartiallySucceeded -> result.errors
-            is SynchronizationResult.Succeeded,
-            is SynchronizationResult.Skipped,
-            is SynchronizationResult.Cancelled,
-            -> null
-        }
-
-    /**
-     * Returns the maximum [SchedulingDelay] from any [RetryDecision.Retry]
-     * decision in [decisions], or `null` when no decision requests retry.
-     *
-     * Stop decisions do not contribute a delay value. Decision order does not
-     * affect maximum selection.
-     */
-    private fun selectMaxDelay(decisions: List<RetryDecision>): SchedulingDelay? =
-        decisions
-            .filterIsInstance<RetryDecision.Retry>()
-            .maxOfOrNull { it.delay.milliseconds }
-            ?.let { SchedulingDelay(it) }
 }
