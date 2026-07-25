@@ -4,12 +4,18 @@ import io.dataloom.api.identifier.ScheduleId
 import io.dataloom.api.model.SynchronizationRequest
 
 /**
- * Immutable scheduling intent for a synchronization workflow.
+ * Immutable scheduling intent for a platform scheduler.
  *
- * A [ScheduleRequest] is a pure data contract that describes which
- * synchronization to schedule, when it should be deferred, what constraints
- * must be satisfied, and how to handle an existing schedule with the same
- * identifier.
+ * A [ScheduleRequest] is a pure data contract that describes what to schedule,
+ * when it should be deferred, what constraints must be satisfied, and how to
+ * handle an existing schedule with the same identifier.
+ *
+ * ## Synchronization intent
+ *
+ * [synchronizationRequest] carries the optional synchronization intent
+ * associated with this schedule. It is non-null for synchronization retry
+ * schedules and null for queue-worker wake-up schedules, which do not carry
+ * a specific synchronization request.
  *
  * ## Construction behaviour
  *
@@ -28,7 +34,10 @@ import io.dataloom.api.model.SynchronizationRequest
  * Equality compares all properties by value.
  *
  * @param id required stable identifier for this scheduled entry.
- * @param synchronizationRequest required immutable synchronization intent.
+ * @param synchronizationRequest optional immutable synchronization intent.
+ *   Non-null for synchronization retry schedules. Null for queue-worker
+ *   wake-up schedules that do not carry a specific synchronization request.
+ *   Defaults to `null`.
  * @param delay minimum scheduling delay. Defaults to [SchedulingDelay.ZERO].
  * @param constraints execution constraints for this schedule. Defaults to
  *   [ScheduleConstraints] with all defaults applied.
@@ -39,8 +48,15 @@ public data class ScheduleRequest(
     /** Required stable identifier for this scheduled entry. */
     public val id: ScheduleId,
 
-    /** Required immutable synchronization intent to be scheduled. */
-    public val synchronizationRequest: SynchronizationRequest,
+    /**
+     * Optional immutable synchronization intent to be scheduled.
+     *
+     * Non-null for synchronization retry schedules. Null for queue-worker
+     * wake-up schedules that do not carry a specific synchronization request.
+     *
+     * Defaults to `null`.
+     */
+    public val synchronizationRequest: SynchronizationRequest? = null,
 
     /**
      * Minimum scheduling delay.
