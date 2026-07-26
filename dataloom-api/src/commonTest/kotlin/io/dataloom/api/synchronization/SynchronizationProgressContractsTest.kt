@@ -82,7 +82,7 @@ class SynchronizationProgressContractsTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `progress preserves phase, completed, unit`() {
+    fun progressPreservesPhaseCompletedAndUnit() {
         val progress: SynchronizationProgress = SynchronizationProgress(
             phase = SynchronizationPhase.PUSHING,
             completed = 10L,

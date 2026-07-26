@@ -41,7 +41,7 @@ class SynchronizationEventContractsTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `started preserves id, request, occurredAt`() {
+    fun startedPreservesIdRequestAndOccurredAt() {
         val id: SynchronizationEventId = SynchronizationEventId("event-001")
         val request: SynchronizationRequest = sampleRequest()
         val occurredAt: DataLoomInstant = sampleInstant()
@@ -197,7 +197,7 @@ class SynchronizationEventContractsTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `retry scheduled preserves attempt, delay, error`() {
+    fun retryScheduledPreservesAttemptDelayAndError() {
         val attempt: RetryAttempt = RetryAttempt(1)
         val delay: SchedulingDelay = SchedulingDelay(5_000L)
         val error: DataLoomError = sampleError()

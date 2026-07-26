@@ -723,7 +723,7 @@ class DurableQueueExecutionProcessorTest {
     }
 
     @Test
-    fun `Reschedule transition uses exact entry ID, lease ID, and outcome fields`() {
+    fun rescheduleTransitionUsesExactEntryIdLeaseIdAndOutcomeFields() {
         val entry = leasedEntry(id = QueueEntryId("entry-resched"))
         val provider = FakeQueueProvider(acquireResponse = entriesResult(entry))
         val attempt = RetryAttempt(3)
@@ -793,7 +793,7 @@ class DurableQueueExecutionProcessorTest {
     }
 
     @Test
-    fun `Failure transition uses exact entry ID, lease ID, error, and disposition`() {
+    fun failureTransitionUsesExactEntryIdLeaseIdErrorAndDisposition() {
         val entry = leasedEntry(id = QueueEntryId("entry-fail"))
         val provider = FakeQueueProvider(acquireResponse = entriesResult(entry))
         val outcome = QueueEntryExecutionOutcome.Failed(

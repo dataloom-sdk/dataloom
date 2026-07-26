@@ -1,5 +1,7 @@
 package io.dataloom.api.identifier
 
+import kotlin.jvm.JvmInline
+
 /**
  * Canonical identifier for a workflow.
  *

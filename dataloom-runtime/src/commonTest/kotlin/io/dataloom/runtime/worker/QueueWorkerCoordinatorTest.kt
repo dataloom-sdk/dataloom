@@ -831,7 +831,7 @@ class QueueWorkerCoordinatorTest {
     }
 
     @Test
-    fun `rescheduled entry — delay equals max(0, earliestAvailableAt - now)`() {
+    fun rescheduledEntryDelayEqualsMaxZeroEarliestAvailableAtMinusNow() {
         val entry = leasedEntry()
         val provider = FakeQueueProvider(acquireResponse = entriesResult(entry))
         val scheduler = FakeSchedulerProvider()

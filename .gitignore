@@ -41,3 +41,14 @@ replay_pid*
 
 # macOS metadata
 .DS_Store
+
+# Apple/Kotlin-Native generated artifacts
+# XCFramework build outputs produced by assembleDataLoomReleaseXCFramework /
+# assembleDataLoomDebugXCFramework tasks.  Do not commit generated binaries.
+*.xcframework/
+*.xcarchive/
+dataloom-apple/build/XCFrameworks/
+
+# Swift Package Manager build artifacts produced by the apple-smoke fixture.
+apple-smoke/.build/
+apple-smoke/DataLoom.xcframework/
