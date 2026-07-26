@@ -40,17 +40,12 @@ android {
 }
 
 dependencies {
-    // DataLoom public API contracts and runtime queue-worker contracts
     implementation(project(":dataloom-api"))
     implementation(project(":dataloom-runtime"))
-
-    // AndroidX WorkManager with coroutines support
     implementation(libs.workmanager.ktx)
-
-    // Kotlin coroutines for Android
     implementation(libs.kotlinx.coroutines.android)
 
-    // Local JVM unit tests
     testImplementation(kotlin("test-junit"))
+    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockito.kotlin)
 }
