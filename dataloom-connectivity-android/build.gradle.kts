@@ -44,5 +44,6 @@ dependencies {
 
     // Local JVM unit tests
     testImplementation(kotlin("test"))
+    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockito.kotlin)
 }
