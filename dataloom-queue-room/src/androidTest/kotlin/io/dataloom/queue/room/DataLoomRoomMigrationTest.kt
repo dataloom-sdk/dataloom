@@ -1,5 +1,6 @@
 package io.dataloom.queue.room
 
+import androidx.room.Room
 import androidx.room.testing.MigrationTestHelper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -25,8 +26,20 @@ class DataLoomRoomMigrationTest {
     )
 
     @Test
-    fun version1SchemaCanBeCreatedFromCommittedAsset() {
+    fun version1SchemaCanBeCreatedAndOpenedByCurrentDatabase() {
         migrationTestHelper.createDatabase(TEST_DATABASE, 1).close()
+
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val database = Room.databaseBuilder(
+            context,
+            DataLoomRoomDatabase::class.java,
+            TEST_DATABASE,
+        ).build()
+        try {
+            database.openHelper.writableDatabase
+        } finally {
+            database.close()
+        }
     }
 
     private companion object {

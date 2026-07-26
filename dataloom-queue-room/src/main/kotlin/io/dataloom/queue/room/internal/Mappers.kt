@@ -2,6 +2,11 @@ package io.dataloom.queue.room.internal
 
 import io.dataloom.api.context.DataLoomMetadata
 import io.dataloom.api.context.ExecutionContext
+import io.dataloom.api.error.DataLoomError
+import io.dataloom.api.error.ErrorCategory
+import io.dataloom.api.error.ErrorCode
+import io.dataloom.api.error.ErrorSeverity
+import io.dataloom.api.error.Recoverability
 import io.dataloom.api.identifier.ConfigurationVersion
 import io.dataloom.api.identifier.CorrelationId
 import io.dataloom.api.identifier.ExecutionId
@@ -64,6 +69,9 @@ internal fun QueueEntry.toEntity(): QueueEntryEntity {
         leaseAcquiredAtMs = lease?.acquiredAt?.epochMilliseconds,
         leaseExpiresAtMs = lease?.expiresAt?.epochMilliseconds,
         lastErrorCode = lastError?.code?.value,
+        lastErrorCategory = lastError?.category?.name,
+        lastErrorSeverity = lastError?.severity?.name,
+        lastErrorRecoverability = lastError?.recoverability?.name,
         lastErrorMessage = lastError?.message,
         entryMetadataJson = metadata.toJsonOrNull(),
     )
@@ -83,6 +91,7 @@ internal fun QueueEntryEntity.toDomain(): QueueEntry {
     val priority = WorkflowPriority.valueOf(priority)
     val execMetadata = execMetadataJson?.toMetadata() ?: DataLoomMetadata.Empty
     val entryMeta = entryMetadataJson?.toMetadata() ?: DataLoomMetadata.Empty
+    val lastError = toLastErrorOrNull()
 
     val executionContext = ExecutionContext(
         executionId = ExecutionId(execExecutionId),
@@ -129,8 +138,49 @@ internal fun QueueEntryEntity.toDomain(): QueueEntry {
         availableAt = DataLoomInstant(availableAtMs),
         retryAttempt = retryAttempt,
         lease = lease,
+        lastError = lastError,
         metadata = entryMeta,
     )
+}
+
+/**
+ * Reconstructs the complete canonical error contract from its flat columns.
+ *
+ * A partially populated error is corrupt durable state. Failing closed keeps
+ * the caller from receiving a misleading error with fabricated defaults.
+ */
+private fun QueueEntryEntity.toLastErrorOrNull(): DataLoomError? {
+    val columns = listOf(
+        lastErrorCode,
+        lastErrorCategory,
+        lastErrorSeverity,
+        lastErrorRecoverability,
+        lastErrorMessage,
+    )
+    if (columns.all { it == null }) return null
+
+    check(columns.all { it != null }) {
+        "Persisted queue error columns must be either all null or all non-null."
+    }
+
+    return PersistedQueueError(
+        code = ErrorCode(checkNotNull(lastErrorCode)),
+        category = enumValueOf<ErrorCategory>(checkNotNull(lastErrorCategory)),
+        severity = enumValueOf<ErrorSeverity>(checkNotNull(lastErrorSeverity)),
+        recoverability = enumValueOf<Recoverability>(checkNotNull(lastErrorRecoverability)),
+        message = checkNotNull(lastErrorMessage),
+    )
+}
+
+/** Canonical error reconstructed from durable, sanitized queue columns. */
+private data class PersistedQueueError(
+    override val code: ErrorCode,
+    override val category: ErrorCategory,
+    override val severity: ErrorSeverity,
+    override val recoverability: Recoverability,
+    override val message: String,
+) : DataLoomError {
+    override val cause: Throwable? = null
 }
 
 // ── DataLoomMetadata ↔ JSON ──────────────────────────────────────────────────
@@ -153,15 +203,12 @@ private fun DataLoomMetadata.toJsonOrNull(): String? {
 /**
  * Deserializes a compact JSON string back to a [DataLoomMetadata] instance.
  *
- * Returns [DataLoomMetadata.Empty] when parsing fails.
+ * Invalid JSON is treated as corrupt durable state and propagates to the
+ * provider's sanitized database-failure mapping.
  */
 private fun String.toMetadata(): DataLoomMetadata {
-    return try {
-        val json = JSONObject(this)
-        val map = mutableMapOf<String, String>()
-        json.keys().forEach { key -> map[key] = json.getString(key) }
-        DataLoomMetadata.of(map)
-    } catch (_: Exception) {
-        DataLoomMetadata.Empty
-    }
+    val json = JSONObject(this)
+    val map = mutableMapOf<String, String>()
+    json.keys().forEach { key -> map[key] = json.getString(key) }
+    return DataLoomMetadata.of(map)
 }

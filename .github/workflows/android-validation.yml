@@ -117,13 +117,48 @@ jobs:
             :dataloom-queue-room:assembleDebugAndroidTest
           run_gradle_check room-tests :dataloom-queue-room:testDebugUnitTest
           run_gradle_check room-lint :dataloom-queue-room:lintDebug
-          run_gradle_check room-managed-device \
-            :dataloom-queue-room:pixel2Api35DebugAndroidTest
 
           echo "::group::room-schema"
-          if [[ ! -f dataloom-queue-room/schemas/io.dataloom.queue.room.internal.DataLoomRoomDatabase/1.json ]]; then
+          schema_file="dataloom-queue-room/schemas/io.dataloom.queue.room.internal.DataLoomRoomDatabase/1.json"
+          generated_database="dataloom-queue-room/build/generated/ksp/debug/kotlin/io/dataloom/queue/room/internal/DataLoomRoomDatabase_Impl.kt"
+          if [[ ! -f "$schema_file" ]]; then
             echo "Missing committed Room schema version 1."
             failures=1
+          elif [[ ! -f "$generated_database" ]]; then
+            echo "Missing KSP-generated Room database implementation."
+            failures=1
+          else
+            python3 - "$schema_file" "$generated_database" <<'PY'
+          import json
+          import pathlib
+          import re
+          import sys
+
+          schema_path = pathlib.Path(sys.argv[1])
+          generated_path = pathlib.Path(sys.argv[2])
+          schema_hash = json.loads(schema_path.read_text())["database"]["identityHash"]
+          if re.fullmatch(r"[0-9a-f]{32}", schema_hash) is None:
+              raise SystemExit(f"Invalid committed Room identity hash: {schema_hash!r}")
+
+          generated_source = generated_path.read_text()
+          generated_match = re.search(
+              r'RoomOpenDelegate\(\s*\d+,\s*"([0-9a-f]{32})"',
+              generated_source,
+          )
+          if generated_match is None:
+              raise SystemExit("Unable to read the KSP-generated Room identity hash.")
+
+          generated_hash = generated_match.group(1)
+          if schema_hash != generated_hash:
+              raise SystemExit(
+                  "Committed Room schema identity hash does not match KSP output: "
+                  f"{schema_hash} != {generated_hash}",
+              )
+          print(f"Verified Room schema identity hash: {schema_hash}")
+          PY
+            if [[ $? -ne 0 ]]; then
+              failures=1
+            fi
           fi
           git status --porcelain --untracked-files=all -- dataloom-queue-room/schemas \
             2>&1 | tee android-ci-logs/room-schema.log
@@ -136,6 +171,13 @@ jobs:
             failures=1
           fi
           echo "::endgroup::"
+
+          if [[ $failures -eq 0 ]]; then
+            run_gradle_check room-managed-device \
+              :dataloom-queue-room:pixel2Api35DebugAndroidTest
+          else
+            echo "SKIPPED: room-managed-device because an earlier required check failed."
+          fi
 
           run_gradle_check android-build \
             :dataloom-connectivity-android:build \

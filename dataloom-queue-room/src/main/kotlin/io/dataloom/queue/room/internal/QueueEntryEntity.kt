@@ -174,6 +174,18 @@ internal data class QueueEntryEntity(
     @ColumnInfo(name = "last_error_code")
     val lastErrorCode: String?,
 
+    /** ErrorCategory enum name from the last processing failure. */
+    @ColumnInfo(name = "last_error_category")
+    val lastErrorCategory: String?,
+
+    /** ErrorSeverity enum name from the last processing failure. */
+    @ColumnInfo(name = "last_error_severity")
+    val lastErrorSeverity: String?,
+
+    /** Recoverability enum name from the last processing failure. */
+    @ColumnInfo(name = "last_error_recoverability")
+    val lastErrorRecoverability: String?,
+
     /**
      * Canonical error message from the last processing failure.
      *

@@ -6,6 +6,11 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.dataloom.api.context.DataLoomMetadata
 import io.dataloom.api.context.ExecutionContext
+import io.dataloom.api.error.DataLoomError
+import io.dataloom.api.error.ErrorCategory
+import io.dataloom.api.error.ErrorCode
+import io.dataloom.api.error.ErrorSeverity
+import io.dataloom.api.error.Recoverability
 import io.dataloom.api.identifier.CorrelationId
 import io.dataloom.api.identifier.ExecutionId
 import io.dataloom.api.identifier.QueueConsumerId
@@ -25,6 +30,8 @@ import io.dataloom.api.queue.QueueCompletionRequest
 import io.dataloom.api.queue.QueueEnqueueRequest
 import io.dataloom.api.queue.QueueEntry
 import io.dataloom.api.queue.QueueEntryState
+import io.dataloom.api.queue.QueueRescheduleRequest
+import io.dataloom.api.retry.RetryAttempt
 import io.dataloom.api.time.DataLoomInstant
 import io.dataloom.queue.room.internal.DataLoomRoomDatabase
 import kotlinx.coroutines.async
@@ -36,6 +43,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -228,6 +236,100 @@ class RoomQueueProviderInstrumentedTest {
     }
 
     @Test
+    fun reschedulePersistsCanonicalErrorAndRecoveryClearsRetryState() = runBlocking<Unit> {
+        enqueue(makeEntry("retry", enqueuedAt = 1_000L))
+        assertIs<QueueAcquireResult.Entries>(
+            acquire(1_000L, leaseId = "first-lease"),
+        )
+        val error = TestDataLoomError(
+            code = ErrorCode("NETWORK_TEMPORARY"),
+            category = ErrorCategory.NETWORK,
+            severity = ErrorSeverity.WARNING,
+            recoverability = Recoverability.RECOVERABLE,
+            message = "A temporary network failure occurred.",
+        )
+
+        assertIs<ProviderOperationResult.Success<Unit>>(
+            provider.reschedule(
+                QueueRescheduleRequest(
+                    entryId = QueueEntryId("retry"),
+                    leaseId = QueueLeaseId("first-lease"),
+                    retryAttempt = RetryAttempt(2),
+                    availableAt = DataLoomInstant(2_000L),
+                    error = error,
+                ),
+            ),
+        )
+
+        database.openHelper.readableDatabase.query(
+            """
+            SELECT last_error_code, last_error_category, last_error_severity,
+                   last_error_recoverability, last_error_message
+            FROM queue_entries
+            WHERE entry_id = 'retry'
+            """.trimIndent(),
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(error.code.value, cursor.getString(0))
+            assertEquals(error.category.name, cursor.getString(1))
+            assertEquals(error.severity.name, cursor.getString(2))
+            assertEquals(error.recoverability.name, cursor.getString(3))
+            assertEquals(error.message, cursor.getString(4))
+        }
+
+        val retried = assertIs<QueueAcquireResult.Entries>(
+            acquire(2_000L, leaseId = "retry-lease", expiresAt = 3_000L),
+        ).entries.single()
+        assertEquals(2, retried.retryAttempt?.number)
+        assertNull(retried.lastError)
+
+        provider.recoverExpiredLeases(
+            ExpiredLeaseRecoveryRequest(currentTime = DataLoomInstant(4_000L)),
+        )
+        val recovered = assertIs<QueueAcquireResult.Entries>(
+            acquire(4_000L, leaseId = "recovered-lease"),
+        ).entries.single()
+        assertNull(recovered.retryAttempt)
+        assertNull(recovered.lastError)
+    }
+
+    @Test
+    fun corruptedMetadataFailsClosedWithoutCommittingLease() = runBlocking<Unit> {
+        enqueue(makeEntry("corrupt", enqueuedAt = 1_000L))
+        database.openHelper.writableDatabase.execSQL(
+            """
+            UPDATE queue_entries
+            SET entry_metadata_json = '{'
+            WHERE entry_id = 'corrupt'
+            """.trimIndent(),
+        )
+
+        val result = provider.acquire(
+            QueueAcquireRequest(
+                consumerId = QueueConsumerId("consumer-corrupt"),
+                leaseId = QueueLeaseId("lease-corrupt"),
+                acquiredAt = DataLoomInstant(1_000L),
+                leaseExpiresAt = DataLoomInstant(2_000L),
+                maxEntries = 1,
+            ),
+        )
+        val failure = assertIs<ProviderOperationResult.Failure>(result)
+        assertEquals("QUEUE_DATABASE_FAILURE", failure.error.code.value)
+
+        database.openHelper.readableDatabase.query(
+            """
+            SELECT state, lease_id
+            FROM queue_entries
+            WHERE entry_id = 'corrupt'
+            """.trimIndent(),
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("PENDING", cursor.getString(0))
+            assertTrue(cursor.isNull(1))
+        }
+    }
+
+    @Test
     fun queueSurvivesDatabaseCloseAndReopen() = runBlocking {
         val databaseName = "dataloom-reopen-${System.nanoTime()}.db"
         context.deleteDatabase(databaseName)
@@ -264,4 +366,13 @@ class RoomQueueProviderInstrumentedTest {
             assertTrue(context.deleteDatabase(databaseName))
         }
     }
+
+    private data class TestDataLoomError(
+        override val code: ErrorCode,
+        override val category: ErrorCategory,
+        override val severity: ErrorSeverity,
+        override val recoverability: Recoverability,
+        override val message: String,
+        override val cause: Throwable? = null,
+    ) : DataLoomError
 }

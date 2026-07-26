@@ -25,7 +25,6 @@ import io.dataloom.api.queue.QueueRescheduleRequest
 import io.dataloom.queue.room.internal.DataLoomRoomDatabase
 import io.dataloom.queue.room.internal.QueueEntryDao
 import io.dataloom.queue.room.internal.QueueProviderError
-import io.dataloom.queue.room.internal.toDomain
 import io.dataloom.queue.room.internal.toEntity
 import java.util.concurrent.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -102,7 +101,7 @@ public class RoomQueueProvider(
         request: QueueEnqueueRequest,
     ): ProviderOperationResult<Unit> = executeDatabaseOperation {
         try {
-            dao.insert(request.entry.toEntity())
+            dao.insert(request.entry.copy(lastError = null).toEntity())
             ProviderOperationResult.Success(Unit)
         } catch (_: SQLiteConstraintException) {
             ProviderOperationResult.Failure(
@@ -135,7 +134,7 @@ public class RoomQueueProvider(
             ProviderOperationResult.Success(
                 QueueAcquireResult.Entries(
                     lease = lease,
-                    entries = acquired.map { it.toDomain() },
+                    entries = acquired,
                 ),
             )
         }
@@ -165,6 +164,9 @@ public class RoomQueueProvider(
                 availableAtMs = request.availableAt.epochMilliseconds,
                 retryAttemptNumber = request.retryAttempt.number,
                 errorCode = request.error.code.value,
+                errorCategory = request.error.category.name,
+                errorSeverity = request.error.severity.name,
+                errorRecoverability = request.error.recoverability.name,
                 errorMessage = request.error.message,
             ),
             request.entryId.value,
@@ -185,6 +187,9 @@ public class RoomQueueProvider(
                 leaseId = request.leaseId.value,
                 targetState = targetState,
                 errorCode = request.error.code.value,
+                errorCategory = request.error.category.name,
+                errorSeverity = request.error.severity.name,
+                errorRecoverability = request.error.recoverability.name,
                 errorMessage = request.error.message,
             ),
             request.entryId.value,

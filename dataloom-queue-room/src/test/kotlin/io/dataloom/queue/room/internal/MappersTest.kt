@@ -1,6 +1,11 @@
 package io.dataloom.queue.room.internal
 
 import io.dataloom.api.context.ExecutionContext
+import io.dataloom.api.error.DataLoomError
+import io.dataloom.api.error.ErrorCategory
+import io.dataloom.api.error.ErrorCode
+import io.dataloom.api.error.ErrorSeverity
+import io.dataloom.api.error.Recoverability
 import io.dataloom.api.identifier.ConfigurationVersion
 import io.dataloom.api.identifier.CorrelationId
 import io.dataloom.api.identifier.ExecutionId
@@ -26,6 +31,7 @@ import io.dataloom.api.retry.RetryAttempt
 import io.dataloom.api.time.DataLoomInstant
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
 /** Pure mapper tests; Android JSON metadata round trips are covered by instrumentation tests. */
@@ -126,4 +132,68 @@ class MappersTest {
         )
         assertEquals(original, original.toEntity().toDomain())
     }
+
+    @Test
+    fun `round trip preserves every canonical last error field`() {
+        val originalError = TestDataLoomError(
+            code = ErrorCode("NETWORK_TEMPORARY"),
+            category = ErrorCategory.NETWORK,
+            severity = ErrorSeverity.WARNING,
+            recoverability = Recoverability.RECOVERABLE,
+            message = "A temporary network failure occurred.",
+        )
+        val original = QueueEntry(
+            id = QueueEntryId("retry-with-error"),
+            synchronizationRequest = request(),
+            state = QueueEntryState.RETRY_WAITING,
+            enqueuedAt = DataLoomInstant(1_000L),
+            availableAt = DataLoomInstant(2_000L),
+            retryAttempt = RetryAttempt(2),
+            lastError = originalError,
+        )
+
+        val entity = original.toEntity()
+        val restoredError = checkNotNull(entity.toDomain().lastError)
+
+        assertEquals(originalError.code, restoredError.code)
+        assertEquals(originalError.category, restoredError.category)
+        assertEquals(originalError.severity, restoredError.severity)
+        assertEquals(originalError.recoverability, restoredError.recoverability)
+        assertEquals(originalError.message, restoredError.message)
+        assertNull(restoredError.cause)
+    }
+
+    @Test
+    fun `partially populated canonical error fails closed`() {
+        val original = QueueEntry(
+            id = QueueEntryId("corrupt-error"),
+            synchronizationRequest = request(),
+            state = QueueEntryState.RETRY_WAITING,
+            enqueuedAt = DataLoomInstant(1_000L),
+            availableAt = DataLoomInstant(2_000L),
+            retryAttempt = RetryAttempt(1),
+            lastError = TestDataLoomError(
+                code = ErrorCode("STORAGE_TEMPORARY"),
+                category = ErrorCategory.STORAGE,
+                severity = ErrorSeverity.ERROR,
+                recoverability = Recoverability.RECOVERABLE,
+                message = "A temporary storage failure occurred.",
+            ),
+        )
+
+        val corrupt = original.toEntity().copy(lastErrorCategory = null)
+
+        assertFailsWith<IllegalStateException> {
+            corrupt.toDomain()
+        }
+    }
+
+    private data class TestDataLoomError(
+        override val code: ErrorCode,
+        override val category: ErrorCategory,
+        override val severity: ErrorSeverity,
+        override val recoverability: Recoverability,
+        override val message: String,
+        override val cause: Throwable? = null,
+    ) : DataLoomError
 }

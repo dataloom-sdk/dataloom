@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import io.dataloom.api.queue.QueueEntry
 
 /** Room DAO for bounded, lease-aware durable queue persistence. */
 @Dao
@@ -34,7 +35,12 @@ internal abstract class QueueEntryDao {
             lease_id = :leaseId,
             lease_consumer_id = :consumerId,
             lease_acquired_at_ms = :acquiredAtMs,
-            lease_expires_at_ms = :expiresAtMs
+            lease_expires_at_ms = :expiresAtMs,
+            last_error_code = NULL,
+            last_error_category = NULL,
+            last_error_severity = NULL,
+            last_error_recoverability = NULL,
+            last_error_message = NULL
         WHERE entry_id = :entryId
           AND state IN ('PENDING', 'RETRY_WAITING')
           AND available_at_ms <= :acquiredAtMs
@@ -57,7 +63,7 @@ internal abstract class QueueEntryDao {
         acquiredAtMs: Long,
         expiresAtMs: Long,
         limit: Int,
-    ): List<QueueEntryEntity> {
+    ): List<QueueEntry> {
         val eligible = selectEligibleEntries(nowMs, limit)
         if (eligible.isEmpty()) return emptyList()
 
@@ -78,7 +84,12 @@ internal abstract class QueueEntryDao {
                             leaseConsumerId = consumerId,
                             leaseAcquiredAtMs = acquiredAtMs,
                             leaseExpiresAtMs = expiresAtMs,
-                        ),
+                            lastErrorCode = null,
+                            lastErrorCategory = null,
+                            lastErrorSeverity = null,
+                            lastErrorRecoverability = null,
+                            lastErrorMessage = null,
+                        ).toDomain(),
                     )
                 }
             }
@@ -92,7 +103,12 @@ internal abstract class QueueEntryDao {
             lease_id = NULL,
             lease_consumer_id = NULL,
             lease_acquired_at_ms = NULL,
-            lease_expires_at_ms = NULL
+            lease_expires_at_ms = NULL,
+            last_error_code = NULL,
+            last_error_category = NULL,
+            last_error_severity = NULL,
+            last_error_recoverability = NULL,
+            last_error_message = NULL
         WHERE entry_id = :entryId
           AND state = 'LEASED'
           AND lease_id = :leaseId
@@ -110,6 +126,9 @@ internal abstract class QueueEntryDao {
             available_at_ms = :availableAtMs,
             retry_attempt_number = :retryAttemptNumber,
             last_error_code = :errorCode,
+            last_error_category = :errorCategory,
+            last_error_severity = :errorSeverity,
+            last_error_recoverability = :errorRecoverability,
             last_error_message = :errorMessage,
             lease_id = NULL,
             lease_consumer_id = NULL,
@@ -126,7 +145,10 @@ internal abstract class QueueEntryDao {
         availableAtMs: Long,
         retryAttemptNumber: Int,
         errorCode: String,
-        errorMessage: String?,
+        errorCategory: String,
+        errorSeverity: String,
+        errorRecoverability: String,
+        errorMessage: String,
     ): Int
 
     @Query(
@@ -134,6 +156,9 @@ internal abstract class QueueEntryDao {
         UPDATE queue_entries
         SET state = :targetState,
             last_error_code = :errorCode,
+            last_error_category = :errorCategory,
+            last_error_severity = :errorSeverity,
+            last_error_recoverability = :errorRecoverability,
             last_error_message = :errorMessage,
             lease_id = NULL,
             lease_consumer_id = NULL,
@@ -149,13 +174,21 @@ internal abstract class QueueEntryDao {
         leaseId: String,
         targetState: String,
         errorCode: String,
-        errorMessage: String?,
+        errorCategory: String,
+        errorSeverity: String,
+        errorRecoverability: String,
+        errorMessage: String,
     ): Int
 
     @Query(
         """
         UPDATE queue_entries
-        SET state = 'CANCELLED'
+        SET state = 'CANCELLED',
+            last_error_code = NULL,
+            last_error_category = NULL,
+            last_error_severity = NULL,
+            last_error_recoverability = NULL,
+            last_error_message = NULL
         WHERE entry_id = :entryId
           AND state IN ('PENDING', 'RETRY_WAITING')
         """,
@@ -166,10 +199,16 @@ internal abstract class QueueEntryDao {
         """
         UPDATE queue_entries
         SET state = 'PENDING',
+            retry_attempt_number = NULL,
             lease_id = NULL,
             lease_consumer_id = NULL,
             lease_acquired_at_ms = NULL,
-            lease_expires_at_ms = NULL
+            lease_expires_at_ms = NULL,
+            last_error_code = NULL,
+            last_error_category = NULL,
+            last_error_severity = NULL,
+            last_error_recoverability = NULL,
+            last_error_message = NULL
         WHERE state = 'LEASED'
           AND lease_expires_at_ms < :nowMs
         """,

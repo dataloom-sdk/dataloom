@@ -1,6 +1,11 @@
 package io.dataloom.queue.room
 
 import io.dataloom.api.context.ExecutionContext
+import io.dataloom.api.error.DataLoomError
+import io.dataloom.api.error.ErrorCategory
+import io.dataloom.api.error.ErrorCode
+import io.dataloom.api.error.ErrorSeverity
+import io.dataloom.api.error.Recoverability
 import io.dataloom.api.identifier.CorrelationId
 import io.dataloom.api.identifier.ExecutionId
 import io.dataloom.api.identifier.QueueConsumerId
@@ -23,6 +28,10 @@ import io.dataloom.api.queue.QueueCompletionRequest
 import io.dataloom.api.queue.QueueEnqueueRequest
 import io.dataloom.api.queue.QueueEntry
 import io.dataloom.api.queue.QueueEntryState
+import io.dataloom.api.queue.QueueFailureDisposition
+import io.dataloom.api.queue.QueueFailureRequest
+import io.dataloom.api.queue.QueueRescheduleRequest
+import io.dataloom.api.retry.RetryAttempt
 import io.dataloom.api.time.DataLoomInstant
 import io.dataloom.queue.room.internal.DataLoomRoomDatabase
 import io.dataloom.queue.room.internal.QueueEntryDao
@@ -163,6 +172,66 @@ class RoomQueueProviderTest {
     }
 
     @Test
+    fun `reschedule persists every canonical error field`() {
+        runBlocking {
+            whenever(
+                dao.rescheduleEntry(
+                    eq("entry-1"),
+                    eq("lease-1"),
+                    eq(3_000L),
+                    eq(2),
+                    eq("NETWORK_TEMPORARY"),
+                    eq("NETWORK"),
+                    eq("WARNING"),
+                    eq("RECOVERABLE"),
+                    eq("A temporary network failure occurred."),
+                ),
+            ).thenReturn(1)
+
+            val result = provider.reschedule(
+                QueueRescheduleRequest(
+                    entryId = QueueEntryId("entry-1"),
+                    leaseId = QueueLeaseId("lease-1"),
+                    retryAttempt = RetryAttempt(2),
+                    availableAt = DataLoomInstant(3_000L),
+                    error = testError(),
+                ),
+            )
+
+            assertIs<ProviderOperationResult.Success<Unit>>(result)
+        }
+    }
+
+    @Test
+    fun `fail persists every canonical error field and disposition`() {
+        runBlocking {
+            whenever(
+                dao.failEntry(
+                    eq("entry-1"),
+                    eq("lease-1"),
+                    eq("DEAD_LETTER"),
+                    eq("NETWORK_TEMPORARY"),
+                    eq("NETWORK"),
+                    eq("WARNING"),
+                    eq("RECOVERABLE"),
+                    eq("A temporary network failure occurred."),
+                ),
+            ).thenReturn(1)
+
+            val result = provider.fail(
+                QueueFailureRequest(
+                    entryId = QueueEntryId("entry-1"),
+                    leaseId = QueueLeaseId("lease-1"),
+                    error = testError(),
+                    disposition = QueueFailureDisposition.DEAD_LETTER,
+                ),
+            )
+
+            assertIs<ProviderOperationResult.Success<Unit>>(result)
+        }
+    }
+
+    @Test
     fun `cancel returns success for a pending entry`() {
         runBlocking {
             whenever(dao.cancelEntry("entry-1")).thenReturn(1)
@@ -187,4 +256,21 @@ class RoomQueueProviderTest {
             assertEquals(3, success.value.recoveredEntries)
         }
     }
+
+    private fun testError(): DataLoomError = TestDataLoomError(
+        code = ErrorCode("NETWORK_TEMPORARY"),
+        category = ErrorCategory.NETWORK,
+        severity = ErrorSeverity.WARNING,
+        recoverability = Recoverability.RECOVERABLE,
+        message = "A temporary network failure occurred.",
+    )
+
+    private data class TestDataLoomError(
+        override val code: ErrorCode,
+        override val category: ErrorCategory,
+        override val severity: ErrorSeverity,
+        override val recoverability: Recoverability,
+        override val message: String,
+        override val cause: Throwable? = null,
+    ) : DataLoomError
 }
