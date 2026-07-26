@@ -1,4 +1,23 @@
 pluginManagement {
+    // Android implementation modules and the io.dataloom.android.library
+    // convention plugin require the Android Gradle Plugin and access to
+    // dl.google.com.  Both are gated on DATALOOM_ANDROID_BUILD=true so that
+    // KMP-only builds (PR validation, JVM, Apple) never contact dl.google.com.
+    val isAndroidBuildEnabled = System.getenv("DATALOOM_ANDROID_BUILD") == "true"
+
+    // build-logic provides KMP convention plugins (io.dataloom.kotlin.*).
+    // Declared here (inside pluginManagement) so that the plugins {} DSL in
+    // every module can resolve it before any build script is evaluated.
+    includeBuild("build-logic")
+
+    // build-logic-android provides the io.dataloom.android.library convention
+    // plugin.  It depends on the Android Gradle Plugin and is therefore only
+    // included when DATALOOM_ANDROID_BUILD=true, keeping dl.google.com
+    // entirely out of KMP-only builds.
+    if (isAndroidBuildEnabled) {
+        includeBuild("build-logic-android")
+    }
+
     repositories {
         gradlePluginPortal()
         mavenCentral()
@@ -15,9 +34,6 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "dataloom"
-
-// Build-logic contains reusable convention plugins for all DataLoom modules.
-includeBuild("build-logic")
 
 include(
     ":dataloom-api",
@@ -66,3 +82,5 @@ val isAppleHost: Boolean = run {
 if (isAppleHost) {
     include(":dataloom-apple")
 }
+
+
