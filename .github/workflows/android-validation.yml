@@ -48,35 +48,66 @@ jobs:
       - name: Verify Gradle version
         run: ./gradlew --version
 
+      - name: Reject accidentally committed Gradle plugin metadata
+        shell: bash
+        run: |
+          if [[ -d META-INF/gradle-plugins ]]; then
+            echo "Generated META-INF/gradle-plugins must not be committed."
+            find META-INF/gradle-plugins -type f -print
+            exit 1
+          fi
+
       - name: Verify project structure includes Android modules
-        run: ./gradlew projects
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew projects \
+            --no-configuration-cache \
+            --stacktrace \
+            --warning-mode all \
+            --console=plain 2>&1 | tee android-projects.log
+
+      - name: Upload Android project configuration log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-projects-${{ github.run_id }}-${{ github.run_attempt }}
+          path: android-projects.log
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Assemble dataloom-connectivity-android
-        run: ./gradlew :dataloom-connectivity-android:assemble
+        run: ./gradlew :dataloom-connectivity-android:assembleDebug :dataloom-connectivity-android:assembleRelease
 
       - name: Run dataloom-connectivity-android tests
-        run: ./gradlew :dataloom-connectivity-android:test
+        run: ./gradlew :dataloom-connectivity-android:testDebugUnitTest
 
       - name: Lint dataloom-connectivity-android
-        run: ./gradlew :dataloom-connectivity-android:lint
+        run: ./gradlew :dataloom-connectivity-android:lintDebug
 
       - name: Assemble dataloom-scheduler-workmanager
-        run: ./gradlew :dataloom-scheduler-workmanager:assemble
+        run: ./gradlew :dataloom-scheduler-workmanager:assembleDebug :dataloom-scheduler-workmanager:assembleRelease
 
       - name: Run dataloom-scheduler-workmanager tests
-        run: ./gradlew :dataloom-scheduler-workmanager:test
+        run: ./gradlew :dataloom-scheduler-workmanager:testDebugUnitTest
 
       - name: Lint dataloom-scheduler-workmanager
-        run: ./gradlew :dataloom-scheduler-workmanager:lint
+        run: ./gradlew :dataloom-scheduler-workmanager:lintDebug
 
       - name: Assemble dataloom-queue-room
-        run: ./gradlew :dataloom-queue-room:assemble
+        run: ./gradlew :dataloom-queue-room:assembleDebug :dataloom-queue-room:assembleRelease
 
       - name: Run dataloom-queue-room tests
-        run: ./gradlew :dataloom-queue-room:test
+        run: ./gradlew :dataloom-queue-room:testDebugUnitTest
 
       - name: Lint dataloom-queue-room
-        run: ./gradlew :dataloom-queue-room:lint
+        run: ./gradlew :dataloom-queue-room:lintDebug
+
+      - name: Verify committed Room schema is current
+        shell: bash
+        run: |
+          test -f dataloom-queue-room/schemas/io.dataloom.queue.room.internal.DataLoomRoomDatabase/1.json
+          git diff --exit-code -- dataloom-queue-room/schemas
 
       - name: Build all Android modules
         run: ./gradlew :dataloom-connectivity-android:build :dataloom-scheduler-workmanager:build :dataloom-queue-room:build

@@ -1,8 +1,7 @@
 [versions]
 kotlin = "2.4.10"
-# Kotlin 2.4.10 officially supports AGP versions up to 9.1.0. Newer versions like 9.1.1
-# remove legacy BaseVariant classes, causing KotlinMultiplatform target resolution failure
-# when com.android.library is loaded in composite builds/classloaders. Keep at 9.1.0.
+# Kotlin 2.4 class files require AGP 9.1.0 or newer. Keep one AGP version
+# across the root build and all Android integration modules.
 agp = "9.1.0"
 android-compileSdk = "35"
 android-minSdk = "21"
@@ -10,13 +9,14 @@ android-targetSdk = "35"
 kotlinx-coroutines = "1.10.2"
 workmanager = "2.10.1"
 room = "2.7.1"
-ksp = "2.4.10-1.0.31"
+# KSP 2.3.1+ supports AGP 9 built-in Kotlin. Use the current stable KSP2 line.
+ksp = "2.3.9"
 mockito-kotlin = "5.4.0"
 
 [libraries]
 # Kotlin Gradle plugin dependency used by build-logic convention plugins
 kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
-# Android Gradle plugin dependency used by build-logic convention plugins
+# Android Gradle plugin dependency retained for explicit build-tool inspection
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
 # Kotlin coroutines for Android
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }
@@ -33,6 +33,5 @@ mockito-kotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", versio
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

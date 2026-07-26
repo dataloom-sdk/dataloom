@@ -13,17 +13,12 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-private const val DEFAULT_COMPILE_SDK = 35
-private const val DEFAULT_MIN_SDK = 21
-
 android {
     namespace = "io.dataloom.queue.room"
-    // Centralized compileSdk from version catalog
-    compileSdk = libs.versions.android.compileSdk.get().toIntOrNull() ?: DEFAULT_COMPILE_SDK
+    compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        // Centralized minSdk from version catalog
-        minSdk = libs.versions.android.minSdk.get().toIntOrNull() ?: DEFAULT_MIN_SDK
+        minSdk = libs.versions.android.minSdk.get().toInt()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
     }
@@ -60,7 +55,7 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
 
-    // Room annotation processor via KSP
+    // Room annotation processor via KSP2
     ksp(libs.room.compiler)
 
     // Local JVM unit tests
