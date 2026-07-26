@@ -9,12 +9,36 @@
 // - Must not depend on WorkManager, dataloom-scheduler-workmanager, or
 //   dataloom-connectivity-android.
 plugins {
-    id("io.dataloom.android.library")
+    alias(libs.plugins.android.library)
     alias(libs.plugins.ksp)
 }
 
 android {
     namespace = "io.dataloom.queue.room"
+    compileSdk = 35
+
+    defaultConfig {
+        minSdk = 21
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("consumer-rules.pro")
+    }
+
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 // Export Room schemas for migration testing.

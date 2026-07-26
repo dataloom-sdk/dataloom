@@ -7,11 +7,35 @@
 // - May depend on dataloom-api and Android framework connectivity APIs.
 // - Must not depend on Room, SQLite, WorkManager, or other DataLoom Android modules.
 plugins {
-    id("io.dataloom.android.library")
+    alias(libs.plugins.android.library)
 }
 
 android {
     namespace = "io.dataloom.connectivity.android"
+    compileSdk = 35
+
+    defaultConfig {
+        minSdk = 21
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("consumer-rules.pro")
+    }
+
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
