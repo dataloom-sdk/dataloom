@@ -17,10 +17,14 @@ plugins {
 }
 
 android {
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
+    val compileSdkStr = libs.versions.android.compileSdk.get()
+    compileSdk = compileSdkStr.toIntOrNull()
+        ?: throw GradleException("Invalid or missing 'android-compileSdk' in version catalog (found '$compileSdkStr')")
 
     defaultConfig {
-        minSdk = libs.versions.android.minSdk.get().toInt()
+        val minSdkStr = libs.versions.android.minSdk.get()
+        minSdk = minSdkStr.toIntOrNull()
+            ?: throw GradleException("Invalid or missing 'android-minSdk' in version catalog (found '$minSdkStr')")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
     }
