@@ -2,11 +2,9 @@ name: Android Validation
 
 on:
   pull_request:
-    branches:
-      - main
+    branches: [main]
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -20,8 +18,7 @@ jobs:
   android-validate:
     name: Validate Android modules
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
+    timeout-minutes: 45
     env:
       DATALOOM_ANDROID_BUILD: "true"
 
@@ -41,6 +38,14 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           cache-provider: basic
+
+      - name: Enable KVM for managed device
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
 
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
@@ -97,26 +102,23 @@ jobs:
           run_gradle_check connectivity-assemble \
             :dataloom-connectivity-android:assembleDebug \
             :dataloom-connectivity-android:assembleRelease
-          run_gradle_check connectivity-tests \
-            :dataloom-connectivity-android:testDebugUnitTest
-          run_gradle_check connectivity-lint \
-            :dataloom-connectivity-android:lintDebug
+          run_gradle_check connectivity-tests :dataloom-connectivity-android:testDebugUnitTest
+          run_gradle_check connectivity-lint :dataloom-connectivity-android:lintDebug
 
           run_gradle_check scheduler-assemble \
             :dataloom-scheduler-workmanager:assembleDebug \
             :dataloom-scheduler-workmanager:assembleRelease
-          run_gradle_check scheduler-tests \
-            :dataloom-scheduler-workmanager:testDebugUnitTest
-          run_gradle_check scheduler-lint \
-            :dataloom-scheduler-workmanager:lintDebug
+          run_gradle_check scheduler-tests :dataloom-scheduler-workmanager:testDebugUnitTest
+          run_gradle_check scheduler-lint :dataloom-scheduler-workmanager:lintDebug
 
           run_gradle_check room-assemble \
             :dataloom-queue-room:assembleDebug \
-            :dataloom-queue-room:assembleRelease
-          run_gradle_check room-tests \
-            :dataloom-queue-room:testDebugUnitTest
-          run_gradle_check room-lint \
-            :dataloom-queue-room:lintDebug
+            :dataloom-queue-room:assembleRelease \
+            :dataloom-queue-room:assembleDebugAndroidTest
+          run_gradle_check room-tests :dataloom-queue-room:testDebugUnitTest
+          run_gradle_check room-lint :dataloom-queue-room:lintDebug
+          run_gradle_check room-managed-device \
+            :dataloom-queue-room:pixel2Api35DebugAndroidTest
 
           echo "::group::room-schema"
           if [[ ! -f dataloom-queue-room/schemas/io.dataloom.queue.room.internal.DataLoomRoomDatabase/1.json ]]; then

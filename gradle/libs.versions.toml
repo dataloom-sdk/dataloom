@@ -9,27 +9,28 @@ android-targetSdk = "35"
 kotlinx-coroutines = "1.10.2"
 workmanager = "2.10.1"
 room = "2.7.1"
-# KSP 2.3.1+ supports AGP 9 built-in Kotlin. Use the current stable KSP2 line.
+# KSP 2.3.1+ supports AGP 9 built-in Kotlin. Use the stable KSP2 line.
 ksp = "2.3.9"
 mockito-kotlin = "5.4.0"
+androidx-test-core = "1.7.0"
+androidx-test-runner = "1.7.0"
+androidx-test-ext-junit = "1.3.0"
 
 [libraries]
-# Kotlin Gradle plugin dependency used by build-logic convention plugins
 kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
-# Android Gradle plugin dependency retained for explicit build-tool inspection
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
-# Kotlin coroutines for Android
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
-# WorkManager
 workmanager-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workmanager" }
-# Room
+workmanager-testing = { group = "androidx.work", name = "work-testing", version.ref = "workmanager" }
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
-# Test utilities
 mockito-kotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockito-kotlin" }
+androidx-test-core-ktx = { group = "androidx.test", name = "core-ktx", version.ref = "androidx-test-core" }
+androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "androidx-test-runner" }
+androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidx-test-ext-junit" }
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }

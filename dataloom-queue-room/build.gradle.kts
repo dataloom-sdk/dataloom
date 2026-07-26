@@ -1,13 +1,6 @@
+import com.android.build.api.dsl.ManagedVirtualDevice
+
 // DataLoom Room queue provider.
-//
-// Provides RoomQueueProvider — an AndroidX Room-backed QueueProvider with
-// transactional bounded acquisition, guarded lease-aware transitions, and
-// transactional expired-lease recovery.
-//
-// Rules:
-// - May depend on dataloom-api, Room, and SQLite APIs required by Room.
-// - Must not depend on WorkManager, dataloom-scheduler-workmanager, or
-//   dataloom-connectivity-android.
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.ksp)
@@ -38,28 +31,37 @@ android {
         unitTests {
             isIncludeAndroidResources = true
         }
+        managedDevices {
+            devices {
+                create<ManagedVirtualDevice>("pixel2Api35") {
+                    device = "Pixel 2"
+                    apiLevel = 35
+                    systemImageSource = "aosp"
+                }
+            }
+        }
     }
 }
 
-// Export Room schemas for migration testing.
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
     arg("room.generateKotlin", "true")
 }
 
 dependencies {
-    // DataLoom public queue provider API contracts
     implementation(project(":dataloom-api"))
-
-    // Room runtime and KTX extensions
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
-
-    // Room annotation processor via KSP2
     ksp(libs.room.compiler)
 
-    // Local JVM unit tests
     testImplementation(kotlin("test-junit"))
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.room.testing)
+
+    androidTestImplementation(kotlin("test-junit"))
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.room.testing)
+    androidTestImplementation(libs.androidx.test.core.ktx)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
 }
