@@ -72,6 +72,26 @@ implementation(project(":dataloom-scheduler-workmanager"))
 implementation(project(":dataloom-queue-room"))
 ```
 
+## Build configuration
+
+Android modules are included in the Gradle build only when the
+`DATALOOM_ANDROID_BUILD` environment variable is set to `"true"`. This
+avoids attempting to resolve the Android Gradle Plugin (AGP) from
+`dl.google.com` in KMP-only or network-restricted builds.
+
+To build and test Android modules locally:
+
+```bash
+DATALOOM_ANDROID_BUILD=true ./gradlew \
+    :dataloom-connectivity-android:build \
+    :dataloom-scheduler-workmanager:build \
+    :dataloom-queue-room:build
+```
+
+The CI Android validation job sets `DATALOOM_ANDROID_BUILD=true`
+automatically. The KMP/JVM and Apple validation jobs do not set this
+variable, so they build without AGP resolution.
+
 ## Documentation
 
 - [Connectivity Provider](./connectivity-provider.md)
