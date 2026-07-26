@@ -24,80 +24,24 @@ import io.dataloom.api.scheduling.ScheduleReceipt
 import io.dataloom.api.scheduling.ScheduleRequest
 import io.dataloom.api.scheduling.SchedulerProvider
 import io.dataloom.scheduler.workmanager.internal.SchedulerProviderError
+import java.util.concurrent.CancellationException
 import java.util.concurrent.TimeUnit
 
 /**
  * AndroidX WorkManager-backed implementation of [SchedulerProvider].
  *
- * Translates DataLoom [ScheduleRequest] intents into WorkManager
- * [OneTimeWorkRequest]s with a deterministic unique work name derived from
- * [io.dataloom.api.identifier.ScheduleId.value].
- *
- * ## Work naming
- *
- * Each schedule uses `ScheduleId.value` as the unique work name. This
- * produces a stable, collision-resistant name for every distinct schedule
- * without hashing. WorkManager's unique work deduplication is used to
- * enforce [ExistingSchedulePolicy] semantics.
- *
- * ## ExistingSchedulePolicy mapping
- *
- * | [ExistingSchedulePolicy] | WorkManager [ExistingWorkPolicy] |
- * |--------------------------|----------------------------------|
- * | [ExistingSchedulePolicy.KEEP]    | [ExistingWorkPolicy.KEEP]    |
- * | [ExistingSchedulePolicy.REPLACE] | [ExistingWorkPolicy.REPLACE] |
- *
- * ## Delay mapping
- *
- * [io.dataloom.api.scheduling.SchedulingDelay.milliseconds] is converted to
- * the WorkManager initial delay. Overflow-safe clamping ensures that values
- * larger than [Long.MAX_VALUE] milliseconds do not cause arithmetic errors
- * (in practice SchedulingDelay already validates non-negative longs, so no
- * real overflow is possible, but the conversion is explicit).
- *
- * ## Connectivity constraint mapping
- *
- * | [ConnectivityRequirement]         | WorkManager [NetworkType]     |
- * |-----------------------------------|-------------------------------|
- * | [ConnectivityRequirement.NONE]    | [NetworkType.NOT_REQUIRED]    |
- * | [ConnectivityRequirement.AVAILABLE] | [NetworkType.CONNECTED]     |
- * | [ConnectivityRequirement.UNMETERED] | [NetworkType.UNMETERED]     |
- *
- * ## WorkManager enqueue contract
- *
- * Exactly one [WorkManager.enqueueUniqueWork] call is made per [schedule]
- * invocation.
- *
- * ## What this provider must not do
- *
- * - Execute synchronization directly.
- * - Select threads or dispatchers.
- * - Initialize or configure DataLoom automatically.
- *
- * ## Thread safety
- *
- * This provider is safe to call from any thread. [WorkManager] enqueue
- * operations are thread-safe.
- *
- * ## Cancellation
- *
- * Coroutine cancellation propagates normally.
- *
- * @param context Android context used to obtain the WorkManager instance.
- *   Should be the application context.
- * @param workManager WorkManager instance to use for scheduling. Defaults to
- *   [WorkManager.getInstance] for the provided context.
+ * Each call maps one immutable DataLoom schedule request to one unique
+ * WorkManager request. Scheduling does not execute synchronization or inspect
+ * queue payloads. WorkManager retry is not used as a second queue retry state
+ * machine.
  */
 public class WorkManagerSchedulerProvider(
-    private val context: Context,
-    private val workManager: WorkManager = WorkManager.getInstance(context),
+    context: Context,
+    private val workManager: WorkManager = WorkManager.getInstance(
+        context.applicationContext ?: context,
+    ),
 ) : SchedulerProvider {
 
-    /**
-     * Immutable descriptor for this scheduler provider.
-     *
-     * [ProviderDescriptor.type] is [ProviderType.SCHEDULER].
-     */
     override val descriptor: ProviderDescriptor = ProviderDescriptor(
         id = ProviderId("io.dataloom.scheduler.workmanager"),
         name = ProviderName("WorkManagerSchedulerProvider"),
@@ -116,52 +60,34 @@ public class WorkManagerSchedulerProvider(
     override suspend fun close(): ProviderOperationResult<Unit> =
         ProviderOperationResult.Success(Unit)
 
-    /**
-     * Schedules a one-time WorkManager work request for the given [request].
-     *
-     * Uses [ScheduleRequest.id] as the unique WorkManager work name.
-     * Applies [ScheduleRequest.existingPolicy] to handle existing schedules.
-     * Maps [ScheduleRequest.delay] to the WorkManager initial delay.
-     * Maps [ScheduleRequest.constraints] to WorkManager [Constraints].
-     *
-     * @param request immutable scheduling intent.
-     * @return [ProviderOperationResult.Success] with a [ScheduleReceipt] when
-     *   WorkManager accepted the request, or [ProviderOperationResult.Failure]
-     *   on platform failure.
-     */
     override suspend fun schedule(
         request: ScheduleRequest,
     ): ProviderOperationResult<ScheduleReceipt> {
         return try {
             val workRequest = buildWorkRequest(request)
-            val existingWorkPolicy = request.existingPolicy.toExistingWorkPolicy()
-            val workName = request.id.value
-
-            workManager.enqueueUniqueWork(workName, existingWorkPolicy, workRequest)
-
+            workManager.enqueueUniqueWork(
+                request.id.value,
+                request.existingPolicy.toExistingWorkPolicy(),
+                workRequest,
+            )
             ProviderOperationResult.Success(ScheduleReceipt(id = request.id))
-        } catch (e: Exception) {
-            ProviderOperationResult.Failure(SchedulerProviderError.schedulingFailure(cause = e))
+        } catch (exception: CancellationException) {
+            throw exception
+        } catch (_: Exception) {
+            ProviderOperationResult.Failure(SchedulerProviderError.schedulingFailure())
         }
     }
 
-    /**
-     * Cancels a previously scheduled work request.
-     *
-     * Uses [ScheduleCancellationRequest.id] as the unique WorkManager work name.
-     *
-     * @param request immutable cancellation request.
-     * @return [ProviderOperationResult.Success] when the cancellation was
-     *   processed, or [ProviderOperationResult.Failure] on platform failure.
-     */
     override suspend fun cancel(
         request: ScheduleCancellationRequest,
     ): ProviderOperationResult<Unit> {
         return try {
             workManager.cancelUniqueWork(request.id.value)
             ProviderOperationResult.Success(Unit)
-        } catch (e: Exception) {
-            ProviderOperationResult.Failure(SchedulerProviderError.schedulingFailure(cause = e))
+        } catch (exception: CancellationException) {
+            throw exception
+        } catch (_: Exception) {
+            ProviderOperationResult.Failure(SchedulerProviderError.schedulingFailure())
         }
     }
 
@@ -192,12 +118,6 @@ public class WorkManagerSchedulerProvider(
         }
 
     public companion object {
-        /**
-         * WorkManager tag applied to all work requests created by this provider.
-         *
-         * Consuming applications may use this tag to query or cancel all
-         * DataLoom-managed work items.
-         */
         public const val WORKER_TAG: String = "io.dataloom.worker"
     }
 }

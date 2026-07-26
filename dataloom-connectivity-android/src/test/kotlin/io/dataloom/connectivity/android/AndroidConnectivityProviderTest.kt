@@ -13,9 +13,9 @@ import io.dataloom.api.identifier.CorrelationId
 import io.dataloom.api.identifier.ExecutionId
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderType
+import kotlinx.coroutines.test.runTest
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -30,7 +30,7 @@ class AndroidConnectivityProviderTest {
     private val mockConnectivityManager: ConnectivityManager = mock()
     private val mockContext: Context = mock()
 
-    private val provider = AndroidConnectivityProvider(mockContext)
+    private val provider = AndroidConnectivityProvider(mockContext, sdkInt = 23)
 
     private fun setupConnected(
         hasInternet: Boolean = true,

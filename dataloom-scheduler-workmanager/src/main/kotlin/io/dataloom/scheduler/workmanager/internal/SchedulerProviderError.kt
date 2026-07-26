@@ -6,41 +6,25 @@ import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
 
-/**
- * Canonical [DataLoomError] for WorkManager scheduler provider failures.
- *
- * Exposes only sanitized diagnostic messages. No raw exception message,
- * stack trace, platform type, or sensitive data is included in [message].
- */
+/** Safe canonical scheduler error with no retained platform exception. */
 internal class SchedulerProviderError(
     override val code: ErrorCode,
     override val category: ErrorCategory,
     override val severity: ErrorSeverity,
     override val recoverability: Recoverability,
     override val message: String,
-    override val cause: Throwable? = null,
 ) : DataLoomError {
+    override val cause: Throwable? = null
 
     internal companion object {
+        fun schedulingFailure(): SchedulerProviderError = SchedulerProviderError(
+            code = ErrorCode("SCHEDULER_WORKMANAGER_FAILURE"),
+            category = ErrorCategory.SCHEDULER,
+            severity = ErrorSeverity.ERROR,
+            recoverability = Recoverability.RECOVERABLE,
+            message = "WorkManager reported a failure while scheduling the requested work.",
+        )
 
-        /**
-         * Returns an error representing a failure during WorkManager scheduling.
-         * The raw [cause] is preserved for diagnostic purposes but must not be
-         * exposed through the public contract.
-         */
-        fun schedulingFailure(cause: Throwable? = null): SchedulerProviderError =
-            SchedulerProviderError(
-                code = ErrorCode("SCHEDULER_WORKMANAGER_FAILURE"),
-                category = ErrorCategory.SCHEDULER,
-                severity = ErrorSeverity.ERROR,
-                recoverability = Recoverability.RECOVERABLE,
-                message = "WorkManager reported a failure while scheduling the requested work.",
-                cause = cause,
-            )
-
-        /**
-         * Returns an error representing an unsupported constraint configuration.
-         */
         fun unsupportedConstraint(detail: String): SchedulerProviderError =
             SchedulerProviderError(
                 code = ErrorCode("SCHEDULER_UNSUPPORTED_CONSTRAINT"),

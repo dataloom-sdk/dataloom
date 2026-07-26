@@ -1,6 +1,8 @@
 package io.dataloom.scheduler.workmanager
 
 import android.content.Context
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequest
 import androidx.work.WorkManager
 import io.dataloom.api.context.DataLoomMetadata
 import io.dataloom.api.context.ExecutionContext
@@ -16,6 +18,7 @@ import io.dataloom.api.scheduling.ScheduleReceipt
 import io.dataloom.api.scheduling.ScheduleRequest
 import io.dataloom.api.scheduling.SchedulingDelay
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import kotlin.coroutines.Continuation
@@ -87,9 +90,9 @@ class WorkManagerSchedulerProviderTest {
         runSync { provider.schedule(request) }
 
         verify(mockWorkManager).enqueueUniqueWork(
-            org.mockito.kotlin.eq("queue-worker-wakeup"),
-            any(),
-            any(),
+            eq("queue-worker-wakeup"),
+            eq(ExistingWorkPolicy.KEEP),
+            any<OneTimeWorkRequest>(),
         )
     }
 

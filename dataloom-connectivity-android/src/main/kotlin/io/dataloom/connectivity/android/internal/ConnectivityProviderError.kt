@@ -9,9 +9,8 @@ import io.dataloom.api.error.Recoverability
 /**
  * Canonical [DataLoomError] for Android connectivity provider failures.
  *
- * Exposes only sanitized diagnostic messages. No raw exception message,
- * stack trace, platform type, connection detail, or sensitive data is
- * included in [message].
+ * The public error intentionally retains no raw platform exception, message,
+ * stack trace, network identifier, or other sensitive diagnostic data.
  */
 internal class ConnectivityProviderError(
     override val code: ErrorCode,
@@ -19,24 +18,16 @@ internal class ConnectivityProviderError(
     override val severity: ErrorSeverity,
     override val recoverability: Recoverability,
     override val message: String,
-    override val cause: Throwable? = null,
 ) : DataLoomError {
+    override val cause: Throwable? = null
 
     internal companion object {
-
-        /**
-         * Returns an error representing a platform-level failure while querying
-         * network state. The raw [cause] is preserved for diagnostic purposes but
-         * must not be exposed through the public contract.
-         */
-        fun platformFailure(cause: Throwable? = null): ConnectivityProviderError =
-            ConnectivityProviderError(
-                code = ErrorCode("CONNECTIVITY_PLATFORM_FAILURE"),
-                category = ErrorCategory.PROVIDER,
-                severity = ErrorSeverity.ERROR,
-                recoverability = Recoverability.RECOVERABLE,
-                message = "The connectivity platform reported a failure while querying network state.",
-                cause = cause,
-            )
+        fun platformFailure(): ConnectivityProviderError = ConnectivityProviderError(
+            code = ErrorCode("CONNECTIVITY_PLATFORM_FAILURE"),
+            category = ErrorCategory.PROVIDER,
+            severity = ErrorSeverity.ERROR,
+            recoverability = Recoverability.RECOVERABLE,
+            message = "The connectivity platform reported a failure while querying network state.",
+        )
     }
 }
