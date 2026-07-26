@@ -112,7 +112,7 @@ class RoomQueueProviderInstrumentedTest {
     }
 
     @Test
-    fun enqueueAcquireCompleteAndStaleLeaseArePersistedTransactionally() = runBlocking {
+    fun enqueueAcquireCompleteAndStaleLeaseArePersistedTransactionally() = runBlocking<Unit> {
         enqueue(makeEntry("entry-1", enqueuedAt = 1_000L))
 
         val acquired = assertIs<QueueAcquireResult.Entries>(
