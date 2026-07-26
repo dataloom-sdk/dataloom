@@ -45,8 +45,14 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
+      - name: Prepare Android CI logs
+        run: mkdir -p android-ci-logs
+
       - name: Verify Gradle version
-        run: ./gradlew --version
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew --version 2>&1 | tee android-ci-logs/gradle-version.log
 
       - name: Reject accidentally committed Gradle plugin metadata
         shell: bash
@@ -65,43 +71,70 @@ jobs:
             --no-configuration-cache \
             --stacktrace \
             --warning-mode all \
-            --console=plain 2>&1 | tee android-projects.log
-
-      - name: Upload Android project configuration log
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: android-projects-${{ github.run_id }}-${{ github.run_attempt }}
-          path: android-projects.log
-          if-no-files-found: error
-          retention-days: 7
+            --console=plain 2>&1 | tee android-ci-logs/projects.log
 
       - name: Assemble dataloom-connectivity-android
-        run: ./gradlew :dataloom-connectivity-android:assembleDebug :dataloom-connectivity-android:assembleRelease
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew :dataloom-connectivity-android:assembleDebug :dataloom-connectivity-android:assembleRelease \
+            --stacktrace --console=plain 2>&1 | tee android-ci-logs/connectivity-assemble.log
 
       - name: Run dataloom-connectivity-android tests
-        run: ./gradlew :dataloom-connectivity-android:testDebugUnitTest
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew :dataloom-connectivity-android:testDebugUnitTest \
+            --stacktrace --console=plain 2>&1 | tee android-ci-logs/connectivity-tests.log
 
       - name: Lint dataloom-connectivity-android
-        run: ./gradlew :dataloom-connectivity-android:lintDebug
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew :dataloom-connectivity-android:lintDebug \
+            --stacktrace --console=plain 2>&1 | tee android-ci-logs/connectivity-lint.log
 
       - name: Assemble dataloom-scheduler-workmanager
-        run: ./gradlew :dataloom-scheduler-workmanager:assembleDebug :dataloom-scheduler-workmanager:assembleRelease
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew :dataloom-scheduler-workmanager:assembleDebug :dataloom-scheduler-workmanager:assembleRelease \
+            --stacktrace --console=plain 2>&1 | tee android-ci-logs/scheduler-assemble.log
 
       - name: Run dataloom-scheduler-workmanager tests
-        run: ./gradlew :dataloom-scheduler-workmanager:testDebugUnitTest
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew :dataloom-scheduler-workmanager:testDebugUnitTest \
+            --stacktrace --console=plain 2>&1 | tee android-ci-logs/scheduler-tests.log
 
       - name: Lint dataloom-scheduler-workmanager
-        run: ./gradlew :dataloom-scheduler-workmanager:lintDebug
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew :dataloom-scheduler-workmanager:lintDebug \
+            --stacktrace --console=plain 2>&1 | tee android-ci-logs/scheduler-lint.log
 
       - name: Assemble dataloom-queue-room
-        run: ./gradlew :dataloom-queue-room:assembleDebug :dataloom-queue-room:assembleRelease
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew :dataloom-queue-room:assembleDebug :dataloom-queue-room:assembleRelease \
+            --stacktrace --console=plain 2>&1 | tee android-ci-logs/room-assemble.log
 
       - name: Run dataloom-queue-room tests
-        run: ./gradlew :dataloom-queue-room:testDebugUnitTest
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew :dataloom-queue-room:testDebugUnitTest \
+            --stacktrace --console=plain 2>&1 | tee android-ci-logs/room-tests.log
 
       - name: Lint dataloom-queue-room
-        run: ./gradlew :dataloom-queue-room:lintDebug
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew :dataloom-queue-room:lintDebug \
+            --stacktrace --console=plain 2>&1 | tee android-ci-logs/room-lint.log
 
       - name: Verify committed Room schema is current
         shell: bash
@@ -110,7 +143,24 @@ jobs:
           git diff --exit-code -- dataloom-queue-room/schemas
 
       - name: Build all Android modules
-        run: ./gradlew :dataloom-connectivity-android:build :dataloom-scheduler-workmanager:build :dataloom-queue-room:build
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew :dataloom-connectivity-android:build :dataloom-scheduler-workmanager:build :dataloom-queue-room:build \
+            --stacktrace --console=plain 2>&1 | tee android-ci-logs/android-build.log
 
       - name: Verify KMP modules unaffected
-        run: ./gradlew :dataloom-api:allTests :dataloom-core:allTests :dataloom-runtime:allTests :dataloom-testing:allTests
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew :dataloom-api:allTests :dataloom-core:allTests :dataloom-runtime:allTests :dataloom-testing:allTests \
+            --stacktrace --console=plain 2>&1 | tee android-ci-logs/kmp-regression.log
+
+      - name: Upload Android validation logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-validation-logs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: android-ci-logs
+          if-no-files-found: error
+          retention-days: 7
