@@ -1,5 +1,7 @@
 package io.dataloom.api.payload
 
+import kotlin.jvm.JvmInline
+
 /**
  * Immutable value type representing an application-defined version of an entity.
  *

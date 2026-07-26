@@ -1,5 +1,7 @@
 package io.dataloom.api.retry
 
+import kotlin.jvm.JvmInline
+
 /**
  * Identifies the logical operation being evaluated by a [RetryPolicy].
  *

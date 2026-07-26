@@ -1,5 +1,7 @@
 package io.dataloom.api.provider
 
+import kotlin.jvm.JvmInline
+
 /**
  * Stable machine-readable provider identifier.
  *

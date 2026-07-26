@@ -1,5 +1,7 @@
 package io.dataloom.api.error
 
+import kotlin.jvm.JvmInline
+
 /**
  * Stable machine-readable DataLoom error code.
  *
