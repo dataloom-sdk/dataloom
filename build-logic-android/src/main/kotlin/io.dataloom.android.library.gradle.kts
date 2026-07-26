@@ -43,10 +43,7 @@ plugins {
     id("com.android.library")
 }
 
-// Apply the Kotlin Android plugin using a direct class reference from the
-// build-logic-android classloader (which contains both KGP and AGP).
-// See the KDoc above for why this is not done via id("org.jetbrains.kotlin.android")
-// in the plugins {} block.
+// See KDoc above for why a class reference is used instead of id("org.jetbrains.kotlin.android").
 apply<org.jetbrains.kotlin.gradle.plugin.KotlinAndroidPluginWrapper>()
 
 plugins.withId("com.android.library") {
