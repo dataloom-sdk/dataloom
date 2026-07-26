@@ -54,7 +54,7 @@ sufficient.
 
 ```kotlin
 val provider = AndroidConnectivityProvider(context)
-val snapshot: ConnectivitySnapshot = provider.check(
+val result: ProviderOperationResult<ConnectivitySnapshot> = provider.currentConnectivity(
     ConnectivityCheckRequest(requirement = ConnectivityRequirement.AVAILABLE)
 )
 ```

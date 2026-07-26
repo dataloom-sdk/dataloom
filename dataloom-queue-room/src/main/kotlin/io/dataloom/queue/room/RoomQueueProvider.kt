@@ -1,6 +1,9 @@
 package io.dataloom.queue.room
 
 import io.dataloom.api.provider.ProviderDescriptor
+import io.dataloom.api.provider.ProviderHealth
+import io.dataloom.api.provider.ProviderHealthStatus
+import io.dataloom.api.provider.ProviderInitializationContext
 import io.dataloom.api.provider.ProviderId
 import io.dataloom.api.provider.ProviderName
 import io.dataloom.api.provider.ProviderOperationResult
@@ -83,6 +86,16 @@ public class RoomQueueProvider(
         type = ProviderType.QUEUE,
         version = ProviderVersion("1.0.0"),
     )
+
+    override suspend fun initialize(
+        context: ProviderInitializationContext,
+    ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+    override suspend fun health(): ProviderOperationResult<ProviderHealth> =
+        ProviderOperationResult.Success(ProviderHealth(status = ProviderHealthStatus.HEALTHY))
+
+    override suspend fun close(): ProviderOperationResult<Unit> =
+        ProviderOperationResult.Success(Unit)
 
     /**
      * Persists a new queue entry in the Room database.

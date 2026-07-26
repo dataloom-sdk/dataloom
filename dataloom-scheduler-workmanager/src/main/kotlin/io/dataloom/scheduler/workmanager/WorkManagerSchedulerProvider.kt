@@ -103,7 +103,7 @@ public class WorkManagerSchedulerProvider(
         name = ProviderName("WorkManagerSchedulerProvider"),
         type = ProviderType.SCHEDULER,
         version = ProviderVersion("1.0.0"),
-        capabilities = listOf(ProviderCapability("one-time-work")),
+        capabilities = setOf(ProviderCapability("one-time-work")),
     )
 
     override suspend fun initialize(
