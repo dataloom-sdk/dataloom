@@ -29,7 +29,7 @@ class SynchronizationResultContractsTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `succeeded preserves request, completedAt, summary`() {
+    fun succeededPreservesRequestCompletedAtAndSummary() {
         val request: SynchronizationRequest = sampleRequest()
         val completedAt: DataLoomInstant = sampleInstant()
         val summary: SynchronizationSummary = emptySummary()
@@ -246,7 +246,7 @@ class SynchronizationResultContractsTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `cancelled preserves request, completedAt, summary`() {
+    fun cancelledPreservesRequestCompletedAtAndSummary() {
         val request: SynchronizationRequest = sampleRequest()
         val completedAt: DataLoomInstant = sampleInstant()
         val summary: SynchronizationSummary = emptySummary()

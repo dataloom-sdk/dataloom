@@ -1,5 +1,6 @@
 package io.dataloom.api.identifier
 
+import kotlin.jvm.JvmInline
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
