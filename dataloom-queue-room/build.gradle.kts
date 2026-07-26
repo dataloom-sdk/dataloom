@@ -32,7 +32,7 @@ android {
             isIncludeAndroidResources = true
         }
         managedDevices {
-            devices {
+            localDevices {
                 create<ManagedVirtualDevice>("pixel2Api35") {
                     device = "Pixel 2"
                     apiLevel = 35
