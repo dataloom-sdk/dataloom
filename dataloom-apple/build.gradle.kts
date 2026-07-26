@@ -26,12 +26,14 @@
 //
 // This module is only included in the build on macOS hosts (enforced in
 // settings.gradle.kts).  See docs/apple/xcframework-integration.md.
+import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
+
 plugins {
-    kotlin("multiplatform")
+    alias(libs.plugins.kotlin.multiplatform)
 }
 
 kotlin {
-    val dataLoomXCFramework = org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework("DataLoom")
+    val dataLoomXCFramework = XCFramework("DataLoom")
 
     // Declare explicit Apple targets.  iosX64 covers the Intel iOS simulator
     // for Rosetta compatibility.  All three targets are required for a
