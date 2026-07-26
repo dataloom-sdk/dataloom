@@ -8,7 +8,7 @@
 // - Must not depend on Room, SQLite, WorkManager, or other DataLoom Android modules.
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
+    id("org.jetbrains.kotlin.android")
 }
 
 android {

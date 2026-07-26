@@ -9,7 +9,7 @@
 // - Must not depend on Room, dataloom-queue-room, or dataloom-connectivity-android.
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
