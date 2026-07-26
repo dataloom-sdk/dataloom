@@ -1,0 +1,85 @@
+name: Android Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android-validate:
+    name: Validate Android modules
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      DATALOOM_ANDROID_BUILD: "true"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Verify Gradle version
+        run: ./gradlew --version
+
+      - name: Verify project structure includes Android modules
+        run: ./gradlew projects
+
+      - name: Assemble dataloom-connectivity-android
+        run: ./gradlew :dataloom-connectivity-android:assemble
+
+      - name: Run dataloom-connectivity-android tests
+        run: ./gradlew :dataloom-connectivity-android:test
+
+      - name: Lint dataloom-connectivity-android
+        run: ./gradlew :dataloom-connectivity-android:lint
+
+      - name: Assemble dataloom-scheduler-workmanager
+        run: ./gradlew :dataloom-scheduler-workmanager:assemble
+
+      - name: Run dataloom-scheduler-workmanager tests
+        run: ./gradlew :dataloom-scheduler-workmanager:test
+
+      - name: Lint dataloom-scheduler-workmanager
+        run: ./gradlew :dataloom-scheduler-workmanager:lint
+
+      - name: Assemble dataloom-queue-room
+        run: ./gradlew :dataloom-queue-room:assemble
+
+      - name: Run dataloom-queue-room tests
+        run: ./gradlew :dataloom-queue-room:test
+
+      - name: Lint dataloom-queue-room
+        run: ./gradlew :dataloom-queue-room:lint
+
+      - name: Build all Android modules
+        run: ./gradlew :dataloom-connectivity-android:build :dataloom-scheduler-workmanager:build :dataloom-queue-room:build
+
+      - name: Verify KMP modules unaffected
+        run: ./gradlew :dataloom-api:allTests :dataloom-core:allTests :dataloom-runtime:allTests :dataloom-testing:allTests

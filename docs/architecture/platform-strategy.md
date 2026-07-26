@@ -227,9 +227,24 @@ This flow is a roadmap target only and is not implemented in DL-006.
 - Define provider SPI contracts
 - Implement shared runtime lifecycle
 - Implement durable queue contracts
-- Add Android platform module
-- Add WorkManager scheduler module
-- Add Room provider
+- Add Android platform module ✅ (DL-037)
+- Add WorkManager scheduler module ✅ (DL-037)
+- Add Room provider ✅ (DL-037)
 - Add Retrofit provider
 - Create Android reference application
 - Add future KMP platform integrations
+
+## Android modules (DL-037)
+
+Three independently consumable Android modules were introduced in DL-037:
+
+| Module | Purpose |
+|---|---|
+| `dataloom-connectivity-android` | `ConnectivityProvider` backed by `ConnectivityManager` |
+| `dataloom-scheduler-workmanager` | `SchedulerProvider` backed by WorkManager, plus CoroutineWorker bridge |
+| `dataloom-queue-room` | `QueueProvider` backed by Room and SQLite |
+
+Each module is optional. An application using only Room does not require
+WorkManager or the connectivity module.
+
+See [docs/android/README.md](../android/README.md) for integration details.

@@ -1,0 +1,61 @@
+// DataLoom WorkManager scheduler provider.
+//
+// Provides WorkManagerSchedulerProvider — an AndroidX WorkManager-backed
+// SchedulerProvider — and DataLoomCoroutineWorker with DataLoomWorkerFactory
+// for explicit Worker injection.
+//
+// Rules:
+// - May depend on dataloom-api, dataloom-runtime, and AndroidX WorkManager.
+// - Must not depend on Room, dataloom-queue-room, or dataloom-connectivity-android.
+plugins {
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+}
+
+android {
+    namespace = "io.dataloom.scheduler.workmanager"
+    compileSdk = 35
+
+    defaultConfig {
+        minSdk = 21
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("consumer-rules.pro")
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
+}
+
+dependencies {
+    // DataLoom public API contracts and runtime queue-worker contracts
+    implementation(project(":dataloom-api"))
+    implementation(project(":dataloom-runtime"))
+
+    // AndroidX WorkManager with coroutines support
+    implementation(libs.workmanager.ktx)
+
+    // Kotlin coroutines for Android
+    implementation(libs.kotlinx.coroutines.android)
+
+    // Local JVM unit tests
+    testImplementation(kotlin("test"))
+    testImplementation(libs.mockito.kotlin)
+}
