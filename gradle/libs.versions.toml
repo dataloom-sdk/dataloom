@@ -1,5 +1,8 @@
 [versions]
 kotlin = "2.4.10"
+# Kotlin 2.4.10 officially supports AGP versions up to 9.1.0. Newer versions like 9.1.1
+# remove legacy BaseVariant classes, causing KotlinMultiplatform target resolution failure
+# when com.android.library is loaded in composite builds/classloaders. Keep at 9.1.0.
 agp = "9.1.0"
 android-compileSdk = "35"
 android-minSdk = "21"
