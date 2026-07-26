@@ -43,7 +43,7 @@ dependencies {
     implementation(project(":dataloom-api"))
 
     // Local JVM unit tests
-    testImplementation(kotlin("test"))
+    testImplementation(kotlin("test-junit"))
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockito.kotlin)
 }

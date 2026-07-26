@@ -51,6 +51,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
 
     // Local JVM unit tests
-    testImplementation(kotlin("test"))
+    testImplementation(kotlin("test-junit"))
     testImplementation(libs.mockito.kotlin)
 }

@@ -59,7 +59,7 @@ dependencies {
     ksp(libs.room.compiler)
 
     // Local JVM unit tests
-    testImplementation(kotlin("test"))
+    testImplementation(kotlin("test-junit"))
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.room.testing)
 }
