@@ -1,5 +1,3 @@
-import com.android.build.api.dsl.ManagedVirtualDevice
-
 // DataLoom Room queue provider.
 plugins {
     alias(libs.plugins.android.library)
@@ -33,7 +31,7 @@ android {
         }
         managedDevices {
             localDevices {
-                create<ManagedVirtualDevice>("pixel2Api35") {
+                create("pixel2Api35") {
                     device = "Pixel 2"
                     apiLevel = 35
                     systemImageSource = "aosp"
