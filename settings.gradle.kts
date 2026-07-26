@@ -1,18 +1,6 @@
 pluginManagement {
-    // Android implementation modules and the io.dataloom.android.library
-    // convention plugin require the Android Gradle Plugin and access to
-    // dl.google.com.  Both are gated on DATALOOM_ANDROID_BUILD=true so that
-    // KMP-only builds (PR validation, JVM, Apple) never contact dl.google.com.
-    val isAndroidBuildEnabled = System.getenv("DATALOOM_ANDROID_BUILD") == "true"
-
     // build-logic provides KMP convention plugins.
     includeBuild("build-logic")
-
-    // build-logic-android provides the Android-specific convention plugin.
-    // Gated on isAndroidBuildEnabled to avoid resolving AGP in KMP-only builds.
-    if (isAndroidBuildEnabled) {
-        includeBuild("build-logic-android")
-    }
 
     repositories {
         gradlePluginPortal()
