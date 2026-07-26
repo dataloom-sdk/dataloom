@@ -40,9 +40,9 @@ android {
 }
 
 dependencies {
-    implementation(project(":dataloom-api"))
-    implementation(project(":dataloom-runtime"))
-    implementation(libs.workmanager.ktx)
+    api(project(":dataloom-api"))
+    api(project(":dataloom-runtime"))
+    api(libs.workmanager.ktx)
     implementation(libs.kotlinx.coroutines.android)
 
     testImplementation(kotlin("test-junit"))

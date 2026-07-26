@@ -1,6 +1,6 @@
 # WorkManager Scheduler Provider (DL-037)
 
-`WorkManagerSchedulerProvider` implements the DataLoom `SchedulerProvider`
+`WorkManagerSchedulerProvider` implements DataLoom's `SchedulerProvider`
 contract using AndroidX WorkManager.
 
 ## Module
@@ -15,60 +15,44 @@ implementation(project(":dataloom-scheduler-workmanager"))
 
 ## Schedule mapping
 
-### ExistingSchedulePolicy
-
-| `ExistingSchedulePolicy` | `ExistingWorkPolicy` |
+| DataLoom value | WorkManager value |
 |---|---|
-| `KEEP` | `ExistingWorkPolicy.KEEP` |
-| `REPLACE` | `ExistingWorkPolicy.REPLACE` |
+| `ExistingSchedulePolicy.KEEP` | `ExistingWorkPolicy.KEEP` |
+| `ExistingSchedulePolicy.REPLACE` | `ExistingWorkPolicy.REPLACE` |
+| `ConnectivityRequirement.NONE` | `NetworkType.NOT_REQUIRED` |
+| `ConnectivityRequirement.AVAILABLE` | `NetworkType.CONNECTED` |
+| `ConnectivityRequirement.UNMETERED` | `NetworkType.UNMETERED` |
 
-### ConnectivityRequirement
+`SchedulingDelay.milliseconds` is passed to
+`OneTimeWorkRequest.Builder.setInitialDelay`. The DataLoom value type already
+rejects negative delays; the provider does not silently clamp or rewrite it.
 
-| `ConnectivityRequirement` | WorkManager `NetworkType` |
-|---|---|
-| `NONE` | `NetworkType.NOT_REQUIRED` |
-| `AVAILABLE` | `NetworkType.CONNECTED` |
-| `UNMETERED` | `NetworkType.UNMETERED` |
-
-### SchedulingDelay
-
-`SchedulingDelay.Relative` delays are applied to the WorkManager
-`OneTimeWorkRequest` via `setInitialDelay`. The delay value is clamped to
-avoid `Long` overflow.
-
-### Work name
-
-The stable unique WorkManager work name is derived from `ScheduleId.value`.
-The same `ScheduleId` always maps to the same work name, ensuring that
-`ExistingWorkPolicy.KEEP` and `ExistingWorkPolicy.REPLACE` behave correctly
-across scheduling calls.
-
-## Behaviour contract
-
-- Enqueues at most once per `schedule()` call.
-- Does not duplicate the retry mechanism between WorkManager retry and the
-  DataLoom durable queue state machine.
-- `ScheduleReceipt.scheduleId` is preserved and returned to the caller.
+The stable unique work name is `ScheduleRequest.id.value`. A successful
+provider result is returned only after WorkManager confirms that the
+asynchronous enqueue or cancellation operation completed successfully. It does
+not mean that synchronization has started or completed.
 
 ## Usage
 
 ```kotlin
-val workManager = WorkManager.getInstance(context)
-val provider = WorkManagerSchedulerProvider(workManager)
+val provider = WorkManagerSchedulerProvider(context)
 
 val receipt = provider.schedule(
     ScheduleRequest(
-        scheduleId = ScheduleId("dataloom-queue-worker"),
-        delay = SchedulingDelay.None,
+        id = ScheduleId("dataloom-queue-worker"),
+        delay = SchedulingDelay.ZERO,
         constraints = ScheduleConstraints(
-            requiresNetwork = ConnectivityRequirement.AVAILABLE,
+            connectivity = ConnectivityRequirement.AVAILABLE,
         ),
-        existingSchedulePolicy = ExistingSchedulePolicy.KEEP,
-    )
+        existingPolicy = ExistingSchedulePolicy.KEEP,
+    ),
 )
 ```
 
+WorkManager retry is not used as a second retry mechanism. DataLoom's durable
+queue owns retry decisions and follow-up scheduling.
+
 ## Worker integration
 
-See [Worker Integration](./worker-integration.md) for configuring
-`DataLoomWorkerFactory` with WorkManager's `Configuration`.
+See [Worker Integration](./worker-integration.md) for the required custom
+`WorkerFactory`, manifest change, and `Configuration.Provider` setup.

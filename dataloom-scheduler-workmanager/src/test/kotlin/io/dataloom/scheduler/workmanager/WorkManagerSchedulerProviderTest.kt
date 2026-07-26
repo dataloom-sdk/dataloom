@@ -1,8 +1,8 @@
 package io.dataloom.scheduler.workmanager
 
-import android.content.Context
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequest
+import androidx.work.Operation
 import androidx.work.WorkManager
 import io.dataloom.api.context.DataLoomMetadata
 import io.dataloom.api.context.ExecutionContext
@@ -17,23 +17,44 @@ import io.dataloom.api.scheduling.ScheduleConstraints
 import io.dataloom.api.scheduling.ScheduleReceipt
 import io.dataloom.api.scheduling.ScheduleRequest
 import io.dataloom.api.scheduling.SchedulingDelay
+import java.util.concurrent.CancellationException
+import org.junit.Before
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.startCoroutine
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class WorkManagerSchedulerProviderTest {
 
-    private val mockContext: Context = mock()
     private val mockWorkManager: WorkManager = mock()
-    private val provider = WorkManagerSchedulerProvider(mockContext, mockWorkManager)
+    private val mockOperation: Operation = mock()
+    private val awaitedOperations = mutableListOf<Operation>()
+    private val provider = WorkManagerSchedulerProvider(
+        workManager = mockWorkManager,
+        operationAwaiter = WorkManagerOperationAwaiter { awaitedOperations += it },
+    )
+
+    @Before
+    fun setUp() {
+        awaitedOperations.clear()
+        whenever(
+            mockWorkManager.enqueueUniqueWork(
+                any<String>(),
+                any<ExistingWorkPolicy>(),
+                any<OneTimeWorkRequest>(),
+            ),
+        ).thenReturn(mockOperation)
+        whenever(mockWorkManager.cancelUniqueWork(any<String>())).thenReturn(mockOperation)
+    }
 
     private fun runSync(block: suspend () -> Unit) {
         var thrown: Throwable? = null
@@ -73,7 +94,7 @@ class WorkManagerSchedulerProviderTest {
     }
 
     @Test
-    fun `schedule returns Success with matching receipt id`() {
+    fun `schedule returns Success only after enqueue completes`() {
         val request = makeScheduleRequest(idValue = "my-schedule-id")
 
         var result: ProviderOperationResult<ScheduleReceipt>? = null
@@ -81,19 +102,47 @@ class WorkManagerSchedulerProviderTest {
 
         val success = assertIs<ProviderOperationResult.Success<ScheduleReceipt>>(result)
         assertEquals(ScheduleId("my-schedule-id"), success.value.id)
+        assertEquals(listOf(mockOperation), awaitedOperations)
     }
 
     @Test
-    fun `schedule calls enqueueUniqueWork with schedule id as work name`() {
-        val request = makeScheduleRequest(idValue = "queue-worker-wakeup")
-
-        runSync { provider.schedule(request) }
+    fun `schedule uses the schedule id as unique work name`() {
+        runSync { provider.schedule(makeScheduleRequest("queue-worker-wakeup")) }
 
         verify(mockWorkManager).enqueueUniqueWork(
             eq("queue-worker-wakeup"),
             eq(ExistingWorkPolicy.KEEP),
             any<OneTimeWorkRequest>(),
         )
+    }
+
+    @Test
+    fun `asynchronous enqueue failure maps to provider failure`() {
+        val failingProvider = WorkManagerSchedulerProvider(
+            workManager = mockWorkManager,
+            operationAwaiter = WorkManagerOperationAwaiter {
+                throw IllegalStateException("enqueue failed")
+            },
+        )
+
+        var result: ProviderOperationResult<ScheduleReceipt>? = null
+        runSync { result = failingProvider.schedule(makeScheduleRequest()) }
+
+        assertIs<ProviderOperationResult.Failure>(result)
+    }
+
+    @Test
+    fun `enqueue cancellation propagates`() {
+        val cancellingProvider = WorkManagerSchedulerProvider(
+            workManager = mockWorkManager,
+            operationAwaiter = WorkManagerOperationAwaiter {
+                throw CancellationException("cancelled")
+            },
+        )
+
+        assertFailsWith<CancellationException> {
+            runSync { cancellingProvider.schedule(makeScheduleRequest()) }
+        }
     }
 
     @Test
@@ -118,7 +167,7 @@ class WorkManagerSchedulerProviderTest {
     }
 
     @Test
-    fun `cancel calls cancelUniqueWork with schedule id`() {
+    fun `cancel awaits the WorkManager operation`() {
         val request = ScheduleCancellationRequest(
             id = ScheduleId("cancel-me"),
             context = makeExecutionContext(),
@@ -127,10 +176,11 @@ class WorkManagerSchedulerProviderTest {
         runSync { provider.cancel(request) }
 
         verify(mockWorkManager).cancelUniqueWork("cancel-me")
+        assertEquals(listOf(mockOperation), awaitedOperations)
     }
 
     @Test
-    fun `cancel returns Success`() {
+    fun `cancel returns Success after operation completes`() {
         val request = ScheduleCancellationRequest(
             id = ScheduleId("cancel-me"),
             context = makeExecutionContext(),

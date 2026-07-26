@@ -40,7 +40,7 @@ android {
 
 dependencies {
     // DataLoom public API contracts
-    implementation(project(":dataloom-api"))
+    api(project(":dataloom-api"))
 
     // Local JVM unit tests
     testImplementation(kotlin("test-junit"))

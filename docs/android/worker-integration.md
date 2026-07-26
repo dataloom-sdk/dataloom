@@ -1,76 +1,97 @@
 # Worker Integration (DL-037)
 
-The `dataloom-scheduler-workmanager` module provides `DataLoomCoroutineWorker`
-and `DataLoomWorkerFactory` for integrating DataLoom queue processing with
-AndroidX WorkManager.
+The `dataloom-scheduler-workmanager` module provides
+`DataLoomCoroutineWorker` and `DataLoomWorkerFactory` for integrating a
+DataLoom queue worker with AndroidX WorkManager.
 
 ## Overview
 
-```
+```text
 WorkManager triggers DataLoomCoroutineWorker
-    → DataLoomCoroutineWorker constructs QueueWorkerRunRequest
-    → Calls DataLoomQueueWorker.run(request)
-    → Maps QueueWorkerRunResult to WorkManager Result
+    → QueueWorkerRunRequestFactory creates a fresh request
+    → DataLoomQueueWorker.run(request) executes once
+    → QueueWorkerRunResult maps to WorkManager Result
 ```
 
-## DataLoomCoroutineWorker
+Each WorkManager invocation performs one bounded queue-worker cycle. The bridge
+does not start the DataLoom runtime, loop until the queue is empty, add a second
+retry state machine, or look up a global DataLoom singleton.
 
-`DataLoomCoroutineWorker` is a `CoroutineWorker` that bridges WorkManager
-execution to the DataLoom `DataLoomQueueWorker` contract. It runs one bounded
-queue-worker cycle per invocation.
+## Disable WorkManager's default initializer
 
-**What it does:**
-- Constructs a `QueueWorkerRunRequest` from injected parameters.
-- Calls `DataLoomQueueWorker.run(request)` once.
-- Maps `QueueWorkerRunResult` to `ListenableWorker.Result`.
+A custom `WorkerFactory` requires custom WorkManager configuration. Remove only
+WorkManager's AndroidX Startup initializer in the application manifest:
 
-**What it does NOT do:**
-- Does not start or stop the DataLoom runtime.
-- Does not loop until the queue is empty.
-- Does not duplicate the DataLoom retry state machine.
-- Does not reference a global DataLoom singleton.
+```xml
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
-## DataLoomWorkerFactory
+    <application>
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
+    </application>
+</manifest>
+```
 
-WorkManager's default `WorkerFactory` uses reflection to instantiate workers
-from their class names. `DataLoomCoroutineWorker` requires constructor
-parameters that cannot be injected by the default factory.
+Do not remove the whole `InitializationProvider` when the application uses
+AndroidX Startup for other components.
 
-`DataLoomWorkerFactory` handles this by matching the requested worker class
-name against `DataLoomCoroutineWorker` and supplying the injected parameters.
-For all other class names, it returns `null`, allowing WorkManager to delegate
-to the next factory in the chain.
+## Supply DataLoomWorkerFactory
 
-## WorkManager Configuration
-
-Configure WorkManager to use `DataLoomWorkerFactory` via `WorkManager.initialize()`:
+Implement `Configuration.Provider` on the application. WorkManager discovers
+this configuration when the host calls `WorkManager.getInstance(context)`;
+the application must not call `WorkManager.initialize()` itself.
 
 ```kotlin
 class MyApplication : Application(), Configuration.Provider {
 
-    override val workManagerConfiguration: Configuration
-        get() = Configuration.Builder()
-            .setWorkerFactory(buildWorkerFactory())
-            .build()
+    private val dataLoom: DataLoom by lazy { buildDataLoom() }
 
-    private fun buildWorkerFactory(): WorkerFactory {
-        return DataLoomWorkerFactory(
-            queueWorker = dataLoom.queueWorker(),     // from DataLoom facade
-            consumerId = QueueConsumerId("my-app"),
-            leaseId = QueueLeaseId(UUID.randomUUID().toString()),
-            acquiredAtMillis = System.currentTimeMillis(),
-            leaseExpiresAtMillis = System.currentTimeMillis() + 60_000L,
-            maxEntries = 10,
-            recoverExpiredLeases = true,
+    private val requestFactory = QueueWorkerRunRequestFactory {
+        val nowMillis = System.currentTimeMillis()
+        QueueWorkerRunRequest(
+            processingRequest = QueueProcessingRequest(
+                acquireRequest = QueueAcquireRequest(
+                    consumerId = QueueConsumerId("my-app"),
+                    leaseId = QueueLeaseId(UUID.randomUUID().toString()),
+                    acquiredAt = DataLoomInstant(nowMillis),
+                    leaseExpiresAt = DataLoomInstant(nowMillis + 60_000L),
+                    maxEntries = 10,
+                ),
+            ),
+            recoveryRequest = ExpiredLeaseRecoveryRequest(
+                currentTime = DataLoomInstant(nowMillis),
+            ),
         )
     }
+
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setWorkerFactory(
+                DataLoomWorkerFactory(
+                    queueWorker = requireNotNull(dataLoom.queueWorker) {
+                        "Configure queue-worker support before WorkManager starts."
+                    },
+                    requestFactory = requestFactory,
+                ),
+            )
+            .build()
 }
 ```
 
-Because `Configuration.Provider` is implemented by `Application`, WorkManager
-initializes on-demand and uses the provided factory. The default
-auto-initialization is suppressed by including WorkManager's
-`work-runtime-ktx` artifact, which provides the necessary manifest merger rules.
+The request factory runs when the worker executes. It must generate a fresh
+lease identifier and timestamps on every call. Set `recoveryRequest` to
+`null` instead when the DataLoom queue-worker configuration disables
+expired-lease recovery.
 
 ## Result mapping
 
@@ -78,13 +99,10 @@ auto-initialization is suppressed by including WorkManager's
 |---|---|
 | `ProcessingCompleted` | `Result.success()` |
 | `RecoveryFailed` | `Result.failure()` |
+| `ProcessingFailed` | `Result.failure()` |
 
 ## Scheduling and retries
 
-WorkManager retries are **not** used. The DataLoom durable queue state machine
-handles retry scheduling independently. Setting `setBackoffCriteria` or
-returning `Result.retry()` would create a duplicate retry mechanism.
-
-When the `DataLoomQueueWorker` determines that further work is needed, it
-schedules a follow-up work item via the `SchedulerProvider`. WorkManager
-receives only `Result.success()` or `Result.failure()`.
+The bridge never returns `Result.retry()`. DataLoom's durable queue owns retry
+and rescheduling state. When another bounded cycle is useful, the queue-worker
+coordinator requests a follow-up schedule through `SchedulerProvider`.

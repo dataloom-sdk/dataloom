@@ -26,6 +26,7 @@ import io.dataloom.api.queue.QueueEntryState
 import io.dataloom.api.time.DataLoomInstant
 import io.dataloom.queue.room.internal.DataLoomRoomDatabase
 import io.dataloom.queue.room.internal.QueueEntryDao
+import java.util.concurrent.CancellationException
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.mockito.kotlin.any
@@ -34,6 +35,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 
 /** Fast provider contract tests. Real Room/SQLite behaviour is covered by androidTest. */
@@ -93,6 +95,21 @@ class RoomQueueProviderTest {
             val failure = assertIs<ProviderOperationResult.Failure>(result)
             assertEquals("QUEUE_DUPLICATE_ENTRY", failure.error.code.value)
         }
+    }
+
+    @Test
+    fun `database cancellation propagates instead of becoming a provider failure`() {
+        val expected = CancellationException("cancelled")
+        runBlocking {
+            whenever(dao.insert(any())).thenThrow(expected)
+        }
+
+        val actual = assertFailsWith<CancellationException> {
+            runBlocking {
+                provider.enqueue(QueueEnqueueRequest(entry()))
+            }
+        }
+        assertEquals("cancelled", actual.message)
     }
 
     @Test

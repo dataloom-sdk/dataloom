@@ -125,8 +125,14 @@ jobs:
             echo "Missing committed Room schema version 1."
             failures=1
           fi
-          if ! git diff --exit-code -- dataloom-queue-room/schemas 2>&1 | tee android-ci-logs/room-schema.log; then
-            echo "Room schema changed during validation and is not committed."
+          git status --porcelain --untracked-files=all -- dataloom-queue-room/schemas \
+            2>&1 | tee android-ci-logs/room-schema.log
+          schema_status=${PIPESTATUS[0]}
+          if [[ $schema_status -ne 0 ]]; then
+            echo "Unable to inspect the generated Room schema state."
+            failures=1
+          elif [[ -s android-ci-logs/room-schema.log ]]; then
+            echo "Room schema changed during validation or contains uncommitted files."
             failures=1
           fi
           echo "::endgroup::"

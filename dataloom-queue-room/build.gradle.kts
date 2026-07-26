@@ -35,10 +35,13 @@ android {
                     device = "Pixel 2"
                     apiLevel = 35
                     systemImageSource = "aosp"
+                    testedAbi = "x86_64"
                 }
             }
         }
     }
+
+    sourceSets.getByName("androidTest").assets.srcDir("$projectDir/schemas")
 }
 
 ksp {
@@ -47,8 +50,8 @@ ksp {
 }
 
 dependencies {
-    implementation(project(":dataloom-api"))
-    implementation(libs.room.runtime)
+    api(project(":dataloom-api"))
+    api(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
 

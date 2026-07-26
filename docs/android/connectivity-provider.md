@@ -1,7 +1,7 @@
 # Android Connectivity Provider (DL-037)
 
-`AndroidConnectivityProvider` implements the DataLoom `ConnectivityProvider`
-contract using the Android `ConnectivityManager` API.
+`AndroidConnectivityProvider` implements DataLoom's `ConnectivityProvider`
+contract using Android `ConnectivityManager`.
 
 ## Module
 
@@ -9,14 +9,12 @@ contract using the Android `ConnectivityManager` API.
 
 ## Required permission
 
-The host application must declare `ACCESS_NETWORK_STATE` in its manifest:
+The module manifest declares `ACCESS_NETWORK_STATE`, which is merged into the
+host application automatically:
 
 ```xml
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 ```
-
-The module manifest already includes this permission. Android merges it
-automatically; no additional step is required.
 
 ## Status mapping
 
@@ -24,42 +22,31 @@ automatically; no additional step is required.
 |---|---|
 | `ConnectivityManager` unavailable | `UNKNOWN` |
 | No active network | `UNAVAILABLE` |
-| Active network but `NetworkCapabilities` unavailable | `UNKNOWN` |
+| Active network but capabilities unavailable | `UNKNOWN` |
 | `NET_CAPABILITY_INTERNET` and `NET_CAPABILITY_VALIDATED` | `AVAILABLE` |
-| `NET_CAPABILITY_INTERNET` but not validated | `LIMITED` |
-| No `NET_CAPABILITY_INTERNET` capability | `LIMITED` |
+| Internet capability without validation | `LIMITED` |
+| No internet capability | `LIMITED` |
 
-Validated internet connectivity (`NET_CAPABILITY_VALIDATED`) is required before
-reporting `AVAILABLE`. The presence of an active network alone is not
-sufficient.
+On API 21–22, where validated-network capability is unavailable, a connected
+legacy network is reported conservatively as `LIMITED`.
 
-## Privacy guarantees
+## Privacy and behavior
 
-- Does not read SSID, BSSID, carrier name, signal strength, IP address, or
-  MAC address.
-- Does not use `WifiInfo` or `TelephonyManager`.
-- Does not require any location permission.
-- Does not log any network characteristics.
-
-## Behaviour contract
-
-- Performs one bounded current-state query per `check()` call.
-- Does not poll.
-- Does not register a `NetworkCallback`.
-- Does not return a `Flow`.
-- Does not hold a background coroutine scope.
-- Does not cache results between calls.
+Each `currentConnectivity()` call performs one bounded current-state query.
+The provider does not poll, register callbacks, expose a `Flow`, cache
+results, or hold a background coroutine scope. It does not read or log SSID,
+BSSID, carrier, signal, IP, MAC, location, credentials, or payload data.
 
 ## Usage
 
 ```kotlin
 val provider = AndroidConnectivityProvider(context)
-val result: ProviderOperationResult<ConnectivitySnapshot> = provider.currentConnectivity(
-    ConnectivityCheckRequest(requirement = ConnectivityRequirement.AVAILABLE)
-)
+val result: ProviderOperationResult<ConnectivitySnapshot> =
+    provider.currentConnectivity(
+        ConnectivityCheckRequest(context = executionContext),
+    )
 ```
 
-## Testing
-
-Unit tests mock `ConnectivityManager` and `NetworkCapabilities` to cover
-all status mapping branches without requiring a real device or emulator.
+The request carries the DataLoom `ExecutionContext`; the connectivity
+requirement belongs to scheduling or synchronization policy, not to
+`ConnectivityCheckRequest`.

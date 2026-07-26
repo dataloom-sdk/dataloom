@@ -6,16 +6,18 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.Operation
 import androidx.work.WorkManager
+import androidx.work.await
 import io.dataloom.api.connectivity.ConnectivityRequirement
 import io.dataloom.api.provider.ProviderCapability
 import io.dataloom.api.provider.ProviderDescriptor
 import io.dataloom.api.provider.ProviderHealth
 import io.dataloom.api.provider.ProviderHealthStatus
 import io.dataloom.api.provider.ProviderInitializationContext
-import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderId
 import io.dataloom.api.provider.ProviderName
+import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.provider.ProviderVersion
 import io.dataloom.api.scheduling.ExistingSchedulePolicy
@@ -34,13 +36,29 @@ import java.util.concurrent.TimeUnit
  * WorkManager request. Scheduling does not execute synchronization or inspect
  * queue payloads. WorkManager retry is not used as a second queue retry state
  * machine.
+ *
+ * Success is returned only after WorkManager's asynchronous enqueue or
+ * cancellation [Operation] reaches its successful terminal state.
  */
-public class WorkManagerSchedulerProvider(
-    context: Context,
-    private val workManager: WorkManager = WorkManager.getInstance(
-        context.applicationContext ?: context,
-    ),
+public class WorkManagerSchedulerProvider internal constructor(
+    private val workManager: WorkManager,
+    private val operationAwaiter: WorkManagerOperationAwaiter,
 ) : SchedulerProvider {
+
+    public constructor(context: Context) : this(
+        workManager = WorkManager.getInstance(context.applicationContext ?: context),
+        operationAwaiter = DefaultWorkManagerOperationAwaiter,
+    )
+
+    /** Retains the explicit WorkManager injection API for hosts and tests. */
+    @Suppress("UNUSED_PARAMETER")
+    public constructor(
+        context: Context,
+        workManager: WorkManager,
+    ) : this(
+        workManager = workManager,
+        operationAwaiter = DefaultWorkManagerOperationAwaiter,
+    )
 
     override val descriptor: ProviderDescriptor = ProviderDescriptor(
         id = ProviderId("io.dataloom.scheduler.workmanager"),
@@ -65,11 +83,12 @@ public class WorkManagerSchedulerProvider(
     ): ProviderOperationResult<ScheduleReceipt> {
         return try {
             val workRequest = buildWorkRequest(request)
-            workManager.enqueueUniqueWork(
+            val operation = workManager.enqueueUniqueWork(
                 request.id.value,
                 request.existingPolicy.toExistingWorkPolicy(),
                 workRequest,
             )
+            operationAwaiter.await(operation)
             ProviderOperationResult.Success(ScheduleReceipt(id = request.id))
         } catch (exception: CancellationException) {
             throw exception
@@ -82,7 +101,8 @@ public class WorkManagerSchedulerProvider(
         request: ScheduleCancellationRequest,
     ): ProviderOperationResult<Unit> {
         return try {
-            workManager.cancelUniqueWork(request.id.value)
+            val operation = workManager.cancelUniqueWork(request.id.value)
+            operationAwaiter.await(operation)
             ProviderOperationResult.Success(Unit)
         } catch (exception: CancellationException) {
             throw exception
@@ -119,5 +139,15 @@ public class WorkManagerSchedulerProvider(
 
     public companion object {
         public const val WORKER_TAG: String = "io.dataloom.worker"
+    }
+}
+
+internal fun interface WorkManagerOperationAwaiter {
+    suspend fun await(operation: Operation)
+}
+
+private object DefaultWorkManagerOperationAwaiter : WorkManagerOperationAwaiter {
+    override suspend fun await(operation: Operation) {
+        operation.await()
     }
 }

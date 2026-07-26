@@ -1,5 +1,6 @@
 package io.dataloom.queue.room
 
+import android.database.sqlite.SQLiteConstraintException
 import io.dataloom.api.provider.ProviderDescriptor
 import io.dataloom.api.provider.ProviderHealth
 import io.dataloom.api.provider.ProviderHealthStatus
@@ -26,6 +27,7 @@ import io.dataloom.queue.room.internal.QueueEntryDao
 import io.dataloom.queue.room.internal.QueueProviderError
 import io.dataloom.queue.room.internal.toDomain
 import io.dataloom.queue.room.internal.toEntity
+import java.util.concurrent.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -63,7 +65,6 @@ import kotlinx.coroutines.withContext
  * - Does not execute synchronization.
  * - Does not decode or interpret payload or metadata content.
  * - Does not evaluate retry policy.
- * - Does not select dispatchers.
  * - Does not expose Room or SQLite types through the public API.
  * - Does not log credentials, tokens, keys, or complete user payloads.
  *
@@ -77,7 +78,6 @@ import kotlinx.coroutines.withContext
 public class RoomQueueProvider(
     private val database: DataLoomRoomDatabase,
 ) : QueueProvider {
-
     private val dao: QueueEntryDao by lazy { database.queueEntryDao() }
 
     override val descriptor: ProviderDescriptor = ProviderDescriptor(
@@ -97,203 +97,142 @@ public class RoomQueueProvider(
     override suspend fun close(): ProviderOperationResult<Unit> =
         ProviderOperationResult.Success(Unit)
 
-    /**
-     * Persists a new queue entry in the Room database.
-     *
-     * Returns [ProviderOperationResult.Failure] with `QUEUE_DUPLICATE_ENTRY`
-     * when an entry with the same identifier already exists, or
-     * `QUEUE_DATABASE_FAILURE` for other storage errors.
-     */
+    /** Persists one new queue entry. */
     override suspend fun enqueue(
         request: QueueEnqueueRequest,
-    ): ProviderOperationResult<Unit> = withContext(Dispatchers.IO) {
+    ): ProviderOperationResult<Unit> = executeDatabaseOperation {
         try {
             dao.insert(request.entry.toEntity())
             ProviderOperationResult.Success(Unit)
-        } catch (e: android.database.sqlite.SQLiteConstraintException) {
+        } catch (_: SQLiteConstraintException) {
             ProviderOperationResult.Failure(
                 QueueProviderError.duplicateEntry(request.entry.id.value),
             )
-        } catch (e: Exception) {
-            ProviderOperationResult.Failure(QueueProviderError.databaseFailure())
         }
     }
 
-    /**
-     * Atomically acquires eligible queue entries and assigns an exclusive lease.
-     *
-     * Eligible entries are those in PENDING or RETRY_WAITING state where
-     * `availableAt <= acquiredAt`, limited to [QueueAcquireRequest.maxEntries].
-     *
-     * Returns [QueueAcquireResult.NoEntries] when no eligible entries exist.
-     * Returns [QueueAcquireResult.Entries] with all acquired entries and the
-     * shared lease.
-     */
+    /** Atomically acquires and leases at most [QueueAcquireRequest.maxEntries]. */
     override suspend fun acquire(
         request: QueueAcquireRequest,
-    ): ProviderOperationResult<QueueAcquireResult> = withContext(Dispatchers.IO) {
-        try {
-            val acquired = dao.acquireEntries(
-                nowMs = request.acquiredAt.epochMilliseconds,
-                leaseId = request.leaseId.value,
-                consumerId = request.consumerId.value,
-                acquiredAtMs = request.acquiredAt.epochMilliseconds,
-                expiresAtMs = request.leaseExpiresAt.epochMilliseconds,
-                limit = request.maxEntries,
+    ): ProviderOperationResult<QueueAcquireResult> = executeDatabaseOperation {
+        val acquired = dao.acquireEntries(
+            nowMs = request.acquiredAt.epochMilliseconds,
+            leaseId = request.leaseId.value,
+            consumerId = request.consumerId.value,
+            acquiredAtMs = request.acquiredAt.epochMilliseconds,
+            expiresAtMs = request.leaseExpiresAt.epochMilliseconds,
+            limit = request.maxEntries,
+        )
+        if (acquired.isEmpty()) {
+            ProviderOperationResult.Success(QueueAcquireResult.NoEntries)
+        } else {
+            val lease = QueueLease(
+                id = request.leaseId,
+                consumerId = request.consumerId,
+                acquiredAt = request.acquiredAt,
+                expiresAt = request.leaseExpiresAt,
             )
-            if (acquired.isEmpty()) {
-                ProviderOperationResult.Success(QueueAcquireResult.NoEntries)
-            } else {
-                val domainEntries = acquired.map { it.toDomain() }
-                val lease = QueueLease(
-                    id = request.leaseId,
-                    consumerId = request.consumerId,
-                    acquiredAt = request.acquiredAt,
-                    expiresAt = request.leaseExpiresAt,
-                )
-                ProviderOperationResult.Success(
-                    QueueAcquireResult.Entries(lease = lease, entries = domainEntries),
-                )
-            }
-        } catch (e: Exception) {
-            ProviderOperationResult.Failure(QueueProviderError.databaseFailure())
+            ProviderOperationResult.Success(
+                QueueAcquireResult.Entries(
+                    lease = lease,
+                    entries = acquired.map { it.toDomain() },
+                ),
+            )
         }
     }
 
-    /**
-     * Marks a leased queue entry as successfully completed.
-     *
-     * Returns [ProviderOperationResult.Failure] with `QUEUE_STALE_LEASE` when
-     * the supplied lease identifier does not match the current entry lease.
-     */
+    /** Completes an entry only when the supplied lease is still current. */
     override suspend fun complete(
         request: QueueCompletionRequest,
-    ): ProviderOperationResult<Unit> = withContext(Dispatchers.IO) {
-        try {
-            val affected = dao.completeEntry(
+    ): ProviderOperationResult<Unit> = executeDatabaseOperation {
+        guardedTransitionResult(
+            dao.completeEntry(
                 entryId = request.entryId.value,
                 leaseId = request.leaseId.value,
-            )
-            if (affected == 0) {
-                ProviderOperationResult.Failure(
-                    QueueProviderError.staleLease(request.entryId.value),
-                )
-            } else {
-                ProviderOperationResult.Success(Unit)
-            }
-        } catch (e: Exception) {
-            ProviderOperationResult.Failure(QueueProviderError.databaseFailure())
-        }
+            ),
+            request.entryId.value,
+        )
     }
 
-    /**
-     * Reschedules a leased queue entry for a future retry attempt.
-     *
-     * Returns [ProviderOperationResult.Failure] with `QUEUE_STALE_LEASE` when
-     * the supplied lease identifier does not match the current entry lease.
-     */
+    /** Reschedules an entry only when the supplied lease is still current. */
     override suspend fun reschedule(
         request: QueueRescheduleRequest,
-    ): ProviderOperationResult<Unit> = withContext(Dispatchers.IO) {
-        try {
-            val affected = dao.rescheduleEntry(
+    ): ProviderOperationResult<Unit> = executeDatabaseOperation {
+        guardedTransitionResult(
+            dao.rescheduleEntry(
                 entryId = request.entryId.value,
                 leaseId = request.leaseId.value,
                 availableAtMs = request.availableAt.epochMilliseconds,
                 retryAttemptNumber = request.retryAttempt.number,
                 errorCode = request.error.code.value,
                 errorMessage = request.error.message,
-            )
-            if (affected == 0) {
-                ProviderOperationResult.Failure(
-                    QueueProviderError.staleLease(request.entryId.value),
-                )
-            } else {
-                ProviderOperationResult.Success(Unit)
-            }
-        } catch (e: Exception) {
-            ProviderOperationResult.Failure(QueueProviderError.databaseFailure())
-        }
+            ),
+            request.entryId.value,
+        )
     }
 
-    /**
-     * Marks a leased queue entry as permanently failed or dead-lettered.
-     *
-     * The target state is determined by [QueueFailureRequest.disposition]:
-     * - [QueueFailureDisposition.FAILED] → `FAILED`
-     * - [QueueFailureDisposition.DEAD_LETTER] → `DEAD_LETTER`
-     *
-     * Returns [ProviderOperationResult.Failure] with `QUEUE_STALE_LEASE` when
-     * the supplied lease identifier does not match the current entry lease.
-     */
+    /** Permanently fails or dead-letters an entry guarded by its lease. */
     override suspend fun fail(
         request: QueueFailureRequest,
-    ): ProviderOperationResult<Unit> = withContext(Dispatchers.IO) {
-        try {
-            val targetState = when (request.disposition) {
-                QueueFailureDisposition.FAILED -> "FAILED"
-                QueueFailureDisposition.DEAD_LETTER -> "DEAD_LETTER"
-            }
-            val affected = dao.failEntry(
+    ): ProviderOperationResult<Unit> = executeDatabaseOperation {
+        val targetState = when (request.disposition) {
+            QueueFailureDisposition.FAILED -> "FAILED"
+            QueueFailureDisposition.DEAD_LETTER -> "DEAD_LETTER"
+        }
+        guardedTransitionResult(
+            dao.failEntry(
                 entryId = request.entryId.value,
                 leaseId = request.leaseId.value,
                 targetState = targetState,
                 errorCode = request.error.code.value,
                 errorMessage = request.error.message,
-            )
-            if (affected == 0) {
-                ProviderOperationResult.Failure(
-                    QueueProviderError.staleLease(request.entryId.value),
-                )
-            } else {
-                ProviderOperationResult.Success(Unit)
-            }
-        } catch (e: Exception) {
-            ProviderOperationResult.Failure(QueueProviderError.databaseFailure())
-        }
+            ),
+            request.entryId.value,
+        )
     }
 
-    /**
-     * Cancels a queue entry that is in PENDING or RETRY_WAITING state.
-     *
-     * Cancellation of LEASED or terminal entries is refused. Returns
-     * [ProviderOperationResult.Failure] with `QUEUE_CANCELLATION_REJECTED`
-     * when the entry cannot be cancelled in its current state.
-     */
+    /** Cancels an entry only while it is pending or waiting for retry. */
     override suspend fun cancel(
         request: QueueCancellationRequest,
-    ): ProviderOperationResult<Unit> = withContext(Dispatchers.IO) {
-        try {
-            val affected = dao.cancelEntry(entryId = request.entryId.value)
-            if (affected == 0) {
-                ProviderOperationResult.Failure(
-                    QueueProviderError.cancellationRejected(request.entryId.value),
-                )
-            } else {
-                ProviderOperationResult.Success(Unit)
-            }
-        } catch (e: Exception) {
-            ProviderOperationResult.Failure(QueueProviderError.databaseFailure())
+    ): ProviderOperationResult<Unit> = executeDatabaseOperation {
+        if (dao.cancelEntry(entryId = request.entryId.value) == 0) {
+            ProviderOperationResult.Failure(
+                QueueProviderError.cancellationRejected(request.entryId.value),
+            )
+        } else {
+            ProviderOperationResult.Success(Unit)
         }
     }
 
-    /**
-     * Recovers queue entries whose exclusive leases have expired.
-     *
-     * Entries in LEASED state with `leaseExpiresAt < currentTime` are
-     * transitioned back to PENDING state. All lease columns are cleared.
-     *
-     * Returns the number of recovered entries in [ExpiredLeaseRecoveryResult].
-     */
+    /** Recovers expired leases in one database update. */
     override suspend fun recoverExpiredLeases(
         request: ExpiredLeaseRecoveryRequest,
-    ): ProviderOperationResult<ExpiredLeaseRecoveryResult> = withContext(Dispatchers.IO) {
+    ): ProviderOperationResult<ExpiredLeaseRecoveryResult> = executeDatabaseOperation {
+        ProviderOperationResult.Success(
+            ExpiredLeaseRecoveryResult(
+                dao.recoverExpiredLeases(request.currentTime.epochMilliseconds),
+            ),
+        )
+    }
+
+    private fun guardedTransitionResult(
+        affectedRows: Int,
+        entryId: String,
+    ): ProviderOperationResult<Unit> =
+        if (affectedRows == 0) {
+            ProviderOperationResult.Failure(QueueProviderError.staleLease(entryId))
+        } else {
+            ProviderOperationResult.Success(Unit)
+        }
+
+    private suspend fun <T> executeDatabaseOperation(
+        operation: suspend () -> ProviderOperationResult<T>,
+    ): ProviderOperationResult<T> = withContext(Dispatchers.IO) {
         try {
-            val recovered = dao.recoverExpiredLeases(
-                nowMs = request.currentTime.epochMilliseconds,
-            )
-            ProviderOperationResult.Success(ExpiredLeaseRecoveryResult(recovered))
-        } catch (e: Exception) {
+            operation()
+        } catch (exception: CancellationException) {
+            throw exception
+        } catch (_: Exception) {
             ProviderOperationResult.Failure(QueueProviderError.databaseFailure())
         }
     }
