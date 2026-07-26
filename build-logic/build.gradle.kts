@@ -21,4 +21,3 @@ dependencies {
     // Provides the Kotlin Multiplatform Gradle plugin to convention plugin scripts.
     implementation(libs.kotlin.gradlePlugin)
 }
-
