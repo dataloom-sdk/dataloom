@@ -73,88 +73,77 @@ jobs:
             --warning-mode all \
             --console=plain 2>&1 | tee android-ci-logs/projects.log
 
-      - name: Assemble dataloom-connectivity-android
+      - name: Run complete Android validation matrix
         shell: bash
         run: |
-          set -o pipefail
-          ./gradlew :dataloom-connectivity-android:assembleDebug :dataloom-connectivity-android:assembleRelease \
-            --stacktrace --console=plain 2>&1 | tee android-ci-logs/connectivity-assemble.log
+          set +e
+          failures=0
 
-      - name: Run dataloom-connectivity-android tests
-        shell: bash
-        run: |
-          set -o pipefail
-          ./gradlew :dataloom-connectivity-android:testDebugUnitTest \
-            --stacktrace --console=plain 2>&1 | tee android-ci-logs/connectivity-tests.log
+          run_gradle_check() {
+            local log_name="$1"
+            shift
+            echo "::group::$log_name"
+            ./gradlew "$@" --stacktrace --console=plain 2>&1 | tee "android-ci-logs/${log_name}.log"
+            local status=${PIPESTATUS[0]}
+            echo "::endgroup::"
+            if [[ $status -ne 0 ]]; then
+              echo "FAILED: $log_name (exit $status)"
+              failures=1
+            else
+              echo "PASSED: $log_name"
+            fi
+          }
 
-      - name: Lint dataloom-connectivity-android
-        shell: bash
-        run: |
-          set -o pipefail
-          ./gradlew :dataloom-connectivity-android:lintDebug \
-            --stacktrace --console=plain 2>&1 | tee android-ci-logs/connectivity-lint.log
+          run_gradle_check connectivity-assemble \
+            :dataloom-connectivity-android:assembleDebug \
+            :dataloom-connectivity-android:assembleRelease
+          run_gradle_check connectivity-tests \
+            :dataloom-connectivity-android:testDebugUnitTest
+          run_gradle_check connectivity-lint \
+            :dataloom-connectivity-android:lintDebug
 
-      - name: Assemble dataloom-scheduler-workmanager
-        shell: bash
-        run: |
-          set -o pipefail
-          ./gradlew :dataloom-scheduler-workmanager:assembleDebug :dataloom-scheduler-workmanager:assembleRelease \
-            --stacktrace --console=plain 2>&1 | tee android-ci-logs/scheduler-assemble.log
+          run_gradle_check scheduler-assemble \
+            :dataloom-scheduler-workmanager:assembleDebug \
+            :dataloom-scheduler-workmanager:assembleRelease
+          run_gradle_check scheduler-tests \
+            :dataloom-scheduler-workmanager:testDebugUnitTest
+          run_gradle_check scheduler-lint \
+            :dataloom-scheduler-workmanager:lintDebug
 
-      - name: Run dataloom-scheduler-workmanager tests
-        shell: bash
-        run: |
-          set -o pipefail
-          ./gradlew :dataloom-scheduler-workmanager:testDebugUnitTest \
-            --stacktrace --console=plain 2>&1 | tee android-ci-logs/scheduler-tests.log
+          run_gradle_check room-assemble \
+            :dataloom-queue-room:assembleDebug \
+            :dataloom-queue-room:assembleRelease
+          run_gradle_check room-tests \
+            :dataloom-queue-room:testDebugUnitTest
+          run_gradle_check room-lint \
+            :dataloom-queue-room:lintDebug
 
-      - name: Lint dataloom-scheduler-workmanager
-        shell: bash
-        run: |
-          set -o pipefail
-          ./gradlew :dataloom-scheduler-workmanager:lintDebug \
-            --stacktrace --console=plain 2>&1 | tee android-ci-logs/scheduler-lint.log
+          echo "::group::room-schema"
+          if [[ ! -f dataloom-queue-room/schemas/io.dataloom.queue.room.internal.DataLoomRoomDatabase/1.json ]]; then
+            echo "Missing committed Room schema version 1."
+            failures=1
+          fi
+          if ! git diff --exit-code -- dataloom-queue-room/schemas 2>&1 | tee android-ci-logs/room-schema.log; then
+            echo "Room schema changed during validation and is not committed."
+            failures=1
+          fi
+          echo "::endgroup::"
 
-      - name: Assemble dataloom-queue-room
-        shell: bash
-        run: |
-          set -o pipefail
-          ./gradlew :dataloom-queue-room:assembleDebug :dataloom-queue-room:assembleRelease \
-            --stacktrace --console=plain 2>&1 | tee android-ci-logs/room-assemble.log
+          run_gradle_check android-build \
+            :dataloom-connectivity-android:build \
+            :dataloom-scheduler-workmanager:build \
+            :dataloom-queue-room:build
 
-      - name: Run dataloom-queue-room tests
-        shell: bash
-        run: |
-          set -o pipefail
-          ./gradlew :dataloom-queue-room:testDebugUnitTest \
-            --stacktrace --console=plain 2>&1 | tee android-ci-logs/room-tests.log
+          run_gradle_check kmp-regression \
+            :dataloom-api:allTests \
+            :dataloom-core:allTests \
+            :dataloom-runtime:allTests \
+            :dataloom-testing:allTests
 
-      - name: Lint dataloom-queue-room
-        shell: bash
-        run: |
-          set -o pipefail
-          ./gradlew :dataloom-queue-room:lintDebug \
-            --stacktrace --console=plain 2>&1 | tee android-ci-logs/room-lint.log
-
-      - name: Verify committed Room schema is current
-        shell: bash
-        run: |
-          test -f dataloom-queue-room/schemas/io.dataloom.queue.room.internal.DataLoomRoomDatabase/1.json
-          git diff --exit-code -- dataloom-queue-room/schemas
-
-      - name: Build all Android modules
-        shell: bash
-        run: |
-          set -o pipefail
-          ./gradlew :dataloom-connectivity-android:build :dataloom-scheduler-workmanager:build :dataloom-queue-room:build \
-            --stacktrace --console=plain 2>&1 | tee android-ci-logs/android-build.log
-
-      - name: Verify KMP modules unaffected
-        shell: bash
-        run: |
-          set -o pipefail
-          ./gradlew :dataloom-api:allTests :dataloom-core:allTests :dataloom-runtime:allTests :dataloom-testing:allTests \
-            --stacktrace --console=plain 2>&1 | tee android-ci-logs/kmp-regression.log
+          if [[ $failures -ne 0 ]]; then
+            echo "One or more required Android validations failed. See the uploaded logs."
+            exit 1
+          fi
 
       - name: Upload Android validation logs
         if: always()
