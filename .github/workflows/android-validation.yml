@@ -1,0 +1,205 @@
+name: Android Validation
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android-validate:
+    name: Validate Android modules
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      DATALOOM_ANDROID_BUILD: "true"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Enable KVM for managed device
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Prepare Android CI logs
+        run: mkdir -p android-ci-logs
+
+      - name: Verify Gradle version
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew --version 2>&1 | tee android-ci-logs/gradle-version.log
+
+      - name: Reject accidentally committed Gradle plugin metadata
+        shell: bash
+        run: |
+          if [[ -d META-INF/gradle-plugins ]]; then
+            echo "Generated META-INF/gradle-plugins must not be committed."
+            find META-INF/gradle-plugins -type f -print
+            exit 1
+          fi
+
+      - name: Verify project structure includes Android modules
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew projects \
+            --no-configuration-cache \
+            --stacktrace \
+            --warning-mode all \
+            --console=plain 2>&1 | tee android-ci-logs/projects.log
+
+      - name: Run complete Android validation matrix
+        shell: bash
+        run: |
+          set +e
+          failures=0
+
+          run_gradle_check() {
+            local log_name="$1"
+            shift
+            echo "::group::$log_name"
+            ./gradlew "$@" --stacktrace --console=plain 2>&1 | tee "android-ci-logs/${log_name}.log"
+            local status=${PIPESTATUS[0]}
+            echo "::endgroup::"
+            if [[ $status -ne 0 ]]; then
+              echo "FAILED: $log_name (exit $status)"
+              failures=1
+            else
+              echo "PASSED: $log_name"
+            fi
+          }
+
+          run_gradle_check connectivity-assemble \
+            :dataloom-connectivity-android:assembleDebug \
+            :dataloom-connectivity-android:assembleRelease
+          run_gradle_check connectivity-tests :dataloom-connectivity-android:testDebugUnitTest
+          run_gradle_check connectivity-lint :dataloom-connectivity-android:lintDebug
+
+          run_gradle_check scheduler-assemble \
+            :dataloom-scheduler-workmanager:assembleDebug \
+            :dataloom-scheduler-workmanager:assembleRelease
+          run_gradle_check scheduler-tests :dataloom-scheduler-workmanager:testDebugUnitTest
+          run_gradle_check scheduler-lint :dataloom-scheduler-workmanager:lintDebug
+
+          run_gradle_check room-assemble \
+            :dataloom-queue-room:assembleDebug \
+            :dataloom-queue-room:assembleRelease \
+            :dataloom-queue-room:assembleDebugAndroidTest
+          run_gradle_check room-tests :dataloom-queue-room:testDebugUnitTest
+          run_gradle_check room-lint :dataloom-queue-room:lintDebug
+
+          echo "::group::room-schema"
+          schema_file="dataloom-queue-room/schemas/io.dataloom.queue.room.internal.DataLoomRoomDatabase/1.json"
+          generated_database="dataloom-queue-room/build/generated/ksp/debug/kotlin/io/dataloom/queue/room/internal/DataLoomRoomDatabase_Impl.kt"
+          if [[ ! -f "$schema_file" ]]; then
+            echo "Missing committed Room schema version 1."
+            failures=1
+          elif [[ ! -f "$generated_database" ]]; then
+            echo "Missing KSP-generated Room database implementation."
+            failures=1
+          else
+            python3 - "$schema_file" "$generated_database" <<'PY'
+          import json
+          import pathlib
+          import re
+          import sys
+
+          schema_path = pathlib.Path(sys.argv[1])
+          generated_path = pathlib.Path(sys.argv[2])
+          schema_hash = json.loads(schema_path.read_text())["database"]["identityHash"]
+          if re.fullmatch(r"[0-9a-f]{32}", schema_hash) is None:
+              raise SystemExit(f"Invalid committed Room identity hash: {schema_hash!r}")
+
+          generated_source = generated_path.read_text()
+          generated_match = re.search(
+              r'RoomOpenDelegate\(\s*\d+,\s*"([0-9a-f]{32})"',
+              generated_source,
+          )
+          if generated_match is None:
+              raise SystemExit("Unable to read the KSP-generated Room identity hash.")
+
+          generated_hash = generated_match.group(1)
+          if schema_hash != generated_hash:
+              raise SystemExit(
+                  "Committed Room schema identity hash does not match KSP output: "
+                  f"{schema_hash} != {generated_hash}",
+              )
+          print(f"Verified Room schema identity hash: {schema_hash}")
+          PY
+            if [[ $? -ne 0 ]]; then
+              failures=1
+            fi
+          fi
+          git status --porcelain --untracked-files=all -- dataloom-queue-room/schemas \
+            2>&1 | tee android-ci-logs/room-schema.log
+          schema_status=${PIPESTATUS[0]}
+          if [[ $schema_status -ne 0 ]]; then
+            echo "Unable to inspect the generated Room schema state."
+            failures=1
+          elif [[ -s android-ci-logs/room-schema.log ]]; then
+            echo "Room schema changed during validation or contains uncommitted files."
+            failures=1
+          fi
+          echo "::endgroup::"
+
+          if [[ $failures -eq 0 ]]; then
+            run_gradle_check room-managed-device \
+              :dataloom-queue-room:pixel2Api35DebugAndroidTest
+          else
+            echo "SKIPPED: room-managed-device because an earlier required check failed."
+          fi
+
+          run_gradle_check android-build \
+            :dataloom-connectivity-android:build \
+            :dataloom-scheduler-workmanager:build \
+            :dataloom-queue-room:build
+
+          run_gradle_check kmp-regression \
+            :dataloom-api:allTests \
+            :dataloom-core:allTests \
+            :dataloom-runtime:allTests \
+            :dataloom-testing:allTests
+
+          if [[ $failures -ne 0 ]]; then
+            echo "One or more required Android validations failed. See the uploaded logs."
+            exit 1
+          fi
+
+      - name: Upload Android validation logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-validation-logs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: android-ci-logs
+          if-no-files-found: error
+          retention-days: 7

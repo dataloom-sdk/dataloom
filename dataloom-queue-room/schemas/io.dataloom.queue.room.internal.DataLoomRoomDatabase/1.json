@@ -1,0 +1,208 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "48194ca52818ff44126aaa1b14f5793f",
+    "entities": [
+      {
+        "tableName": "queue_entries",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`entry_id` TEXT NOT NULL, `workflow_id` TEXT NOT NULL, `session_id` TEXT NOT NULL, `direction` TEXT NOT NULL, `mode` TEXT NOT NULL, `priority` TEXT NOT NULL, `exec_execution_id` TEXT NOT NULL, `exec_correlation_id` TEXT NOT NULL, `exec_trace_id` TEXT, `exec_request_id` TEXT, `exec_tenant_id` TEXT, `exec_user_id` TEXT, `exec_locale_tag` TEXT, `exec_runtime_version` TEXT, `exec_config_version` TEXT, `exec_metadata_json` TEXT, `state` TEXT NOT NULL, `enqueued_at_ms` INTEGER NOT NULL, `available_at_ms` INTEGER NOT NULL, `retry_attempt_number` INTEGER, `lease_id` TEXT, `lease_consumer_id` TEXT, `lease_acquired_at_ms` INTEGER, `lease_expires_at_ms` INTEGER, `last_error_code` TEXT, `last_error_category` TEXT, `last_error_severity` TEXT, `last_error_recoverability` TEXT, `last_error_message` TEXT, `entry_metadata_json` TEXT, PRIMARY KEY(`entry_id`))",
+        "fields": [
+          {
+            "fieldPath": "entryId",
+            "columnName": "entry_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "workflowId",
+            "columnName": "workflow_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sessionId",
+            "columnName": "session_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "direction",
+            "columnName": "direction",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mode",
+            "columnName": "mode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "priority",
+            "columnName": "priority",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "execExecutionId",
+            "columnName": "exec_execution_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "execCorrelationId",
+            "columnName": "exec_correlation_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "execTraceId",
+            "columnName": "exec_trace_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "execRequestId",
+            "columnName": "exec_request_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "execTenantId",
+            "columnName": "exec_tenant_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "execUserId",
+            "columnName": "exec_user_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "execLocaleTag",
+            "columnName": "exec_locale_tag",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "execRuntimeVersion",
+            "columnName": "exec_runtime_version",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "execConfigVersion",
+            "columnName": "exec_config_version",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "execMetadataJson",
+            "columnName": "exec_metadata_json",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "enqueuedAtMs",
+            "columnName": "enqueued_at_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "availableAtMs",
+            "columnName": "available_at_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "retryAttemptNumber",
+            "columnName": "retry_attempt_number",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "leaseId",
+            "columnName": "lease_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "leaseConsumerId",
+            "columnName": "lease_consumer_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "leaseAcquiredAtMs",
+            "columnName": "lease_acquired_at_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "leaseExpiresAtMs",
+            "columnName": "lease_expires_at_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "lastErrorCode",
+            "columnName": "last_error_code",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastErrorCategory",
+            "columnName": "last_error_category",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastErrorSeverity",
+            "columnName": "last_error_severity",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastErrorRecoverability",
+            "columnName": "last_error_recoverability",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastErrorMessage",
+            "columnName": "last_error_message",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "entryMetadataJson",
+            "columnName": "entry_metadata_json",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "entry_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "idx_state_available_at",
+            "unique": false,
+            "columnNames": [
+              "state",
+              "available_at_ms"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `idx_state_available_at` ON `${TABLE_NAME}` (`state`, `available_at_ms`)"
+          },
+          {
+            "name": "idx_state_lease_expires",
+            "unique": false,
+            "columnNames": [
+              "state",
+              "lease_expires_at_ms"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `idx_state_lease_expires` ON `${TABLE_NAME}` (`state`, `lease_expires_at_ms`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '48194ca52818ff44126aaa1b14f5793f')"
+    ]
+  }
+}
