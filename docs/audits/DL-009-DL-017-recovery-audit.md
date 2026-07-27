@@ -1,5 +1,13 @@
 # DL-AUDIT-002: Re-Audit of DL-009 through DL-017 after Recovery
 
+> [!IMPORTANT]
+> **Historical evidence:** this audit is frozen to the commits named below.
+> “PASS” means that its bounded DL-009–DL-017 acceptance criteria passed at
+> that checkpoint; it is not a current production-V1 verdict. Use the
+> [audit index](./README.md) and
+> [DL-AUDIT-004](./DL-AUDIT-004-v1-production-readiness.md) for the current
+> release decision.
+
 **Audit date:** 2026-07-22 (updated after DL-013 recovery merge)
 **Auditor:** Copilot Coding Agent (DL-AUDIT-002)
 **Scope:** Issues DL-009 through DL-017 — complete re-audit against latest `main`

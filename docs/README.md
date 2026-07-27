@@ -1,93 +1,139 @@
-# DataLoom Documentation
+# DataLoom documentation
 
-This directory contains project documentation for repository governance and
-planned SDK architecture.
+DataLoom is an Android-first synchronization SDK with a Kotlin Multiplatform
+core. Its defining V1 capability is one policy-driven engine that supports six
+built-in synchronization strategies across native Android, KMP Android, and
+KMP iOS:
 
-- API
-  - [Foundational Contracts](./api/foundational-contracts.md)
-  - [Error Model](./api/error-model.md)
-  - [Payload Contracts (DL-008)](./api/payload-contracts.md)
-  - [Change Model (DL-008)](./api/change-model.md)
-  - [Provider SPI](./api/provider-spi.md)
-  - [Provider Lifecycle and Health](./api/provider-lifecycle.md)
-  - [Provider Registry (DL-018)](./api/provider-registry.md)
-  - [Storage Provider (DL-009, DL-011)](./api/storage-provider.md)
-  - [Transport Provider (DL-010, DL-011)](./api/transport-provider.md)
-  - [Queue Models (DL-015)](./api/queue-model.md)
-  - [Queue Provider (DL-015)](./api/queue-provider.md)
-  - [Conflict Contracts (DL-014)](./api/conflict-contracts.md)
-  - [Conflict Orchestration (DL-025)](./api/conflict-orchestration.md)
-  - [Acknowledgement Contracts (DL-011)](./api/acknowledgement-contracts.md)
-  - [Checkpoint Contracts (DL-011)](./api/checkpoint-contracts.md)
-  - [Scheduler Provider (DL-012)](./api/scheduler-provider.md)
-  - [Connectivity Provider (DL-012)](./api/connectivity-provider.md)
-  - [Retry Policy (DL-013)](./api/retry-policy.md)
-  - [Synchronization Progress (DL-016)](./api/synchronization-progress.md)
-  - [Synchronization Result (DL-016)](./api/synchronization-result.md)
-  - [Synchronization Events (DL-016)](./api/synchronization-events.md)
-  - [Clock (DL-017)](./api/clock.md)
-  - [Identifier Generation (DL-017)](./api/identifier-generation.md)
-  - [Provider Bindings (DL-019)](./api/provider-bindings.md)
-  - [Synchronization Execution (DL-020)](./api/synchronization-execution.md)
-  - [Outbound Push Pipeline (DL-021)](./api/outbound-push-pipeline.md)
-  - [Inbound Pull Pipeline (DL-022)](./api/inbound-pull-pipeline.md)
-  - [Bidirectional Pipeline (DL-023)](./api/bidirectional-pipeline.md)
-  - [Retry Orchestration (DL-024)](./api/retry-orchestration.md)
-  - [Durable Queue Execution Processor (DL-026)](./api/durable-queue-processor.md)
-  - [Queued Synchronization Execution (DL-027)](./api/queued-synchronization-execution.md)
-  - [Synchronization Event Dispatcher (DL-028)](./api/synchronization-event-dispatcher.md)
-  - [Runtime Lifecycle Events (DL-029)](./api/runtime-lifecycle-events.md)
-  - [Runtime Operational Events (DL-030)](./api/runtime-operational-events.md)
-  - [Connectivity-Aware Execution (DL-031)](./api/connectivity-aware-execution.md)
-  - [Queue Worker Coordinator (DL-032)](./api/queue-worker-coordinator.md)
-  - [DataLoom Facade (DL-033)](./api/dataloom-facade.md)
-  - [Queue Submission (DL-034)](./api/queue-submission.md)
-- [Architecture](./architecture/README.md)
-  - [Module Architecture](./architecture/modules.md)
-  - [Platform Strategy (DL-006)](./architecture/platform-strategy.md)
-  - [Storage Boundaries (DL-009, DL-011)](./architecture/storage-boundaries.md)
-  - [Transport Boundaries (DL-010, DL-011)](./architecture/transport-boundaries.md)
-  - [Queue Boundaries (DL-015)](./architecture/queue-boundaries.md)
-  - [Background Execution Boundaries (DL-012)](./architecture/background-execution-boundaries.md)
-  - [Conflict Boundaries (DL-014)](./architecture/conflict-boundaries.md)
-  - [Retry Boundaries (DL-013)](./architecture/retry-boundaries.md)
-  - [Observation Boundaries (DL-016)](./architecture/observation-boundaries.md)
-  - [Runtime Dependencies (DL-017)](./architecture/runtime-dependencies.md)
-  - [Provider Lifecycle Coordinator (DL-018)](./architecture/provider-lifecycle.md)
-  - [Provider Resolution (DL-019)](./architecture/provider-resolution.md)
-  - [Execution Coordinator (DL-020)](./architecture/execution-coordinator.md)
-  - [Outbound Push Flow (DL-021)](./architecture/outbound-push-flow.md)
-  - [Inbound Pull Flow (DL-022)](./architecture/inbound-pull-flow.md)
-  - [Bidirectional Flow (DL-023)](./architecture/bidirectional-flow.md)
-  - [Retry and Rescheduling Flow (DL-024)](./architecture/retry-rescheduling-flow.md)
-  - [Conflict Detection and Resolution Flow (DL-025)](./architecture/conflict-detection-resolution-flow.md)
-  - [Durable Queue Processing Flow (DL-026)](./architecture/durable-queue-processing-flow.md)
-  - [Queued Synchronization Retry Flow (DL-027)](./architecture/queued-synchronization-retry-flow.md)
-  - [Observer Delivery Flow (DL-028)](./architecture/observer-delivery-flow.md)
-  - [Runtime Event Integration Flow (DL-029)](./architecture/runtime-event-integration-flow.md)
-  - [Progress, Retry, and Conflict Event Flow (DL-030)](./architecture/progress-retry-conflict-event-flow.md)
-  - [Connectivity Preflight and Offline Deferral (DL-031)](./architecture/connectivity-preflight-offline-deferral.md)
-  - [Queue Worker Wake-Up and Recovery Flow (DL-032)](./architecture/queue-worker-wakeup-recovery-flow.md)
-  - [Runtime Assembly (DL-033)](./architecture/runtime-assembly.md)
-  - [Application-Owned Queue Encoding (DL-034)](./architecture/application-owned-queue-encoding.md)
-- Testing
-  - [Clock and Identifier Test Utilities (DL-017)](./testing/clock-and-identifiers.md)
-  - [Testing Toolkit Overview (DL-035)](./testing/testing-toolkit.md)
-  - [In-Memory Providers (DL-035)](./testing/in-memory-providers.md)
-  - [Scripted and Recording Utilities (DL-035)](./testing/scripted-and-recording-utilities.md)
-- Apple Platform (DL-036)
-  - [Apple Platform Overview](./apple/README.md)
-  - [Apple Targets and Source-Set Hierarchy](./apple/apple-targets.md)
-  - [XCFramework Integration](./apple/xcframework-integration.md)
-  - [Swift Interoperability](./apple/swift-interop.md)
-  - [Apple Testing Strategy](./apple/apple-testing.md)
-- Android Platform (DL-037)
-  - [Android Platform Overview](./android/README.md)
-  - [Connectivity Provider](./android/connectivity-provider.md)
-  - [WorkManager Scheduler](./android/workmanager-scheduler.md)
-  - [Room Queue Provider](./android/room-queue-provider.md)
-  - [Worker Integration](./android/worker-integration.md)
-  - [Security and R8](./android/security-and-r8.md)
-- [Architecture Decision Records (ADRs)](./adr/README.md)
-  - [ADR-0001: Android-first and Kotlin Multiplatform-ready core architecture](./adr/ADR-0001-android-first-kmp-core.md)
+- offline-first;
+- remote-first;
+- cache-first;
+- network-only;
+- hybrid; and
+- adaptive.
+
+> [!IMPORTANT]
+> DataLoom is in active pre-V1 development. The documentation distinguishes
+> **current repository behavior** from **required V1 behavior**. A V1
+> requirement is not an implementation claim.
+
+## Start here
+
+| Goal | Recommended entry point |
+|---|---|
+| Understand the product and its boundaries | [System overview](./architecture/system-overview.md) |
+| Choose a synchronization strategy | [Strategy guide](./strategies/README.md) |
+| Integrate an Android application | [Android guide](./android/README.md) |
+| Integrate KMP or Apple targets | [Apple and KMP iOS guide](./apple/README.md) |
+| Explore current public contracts | [API reference](./api/README.md) |
+| Understand modules and dependencies | [Module architecture](./architecture/modules.md) |
+| Build and verify a change locally | [Development guide](./development/building.md) |
+| Use the testing toolkit | [Testing guide](./testing/testing-toolkit.md) |
+| Review V1 gaps and release gates | [V1 production-readiness audit](./audits/DL-AUDIT-004-v1-production-readiness.md) |
+| Understand accepted decisions | [Architecture decision records](./adr/README.md) |
+
+## Documentation map
+
+```mermaid
+flowchart LR
+    start([Choose your goal])
+    product{What do you need?}
+    evaluate[Evaluate DataLoom]
+    integrate[Integrate a platform]
+    implement[Implement or extend]
+    verify[Verify readiness]
+
+    architecture[Architecture]
+    strategies[Six strategies]
+    android[Android]
+    apple[KMP and Apple]
+    api[API contracts]
+    testing[Testing]
+    decisions[ADRs]
+    audits[Audits]
+
+    start --> product
+    product -->|Product fit| evaluate
+    product -->|App integration| integrate
+    product -->|SDK development| implement
+    product -->|Release evidence| verify
+    evaluate --> architecture
+    evaluate --> strategies
+    integrate --> android
+    integrate --> apple
+    implement --> api
+    implement --> testing
+    verify --> decisions
+    verify --> audits
+
+    style strategies fill:#DCCCFF,stroke:#874FFF
+    style audits fill:#FFECBD,stroke:#FFC943
+```
+
+## Product and strategy
+
+- [System overview](./architecture/system-overview.md)
+- [Synchronization strategy guide](./strategies/README.md)
+  - [Offline-first](./strategies/offline-first.md)
+  - [Remote-first](./strategies/remote-first.md)
+  - [Cache-first](./strategies/cache-first.md)
+  - [Network-only](./strategies/network-only.md)
+  - [Hybrid](./strategies/hybrid.md)
+  - [Adaptive](./strategies/adaptive.md)
+- [Platform strategy](./architecture/platform-strategy.md)
+
+## API reference
+
+The [API reference hub](./api/README.md) groups the current contracts by
+developer task. Major areas include:
+
+- request, execution, progress, result, and event contracts;
+- storage, transport, queue, scheduler, and connectivity providers;
+- outbound, inbound, and bidirectional pipelines;
+- retry, conflict, queue, lifecycle, and observation orchestration; and
+- facade, provider registry, provider resolution, and runtime assembly.
+
+## Architecture
+
+The [architecture hub](./architecture/README.md) connects the system views:
+
+- module and dependency boundaries;
+- provider lifecycle, registry, bindings, and resolution;
+- push, pull, and bidirectional execution flows;
+- durable queue, retry, conflict, and event flows;
+- platform adapters and background execution; and
+- the approved V1 target architecture.
+
+## Platforms
+
+| Consumer path | V1 disposition | Documentation |
+|---|---|---|
+| Native Android | Mandatory | [Android](./android/README.md) |
+| KMP Android | Mandatory | [Android](./android/README.md) |
+| KMP iOS | Mandatory | [Apple and KMP iOS](./apple/README.md) |
+| Native Swift through XCFramework | Optional distribution path | [XCFramework integration](./apple/xcframework-integration.md) |
+
+## Build, test, and contribute
+
+- [Local development and validation](./development/building.md)
+- [Testing toolkit](./testing/testing-toolkit.md)
+- [Contributing](../CONTRIBUTING.md)
+- [Security policy](../SECURITY.md)
+- [Code of conduct](../CODE_OF_CONDUCT.md)
+
+## Decisions, specifications, and evidence
+
+- [Architecture decision records](./adr/README.md)
 - [Specifications](./specifications/README.md)
+- [Audit index](./audits/README.md)
+
+ADRs define accepted direction. Specifications define behavior to implement.
+Audits are point-in-time evidence and must not be read as current product
+marketing.
+
+## Documentation standard
+
+All active documentation follows the
+[documentation style guide](./documentation-style.md): status-aware language,
+real repository names, GitHub-native diagrams, accessible text equivalents,
+working relative links, and explicit current-versus-target boundaries.

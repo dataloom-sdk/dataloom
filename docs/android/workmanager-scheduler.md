@@ -1,43 +1,49 @@
-# WorkManager Scheduler Provider (DL-037)
+# WorkManager scheduler provider
 
-`WorkManagerSchedulerProvider` implements DataLoom's `SchedulerProvider`
-contract using AndroidX WorkManager.
+> **Audience:** Android developers scheduling DataLoom queue-worker wake-ups
+> **Purpose:** Document the exact `ScheduleRequest` to WorkManager mapping and
+> current integration limits
+> **Status:** Implemented scheduler foundation; not a complete retry or
+> strategy engine
+
+[← Android overview](README.md) ·
+[Worker integration](worker-integration.md) ·
+[Connectivity provider](connectivity-provider.md)
+
+`WorkManagerSchedulerProvider` implements the shared `SchedulerProvider`
+contract with unique, one-time AndroidX WorkManager requests.
 
 ## Module
-
-`dataloom-scheduler-workmanager`
-
-## Dependency
 
 ```kotlin
 implementation(project(":dataloom-scheduler-workmanager"))
 ```
 
-## Schedule mapping
+This project dependency is for the source checkout. Published V1 coordinates
+are not available yet.
+
+## Mapping
 
 | DataLoom value | WorkManager value |
 |---|---|
+| `ScheduleRequest.id.value` | Unique work name |
 | `ExistingSchedulePolicy.KEEP` | `ExistingWorkPolicy.KEEP` |
 | `ExistingSchedulePolicy.REPLACE` | `ExistingWorkPolicy.REPLACE` |
 | `ConnectivityRequirement.NONE` | `NetworkType.NOT_REQUIRED` |
 | `ConnectivityRequirement.AVAILABLE` | `NetworkType.CONNECTED` |
 | `ConnectivityRequirement.UNMETERED` | `NetworkType.UNMETERED` |
+| `ScheduleConstraints.requiresCharging` | `Constraints.setRequiresCharging` |
+| `SchedulingDelay.milliseconds` | Initial delay in milliseconds |
 
-`SchedulingDelay.milliseconds` is passed to
-`OneTimeWorkRequest.Builder.setInitialDelay`. The DataLoom value type already
-rejects negative delays; the provider does not silently clamp or rewrite it.
-
-The stable unique work name is `ScheduleRequest.id.value`. A successful
-provider result is returned only after WorkManager confirms that the
-asynchronous enqueue or cancellation operation completed successfully. It does
-not mean that synchronization has started or completed.
+The provider does not clamp a negative delay; `SchedulingDelay` rejects it at
+construction.
 
 ## Usage
 
 ```kotlin
-val provider = WorkManagerSchedulerProvider(context)
+val scheduler = WorkManagerSchedulerProvider(context)
 
-val receipt = provider.schedule(
+val result = scheduler.schedule(
     ScheduleRequest(
         id = ScheduleId("dataloom-queue-worker"),
         delay = SchedulingDelay.ZERO,
@@ -49,10 +55,39 @@ val receipt = provider.schedule(
 )
 ```
 
-WorkManager retry is not used as a second retry mechanism. DataLoom's durable
-queue owns retry decisions and follow-up scheduling.
+Both `schedule` and `cancel` wait for WorkManager's asynchronous operation to
+reach a successful terminal state before returning
+`ProviderOperationResult.Success`. Acceptance means that WorkManager accepted
+the request; it does not mean synchronization started or completed.
 
-## Worker integration
+## Worker and retry boundary
 
-See [Worker Integration](./worker-integration.md) for the required custom
-`WorkerFactory`, manifest change, and `Configuration.Provider` setup.
+Every request currently targets `DataLoomCoroutineWorker`. The implementation
+does not serialize `ScheduleRequest.synchronizationRequest` into WorkManager
+input data. The worker instead obtains a fresh `QueueWorkerRunRequest` from the
+injected factory.
+
+Treat the current module as a queue-worker wake-up bridge. Direct,
+per-`SynchronizationRequest` retry transport has not been qualified.
+WorkManager retry is deliberately not used as a second retry mechanism;
+DataLoom policy, durable queue state, and follow-up scheduling own that
+decision.
+
+See [Worker integration](worker-integration.md) for the required manifest
+change, custom `WorkerFactory`, and `Configuration.Provider`.
+
+## Current limits
+
+- The provider creates one-time work only.
+- It does not initialize DataLoom providers or restore host configuration.
+- It does not persist DataLoom queue records.
+- It does not implement offline-first, remote-first, cache-first,
+  network-only, hybrid, or adaptive behavior.
+- Process recreation, background execution, and end-to-end consumer behavior
+  remain V1 qualification work.
+
+## Related documentation
+
+- [Scheduler provider contract](../api/scheduler-provider.md)
+- [Worker integration](worker-integration.md)
+- [Background execution boundaries](../architecture/background-execution-boundaries.md)

@@ -34,16 +34,33 @@ This document covers:
 
 ## Sequence diagram
 
-```text
-Application
-    → ProviderLifecycleCoordinator.initialize()       (pre-condition)
-    → SynchronizationExecutionCoordinator.execute()
-        1. check ProviderLifecycleCoordinator.state
-        2. SynchronizationProviderResolver.resolve(bindings)
-        3. SynchronizationPipelineRegistry.lookup(direction)
-        4. construct SynchronizationExecutionContext
-        5. SynchronizationPipeline.execute(context)
-    → SynchronizationExecutionResult.Executed(SynchronizationResult)
+```mermaid
+flowchart LR
+    request[/Synchronization request/]
+    lifecycle{Providers initialized?}
+    resolution{Bindings resolve?}
+    pipeline{Pipeline exists?}
+    context[Build execution context]
+    execute[Execute pipeline]
+    result[/Execution result/]
+    lifecycleRejected[Reject lifecycle]
+    providerRejected[Reject bindings]
+    pipelineRejected[Reject pipeline]
+
+    request --> lifecycle
+    lifecycle -->|No| lifecycleRejected
+    lifecycle -->|Yes| resolution
+    resolution -->|No| providerRejected
+    resolution -->|Yes| pipeline
+    pipeline -->|No| pipelineRejected
+    pipeline -->|Yes| context
+    context --> execute
+    execute --> result
+
+    style execute fill:#C2E5FF,stroke:#3DADFF
+    style lifecycleRejected fill:#FFCDC2,stroke:#FF7556
+    style providerRejected fill:#FFCDC2,stroke:#FF7556
+    style pipelineRejected fill:#FFCDC2,stroke:#FF7556
 ```
 
 ---
@@ -92,6 +109,10 @@ The coordinator follows a strict deterministic order:
    `Executed(pipelineResult)`.
 
 No step is skipped or reordered.
+
+> [!NOTE]
+> This is the current direction-based coordinator. V1 strategy evaluation and
+> plan-derived capability resolution must run before this stage.
 
 ---
 
@@ -230,18 +251,22 @@ the resolver.
 
 ## Event-dispatch boundary
 
-DL-020 implements no event dispatch. No `SynchronizationObserver` is called.
-No `SynchronizationEvent` is emitted. No `Flow` or `SharedFlow` is used.
-Observer registry and event fan-out are deferred.
+The original DL-020 slice implemented no event dispatch. The current
+coordinator accepts an optional lifecycle emitter and emits accepted
+Started/Completed events around pipeline execution; pipelines emit phase and
+progress events. Rejected preparation paths emit no lifecycle event.
+
+The coordinator still provides no replay, durable event history, `Flow`/
+`SharedFlow` adapter, metrics exporter, or trace exporter.
 
 ---
 
 ## Retry and queue boundaries
 
-DL-020 implements no retry logic, no backoff, no queue processing, no queue
-acquisition, no queue completion, and no acknowledgement handling. These
-responsibilities belong to future runtime orchestration layers and concrete
-pipeline implementations.
+The coordinator itself implements no retry, backoff, queue acquisition, queue
+transition, or scheduler operation. Current direct and queue-backed retry
+orchestration wraps coordinator results in separate runtime components.
+Acknowledgement handling remains inside the outbound pipeline.
 
 ---
 
@@ -287,16 +312,26 @@ API, Apple-specific API, or third-party library type is required or exposed.
 
 ---
 
-## No concrete synchronization pipeline
+## Current pipeline and orchestration boundary
 
-DL-020 defines `SynchronizationPipeline` (interface) and
-`SynchronizationPipelineRegistry` only. No concrete pipeline implementation
-exists. Outbound push, inbound pull, and bidirectional pipeline implementations
-are deferred to later issues.
+DL-020 originally introduced `SynchronizationPipeline` and
+`SynchronizationPipelineRegistry`. The current repository also includes
+concrete outbound push, inbound pull, and bidirectional pipelines, and
+`DataLoomBuilder` registers defaults for all three directions. See
+[Outbound Push Flow](./outbound-push-flow.md),
+[Inbound Pull Flow](./inbound-pull-flow.md), and
+[Bidirectional Flow](./bidirectional-flow.md).
 
-No synchronization data transfer is implemented. No retries are executed. No
-queue entries are processed. No events are dispatched. Providers are not
-automatically initialized. Concurrent execution is not coordinated.
+The coordinator delegates data transfer to the selected pipeline. It also
+enforces the provider-lifecycle precondition, resolves providers, performs the
+configured connectivity preflight, and can emit `Started` and `Completed`
+events through the optional lifecycle emitter.
+
+Queue processing and retry evaluation call into the coordinator from separate
+runtime components; they are not performed by the coordinator itself.
+Providers are still not initialized automatically, concurrent executions are
+not serialized, and complete strategy-aware planning, conflict integration,
+durable event delivery, and the other V1 guarantees remain open.
 
 ---
 

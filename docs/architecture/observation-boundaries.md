@@ -3,10 +3,11 @@
 This document describes the architectural responsibility boundaries for the
 synchronization observation system in DataLoom.
 
-> **Important:** Event dispatch infrastructure, observer registration,
-> replay, backpressure, and Flow-based streaming are not implemented in
-> DL-016. This document describes the intended architecture and the
-> boundaries that govern future implementation.
+> [!IMPORTANT]
+> Later runtime work added observer registration, ordered in-process dispatch,
+> failure isolation, and lifecycle/progress/retry/conflict emissions. Replay,
+> durable event history, backpressure/Flow delivery, metrics, tracing, health,
+> and operational read models remain incomplete V1 requirements.
 
 ---
 
@@ -15,6 +16,25 @@ synchronization observation system in DataLoom.
 DataLoom provides an application-level observation contract that allows host
 applications to receive immutable notifications about synchronization
 lifecycle activity without controlling it.
+
+```mermaid
+flowchart LR
+    runtime[Runtime operation]
+    event[Immutable event]
+    dispatcher[Event dispatcher]
+    observerA[Observer A]
+    observerB[Observer B]
+    telemetry[V1 telemetry exporters]
+
+    runtime --> event
+    event --> dispatcher
+    dispatcher --> observerA
+    dispatcher --> observerB
+    event -.-> telemetry
+
+    style dispatcher fill:#C2E5FF,stroke:#3DADFF
+    style telemetry fill:#FFECBD,stroke:#FFC943
+```
 
 ---
 
@@ -25,14 +45,14 @@ lifecycle activity without controlling it.
 | Events describe activity  | Events are immutable facts about what happened; they do not control the runtime |
 | Callbacks are notifications| `onEvent()` is a notification, not a command                  |
 | Event ordering            | Expected to follow runtime emission order                     |
-| Cross-thread delivery     | Not defined in DL-016; determined by the future runtime       |
-| Replay                    | Not implemented in DL-016                                     |
-| Persistent event history  | Not implemented in DL-016                                     |
-| Multiple-observer registration | Not implemented in DL-016                               |
-| Observer failure isolation | Not implemented in DL-016                                    |
-| Backpressure              | Not implemented in DL-016                                     |
-| Lifecycle-aware collection | Not implemented in DL-016                                    |
-| Flow-based observation    | Deferred to a future issue                                    |
+| Delivery thread           | Current in-process dispatch runs on the caller's execution path |
+| Replay                    | Not implemented                                                |
+| Persistent event history  | Not implemented                                                |
+| Multiple-observer registration | Implemented in the later runtime registry               |
+| Observer failure isolation | Implemented for ordinary failures; cancellation propagates   |
+| Backpressure              | Not implemented                                                |
+| Lifecycle-aware collection | Not implemented                                               |
+| Flow-based observation    | Not implemented                                                |
 
 Do not claim guaranteed exactly-once event delivery, which is not defined
 in DL-016.
@@ -52,7 +72,7 @@ public interface SynchronizationObserver {
 
 - Return quickly from `onEvent()`.
 - Do not block the calling thread.
-- Do not throw from `onEvent()`; the future runtime will isolate observer
+- Do not throw from `onEvent()`; the runtime isolates ordinary observer
   failures so that one failing observer cannot fail synchronization or
   prevent delivery to other observers.
 - Do not log payload content automatically from within `onEvent()`.
@@ -61,9 +81,9 @@ public interface SynchronizationObserver {
 
 ### Thread safety
 
-The calling thread for `onEvent()` is determined by the future runtime and
-is not defined in DL-016. Implementations are responsible for their own
-thread safety.
+`onEvent()` runs on the dispatching caller's execution path. Implementations
+must return quickly and remain thread-safe if applications execute multiple
+synchronizations concurrently.
 
 ---
 
@@ -74,7 +94,7 @@ thread safety.
 | `SynchronizationObserver`  | Application-level event observation contract                    |
 | `MonitoringProvider`       | Future metrics and telemetry integration (deferred)             |
 | `LoggingProvider`          | Future structured logging integration (deferred)               |
-| DataLoom Runtime (future)  | Produces and dispatches events; isolates observer failures      |
+| DataLoom Runtime           | Produces and dispatches events; isolates ordinary observer failures |
 
 These have different responsibilities and must not be conflated.
 
@@ -124,8 +144,9 @@ SynchronizationResult
 QueueProvider.complete(), reschedule(), or fail()
 ```
 
-Events and results do **not** mutate queue entries themselves. Queue
-transitions are performed by the future runtime after producing a result.
+Events and results do **not** mutate queue entries themselves. The queue
+processor performs lease-guarded transitions after its handler produces an
+outcome.
 
 ---
 

@@ -1,65 +1,170 @@
 # DataLoom
 
-DataLoom is an Android-first, Jetpack-style offline synchronization SDK with a
-Kotlin Multiplatform-ready shared core.
+**Synchronize once. Scale everywhere.**
 
-## Current project status
+DataLoom is an Android-first, Jetpack-style synchronization SDK for native
+Android and Kotlin Multiplatform applications targeting Android and iOS. Its
+main purpose is to provide one deterministic engine with six built-in
+synchronization strategies:
 
-DataLoom is in active SDK development.  The synchronization runtime, provider
-contracts, facade, durable queue, retry orchestration, conflict handling,
-observer delivery, and connectivity-aware execution are implemented.
-Apple-platform (iOS) support via Kotlin/Native and XCFramework is established
-in DL-036.
+| Strategy | Intent |
+|---|---|
+| Offline-first | Commit local intent durably, then synchronize |
+| Remote-first | Prefer the remote authority with explicit safe fallback |
+| Cache-first | Serve a valid cache and refresh by policy |
+| Network-only | Use the remote source with no storage or queue side effects |
+| Hybrid | Compose explicit local, remote, cache, and reconciliation rules |
+| Adaptive | Select an allowed concrete strategy from recorded evidence |
 
-## Required JDK
+All six are mandatory V1 capabilities. Strategy is independent from transfer
+direction (`PUSH`, `PULL`, `BIDIRECTIONAL`), transfer mode (`FULL`, `DELTA`),
+and trigger.
 
-Java Development Kit **17 or newer** is required.
+> [!WARNING]
+> DataLoom is in active pre-V1 development and is not production-ready.
+> Current foundations are substantial, but the six-strategy engine and several
+> mandatory V1 systems are incomplete. No release should be represented as V1
+> until the documented release gates have evidence.
 
-```bash
-java -version
+## Product at a glance
+
+```mermaid
+flowchart LR
+    app[Application]
+    request[/Synchronization request/]
+    strategy{V1 strategy policy}
+    plan[Deterministic plan]
+    runtime[Shared runtime]
+    local[(Local data)]
+    remote[(Remote service)]
+    durable[(Queue and recovery)]
+    signals[Events and observability]
+
+    app --> request
+    request --> strategy
+    strategy --> plan
+    plan --> runtime
+    runtime --> local
+    runtime --> remote
+    runtime --> durable
+    runtime --> signals
+    signals --> app
+
+    style strategy fill:#FFECBD,stroke:#FFC943
+    style runtime fill:#C2E5FF,stroke:#3DADFF
+    style durable fill:#DCCCFF,stroke:#874FFF
 ```
+
+The diagram is the approved V1 product model. The current repository implements
+the shared runtime foundation, provider contracts, push/pull/bidirectional
+pipelines, durable queue processing, Android adapters, and Apple compilation
+paths. It does not yet implement the complete strategy evaluator and plan
+model.
+
+## Current capability
+
+| Area | Current repository | V1 requirement |
+|---|---|---|
+| Shared contracts and runtime | Implemented foundation | Stable, published, qualified API |
+| Push, pull, bidirectional flows | Implemented foundation | Strategy-aware deterministic plans |
+| Six synchronization strategies | Partial or missing | All six built in and fully qualified |
+| Durable queue | Implemented foundation | Correct deferral, recovery, migration, and restart semantics |
+| Retry and circuit breaking | Custom contracts/orchestration are partial | Standard backoff, jitter, budgets, hints, and durable circuit state |
+| Conflict handling | Custom contracts/orchestration are partial | Built-in generic policies, persistence, recovery, and audit |
+| Events and observability | In-process dispatch is partial | Durable events, metrics, traces, health, and operational views |
+| Asset transfer | Missing | Upload/download, chunking, streaming, integrity, and resume |
+| Plugin platform | Provider interfaces only | Permission-bounded plugin lifecycle and governance |
+| Enterprise governance | Missing | Tenant isolation, administration, policy, audit, and controls |
+
+See the
+[V1 production-readiness audit](./docs/audits/DL-AUDIT-004-v1-production-readiness.md)
+for the requirement matrix and no-go gates.
+
+## Supported V1 consumer paths
+
+| Consumer | V1 status |
+|---|---|
+| Native Android application | Mandatory |
+| KMP application targeting Android | Mandatory |
+| KMP application targeting iOS | Mandatory |
+| Native Swift application through an XCFramework | Optional distribution path |
+
+A native Android application remains Android-only. iOS becomes part of the
+same product codebase when the application itself is Kotlin Multiplatform and
+declares an iOS target. See
+[platform strategy](./docs/architecture/platform-strategy.md).
+
+## Repository modules
+
+```mermaid
+flowchart TD
+    model[dataloom-model]
+    api[dataloom-api]
+    core[dataloom-core]
+    runtime[dataloom-runtime]
+    testing[dataloom-testing]
+    connectivity[dataloom-connectivity-android]
+    room[dataloom-queue-room]
+    work[dataloom-scheduler-workmanager]
+    apple[dataloom-apple]
+
+    model --> api
+    model --> core
+    api --> core
+    model --> runtime
+    api --> runtime
+    core --> runtime
+    model --> testing
+    api --> testing
+    core --> testing
+    runtime --> testing
+    api --> connectivity
+    api --> room
+    model --> room
+    api --> work
+    runtime --> work
+    model --> apple
+    api --> apple
+    core --> apple
+    runtime --> apple
+
+    style model fill:#DCCCFF,stroke:#874FFF
+    style api fill:#C2E5FF,stroke:#3DADFF
+    style runtime fill:#C6FAF6,stroke:#5AD8CC
+```
+
+| Module | Responsibility |
+|---|---|
+| `dataloom-model` | Dependency-root models; currently owns clock primitives |
+| `dataloom-api` | Public contracts, requests, results, and provider interfaces |
+| `dataloom-core` | Provider lifecycle, registry, resolution, and shared runtime dependencies |
+| `dataloom-runtime` | Facade, pipelines, queue, retry, conflict, and event orchestration |
+| `dataloom-testing` | Deterministic clocks, in-memory providers, scripts, and recorders |
+| `dataloom-connectivity-android` | Android `ConnectivityProvider` |
+| `dataloom-queue-room` | Room-backed durable `QueueProvider` |
+| `dataloom-scheduler-workmanager` | WorkManager scheduler and worker bridge |
+| `dataloom-apple` | macOS-only Apple/XCFramework umbrella |
+
+The exact dependency and publication rules are in
+[module architecture](./docs/architecture/modules.md) and
+[ADR-0002](./docs/adr/ADR-0002-v1-artifact-and-foundation-architecture.md).
 
 ## Toolchain
 
 | Tool | Version |
 |---|---|
+| JDK | 17 or newer |
 | Gradle Wrapper | 9.5.0 |
 | Kotlin | 2.4.10 |
 | JVM bytecode target | 17 |
-| Platform targets | JVM · iosArm64 · iosSimulatorArm64 · iosX64 |
+| Shared targets | JVM, `iosArm64`, `iosSimulatorArm64`, `iosX64` |
 
-## Platform Support
+An explicit KMP Android target and complete KMP consumer qualification remain
+V1 gates.
 
-| Platform | Target | Status |
-|---|---|---|
-| Kotlin / JVM | `jvm` | ✓ Active |
-| Physical iPhone / iPad | `iosArm64` | ✓ DL-036 |
-| Apple-silicon iOS Simulator | `iosSimulatorArm64` | ✓ DL-036 |
-| Intel iOS Simulator | `iosX64` | ✓ DL-036 |
-| Android | `android` | Planned |
-| Desktop | — | Not planned |
+## Build the current shared foundation
 
-Apple-platform support requires macOS with Xcode.  See
-[docs/apple/README.md](./docs/apple/README.md) for details.
-
-## Module Overview
-
-| Module | Purpose |
-|---|---|
-| `dataloom-api` | Stable public contracts, models, provider interfaces |
-| `dataloom-core` | Platform-independent runtime foundations |
-| `dataloom-runtime` | Synchronization runtime, facade, pipelines, queue |
-| `dataloom-testing` | Test utilities and fake providers |
-| `dataloom-apple` | Apple XCFramework umbrella (macOS only) |
-
-See [Module Architecture](./docs/architecture/modules.md) for dependency
-rules and boundaries, and
-[Platform Strategy (DL-006)](./docs/architecture/platform-strategy.md) for
-Android-first and Kotlin Multiplatform architecture direction.
-
-## Basic Build Command
-
-Use the Gradle Wrapper (no separate Gradle installation required):
+Use the checked-in Gradle Wrapper:
 
 ```bash
 ./gradlew build
@@ -71,76 +176,64 @@ On Windows:
 .\gradlew.bat build
 ```
 
-## Apple XCFramework
+Android modules are included only when `DATALOOM_ANDROID_BUILD=true` and require
+an Android SDK plus access to Google Maven:
 
-To assemble the DataLoom XCFramework (requires macOS with Xcode):
+```bash
+DATALOOM_ANDROID_BUILD=true ./gradlew \
+  :dataloom-connectivity-android:build \
+  :dataloom-queue-room:build \
+  :dataloom-scheduler-workmanager:build
+```
+
+Apple compilation, simulator tests, and XCFramework assembly require macOS and
+Xcode:
 
 ```bash
 ./gradlew :dataloom-apple:assembleDataLoomReleaseXCFramework
 ```
 
-Output: `dataloom-apple/build/XCFrameworks/release/DataLoom.xcframework`
+Output:
+`dataloom-apple/build/XCFrameworks/release/DataLoom.xcframework`
 
-See [XCFramework Integration](./docs/apple/xcframework-integration.md) for details.
+For host requirements, offline-cache limitations, and the lowest-cost local
+validation order, read [building DataLoom](./docs/development/building.md).
 
 ## Documentation
 
-- [Module Architecture](./docs/architecture/modules.md)
-- [Platform Strategy (DL-006)](./docs/architecture/platform-strategy.md)
-- [Local Build Instructions](./docs/development/building.md)
-- [Apple Platform Support (DL-036)](./docs/apple/README.md)
-- [Foundational API Contracts (DL-004, DL-005)](./docs/api/foundational-contracts.md)
-- [Error Model (DL-004)](./docs/api/error-model.md)
-- [Execution Context (DL-005)](./docs/api/execution-context.md)
-- [Synchronization Request (DL-005)](./docs/api/synchronization-request.md)
-- [Payload Contracts (DL-008)](./docs/api/payload-contracts.md)
-- [Change Model (DL-008)](./docs/api/change-model.md)
-- [Provider SPI (DL-007)](./docs/api/provider-spi.md)
-- [Provider Lifecycle and Health (DL-007)](./docs/api/provider-lifecycle.md)
-- [Conflict Contracts (DL-014)](./docs/api/conflict-contracts.md)
-- [Contributing Guide](./CONTRIBUTING.md)
-- [Security Policy](./SECURITY.md)
-- [Code of Conduct](./CODE_OF_CONDUCT.md)
-- [Documentation Index](./docs/README.md)
-  - [Architecture](./docs/architecture/README.md)
-  - [Architecture Decision Records](./docs/adr/README.md)
-    - [ADR-0001: Android-first and Kotlin Multiplatform-ready core architecture](./docs/adr/ADR-0001-android-first-kmp-core.md)
-  - [Specifications](./docs/specifications/README.md)
+Start with the [documentation hub](./docs/README.md).
 
-## The Problem DataLoom Is Designed to Solve
+- [System overview](./docs/architecture/system-overview.md)
+- [Six-strategy guide](./docs/strategies/README.md)
+- [API reference](./docs/api/README.md)
+- [Architecture](./docs/architecture/README.md)
+- [Android integration](./docs/android/README.md)
+- [KMP iOS and Apple integration](./docs/apple/README.md)
+- [Testing](./docs/testing/testing-toolkit.md)
+- [Development](./docs/development/building.md)
+- [ADRs](./docs/adr/README.md)
+- [Audits](./docs/audits/README.md)
 
-Offline-first applications must continue to work while networks are slow,
-unavailable, or intermittent. DataLoom provides shared synchronization
-capabilities such as durable queueing, retry handling, conflict management,
-policy evaluation, and recovery checkpoints so host applications can focus
-on product-specific business logic.
+## Product boundary
 
-## Planned Platforms
+DataLoom owns synchronization policy, deterministic orchestration, transfer
+coordination, durable recovery, and operational signals. Applications retain
+their domain repositories, UI state, server contracts, authentication
+credentials, and domain-specific business truth.
 
-- Kotlin
-- Android
-- Kotlin/JVM
-- iOS via Kotlin/Native and XCFramework (DL-036)
-- Kotlin Multiplatform (where appropriate)
+Payloads remain opaque to the shared engine. Generic conflict utilities can be
+built in, but DataLoom must not silently invent business merge rules.
 
-## High-Level Architecture
+## Contributing and security
 
-- Core synchronization orchestration and state management
-- Durable operation queue and retry coordination
-- Conflict resolution and policy evaluation
-- Provider and plugin extensibility points
-- Observability and integration layers
+Before changing code, read [CONTRIBUTING.md](./CONTRIBUTING.md). Public API,
+durable schema, module-boundary, platform, and strategy changes require
+corresponding documentation and validation evidence.
 
-## Contribution Status
-
-Contributions are welcome through approved issues and pull requests that follow
-the repository governance documents.
-
-## Security Reporting
-
-Please report vulnerabilities privately following the process in
-[SECURITY.md](./SECURITY.md).
+Report vulnerabilities privately as described in
+[SECURITY.md](./SECURITY.md). Never place credentials, tokens, personal data,
+or customer payloads in commits, examples, issues, logs, or test fixtures.
 
 ## License
 
-License status: **To be finalized**.
+License status: **to be finalized before V1 publication**.

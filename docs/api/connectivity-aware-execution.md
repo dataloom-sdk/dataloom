@@ -1,5 +1,11 @@
 # Connectivity-Aware Execution (DL-031)
 
+[API reference index](./README.md)
+
+> **Status:** Available execution foundation. Direct preflight and queued
+> offline deferral exist; complete platform parity and retry-history-safe
+> constraint deferral remain V1 work.
+
 DataLoom can prevent network-dependent synchronization when the configured
 connectivity requirement is not satisfied. This document describes the
 configuration, preflight evaluation, direct-execution rejection, and
@@ -187,15 +193,25 @@ receiving a connectivity rejection.
 When the outcome is `Reschedule`:
 
 - `RetryPolicy` is **not** invoked.
-- `SchedulerProvider` is **not** invoked.
+- The handler does **not** invoke `SchedulerProvider` directly.
 - `DataLoomClock.now()` is read exactly once from the injected clock.
 - `availableAt` = `clock.now().epochMilliseconds + offlineRescheduleDelay.milliseconds`
   (overflow-safe; see below).
 - `retryAttempt` is taken from the existing `QueueEntry.retryAttempt`, or
   defaults to `RetryAttempt(1)` when the entry has no prior attempt.
 
+The default above describes current behavior, not the intended V1 retry
+contract. Connectivity rejection occurs before pipeline execution and without
+retry-policy evaluation, so manufacturing attempt 1 consumes a phantom retry.
+V1 must use a non-retry constraint-deferral transition that preserves the
+existing attempt exactly: `null` before any retry evaluation or `N` after
+retry N. See [Queue Provider](./queue-provider.md#current-retry-history-limitation).
+
 `DurableQueueExecutionProcessor` remains responsible for calling
 `QueueProvider.reschedule()`. The handler never calls `QueueProvider` directly.
+After that transition is persisted, `QueueWorkerCoordinator` may create one
+wake-up schedule from
+`QueueProcessingResult.Processed.earliestRescheduledAt`.
 
 ---
 
@@ -222,7 +238,8 @@ directly. No random jitter is added.
 
 ## SchedulerProvider Boundary
 
-`SchedulerProvider` is **never** invoked for offline queue deferral.
+`QueuedSynchronizationExecutionHandler` never invokes `SchedulerProvider`
+directly for offline queue deferral.
 
 Queued offline deferral uses:
 
@@ -232,8 +249,10 @@ QueueEntryExecutionOutcome.Reschedule
     → QueueProvider.reschedule()
 ```
 
-No `ScheduleRequest`, no WorkManager, and no background scheduling occurs in
-the handler.
+No `ScheduleRequest`, WorkManager call, or other background scheduling occurs
+inside the handler. After the processor persists the reschedule,
+`QueueWorkerCoordinator` may use the recorded `earliestRescheduledAt` to
+schedule the next bounded worker wake-up.
 
 ---
 

@@ -1,40 +1,113 @@
 # DataLoom Module Architecture
 
-This document describes the DataLoom module structure, responsibilities, and
-dependency rules for current shared modules and planned platform modules.
+This document describes the DL-036 merged baseline plus the first local DL-039
+module-migration checkpoint and their immediate dependency rules. It is a
+current-state view, not the V1 publication claim. The approved V1 target graph,
+published coordinates, internal engines, and migration sequence are defined by
+[ADR-0002](../adr/ADR-0002-v1-artifact-and-foundation-architecture.md).
 
 Product positioning:
 
-> DataLoom is an Android-first, Jetpack-style offline synchronization SDK with
-> a Kotlin Multiplatform-ready shared core.
+> DataLoom is an Android-first, Jetpack-style, policy-driven adaptable
+> synchronization SDK for native Android applications and Kotlin Multiplatform
+> applications targeting Android and iOS.
+
+The ADR-0002 V1 target spans offline-first, remote-first, cache-first,
+network-only, hybrid, and adaptive synchronization profiles. Those profiles
+define the target architecture; they are not all implemented or qualified in
+the current repository.
 
 ---
 
 ## Module Overview
 
-DataLoom is currently organized into four shared library modules and one
+DataLoom is currently organized into five shared library modules, three
+Android integration modules, a macOS-only Apple distribution module, and one
 build-infrastructure included build.
+
+```mermaid
+flowchart TD
+    model[dataloom-model]
+    api[dataloom-api]
+    core[dataloom-core]
+    runtime[dataloom-runtime]
+    testing[dataloom-testing]
+    connectivity[dataloom-connectivity-android]
+    room[dataloom-queue-room]
+    work[dataloom-scheduler-workmanager]
+    apple[dataloom-apple]
+
+    model --> api
+    model --> core
+    api --> core
+    model --> runtime
+    api --> runtime
+    core --> runtime
+    model --> testing
+    api --> testing
+    core --> testing
+    runtime --> testing
+    api --> connectivity
+    model --> room
+    api --> room
+    api --> work
+    runtime --> work
+    model --> apple
+    api --> apple
+    core --> apple
+    runtime --> apple
+
+    style model fill:#DCCCFF,stroke:#874FFF
+    style api fill:#C2E5FF,stroke:#3DADFF
+    style testing fill:#F5F5F5,stroke:#B3B3B3
+    style apple fill:#FFECBD,stroke:#FFC943
+```
+
+Arrows point from a dependency to its consumer. The Apple export of
+`dataloom-core` is a documented pre-V1 boundary leak, not the approved
+publication shape.
 
 | Component | Type | Purpose |
 |---|---|---|
-| `dataloom-api` | Library module | Stable public contracts, models, and error types |
+| `dataloom-model` | Library module | Dependency-root canonical models; first slice contains clock primitives |
+| `dataloom-api` | Library module | Current public contracts, models, and error types |
 | `dataloom-core` | Library module | Internal platform-independent foundation |
 | `dataloom-runtime` | Library module | Synchronization runtime and engine coordination |
 | `dataloom-testing` | Library module | Testing utilities, fakes, and controlled providers |
+| `dataloom-connectivity-android` | Android library | Android `ConnectivityProvider` |
+| `dataloom-scheduler-workmanager` | Android library | WorkManager scheduler and worker bridge |
+| `dataloom-queue-room` | Android library | Room-backed durable `QueueProvider` |
+| `dataloom-apple` | KMP distribution module | Static `DataLoom` XCFramework assembly |
 | `build-logic` | Build infrastructure | Gradle convention plugins (not a published library) |
 
-All four library modules use Kotlin Multiplatform with an initial JVM target.
-Android-specific functionality is intentionally deferred to dedicated Android
-integration modules.
+The five shared modules use Kotlin Multiplatform with JVM and host-gated Apple
+targets. Android-specific functionality is isolated in dedicated Android
+libraries. None of these projects is a published V1 artifact yet.
 
 ---
 
 ## Module Responsibilities
 
+### `dataloom-model`
+
+Provides the dependency-root canonical model boundary. The first extraction
+slice owns `DataLoomInstant` and `DataLoomClock` while preserving their
+`io.dataloom.api.time` FQCNs and semantics.
+
+Rules:
+
+- Must not depend on another DataLoom project.
+- Must remain platform-independent.
+- Must not contain orchestration, providers, storage, or platform code.
+- Additional moves must remain narrow and ABI-reviewed.
+
+---
+
 ### `dataloom-api`
 
-Provides stable public contracts that host applications and production modules
-depend on. Future content includes:
+Provides the current public contracts that host applications and production
+modules depend on. These contracts are not frozen until the V1 compatibility
+baseline is approved. Current content includes:
 
 - Public API interfaces and models
 - Canonical public error types
@@ -44,7 +117,8 @@ depend on. Future content includes:
 Rules:
 
 - Must remain platform-independent.
-- Must not depend on any other DataLoom implementation module.
+- May depend on `dataloom-model`; must not depend on another DataLoom
+  implementation module.
 - Must not expose third-party dependency types through its API.
 - Must not contain runtime implementations.
 - Must not depend on Android APIs.
@@ -61,7 +135,7 @@ components. Future content includes:
 
 Rules:
 
-- May depend on `dataloom-api`.
+- May depend on `dataloom-model` and `dataloom-api`.
 - Must not depend on `dataloom-runtime`.
 - Must not depend on `dataloom-testing`.
 - Internal implementation details must not be exposed as public API.
@@ -79,7 +153,7 @@ Provides the synchronization runtime. Future content includes:
 
 Rules:
 
-- May depend on `dataloom-api` and `dataloom-core`.
+- May depend on `dataloom-model`, `dataloom-api`, and `dataloom-core`.
 - Must not depend on `dataloom-testing`.
 - Must not expose internal implementation types publicly.
 - Must not depend on Android APIs.
@@ -97,7 +171,8 @@ Provides testing utilities for consumers of DataLoom. Future content includes:
 
 Rules:
 
-- May depend on `dataloom-api` and `dataloom-core`.
+- May depend on `dataloom-model`, `dataloom-api`, `dataloom-core`, and
+  `dataloom-runtime`.
 - Must not be a dependency of any production module (`dataloom-runtime` or
   `dataloom-core` production source sets).
 - Must not be included in runtime implementation dependencies.
@@ -114,26 +189,59 @@ Current convention plugins:
 
 - `io.dataloom.kotlin.multiplatform-library` — configures Kotlin Multiplatform
   with a JVM target, Java toolchain 17, JVM bytecode target 17, common source
-  sets, and reproducible archive output.
+  sets, reproducible archive output, Kotlin ABI baselines, and public
+  dependency-boundary checks.
+
+The JVM ABI baseline now records all five shared modules. The runtime baseline
+contains 13 exact, temporary compatibility allowances for signatures that
+expose `dataloom-core`; new implementation-type leaks are rejected and the
+allowances must be removed before `1.0.0`. Kotlin/Native KLib baselines for the
+five shared modules and `dataloom-apple`, plus Apple-facing header/API
+compatibility evidence, must be generated and reviewed on macOS before this
+foundation change is pushed.
 
 ---
 
 ## Approved Dependency Direction
 
 ```
-dataloom-api
+dataloom-model
   (no DataLoom dependencies)
 
+dataloom-api
+└── depends on dataloom-model
+
 dataloom-core
+├── depends on dataloom-model
 └── depends on dataloom-api
 
 dataloom-runtime
+├── depends on dataloom-model
 ├── depends on dataloom-api
 └── depends on dataloom-core
 
 dataloom-testing
+├── depends on dataloom-model
 ├── depends on dataloom-api
-└── depends on dataloom-core
+├── depends on dataloom-core
+└── depends on dataloom-runtime
+
+dataloom-connectivity-android
+└── depends on dataloom-api
+
+dataloom-queue-room
+├── depends on dataloom-model
+└── depends on dataloom-api
+
+dataloom-scheduler-workmanager
+├── depends on dataloom-api
+└── depends on dataloom-runtime
+
+dataloom-apple
+├── exports dataloom-model
+├── exports dataloom-api
+├── exports dataloom-core (temporary pre-V1 boundary)
+└── exports dataloom-runtime
 ```
 
 ---
@@ -143,11 +251,13 @@ dataloom-testing
 The following dependencies are explicitly prohibited:
 
 ```
+dataloom-model   → any DataLoom project
 dataloom-api     → any DataLoom implementation module
 dataloom-core    → dataloom-runtime
 dataloom-core    → dataloom-testing
 dataloom-runtime → dataloom-testing
 production code  → dataloom-testing
+Android adapters → unrelated Android adapter modules
 ```
 
 Circular project dependencies are prohibited.
@@ -157,12 +267,21 @@ Circular project dependencies are prohibited.
 ## Platform Strategy Summary
 
 - Android is the primary reference and adoption platform.
+- Native Android, KMP Android, and KMP iOS are mandatory V1 consumer paths.
 - Shared contracts and runtime foundations use Kotlin Multiplatform where
   technically appropriate.
-- Shared modules must not depend on Android APIs.
+- `commonMain` code and platform-neutral public contracts must not depend
+  directly on Android or Apple APIs. Platform source sets and dedicated
+  platform modules may use the APIs of the platform they integrate with.
 - Platform-specific behavior belongs in dedicated platform modules or provider
   interfaces.
-- KMP compatibility must not delay the first complete Android vertical slice.
+- Android-first controls implementation order, not V1 platform scope. The
+  release remains blocked until both KMP Android and KMP iOS consumer paths
+  are complete and qualified alongside native Android.
+- The current shared convention has JVM and host-gated iOS targets, but no
+  explicit KMP Android target. Native Android library support does not prove a
+  KMP Android publication/consumer path; that target and its external consumer
+  fixture are mandatory V1 work.
 - New platform targets require an approved issue and compatibility testing.
 - Support is not claimed until adapter and qualification tests exist.
 - Prefer provider interfaces over `expect`/`actual` when interfaces provide a
@@ -177,34 +296,29 @@ Circular project dependencies are prohibited.
 - Common source sets must not use Android APIs, JVM-specific APIs, or other
   platform-specific code.
 - Platform-specific extensions belong in the appropriate platform source set
-  (for example `jvmMain`).
-- Do not add iOS, JavaScript, Wasm, Kotlin/Native, Compose, desktop
-  application, or server application targets without an approved issue.
+  (for example `androidMain`, `iosMain`, or `jvmMain`).
+- V1 shared/public modules must provide compatible Android/JVM and
+  `iosArm64`/`iosSimulatorArm64`/`iosX64` variants where their artifact
+  responsibility requires them.
+- Do not add JavaScript, Wasm, desktop application, or additional native
+  targets without an approved issue.
 
 ---
 
-## Planned Android-First Modules (not implemented in this issue)
+## Current Android Integration Modules
 
-| Module | Planned responsibilities | Boundaries |
+| Module | Responsibilities | Boundaries |
 |---|---|---|
-| `dataloom-android` | Android initialization, app/process lifecycle integration, connectivity integration, Android runtime configuration, diagnostics, and DI hooks where useful | Must not contain Room, Retrofit, or WorkManager implementations directly |
-| `dataloom-workmanager` | Optional WorkManager scheduling, durable background execution, constraints mapping, worker/runtime integration, process restart recovery coordination | Optional Android integration artifact |
-| `dataloom-room` | Optional Room-backed storage provider, queue/checkpoint persistence support, migration guidance | Room must not be mandatory for shared core/runtime |
-| `dataloom-retrofit` | Optional Retrofit transport integration, request/response adaptation, DataLoom error mapping | Retrofit must not be mandatory for shared core/runtime |
-| `sample-android` | Reference integration sample: offline-first flow, scheduling, providers, state observation, failure/retry demonstration | Reference app only, not a shared runtime dependency |
+| `dataloom-connectivity-android` | Bounded Android connectivity snapshot provider | No Room, SQLite, WorkManager, or other adapter dependency |
+| `dataloom-scheduler-workmanager` | WorkManager scheduler, coroutine worker, and explicit worker factory | No Room or connectivity-adapter dependency |
+| `dataloom-queue-room` | Room-backed durable queue, schema export, and migration tests | Room is not a shared runtime dependency |
 
----
-
-## Planned Future KMP Modules (roadmap only)
-
-| Module | Planned responsibilities | Status |
-|---|---|---|
-| `dataloom-ktor` | Future multiplatform transport provider | Roadmap only |
-| `dataloom-sqldelight` | Future multiplatform storage provider | Roadmap only |
-| `dataloom-apple` | Future Apple lifecycle, connectivity, and scheduling integration | Roadmap only |
-| `sample-kmp` | Future shared Android and iOS reference application | Roadmap only |
-
-These modules are not part of the current release scope.
+The V1 migration will aggregate the supported Android surface behind the
+published `dataloom-android` artifact while retaining narrow implementation
+boundaries. It will also add `dataloom-ios` for KMP iOS platform integrations
+and `dataloom-jvm` for JVM/server integrations. `dataloom-apple` remains a thin
+XCFramework/Swift distribution boundary. See ADR-0002; empty wrapper artifacts
+do not satisfy this migration.
 
 ---
 

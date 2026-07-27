@@ -1,238 +1,251 @@
-# Building DataLoom Locally
+# Build and validate DataLoom locally
 
-This guide covers the tools required to build DataLoom, the Gradle Wrapper,
-available build commands, and common troubleshooting steps.
+> **Audience:** Contributors preparing changes or reproducing validation
+> failures
+> **Purpose:** Provide repository-grounded shared, Android, and Apple commands
+> **Status:** Current source-build workflow; successful builds do not equal V1
+> production readiness
 
----
+[Project overview](../../README.md) ·
+[Android guide](../android/README.md) ·
+[Apple guide](../apple/README.md) ·
+[Testing toolkit](../testing/testing-toolkit.md)
 
-## Required Tools
+The default project graph contains five shared KMP modules. Android projects
+are opt-in through `DATALOOM_ANDROID_BUILD=true`; Apple targets and
+`dataloom-apple` are available only on macOS.
 
-| Tool | Required version |
+## Select the validation lane
+
+```mermaid
+flowchart LR
+    checkout["Source checkout"] --> shared["Shared validation"]
+    checkout --> androidGate{"Android flag set?"}
+    checkout --> macGate{"macOS host?"}
+    androidGate -->|"Yes"| android["Android validation"]
+    macGate -->|"Yes"| apple["Apple validation"]
+    apple --> swift["Swift compile smoke"]
+```
+
+## Toolchain
+
+| Tool | Current repository requirement |
 |---|---|
 | JDK | 17 or newer |
-| Gradle | 9.5.0 (via the Gradle Wrapper — no separate installation required) |
-| Kotlin | 2.4.10 (managed by Gradle) |
+| Gradle | 9.5.0 through the committed Wrapper |
+| Kotlin | 2.4.10 |
+| Android Gradle Plugin | 9.1.0 when Android projects are enabled |
+| Android SDK | Compile SDK 35; minimum SDK 21 |
+| Xcode | Required on macOS for Apple linking, simulator tests, and XCFramework assembly |
 
-You do not need to install Gradle or Kotlin manually. The Gradle Wrapper
-(`gradlew` / `gradlew.bat`) downloads and caches the correct Gradle
-distribution automatically.
-
----
-
-## Verifying Your Java Installation
-
-```bash
-java -version
-```
-
-Expected output (version must be 17 or newer):
-
-```
-openjdk version "17.x.x" ...
-```
-
-On Windows:
-
-```powershell
-java -version
-```
-
----
-
-## The Gradle Wrapper
-
-Always use the Gradle Wrapper instead of a locally installed Gradle binary to
-ensure the correct version is used.
+Always run the Wrapper:
 
 - Unix/macOS: `./gradlew`
 - Windows: `.\gradlew.bat`
 
-The wrapper downloads Gradle 9.5.0 from `https://services.gradle.org/` on
-first use and caches it in `~/.gradle/wrapper/dists/`.
+## Shared validation
 
-### Wrapper Checksum Verification
+From the repository root:
 
-The Gradle Wrapper is configured with the official SHA-256 checksum for the
-`gradle-9.5.0-bin.zip` distribution:
-
+```bash
+./gradlew --version
+./gradlew projects
+./gradlew build --configuration-cache
+./gradlew check --configuration-cache
 ```
+
+Run all shared module test tasks explicitly:
+
+```bash
+./gradlew \
+    :dataloom-model:allTests \
+    :dataloom-api:allTests \
+    :dataloom-core:allTests \
+    :dataloom-runtime:allTests \
+    :dataloom-testing:allTests
+```
+
+Inspect the runtime classpath:
+
+```bash
+./gradlew \
+    :dataloom-runtime:dependencies \
+    --configuration jvmRuntimeClasspath
+```
+
+Validate reviewed Kotlin/KLib ABI baselines:
+
+```bash
+./gradlew checkKotlinAbi
+```
+
+The
+[Pull Request Validation workflow](../../.github/workflows/pr-validation.yml)
+currently runs the shared build, checks, module tests, and runtime dependency
+inspection. Apple validation additionally runs ABI validation. This guide does
+not trigger either workflow.
+
+## Android validation
+
+Android projects are absent unless the environment variable is exactly
+`true`.
+
+```bash
+DATALOOM_ANDROID_BUILD=true ./gradlew \
+    projects \
+    --no-configuration-cache
+```
+
+### Fast Android build
+
+```bash
+DATALOOM_ANDROID_BUILD=true ./gradlew \
+    :dataloom-connectivity-android:build \
+    :dataloom-scheduler-workmanager:build \
+    :dataloom-queue-room:build
+```
+
+### Workflow-aligned Android checks
+
+```bash
+DATALOOM_ANDROID_BUILD=true ./gradlew \
+    :dataloom-connectivity-android:assembleDebug \
+    :dataloom-connectivity-android:assembleRelease \
+    :dataloom-connectivity-android:testDebugUnitTest \
+    :dataloom-connectivity-android:lintDebug \
+    :dataloom-scheduler-workmanager:assembleDebug \
+    :dataloom-scheduler-workmanager:assembleRelease \
+    :dataloom-scheduler-workmanager:testDebugUnitTest \
+    :dataloom-scheduler-workmanager:lintDebug \
+    :dataloom-queue-room:assembleDebug \
+    :dataloom-queue-room:assembleRelease \
+    :dataloom-queue-room:assembleDebugAndroidTest \
+    :dataloom-queue-room:testDebugUnitTest \
+    :dataloom-queue-room:lintDebug
+```
+
+The Android workflow also verifies the committed Room schema against KSP
+output and then runs the managed-device test:
+
+```bash
+DATALOOM_ANDROID_BUILD=true ./gradlew \
+    :dataloom-queue-room:pixel2Api35DebugAndroidTest
+```
+
+The managed-device task requires Android SDK components, an API 35 x86_64
+system image, and hardware virtualization. See
+[Android Validation](../../.github/workflows/android-validation.yml) for the
+authoritative ordering and schema comparison.
+
+## Apple validation
+
+Run Apple commands on macOS:
+
+```bash
+./gradlew \
+    :dataloom-model:iosSimulatorArm64Test \
+    :dataloom-api:iosSimulatorArm64Test \
+    :dataloom-core:iosSimulatorArm64Test \
+    :dataloom-runtime:iosSimulatorArm64Test \
+    :dataloom-testing:iosSimulatorArm64Test
+```
+
+Assemble the optional Swift/Objective-C artifact:
+
+```bash
+./gradlew :dataloom-apple:assembleDataLoomReleaseXCFramework
+```
+
+Then follow the
+[Swift smoke fixture](../../apple-smoke/README.md) for the exact
+`xcodebuild` command. These producer checks do not replace the missing
+executable KMP iOS consumer and real Apple adapter tests.
+
+## Windows
+
+Set the Android flag in PowerShell before invoking Android tasks:
+
+```powershell
+$env:DATALOOM_ANDROID_BUILD = "true"
+.\gradlew.bat projects --no-configuration-cache
+.\gradlew.bat :dataloom-connectivity-android:build
+.\gradlew.bat :dataloom-scheduler-workmanager:build
+.\gradlew.bat :dataloom-queue-room:build
+```
+
+Shared commands use the same task names with `.\gradlew.bat`. Apple targets
+and XCFramework tasks are unavailable on Windows.
+
+## Wrapper integrity
+
+The Wrapper downloads `gradle-9.5.0-bin.zip` and verifies this committed
+SHA-256 value:
+
+```text
 553c78f50dafcd54d65b9a444649057857469edf836431389695608536d6b746
 ```
 
-Gradle verifies this checksum automatically before extracting the distribution.
-If the download is corrupted or tampered with, the build fails with a checksum
-mismatch error.
-
-The checksum was sourced from the official Gradle release-checksums page:
-https://gradle.org/release-checksums/
-
-The wrapper JAR itself (`gradle/wrapper/gradle-wrapper.jar`) can be verified
-against the official wrapper JAR checksum for Gradle 9.5.0:
-
-```
-497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1d2f67a194a9c7
-```
-
-To verify on Unix/macOS:
+Verify the committed wrapper JAR:
 
 ```bash
 sha256sum gradle/wrapper/gradle-wrapper.jar
 ```
 
-To verify on Windows (PowerShell):
+Expected SHA-256:
+
+```text
+497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1d2f67a194a9c7
+```
+
+PowerShell equivalent:
 
 ```powershell
 Get-FileHash gradle\wrapper\gradle-wrapper.jar -Algorithm SHA256
 ```
 
----
+## Troubleshooting
 
-## Gradle and Kotlin Versions
+### Android modules are missing
 
-To confirm the active Gradle and Kotlin versions:
+Run `./gradlew projects` with `DATALOOM_ANDROID_BUILD=true` in the same process.
+If the flag is absent or has another value, `settings.gradle.kts` intentionally
+omits all three Android projects.
 
-```bash
-./gradlew --version
-```
+### Android plugin or dependency resolution fails
 
----
+Android validation needs access to the Gradle Plugin Portal, Maven Central, and
+Google Maven. The repository already declares these in `settings.gradle.kts`;
+do not work around resolution failures by committing generated plugin metadata
+or weakening validation. The Android workflow explicitly rejects a root
+`META-INF/gradle-plugins` directory.
 
-## Build Commands
+### Java bytecode version fails
 
-### List all projects
+Confirm `java -version` reports JDK 17 or newer and that `JAVA_HOME` points to
+that JDK.
 
-```bash
-./gradlew projects
-```
+### Wrapper download fails
 
-### Build all modules
+The first run needs the configured Gradle distribution unless it is already
+cached or supplied by an approved mirror. Do not change the distribution URL
+or checksum merely to bypass a transient network failure.
 
-```bash
-./gradlew build
-```
+### Configuration cache fails
 
-### Build with configuration-cache validation
+Inspect:
 
-```bash
-./gradlew build --configuration-cache
-```
-
-The configuration cache is enabled by default in `gradle.properties`. This
-command confirms that the build graph is fully configuration-cache compatible.
-
-### Run verification tasks with configuration-cache validation
-
-```bash
-./gradlew check --configuration-cache
-```
-
-### Run all tests
-
-```bash
-./gradlew :dataloom-api:allTests
-./gradlew :dataloom-core:allTests
-./gradlew :dataloom-runtime:allTests
-./gradlew :dataloom-testing:allTests
-```
-
-Or all at once:
-
-```bash
-./gradlew allTests
-```
-
-### Inspect module dependencies
-
-To view the resolved runtime classpath for a specific module:
-
-```bash
-./gradlew :dataloom-runtime:dependencies --configuration jvmRuntimeClasspath
-```
-
-Replace `:dataloom-runtime` with any module name to inspect its dependency
-tree.
-
----
-
-## Pull request validation in GitHub Actions
-
-DataLoom pull requests targeting `main`, pushes to `main`, and manual workflow
-runs are validated in GitHub Actions by the **Pull Request Validation**
-workflow.
-
-The workflow uses:
-
-- JDK 17 (Temurin)
-- The committed Gradle Wrapper
-- `gradle/actions/setup-gradle` with the `basic` cache provider
-
-Validation executes:
-
-- `./gradlew --version`
-- `./gradlew projects`
-- `./gradlew build --configuration-cache`
-- `./gradlew check --configuration-cache`
-- `./gradlew :dataloom-api:allTests :dataloom-core:allTests :dataloom-runtime:allTests :dataloom-testing:allTests`
-- `./gradlew :dataloom-runtime:dependencies --configuration jvmRuntimeClasspath`
-
-Before requesting review, run the same commands locally to confirm your branch
-matches CI expectations.
-
-This workflow validates build and verification only. It does not publish
-artifacts, create releases, or deploy services.
-
----
-
-## Windows Equivalents
-
-Replace `./gradlew` with `.\gradlew.bat` in all commands above:
-
-```powershell
-.\gradlew.bat --version
-.\gradlew.bat projects
-.\gradlew.bat build
-.\gradlew.bat :dataloom-api:allTests
-```
-
----
-
-## Common Setup Problems
-
-### Build fails with `Unsupported class file major version`
-
-The JDK version is too old. Java 17 or newer is required. Verify with:
-
-```bash
-java -version
-```
-
-### `JAVA_HOME` not set
-
-Ensure `JAVA_HOME` points to a JDK 17 installation and that `$JAVA_HOME/bin`
-is on your `PATH`.
-
-### Network errors when downloading Gradle
-
-If the Gradle Wrapper cannot download the distribution (for example in an
-air-gapped environment), pre-install Gradle 9.5.0 and set
-`GRADLE_HOME` or configure the wrapper to point to a local mirror in
-`gradle-wrapper.properties`.
-
-### Configuration cache problems
-
-If a task is not configuration-cache compatible, Gradle reports a problem
-during the store phase. Check the problems report at:
-
-```
+```text
 build/reports/problems/problems-report.html
 ```
 
-Configuration cache is enabled by default. If you need to disable it
-temporarily during investigation, run with:
+Use `--no-configuration-cache` only for diagnosis or for tasks that are
+explicitly invoked that way by the current workflow. Do not commit a global
+configuration-cache disablement without an approved rationale.
 
-```bash
-./gradlew build --no-configuration-cache
-```
+## Product-readiness boundary
 
-Do not commit a change that disables the configuration cache without
-documenting the reason.
+A green build validates the source graph and covered behavior. It does not
+prove complete offline-first, remote-first, cache-first, network-only, hybrid,
+or adaptive strategy support, nor platform parity across native Android, KMP
+Android, and KMP iOS. Optional native Swift distribution remains a separate
+qualification decision.

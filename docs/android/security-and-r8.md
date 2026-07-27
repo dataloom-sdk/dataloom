@@ -1,60 +1,84 @@
-# Security and R8 (DL-037)
+# Android security and R8
+
+> **Audience:** Android security reviewers, application integrators, and SDK
+> maintainers
+> **Purpose:** Record current shrinker rules, permissions, sensitive-data
+> boundaries, and known gaps
+> **Status:** Accurate for the three current Android adapter modules; not a V1
+> security certification
+
+[← Android overview](README.md) ·
+[Connectivity provider](connectivity-provider.md) ·
+[Room queue provider](room-queue-provider.md)
 
 ## Consumer R8 rules
 
-Each Android module ships consumer ProGuard rules that are applied
-automatically to consuming applications by the Android build tools. No
-manual configuration is required for the DataLoom classes themselves.
+Each Android library packages `consumer-rules.pro`; Android build tooling
+applies those rules to consuming applications automatically.
 
-| Module | File |
+| Module | Preserved surface |
 |---|---|
-| `dataloom-connectivity-android` | `consumer-rules.pro` |
-| `dataloom-scheduler-workmanager` | `consumer-rules.pro` |
-| `dataloom-queue-room` | `consumer-rules.pro` |
+| `dataloom-connectivity-android` | `AndroidConnectivityProvider` |
+| `dataloom-scheduler-workmanager` | Scheduler provider, worker, worker factory, and worker class name |
+| `dataloom-queue-room` | Queue provider, database builder, Room database, DAO, entity, and internal Room members |
 
-## What the rules preserve
+No extra DataLoom keep rules are currently documented for host applications.
+Consumers should still test their own minified release build because host
+serialization, DI, and provider implementations may need separate rules.
 
-- Public provider classes and their public API surface.
-- Room entity, DAO, and database classes (required for Room's reflection).
-- Worker classes (required for WorkManager's class-name-based instantiation).
+## Data at rest
 
-## Database encryption
+`dataloom-queue-room` stores queue entries in an ordinary Room database. It
+does not enable SQLCipher or another encryption layer.
 
-`RoomQueueProvider` does not enable database encryption by default. Queue
-entries may contain application context that is sensitive according to
-application policy.
+The current `DataLoomDatabaseBuilder` accepts a context and database name only;
+it does not expose Room's open-helper factory. Do not claim that encrypted
+queue persistence is a drop-in option through the current builder.
+Applications that require SDK-managed encrypted queue storage must provide an
+alternative `QueueProvider` or wait for a reviewed encrypted construction
+boundary.
 
-Host applications that require encryption should configure SQLCipher or
-an equivalent encrypted Room support with `SupportSQLiteOpenHelper.Factory`
-before passing the database to `RoomQueueProvider`.
+Android file-based encryption may protect application files at the operating
+system level, but its availability and policy are properties of the host
+device and application—not a DataLoom guarantee.
 
-## Payload and metadata security
+## Payload and metadata handling
 
-Queue entry payloads and `ExecutionContext` metadata may contain sensitive
-data according to the host application's threat model. No DataLoom module
-logs, transmits, or caches this data. However, the host application is
-responsible for:
+The Room queue necessarily persists queue payloads, metadata, and selected
+sanitized error fields. The current Android adapters do not intentionally log
+raw payloads, credentials, tokens, keys, SQL statements, or database paths.
 
-- Applying appropriate file-system encryption (e.g., Android File-Based
-  Encryption) to protect the database at rest.
-- Ensuring that `ExecutionContext.metadata` does not contain credentials,
-  tokens, or sensitive personal data (per the DataLoom API contract).
+Host applications remain responsible for:
 
-## Diagnostic log safety
-
-No module logs raw SQL details, database paths, exception messages, stack
-traces, credentials, or user payloads. All error messages in
-`ProviderOperationResult.Failure` are sanitized canonical strings.
+- keeping credentials, authorization headers, personal data, and encryption
+  keys out of `ExecutionContext.metadata`;
+- deciding whether queued payloads are permitted under the application's
+  threat model and retention policy;
+- protecting backups, support bundles, crash reports, and device storage;
+- testing redaction and minified release behavior.
 
 ## Permissions
 
-Only `dataloom-connectivity-android` declares a manifest permission:
+Only `dataloom-connectivity-android` declares a permission:
 
 ```xml
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 ```
 
-This is a normal (non-dangerous) permission. It does not require runtime
-user consent.
+It is a normal permission and does not require runtime consent.
+`dataloom-scheduler-workmanager` and `dataloom-queue-room` declare no
+additional permissions.
 
-No other Android module declares any permission.
+## V1 security gaps
+
+Passing current Android tests does not qualify the V1 security model. V1 still
+requires reviewed encryption/key-reference handling, redaction tests, asset
+integrity and cleanup, tenant isolation, audit behavior, migration evidence,
+and parity across native Android, KMP Android, and KMP iOS. Optional native
+Swift distribution requires a separate Apple API and security review.
+
+## Related documentation
+
+- [Room queue provider](room-queue-provider.md)
+- [Security policy](../../SECURITY.md)
+- [V1 architecture decision](../adr/ADR-0002-v1-artifact-and-foundation-architecture.md)

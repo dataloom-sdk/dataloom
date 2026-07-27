@@ -1,10 +1,19 @@
 # DataLoom Provider Lifecycle and Health (DL-007)
 
+[API reference index](./README.md)
+
+> **Status:** Available provider contracts plus aggregate runtime lifecycle
+> coordination. Fleet health, automatic recovery, and operational policy remain
+> V1 gaps.
+
 This document defines lifecycle and health semantics for provider contracts in
 `dataloom-api`.
 
-These semantics are conceptual in DL-007. Runtime lifecycle orchestration and
-transition enforcement are not implemented yet.
+`ProviderLifecycleState` describes provider-level lifecycle semantics. The
+current runtime also supplies `ProviderLifecycleCoordinator`, which implements
+deterministic aggregate initialization, rollback, and shutdown. It uses its own
+`ProviderLifecycleCoordinatorState`; it does not mutate or enforce each
+provider's `ProviderLifecycleState` value.
 
 ## Lifecycle states
 
@@ -69,8 +78,9 @@ FAILED → INITIALIZING
 FAILED → CLOSING
 ```
 
-DL-007 does not implement a lifecycle state machine, transition enforcement,
-automatic recovery, or retry timing.
+The provider-level enum does not implement transitions. Aggregate lifecycle
+coordination exists, but automatic provider recovery, health-driven
+transitions, and retry timing do not.
 
 ## Initialization
 
@@ -93,8 +103,9 @@ behavior.
 Shutdown uses `DataLoomProvider.close()` and returns
 `ProviderOperationResult<Unit>`.
 
-The SPI does not define close ordering across providers or orchestrated
-shutdown behavior.
+The SPI itself does not define close ordering across providers.
+`ProviderLifecycleCoordinator` closes successfully initialized providers in
+reverse initialization order and reports ordered failures.
 
 ## Failure behavior
 
@@ -103,5 +114,18 @@ Failures are represented through `ProviderOperationResult.Failure` with
 
 ## Runtime orchestration status
 
-Provider lifecycle orchestration belongs to a later runtime issue and is not
-part of the DL-007 contract surface.
+`ProviderLifecycleCoordinator` is available in `dataloom-core` and:
+
+- initializes providers in registry order;
+- rolls back prior successful initializations in reverse order after failure;
+- shuts down successfully initialized providers in reverse order;
+- preserves primary and rollback/shutdown failures structurally; and
+- propagates coroutine cancellation.
+
+It does not provide concurrent-call serialization, automatic restart,
+continuous health polling, fleet health aggregation, policy-controlled
+degradation, or enterprise operational controls.
+
+See [Provider Registry](./provider-registry.md),
+[Provider Bindings](./provider-bindings.md), and
+[DataLoom Facade](./dataloom-facade.md) for assembly and admission behavior.

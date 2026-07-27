@@ -30,6 +30,27 @@ Making every dependency explicit:
 - Makes every dependency visible to the caller.
 - Enables any injection approach the application team prefers.
 
+```mermaid
+flowchart LR
+    application[Application assembly]
+    dependencies[RuntimeDependencies]
+    clock[DataLoomClock]
+    identifiers[Identifier generators]
+    runtime[Runtime components]
+    tests[Deterministic tests]
+
+    application --> dependencies
+    dependencies --> clock
+    dependencies --> identifiers
+    clock --> runtime
+    identifiers --> runtime
+    tests -.-> clock
+    tests -.-> identifiers
+
+    style dependencies fill:#C2E5FF,stroke:#3DADFF
+    style tests fill:#CDF4D3,stroke:#66D575
+```
+
 ---
 
 ## Clock ownership
@@ -113,37 +134,44 @@ dependency-injection framework.
 ## Android-first and KMP considerations
 
 `RuntimeDependencies` and `RuntimeIdentifierGenerators` are declared in
-`dataloom-core`, which is a Kotlin Multiplatform common module with an
-initial JVM target.
+`dataloom-core` common code and are used by the implemented shared runtime.
+The shared modules currently declare JVM plus host-gated Apple targets; they
+do not yet declare the explicit KMP Android target required for V1.
 
 Neither class depends on Android APIs, `java.time`, or any third-party
 date-time library. Both are safe for use in Kotlin Multiplatform common code.
+`DataLoomClock` and `DataLoomInstant` are now sourced from the dependency-root
+`dataloom-model` module while retaining their existing
+`io.dataloom.api.time` fully qualified names.
 
-When Android-specific clock or identifier implementations are introduced in
-future issues, they will be supplied through the injection boundary — not
-hard-coded into the runtime container.
-
----
-
-## Future provider-registry integration
-
-`RuntimeDependencies` is the initial dependency container. Future issues may
-extend runtime construction with:
-
-- Provider registry (storage, transport, queue, scheduler, connectivity)
-- Policy configuration
-- Synchronization observers
-- Logging and monitoring observers
-
-These extensions are deferred and will be introduced with explicit future
-issues. The current `RuntimeDependencies` class contains only the clock and
-identifier generators.
+Platform-specific clock or identifier implementations must be supplied through
+the injection boundary, not hard-coded into the runtime container.
 
 ---
 
-## Synchronization runtime not yet implemented
+## Provider and runtime integration
 
-The DataLoom synchronization runtime is not yet implemented. `RuntimeDependencies`
-defines the dependency container structure for the future runtime. No
-synchronization orchestration, queue processing, retry execution, or workflow
-coordination exists at this point.
+The DL-017 `RuntimeDependencies` scope remains deliberately narrow: the class
+contains only the clock and identifier generators. It does not own provider
+selection, provider lifecycle, policy configuration, or observers.
+
+Provider and runtime construction now exist through separate components,
+including `ProviderRegistry`, `ProviderLifecycleCoordinator`,
+`DataLoomBuilder`, and the runtime facade. Keeping those components separate
+from `RuntimeDependencies` avoids turning the deterministic clock/identifier
+container into a service locator.
+
+---
+
+## Current synchronization-runtime status
+
+Shared foundations now exist for synchronization orchestration, durable queue
+processing, retry evaluation and rescheduling, conflict orchestration, event
+dispatch, and connectivity-aware execution. These implementations consume the
+explicit runtime dependencies where time or identifiers are required.
+
+This is an implemented foundation, not a complete V1 support claim. Standard
+retry/circuit-breaker behavior, generic conflict persistence and built-in
+policies, production observability, mandatory platform adapters, and
+native Android/KMP Android/KMP iOS consumer qualification still require
+completion before release.

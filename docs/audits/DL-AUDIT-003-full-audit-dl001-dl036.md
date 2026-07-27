@@ -1,5 +1,13 @@
 # DL-AUDIT-003: Full Audit DL-001 through DL-036
 
+> [!IMPORTANT]
+> **Historical evidence:** this audit is frozen to the branch and workflow
+> runs named below. “READY FOR DL-037” is a next-issue verdict for its bounded
+> scope, not proof that the current repository is production-ready for V1.
+> Use the [audit index](./README.md) and
+> [DL-AUDIT-004](./DL-AUDIT-004-v1-production-readiness.md) for the current
+> release decision.
+
 **Audit date:** 2026-07-26
 **Auditor:** Copilot Coding Agent (DL-AUDIT-003)
 **Scope:** Issues DL-001 through DL-036 — complete implementation, architecture,

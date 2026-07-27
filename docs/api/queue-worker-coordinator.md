@@ -1,5 +1,10 @@
 # Queue Worker Coordinator (DL-032)
 
+[API reference index](./README.md)
+
+> **Status:** Available recovery, bounded-processing, and wake-up foundation.
+> Complete retry/circuit policy and platform qualification remain V1 gates.
+
 ## Overview
 
 `QueueWorkerCoordinator` is the platform-independent coordinator that

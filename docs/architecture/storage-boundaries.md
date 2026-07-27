@@ -14,12 +14,16 @@ The host application owns all domain data and domain queries. The application
 repository is the authoritative API through which UI and business logic read
 and modify domain data.
 
-```text
-UI / ViewModel
-      ↓
-Application Repository
-      ↓
-Room / SQLDelight / DataStore / custom storage
+```mermaid
+flowchart LR
+    ui[UI and business logic]
+    repository[Application repository]
+    domain[(Domain storage)]
+
+    ui -->|Reads and writes| repository
+    repository -->|Owns queries| domain
+
+    style repository fill:#C2E5FF,stroke:#3DADFF
 ```
 
 DataLoom does not replace, wrap, or proxy the application repository.
@@ -50,14 +54,19 @@ patterns for domain data.
 
 DataLoom interacts with application storage through the `StorageProvider` SPI:
 
-```text
-DataLoom Runtime
-      ↓
-StorageProvider
-      ↓
-Application-controlled storage adapter
-      ↓
-Room / SQLDelight / custom storage
+```mermaid
+flowchart LR
+    runtime[DataLoom runtime]
+    provider[StorageProvider]
+    adapter[Application adapter]
+    domain[(Domain storage)]
+
+    runtime -->|Synchronization operations| provider
+    provider -->|Delegates| adapter
+    adapter -->|Maps payloads| domain
+
+    style runtime fill:#DCCCFF,stroke:#874FFF
+    style provider fill:#C2E5FF,stroke:#3DADFF
 ```
 
 `StorageProvider` is a **synchronization adapter**, not a general-purpose
@@ -83,20 +92,23 @@ DataLoom remains neutral to these choices.
 
 ---
 
-## Future DataLoom Infrastructure Storage
+## DataLoom Infrastructure Storage
 
-DataLoom may later introduce its own internal storage for SDK infrastructure
-concerns, separate from application domain storage. Examples include:
+DataLoom infrastructure persistence is separate from application domain
+storage. Infrastructure concerns include:
 
 - Durable synchronization queue persistence
 - Retry records
 - Idempotency records
 
+The current `dataloom-queue-room` module provides Android durable queue
+persistence through `QueueProvider`.
+
 DL-011 introduces the `readCheckpoint` and `writeCheckpoint` operations on
 `StorageProvider` for persisting opaque `SynchronizationCheckpoint` values,
 but no concrete checkpoint storage implementation is provided. Checkpoint
-deletion, and durable queue/retry-record persistence, remain deferred to
-later issues and will not share schemas or DAOs with application domain
+deletion and standalone durable retry/idempotency-record persistence remain
+unimplemented and must not share schemas or DAOs with application domain
 storage.
 
 ---
@@ -108,13 +120,16 @@ Room is appropriate for:
 - Android application domain data
 - Complex local queries
 - Transactional application of remote changes
-- Future durable DataLoom queue persistence (via a dedicated `dataloom-room`
-  module, deferred)
+- Current Android DataLoom queue persistence through the dedicated
+  `dataloom-queue-room` module
 
-A later `dataloom-room` module may provide reusable integration support for
-implementing `StorageProvider` with Room.
+`dataloom-queue-room` implements `QueueProvider` only. It is not a general
+Room-backed `StorageProvider` for application domain data or synchronization
+checkpoints. A reusable Room-backed `StorageProvider` remains unimplemented,
+and its V1 technology and artifact boundary are not yet decided.
 
-Do not claim that a concrete Room provider exists. None is provided by DL-009.
+DL-009 did not provide a concrete Room implementation; the later queue module
+must not be misrepresented as filling that broader storage-provider scope.
 
 ---
 
@@ -124,11 +139,15 @@ SQLDelight is appropriate for:
 
 - Kotlin Multiplatform persistence
 - Android and Apple shared storage implementations
-- Future KMP provider integration
+- Potential KMP provider integration
 
 Applications using SQLDelight may implement `StorageProvider` using
 SQLDelight-generated queries inside the adapter, keeping SQLDelight types
 outside the shared DataLoom public surface.
+
+DataLoom has not selected SQLDelight as its cross-platform persistence
+technology. Whatever technology is selected must implement and qualify the
+mandatory KMP iOS persistence and recovery capability for V1.
 
 ---
 
@@ -194,9 +213,9 @@ application explicitly applies it before passing payloads to DataLoom.
 | Inbound change-apply adapter | `StorageProvider` implementation |
 | Outbound acknowledgement recording | `StorageProvider` implementation |
 | Checkpoint read/write persistence | `StorageProvider` implementation |
-| Checkpoint apply-before-advance timing | DataLoom runtime (deferred) |
+| Checkpoint apply-before-advance timing | DataLoom inbound runtime pipeline |
 | Synchronization orchestration | DataLoom runtime |
-| Future DataLoom queue persistence | DataLoom (deferred) |
+| DataLoom workflow queue persistence | `QueueProvider` implementation |
 
 ---
 

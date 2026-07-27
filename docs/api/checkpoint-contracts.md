@@ -1,13 +1,18 @@
 # DataLoom Checkpoint Contracts (DL-011)
 
+[API reference index](./README.md)
+
+> **Status:** Available contract with inbound-pipeline integration. Complete
+> restart, migration, and cross-platform persistence qualification remains.
+
 This document defines the platform-independent synchronization-checkpoint
 contracts introduced in `dataloom-api` by DL-011.
 
 These contracts represent opaque checkpoint identity and progress values,
-and the storage read/write requests used to persist and retrieve them. Runtime
-orchestration, durable queue processing, retry execution, conflict
-resolution, and concrete storage or transport providers are **not
-implemented** in this issue.
+and the storage read/write requests used to persist and retrieve them. The
+current inbound pipeline coordinates checkpoint read, pull, apply, and safe
+checkpoint advancement. Durable queue/retry/conflict integration and qualified
+reference storage/transport providers remain separate work.
 
 ---
 
@@ -18,8 +23,7 @@ stream has progressed with the remote participant. DataLoom treats the
 checkpoint's progress marker as opaque; it never interprets, compares, or
 generates checkpoint values.
 
-Conceptual flow for inbound synchronization (runtime orchestration is
-deferred):
+Current inbound synchronization flow:
 
 ```text
 StorageProvider.readCheckpoint()
@@ -96,7 +100,7 @@ as credentials.**
 | Checkpoint key naming | Host application or integration |
 | Checkpoint token format and semantics | Remote system or application-defined contract |
 | Checkpoint persistence | `StorageProvider` implementation |
-| Checkpoint advancement timing | DataLoom runtime (deferred orchestration) |
+| Checkpoint advancement timing | Current inbound pipeline, after successful application |
 | Checkpoint interpretation | Never DataLoom core |
 
 DataLoom core never owns or interprets the token; it only carries the
@@ -173,8 +177,9 @@ that no checkpoint is currently stored for the requested `CheckpointKey`. This
 is the expected result for the first synchronization of a stream. Checkpoint
 deletion is **not** implemented in this issue.
 
-Checkpoint writes must not happen automatically; a caller must explicitly
-invoke `writeCheckpoint` only when the critical rule below is satisfied.
+The value objects do not write checkpoints. A direct caller—or the current
+inbound pipeline—must invoke `writeCheckpoint` only when the critical rule
+below is satisfied.
 
 ---
 
@@ -245,8 +250,12 @@ TransportProvider.pullChanges()
 StorageProvider.writeCheckpoint() when a next checkpoint exists
 ```
 
-This document describes the sequence only. Runtime orchestration that
-enforces this order is deferred to a later issue.
+`InboundPullSynchronizationPipeline` enforces this call order today: it does
+not write the returned checkpoint when inbound application fails. The
+`StorageProvider` SPI does not provide one atomic apply-and-checkpoint
+transaction, so applications must still make inbound application idempotent
+for recovery when application succeeds but a subsequent checkpoint write
+fails.
 
 ---
 
@@ -255,8 +264,9 @@ enforces this order is deferred to a later issue.
 A `PullChangesResult.NoChanges` result may still carry a next checkpoint,
 for example, when the remote participant advances a delta token even though
 no changes matched. Because no inbound changes require applying, the
-runtime may persist that checkpoint directly (no apply step is required),
-but only after the pull operation itself has completed successfully.
+current inbound pipeline persists that checkpoint directly when present (no
+apply step is required), but only after the pull operation itself has
+completed successfully.
 
 ---
 
@@ -295,15 +305,13 @@ when (val result = storageProvider.readCheckpoint(readRequest)) {
 
 ---
 
-## Deferred Behavior
+## Current gaps
 
-The following are explicitly deferred to later issues:
+The following remain outside the current implementation:
 
 - Checkpoint deletion
-- Runtime orchestration enforcing apply-before-advance
-- Retry-policy contracts
-- Durable queue contracts
-- Room or SQLDelight checkpoint persistence
+- A qualified built-in Room, SQLDelight, or equivalent checkpoint store
+- Cross-platform persistence migration and restart qualification
 - Server-directed retry metadata
 
 ---

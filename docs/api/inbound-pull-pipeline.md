@@ -1,5 +1,10 @@
 # Inbound Pull Pipeline (DL-022)
 
+[API reference index](./README.md)
+
+> **Status:** Available execution foundation with checkpoint and progress-event
+> integration. It is not a complete V1 synchronization strategy.
+
 `InboundPullSynchronizationPipeline` is the second concrete
 `SynchronizationPipeline` implementation. It reads the stored synchronization
 checkpoint once, pulls inbound change batches through the configured
@@ -7,11 +12,11 @@ checkpoint once, pulls inbound change batches through the configured
 `StorageProvider`, and advances the checkpoint only after the corresponding
 inbound changes have been applied successfully.
 
-DL-022 implements inbound pull, apply, and checkpoint coordination only.
-Outbound push, bidirectional synchronization, conflict detection or
-resolution, retry execution, scheduling, queue processing, connectivity
-checks, lifecycle-event dispatch, and observer registration are out of scope
-and deferred to other issues.
+This pipeline implements inbound pull, apply, and checkpoint coordination
+only. Separate runtime components provide outbound and bidirectional execution,
+queue/retry orchestration, connectivity admission, and lifecycle/operational
+event delivery. Complete strategy and conflict-policy integration remains V1
+work.
 
 ---
 
@@ -68,8 +73,9 @@ public class InboundPullSynchronizationPipeline(
 
 - `direction` is `SynchronizationDirection.PULL`, the exact existing
   inbound-only direction. This pipeline is not registered for
-  `SynchronizationDirection.BIDIRECTIONAL` synchronization; bidirectional
-  composition is deferred to DL-023.
+  `SynchronizationDirection.BIDIRECTIONAL` synchronization.
+  `BidirectionalSynchronizationPipeline` provides the current ordered
+  composition of this pull pipeline with an outbound push pipeline.
 - Providers are obtained exclusively from
   `SynchronizationExecutionContext.providers`. The constructor does not
   receive a provider registry, lifecycle coordinator, provider resolver,
@@ -333,18 +339,20 @@ scheduling, enqueuing, or dequeueing operation.
 ## Conflict boundary
 
 `ConflictDetector` and `ConflictResolver` are never called. Conflict
-orchestration is deferred to a later issue. `StorageProvider.applyInboundChanges`
-is responsible for applying the supplied batch according to the current
+orchestration exists as a separate runtime boundary but is not integrated into
+this pipeline's apply path. `StorageProvider.applyInboundChanges` is
+responsible for applying the supplied batch according to the current
 storage-provider contract.
 
 ---
 
 ## Event boundary
 
-This pipeline does not implement an event dispatcher, observer registry,
-`Started`, `ProgressUpdated`, or `Completed` event, retry event dispatch,
-lifecycle event persistence, or `Flow`/`StateFlow`/`SharedFlow`/`Channel`
-adapters.
+When an event emitter is present in the execution context, this pipeline emits
+phase changes and durable batch-boundary progress. The execution coordinator
+owns `Started` and `Completed`; the separate dispatcher owns observer delivery.
+No component in this path supplies event persistence, replay, bounded
+back-pressure, or streaming adapters.
 
 ---
 

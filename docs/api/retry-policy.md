@@ -1,7 +1,13 @@
 # DataLoom Retry Policy Contracts (DL-013)
 
+[API reference index](./README.md)
+
+> **Status:** Partial V1 subsystem. The custom policy contract exists, but
+> built-in strategies, jitter, limits, server hints, and circuit behavior are
+> not implemented as a complete engine.
+
 This document describes the public retry-policy contracts introduced in DL-013.
-These contracts allow the future DataLoom runtime to evaluate whether a failed
+These contracts allow the DataLoom runtime to evaluate whether a failed
 synchronization operation should be retried and, when retrying, how long to wait.
 
 ---
@@ -33,7 +39,9 @@ RetryDecision
         └── Stop retrying
 ```
 
-The runtime engine that executes this flow is introduced in a later issue.
+The current runtime evaluates this contract through scheduler-backed retry
+orchestration and queue-backed retry evaluation. That integration does not
+supply the complete standard V1 retry engine.
 
 ---
 
@@ -124,8 +132,12 @@ val attempt = RetryAttempt(1) // first retry evaluation
 - Attempt number `1` represents the first retry evaluation after the original
   operation failed. The initial provider operation is not attempt zero.
 - Construction does not read the clock, sleep, or schedule work.
-- The DataLoom runtime supplies and manages attempt values. A later issue
-  introduces attempt creation and increment behavior.
+- For a policy-evaluated failed queued execution, the queued execution handler
+  currently creates the next attempt as one when no retry attempt is stored,
+  otherwise increments the stored attempt, passes that value to retry
+  evaluation, and returns it for persistence when the entry is rescheduled.
+  The standalone retry orchestrator instead receives an already selected
+  attempt from its caller.
 
 ---
 
@@ -240,9 +252,10 @@ The policy requests the failed operation be retried after `delay`.
 - `metadata` defaults to `DataLoomMetadata.Empty`.
 - Creating this variant does not sleep, schedule work, mutate queues, or
   execute the operation.
-- `delay` is the canonical output of backoff evaluation. Future built-in
-  policy implementations may compute this value using immediate, fixed, linear,
-  exponential, or custom formulas. No algorithm is implemented by this contract.
+- `delay` is the canonical output of backoff evaluation. Custom policies can
+  compute it today. Mandatory V1 built-ins must provide standard immediate,
+  fixed, linear, exponential, and jittered behavior; no such algorithm is
+  implemented by this contract itself.
 
 #### `Stop`
 
@@ -338,8 +351,10 @@ The normal decision is:
 RetryDecision.Stop(NON_RECOVERABLE)
 ```
 
-A future runtime may reject a policy decision that attempts to retry a
-non-recoverable error. Enforcement is deferred.
+The current runtime does not centrally override a policy that returns `Retry`
+for a non-recoverable error. The configured policy must return
+`Stop(NON_RECOVERABLE)` today; central non-retryable protection remains a
+mandatory V1 requirement.
 
 ### `Recoverability.RECOVERABLE`
 
@@ -383,7 +398,7 @@ ChangeSetAcknowledgement
         ↓
 One or more events have status RETRY
         ↓
-Runtime evaluates retry policy per future orchestration rules
+Runtime or application reconciliation evaluates the event outcome
 ```
 
 A successful provider call can still contain event-level retry outcomes. These
@@ -396,7 +411,7 @@ the DL-013 contracts.
 
 `RetryDecision.Retry.delay` is the canonical output of backoff evaluation.
 
-Future built-in policy implementations may include:
+Mandatory V1 built-in policy implementations include:
 
 | Strategy           | Conceptual Formula                                   |
 |--------------------|------------------------------------------------------|
@@ -406,10 +421,11 @@ Future built-in policy implementations may include:
 | Exponential        | `delay` grows according to the attempt number        |
 | Custom application | Application-defined formula                          |
 
-**DL-013 does not implement any of these algorithms.** No arithmetic overflow
-handling, multipliers, jitter, randomness, maximum-delay enforcement, or
-attempt-limit enforcement is implemented. Built-in policy implementations
-belong in a later `dataloom-core` issue.
+The current custom-policy contract does not implement these algorithms.
+Overflow-safe timestamp addition exists in selected runtime paths, but
+standard multipliers, jitter, random-source injection, maximum-delay
+enforcement, attempt/elapsed-time enforcement, server-hint handling, and
+durable circuit-breaker behavior remain incomplete.
 
 ---
 
@@ -439,14 +455,19 @@ class AlwaysRetryPolicy(
 
 ---
 
-## Deferred Built-In Policies
+## Mandatory V1 policies not yet implemented
 
-The following policy implementations are deferred to a later issue:
+The following production implementations remain required for V1:
 
+- Immediate policy
 - Fixed-delay policy
 - Linear-backoff policy
 - Exponential-backoff policy
 - Maximum-attempt policy
 - Composite policy
+- Bounded server-hint policy
+- Durable circuit-breaker policy with half-open probes
 
-These implementations will reside in `dataloom-core`, not `dataloom-api`.
+Their final artifact ownership must follow the approved public API and
+implementation boundaries; this contract page does not assign them to the
+legacy `dataloom-core` catch-all.

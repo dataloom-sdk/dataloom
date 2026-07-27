@@ -1,5 +1,10 @@
 # Outbound Push Pipeline (DL-021)
 
+[API reference index](./README.md)
+
+> **Status:** Available execution foundation with acknowledgement and
+> progress-event integration. It is not a complete V1 synchronization strategy.
+
 `OutboundPushSynchronizationPipeline` is the first concrete
 `SynchronizationPipeline` implementation. It reads pending outbound changes
 from the configured `StorageProvider`, pushes each batch through the
@@ -7,10 +12,10 @@ configured `TransportProvider`, validates the returned
 `ChangeSetAcknowledgement`, and persists the acknowledgement back through
 `StorageProvider`.
 
-DL-021 implements outbound execution only. Inbound pull/apply, bidirectional
-synchronization, checkpoint handling, retry execution, scheduling, queue
-processing, connectivity checks, conflict orchestration, and lifecycle-event
-dispatch are out of scope and deferred to later issues.
+This pipeline implements outbound execution only. Separate runtime components
+provide inbound and bidirectional execution, queue/retry orchestration,
+connectivity admission, and lifecycle/operational event delivery. Complete
+strategy and conflict-policy integration remains V1 work.
 
 ---
 
@@ -67,8 +72,9 @@ public class OutboundPushSynchronizationPipeline(
 
 - `direction` is `SynchronizationDirection.PUSH`, the exact existing
   outbound-only direction. This pipeline is not registered for
-  `SynchronizationDirection.BIDIRECTIONAL` synchronization; bidirectional
-  composition is deferred to DL-023.
+  `SynchronizationDirection.BIDIRECTIONAL` synchronization.
+  `BidirectionalSynchronizationPipeline` provides the current ordered
+  composition of this push pipeline with an inbound pull pipeline.
 - Providers are obtained exclusively from
   `SynchronizationExecutionContext.providers`. The constructor does not
   receive a provider registry, lifecycle coordinator, provider resolver,
@@ -295,10 +301,11 @@ Checkpoint handling belongs to inbound pull/apply processing.
 
 ## Event-dispatch boundary
 
-DL-021 does not implement an event dispatcher, observer registry, `Started`,
-`ProgressUpdated`, or `Completed` event, retry event dispatch, lifecycle event
-persistence, or `Flow`/`StateFlow`/`SharedFlow`/`Channel` adapters. Event
-delivery is deferred to a later issue.
+When an event emitter is present in the execution context, this pipeline emits
+phase changes and durable batch-boundary progress. The execution coordinator
+owns `Started` and `Completed`; the separate dispatcher owns observer delivery.
+No component in this path supplies event persistence, replay, bounded
+back-pressure, or streaming adapters.
 
 ---
 

@@ -1,9 +1,34 @@
 # Synchronization Execution (DL-020)
 
+[API reference index](./README.md)
+
+> **Status:** Available execution foundation with concrete push, pull, and
+> bidirectional pipelines. The complete six-strategy V1 engine remains open.
+
 `SynchronizationExecutionCoordinator` connects provider lifecycle
 initialization, provider resolution, and direction-based pipeline selection
 into a deterministic pre-execution sequence. It delegates synchronization work
 to the matching `SynchronizationPipeline` and returns the result unchanged.
+
+```mermaid
+flowchart LR
+    Request[SynchronizationRequest] --> Lifecycle{Providers initialized}
+    Lifecycle -->|No| RejectLifecycle[Rejected]
+    Lifecycle -->|Yes| Resolve{Bindings resolve}
+    Resolve -->|No| RejectBinding[Rejected]
+    Resolve -->|Yes| Lookup{Pipeline found}
+    Lookup -->|No| RejectPipeline[Rejected]
+    Lookup -->|Yes| Connectivity{Connectivity satisfied}
+    Connectivity -->|No| RejectConnectivity[Rejected]
+    Connectivity -->|Yes| Started[Emit Started]
+    Started --> Pipeline[Execute selected pipeline]
+    Pipeline --> Completed[Emit Completed]
+    Completed --> Executed[Executed with exact result]
+```
+
+Direction selects the current push, pull, or bidirectional execution
+primitive. It does not select a complete offline-first, remote-first,
+cache-first, network-only, hybrid, or adaptive strategy.
 
 ---
 
@@ -18,6 +43,7 @@ public class SynchronizationExecutionContext(
     public val request: SynchronizationRequest,
     public val providers: ResolvedSynchronizationProviders,
     public val runtimeDependencies: RuntimeDependencies,
+    public val lifecycleEventEmitter: SynchronizationLifecycleEventEmitter? = null,
 )
 ```
 
@@ -56,8 +82,10 @@ public interface SynchronizationPipeline {
 - Coroutine cancellation propagates normally; implementations must not catch
   `CancellationException`.
 
-**Scope restrictions (DL-020):** No concrete pipeline implementation exists.
-Outbound push, inbound pull, and bidirectional pipelines are deferred.
+The current runtime provides outbound push, inbound pull, and bidirectional
+pipeline implementations. Custom pipelines may also be registered by
+direction. These pipelines remain lower-level execution primitives rather than
+the complete V1 strategy engine.
 
 ---
 
@@ -102,6 +130,9 @@ pipeline.
 | `PROVIDERS_NOT_INITIALIZED` | `ProviderLifecycleCoordinator` is not in the `INITIALIZED` state.    |
 | `PROVIDER_RESOLUTION_FAILED` | `SynchronizationProviderResolver` returned one or more failures.    |
 | `PIPELINE_NOT_FOUND`     | No pipeline is registered for the request direction.                     |
+| `CONNECTIVITY_PROVIDER_NOT_CONFIGURED` | Connectivity is required but the active bindings resolve no connectivity provider. |
+| `CONNECTIVITY_REQUIREMENT_NOT_MET` | The current snapshot does not satisfy the configured requirement. |
+| `CONNECTIVITY_CHECK_FAILED` | The connectivity provider returned a canonical error. |
 
 Coroutine cancellation is not a rejection reason and is never converted to one.
 Enum ordinals must not be persisted.
@@ -122,6 +153,7 @@ public sealed interface SynchronizationExecutionResult {
     public class Rejected(
         public val reason: SynchronizationExecutionRejectionReason,
         providerBindingFailures: List<ProviderBindingFailure> = emptyList(),
+        public val connectivityCheckError: DataLoomError? = null,
     ) : SynchronizationExecutionResult {
         public val providerBindingFailures: List<ProviderBindingFailure>
     }
@@ -136,6 +168,8 @@ public sealed interface SynchronizationExecutionResult {
 - `PROVIDER_RESOLUTION_FAILED` requires a non-empty `providerBindingFailures`
   list.
 - All other reasons require an empty `providerBindingFailures` list.
+- `CONNECTIVITY_CHECK_FAILED` requires a non-null `connectivityCheckError`.
+- All other reasons require a null `connectivityCheckError`.
 - Violations throw `IllegalArgumentException`.
 - The failure collection is defensively copied.
 - Exposes no provider instance, no `Throwable`, and no stack trace.
@@ -152,6 +186,11 @@ public class SynchronizationExecutionCoordinator(
     private val providerResolver: SynchronizationProviderResolver,
     private val pipelineRegistry: SynchronizationPipelineRegistry,
     private val runtimeDependencies: RuntimeDependencies,
+    private val lifecycleEventEmitter: SynchronizationLifecycleEventEmitter? = null,
+    private val connectivityConfiguration: SynchronizationConnectivityConfiguration =
+        SynchronizationConnectivityConfiguration.NONE,
+    private val connectivityPreflight: SynchronizationConnectivityPreflight =
+        SynchronizationConnectivityPreflight(),
 ) {
     public suspend fun execute(
         request: SynchronizationRequest,
@@ -167,9 +206,13 @@ public class SynchronizationExecutionCoordinator(
 4. If `Failure` → `Rejected(PROVIDER_RESOLUTION_FAILED, failures)`.
 5. `pipelineRegistry.lookup(request.direction)`.
 6. If `null` → `Rejected(PIPELINE_NOT_FOUND)`.
-7. Construct `SynchronizationExecutionContext`.
-8. Invoke selected pipeline exactly once.
-9. Return `Executed(pipelineResult)`.
+7. Evaluate the configured connectivity requirement.
+8. Return the matching connectivity rejection when it cannot proceed.
+9. Construct `SynchronizationExecutionContext`.
+10. Emit `Started` when an emitter is configured.
+11. Invoke the selected pipeline exactly once.
+12. Emit `Completed` when an emitter is configured.
+13. Return `Executed(pipelineResult)`.
 
 ---
 
@@ -252,10 +295,12 @@ The coordinator does not:
 
 - Initialize or shut down providers.
 - Call provider health automatically.
-- Call storage, transport, scheduler, connectivity, or queue providers directly.
+- Call storage, transport, scheduler, or queue providers directly.
+- Call connectivity providers outside the configured preflight boundary.
 - Read the clock directly.
 - Generate identifiers directly.
-- Dispatch events.
+- Construct or dispatch events except through the optional injected lifecycle
+  emitter.
 - Write checkpoints.
 - Acknowledge changes.
 - Process queues.
@@ -268,12 +313,16 @@ The coordinator does not:
 
 ---
 
-## No concrete synchronization pipeline
+## Current pipelines and V1 strategy boundary
 
-DL-020 defines the `SynchronizationPipeline` interface and
-`SynchronizationPipelineRegistry` only. No concrete pipeline implementation
-exists. Outbound push, inbound pull, and bidirectional implementations are
-deferred to later issues.
+The runtime includes concrete outbound push, inbound pull, and bidirectional
+pipelines and registers defaults through `DataLoomBuilder`. Pipeline direction
+and full/delta mode do not define source authority, cache fallback,
+connectivity admission, consistency, or adaptive policy.
+
+The mandatory V1 strategy/effective-plan architecture for offline-first,
+remote-first, cache-first, network-only, hybrid, and adaptive execution is not
+implemented by this coordinator.
 
 ---
 
@@ -300,7 +349,7 @@ API, Apple-specific API, or third-party library type is required.
 
 ```kotlin
 // Pre-condition: providers must be initialized.
-val lifecycleResult = coordinator.initialize()
+val lifecycleResult = lifecycleCoordinator.initialize()
 check(lifecycleResult is ProviderLifecycleResult.InitializeSuccess)
 
 val request = SynchronizationRequest(
@@ -329,6 +378,9 @@ when (val outcome = executionCoordinator.execute(request, bindings)) {
             PROVIDERS_NOT_INITIALIZED -> { /* call lifecycleCoordinator.initialize() first */ }
             PROVIDER_RESOLUTION_FAILED -> { /* check outcome.providerBindingFailures */ }
             PIPELINE_NOT_FOUND -> { /* register a pipeline for request.direction */ }
+            CONNECTIVITY_PROVIDER_NOT_CONFIGURED -> { /* correct provider bindings */ }
+            CONNECTIVITY_REQUIREMENT_NOT_MET -> { /* defer or report unavailable connectivity */ }
+            CONNECTIVITY_CHECK_FAILED -> { /* inspect outcome.connectivityCheckError */ }
         }
     }
 }

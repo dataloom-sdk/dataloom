@@ -1,5 +1,10 @@
 # DataLoom Payload Contracts (DL-008)
 
+[API reference index](./README.md)
+
+> **Status:** Available opaque-payload contract. Streaming, chunking, resume,
+> integrity, quota, and temporary-file safety are mandatory V1 asset gaps.
+
 This document defines the payload-related public contracts introduced in
 `dataloom-api` by DL-008.
 

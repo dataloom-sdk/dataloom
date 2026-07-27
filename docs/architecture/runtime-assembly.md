@@ -22,54 +22,41 @@ Package: `io.dataloom.runtime.facade`
 
 ## Component assembly
 
+```mermaid
+flowchart TD
+    builder[DataLoomBuilder]
+    registry[ProviderRegistry]
+    lifecycle[ProviderLifecycleCoordinator]
+    resolver[ProviderResolver]
+    pipelineRegistry[PipelineRegistry]
+    events[Observer and event components]
+    connectivity[Connectivity preflight]
+    coordinator[ExecutionCoordinator]
+    queueWorker[QueueWorkerCoordinator]
+    facade[DefaultDataLoom]
+
+    builder --> registry
+    registry --> lifecycle
+    registry --> resolver
+    builder --> pipelineRegistry
+    builder -.-> events
+    builder -.-> connectivity
+    lifecycle --> coordinator
+    resolver --> coordinator
+    pipelineRegistry --> coordinator
+    events -.-> coordinator
+    connectivity -.-> coordinator
+    coordinator --> facade
+    builder -.-> queueWorker
+    queueWorker -.-> facade
+
+    style builder fill:#DCCCFF,stroke:#874FFF
+    style coordinator fill:#C2E5FF,stroke:#3DADFF
+    style facade fill:#CDF4D3,stroke:#66D575
 ```
-DataLoomBuilder.build()
-│
-├── ProviderRegistry
-│     └── registers all supplied DataLoomProvider instances
-│
-├── ProviderLifecycleCoordinator
-│     └── owns lifecycle for all registered providers
-│
-├── SynchronizationProviderResolver
-│     └── resolves providers from the registry for each request
-│
-├── SynchronizationPipelineRegistry
-│     ├── OutboundPushSynchronizationPipeline  (default or custom)
-│     ├── InboundPullSynchronizationPipeline   (default or custom)
-│     └── BidirectionalSynchronizationPipeline (composed from outbound + inbound)
-│
-├── [Optional] SynchronizationObserverRegistry
-│     └── registered in observer-registration order
-│
-├── [Optional] SynchronizationEventDispatcher
-│     └── driven by SynchronizationObserverRegistry
-│
-├── [Optional] DispatchingSynchronizationLifecycleEventEmitter
-│     └── uses SynchronizationEventDispatcher + RuntimeDependencies
-│
-├── [Optional] SynchronizationConnectivityPreflight
-│     └── assembled when connectivityConfiguration is supplied
-│
-├── SynchronizationExecutionCoordinator
-│     ├── providerResolver
-│     ├── pipelineRegistry
-│     ├── runtimeDependencies
-│     ├── optional lifecycleEventEmitter
-│     └── optional connectivityConfiguration + connectivityPreflight
-│
-├── [Optional] QueueWorkerCoordinator
-│     ├── RetryEvaluator
-│     ├── QueuedSynchronizationExecutionHandler
-│     ├── DurableQueueExecutionProcessor
-│     └── SchedulerProvider (optional per DL-032)
-│
-└── DefaultDataLoom
-      ├── providerLifecycleCoordinator
-      ├── executionCoordinator
-      ├── defaultProviderBindings
-      └── optional DefaultDataLoomQueueWorker
-```
+
+Solid edges are mandatory in the current facade. Dotted edges are assembled
+only when their optional configuration is supplied.
 
 ---
 

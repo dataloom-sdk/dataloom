@@ -1,5 +1,10 @@
 # DataLoom Clock (DL-017)
 
+[API reference index](./README.md)
+
+> **Status:** Available wall-clock contract. A monotonic duration abstraction
+> and production-wide elapsed-time enforcement remain V1 gaps.
+
 **Package:** `io.dataloom.api.time`
 
 ## Overview

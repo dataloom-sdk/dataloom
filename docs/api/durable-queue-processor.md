@@ -1,5 +1,10 @@
 # Durable Queue Execution Processor (DL-026)
 
+[API reference index](./README.md)
+
+> **Status:** Available at-least-once queue-processing foundation. Complete
+> retry history, migrations, platform persistence, and V1 qualification remain.
+
 ## Overview
 
 `DurableQueueExecutionProcessor` is the bounded processing-cycle foundation

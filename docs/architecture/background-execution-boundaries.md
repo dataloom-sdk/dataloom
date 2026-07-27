@@ -18,16 +18,21 @@ implement.
 
 ## Scheduler Architecture
 
-```text
-DataLoom Runtime
-      ↓
-ScheduleRequest
-      ↓
-SchedulerProvider
-      ↓
-Platform scheduler implementation
-      ↓
-WorkManager / Apple scheduler / custom scheduler
+```mermaid
+flowchart LR
+    runtime[Shared runtime]
+    request[ScheduleRequest]
+    provider[SchedulerProvider]
+    adapter[Platform adapter]
+    scheduler[Platform scheduler]
+
+    runtime --> request
+    request --> provider
+    provider --> adapter
+    adapter --> scheduler
+
+    style provider fill:#C2E5FF,stroke:#3DADFF
+    style adapter fill:#FFECBD,stroke:#FFC943
 ```
 
 ### Shared runtime responsibilities
@@ -47,10 +52,11 @@ WorkManager / Apple scheduler / custom scheduler
 - Map platform failures to canonical `DataLoomError` values.
 - Never expose platform scheduler types through the public API.
 
-### Future WorkManager responsibilities (deferred)
+### WorkManager responsibilities
 
-A future `dataloom-workmanager` artifact will implement
-`WorkManagerSchedulerProvider`, which maps:
+The current `dataloom-scheduler-workmanager` artifact implements the Android
+WorkManager provider boundary. Its V1 aggregation, publication, and full
+restart qualification remain open. It maps:
 
 | `ScheduleConstraints` property              | WorkManager equivalent       |
 |---------------------------------------------|------------------------------|
@@ -61,10 +67,10 @@ A future `dataloom-workmanager` artifact will implement
 It will not expose `WorkManager`, `Worker`, `WorkRequest`, or `Constraints`
 types through the `SchedulerProvider` interface.
 
-### Future Apple scheduling limitations (deferred)
+### Mandatory V1 Apple scheduling limitations
 
 Apple background execution is subject to system-enforced constraints that may
-prevent guaranteed execution timing. A future Apple-specific adapter must
+prevent guaranteed execution timing. The mandatory V1 Apple-specific adapter must
 document platform-specific limitations and map unsupported constraints to
 canonical errors rather than silently ignoring them.
 
@@ -72,16 +78,21 @@ canonical errors rather than silently ignoring them.
 
 ## Connectivity Architecture
 
-```text
-DataLoom Runtime
-      ↓
-ConnectivityCheckRequest
-      ↓
-ConnectivityProvider
-      ↓
-Platform connectivity implementation
-      ↓
-ConnectivityManager / native network monitor / custom implementation
+```mermaid
+flowchart LR
+    runtime[Shared runtime]
+    request[ConnectivityCheckRequest]
+    provider[ConnectivityProvider]
+    adapter[Platform adapter]
+    network[Platform network API]
+
+    runtime --> request
+    request --> provider
+    provider --> adapter
+    adapter --> network
+
+    style provider fill:#C2E5FF,stroke:#3DADFF
+    style adapter fill:#FFECBD,stroke:#FFC943
 ```
 
 ### Shared runtime responsibilities
@@ -104,7 +115,7 @@ ConnectivityManager / native network monitor / custom implementation
   details, or platform network handles.
 - Map platform failures to canonical `DataLoomError` values.
 
-### Future Android ConnectivityManager boundary (deferred)
+### Android ConnectivityManager boundary
 
 ```text
 ConnectivityManager
@@ -120,10 +131,10 @@ The Android provider may inspect `NetworkCapabilities` and
 `ConnectivityManager` internally to determine `ConnectivityStatus` and
 `isMetered`. It must expose only the canonical DataLoom model.
 
-### Future Apple connectivity limitations (deferred)
+### Mandatory V1 Apple connectivity limitations
 
-An Apple-specific adapter must use `NWPathMonitor` or equivalent APIs
-internally. Platform-specific types must remain internal to the adapter.
+The mandatory V1 Apple-specific adapter must use `NWPathMonitor` or equivalent
+APIs internally. Platform-specific types must remain internal to the adapter.
 
 ---
 
@@ -152,8 +163,7 @@ application can remain technology-neutral.
 
 ## Connectivity requirement evaluation
 
-These rules are documented only. Runtime policy evaluation is deferred to a
-future issue.
+DL-031 implements these rules in `SynchronizationConnectivityPreflight`.
 
 ### `NONE`
 
@@ -164,8 +174,9 @@ Always satisfied without requiring a connectivity query.
 Satisfied only when the current `ConnectivitySnapshot` reports
 `ConnectivityStatus.AVAILABLE`.
 
-A runtime may apply a future policy to determine whether `LIMITED` is
-acceptable for a given workflow. This is not defined in DL-012.
+`LIMITED` does not currently satisfy `AVAILABLE`. Any richer policy must be
+explicitly configured, tested, and represented without silently upgrading a
+limited connection.
 
 ### `UNMETERED`
 
@@ -183,7 +194,11 @@ A `null` metering state must not be treated as unmetered.
 
 ---
 
-## Deferred features
+## Outside the DL-012 baseline
+
+DL-012 did not implement the following features. Their V1 inclusion is governed
+by the approved full-V1 scope and ADR-0002; this heading does not defer them to
+V2 automatically.
 
 ### Scheduling
 

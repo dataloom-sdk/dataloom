@@ -1,5 +1,11 @@
 # Retry Orchestration Contracts (DL-024)
 
+[API reference index](./README.md)
+
+> **Status:** Partial V1 subsystem. Custom policy evaluation and scheduling
+> orchestration exist; standard strategies and the durable circuit engine do
+> not.
+
 **Module:** `dataloom-runtime`  
 **Package:** `io.dataloom.runtime.retry`  
 **Platform:** Kotlin Multiplatform (commonMain)
@@ -16,7 +22,30 @@ synchronization attempt through
 
 Retry orchestration is a deterministic, platform-independent operation. It
 does not execute synchronization, process queue entries, check connectivity,
-dispatch events, or initialize providers.
+or initialize providers. When an optional runtime event emitter is configured,
+it emits `RetryScheduled` only after scheduler acceptance.
+
+```mermaid
+flowchart LR
+    Result[SynchronizationResult] --> Eligible{Failure eligible}
+    Eligible -->|No| NotRequired[NOT_REQUIRED]
+    Eligible -->|Yes| Policy[Evaluate custom RetryPolicy per error]
+    Policy --> Decision{Any retry decision}
+    Decision -->|No| Stopped[STOPPED]
+    Decision -->|Yes| Delay[Select maximum delay]
+    Delay --> Scheduler{Scheduler configured}
+    Scheduler -->|No| Missing[SCHEDULER_NOT_CONFIGURED]
+    Scheduler -->|Yes| Schedule[Schedule once]
+    Schedule -->|Failure| Failed[SCHEDULER_FAILED]
+    Schedule -->|Success| Event[Optional RetryScheduled event]
+    Event --> Scheduled[SCHEDULED]
+```
+
+This is the current custom-policy scheduling path. The mandatory V1 target
+also requires built-in delay strategies, deterministic jitter, attempt and
+elapsed-time limits, bounded server hints, durable circuit-breaker state,
+half-open probes, restart recovery, manual retry, and central non-retryable
+protection. Those capabilities are not a complete production engine today.
 
 ---
 
@@ -60,7 +89,7 @@ val request = SynchronizationRetryRequest(
 
 `retryAttempt` is passed to `RetryPolicy` **unchanged**. The orchestrator
 does not silently increment the attempt number. Attempt advancement is the
-responsibility of the future runtime or queue processor that creates the next
+responsibility of the runtime or queue integration that creates the next
 `SynchronizationRetryRequest`.
 
 #### Diagnostic safety
@@ -184,6 +213,7 @@ val orchestrator = SynchronizationRetryOrchestrator(
         constraints = ScheduleConstraints(),
         existingSchedulePolicy = ExistingSchedulePolicy.REPLACE,
     ),
+    eventEmitter = runtimeEventEmitter, // optional
 )
 
 val result = orchestrator.evaluateAndSchedule(retryRequest)
@@ -191,11 +221,12 @@ val result = orchestrator.evaluateAndSchedule(retryRequest)
 
 #### Constructor parameters
 
-| Parameter           | Type                           | Description                                    |
-|---------------------|--------------------------------|------------------------------------------------|
-| `retryPolicy`       | `RetryPolicy`                  | Policy evaluated for each canonical error.     |
-| `schedulerProvider` | `SchedulerProvider?`           | Optional platform scheduler.                   |
-| `configuration`     | `RetrySchedulingConfiguration` | Scheduling configuration.                      |
+| Parameter | Type | Description |
+|---|---|---|
+| `retryPolicy` | `RetryPolicy` | Policy evaluated for each canonical error. |
+| `schedulerProvider` | `SchedulerProvider?` | Optional platform scheduler. |
+| `configuration` | `RetrySchedulingConfiguration` | Scheduling configuration. |
+| `eventEmitter` | `SynchronizationRuntimeEventEmitter?` | Optional post-acceptance retry-event emitter. |
 
 #### `evaluateAndSchedule`
 
@@ -370,9 +401,11 @@ changes, or alter `ScheduleConstraints` based on runtime connectivity.
 
 ### Event-Dispatch Boundary
 
-`SynchronizationRetryOrchestrator` does not emit events. It does not call any
-observer, event dispatcher, or event persistence layer. A future event layer
-may observe `RetryOrchestrationResult` to emit a `RetryScheduled` event.
+When `eventEmitter` is configured, `SynchronizationRetryOrchestrator` emits
+`RetryScheduled` after `SchedulerProvider.schedule()` succeeds. It does not
+emit for `NOT_REQUIRED`, `STOPPED`, an absent scheduler, or scheduler failure.
+It does not persist or replay the event, and observer-delivery failure does not
+undo an already accepted schedule.
 
 ---
 

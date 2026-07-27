@@ -26,53 +26,38 @@ the orchestrator:
 
 ## Sequence Diagram
 
-```text
-Caller
-  │
-  ├─→ SynchronizationRetryOrchestrator.evaluateAndSchedule(request)
-  │         │
-  │         ├─ inspect SynchronizationResult variant
-  │         │
-  │         ├─ [Succeeded / Skipped / Cancelled]
-  │         │     └─→ RetryOrchestrationResult(NOT_REQUIRED)
-  │         │
-  │         ├─ [Failed]
-  │         │     ├─ extract single DataLoomError
-  │         │     └─→ RetryPolicy.evaluate(RetryEvaluationRequest)
-  │         │               └─→ RetryDecision
-  │         │
-  │         ├─ [PartiallySucceeded]
-  │         │     ├─ extract errors[0..n] in original order
-  │         │     └─→ for each error:
-  │         │               RetryPolicy.evaluate(RetryEvaluationRequest)
-  │         │                    └─→ RetryDecision
-  │         │
-  │         ├─ aggregate RetryDecision values (preserve order)
-  │         │
-  │         ├─ [no Retry decision]
-  │         │     └─→ RetryOrchestrationResult(STOPPED, decisions)
-  │         │
-  │         ├─ [≥1 Retry decision]
-  │         │     ├─ select maximum SchedulingDelay
-  │         │     │
-  │         │     ├─ [schedulerProvider == null]
-  │         │     │     └─→ RetryOrchestrationResult(
-  │         │     │               SCHEDULER_NOT_CONFIGURED, decisions, delay)
-  │         │     │
-  │         │     ├─ build ScheduleRequest(id, syncRequest, delay, constraints, policy)
-  │         │     └─→ SchedulerProvider.schedule(ScheduleRequest)
-  │         │               │
-  │         │               ├─ [Success(receipt)]
-  │         │               │     └─→ RetryOrchestrationResult(
-  │         │               │               SCHEDULED, decisions, delay, receipt)
-  │         │               │
-  │         │               └─ [Failure(error)]
-  │         │                     └─→ RetryOrchestrationResult(
-  │         │                               SCHEDULER_FAILED, decisions, delay, error)
-  │         │
-  │         └─→ CancellationException propagates normally
-  │
-  └─ RetryOrchestrationResult
+```mermaid
+flowchart LR
+    result[/Synchronization result/]
+    eligible{Failure result?}
+    extract[Extract errors in order]
+    evaluate[Evaluate each policy]
+    retry{Any retry?}
+    stopped[Stopped]
+    delay[Select maximum delay]
+    scheduler{Scheduler configured?}
+    schedule[Submit one schedule]
+    accepted[Scheduled]
+    failed[Scheduler failed]
+    missing[Scheduler not configured]
+    notRequired[Not required]
+
+    result --> eligible
+    eligible -->|No| notRequired
+    eligible -->|Yes| extract
+    extract --> evaluate
+    evaluate --> retry
+    retry -->|No| stopped
+    retry -->|Yes| delay
+    delay --> scheduler
+    scheduler -->|No| missing
+    scheduler -->|Yes| schedule
+    schedule -->|Accepted| accepted
+    schedule -->|Rejected| failed
+
+    style accepted fill:#CDF4D3,stroke:#66D575
+    style failed fill:#FFCDC2,stroke:#FF7556
+    style missing fill:#FFECBD,stroke:#FFC943
 ```
 
 ---
@@ -133,9 +118,9 @@ RetryEvaluationRequest(
 
 `RetryPolicy.evaluate` is invoked **synchronously** once per error.
 
-**RetryAttempt is not incremented.** Attempt advancement belongs to the
-future runtime or queue processor that creates the next
-`SynchronizationRetryRequest`.
+**RetryAttempt is not incremented by this orchestrator.** Attempt advancement
+belongs to its caller; the queue-backed handler computes the next attempt
+before evaluation.
 
 Unexpected exceptions from `RetryPolicy` propagate normally.
 

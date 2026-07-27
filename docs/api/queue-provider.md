@@ -1,5 +1,11 @@
 # DataLoom Queue Provider SPI (DL-015)
 
+[API reference index](./README.md)
+
+> **Status:** Available SPI with a Room implementation and in-memory test
+> provider. Full restart-safe retry history and V1 persistence qualification
+> remain open.
+
 This document describes the `QueueProvider` interface introduced in DL-015.
 
 ---
@@ -10,13 +16,21 @@ This document describes the `QueueProvider` interface introduced in DL-015.
 durable synchronization queue. It is the boundary between the DataLoom runtime
 and a concrete durable storage implementation.
 
-```text
-DataLoom Runtime
-      ↓
-QueueProvider
-      ↓
-Room / SQLDelight / custom durable storage
+```mermaid
+flowchart LR
+    Pending[PENDING] -->|acquire| Leased[LEASED]
+    Waiting[RETRY_WAITING] -->|acquire| Leased
+    Leased -->|complete| Completed[COMPLETED]
+    Leased -->|reschedule| Waiting
+    Leased -->|fail| Failed[FAILED]
+    Leased -->|dead letter| Dead[DEAD_LETTER]
+    Pending -->|cancel| Cancelled[CANCELLED]
+    Waiting -->|cancel| Cancelled
+    Leased -->|expired lease recovery in current providers| Pending
 ```
+
+The diagram shows current Room and in-memory provider behavior. The SPI allows
+a concrete provider to document recovery to `PENDING` or `RETRY_WAITING`.
 
 ---
 
@@ -68,6 +82,26 @@ The `descriptor` property must use `ProviderType.QUEUE`.
 DataLoom queue records, leases, recovery, and queue-state persistence.
 
 This is a pre-release public API addition introduced in DL-015.
+
+---
+
+## Current retry-history limitation
+
+The current queue API has a retry reschedule transition but no distinct
+non-retry constraint-deferral transition. Queued offline deferral therefore
+defaults an entry with no previous policy evaluation to `RetryAttempt(1)` and
+persists it as `RETRY_WAITING`. The first later synchronization failure can be
+evaluated as attempt 2 even though no earlier retry occurred.
+
+Current Room and in-memory expired-lease recovery also clear a previously
+persisted retry attempt when moving an entry back to `PENDING`. A process death
+can therefore reset genuine retry history.
+
+These are confirmed pre-V1 correctness gaps, not intended retry semantics.
+V1 must preserve `null` before the first retry evaluation and preserve attempt
+`N` across constraint deferral, acquisition, and expired-lease recovery. The
+first genuine failure after initial offline deferral must still be evaluated as
+attempt 1.
 
 ---
 
@@ -303,24 +337,27 @@ cancellation exceptions into normal failures.
 
 ---
 
-## Future Platform Implementations
+## Platform Implementations
 
-### Android (`dataloom-room`)
+### Android
 
-A future `dataloom-room` module may implement `QueueProvider` using
-Room for Android persistence.
+The current `dataloom-queue-room` module implements `QueueProvider` using Room
+for Android persistence. The current `dataloom-scheduler-workmanager` module
+provides the WorkManager scheduler and worker bridge that can:
 
-A future WorkManager integration may:
 1. Acquire leased work via `acquire`.
 2. Execute through the shared runtime.
 3. Complete, reschedule, or fail the entry via `complete`, `reschedule`, or `fail`.
 
-### KMP (`dataloom-sqldelight`)
+These modules are current foundations; they are not yet a published aggregate
+or proof of complete V1 consumer-path qualification.
 
-A future `dataloom-sqldelight` module may implement `QueueProvider`
-for cross-platform persistence.
+### KMP and iOS
 
-Platform background-execution guarantees are documented per platform.
+A cross-platform persistence technology, including whether SQLDelight is used,
+has not been selected and qualified. Durable queue persistence and recovery
+for the mandatory KMP iOS path remain V1 requirements. Platform
+background-execution guarantees must be documented and tested per platform.
 
 ---
 

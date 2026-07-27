@@ -41,23 +41,18 @@ in `dataloom-api`, which describes an individual provider's lifecycle state.
 
 State transitions are deterministic:
 
-```text
-NOT_INITIALIZED
-    ↓ initialize() called
-INITIALIZING
-    ↓ all providers succeed
-INITIALIZED
-    ↓ shutdown() called
-SHUTTING_DOWN
-    ↓ all providers succeed
-SHUT_DOWN
-```
-
-Exceptional transitions:
-
-```text
-INITIALIZING → FAILED  (provider initialization failure after rollback)
-SHUTTING_DOWN → FAILED  (one or more provider shutdown failures)
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> NotInitialized
+    NotInitialized --> Initializing: initialize
+    Initializing --> Initialized: all succeed
+    Initializing --> Failed: failure and rollback
+    Initialized --> ShuttingDown: shutdown
+    ShuttingDown --> ShutDown: all succeed
+    ShuttingDown --> Failed: close failure
+    ShutDown --> [*]
+    Failed --> [*]
 ```
 
 State never returns to an earlier lifecycle phase. Terminal states
@@ -286,7 +281,11 @@ It does not implement:
 - Provider replacement
 - Runtime provider mutation
 
-Synchronization runtime is a later DataLoom issue.
+The current synchronization runtime consumes this coordinator as a lifecycle
+precondition: `SynchronizationExecutionCoordinator` rejects execution unless
+the aggregate lifecycle state is `INITIALIZED`. The lifecycle coordinator
+itself remains limited to provider initialization and shutdown and does not own
+the runtime concerns listed above.
 
 ---
 
@@ -335,7 +334,7 @@ when (val result = coordinator.shutdown()) {
 
 ---
 
-## Synchronization orchestration not implemented
+## Lifecycle-only boundary
 
 `ProviderLifecycleCoordinator` does not implement or trigger synchronization
 orchestration. It initializes and shuts down providers. No queue processing,

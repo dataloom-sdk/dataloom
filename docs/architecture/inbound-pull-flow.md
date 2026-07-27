@@ -8,20 +8,33 @@ pipeline implementation.
 
 ## Sequence
 
-```text
-InboundPullSynchronizationPipeline
-    → StorageProvider.readCheckpoint()
-    → TransportProvider.pullChanges(checkpoint)
-    → StorageProvider.applyInboundChanges()
-    → StorageProvider.writeCheckpoint(nextCheckpoint)
-    → repeat when hasMore
-    → SynchronizationResult
+```mermaid
+sequenceDiagram
+    title Inbound batch
+    participant Pipeline
+    participant StorageProvider
+    participant TransportProvider
+    participant EventEmitter
+
+    Pipeline->>StorageProvider: read checkpoint
+    StorageProvider-->>Pipeline: stored checkpoint
+    Pipeline->>TransportProvider: pull changes
+    TransportProvider-->>Pipeline: changes and next checkpoint
+    Pipeline->>StorageProvider: apply inbound changes
+    StorageProvider-->>Pipeline: success
+    Pipeline->>StorageProvider: write next checkpoint
+    StorageProvider-->>Pipeline: success
+    Pipeline->>EventEmitter: emit progress
+    Pipeline-->>Pipeline: repeat when more
 ```
 
 Each batch is processed strictly sequentially: read checkpoint (once only),
 pull, apply, write checkpoint. The pipeline never performs parallel pulls and
 does not begin pulling the next batch until the current batch's checkpoint
 has been persisted (or execution has stopped).
+
+The apply-before-checkpoint order is the central crash-safety invariant: a
+checkpoint must never advance past changes that were not applied successfully.
 
 ---
 
@@ -184,14 +197,14 @@ A failed `applyInboundChanges` call terminates the execution without calling
 
 | Boundary | Status |
 |---|---|
-| Outbound push | Not implemented (DL-021) |
-| Bidirectional composition | Not implemented (DL-023) |
+| Outbound push | Separate checked-in outbound pipeline; not invoked here |
+| Bidirectional composition | Separate checked-in composition; this page covers the inbound child |
 | `RetryPolicy` execution | Not invoked |
 | Queue acquire/complete/reschedule | Not invoked |
 | `SchedulerProvider` | Not invoked |
 | `ConnectivityProvider` | Not invoked |
-| Conflict detection/resolution | Not invoked (DL-014 contracts exist but are not executed) |
-| Event dispatch / observer registry | Not implemented (deferred) |
+| Conflict detection/resolution | Not invoked by this pipeline |
+| Event dispatch / observer registry | Optional runtime emitter is used for lifecycle/progress events |
 | Provider `initialize` / `health` / `close` | Not invoked (owned by execution coordinator and lifecycle coordinator) |
 
 ---

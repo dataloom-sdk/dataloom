@@ -1,5 +1,10 @@
 # DataLoom Identifier Generation (DL-017)
 
+[API reference index](./README.md)
+
+> **Status:** Available injection contract and deterministic test foundation.
+> Production generator selection and qualification remain host/platform work.
+
 **Package:** `io.dataloom.api.identifier`
 
 ## Overview

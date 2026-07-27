@@ -1,199 +1,117 @@
-# Clock and Identifier Test Utilities (DL-017)
+# Test clocks and identifier generators
 
-**Package:** `io.dataloom.testing.time`, `io.dataloom.testing.identifier`
+> **Audience:** Developers writing deterministic time- and ID-sensitive tests
+> **Purpose:** Document the `dataloom-testing` clock and generator semantics
+> **Status:** Current test-only utilities; not production randomness or clock
+> implementations
 
-## Overview
+[← Testing toolkit](testing-toolkit.md) ·
+[In-memory providers](in-memory-providers.md) ·
+[Local build guide](../development/building.md)
 
-The `dataloom-testing` module provides deterministic, platform-independent
-implementations of `DataLoomClock` and `IdentifierGenerator<T>` for use in
-unit and integration tests. These utilities remove all platform-clock
-dependencies, all randomness, and all I/O from test scenarios.
+Packages:
 
----
+- `io.dataloom.testing.time`
+- `io.dataloom.testing.identifier`
+
+## Choose a utility
+
+| Utility | Behavior | Mutable | Thread-safe |
+|---|---|---:|---:|
+| `FixedDataLoomClock` | Always returns one instant | No | Yes |
+| `MutableDataLoomClock` | Test controls current instant | Yes | No |
+| `SequenceIdentifierGenerator<T>` | Consumes a finite ordered sequence | Yes | No |
+| `ConstantIdentifierGenerator<T>` | Always returns one value | No | Yes |
 
 ## Fixed clock
 
-### `FixedDataLoomClock`
-
-**Package:** `io.dataloom.testing.time`
-
-A `DataLoomClock` implementation that always returns a single configured
-`DataLoomInstant`. The value never changes and is never automatically advanced.
+Use `FixedDataLoomClock` when the entire test can share one timestamp:
 
 ```kotlin
 val clock = FixedDataLoomClock(
     instant = DataLoomInstant(epochMilliseconds = 1_000L),
 )
 
-check(clock.now() == DataLoomInstant(1_000L))
-check(clock.now() == DataLoomInstant(1_000L)) // always the same
+assertEquals(DataLoomInstant(1_000L), clock.now())
+assertEquals(DataLoomInstant(1_000L), clock.now())
 ```
 
-**Use when:**
-
-- The test only needs a single fixed timestamp.
-- Time does not need to change during the test.
-- Thread safety is required (the instance is immutable).
-
----
+The clock never advances automatically and never reads a platform clock.
 
 ## Mutable clock
 
-### `MutableDataLoomClock`
-
-**Package:** `io.dataloom.testing.time`
-
-A `DataLoomClock` implementation whose current instant can be updated during
-the test. This enables tests to simulate time advancing, lease expiration, and
-retry-delay scenarios without platform-clock access.
+Use `MutableDataLoomClock` to model lease expiry, retry delays, or event
+ordering without sleeping:
 
 ```kotlin
 val clock = MutableDataLoomClock(
     initialInstant = DataLoomInstant(epochMilliseconds = 1_000L),
 )
 
-// Returns 1_000
-check(clock.now().epochMilliseconds == 1_000L)
-
-// Advance by 500 ms
 clock.advanceBy(milliseconds = 500L)
-check(clock.now().epochMilliseconds == 1_500L)
+assertEquals(DataLoomInstant(1_500L), clock.now())
 
-// Jump to a specific instant
-clock.set(instant = DataLoomInstant(epochMilliseconds = 10_000L))
-check(clock.now().epochMilliseconds == 10_000L)
+clock.set(DataLoomInstant(epochMilliseconds = 10_000L))
+assertEquals(DataLoomInstant(10_000L), clock.now())
 ```
 
-### `advanceBy` rules
+`advanceBy` behavior:
 
-| Input | Result |
+| Input | Outcome |
 |---|---|
-| Zero | Accepted; instant unchanged |
-| Positive | Accepted; instant advanced |
-| Negative | `IllegalArgumentException` thrown; instant unchanged |
-| Overflow | `IllegalStateException` thrown; instant unchanged |
+| Zero | Accepted; time does not change |
+| Positive | Added to the current epoch milliseconds |
+| Negative | `IllegalArgumentException`; state is unchanged |
+| `Long` overflow | `IllegalStateException`; state is unchanged |
 
-### Concurrency limitations
-
-`MutableDataLoomClock` is mutable. Test code that shares a single instance
-across threads must coordinate concurrent access externally. No
-production-grade thread safety is implemented or claimed.
-
----
+Coordinate access externally if the same mutable clock is used by concurrent
+test code.
 
 ## Sequence generator
 
-### `SequenceIdentifierGenerator<T>`
-
-**Package:** `io.dataloom.testing.identifier`
-
-An `IdentifierGenerator<T>` that returns values from a finite, pre-supplied
-sequence. Values are returned in supplied order. When the sequence is
-exhausted, `generate()` throws `NoSuchElementException`.
+Use `SequenceIdentifierGenerator<T>` when each creation path needs a known,
+distinct value:
 
 ```kotlin
-val generator = SequenceIdentifierGenerator(
+val ids = SequenceIdentifierGenerator(
     values = listOf(
         QueueEntryId("entry-001"),
         QueueEntryId("entry-002"),
-        QueueEntryId("entry-003"),
     ),
 )
 
-check(generator.generate() == QueueEntryId("entry-001"))
-check(generator.generate() == QueueEntryId("entry-002"))
-check(generator.generate() == QueueEntryId("entry-003"))
-// Next call throws NoSuchElementException
+assertEquals(QueueEntryId("entry-001"), ids.generate())
+assertEquals(QueueEntryId("entry-002"), ids.generate())
 ```
 
-### Rules
-
-- At least one value is required. Empty collections are rejected.
-- The source collection is defensively copied at construction time.
-- Values are returned in the order they were supplied.
-- Each call consumes one value.
-- The final value is not silently repeated after exhaustion.
-- The sequence does not cycle automatically.
-
-**Use when:**
-
-- The test exercises multiple creation paths and each identifier must be
-  distinct.
-- The test needs to verify the exact identifiers produced by the component.
-
----
+The input must contain at least one value and is defensively copied. Each call
+consumes one value. Exhaustion throws `NoSuchElementException`; the sequence
+does not repeat or cycle.
 
 ## Constant generator
 
-### `ConstantIdentifierGenerator<T>`
-
-**Package:** `io.dataloom.testing.identifier`
-
-An `IdentifierGenerator<T>` that always returns the same configured value.
+Use `ConstantIdentifierGenerator<T>` only when uniqueness is irrelevant:
 
 ```kotlin
-val generator = ConstantIdentifierGenerator(
+val ids = ConstantIdentifierGenerator(
     value = QueueEntryId("entry-fixed"),
 )
 
-check(generator.generate() == QueueEntryId("entry-fixed"))
-check(generator.generate() == QueueEntryId("entry-fixed")) // always the same
+assertEquals(QueueEntryId("entry-fixed"), ids.generate())
+assertEquals(QueueEntryId("entry-fixed"), ids.generate())
 ```
 
-**Use when:**
+Do not use a constant generator in a test that is intended to prove unique ID
+generation.
 
-- The test exercises only one creation path.
-- Identifier uniqueness is not under test.
-- Thread safety is required (the instance is immutable).
+## Production boundary
 
-Do not use `ConstantIdentifierGenerator` when the test verifies that
-different calls produce different identifiers.
+These utilities deliberately remove real time and randomness. Production hosts
+must supply appropriate clock and identifier implementations. None of these
+classes provides cryptographic randomness, monotonic time, persistence, or
+cross-process coordination.
 
----
+## Related documentation
 
-## Deterministic test examples
-
-### Enqueue with fixed clock and sequence generator
-
-```kotlin
-val clock = FixedDataLoomClock(
-    instant = DataLoomInstant(epochMilliseconds = 1_000L),
-)
-val entryGenerator = SequenceIdentifierGenerator(
-    values = listOf(QueueEntryId("entry-001")),
-)
-
-val now = clock.now()
-val id = entryGenerator.generate()
-
-check(now == DataLoomInstant(1_000L))
-check(id == QueueEntryId("entry-001"))
-```
-
-### Lease expiry with mutable clock
-
-```kotlin
-val clock = MutableDataLoomClock(
-    initialInstant = DataLoomInstant(epochMilliseconds = 0L),
-)
-
-val acquiredAt = clock.now()
-clock.advanceBy(milliseconds = 30_000L)
-val checkTime = clock.now()
-
-check(checkTime.epochMilliseconds > acquiredAt.epochMilliseconds)
-```
-
----
-
-## Concurrency limitations
-
-| Utility | Thread safe |
-|---|---|
-| `FixedDataLoomClock` | Yes (immutable) |
-| `MutableDataLoomClock` | No (mutable; coordinate externally) |
-| `SequenceIdentifierGenerator` | No (mutable index; coordinate externally) |
-| `ConstantIdentifierGenerator` | Yes (immutable) |
-
-All test utilities in this module are intended for deterministic testing only.
-Do not use them in production code.
+- [Testing toolkit](testing-toolkit.md)
+- [Runtime dependencies](../architecture/runtime-dependencies.md)

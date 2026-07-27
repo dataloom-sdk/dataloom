@@ -1,23 +1,29 @@
 # DataLoom Synchronization Result Contracts (DL-016)
 
+[API reference index](./README.md)
+
+> **Status:** Available terminal-result contract used by current pipelines and
+> the facade. Queue/retry/event actions remain separate runtime responsibilities.
+
 This document defines the synchronization result contracts introduced in
 `dataloom-api` by DL-016.
 
 These contracts represent the terminal outcomes of synchronization workflow
-execution. Runtime lifecycle transitions, queue mutations, retry execution,
-and event dispatch are **not implemented** in this issue.
+execution. Current pipelines produce these results; lifecycle events,
+queue-transition mapping, and custom retry evaluation consume them in separate
+runtime components.
 
 ---
 
 ## Overview
 
 `SynchronizationResult` is a sealed public interface with one variant per
-possible terminal state. The future DataLoom runtime produces and supplies
+possible terminal state. The current DataLoom runtime produces and supplies
 the appropriate variant at the end of every workflow execution.
 
 Applications receive results through
-[`SynchronizationEvent.Completed`](./synchronization-events.md) or a
-direct result callback defined in a future integration issue.
+[`SynchronizationEvent.Completed`](./synchronization-events.md) when event
+delivery is configured and directly from `DataLoom.synchronize`.
 
 ---
 
@@ -114,7 +120,7 @@ public data class Cancelled(
 ```
 
 > Creating this result does **not** cancel any running work. Cancellation
-> is represented as an explicit terminal state by the future runtime or host
+> is represented as an explicit terminal state by a runtime pipeline or host
 > integration.
 
 `Cancelled` is distinct from `Failed` and `Skipped`.
@@ -175,7 +181,8 @@ QueueProvider.complete(), reschedule(), or fail()
 ```
 
 Events and results do **not** mutate queue entries themselves. Queue
-transitions are performed by the future runtime after receiving a result.
+transitions are performed by queued execution and the durable queue processor
+after receiving a result.
 
 ---
 
@@ -183,6 +190,5 @@ transitions are performed by the future runtime after receiving a result.
 
 `kotlin.coroutines.CancellationException` must still propagate through
 runtime code and must never be swallowed. The `Cancelled` result variant is
-created explicitly by the future runtime or host integration after
-intercepting a cancellation; it is not converted automatically from a
-caught `CancellationException`.
+created explicitly by a pipeline or host integration; the execution
+coordinator does not automatically convert a thrown `CancellationException`.

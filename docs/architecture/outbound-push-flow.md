@@ -8,14 +8,23 @@ pipeline implementation.
 
 ## Sequence
 
-```text
-OutboundPushSynchronizationPipeline
-    → StorageProvider.readOutboundChanges()
-    → TransportProvider.pushChanges()
-    → validate ChangeSetAcknowledgement
-    → StorageProvider.acknowledgeOutboundChanges()
-    → repeat when hasMore
-    → SynchronizationResult
+```mermaid
+sequenceDiagram
+    title Outbound batch
+    participant Pipeline
+    participant StorageProvider
+    participant TransportProvider
+    participant EventEmitter
+
+    Pipeline->>StorageProvider: read outbound changes
+    StorageProvider-->>Pipeline: change set
+    Pipeline->>TransportProvider: push changes
+    TransportProvider-->>Pipeline: acknowledgement
+    Pipeline->>Pipeline: validate acknowledgement
+    Pipeline->>StorageProvider: persist acknowledgement
+    StorageProvider-->>Pipeline: success
+    Pipeline->>EventEmitter: emit progress
+    Pipeline-->>Pipeline: repeat when more
 ```
 
 Each batch is processed strictly sequentially: read, push, validate,
@@ -124,15 +133,15 @@ acknowledgement contains RETRY or REJECTED events
 
 | Boundary | Status |
 |---|---|
-| Inbound pull / apply | Not implemented (DL-022) |
-| Bidirectional composition | Not implemented (DL-023) |
-| Checkpoint read/write/advance | Not implemented; outbound push does not touch checkpoints |
+| Inbound pull / apply | Separate checked-in inbound pipeline; not invoked here |
+| Bidirectional composition | Separate checked-in composition; this page covers the outbound child |
+| Checkpoint read/write/advance | Not invoked; outbound push does not touch checkpoints |
 | `RetryPolicy` execution | Not invoked |
 | Queue acquire/complete/reschedule | Not invoked |
 | `SchedulerProvider` | Not invoked |
 | `ConnectivityProvider` | Not invoked |
 | Conflict detection/resolution | Not invoked |
-| Event dispatch / observer registry | Not implemented (deferred) |
+| Event dispatch / observer registry | Optional runtime emitter is used for lifecycle/progress events |
 | Provider `initialize` / `health` / `close` | Not invoked (owned by the execution coordinator and lifecycle coordinator) |
 
 ---
