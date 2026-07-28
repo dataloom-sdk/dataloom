@@ -54,6 +54,9 @@ jobs:
           ./gradlew
           :build-logic:test
           build
+          :runtime-external-consumer:compileKotlinIosArm64
+          :runtime-external-consumer:compileKotlinIosSimulatorArm64
+          :runtime-external-consumer:compileKotlinIosX64
           :dataloom-apple:assembleDataLoomReleaseXCFramework
           --configuration-cache
           --stacktrace
@@ -92,6 +95,39 @@ jobs:
           echo ""
           echo "=== Info.plist ==="
           cat "$XCFW/Info.plist"
+
+      - name: Audit exported Apple headers
+        shell: bash
+        run: |
+          set -euo pipefail
+          XCFW="dataloom-apple/build/XCFrameworks/release/DataLoom.xcframework"
+          headers=()
+          while IFS= read -r header; do
+            headers+=("$header")
+          done < <(find "$XCFW" -type f -name "DataLoom.h" | sort)
+
+          if [[ "${#headers[@]}" -lt 2 ]]; then
+            echo "ERROR: Expected DataLoom headers for device and simulator slices."
+            printf '%s\n' "${headers[@]}"
+            exit 1
+          fi
+
+          forbidden='io_dataloom_core|dataloom_core|DataloomCore|io_dataloom_testing|dataloom_testing|DataloomTesting'
+          if grep -nE "$forbidden" "${headers[@]}"; then
+            echo "ERROR: Apple headers expose implementation-only core or testing symbols."
+            exit 1
+          fi
+
+          reference="${headers[0]}"
+          for header in "${headers[@]:1}"; do
+            if ! cmp -s "$reference" "$header"; then
+              echo "ERROR: Exported DataLoom headers differ between XCFramework slices."
+              diff -u "$reference" "$header" || true
+              exit 1
+            fi
+          done
+
+          echo "Verified ${#headers[@]} matching DataLoom headers with no core/testing leaks."
 
       # ---------------------------------------------------------------
       # Swift smoke test

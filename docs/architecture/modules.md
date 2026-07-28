@@ -1,8 +1,8 @@
 # DataLoom Module Architecture
 
-This document describes the DL-036 merged baseline plus the first local DL-039
-module-migration checkpoint and their immediate dependency rules. It is a
-current-state view, not the V1 publication claim. The approved V1 target graph,
+This document describes the current DL-039 module-migration checkpoint and its
+immediate dependency rules. It is a current-state view, not the V1 publication
+claim. The approved V1 target graph,
 published coordinates, internal engines, and migration sequence are defined by
 [ADR-0002](../adr/ADR-0002-v1-artifact-and-foundation-architecture.md).
 
@@ -21,13 +21,14 @@ the current repository.
 
 ## Module Overview
 
-DataLoom is currently organized into five shared library modules, three
+DataLoom is currently organized into six shared library modules, three
 Android integration modules, a macOS-only Apple distribution module, and one
 build-infrastructure included build.
 
 ```mermaid
 flowchart TD
     model[dataloom-model]
+    providerApi[dataloom-provider-api]
     api[dataloom-api]
     core[dataloom-core]
     runtime[dataloom-runtime]
@@ -37,13 +38,18 @@ flowchart TD
     work[dataloom-scheduler-workmanager]
     apple[dataloom-apple]
 
+    model --> providerApi
     model --> api
+    providerApi --> api
     model --> core
+    providerApi --> core
     api --> core
     model --> runtime
+    providerApi --> runtime
     api --> runtime
     core --> runtime
     model --> testing
+    providerApi --> testing
     api --> testing
     core --> testing
     runtime --> testing
@@ -53,8 +59,8 @@ flowchart TD
     api --> work
     runtime --> work
     model --> apple
+    providerApi --> apple
     api --> apple
-    core --> apple
     runtime --> apple
 
     style model fill:#DCCCFF,stroke:#874FFF
@@ -63,13 +69,14 @@ flowchart TD
     style apple fill:#FFECBD,stroke:#FFC943
 ```
 
-Arrows point from a dependency to its consumer. The Apple export of
-`dataloom-core` is a documented pre-V1 boundary leak, not the approved
-publication shape.
+Arrows point from a dependency to its consumer. `dataloom-core` remains an
+internal runtime implementation dependency and is not exported through the
+Apple distribution boundary.
 
 | Component | Type | Purpose |
 |---|---|---|
 | `dataloom-model` | Library module | Dependency-root canonical models; first slice contains clock primitives |
+| `dataloom-provider-api` | Library module | Minimal provider lifecycle, descriptor, binding, and registry contracts |
 | `dataloom-api` | Library module | Current public contracts, models, and error types |
 | `dataloom-core` | Library module | Internal platform-independent foundation |
 | `dataloom-runtime` | Library module | Synchronization runtime and engine coordination |
@@ -80,7 +87,7 @@ publication shape.
 | `dataloom-apple` | KMP distribution module | Static `DataLoom` XCFramework assembly |
 | `build-logic` | Build infrastructure | Gradle convention plugins (not a published library) |
 
-The five shared modules use Kotlin Multiplatform with JVM and host-gated Apple
+The six shared modules use Kotlin Multiplatform with JVM and host-gated Apple
 targets. Android-specific functionality is isolated in dedicated Android
 libraries. None of these projects is a published V1 artifact yet.
 
@@ -103,6 +110,20 @@ Rules:
 
 ---
 
+### `dataloom-provider-api`
+
+Provides the smallest public SPI required by provider implementations without
+pulling in the full SDK API or runtime.
+
+Rules:
+
+- May depend only on `dataloom-model`.
+- Must remain platform-independent.
+- Must not depend on `dataloom-api`, `dataloom-core`, or `dataloom-runtime`.
+- Must not contain provider implementations or runtime orchestration.
+
+---
+
 ### `dataloom-api`
 
 Provides the current public contracts that host applications and production
@@ -117,8 +138,8 @@ baseline is approved. Current content includes:
 Rules:
 
 - Must remain platform-independent.
-- May depend on `dataloom-model`; must not depend on another DataLoom
-  implementation module.
+- May depend on `dataloom-model` and `dataloom-provider-api`; must not depend
+  on a DataLoom implementation module.
 - Must not expose third-party dependency types through its API.
 - Must not contain runtime implementations.
 - Must not depend on Android APIs.
@@ -135,7 +156,7 @@ components. Future content includes:
 
 Rules:
 
-- May depend on `dataloom-model` and `dataloom-api`.
+- May depend on `dataloom-model`, `dataloom-provider-api`, and `dataloom-api`.
 - Must not depend on `dataloom-runtime`.
 - Must not depend on `dataloom-testing`.
 - Internal implementation details must not be exposed as public API.
@@ -153,7 +174,8 @@ Provides the synchronization runtime. Future content includes:
 
 Rules:
 
-- May depend on `dataloom-model`, `dataloom-api`, and `dataloom-core`.
+- Public API may depend on `dataloom-model`, `dataloom-provider-api`, and
+  `dataloom-api`; implementation may depend on `dataloom-core`.
 - Must not depend on `dataloom-testing`.
 - Must not expose internal implementation types publicly.
 - Must not depend on Android APIs.
@@ -171,8 +193,8 @@ Provides testing utilities for consumers of DataLoom. Future content includes:
 
 Rules:
 
-- May depend on `dataloom-model`, `dataloom-api`, `dataloom-core`, and
-  `dataloom-runtime`.
+- May depend on `dataloom-model`, `dataloom-provider-api`, `dataloom-api`,
+  `dataloom-core`, and `dataloom-runtime`.
 - Must not be a dependency of any production module (`dataloom-runtime` or
   `dataloom-core` production source sets).
 - Must not be included in runtime implementation dependencies.
@@ -192,13 +214,12 @@ Current convention plugins:
   sets, reproducible archive output, Kotlin ABI baselines, and public
   dependency-boundary checks.
 
-The JVM ABI baseline now records all five shared modules. The runtime baseline
-contains 13 exact, temporary compatibility allowances for signatures that
-expose `dataloom-core`; new implementation-type leaks are rejected and the
-allowances must be removed before `1.0.0`. Kotlin/Native KLib baselines for the
-five shared modules and `dataloom-apple`, plus Apple-facing header/API
-compatibility evidence, must be generated and reviewed on macOS before this
-foundation change is pushed.
+Committed JVM and Kotlin/Native ABI baselines cover all six shared modules;
+the Apple umbrella has its own KLib baseline. `dataloom-runtime` exposes no
+`dataloom-core` or `dataloom-testing` type in either baseline, and a build task
+rejects either namespace if it appears later. Apple validation also compiles
+the external KMP consumer for all three iOS targets and audits generated
+XCFramework headers for internal namespaces and cross-slice drift.
 
 ---
 
@@ -208,20 +229,27 @@ foundation change is pushed.
 dataloom-model
   (no DataLoom dependencies)
 
-dataloom-api
+dataloom-provider-api
 └── depends on dataloom-model
+
+dataloom-api
+├── depends on dataloom-model
+└── depends on dataloom-provider-api
 
 dataloom-core
 ├── depends on dataloom-model
+├── depends on dataloom-provider-api
 └── depends on dataloom-api
 
 dataloom-runtime
 ├── depends on dataloom-model
+├── depends on dataloom-provider-api
 ├── depends on dataloom-api
 └── depends on dataloom-core
 
 dataloom-testing
 ├── depends on dataloom-model
+├── depends on dataloom-provider-api
 ├── depends on dataloom-api
 ├── depends on dataloom-core
 └── depends on dataloom-runtime
@@ -239,8 +267,8 @@ dataloom-scheduler-workmanager
 
 dataloom-apple
 ├── exports dataloom-model
+├── exports dataloom-provider-api
 ├── exports dataloom-api
-├── exports dataloom-core (temporary pre-V1 boundary)
 └── exports dataloom-runtime
 ```
 
@@ -252,6 +280,7 @@ The following dependencies are explicitly prohibited:
 
 ```
 dataloom-model   → any DataLoom project
+dataloom-provider-api → dataloom-api or any implementation module
 dataloom-api     → any DataLoom implementation module
 dataloom-core    → dataloom-runtime
 dataloom-core    → dataloom-testing

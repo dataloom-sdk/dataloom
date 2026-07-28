@@ -230,9 +230,11 @@ no `CoroutineScope`.
 
 ## KMP constraints
 
-All contracts are in `dataloom-core` `commonMain`. They use Kotlin
-standard-library and DataLoom API types only. No Android APIs, JVM-only types,
-Apple-specific types, or third-party libraries are required.
+Public lifecycle, binding, descriptor, and registry contracts are in
+`dataloom-provider-api` `commonMain`; resolution implementations are internal
+to `dataloom-core` `commonMain`. They use Kotlin standard-library and DataLoom
+public types only. No Android APIs, JVM-only types, Apple-specific types, or
+third-party libraries are required.
 
 ---
 

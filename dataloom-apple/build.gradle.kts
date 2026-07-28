@@ -1,7 +1,7 @@
 // DataLoom Apple umbrella module.
 //
 // This module is the Apple distribution boundary for the DataLoom SDK.
-// It assembles one XCFramework named "DataLoom" that exports the three
+// It assembles one XCFramework named "DataLoom" that exports the four
 // stable production modules required by Apple consumers.
 //
 // Rules:

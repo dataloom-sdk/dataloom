@@ -101,30 +101,32 @@ appropriate platform dependency in its Android and iOS source sets.
 | Native Android | Connectivity, Room queue, and WorkManager Android library modules compile and have focused tests | Published aggregate artifact, external consumer/reference app, full provider set, release qualification |
 | KMP Android | A JVM artifact exists, but that does not prove a KMP Android variant or `androidMain` consumer path | Explicit KMP Android target and Gradle variant, Android source-set consumer fixture, publication and end-to-end evidence |
 | KMP iOS | Shared modules compile for three iOS targets on macOS and shared simulator tests run | `dataloom-ios`, platform providers, external KMP iOS consumer/sample, persistence/background/security integration, end-to-end evidence |
-| Native Swift | XCFramework assembly and a compile-only Swift smoke fixture exist | Removal of exported internal `dataloom-core` types, supported facade, platform implementations, packaging/signing and runtime qualification |
+| Native Swift | XCFramework assembly and a compile-only Swift smoke fixture exist; the current export graph excludes internal `dataloom-core` and `dataloom-testing` modules | Supported Swift facade review, platform implementations, packaging/signing, header compatibility, and runtime qualification |
 
-The current `dataloom-apple` umbrella exports `dataloom-core`, and its Swift
-smoke fixture deliberately references `RuntimeDependencies` and
-`RuntimeIdentifierGenerators`. That is useful evidence of the present leak,
-not proof that internal types are absent. The V1 migration must move consumer
-types to stable artifacts and then stop exporting `dataloom-core`; changing a
-Gradle exposure keyword alone would not correct the API boundary.
+The current `dataloom-apple` umbrella exports `dataloom-model`,
+`dataloom-provider-api`, `dataloom-api`, and `dataloom-runtime`. The public
+runtime JVM and KLib ABI baselines contain no `dataloom-core` or
+`dataloom-testing` references. Apple CI additionally rejects those namespaces
+in generated headers and requires identical public headers across device and
+simulator XCFramework slices.
 
 ## Current pre-V1 shared modules
 
 | Module | Current ownership |
 |---|---|
-| `dataloom-model` | First extracted dependency-root slice: `DataLoomInstant` and `DataLoomClock`, preserving their existing FQCNs |
-| `dataloom-api` | Combined canonical models, errors, provider/queue/storage/transport SPIs, retry/conflict contracts, events, and execution contracts |
-| `dataloom-core` | Provider registry, provider binding/resolution and lifecycle coordination, plus runtime dependency/identifier containers |
+| `dataloom-model` | Dependency-root canonical models, errors, metadata, identifiers, and time contracts |
+| `dataloom-provider-api` | Minimal provider lifecycle, descriptor, binding, registry, and provider-reference contracts |
+| `dataloom-api` | Public configuration, queue/storage/transport SPIs, retry/conflict contracts, events, execution contracts, and runtime dependency inputs |
+| `dataloom-core` | Internal provider registry, binding/resolution, and lifecycle implementation |
 | `dataloom-runtime` | Facade, synchronization pipelines, queue/worker coordination, connectivity preflight, retry/conflict orchestration, and observer dispatch |
 | `dataloom-testing` | Fake providers, controlled clocks/identifiers, failure helpers, fixtures, and deterministic test support |
 
 These are implementation facts, not the approved V1 artifact ownership model.
 `dataloom-api` is not yet a frozen publication surface, no full plugin API
-exists, and `dataloom-core` currently leaks into runtime public signatures.
-Production modules must not depend on `dataloom-testing`. Platform-specific
-execution remains behind provider/platform boundaries.
+exists, and the complete V1 capability set is not yet implemented.
+`dataloom-core` remains an internal runtime dependency and production modules
+must not depend on `dataloom-testing`. Platform-specific execution remains
+behind provider/platform boundaries.
 
 The target source modules, stable coordinates, and migration direction are
 defined only by ADR-0002.
@@ -280,7 +282,8 @@ baseline.
 - Create Android reference application
 - Add explicit KMP Android target and consumer qualification
 - Add `dataloom-ios` platform integrations and KMP iOS consumer qualification
-- Remove internal `dataloom-core` types from the Apple export surface
+- Keep Apple headers and runtime ABI free of internal `dataloom-core` and
+  `dataloom-testing` types
 - Add platform-parity contract and end-to-end suites
 
 ## Android modules (DL-037)

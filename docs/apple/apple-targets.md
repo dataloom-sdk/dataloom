@@ -55,9 +55,10 @@ set only when architecture-specific behavior is unavoidable.
 
 | Module | Apple role |
 |---|---|
-| `dataloom-model` | Dependency-root models and clock primitives |
+| `dataloom-model` | Dependency-root models, errors, metadata, identifiers, and time contracts |
+| `dataloom-provider-api` | Minimal public provider lifecycle and binding SPI |
 | `dataloom-api` | Current public contracts; not yet V1-frozen |
-| `dataloom-core` | Platform-independent foundations |
+| `dataloom-core` | Internal platform-independent implementation; never exported by the umbrella |
 | `dataloom-runtime` | Runtime facade and orchestration foundations |
 | `dataloom-testing` | Shared test utilities; excluded from XCFramework |
 | `dataloom-apple` | Static XCFramework umbrella/export module |
@@ -74,7 +75,7 @@ therefore see the JVM targets only.
 The configuration lives in:
 
 ```text
-build-logic/src/main/kotlin/io.dataloom.kotlin.multiplatform-library.gradle.kts
+build-logic/src/main/java/io/dataloom/buildlogic/DataLoomKotlinMultiplatformLibraryPlugin.java
 ```
 
 ## Why `iosX64` is present

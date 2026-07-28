@@ -1,0 +1,303 @@
+public abstract interface class io/dataloom/api/provider/DataLoomProvider {
+	public abstract fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public abstract fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/api/provider/ProviderBindingFailure {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/provider/ProviderType;Lio/dataloom/api/provider/ProviderType;Lio/dataloom/api/provider/ProviderBindingFailureReason;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-MVFgJrg ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/provider/ProviderType;
+	public final fun component3 ()Lio/dataloom/api/provider/ProviderType;
+	public final fun component4 ()Lio/dataloom/api/provider/ProviderBindingFailureReason;
+	public final fun copy-1CEqfpE (Ljava/lang/String;Lio/dataloom/api/provider/ProviderType;Lio/dataloom/api/provider/ProviderType;Lio/dataloom/api/provider/ProviderBindingFailureReason;)Lio/dataloom/api/provider/ProviderBindingFailure;
+	public static synthetic fun copy-1CEqfpE$default (Lio/dataloom/api/provider/ProviderBindingFailure;Ljava/lang/String;Lio/dataloom/api/provider/ProviderType;Lio/dataloom/api/provider/ProviderType;Lio/dataloom/api/provider/ProviderBindingFailureReason;ILjava/lang/Object;)Lio/dataloom/api/provider/ProviderBindingFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActualType ()Lio/dataloom/api/provider/ProviderType;
+	public final fun getExpectedType ()Lio/dataloom/api/provider/ProviderType;
+	public final fun getReason ()Lio/dataloom/api/provider/ProviderBindingFailureReason;
+	public final fun getRequestedId-MVFgJrg ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/provider/ProviderBindingFailureReason : java/lang/Enum {
+	public static final field PROVIDER_CONTRACT_MISMATCH Lio/dataloom/api/provider/ProviderBindingFailureReason;
+	public static final field PROVIDER_NOT_FOUND Lio/dataloom/api/provider/ProviderBindingFailureReason;
+	public static final field PROVIDER_TYPE_MISMATCH Lio/dataloom/api/provider/ProviderBindingFailureReason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/provider/ProviderBindingFailureReason;
+	public static fun values ()[Lio/dataloom/api/provider/ProviderBindingFailureReason;
+}
+
+public final class io/dataloom/api/provider/ProviderCapability {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/provider/ProviderCapability;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/provider/ProviderDescriptor {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/provider/ProviderType;Ljava/lang/String;Ljava/util/Set;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/provider/ProviderType;Ljava/lang/String;Ljava/util/Set;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCapabilities ()Ljava/util/Set;
+	public final fun getId-MVFgJrg ()Ljava/lang/String;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun getName-si4Pr4o ()Ljava/lang/String;
+	public final fun getType ()Lio/dataloom/api/provider/ProviderType;
+	public final fun getVersion-weignRw ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/provider/ProviderHealth {
+	public fun <init> (Lio/dataloom/api/provider/ProviderHealthStatus;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Lio/dataloom/api/provider/ProviderHealthStatus;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/provider/ProviderHealthStatus;
+	public final fun component2 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun component3 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (Lio/dataloom/api/provider/ProviderHealthStatus;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/provider/ProviderHealth;
+	public static synthetic fun copy$default (Lio/dataloom/api/provider/ProviderHealth;Lio/dataloom/api/provider/ProviderHealthStatus;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/provider/ProviderHealth;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDetails ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public final fun getStatus ()Lio/dataloom/api/provider/ProviderHealthStatus;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/provider/ProviderHealthStatus : java/lang/Enum {
+	public static final field DEGRADED Lio/dataloom/api/provider/ProviderHealthStatus;
+	public static final field HEALTHY Lio/dataloom/api/provider/ProviderHealthStatus;
+	public static final field UNHEALTHY Lio/dataloom/api/provider/ProviderHealthStatus;
+	public static final field UNKNOWN Lio/dataloom/api/provider/ProviderHealthStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/provider/ProviderHealthStatus;
+	public static fun values ()[Lio/dataloom/api/provider/ProviderHealthStatus;
+}
+
+public final class io/dataloom/api/provider/ProviderId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/provider/ProviderId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/provider/ProviderInitializationContext {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-vZrNJ34 ()Ljava/lang/String;
+	public final fun component2-im0FcQU ()Ljava/lang/String;
+	public final fun component3 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy-eZFk0_Q (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/provider/ProviderInitializationContext;
+	public static synthetic fun copy-eZFk0_Q$default (Lio/dataloom/api/provider/ProviderInitializationContext;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/provider/ProviderInitializationContext;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConfigurationVersion-im0FcQU ()Ljava/lang/String;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun getRuntimeVersion-vZrNJ34 ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/provider/ProviderLifecycleCoordinatorState : java/lang/Enum {
+	public static final field FAILED Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;
+	public static final field INITIALIZED Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;
+	public static final field INITIALIZING Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;
+	public static final field NOT_INITIALIZED Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;
+	public static final field SHUTTING_DOWN Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;
+	public static final field SHUT_DOWN Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;
+	public static fun values ()[Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;
+}
+
+public final class io/dataloom/api/provider/ProviderLifecycleFailure {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/provider/ProviderLifecycleOperation;Lio/dataloom/api/error/DataLoomError;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-MVFgJrg ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/provider/ProviderLifecycleOperation;
+	public final fun component3 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy-x09O0Ac (Ljava/lang/String;Lio/dataloom/api/provider/ProviderLifecycleOperation;Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/api/provider/ProviderLifecycleFailure;
+	public static synthetic fun copy-x09O0Ac$default (Lio/dataloom/api/provider/ProviderLifecycleFailure;Ljava/lang/String;Lio/dataloom/api/provider/ProviderLifecycleOperation;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/api/provider/ProviderLifecycleFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public final fun getOperation ()Lio/dataloom/api/provider/ProviderLifecycleOperation;
+	public final fun getProviderId-MVFgJrg ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/provider/ProviderLifecycleOperation : java/lang/Enum {
+	public static final field INITIALIZE Lio/dataloom/api/provider/ProviderLifecycleOperation;
+	public static final field SHUTDOWN Lio/dataloom/api/provider/ProviderLifecycleOperation;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/provider/ProviderLifecycleOperation;
+	public static fun values ()[Lio/dataloom/api/provider/ProviderLifecycleOperation;
+}
+
+public abstract interface class io/dataloom/api/provider/ProviderLifecycleResult {
+}
+
+public final class io/dataloom/api/provider/ProviderLifecycleResult$InitializeFailure : io/dataloom/api/provider/ProviderLifecycleResult {
+	public fun <init> (Lio/dataloom/api/provider/ProviderLifecycleFailure;Ljava/util/List;)V
+	public synthetic fun <init> (Lio/dataloom/api/provider/ProviderLifecycleFailure;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPrimaryFailure ()Lio/dataloom/api/provider/ProviderLifecycleFailure;
+	public final fun getRollbackFailures ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/provider/ProviderLifecycleResult$InitializeSuccess : io/dataloom/api/provider/ProviderLifecycleResult {
+	public static final field INSTANCE Lio/dataloom/api/provider/ProviderLifecycleResult$InitializeSuccess;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/provider/ProviderLifecycleResult$InvalidOperation : io/dataloom/api/provider/ProviderLifecycleResult {
+	public fun <init> (Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;Lio/dataloom/api/provider/ProviderLifecycleOperation;)V
+	public final fun component1 ()Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;
+	public final fun component2 ()Lio/dataloom/api/provider/ProviderLifecycleOperation;
+	public final fun copy (Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;Lio/dataloom/api/provider/ProviderLifecycleOperation;)Lio/dataloom/api/provider/ProviderLifecycleResult$InvalidOperation;
+	public static synthetic fun copy$default (Lio/dataloom/api/provider/ProviderLifecycleResult$InvalidOperation;Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;Lio/dataloom/api/provider/ProviderLifecycleOperation;ILjava/lang/Object;)Lio/dataloom/api/provider/ProviderLifecycleResult$InvalidOperation;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getOperation ()Lio/dataloom/api/provider/ProviderLifecycleOperation;
+	public final fun getState ()Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/provider/ProviderLifecycleResult$ShutdownFailure : io/dataloom/api/provider/ProviderLifecycleResult {
+	public fun <init> (Ljava/util/List;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFailures ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/provider/ProviderLifecycleResult$ShutdownSuccess : io/dataloom/api/provider/ProviderLifecycleResult {
+	public static final field INSTANCE Lio/dataloom/api/provider/ProviderLifecycleResult$ShutdownSuccess;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/provider/ProviderLifecycleState : java/lang/Enum {
+	public static final field CLOSED Lio/dataloom/api/provider/ProviderLifecycleState;
+	public static final field CLOSING Lio/dataloom/api/provider/ProviderLifecycleState;
+	public static final field CREATED Lio/dataloom/api/provider/ProviderLifecycleState;
+	public static final field DEGRADED Lio/dataloom/api/provider/ProviderLifecycleState;
+	public static final field FAILED Lio/dataloom/api/provider/ProviderLifecycleState;
+	public static final field INITIALIZING Lio/dataloom/api/provider/ProviderLifecycleState;
+	public static final field READY Lio/dataloom/api/provider/ProviderLifecycleState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/provider/ProviderLifecycleState;
+	public static fun values ()[Lio/dataloom/api/provider/ProviderLifecycleState;
+}
+
+public final class io/dataloom/api/provider/ProviderName {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/provider/ProviderName;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/provider/ProviderOperationResult {
+}
+
+public final class io/dataloom/api/provider/ProviderOperationResult$Failure : io/dataloom/api/provider/ProviderOperationResult {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/api/provider/ProviderOperationResult$Failure;
+	public static synthetic fun copy$default (Lio/dataloom/api/provider/ProviderOperationResult$Failure;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/api/provider/ProviderOperationResult$Failure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/provider/ProviderOperationResult$Success : io/dataloom/api/provider/ProviderOperationResult {
+	public fun <init> (Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/Object;)Lio/dataloom/api/provider/ProviderOperationResult$Success;
+	public static synthetic fun copy$default (Lio/dataloom/api/provider/ProviderOperationResult$Success;Ljava/lang/Object;ILjava/lang/Object;)Lio/dataloom/api/provider/ProviderOperationResult$Success;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/provider/ProviderType : java/lang/Enum {
+	public static final field AUTHENTICATION Lio/dataloom/api/provider/ProviderType;
+	public static final field COMPRESSION Lio/dataloom/api/provider/ProviderType;
+	public static final field CONNECTIVITY Lio/dataloom/api/provider/ProviderType;
+	public static final field ENCRYPTION Lio/dataloom/api/provider/ProviderType;
+	public static final field LOGGING Lio/dataloom/api/provider/ProviderType;
+	public static final field MONITORING Lio/dataloom/api/provider/ProviderType;
+	public static final field QUEUE Lio/dataloom/api/provider/ProviderType;
+	public static final field SCHEDULER Lio/dataloom/api/provider/ProviderType;
+	public static final field SERIALIZATION Lio/dataloom/api/provider/ProviderType;
+	public static final field STORAGE Lio/dataloom/api/provider/ProviderType;
+	public static final field TRANSPORT Lio/dataloom/api/provider/ProviderType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/provider/ProviderType;
+	public static fun values ()[Lio/dataloom/api/provider/ProviderType;
+}
+
+public final class io/dataloom/api/provider/ProviderVersion {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/provider/ProviderVersion;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/provider/SynchronizationProviderBindings {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-MVFgJrg ()Ljava/lang/String;
+	public final fun component2-MVFgJrg ()Ljava/lang/String;
+	public final fun component3-I61KZlw ()Ljava/lang/String;
+	public final fun component4-I61KZlw ()Ljava/lang/String;
+	public final fun component5-I61KZlw ()Ljava/lang/String;
+	public final fun copy-4Ab8clQ (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/dataloom/api/provider/SynchronizationProviderBindings;
+	public static synthetic fun copy-4Ab8clQ$default (Lio/dataloom/api/provider/SynchronizationProviderBindings;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/provider/SynchronizationProviderBindings;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConnectivityProviderId-I61KZlw ()Ljava/lang/String;
+	public final fun getQueueProviderId-I61KZlw ()Ljava/lang/String;
+	public final fun getSchedulerProviderId-I61KZlw ()Ljava/lang/String;
+	public final fun getStorageProviderId-MVFgJrg ()Ljava/lang/String;
+	public final fun getTransportProviderId-MVFgJrg ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+

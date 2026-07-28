@@ -84,6 +84,42 @@ public final class DataLoomKotlinMultiplatformLibraryPlugin
             project.getTasks().named("check").configure(
                     task -> task.dependsOn(boundaryCheck)
             );
+
+            TaskProvider<PublicAbiBoundaryCheckTask> publicAbiCheck =
+                    project.getTasks().register(
+                            "checkPublicAbiBoundaries",
+                            PublicAbiBoundaryCheckTask.class,
+                            task -> {
+                                task.setGroup("verification");
+                                task.setDescription(
+                                        "Rejects implementation-only packages from the public runtime ABI."
+                                );
+                                task.getAbiDumps().from(
+                                        project.getLayout()
+                                                .getBuildDirectory()
+                                                .file("kotlin/abi/dataloom-runtime.api")
+                                );
+                                task.getAbiDumps().from(
+                                        project.getLayout()
+                                                .getBuildDirectory()
+                                                .file("kotlin/abi/dataloom-runtime.klib.api")
+                                );
+                                task.getForbiddenMarkers().set(
+                                        Set.of(
+                                                "io/dataloom/core/",
+                                                "io/dataloom/testing/",
+                                                "io.dataloom.core.",
+                                                "io.dataloom.testing."
+                                        )
+                                );
+                                task.dependsOn(
+                                        project.getTasks().named("internalDumpKotlinAbi")
+                                );
+                            }
+                    );
+            project.getTasks().named("check").configure(
+                    task -> task.dependsOn(publicAbiCheck)
+            );
         }
     }
 }

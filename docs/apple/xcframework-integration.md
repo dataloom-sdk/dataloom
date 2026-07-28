@@ -28,10 +28,10 @@ optional native Swift/Objective-C path.
 ## Export topology
 
 ```mermaid
-flowchart LR
+flowchart TD
     model["dataloom-model"] --> appleUmbrella["Apple umbrella"]
+    providerApi["dataloom-provider-api"] --> appleUmbrella
     api["dataloom-api"] --> appleUmbrella
-    core["dataloom-core leak"] --> appleUmbrella
     runtime["dataloom-runtime"] --> appleUmbrella
     appleUmbrella --> framework["Static XCFramework"]
     framework --> swiftSmoke["Swift compile smoke"]
@@ -45,12 +45,13 @@ exported.
 | Module | Reason it is present | Boundary status |
 |---|---|---|
 | `dataloom-model` | Canonical dependency-root types | Current public foundation |
-| `dataloom-api` | Contracts, identifiers, models, provider interfaces | Current public foundation |
-| `dataloom-core` | Runtime dependency, registry, and lifecycle types | Temporary defect; remove before supported Swift distribution |
+| `dataloom-provider-api` | Provider lifecycle, descriptor, and binding contracts | Current public SPI foundation |
+| `dataloom-api` | Contracts, identifiers, models, and synchronization interfaces | Current public foundation |
 | `dataloom-runtime` | Facade and orchestration foundations | Current export under review |
 
-`dataloom-testing` is intentionally absent. The XCFramework contains no Apple
-platform provider implementation and no global singleton.
+`dataloom-core` and `dataloom-testing` are intentionally absent. The
+XCFramework contains no Apple platform provider implementation and no global
+singleton.
 
 ## Why static linkage
 
@@ -125,8 +126,9 @@ apple-smoke/DataLoom.xcframework/
 
 - Production `dataloom-ios` platform adapters.
 - Published KMP iOS variants and an external executable KMP consumer.
-- A public surface free of `dataloom-core` implementation types.
-- Reviewed generated-header and binary compatibility baselines.
+- A reviewed Swift-facing API beyond the current compile-smoke selection.
+- Reviewed generated-header compatibility after the automated internal-type
+  and slice-consistency gates.
 - Executable Swift runtime, cancellation, relaunch, and background tests.
 - Remote SwiftPM or CocoaPods distribution.
 - Apple signing, provisioning, or release publication.

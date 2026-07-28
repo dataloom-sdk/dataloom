@@ -11,7 +11,7 @@
 [Apple guide](../apple/README.md) ·
 [Testing toolkit](../testing/testing-toolkit.md)
 
-The default project graph contains five shared KMP modules. Android projects
+The default project graph contains six shared KMP modules. Android projects
 are opt-in through `DATALOOM_ANDROID_BUILD=true`; Apple targets and
 `dataloom-apple` are available only on macOS.
 
@@ -59,6 +59,7 @@ Run all shared module test tasks explicitly:
 ```bash
 ./gradlew \
     :dataloom-model:allTests \
+    :dataloom-provider-api:allTests \
     :dataloom-api:allTests \
     :dataloom-core:allTests \
     :dataloom-runtime:allTests \
@@ -144,6 +145,7 @@ Run Apple commands on macOS:
 ```bash
 ./gradlew \
     :dataloom-model:iosSimulatorArm64Test \
+    :dataloom-provider-api:iosSimulatorArm64Test \
     :dataloom-api:iosSimulatorArm64Test \
     :dataloom-core:iosSimulatorArm64Test \
     :dataloom-runtime:iosSimulatorArm64Test \
@@ -156,7 +158,9 @@ Assemble the optional Swift/Objective-C artifact:
 ./gradlew :dataloom-apple:assembleDataLoomReleaseXCFramework
 ```
 
-Then follow the
+The Apple workflow additionally compiles `runtime-external-consumer` for all
+three iOS targets and compares the generated XCFramework headers. Then follow
+the
 [Swift smoke fixture](../../apple-smoke/README.md) for the exact
 `xcodebuild` command. These producer checks do not replace the missing
 executable KMP iOS consumer and real Apple adapter tests.

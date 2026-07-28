@@ -44,6 +44,7 @@ Run from the repository root on macOS:
 ```bash
 ./gradlew \
     :dataloom-model:iosSimulatorArm64Test \
+    :dataloom-provider-api:iosSimulatorArm64Test \
     :dataloom-api:iosSimulatorArm64Test \
     :dataloom-core:iosSimulatorArm64Test \
     :dataloom-runtime:iosSimulatorArm64Test \
@@ -57,7 +58,7 @@ declared there.
 
 | Area | Current shared evidence |
 |---|---|
-| Model, API, core, runtime, testing modules | Their `commonTest` suites run on `iosSimulatorArm64` |
+| Model, provider API, API, core, runtime, and testing modules | Their `commonTest` suites run on `iosSimulatorArm64` |
 | Facade construction | `DataLoomRuntimeModuleTest` and related tests |
 | Provider lifecycle | `ProviderLifecycleCoordinatorTest` |
 | Inbound, outbound, and bidirectional orchestration | Shared pipeline tests |
@@ -89,9 +90,11 @@ Use `FixedDataLoomClock`, `MutableDataLoomClock`,
 
 The repository's
 [Apple Platform Validation workflow](../../.github/workflows/apple-validation.yml)
-also compiles all three targets, validates Kotlin/KLib ABI, assembles the
-XCFramework, compiles the Swift smoke fixture, and runs the shared regression
-suite. This documentation does not trigger that workflow.
+also compiles all three targets, validates Kotlin/KLib ABI, compiles the
+external KMP consumer for every iOS target, assembles the XCFramework, audits
+generated headers for internal namespaces and slice drift, compiles the Swift
+smoke fixture, and runs the shared regression suite. This documentation does
+not trigger that workflow.
 
 For local XCFramework and Swift commands, see
 [XCFramework integration](xcframework-integration.md) and the

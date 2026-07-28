@@ -65,11 +65,11 @@ This is not a generated-header inventory. It records the symbols referenced by
 | Provider protocols | `ConnectivityProvider`, `StorageProvider`, `TransportProvider`, `QueueProvider`, `SchedulerProvider` |
 | Observation | `SynchronizationObserver` |
 
-`SynchronizationProviderBindings`, `ProviderLifecycleResult`,
-`RuntimeDependencies`, and `RuntimeIdentifierGenerators` currently come from
-`dataloom-core`. Their export is a known pre-V1 boundary defect, not an
-approved Swift API. The core export must be removed before native Swift
-distribution can be supported.
+`SynchronizationProviderBindings` and `ProviderLifecycleResult` come from the
+public `dataloom-provider-api` boundary. `RuntimeDependencies` and
+`RuntimeIdentifierGenerators` come from `dataloom-api`. The Apple umbrella
+does not export `dataloom-core` or `dataloom-testing`; CI audits generated
+headers so those internal namespaces cannot silently return.
 
 ## Suspend functions
 
@@ -110,7 +110,8 @@ until every throwing path has explicit, tested behavior.
 - No persistent Apple queue.
 - Sealed classes do not receive Swift enum ergonomics automatically.
 - Kotlin `Long` maps to `Int64`; `ByteArray` maps to `KotlinByteArray`.
-- The generated header has no approved compatibility baseline.
+- Generated headers have automated internal-namespace and cross-slice
+  consistency gates, but still require product-level Swift API review.
 - The current smoke does not run synchronization or validate process relaunch.
 
 ## Security requirements
@@ -120,8 +121,8 @@ logs, support bundles, and error bridges do not expose payloads, queue data,
 metadata values, credentials, checkpoint tokens, keys, personal data, provider
 state, or stack traces.
 
-`dataloom-testing` is excluded from the current XCFramework, but that alone is
-not an API or security audit.
+`dataloom-core` and `dataloom-testing` are excluded from the current
+XCFramework, but that alone is not an API or security audit.
 
 ## Related documentation
 

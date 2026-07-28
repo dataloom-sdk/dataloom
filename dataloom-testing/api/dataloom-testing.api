@@ -1,0 +1,199 @@
+public final class io/dataloom/DataLoomTestingModule {
+	public static final field INSTANCE Lio/dataloom/DataLoomTestingModule;
+}
+
+public final class io/dataloom/testing/conflict/ScriptedConflictDetector : io/dataloom/api/conflict/ConflictDetector {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Lio/dataloom/api/conflict/ConflictDetectionResult;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Lio/dataloom/api/conflict/ConflictDetectionResult;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun clearRecordings ()V
+	public fun detect (Lio/dataloom/api/conflict/ConflictDetectionRequest;)Lio/dataloom/api/conflict/ConflictDetectionResult;
+	public final fun enqueueResult (Lio/dataloom/api/conflict/ConflictDetectionResult;)V
+	public final fun getDetectionRequests ()Ljava/util/List;
+	public fun getId-SQTsAXs ()Ljava/lang/String;
+	public final fun resetState ()V
+}
+
+public final class io/dataloom/testing/conflict/ScriptedConflictResolver : io/dataloom/api/conflict/ConflictResolver {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Lio/dataloom/api/conflict/ConflictResolutionDecision;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Lio/dataloom/api/conflict/ConflictResolutionDecision;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun clearRecordings ()V
+	public final fun enqueueDecision (Lio/dataloom/api/conflict/ConflictResolutionDecision;)V
+	public fun getId-wOiKSnc ()Ljava/lang/String;
+	public final fun getResolutionRequests ()Ljava/util/List;
+	public final fun resetState ()V
+	public fun resolve (Lio/dataloom/api/conflict/ConflictResolutionRequest;)Lio/dataloom/api/conflict/ConflictResolutionDecision;
+}
+
+public final class io/dataloom/testing/connectivity/MutableConnectivityProvider : io/dataloom/api/connectivity/ConnectivityProvider {
+	public fun <init> (Lio/dataloom/api/connectivity/ConnectivitySnapshot;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/api/provider/ProviderOperationResult;Lio/dataloom/testing/provider/TestProviderLifecycleController;)V
+	public synthetic fun <init> (Lio/dataloom/api/connectivity/ConnectivitySnapshot;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/api/provider/ProviderOperationResult;Lio/dataloom/testing/provider/TestProviderLifecycleController;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun clearRecordings ()V
+	public fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun currentConnectivity (Lio/dataloom/api/connectivity/ConnectivityCheckRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getConnectivityRequests ()Ljava/util/List;
+	public fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun resetState ()V
+	public final fun setSnapshot (Lio/dataloom/api/connectivity/ConnectivitySnapshot;)V
+}
+
+public final class io/dataloom/testing/identifier/ConstantIdentifierGenerator : io/dataloom/api/identifier/IdentifierGenerator {
+	public fun <init> (Ljava/lang/Object;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun generate ()Ljava/lang/Object;
+	public final fun getValue ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/testing/identifier/SequenceIdentifierGenerator : io/dataloom/api/identifier/IdentifierGenerator {
+	public fun <init> (Ljava/lang/Iterable;)V
+	public fun generate ()Ljava/lang/Object;
+}
+
+public final class io/dataloom/testing/observation/RecordingSynchronizationObserver : io/dataloom/api/observation/SynchronizationObserver {
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun clearRecordings ()V
+	public final fun getEventCount ()I
+	public final fun getEvents ()Ljava/util/List;
+	public fun getId-9boBKdU ()Ljava/lang/String;
+	public final fun getLatestEvent ()Lio/dataloom/api/synchronization/SynchronizationEvent;
+	public fun onEvent (Lio/dataloom/api/synchronization/SynchronizationEvent;)V
+}
+
+public final class io/dataloom/testing/provider/TestProviderLifecycleController {
+	public fun <init> ()V
+	public fun <init> (Lio/dataloom/api/provider/ProviderOperationResult;Lio/dataloom/api/provider/ProviderOperationResult;Lio/dataloom/api/provider/ProviderOperationResult;)V
+	public synthetic fun <init> (Lio/dataloom/api/provider/ProviderOperationResult;Lio/dataloom/api/provider/ProviderOperationResult;Lio/dataloom/api/provider/ProviderOperationResult;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun clearRecordings ()V
+	public final fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getCloseCallCount ()I
+	public final fun getHealthCallCount ()I
+	public final fun getInitializationContexts ()Ljava/util/List;
+	public final fun getInitializeCallCount ()I
+	public final fun getLifecycleCalls ()Ljava/util/List;
+	public final fun getLifecycleState ()Lio/dataloom/api/provider/ProviderLifecycleState;
+	public final fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/testing/queue/InMemoryQueueProvider : io/dataloom/api/queue/QueueProvider {
+	public fun <init> ()V
+	public fun <init> (Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/testing/provider/TestProviderLifecycleController;)V
+	public synthetic fun <init> (Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/testing/provider/TestProviderLifecycleController;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun acquire (Lio/dataloom/api/queue/QueueAcquireRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun cancel (Lio/dataloom/api/queue/QueueCancellationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun clearRecordings ()V
+	public fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun complete (Lio/dataloom/api/queue/QueueCompletionRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun enqueue (Lio/dataloom/api/queue/QueueEnqueueRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun fail (Lio/dataloom/api/queue/QueueFailureRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getAcquireRequests ()Ljava/util/List;
+	public final fun getCancellationRequests ()Ljava/util/List;
+	public final fun getCompletionRequests ()Ljava/util/List;
+	public fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public final fun getEnqueueRequests ()Ljava/util/List;
+	public final fun getEntryCount ()I
+	public final fun getExpiredLeaseRecoveryRequests ()Ljava/util/List;
+	public final fun getFailureRequests ()Ljava/util/List;
+	public final fun getRescheduleRequests ()Ljava/util/List;
+	public fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recoverExpiredLeases (Lio/dataloom/api/queue/ExpiredLeaseRecoveryRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun reschedule (Lio/dataloom/api/queue/QueueRescheduleRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun resetState ()V
+	public final fun snapshotEntryIds ()Ljava/util/List;
+	public final fun snapshotStates ()Ljava/util/Map;
+}
+
+public final class io/dataloom/testing/retry/ScriptedRetryPolicy : io/dataloom/api/retry/RetryPolicy {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Lio/dataloom/api/retry/RetryDecision;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Lio/dataloom/api/retry/RetryDecision;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun clearRecordings ()V
+	public final fun enqueueDecision (Lio/dataloom/api/retry/RetryDecision;)V
+	public fun evaluate (Lio/dataloom/api/retry/RetryEvaluationRequest;)Lio/dataloom/api/retry/RetryDecision;
+	public final fun getEvaluationRequests ()Ljava/util/List;
+	public fun getId-Bqc1ZN8 ()Ljava/lang/String;
+	public final fun resetState ()V
+}
+
+public final class io/dataloom/testing/scheduling/RecordingSchedulerProvider : io/dataloom/api/scheduling/SchedulerProvider {
+	public fun <init> ()V
+	public fun <init> (Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/api/provider/ProviderOperationResult;Lio/dataloom/api/provider/ProviderOperationResult;Lio/dataloom/testing/provider/TestProviderLifecycleController;)V
+	public synthetic fun <init> (Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/api/provider/ProviderOperationResult;Lio/dataloom/api/provider/ProviderOperationResult;Lio/dataloom/testing/provider/TestProviderLifecycleController;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun cancel (Lio/dataloom/api/scheduling/ScheduleCancellationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun clearRecordings ()V
+	public fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun enqueueScheduleResult (Lio/dataloom/api/provider/ProviderOperationResult;)V
+	public final fun getCancellationRequests ()Ljava/util/List;
+	public fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public final fun getScheduleRequests ()Ljava/util/List;
+	public fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun resetState ()V
+	public fun schedule (Lio/dataloom/api/scheduling/ScheduleRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/testing/storage/InMemoryStorageProvider : io/dataloom/api/storage/StorageProvider {
+	public fun <init> ()V
+	public fun <init> (Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/testing/provider/TestProviderLifecycleController;)V
+	public synthetic fun <init> (Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/testing/provider/TestProviderLifecycleController;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun acknowledgeOutboundChanges (Lio/dataloom/api/synchronization/OutboundChangeAcknowledgementRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun applyInboundChanges (Lio/dataloom/api/storage/InboundChangeApplyRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun clearRecordings ()V
+	public fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun enqueueAcknowledgeResult (Lio/dataloom/api/provider/ProviderOperationResult;)V
+	public final fun enqueueApplyInboundResult (Lio/dataloom/api/provider/ProviderOperationResult;)V
+	public final fun enqueueReadOutboundResult (Lio/dataloom/api/provider/ProviderOperationResult;)V
+	public final fun getAcknowledgeRequests ()Ljava/util/List;
+	public final fun getApplyInboundRequests ()Ljava/util/List;
+	public final fun getCheckpointReadRequests ()Ljava/util/List;
+	public final fun getCheckpointWriteRequests ()Ljava/util/List;
+	public fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public final fun getReadOutboundRequests ()Ljava/util/List;
+	public fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun readCheckpoint (Lio/dataloom/api/synchronization/CheckpointReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun readOutboundChanges (Lio/dataloom/api/storage/OutboundChangeReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun resetState ()V
+	public final fun setCheckpointReadFailure (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun setCheckpointWriteFailure (Lio/dataloom/api/error/DataLoomError;)V
+	public fun writeCheckpoint (Lio/dataloom/api/synchronization/CheckpointWriteRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/testing/time/FixedDataLoomClock : io/dataloom/api/time/DataLoomClock {
+	public fun <init> (Lio/dataloom/api/time/DataLoomInstant;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getInstant ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun hashCode ()I
+	public fun now ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/testing/time/MutableDataLoomClock : io/dataloom/api/time/DataLoomClock {
+	public fun <init> (Lio/dataloom/api/time/DataLoomInstant;)V
+	public final fun advanceBy (J)V
+	public fun now ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun set (Lio/dataloom/api/time/DataLoomInstant;)V
+}
+
+public final class io/dataloom/testing/transport/ScriptedTransportProvider : io/dataloom/api/transport/TransportProvider {
+	public fun <init> ()V
+	public fun <init> (Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/testing/provider/TestProviderLifecycleController;)V
+	public synthetic fun <init> (Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/testing/provider/TestProviderLifecycleController;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun clearRecordings ()V
+	public fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun enqueuePullResult (Lio/dataloom/api/provider/ProviderOperationResult;)V
+	public final fun enqueuePushResult (Lio/dataloom/api/provider/ProviderOperationResult;)V
+	public fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public final fun getPullRequests ()Ljava/util/List;
+	public final fun getPushRequests ()Ljava/util/List;
+	public fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun pullChanges (Lio/dataloom/api/transport/PullChangesRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun pushChanges (Lio/dataloom/api/transport/PushChangesRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun resetState ()V
+}
+

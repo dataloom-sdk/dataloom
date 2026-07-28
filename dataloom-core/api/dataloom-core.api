@@ -1,0 +1,55 @@
+public final class io/dataloom/core/provider/ProviderLifecycleCoordinator {
+	public fun <init> (Lio/dataloom/core/provider/ProviderRegistry;Lio/dataloom/api/provider/ProviderInitializationContext;)V
+	public final fun getState ()Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;
+	public final fun initialize (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun shutdown (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/core/provider/ProviderRegistry {
+	public fun <init> (Ljava/util/List;)V
+	public final fun findById-sSMY0RE (Ljava/lang/String;)Lio/dataloom/api/provider/DataLoomProvider;
+	public final fun findByType (Lio/dataloom/api/provider/ProviderType;)Ljava/util/List;
+	public final fun getProviders ()Ljava/util/List;
+	public final fun getSize ()I
+	public final fun isEmpty ()Z
+}
+
+public abstract interface class io/dataloom/core/provider/ProviderResolutionResult {
+}
+
+public final class io/dataloom/core/provider/ProviderResolutionResult$Failure : io/dataloom/core/provider/ProviderResolutionResult {
+	public fun <init> (Ljava/util/List;)V
+	public final fun copy (Ljava/util/List;)Lio/dataloom/core/provider/ProviderResolutionResult$Failure;
+	public static synthetic fun copy$default (Lio/dataloom/core/provider/ProviderResolutionResult$Failure;Ljava/util/List;ILjava/lang/Object;)Lio/dataloom/core/provider/ProviderResolutionResult$Failure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBindingFailures ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/core/provider/ProviderResolutionResult$Success : io/dataloom/core/provider/ProviderResolutionResult {
+	public fun <init> (Lio/dataloom/core/provider/ResolvedSynchronizationProviders;)V
+	public final fun component1 ()Lio/dataloom/core/provider/ResolvedSynchronizationProviders;
+	public final fun copy (Lio/dataloom/core/provider/ResolvedSynchronizationProviders;)Lio/dataloom/core/provider/ProviderResolutionResult$Success;
+	public static synthetic fun copy$default (Lio/dataloom/core/provider/ProviderResolutionResult$Success;Lio/dataloom/core/provider/ResolvedSynchronizationProviders;ILjava/lang/Object;)Lio/dataloom/core/provider/ProviderResolutionResult$Success;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getProviders ()Lio/dataloom/core/provider/ResolvedSynchronizationProviders;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/core/provider/ResolvedSynchronizationProviders : io/dataloom/api/execution/SynchronizationProviderSet {
+	public fun <init> (Lio/dataloom/api/storage/StorageProvider;Lio/dataloom/api/transport/TransportProvider;Lio/dataloom/api/scheduling/SchedulerProvider;Lio/dataloom/api/connectivity/ConnectivityProvider;Lio/dataloom/api/queue/QueueProvider;)V
+	public fun getConnectivityProvider ()Lio/dataloom/api/connectivity/ConnectivityProvider;
+	public fun getQueueProvider ()Lio/dataloom/api/queue/QueueProvider;
+	public fun getSchedulerProvider ()Lio/dataloom/api/scheduling/SchedulerProvider;
+	public fun getStorageProvider ()Lio/dataloom/api/storage/StorageProvider;
+	public fun getTransportProvider ()Lio/dataloom/api/transport/TransportProvider;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/core/provider/SynchronizationProviderResolver {
+	public fun <init> (Lio/dataloom/core/provider/ProviderRegistry;)V
+	public final fun resolve (Lio/dataloom/api/provider/SynchronizationProviderBindings;)Lio/dataloom/core/provider/ProviderResolutionResult;
+}
+

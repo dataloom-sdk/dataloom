@@ -468,6 +468,28 @@ until JVM `.api` references for `dataloom-model`, `dataloom-api`,
 validation does not replace generated Objective-C/Swift header compatibility
 or XCFramework layout checks.
 
+### DL-039 implementation update
+
+The checkpoint above records the defect-discovery state and its safe migration
+plan. The current DL-039 implementation has completed the next boundary slice:
+
+- `dataloom-model` and `dataloom-provider-api` are explicit dependency-root
+  modules;
+- public runtime dependency and provider-binding types no longer come from
+  `dataloom-core`;
+- `dataloom-runtime` retains `dataloom-core` only as an implementation
+  dependency;
+- JVM and three-target iOS KLib baselines cover all six shared modules, with a
+  separate KLib baseline for `dataloom-apple`;
+- the runtime ABI contains zero `dataloom-core` or `dataloom-testing`
+  references, replacing the temporary 13-line allowlist with a zero-tolerance
+  boundary check; and
+- Apple validation compiles an external consumer for every iOS target and
+  rejects internal namespaces or header drift across XCFramework slices.
+
+The remaining macOS validation and review evidence is still required before
+this checkpoint is merged.
+
 ## Validation strategy
 
 Each migration slice must pass locally before it is pushed:

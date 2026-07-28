@@ -87,14 +87,14 @@ orchestration, export, administration, or qualification.
 
 | Capability | Current state | Evidence and limitation |
 |---|---|---|
-| Kotlin Multiplatform foundation | Available foundation | At the audited baseline, shared API, core, runtime, and testing modules compile for JVM plus host-gated `iosArm64`, `iosSimulatorArm64`, and `iosX64`; the post-baseline checkpoint adds `dataloom-model`. A true KMP Android library target, published variants, and Android+iOS consumer application are not yet qualified. |
+| Kotlin Multiplatform foundation | Available foundation | Six shared modules (`model`, `provider-api`, `api`, `core`, `runtime`, and `testing`) have JVM and three-target iOS ABI baselines. A true KMP Android library target, published variants, and Android+iOS consumer application are not yet qualified. |
 | Provider SPI and lifecycle | Available foundation | Provider descriptors, registry, lifecycle, and resolution exist; this is not a complete plugin platform. |
 | Outbound, inbound, and bidirectional synchronization | Available foundation | Runtime pipelines coordinate transport/storage operations; production hardening and the expanded V1 subsystems remain. |
 | Core synchronization strategy engine | Partial foundation | DataLoom's main product purpose requires complete offline-first, remote-first, cache-first, network-only, hybrid, and adaptive strategies. Direction (`PUSH`, `PULL`, `BIDIRECTIONAL`), scope (`FULL`, `DELTA`), explicit outbound/inbound order, connectivity preflight, queueing, and custom pipelines provide useful building blocks, but no versioned strategy contract currently composes source preference, freshness, fallback, persistence, queue, consistency, and reconciliation policy, and no adaptive evaluator selects and durably records that behavior. |
 | Durable queue processing | Available foundation | Queue contracts, worker coordination, retry rescheduling integration, Room queue, and WorkManager adapter exist. |
 | Android integrations | Available foundation | Connectivity, Room queue, and WorkManager modules exist and passed the latest merged validation baseline. No release publication has occurred. |
 | KMP iOS compilation foundation | Validation foundation | Shared targets compile and fake-backed common tests run on `iosSimulatorArm64`. Complete iOS lifecycle, connectivity, background execution, secure storage, files/assets, persistence adapters, published KMP variants, consumer integration, and end-to-end qualification remain. |
-| Optional native Swift packaging foundation | Validation foundation | XCFramework assembly, slice inspection, and selected-symbol Swift compile smoke exist. The framework exports internal core types and lacks runtime, compatibility, signing, and distribution qualification. |
+| Optional native Swift packaging foundation | Validation foundation | XCFramework assembly, slice inspection, and selected-symbol Swift compile smoke exist. The export graph excludes internal core/testing modules; header/API compatibility, runtime, signing, and distribution qualification still remain. |
 | Retry engine | Partial | Custom policy evaluation and queue rescheduling exist; standard strategies, jitter, hard limits, server hints, circuit breaker, half-open recovery, and complete persisted state do not. |
 | Conflict engine | Partial | Custom detector/resolver contracts and lookup/orchestration exist; built-in strategies, decision application, persistence, audit, precedence, loop protection, and metrics do not. |
 | Events and observability | Partial | Lifecycle/progress/retry/conflict callbacks and sequential dispatch exist; canonical envelopes, durable delivery, filtering, back-pressure, metrics, structured logging, tracing/export, and dashboard/read model do not. |
@@ -106,24 +106,25 @@ orchestration, export, administration, or qualification.
 ### Post-baseline DL-039 local checkpoint
 
 The following evidence is newer than audited commit `e855894` and is not part
-of that reproducible baseline. The local DL-039 work has generated JVM ABI
-references for the five current shared modules, introduced `dataloom-model`
-with the unchanged-FQCN clock primitives, and added a check that freezes 13
-existing `dataloom-runtime` → `dataloom-core` public-signature leaks while
-rejecting new ones. This is progress, not GA evidence: the legacy leaks still
-block V1, and the Apple `.klib.api` plus Objective-C/Swift header compatibility
-baselines must be produced on macOS before the change is review-ready.
+of that reproducible baseline. DL-039 introduces the dependency-root
+`dataloom-model` and narrow `dataloom-provider-api` modules, moves public
+runtime dependency inputs to approved public artifacts, and keeps
+`dataloom-core` as an implementation dependency.
 
-Local Linux verification passes build-logic/plugin validation, JVM compilation,
-`checkKotlinAbi`, and the public-dependency fitness checks for the five shared
-modules. With the local API-35 SDK, connectivity debug/release assembly, unit
-tests, and lint pass; Room debug/release plus Android-test assembly, unit tests,
-lint, and the committed/generated schema identity check also pass. No managed
-device was run because no API-35 system image is installed. WorkManager and full
-shared test execution remain unverified in this environment because their
-required Maven artifacts are absent from the offline cache and repository
-access is unavailable; that dependency-resolution blocker is not recorded as a
-product test failure.
+Exact Kotlin 2.4.10 compilation and ABI extraction produced committed JVM and
+KLib references for all six shared modules and a KLib reference for
+`dataloom-apple`. Both runtime references are free of `dataloom-core` and
+`dataloom-testing` types. A runtime ABI boundary task rejects either namespace
+if it appears later. The Apple validation graph compiles an external consumer
+for `iosArm64`, `iosSimulatorArm64`, and `iosX64`, rejects internal namespaces
+from generated headers, and requires identical headers across XCFramework
+slices.
+
+This remains checkpoint evidence rather than GA evidence. Linux cannot produce
+or inspect Apple frameworks, so the first review run must execute the macOS
+header and external-consumer gates. Full Gradle validation must also run in CI
+with the repository's declared dependency graph; a local toolchain/cache
+limitation is not recorded as a product failure.
 
 ## V1 platform and distribution matrix
 
