@@ -2,8 +2,9 @@
 
 [API reference index](./README.md)
 
-> **Status:** Available at-least-once queue-processing foundation. Complete
-> retry history, migrations, platform persistence, and V1 qualification remain.
+> **Status:** Available at-least-once queue-processing foundation. Retry and
+> non-retry deferral transitions are distinct; complete retry/circuit policy,
+> migrations, platform persistence, and V1 qualification remain.
 
 ## Overview
 
@@ -46,6 +47,7 @@ Package: `io.dataloom.runtime.queue`
 - Transition mapping is 1:1 with outcomes:
   - `Completed` -> `QueueProvider.complete`
   - `Reschedule` -> `QueueProvider.reschedule`
+  - `Deferred` -> `QueueProvider.defer`
   - `Failed` -> `QueueProvider.fail`
   - `Cancelled` -> `QueueProvider.cancel`
 - Lease and entry identities are preserved in transitions; replacement leases are
@@ -74,7 +76,12 @@ Package: `io.dataloom.runtime.queue`
 
 - all counters are non-negative
 - `executed <= acquired`
-- `(completed + rescheduled + failed + cancelled) <= executed`
+- `(completed + rescheduled + deferred + failed + cancelled) <= executed`
+
+`QueueProcessingResult.Processed` records retry and deferral availability
+separately as `earliestRescheduledAt` and `earliestDeferredAt`. Its
+`earliestNextAvailableAt` view selects the earlier successful transition.
+Failed provider transitions never contribute availability evidence.
 
 ---
 

@@ -16,6 +16,8 @@ package io.dataloom.runtime.queue
  *   [io.dataloom.api.queue.QueueEntryState.COMPLETED].
  * - [rescheduled] — number of entries that were successfully transitioned to
  *   [io.dataloom.api.queue.QueueEntryState.RETRY_WAITING].
+ * - [deferred] — number of entries that were made available again through a
+ *   non-retry [io.dataloom.api.queue.QueueDeferralRequest].
  * - [failed] — number of entries that were successfully transitioned to
  *   [io.dataloom.api.queue.QueueEntryState.FAILED] or
  *   [io.dataloom.api.queue.QueueEntryState.DEAD_LETTER].
@@ -29,7 +31,7 @@ package io.dataloom.runtime.queue
  * - All counts must be non-negative.
  * - [executed] must not exceed [acquired].
  * - The sum of persisted transition counts ([completed] + [rescheduled] +
- *   [failed] + [cancelled]) must not exceed [executed].
+ *   [failed] + [cancelled] + [deferred]) must not exceed [executed].
  *
  * ## KMP compatibility
  *
@@ -48,6 +50,8 @@ package io.dataloom.runtime.queue
  *   [io.dataloom.api.queue.QueueFailureRequest]. Must be non-negative.
  * @param cancelled number of entries successfully transitioned via
  *   [io.dataloom.api.queue.QueueCancellationRequest]. Must be non-negative.
+ * @param deferred number of entries successfully transitioned via
+ *   [io.dataloom.api.queue.QueueDeferralRequest]. Must be non-negative.
  */
 public data class QueueProcessingSummary(
     /** Number of entries returned by provider acquisition. */
@@ -79,6 +83,12 @@ public data class QueueProcessingSummary(
      * [io.dataloom.api.queue.QueueCancellationRequest].
      */
     public val cancelled: Int,
+
+    /**
+     * Number of entries successfully transitioned via
+     * [io.dataloom.api.queue.QueueDeferralRequest].
+     */
+    public val deferred: Int = 0,
 ) {
     init {
         require(acquired >= 0) {
@@ -99,11 +109,18 @@ public data class QueueProcessingSummary(
         require(cancelled >= 0) {
             "QueueProcessingSummary cancelled must be non-negative, but was $cancelled."
         }
+        require(deferred >= 0) {
+            "QueueProcessingSummary deferred must be non-negative, but was $deferred."
+        }
         require(executed <= acquired) {
             "QueueProcessingSummary executed ($executed) must not exceed acquired ($acquired)."
         }
-        val persistedTotal = completed + rescheduled + failed + cancelled
-        require(persistedTotal <= executed) {
+        val persistedTotal = completed.toLong() +
+            rescheduled.toLong() +
+            failed.toLong() +
+            cancelled.toLong() +
+            deferred.toLong()
+        require(persistedTotal <= executed.toLong()) {
             "QueueProcessingSummary persisted transition total ($persistedTotal) must not exceed " +
                 "executed ($executed)."
         }

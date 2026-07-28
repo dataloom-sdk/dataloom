@@ -147,14 +147,15 @@ and transition logic is owned by the processor.
 
 ## Continuation evidence
 
-`QueueProcessingResult.Processed` carries two continuation evidence fields:
+`QueueProcessingResult.Processed` carries three continuation evidence fields:
 
 | Field | Type | Meaning |
 |---|---|---|
 | `acquisitionLimitReached` | `Boolean` | Acquired count equalled `QueueAcquireRequest.maxEntries`. |
 | `earliestRescheduledAt` | `DataLoomInstant?` | Earliest availability instant from **successfully** persisted reschedule transitions. |
+| `earliestDeferredAt` | `DataLoomInstant?` | Earliest availability instant from **successfully** persisted non-retry deferrals. |
 
-Failed reschedule transitions do **not** contribute a timestamp.
+Failed reschedule or deferral transitions do **not** contribute a timestamp.
 `acquisitionLimitReached` does not claim the queue is definitely non-empty.
 
 ---
@@ -168,25 +169,28 @@ The coordinator builds a `QueueWorkerWakeUpPlan` from continuation evidence:
 | Neither | `NoWakeUp` | — | — |
 | Limit reached only | `Schedule` | `ACQUISITION_LIMIT_REACHED` | `continuationDelay` |
 | Rescheduled only | `Schedule` | `RESCHEDULED_ENTRY_AVAILABLE` | `max(0, earliestRescheduledAt − now)` |
-| Both | `Schedule` | `BOTH` | Earlier of the two candidates |
+| Deferred only | `Schedule` | `DEFERRED_ENTRY_AVAILABLE` | `max(0, earliestDeferredAt − now)` |
+| Retry and deferral | `Schedule` | `RETRY_AND_DEFERRAL_AVAILABLE` | Earlier entry availability |
+| Limit plus retry and/or deferral | `Schedule` | `BOTH` | Earlier of continuation and entry availability |
 
 When both conditions exist, the **earlier** of the two candidate delays is
 chosen. The maximum delay is never selected. A negative delay is never used;
 already-due timestamps produce `SchedulingDelay.ZERO`.
 
 The injected `DataLoomClock` is read **at most once**, only when
-`earliestRescheduledAt` is non-null.
+retry or deferral availability evidence is present.
 
 ---
 
 ## Earliest-delay selection (BOTH case)
 
-When both `acquisitionLimitReached` and `earliestRescheduledAt` are present:
+When `acquisitionLimitReached` and retry or deferral availability are present:
 
 ```
 continuationDelayMs = configuration.continuationDelay.milliseconds
-reschedDelayMs      = max(0, earliestRescheduledAt − clock.now())
-selectedDelay       = min(continuationDelayMs, reschedDelayMs)
+entryAvailableAt    = min(earliestRescheduledAt, earliestDeferredAt)
+entryDelayMs        = max(0, entryAvailableAt − clock.now())
+selectedDelay       = min(continuationDelayMs, entryDelayMs)
 ```
 
 The worker wakes at the earliest time when useful work may be available.
@@ -227,10 +231,10 @@ after successful queue processing:
 
 ## No queue-state rollback
 
-Durable queue transitions (completion, reschedule, failure, cancellation)
-persist inside `DurableQueueExecutionProcessor`. They are not reversed if a
-subsequent scheduler call fails, if the coordinator is cancelled, or for any
-other reason.
+Durable queue transitions (completion, retry reschedule, non-retry deferral,
+failure, cancellation) persist inside `DurableQueueExecutionProcessor`. They
+are not reversed if a subsequent scheduler call fails, if the coordinator is
+cancelled, or for any other reason.
 
 ---
 

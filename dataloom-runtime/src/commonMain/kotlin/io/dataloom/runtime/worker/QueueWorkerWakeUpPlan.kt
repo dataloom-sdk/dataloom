@@ -21,15 +21,15 @@ import io.dataloom.api.scheduling.SchedulingDelay
  *
  * ## Plan selection rules
  *
- * 1. Neither acquisition limit reached nor a rescheduled entry available:
+ * 1. Neither acquisition limit reached nor a retry/deferred entry available:
  *    [NoWakeUp].
  * 2. Only acquisition limit reached: [Schedule] with the configured
  *    [QueueWorkerConfiguration.continuationDelay] and reason
  *    [QueueWorkerWakeUpReason.ACQUISITION_LIMIT_REACHED].
- * 3. Only a rescheduled entry available: [Schedule] with a delay calculated
- *    from the injected [io.dataloom.api.time.DataLoomClock] to
- *    [io.dataloom.runtime.queue.QueueProcessingResult.Processed.earliestRescheduledAt]
- *    and reason [QueueWorkerWakeUpReason.RESCHEDULED_ENTRY_AVAILABLE].
+ * 3. Only future retry or deferral availability exists: [Schedule] with a
+ *    delay calculated from the injected
+ *    [io.dataloom.api.time.DataLoomClock] and a reason that distinguishes
+ *    retry, deferral, or both.
  * 4. Both conditions exist: [Schedule] with the earlier of the two candidate
  *    delays and reason [QueueWorkerWakeUpReason.BOTH].
  *
@@ -49,7 +49,7 @@ public sealed interface QueueWorkerWakeUpPlan {
      * No wake-up is required.
      *
      * Neither the acquisition limit was reached nor were any entries
-     * successfully rescheduled in this processing cycle.
+     * successfully rescheduled or deferred in this processing cycle.
      */
     public data object NoWakeUp : QueueWorkerWakeUpPlan
 

@@ -10,6 +10,7 @@ import io.dataloom.api.queue.QueueProvider
 import io.dataloom.api.queue.QueueAcquireResult
 import io.dataloom.api.queue.QueueCancellationRequest
 import io.dataloom.api.queue.QueueCompletionRequest
+import io.dataloom.api.queue.QueueDeferralRequest
 import io.dataloom.api.queue.QueueEntry
 import io.dataloom.api.queue.QueueFailureRequest
 import io.dataloom.api.queue.QueueRescheduleRequest
@@ -62,6 +63,7 @@ import io.dataloom.api.time.DataLoomInstant
  * |---|---|
  * | [QueueEntryExecutionOutcome.Completed] | [QueueProvider.complete] |
  * | [QueueEntryExecutionOutcome.Reschedule] | [QueueProvider.reschedule] |
+ * | [QueueEntryExecutionOutcome.Deferred] | [QueueProvider.defer] |
  * | [QueueEntryExecutionOutcome.Failed] | [QueueProvider.fail] |
  * | [QueueEntryExecutionOutcome.Cancelled] | [QueueProvider.cancel] |
  *
@@ -180,9 +182,11 @@ public class DurableQueueExecutionProcessor(
         var executed = 0
         var completed = 0
         var rescheduled = 0
+        var deferred = 0
         var failed = 0
         var cancelled = 0
         var earliestRescheduledAt: DataLoomInstant? = null
+        var earliestDeferredAt: DataLoomInstant? = null
 
         for (entry in entries) {
             val outcome = executionHandler.execute(entry)
@@ -202,6 +206,16 @@ public class DurableQueueExecutionProcessor(
                                 earliestRescheduledAt = availableAt
                             }
                         }
+                        is QueueEntryExecutionOutcome.Deferred -> {
+                            deferred++
+                            val availableAt = outcome.availableAt
+                            val current = earliestDeferredAt
+                            if (current == null ||
+                                availableAt.epochMilliseconds < current.epochMilliseconds
+                            ) {
+                                earliestDeferredAt = availableAt
+                            }
+                        }
                         is QueueEntryExecutionOutcome.Failed -> failed++
                         is QueueEntryExecutionOutcome.Cancelled -> cancelled++
                     }
@@ -217,6 +231,7 @@ public class DurableQueueExecutionProcessor(
                             rescheduled = rescheduled,
                             failed = failed,
                             cancelled = cancelled,
+                            deferred = deferred,
                         ),
                         affectedEntryId = entry.id,
                         leaseId = leaseId,
@@ -233,9 +248,11 @@ public class DurableQueueExecutionProcessor(
                 rescheduled = rescheduled,
                 failed = failed,
                 cancelled = cancelled,
+                deferred = deferred,
             ),
             acquisitionLimitReached = acquiredCount >= request.acquireRequest.maxEntries,
             earliestRescheduledAt = earliestRescheduledAt,
+            earliestDeferredAt = earliestDeferredAt,
         )
     }
 
@@ -306,6 +323,17 @@ public class DurableQueueExecutionProcessor(
                 )
                 result.toTransitionResult(QueueProcessingFailureStage.RESCHEDULE_TRANSITION)
             }
+            is QueueEntryExecutionOutcome.Deferred -> {
+                val result = queueProvider.defer(
+                    QueueDeferralRequest(
+                        entryId = entry.id,
+                        leaseId = leaseId,
+                        availableAt = outcome.availableAt,
+                        reason = outcome.reason,
+                    ),
+                )
+                result.toTransitionResult(QueueProcessingFailureStage.DEFERRAL_TRANSITION)
+            }
             is QueueEntryExecutionOutcome.Failed -> {
                 val result = queueProvider.fail(
                     QueueFailureRequest(
@@ -358,6 +386,7 @@ public class DurableQueueExecutionProcessor(
         rescheduled = 0,
         failed = 0,
         cancelled = 0,
+        deferred = 0,
     )
 
     private fun contractViolationError(message: String): DataLoomError =

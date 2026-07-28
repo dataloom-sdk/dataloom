@@ -32,7 +32,7 @@ executed by `SynchronizationConnectivityPreflight`. When connectivity is not
 required (`ConnectivityRequirement.NONE`), no provider is invoked.
 
 `QueuedSynchronizationExecutionHandler` maps `CONNECTIVITY_REQUIREMENT_NOT_MET`
-coordinator rejections to `QueueEntryExecutionOutcome.Reschedule` using an
+coordinator rejections to `QueueEntryExecutionOutcome.Deferred` using an
 injected `DataLoomClock` and the configured `offlineRescheduleDelay`.
 
 ```mermaid
@@ -62,11 +62,9 @@ flowchart LR
     style fail fill:#FFCDC2,stroke:#FF7556
 ```
 
-> [!CAUTION]
-> The current queued branch uses retry rescheduling and fabricates attempt 1
-> for an entry that has never undergone retry evaluation. The required
-> correction is a distinct non-retry deferral transition that preserves a
-> null or existing attempt exactly.
+The deferral branch is separate from retry rescheduling. It preserves a null
+or existing retry attempt exactly and therefore cannot consume retry budget
+before pipeline execution.
 
 ---
 
@@ -151,17 +149,22 @@ DurableQueueExecutionProcessor
             → SynchronizationExecutionResult.Rejected(CONNECTIVITY_REQUIREMENT_NOT_MET)
       → mapCoordinatorRejection:
             reason == CONNECTIVITY_REQUIREMENT_NOT_MET
-                → offlineDeferralReschedule(entry, config, clock)
+                → offlineDeferral(config, clock)
                     → now = clock.now()                         ← injected clock, read once
                     → nextMillis = now.epochMilliseconds + delay.milliseconds (overflow-safe)
                     → availableAt = DataLoomInstant(nextMillis)
-                    → retryAttempt = entry.retryAttempt ?: RetryAttempt(1)
-                → QueueEntryExecutionOutcome.Reschedule(availableAt, retryAttempt)
+                → QueueEntryExecutionOutcome.Deferred(
+                      availableAt,
+                      CONNECTIVITY_REQUIREMENT_NOT_MET,
+                  )
             [no RetryPolicy invocation]
             [no SchedulerProvider call]
             [no QueueProvider call from handler]
-  → DurableQueueExecutionProcessor receives Reschedule
-      → QueueProvider.reschedule(...)
+  → DurableQueueExecutionProcessor receives Deferred
+      → QueueProvider.defer(...)
+            → preserve retryAttempt exactly
+            → PENDING when attempt is null
+            → RETRY_WAITING when attempt N exists
 ```
 
 ---
@@ -219,7 +222,7 @@ construction.
 Extended with optional `connectivityConfiguration` and `clock` constructor
 parameters. When both are present and the coordinator returns
 `CONNECTIVITY_REQUIREMENT_NOT_MET`, the handler returns
-`QueueEntryExecutionOutcome.Reschedule`. For all other connectivity rejections,
+`QueueEntryExecutionOutcome.Deferred`. For all other connectivity rejections,
 it returns `QueueEntryExecutionOutcome.Failed`.
 
 ---
@@ -229,11 +232,11 @@ it returns `QueueEntryExecutionOutcome.Failed`.
 `QueuedSynchronizationExecutionHandler` never invokes `SchedulerProvider`
 directly for offline queue deferral.
 
-Offline deferral produces `QueueEntryExecutionOutcome.Reschedule` only. The
+Offline deferral produces `QueueEntryExecutionOutcome.Deferred` only. The
 `DurableQueueExecutionProcessor` translates this outcome to
-`QueueProvider.reschedule()`. No `ScheduleRequest` is created inside either
+`QueueProvider.defer()`. No `ScheduleRequest` is created inside either
 component. After persistence, `QueueWorkerCoordinator` may derive one worker
-wake-up from `QueueProcessingResult.Processed.earliestRescheduledAt` and invoke
+wake-up from `QueueProcessingResult.Processed.earliestDeferredAt` and invoke
 the configured scheduler.
 
 ---

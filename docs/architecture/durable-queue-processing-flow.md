@@ -51,6 +51,7 @@ performs no queue transition.
 |---|---|
 | `Completed` | `QueueProvider.complete` |
 | `Reschedule` | `QueueProvider.reschedule` |
+| `Deferred` | `QueueProvider.defer` |
 | `Failed` | `QueueProvider.fail` |
 | `Cancelled` | `QueueProvider.cancel` |
 

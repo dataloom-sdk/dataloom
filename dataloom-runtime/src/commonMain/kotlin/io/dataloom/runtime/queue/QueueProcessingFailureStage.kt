@@ -46,6 +46,12 @@ public enum class QueueProcessingFailureStage {
     RESCHEDULE_TRANSITION,
 
     /**
+     * The [io.dataloom.api.queue.QueueProvider.defer] call failed for an entry
+     * whose handler returned [QueueEntryExecutionOutcome.Deferred].
+     */
+    DEFERRAL_TRANSITION,
+
+    /**
      * The [io.dataloom.api.queue.QueueProvider.fail] call failed for an
      * entry whose handler returned [QueueEntryExecutionOutcome.Failed].
      */

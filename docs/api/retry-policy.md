@@ -43,6 +43,12 @@ The current runtime evaluates this contract through scheduler-backed retry
 orchestration and queue-backed retry evaluation. That integration does not
 supply the complete standard V1 retry engine.
 
+An unmet execution constraint is not a failed attempt. Connectivity deferral
+therefore bypasses `RetryPolicy`, persists no error, and preserves the queued
+entry's existing attempt exactly: null remains null and attempt N remains N.
+Only a genuine pipeline failure advances the attempt supplied to retry
+evaluation.
+
 ---
 
 ## Contracts

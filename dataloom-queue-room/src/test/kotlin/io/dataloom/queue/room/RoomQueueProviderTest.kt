@@ -25,6 +25,8 @@ import io.dataloom.api.queue.QueueAcquireRequest
 import io.dataloom.api.queue.QueueAcquireResult
 import io.dataloom.api.queue.QueueCancellationRequest
 import io.dataloom.api.queue.QueueCompletionRequest
+import io.dataloom.api.queue.QueueDeferralReason
+import io.dataloom.api.queue.QueueDeferralRequest
 import io.dataloom.api.queue.QueueEnqueueRequest
 import io.dataloom.api.queue.QueueEntry
 import io.dataloom.api.queue.QueueEntryState
@@ -199,6 +201,48 @@ class RoomQueueProviderTest {
             )
 
             assertIs<ProviderOperationResult.Success<Unit>>(result)
+        }
+    }
+
+    @Test
+    fun `defer forwards the guarded lease and availability without retry data`() {
+        runBlocking {
+            whenever(
+                dao.deferEntry(
+                    eq("entry-1"),
+                    eq("lease-1"),
+                    eq(3_000L),
+                ),
+            ).thenReturn(1)
+
+            val result = provider.defer(
+                QueueDeferralRequest(
+                    entryId = QueueEntryId("entry-1"),
+                    leaseId = QueueLeaseId("lease-1"),
+                    availableAt = DataLoomInstant(3_000L),
+                    reason = QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET,
+                ),
+            )
+
+            assertIs<ProviderOperationResult.Success<Unit>>(result)
+        }
+    }
+
+    @Test
+    fun `defer rejects a stale lease`() {
+        runBlocking {
+            whenever(dao.deferEntry(any(), any(), any())).thenReturn(0)
+            val result = provider.defer(
+                QueueDeferralRequest(
+                    entryId = QueueEntryId("entry-1"),
+                    leaseId = QueueLeaseId("stale-lease"),
+                    availableAt = DataLoomInstant(3_000L),
+                    reason = QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET,
+                ),
+            )
+
+            val failure = assertIs<ProviderOperationResult.Failure>(result)
+            assertEquals("QUEUE_STALE_LEASE", failure.error.code.value)
         }
     }
 

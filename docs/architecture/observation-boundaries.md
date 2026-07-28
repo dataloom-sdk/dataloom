@@ -141,7 +141,7 @@ Synchronization events (Started, PhaseChanged, ProgressUpdated, …)
         ↓
 SynchronizationResult
         ↓
-QueueProvider.complete(), reschedule(), or fail()
+QueueProvider.complete(), defer(), reschedule(), or fail()
 ```
 
 Events and results do **not** mutate queue entries themselves. The queue

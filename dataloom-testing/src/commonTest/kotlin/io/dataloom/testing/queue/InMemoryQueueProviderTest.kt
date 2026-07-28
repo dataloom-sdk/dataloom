@@ -12,6 +12,7 @@ import io.dataloom.api.time.DataLoomInstant
 import io.dataloom.testing.sampleQueueAcquireRequest
 import io.dataloom.testing.sampleQueueCancellationRequest
 import io.dataloom.testing.sampleQueueCompletionRequest
+import io.dataloom.testing.sampleQueueDeferralRequest
 import io.dataloom.testing.sampleQueueEnqueueRequest
 import io.dataloom.testing.sampleQueueEntry
 import io.dataloom.testing.sampleQueueFailureRequest
@@ -20,6 +21,7 @@ import io.dataloom.testing.runSuspend
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 
 class InMemoryQueueProviderTest {
     @Test
@@ -135,6 +137,68 @@ class InMemoryQueueProviderTest {
     }
 
     @Test
+    fun `initial deferral preserves null retry history and pending state`() {
+        val provider = InMemoryQueueProvider()
+        runSuspend { provider.enqueue(sampleQueueEnqueueRequest()) }
+        runSuspend { provider.acquire(sampleQueueAcquireRequest()) }
+
+        val result = runSuspend {
+            provider.defer(sampleQueueDeferralRequest(availableAt = 50_000L))
+        }
+
+        assertEquals(ProviderOperationResult.Success(Unit), result)
+        assertEquals(QueueEntryState.PENDING, provider.snapshotStates().values.single())
+        val reacquired = runSuspend {
+            provider.acquire(sampleQueueAcquireRequest(acquiredAt = 50_000L, leaseExpiresAt = 55_000L))
+        }
+        val entry = ((reacquired as ProviderOperationResult.Success).value as QueueAcquireResult.Entries)
+            .entries.single()
+        assertNull(entry.retryAttempt)
+    }
+
+    @Test
+    fun `repeated initial deferral never fabricates a retry attempt`() {
+        val provider = InMemoryQueueProvider()
+        runSuspend { provider.enqueue(sampleQueueEnqueueRequest()) }
+        runSuspend { provider.acquire(sampleQueueAcquireRequest()) }
+        runSuspend { provider.defer(sampleQueueDeferralRequest(availableAt = 50_000L)) }
+        runSuspend {
+            provider.acquire(sampleQueueAcquireRequest(acquiredAt = 50_000L, leaseExpiresAt = 55_000L))
+        }
+
+        runSuspend { provider.defer(sampleQueueDeferralRequest(availableAt = 60_000L)) }
+
+        assertEquals(QueueEntryState.PENDING, provider.snapshotStates().values.single())
+        val reacquired = runSuspend {
+            provider.acquire(sampleQueueAcquireRequest(acquiredAt = 60_000L, leaseExpiresAt = 65_000L))
+        }
+        val entry = ((reacquired as ProviderOperationResult.Success).value as QueueAcquireResult.Entries)
+            .entries.single()
+        assertNull(entry.retryAttempt)
+    }
+
+    @Test
+    fun `deferral after retry preserves attempt and retry waiting state`() {
+        val provider = InMemoryQueueProvider()
+        runSuspend { provider.enqueue(sampleQueueEnqueueRequest()) }
+        runSuspend { provider.acquire(sampleQueueAcquireRequest()) }
+        runSuspend { provider.reschedule(sampleQueueRescheduleRequest()) }
+        runSuspend {
+            provider.acquire(sampleQueueAcquireRequest(acquiredAt = 50_000L, leaseExpiresAt = 55_000L))
+        }
+
+        runSuspend { provider.defer(sampleQueueDeferralRequest(availableAt = 60_000L)) }
+
+        assertEquals(QueueEntryState.RETRY_WAITING, provider.snapshotStates().values.single())
+        val reacquired = runSuspend {
+            provider.acquire(sampleQueueAcquireRequest(acquiredAt = 60_000L, leaseExpiresAt = 65_000L))
+        }
+        val entry = ((reacquired as ProviderOperationResult.Success).value as QueueAcquireResult.Entries)
+            .entries.single()
+        assertEquals(RetryAttempt(2), entry.retryAttempt)
+    }
+
+    @Test
     fun `fail with failed disposition transitions entry to failed`() {
         val provider = InMemoryQueueProvider()
         runSuspend { provider.enqueue(sampleQueueEnqueueRequest()) }
@@ -179,6 +243,36 @@ class InMemoryQueueProviderTest {
         }
         assertEquals(ProviderOperationResult.Success(ExpiredLeaseRecoveryResult(1)), result)
         assertEquals(QueueEntryState.PENDING, provider.snapshotStates().values.single())
+        val reacquired = runSuspend {
+            provider.acquire(sampleQueueAcquireRequest(acquiredAt = 26_000L, leaseExpiresAt = 30_000L))
+        }
+        val entry = ((reacquired as ProviderOperationResult.Success).value as QueueAcquireResult.Entries)
+            .entries.single()
+        assertNull(entry.retryAttempt)
+    }
+
+    @Test
+    fun `recover expired lease preserves retry attempt and retry waiting state`() {
+        val provider = InMemoryQueueProvider()
+        runSuspend { provider.enqueue(sampleQueueEnqueueRequest()) }
+        runSuspend { provider.acquire(sampleQueueAcquireRequest()) }
+        runSuspend { provider.reschedule(sampleQueueRescheduleRequest()) }
+        runSuspend {
+            provider.acquire(sampleQueueAcquireRequest(acquiredAt = 50_000L, leaseExpiresAt = 55_000L))
+        }
+
+        val result = runSuspend {
+            provider.recoverExpiredLeases(ExpiredLeaseRecoveryRequest(currentTime = DataLoomInstant(56_000L)))
+        }
+
+        assertEquals(ProviderOperationResult.Success(ExpiredLeaseRecoveryResult(1)), result)
+        assertEquals(QueueEntryState.RETRY_WAITING, provider.snapshotStates().values.single())
+        val reacquired = runSuspend {
+            provider.acquire(sampleQueueAcquireRequest(acquiredAt = 56_000L, leaseExpiresAt = 60_000L))
+        }
+        val entry = ((reacquired as ProviderOperationResult.Success).value as QueueAcquireResult.Entries)
+            .entries.single()
+        assertEquals(RetryAttempt(2), entry.retryAttempt)
     }
 
     @Test

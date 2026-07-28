@@ -523,6 +523,19 @@ public final class io/dataloom/runtime/queue/QueueEntryExecutionOutcome$Complete
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/runtime/queue/QueueEntryExecutionOutcome$Deferred : io/dataloom/runtime/queue/QueueEntryExecutionOutcome {
+	public fun <init> (Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/queue/QueueDeferralReason;)V
+	public final fun component1 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component2 ()Lio/dataloom/api/queue/QueueDeferralReason;
+	public final fun copy (Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/queue/QueueDeferralReason;)Lio/dataloom/runtime/queue/QueueEntryExecutionOutcome$Deferred;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/queue/QueueEntryExecutionOutcome$Deferred;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/queue/QueueDeferralReason;ILjava/lang/Object;)Lio/dataloom/runtime/queue/QueueEntryExecutionOutcome$Deferred;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAvailableAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getReason ()Lio/dataloom/api/queue/QueueDeferralReason;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/runtime/queue/QueueEntryExecutionOutcome$Failed : io/dataloom/runtime/queue/QueueEntryExecutionOutcome {
 	public fun <init> (Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/queue/QueueFailureDisposition;)V
 	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
@@ -556,6 +569,7 @@ public final class io/dataloom/runtime/queue/QueueProcessingFailureStage : java/
 	public static final field ACQUISITION_VALIDATION Lio/dataloom/runtime/queue/QueueProcessingFailureStage;
 	public static final field CANCELLATION_TRANSITION Lio/dataloom/runtime/queue/QueueProcessingFailureStage;
 	public static final field COMPLETION_TRANSITION Lio/dataloom/runtime/queue/QueueProcessingFailureStage;
+	public static final field DEFERRAL_TRANSITION Lio/dataloom/runtime/queue/QueueProcessingFailureStage;
 	public static final field FAILURE_TRANSITION Lio/dataloom/runtime/queue/QueueProcessingFailureStage;
 	public static final field RESCHEDULE_TRANSITION Lio/dataloom/runtime/queue/QueueProcessingFailureStage;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
@@ -585,15 +599,18 @@ public final class io/dataloom/runtime/queue/QueueProcessingResult$NoWork : io/d
 }
 
 public final class io/dataloom/runtime/queue/QueueProcessingResult$Processed : io/dataloom/runtime/queue/QueueProcessingResult {
-	public fun <init> (Lio/dataloom/runtime/queue/QueueProcessingSummary;ZLio/dataloom/api/time/DataLoomInstant;)V
-	public synthetic fun <init> (Lio/dataloom/runtime/queue/QueueProcessingSummary;ZLio/dataloom/api/time/DataLoomInstant;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/dataloom/runtime/queue/QueueProcessingSummary;ZLio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/queue/QueueProcessingSummary;ZLio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lio/dataloom/runtime/queue/QueueProcessingSummary;
 	public final fun component2 ()Z
 	public final fun component3 ()Lio/dataloom/api/time/DataLoomInstant;
-	public final fun copy (Lio/dataloom/runtime/queue/QueueProcessingSummary;ZLio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/runtime/queue/QueueProcessingResult$Processed;
-	public static synthetic fun copy$default (Lio/dataloom/runtime/queue/QueueProcessingResult$Processed;Lio/dataloom/runtime/queue/QueueProcessingSummary;ZLio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/runtime/queue/QueueProcessingResult$Processed;
+	public final fun component4 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy (Lio/dataloom/runtime/queue/QueueProcessingSummary;ZLio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/runtime/queue/QueueProcessingResult$Processed;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/queue/QueueProcessingResult$Processed;Lio/dataloom/runtime/queue/QueueProcessingSummary;ZLio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/runtime/queue/QueueProcessingResult$Processed;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAcquisitionLimitReached ()Z
+	public final fun getEarliestDeferredAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getEarliestNextAvailableAt ()Lio/dataloom/api/time/DataLoomInstant;
 	public final fun getEarliestRescheduledAt ()Lio/dataloom/api/time/DataLoomInstant;
 	public final fun getSummary ()Lio/dataloom/runtime/queue/QueueProcessingSummary;
 	public fun hashCode ()I
@@ -634,19 +651,22 @@ public final class io/dataloom/runtime/queue/QueueProcessingResult$QueueProvider
 }
 
 public final class io/dataloom/runtime/queue/QueueProcessingSummary {
-	public fun <init> (IIIIII)V
+	public fun <init> (IIIIIII)V
+	public synthetic fun <init> (IIIIIIIILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()I
 	public final fun component2 ()I
 	public final fun component3 ()I
 	public final fun component4 ()I
 	public final fun component5 ()I
 	public final fun component6 ()I
-	public final fun copy (IIIIII)Lio/dataloom/runtime/queue/QueueProcessingSummary;
-	public static synthetic fun copy$default (Lio/dataloom/runtime/queue/QueueProcessingSummary;IIIIIIILjava/lang/Object;)Lio/dataloom/runtime/queue/QueueProcessingSummary;
+	public final fun component7 ()I
+	public final fun copy (IIIIIII)Lio/dataloom/runtime/queue/QueueProcessingSummary;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/queue/QueueProcessingSummary;IIIIIIIILjava/lang/Object;)Lio/dataloom/runtime/queue/QueueProcessingSummary;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAcquired ()I
 	public final fun getCancelled ()I
 	public final fun getCompleted ()I
+	public final fun getDeferred ()I
 	public final fun getExecuted ()I
 	public final fun getFailed ()I
 	public final fun getRescheduled ()I
@@ -1179,7 +1199,9 @@ public final class io/dataloom/runtime/worker/QueueWorkerWakeUpPlan$Schedule : i
 public final class io/dataloom/runtime/worker/QueueWorkerWakeUpReason : java/lang/Enum {
 	public static final field ACQUISITION_LIMIT_REACHED Lio/dataloom/runtime/worker/QueueWorkerWakeUpReason;
 	public static final field BOTH Lio/dataloom/runtime/worker/QueueWorkerWakeUpReason;
+	public static final field DEFERRED_ENTRY_AVAILABLE Lio/dataloom/runtime/worker/QueueWorkerWakeUpReason;
 	public static final field RESCHEDULED_ENTRY_AVAILABLE Lio/dataloom/runtime/worker/QueueWorkerWakeUpReason;
+	public static final field RETRY_AND_DEFERRAL_AVAILABLE Lio/dataloom/runtime/worker/QueueWorkerWakeUpReason;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/worker/QueueWorkerWakeUpReason;
 	public static fun values ()[Lio/dataloom/runtime/worker/QueueWorkerWakeUpReason;

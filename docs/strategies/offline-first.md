@@ -40,7 +40,7 @@ The repository already has:
 - durable queue models and Room/in-memory queue providers;
 - queue processing, worker wake-up planning, and Android WorkManager
   integration;
-- connectivity preflight and queued offline rescheduling; and
+- connectivity preflight and retry-history-safe queued offline deferral; and
 - retry, conflict, and event extension foundations.
 
 See [Storage Provider](../api/storage-provider.md),
@@ -56,10 +56,8 @@ It does **not** yet provide the complete strategy because:
 - direct connectivity rejection does not automatically become durable work;
 - the request and queued entry do not carry an effective strategy/configuration
   decision;
-- current offline deferral is represented through retry-shaped state rather
-  than a distinct non-retry deferral transition;
-- retry history is not yet trustworthy across every deferral and expired-lease
-  recovery path; and
+- the standard built-in retry/circuit engine and its durable policy state are
+  not complete; and
 - complete conflict persistence, durable event delivery, and restart
   qualification remain release work.
 

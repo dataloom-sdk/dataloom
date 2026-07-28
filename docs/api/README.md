@@ -116,9 +116,10 @@ not implement the approved six-strategy product architecture by themselves.
 | [Queued synchronization execution](./queued-synchronization-execution.md) | Available foundation | Queue-entry resolution, synchronization execution, and retry evaluation. |
 | [Queue worker coordinator](./queue-worker-coordinator.md) | Available foundation | Recovery, bounded processing, and scheduler-backed wake-up planning. |
 
-Queue processing is an at-least-once foundation. V1 still requires complete
-restart-safe retry history, migration evidence, cross-platform persistence,
-and end-to-end qualification.
+Queue processing is an at-least-once foundation. Connectivity deferral and
+expired-lease recovery now preserve retry attempt history. V1 still requires
+complete durable retry/circuit policy state, migration evidence,
+cross-platform persistence, and end-to-end qualification.
 
 ## Retry and conflict
 

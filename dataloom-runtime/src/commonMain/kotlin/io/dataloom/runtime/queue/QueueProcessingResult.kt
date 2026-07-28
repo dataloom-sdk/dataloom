@@ -52,9 +52,10 @@ public sealed interface QueueProcessingResult {
      *
      * ## Continuation evidence
      *
-     * [acquisitionLimitReached] and [earliestRescheduledAt] expose safe
-     * evidence that a caller — such as [io.dataloom.runtime.worker.QueueWorkerCoordinator]
-     * — can use to decide whether another processing cycle is worth scheduling.
+     * [acquisitionLimitReached], [earliestRescheduledAt], and
+     * [earliestDeferredAt] expose safe evidence that a caller — such as
+     * [io.dataloom.runtime.worker.QueueWorkerCoordinator] — can use to decide
+     * whether another processing cycle is worth scheduling.
      *
      * - [acquisitionLimitReached] is `true` when the number of acquired entries
      *   equals [io.dataloom.api.queue.QueueAcquireRequest.maxEntries].
@@ -71,6 +72,9 @@ public sealed interface QueueProcessingResult {
      * @param earliestRescheduledAt the earliest [DataLoomInstant] from
      *   successfully persisted reschedule transitions, or `null` when no entry
      *   was rescheduled successfully. Defaults to `null`.
+     * @param earliestDeferredAt the earliest [DataLoomInstant] from
+     *   successfully persisted non-retry deferral transitions, or `null` when
+     *   no entry was deferred successfully. Defaults to `null`.
      */
     public data class Processed(
         /** Immutable counters describing the completed processing cycle. */
@@ -94,7 +98,30 @@ public sealed interface QueueProcessingResult {
          * timestamp. Defaults to `null`.
          */
         public val earliestRescheduledAt: DataLoomInstant? = null,
-    ) : QueueProcessingResult
+
+        /**
+         * The earliest [DataLoomInstant] from successfully persisted non-retry
+         * deferrals, or `null` when no entry was deferred.
+         */
+        public val earliestDeferredAt: DataLoomInstant? = null,
+    ) : QueueProcessingResult {
+
+        /**
+         * Earliest successful future-availability transition across retry
+         * reschedules and non-retry deferrals.
+         */
+        public val earliestNextAvailableAt: DataLoomInstant?
+            get() {
+                val retryAt = earliestRescheduledAt
+                val deferredAt = earliestDeferredAt
+                return when {
+                    retryAt == null -> deferredAt
+                    deferredAt == null -> retryAt
+                    retryAt.epochMilliseconds <= deferredAt.epochMilliseconds -> retryAt
+                    else -> deferredAt
+                }
+            }
+    }
 
     /**
      * A [io.dataloom.api.queue.QueueProvider] operation failed during the

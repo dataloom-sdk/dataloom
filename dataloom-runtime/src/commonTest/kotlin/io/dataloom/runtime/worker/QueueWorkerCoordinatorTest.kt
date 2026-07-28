@@ -33,6 +33,8 @@ import io.dataloom.api.queue.QueueAcquireRequest
 import io.dataloom.api.queue.QueueAcquireResult
 import io.dataloom.api.queue.QueueCancellationRequest
 import io.dataloom.api.queue.QueueCompletionRequest
+import io.dataloom.api.queue.QueueDeferralRequest
+import io.dataloom.api.queue.QueueDeferralReason
 import io.dataloom.api.queue.QueueEntry
 import io.dataloom.api.queue.QueueEntryState
 import io.dataloom.api.queue.QueueEnqueueRequest
@@ -282,6 +284,9 @@ class QueueWorkerCoordinatorTest {
         override suspend fun reschedule(request: QueueRescheduleRequest): ProviderOperationResult<Unit> =
             rescheduleResponse
 
+        override suspend fun defer(request: QueueDeferralRequest): ProviderOperationResult<Unit> =
+            ProviderOperationResult.Success(Unit)
+
         override suspend fun fail(request: QueueFailureRequest): ProviderOperationResult<Unit> =
             ProviderOperationResult.Success(Unit)
 
@@ -300,6 +305,15 @@ class QueueWorkerCoordinatorTest {
         private val outcome: QueueEntryExecutionOutcome,
     ) : QueueEntryExecutionHandler {
         override suspend fun execute(entry: QueueEntry): QueueEntryExecutionOutcome = outcome
+    }
+
+    private class SequencedOutcomeHandler(
+        outcomes: List<QueueEntryExecutionOutcome>,
+    ) : QueueEntryExecutionHandler {
+        private val remaining = outcomes.toMutableList()
+
+        override suspend fun execute(entry: QueueEntry): QueueEntryExecutionOutcome =
+            remaining.removeAt(0)
     }
 
     private open class FakeSchedulerProvider(
@@ -875,6 +889,76 @@ class QueueWorkerCoordinatorTest {
             configuration = defaultConfiguration,
         )
         runSuspend { c.run(noRecoveryRunRequest) }
+        assertEquals(1, scheduler.scheduleCallCount)
+    }
+
+    // =========================================================================
+    // Deferred-entry wake-up
+    // =========================================================================
+
+    @Test
+    fun `deferred entry schedules its exact availability with deferral reason`() {
+        val entry = leasedEntry()
+        val provider = FakeQueueProvider(acquireResponse = entriesResult(entry))
+        val scheduler = FakeSchedulerProvider()
+        val clock = FixedClock(t1)
+        val c = coordinator(
+            queueProvider = provider,
+            schedulerProvider = scheduler,
+            handler = FixedOutcomeHandler(
+                QueueEntryExecutionOutcome.Deferred(
+                    availableAt = t3,
+                    reason = QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET,
+                ),
+            ),
+            clock = clock,
+            configuration = defaultConfiguration,
+        )
+
+        val result = runSuspend { c.run(noRecoveryRunRequest) }
+
+        val completed = assertIs<QueueWorkerRunResult.ProcessingCompleted>(result)
+        val scheduled = assertIs<QueueWorkerSchedulingResult.Scheduled>(completed.schedulingResult)
+        assertEquals(QueueWorkerWakeUpReason.DEFERRED_ENTRY_AVAILABLE, scheduled.plan.reason)
+        assertEquals(SchedulingDelay(2_000_000L), scheduled.plan.delay)
+        assertEquals(1, scheduler.scheduleCallCount)
+    }
+
+    @Test
+    fun `retry and deferral schedule once at the earlier availability`() {
+        val retryEntry = leasedEntry(entryId = "retry-entry")
+        val deferredEntry = leasedEntry(entryId = "deferred-entry")
+        val provider = FakeQueueProvider(
+            acquireResponse = entriesResult(retryEntry, deferredEntry),
+        )
+        val scheduler = FakeSchedulerProvider()
+        val clock = FixedClock(t0)
+        val c = coordinator(
+            queueProvider = provider,
+            schedulerProvider = scheduler,
+            handler = SequencedOutcomeHandler(
+                listOf(
+                    QueueEntryExecutionOutcome.Reschedule(
+                        retryAttempt = RetryAttempt(1),
+                        availableAt = t3,
+                        error = sampleError(),
+                    ),
+                    QueueEntryExecutionOutcome.Deferred(
+                        availableAt = t2,
+                        reason = QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET,
+                    ),
+                ),
+            ),
+            clock = clock,
+            configuration = defaultConfiguration,
+        )
+
+        val result = runSuspend { c.run(noRecoveryRunRequest) }
+
+        val completed = assertIs<QueueWorkerRunResult.ProcessingCompleted>(result)
+        val scheduled = assertIs<QueueWorkerSchedulingResult.Scheduled>(completed.schedulingResult)
+        assertEquals(QueueWorkerWakeUpReason.RETRY_AND_DEFERRAL_AVAILABLE, scheduled.plan.reason)
+        assertEquals(SchedulingDelay(2_000_000L), scheduled.plan.delay)
         assertEquals(1, scheduler.scheduleCallCount)
     }
 

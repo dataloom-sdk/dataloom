@@ -23,6 +23,7 @@ import io.dataloom.api.queue.QueueAcquireRequest
 import io.dataloom.api.queue.QueueAcquireResult
 import io.dataloom.api.queue.QueueCancellationRequest
 import io.dataloom.api.queue.QueueCompletionRequest
+import io.dataloom.api.queue.QueueDeferralRequest
 import io.dataloom.api.queue.QueueEntry
 import io.dataloom.api.queue.QueueEntryState
 import io.dataloom.api.queue.QueueEnqueueRequest
@@ -54,6 +55,7 @@ public class InMemoryQueueProvider(
     private val recordedAcquireRequests: MutableList<QueueAcquireRequest> = mutableListOf()
     private val recordedCompletionRequests: MutableList<QueueCompletionRequest> = mutableListOf()
     private val recordedRescheduleRequests: MutableList<QueueRescheduleRequest> = mutableListOf()
+    private val recordedDeferralRequests: MutableList<QueueDeferralRequest> = mutableListOf()
     private val recordedFailureRequests: MutableList<QueueFailureRequest> = mutableListOf()
     private val recordedCancellationRequests: MutableList<QueueCancellationRequest> = mutableListOf()
     private val recordedRecoveryRequests: MutableList<ExpiredLeaseRecoveryRequest> = mutableListOf()
@@ -73,6 +75,10 @@ public class InMemoryQueueProvider(
     /** Recorded reschedule requests in call order. */
     public val rescheduleRequests: List<QueueRescheduleRequest>
         get() = recordedRescheduleRequests.toList()
+
+    /** Recorded non-retry deferral requests in call order. */
+    public val deferralRequests: List<QueueDeferralRequest>
+        get() = recordedDeferralRequests.toList()
 
     /** Recorded failure requests in call order. */
     public val failureRequests: List<QueueFailureRequest>
@@ -182,6 +188,25 @@ public class InMemoryQueueProvider(
         }
     }
 
+    override suspend fun defer(
+        request: QueueDeferralRequest,
+    ): ProviderOperationResult<Unit> {
+        recordedDeferralRequests += request
+        return withValidatedLease(request.entryId, request.leaseId) { entry ->
+            entries[request.entryId] = entry.copy(
+                state = if (entry.retryAttempt == null) {
+                    QueueEntryState.PENDING
+                } else {
+                    QueueEntryState.RETRY_WAITING
+                },
+                availableAt = request.availableAt,
+                lease = null,
+                lastError = null,
+            )
+            ProviderOperationResult.Success(Unit)
+        }
+    }
+
     override suspend fun fail(
         request: QueueFailureRequest,
     ): ProviderOperationResult<Unit> {
@@ -238,8 +263,11 @@ public class InMemoryQueueProvider(
                 lease.expiresAt.epochMilliseconds < request.currentTime.epochMilliseconds
             ) {
                 entries[entryId] = entry.copy(
-                    state = QueueEntryState.PENDING,
-                    retryAttempt = null,
+                    state = if (entry.retryAttempt == null) {
+                        QueueEntryState.PENDING
+                    } else {
+                        QueueEntryState.RETRY_WAITING
+                    },
                     lease = null,
                     lastError = null,
                 )
@@ -262,6 +290,7 @@ public class InMemoryQueueProvider(
         recordedAcquireRequests.clear()
         recordedCompletionRequests.clear()
         recordedRescheduleRequests.clear()
+        recordedDeferralRequests.clear()
         recordedFailureRequests.clear()
         recordedCancellationRequests.clear()
         recordedRecoveryRequests.clear()

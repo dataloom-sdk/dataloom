@@ -32,6 +32,8 @@ import io.dataloom.api.queue.QueueAcquireRequest
 import io.dataloom.api.queue.QueueAcquireResult
 import io.dataloom.api.queue.QueueCancellationRequest
 import io.dataloom.api.queue.QueueCompletionRequest
+import io.dataloom.api.queue.QueueDeferralRequest
+import io.dataloom.api.queue.QueueDeferralReason
 import io.dataloom.api.queue.QueueEntry
 import io.dataloom.api.queue.QueueEntryState
 import io.dataloom.api.queue.QueueEnqueueRequest
@@ -180,6 +182,8 @@ class DurableQueueExecutionProcessorTest {
             ProviderOperationResult.Success(Unit),
         private val rescheduleResponse: ProviderOperationResult<Unit> =
             ProviderOperationResult.Success(Unit),
+        private val deferResponse: ProviderOperationResult<Unit> =
+            ProviderOperationResult.Success(Unit),
         private val failResponse: ProviderOperationResult<Unit> =
             ProviderOperationResult.Success(Unit),
         private val cancelResponse: ProviderOperationResult<Unit> =
@@ -189,6 +193,7 @@ class DurableQueueExecutionProcessorTest {
         val acquireRequests = mutableListOf<QueueAcquireRequest>()
         val completionRequests = mutableListOf<QueueCompletionRequest>()
         val rescheduleRequests = mutableListOf<QueueRescheduleRequest>()
+        val deferralRequests = mutableListOf<QueueDeferralRequest>()
         val failureRequests = mutableListOf<QueueFailureRequest>()
         val cancellationRequests = mutableListOf<QueueCancellationRequest>()
 
@@ -231,6 +236,13 @@ class DurableQueueExecutionProcessorTest {
         ): ProviderOperationResult<Unit> {
             rescheduleRequests.add(request)
             return rescheduleResponse
+        }
+
+        override suspend fun defer(
+            request: QueueDeferralRequest,
+        ): ProviderOperationResult<Unit> {
+            deferralRequests.add(request)
+            return deferResponse
         }
 
         override suspend fun fail(
@@ -328,6 +340,16 @@ class DurableQueueExecutionProcessorTest {
     }
 
     @Test
+    fun `Deferred outcome preserves availability and reason without retry data`() {
+        val outcome = QueueEntryExecutionOutcome.Deferred(
+            availableAt = t2,
+            reason = QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET,
+        )
+        assertEquals(t2, outcome.availableAt)
+        assertEquals(QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET, outcome.reason)
+    }
+
+    @Test
     fun `Failed outcome preserves error and disposition`() {
         val outcome = QueueEntryExecutionOutcome.Failed(
             error = sampleError,
@@ -408,6 +430,16 @@ class DurableQueueExecutionProcessorTest {
     }
 
     @Test
+    fun `QueueProcessingSummary rejects negative deferred`() {
+        assertFailsWith<IllegalArgumentException> {
+            QueueProcessingSummary(
+                acquired = 1, executed = 1, completed = 0,
+                rescheduled = 0, failed = 0, cancelled = 0, deferred = -1,
+            )
+        }
+    }
+
+    @Test
     fun `QueueProcessingSummary rejects negative failed`() {
         assertFailsWith<IllegalArgumentException> {
             QueueProcessingSummary(
@@ -457,6 +489,7 @@ class DurableQueueExecutionProcessorTest {
         assertEquals(3, summary.executed)
         assertEquals(1, summary.completed)
         assertEquals(1, summary.rescheduled)
+        assertEquals(0, summary.deferred)
         assertEquals(1, summary.failed)
         assertEquals(0, summary.cancelled)
     }
@@ -472,6 +505,7 @@ class DurableQueueExecutionProcessorTest {
         assertTrue(stages.any { it == QueueProcessingFailureStage.ACQUISITION_VALIDATION })
         assertTrue(stages.any { it == QueueProcessingFailureStage.COMPLETION_TRANSITION })
         assertTrue(stages.any { it == QueueProcessingFailureStage.RESCHEDULE_TRANSITION })
+        assertTrue(stages.any { it == QueueProcessingFailureStage.DEFERRAL_TRANSITION })
         assertTrue(stages.any { it == QueueProcessingFailureStage.FAILURE_TRANSITION })
         assertTrue(stages.any { it == QueueProcessingFailureStage.CANCELLATION_TRANSITION })
     }
@@ -769,6 +803,76 @@ class DurableQueueExecutionProcessorTest {
     }
 
     // =========================================================================
+    // Transition mapping — Deferred outcome
+    // =========================================================================
+
+    @Test
+    fun `Deferred outcome invokes only the deferral transition`() {
+        val entry = leasedEntry()
+        val provider = FakeQueueProvider(acquireResponse = entriesResult(entry))
+        val handler = CapturingHandler(
+            QueueEntryExecutionOutcome.Deferred(
+                availableAt = t2,
+                reason = QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET,
+            ),
+        )
+        val processor = DurableQueueExecutionProcessor(provider, handler)
+
+        runSuspend { processor.process(sampleProcessingRequest) }
+
+        assertEquals(0, provider.completionRequests.size)
+        assertEquals(0, provider.rescheduleRequests.size)
+        assertEquals(1, provider.deferralRequests.size)
+        assertEquals(0, provider.failureRequests.size)
+        assertEquals(0, provider.cancellationRequests.size)
+    }
+
+    @Test
+    fun `Deferral transition uses exact entry ID lease ID and outcome fields`() {
+        val entry = leasedEntry(id = QueueEntryId("entry-deferred"))
+        val provider = FakeQueueProvider(acquireResponse = entriesResult(entry))
+        val outcome = QueueEntryExecutionOutcome.Deferred(
+            availableAt = t2,
+            reason = QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET,
+        )
+        val processor = DurableQueueExecutionProcessor(provider, CapturingHandler(outcome))
+
+        runSuspend { processor.process(sampleProcessingRequest) }
+
+        val request = provider.deferralRequests.single()
+        assertEquals(QueueEntryId("entry-deferred"), request.entryId)
+        assertEquals(leaseId, request.leaseId)
+        assertEquals(t2, request.availableAt)
+        assertEquals(QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET, request.reason)
+    }
+
+    @Test
+    fun `Deferred transition increments only deferred summary count and availability evidence`() {
+        val entry = leasedEntry()
+        val provider = FakeQueueProvider(acquireResponse = entriesResult(entry))
+        val processor = DurableQueueExecutionProcessor(
+            provider,
+            CapturingHandler(
+                QueueEntryExecutionOutcome.Deferred(
+                    availableAt = t2,
+                    reason = QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET,
+                ),
+            ),
+        )
+
+        val result = runSuspend { processor.process(sampleProcessingRequest) }
+
+        val processed = assertIs<QueueProcessingResult.Processed>(result)
+        assertEquals(1, processed.summary.deferred)
+        assertEquals(0, processed.summary.completed)
+        assertEquals(0, processed.summary.rescheduled)
+        assertEquals(0, processed.summary.failed)
+        assertEquals(0, processed.summary.cancelled)
+        assertEquals(t2, processed.earliestDeferredAt)
+        assertEquals(t2, processed.earliestNextAvailableAt)
+    }
+
+    // =========================================================================
     // Transition mapping — Failed outcome
     // =========================================================================
 
@@ -961,6 +1065,32 @@ class DurableQueueExecutionProcessorTest {
         assertEquals(1, processed.summary.rescheduled)
     }
 
+    @Test
+    fun `Mixed retry and deferral preserve separate counts and earliest availability`() {
+        val entry1 = leasedEntry(id = QueueEntryId("entry-retry"))
+        val entry2 = leasedEntry(id = QueueEntryId("entry-deferred"))
+        val provider = FakeQueueProvider(acquireResponse = entriesResult(entry1, entry2))
+        val handler = MultiOutcomeHandler(
+            listOf(
+                QueueEntryExecutionOutcome.Reschedule(RetryAttempt(1), t3, sampleError),
+                QueueEntryExecutionOutcome.Deferred(
+                    availableAt = t2,
+                    reason = QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET,
+                ),
+            ),
+        )
+        val processor = DurableQueueExecutionProcessor(provider, handler)
+
+        val result = runSuspend { processor.process(sampleProcessingRequest) }
+
+        val processed = assertIs<QueueProcessingResult.Processed>(result)
+        assertEquals(1, processed.summary.rescheduled)
+        assertEquals(1, processed.summary.deferred)
+        assertEquals(t3, processed.earliestRescheduledAt)
+        assertEquals(t2, processed.earliestDeferredAt)
+        assertEquals(t2, processed.earliestNextAvailableAt)
+    }
+
     // =========================================================================
     // Acquisition is called exactly once
     // =========================================================================
@@ -1039,6 +1169,33 @@ class DurableQueueExecutionProcessorTest {
         val failure = assertIs<QueueProcessingResult.QueueProviderFailure>(result)
         assertSame(error, failure.error)
         assertEquals(QueueProcessingFailureStage.RESCHEDULE_TRANSITION, failure.stage)
+    }
+
+    @Test
+    fun `Deferral transition failure returns QueueProviderFailure with DEFERRAL_TRANSITION stage`() {
+        val error = FakeError(code = ErrorCode("DL-DEFER-FAIL"))
+        val entry = leasedEntry()
+        val provider = FakeQueueProvider(
+            acquireResponse = entriesResult(entry),
+            deferResponse = failureResult(error),
+        )
+        val processor = DurableQueueExecutionProcessor(
+            provider,
+            CapturingHandler(
+                QueueEntryExecutionOutcome.Deferred(
+                    availableAt = t2,
+                    reason = QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET,
+                ),
+            ),
+        )
+
+        val result = runSuspend { processor.process(sampleProcessingRequest) }
+
+        val failure = assertIs<QueueProcessingResult.QueueProviderFailure>(result)
+        assertSame(error, failure.error)
+        assertEquals(QueueProcessingFailureStage.DEFERRAL_TRANSITION, failure.stage)
+        assertEquals(1, failure.summary.executed)
+        assertEquals(0, failure.summary.deferred)
     }
 
     @Test
@@ -1260,6 +1417,31 @@ class DurableQueueExecutionProcessorTest {
             provider,
             CapturingHandler(
                 QueueEntryExecutionOutcome.Reschedule(RetryAttempt(1), t2, sampleError),
+            ),
+        )
+
+        val thrown = assertFailsWith<CancellationException> {
+            runSuspend { processor.process(sampleProcessingRequest) }
+        }
+        assertSame(cancellation, thrown)
+    }
+
+    @Test
+    fun `CancellationException from deferral transition propagates`() {
+        val cancellation = CancellationException("Cancelled in defer")
+        val entry = leasedEntry()
+        val provider = object : FakeQueueProvider(acquireResponse = entriesResult(entry)) {
+            override suspend fun defer(request: QueueDeferralRequest): ProviderOperationResult<Unit> {
+                throw cancellation
+            }
+        }
+        val processor = DurableQueueExecutionProcessor(
+            provider,
+            CapturingHandler(
+                QueueEntryExecutionOutcome.Deferred(
+                    availableAt = t2,
+                    reason = QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET,
+                ),
             ),
         )
 
