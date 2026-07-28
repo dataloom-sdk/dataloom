@@ -12,6 +12,10 @@ synchronization runtime must use for each runtime role. Every binding uses an
 explicit `ProviderId` so the caller controls provider selection — the runtime
 never selects a provider automatically.
 
+`StrategyProviderBindings` is the plan-aware counterpart. Every role is
+optional in that contract; the evaluated strategy plan determines which IDs
+must resolve for one call.
+
 ```mermaid
 flowchart LR
     Providers[Registered provider instances] --> Registry[ProviderRegistry]
@@ -80,6 +84,33 @@ runtime capability is unavailable for this binding set.
 
 `SynchronizationProviderBindings` is a `data class` and provides value-based
 equality and `copy` semantics.
+
+---
+
+### `StrategyProviderBindings`
+
+Immutable optional binding model used after strategy evaluation.
+
+```kotlin
+public data class StrategyProviderBindings(
+    public val storageProviderId: ProviderId? = null,
+    public val transportProviderId: ProviderId? = null,
+    public val schedulerProviderId: ProviderId? = null,
+    public val connectivityProviderId: ProviderId? = null,
+    public val queueProviderId: ProviderId? = null,
+)
+```
+
+An optional ID is neither resolved nor validated merely because it is present.
+`StrategyProviderResolver` receives the plan's required capability set and
+looks up only matching roles. This guarantees, for example, that a
+network-only plan can require transport while ignoring unused storage and
+queue IDs.
+
+Missing required roles are returned as typed
+`StrategyProviderCapability` values. Configured required roles use the same
+existence, descriptor-type, and provider-interface checks as legacy
+resolution.
 
 ---
 

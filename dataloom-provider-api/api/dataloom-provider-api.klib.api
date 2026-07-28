@@ -284,6 +284,31 @@ final class io.dataloom.api.provider/ProviderLifecycleFailure { // io.dataloom.a
     final fun toString(): kotlin/String // io.dataloom.api.provider/ProviderLifecycleFailure.toString|toString(){}[0]
 }
 
+final class io.dataloom.api.provider/StrategyProviderBindings { // io.dataloom.api.provider/StrategyProviderBindings|null[0]
+    constructor <init>(io.dataloom.api.provider/ProviderId? = ..., io.dataloom.api.provider/ProviderId? = ..., io.dataloom.api.provider/ProviderId? = ..., io.dataloom.api.provider/ProviderId? = ..., io.dataloom.api.provider/ProviderId? = ...) // io.dataloom.api.provider/StrategyProviderBindings.<init>|<init>(io.dataloom.api.provider.ProviderId?;io.dataloom.api.provider.ProviderId?;io.dataloom.api.provider.ProviderId?;io.dataloom.api.provider.ProviderId?;io.dataloom.api.provider.ProviderId?){}[0]
+
+    final val connectivityProviderId // io.dataloom.api.provider/StrategyProviderBindings.connectivityProviderId|{}connectivityProviderId[0]
+        final fun <get-connectivityProviderId>(): io.dataloom.api.provider/ProviderId? // io.dataloom.api.provider/StrategyProviderBindings.connectivityProviderId.<get-connectivityProviderId>|<get-connectivityProviderId>(){}[0]
+    final val queueProviderId // io.dataloom.api.provider/StrategyProviderBindings.queueProviderId|{}queueProviderId[0]
+        final fun <get-queueProviderId>(): io.dataloom.api.provider/ProviderId? // io.dataloom.api.provider/StrategyProviderBindings.queueProviderId.<get-queueProviderId>|<get-queueProviderId>(){}[0]
+    final val schedulerProviderId // io.dataloom.api.provider/StrategyProviderBindings.schedulerProviderId|{}schedulerProviderId[0]
+        final fun <get-schedulerProviderId>(): io.dataloom.api.provider/ProviderId? // io.dataloom.api.provider/StrategyProviderBindings.schedulerProviderId.<get-schedulerProviderId>|<get-schedulerProviderId>(){}[0]
+    final val storageProviderId // io.dataloom.api.provider/StrategyProviderBindings.storageProviderId|{}storageProviderId[0]
+        final fun <get-storageProviderId>(): io.dataloom.api.provider/ProviderId? // io.dataloom.api.provider/StrategyProviderBindings.storageProviderId.<get-storageProviderId>|<get-storageProviderId>(){}[0]
+    final val transportProviderId // io.dataloom.api.provider/StrategyProviderBindings.transportProviderId|{}transportProviderId[0]
+        final fun <get-transportProviderId>(): io.dataloom.api.provider/ProviderId? // io.dataloom.api.provider/StrategyProviderBindings.transportProviderId.<get-transportProviderId>|<get-transportProviderId>(){}[0]
+
+    final fun component1(): io.dataloom.api.provider/ProviderId? // io.dataloom.api.provider/StrategyProviderBindings.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.provider/ProviderId? // io.dataloom.api.provider/StrategyProviderBindings.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.provider/ProviderId? // io.dataloom.api.provider/StrategyProviderBindings.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.provider/ProviderId? // io.dataloom.api.provider/StrategyProviderBindings.component4|component4(){}[0]
+    final fun component5(): io.dataloom.api.provider/ProviderId? // io.dataloom.api.provider/StrategyProviderBindings.component5|component5(){}[0]
+    final fun copy(io.dataloom.api.provider/ProviderId? = ..., io.dataloom.api.provider/ProviderId? = ..., io.dataloom.api.provider/ProviderId? = ..., io.dataloom.api.provider/ProviderId? = ..., io.dataloom.api.provider/ProviderId? = ...): io.dataloom.api.provider/StrategyProviderBindings // io.dataloom.api.provider/StrategyProviderBindings.copy|copy(io.dataloom.api.provider.ProviderId?;io.dataloom.api.provider.ProviderId?;io.dataloom.api.provider.ProviderId?;io.dataloom.api.provider.ProviderId?;io.dataloom.api.provider.ProviderId?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.provider/StrategyProviderBindings.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.provider/StrategyProviderBindings.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.provider/StrategyProviderBindings.toString|toString(){}[0]
+}
+
 final class io.dataloom.api.provider/SynchronizationProviderBindings { // io.dataloom.api.provider/SynchronizationProviderBindings|null[0]
     constructor <init>(io.dataloom.api.provider/ProviderId, io.dataloom.api.provider/ProviderId, io.dataloom.api.provider/ProviderId? = ..., io.dataloom.api.provider/ProviderId? = ..., io.dataloom.api.provider/ProviderId? = ...) // io.dataloom.api.provider/SynchronizationProviderBindings.<init>|<init>(io.dataloom.api.provider.ProviderId;io.dataloom.api.provider.ProviderId;io.dataloom.api.provider.ProviderId?;io.dataloom.api.provider.ProviderId?;io.dataloom.api.provider.ProviderId?){}[0]
 

@@ -5,6 +5,9 @@ import io.dataloom.api.connectivity.ConnectivityProvider
 import io.dataloom.api.connectivity.ConnectivityRequirement
 import io.dataloom.api.connectivity.ConnectivitySnapshot
 import io.dataloom.api.connectivity.ConnectivityStatus
+import io.dataloom.api.change.ChangeEvent
+import io.dataloom.api.change.ChangeSet
+import io.dataloom.api.change.EntityReference
 import io.dataloom.api.context.ExecutionContext
 import io.dataloom.api.error.DataLoomError
 import io.dataloom.api.error.ErrorCategory
@@ -12,7 +15,11 @@ import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
 import io.dataloom.api.identifier.ConflictId
+import io.dataloom.api.identifier.ChangeEventId
+import io.dataloom.api.identifier.ChangeSetId
 import io.dataloom.api.identifier.CorrelationId
+import io.dataloom.api.identifier.EntityId
+import io.dataloom.api.identifier.EntityType
 import io.dataloom.api.identifier.ExecutionId
 import io.dataloom.api.identifier.IdentifierGenerator
 import io.dataloom.api.identifier.QueueConsumerId
@@ -25,6 +32,7 @@ import io.dataloom.api.identifier.SynchronizationObserverId
 import io.dataloom.api.identifier.SynchronizationSessionId
 import io.dataloom.api.identifier.WorkflowId
 import io.dataloom.api.model.SynchronizationDirection
+import io.dataloom.api.model.ChangeOperation
 import io.dataloom.api.model.SynchronizationMode
 import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.api.observation.SynchronizationObserver
@@ -38,6 +46,7 @@ import io.dataloom.api.provider.ProviderName
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.provider.ProviderVersion
+import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.api.queue.QueueProvider
 import io.dataloom.api.queue.ExpiredLeaseRecoveryRequest
 import io.dataloom.api.queue.ExpiredLeaseRecoveryResult
@@ -62,6 +71,8 @@ import io.dataloom.api.storage.OutboundChangeReadRequest
 import io.dataloom.api.storage.OutboundChangeReadResult
 import io.dataloom.api.storage.StorageProvider
 import io.dataloom.api.synchronization.ChangeSetAcknowledgement
+import io.dataloom.api.synchronization.ChangeAcknowledgementStatus
+import io.dataloom.api.synchronization.ChangeEventAcknowledgement
 import io.dataloom.api.synchronization.CheckpointReadRequest
 import io.dataloom.api.synchronization.CheckpointWriteRequest
 import io.dataloom.api.synchronization.OutboundChangeAcknowledgementRequest
@@ -80,6 +91,18 @@ import io.dataloom.api.provider.ProviderLifecycleResult
 import io.dataloom.api.provider.SynchronizationProviderBindings
 import io.dataloom.api.runtime.RuntimeDependencies
 import io.dataloom.api.runtime.RuntimeIdentifierGenerators
+import io.dataloom.api.strategy.NetworkOnlyStrategyProfile
+import io.dataloom.api.strategy.StrategyConfigurationVersion
+import io.dataloom.api.strategy.StrategyConnectivity
+import io.dataloom.api.strategy.StrategyDecisionId
+import io.dataloom.api.strategy.StrategyExecutionTrigger
+import io.dataloom.api.strategy.StrategyOperation
+import io.dataloom.api.strategy.StrategyOperationInput
+import io.dataloom.api.strategy.StrategyPlanId
+import io.dataloom.api.strategy.StrategyProfileId
+import io.dataloom.api.strategy.StrategyRuntimeEvidence
+import io.dataloom.api.strategy.StrategySynchronizationRequest
+import io.dataloom.api.strategy.StrategyTransportOutput
 import io.dataloom.runtime.connectivity.SynchronizationConnectivityConfiguration
 import io.dataloom.runtime.execution.SynchronizationExecutionResult
 import io.dataloom.runtime.execution.SynchronizationPipeline
@@ -87,6 +110,8 @@ import io.dataloom.runtime.execution.SynchronizationExecutionContext
 import io.dataloom.runtime.execution.bidirectional.BidirectionalPipelineConfiguration
 import io.dataloom.runtime.execution.inbound.InboundPullPipelineConfiguration
 import io.dataloom.runtime.execution.outbound.OutboundPushPipelineConfiguration
+import io.dataloom.runtime.strategy.StrategyExecutionRejectionReason
+import io.dataloom.runtime.strategy.StrategySynchronizationExecutionResult
 import io.dataloom.runtime.queue.QueuedSynchronizationWork
 import io.dataloom.runtime.queue.QueuedSynchronizationWorkResolution
 import io.dataloom.runtime.queue.QueuedSynchronizationWorkResolver
@@ -212,7 +237,17 @@ class DataLoomBuilderTest {
         id: String = "transport-prod",
         var initializeCallCount: Int = 0,
         var closeCallCount: Int = 0,
+        var pushResult: ProviderOperationResult<ChangeSetAcknowledgement> =
+            ProviderOperationResult.Failure(FakeError()),
+        var pullResult: ProviderOperationResult<PullChangesResult> =
+            ProviderOperationResult.Failure(FakeError()),
     ) : TransportProvider {
+        var pushCallCount: Int = 0
+        var pullCallCount: Int = 0
+        val operationOrder: MutableList<String> = mutableListOf()
+        var lastPushRequest: PushChangesRequest? = null
+        var lastPullRequest: PullChangesRequest? = null
+
         override val descriptor = ProviderDescriptor(
             id = ProviderId(id),
             name = ProviderName("Transport $id"),
@@ -233,11 +268,23 @@ class DataLoomBuilderTest {
             return ProviderOperationResult.Success(Unit)
         }
 
-        override suspend fun pushChanges(request: PushChangesRequest): ProviderOperationResult<ChangeSetAcknowledgement> =
-            ProviderOperationResult.Failure(FakeError())
+        override suspend fun pushChanges(
+            request: PushChangesRequest,
+        ): ProviderOperationResult<ChangeSetAcknowledgement> {
+            pushCallCount++
+            operationOrder += "push"
+            lastPushRequest = request
+            return pushResult
+        }
 
-        override suspend fun pullChanges(request: PullChangesRequest): ProviderOperationResult<PullChangesResult> =
-            ProviderOperationResult.Failure(FakeError())
+        override suspend fun pullChanges(
+            request: PullChangesRequest,
+        ): ProviderOperationResult<PullChangesResult> {
+            pullCallCount++
+            operationOrder += "pull"
+            lastPullRequest = request
+            return pullResult
+        }
     }
 
     /**
@@ -418,6 +465,61 @@ class DataLoomBuilderTest {
                 executionId = ExecutionId("exec-001"),
                 correlationId = CorrelationId("corr-001"),
             ),
+        )
+
+    private fun makeChangeSet(): ChangeSet {
+        val event = ChangeEvent(
+            id = ChangeEventId("change-001"),
+            entity = EntityReference(
+                type = EntityType("document"),
+                id = EntityId("doc-001"),
+            ),
+            operation = ChangeOperation.UPDATE,
+        )
+        return ChangeSet(
+            id = ChangeSetId("changes-001"),
+            events = listOf(event),
+        )
+    }
+
+    private fun makeAcknowledgement(
+        changeSet: ChangeSet,
+    ): ChangeSetAcknowledgement =
+        ChangeSetAcknowledgement(
+            changeSetId = changeSet.id,
+            events = changeSet.events.map { event ->
+                ChangeEventAcknowledgement(
+                    eventId = event.id,
+                    status = ChangeAcknowledgementStatus.ACCEPTED,
+                )
+            },
+        )
+
+    private fun makeNetworkOnlyRequest(
+        direction: SynchronizationDirection,
+        input: StrategyOperationInput = when (direction) {
+            SynchronizationDirection.PUSH,
+            SynchronizationDirection.BIDIRECTIONAL,
+            -> StrategyOperationInput.DirectTransport(
+                outboundChangeSet = makeChangeSet(),
+            )
+            SynchronizationDirection.PULL -> StrategyOperationInput.DirectTransport()
+        },
+        trigger: StrategyExecutionTrigger = StrategyExecutionTrigger.DIRECT,
+    ): StrategySynchronizationRequest =
+        StrategySynchronizationRequest(
+            request = makeRequest(direction),
+            decisionId = StrategyDecisionId("decision-001"),
+            planId = StrategyPlanId("plan-001"),
+            profile = NetworkOnlyStrategyProfile(
+                id = StrategyProfileId("network-only"),
+                configurationVersion = StrategyConfigurationVersion(1),
+            ),
+            evidence = StrategyRuntimeEvidence(
+                connectivity = StrategyConnectivity.AVAILABLE,
+            ),
+            trigger = trigger,
+            input = input,
         )
 
     private fun makeMinimalBuilder(
@@ -1311,6 +1413,286 @@ class DataLoomBuilderTest {
 
         assertNotNull(dataLoom.queueWorker)
         assertNotNull(dataLoom.queueSubmission)
+    }
+
+    // =========================================================================
+    // Strategy-aware network-only execution
+    // =========================================================================
+
+    @Test
+    fun networkOnlyPull_buildsAndExecutesWithTransportProviderOnly() {
+        val transport = FakeTransportProvider(
+            pullResult = ProviderOperationResult.Success(PullChangesResult.NoChanges()),
+        )
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .provider(transport)
+            .defaultStrategyProviderBindings(
+                StrategyProviderBindings(
+                    transportProviderId = transport.descriptor.id,
+                ),
+            )
+            .build()
+
+        runSuspend { dataLoom.initialize() }
+        val result = runSuspend {
+            dataLoom.synchronize(
+                makeNetworkOnlyRequest(SynchronizationDirection.PULL),
+            )
+        }
+
+        val executed = assertIs<StrategySynchronizationExecutionResult.Executed>(result)
+        val output = assertIs<StrategyTransportOutput.Pulled>(executed.output)
+        assertIs<PullChangesResult.NoChanges>(output.result)
+        assertEquals(1, transport.pullCallCount)
+        assertEquals(0, transport.pushCallCount)
+    }
+
+    @Test
+    fun networkOnlyPushReturnsCanonicalRemoteAcknowledgement() {
+        val changeSet = makeChangeSet()
+        val acknowledgement = makeAcknowledgement(changeSet)
+        val transport = FakeTransportProvider(
+            pushResult = ProviderOperationResult.Success(acknowledgement),
+        )
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .provider(transport)
+            .defaultStrategyProviderBindings(
+                StrategyProviderBindings(
+                    transportProviderId = transport.descriptor.id,
+                ),
+            )
+            .build()
+
+        runSuspend { dataLoom.initialize() }
+        val result = runSuspend {
+            dataLoom.synchronize(
+                makeNetworkOnlyRequest(
+                    direction = SynchronizationDirection.PUSH,
+                    input = StrategyOperationInput.DirectTransport(
+                        outboundChangeSet = changeSet,
+                    ),
+                ),
+            )
+        }
+
+        val executed = assertIs<StrategySynchronizationExecutionResult.Executed>(result)
+        val output = assertIs<StrategyTransportOutput.Pushed>(executed.output)
+        assertSame(acknowledgement, output.acknowledgement)
+        assertEquals(1, transport.pushCallCount)
+        assertEquals(0, transport.pullCallCount)
+    }
+
+    @Test
+    fun networkOnlyBidirectionalExecutesPushBeforePull() {
+        val changeSet = makeChangeSet()
+        val transport = FakeTransportProvider(
+            pushResult = ProviderOperationResult.Success(makeAcknowledgement(changeSet)),
+            pullResult = ProviderOperationResult.Success(PullChangesResult.NoChanges()),
+        )
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .provider(transport)
+            .defaultStrategyProviderBindings(
+                StrategyProviderBindings(
+                    transportProviderId = transport.descriptor.id,
+                ),
+            )
+            .build()
+
+        runSuspend { dataLoom.initialize() }
+        val result = runSuspend {
+            dataLoom.synchronize(
+                makeNetworkOnlyRequest(
+                    direction = SynchronizationDirection.BIDIRECTIONAL,
+                    input = StrategyOperationInput.DirectTransport(
+                        outboundChangeSet = changeSet,
+                    ),
+                ),
+            )
+        }
+
+        assertIs<StrategySynchronizationExecutionResult.Executed>(result)
+        assertEquals(listOf("push", "pull"), transport.operationOrder)
+    }
+
+    @Test
+    fun networkOnlyBidirectionalPullFailurePreservesCompletedPush() {
+        val changeSet = makeChangeSet()
+        val acknowledgement = makeAcknowledgement(changeSet)
+        val pullError = FakeError(
+            code = ErrorCode("DL-FAKE-PULL"),
+            message = "Pull failed after push completed.",
+        )
+        val transport = FakeTransportProvider(
+            pushResult = ProviderOperationResult.Success(acknowledgement),
+            pullResult = ProviderOperationResult.Failure(pullError),
+        )
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .provider(transport)
+            .defaultStrategyProviderBindings(
+                StrategyProviderBindings(
+                    transportProviderId = transport.descriptor.id,
+                ),
+            )
+            .build()
+
+        runSuspend { dataLoom.initialize() }
+        val result = runSuspend {
+            dataLoom.synchronize(
+                makeNetworkOnlyRequest(
+                    direction = SynchronizationDirection.BIDIRECTIONAL,
+                    input = StrategyOperationInput.DirectTransport(
+                        outboundChangeSet = changeSet,
+                    ),
+                ),
+            )
+        }
+
+        val failed = assertIs<StrategySynchronizationExecutionResult.Failed>(result)
+        assertSame(pullError, failed.error)
+        assertEquals(listOf(StrategyOperation.PUSH_REMOTE), failed.completedOperations)
+        val partialOutput = assertIs<StrategyTransportOutput.Pushed>(failed.partialOutput)
+        assertSame(acknowledgement, partialOutput.acknowledgement)
+        assertEquals(listOf("push", "pull"), transport.operationOrder)
+
+        val callerOwnedOperations = mutableListOf(StrategyOperation.PUSH_REMOTE)
+        val snapshot = StrategySynchronizationExecutionResult.Failed(
+            evaluation = failed.evaluation,
+            completedAt = failed.completedAt,
+            error = failed.error,
+            transportAttempted = true,
+            completedOperations = callerOwnedOperations,
+            partialOutput = failed.partialOutput,
+        )
+        callerOwnedOperations.clear()
+        assertEquals(listOf(StrategyOperation.PUSH_REMOTE), snapshot.completedOperations)
+    }
+
+    @Test
+    fun networkOnlyIgnoresExtraStorageAndQueueBindings() {
+        val transport = FakeTransportProvider(
+            pullResult = ProviderOperationResult.Success(PullChangesResult.NoChanges()),
+        )
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .provider(transport)
+            .defaultStrategyProviderBindings(
+                StrategyProviderBindings(
+                    transportProviderId = transport.descriptor.id,
+                ),
+            )
+            .build()
+
+        runSuspend { dataLoom.initialize() }
+        val result = runSuspend {
+            dataLoom.synchronize(
+                request = makeNetworkOnlyRequest(SynchronizationDirection.PULL),
+                bindings = StrategyProviderBindings(
+                    storageProviderId = ProviderId("must-not-resolve-storage"),
+                    transportProviderId = transport.descriptor.id,
+                    queueProviderId = ProviderId("must-not-resolve-queue"),
+                ),
+            )
+        }
+
+        assertIs<StrategySynchronizationExecutionResult.Executed>(result)
+        assertEquals(1, transport.pullCallCount)
+    }
+
+    @Test
+    fun networkOnlyDefaultBindingsIgnoreUnusedMissingStorageAndQueue() {
+        val transport = FakeTransportProvider(
+            pullResult = ProviderOperationResult.Success(PullChangesResult.NoChanges()),
+        )
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .provider(transport)
+            .defaultStrategyProviderBindings(
+                StrategyProviderBindings(
+                    storageProviderId = ProviderId("must-not-resolve-storage"),
+                    transportProviderId = transport.descriptor.id,
+                    queueProviderId = ProviderId("must-not-resolve-queue"),
+                ),
+            )
+            .build()
+
+        runSuspend { dataLoom.initialize() }
+        val result = runSuspend {
+            dataLoom.synchronize(
+                makeNetworkOnlyRequest(SynchronizationDirection.PULL),
+            )
+        }
+
+        assertIs<StrategySynchronizationExecutionResult.Executed>(result)
+        assertEquals(1, transport.pullCallCount)
+    }
+
+    @Test
+    fun networkOnlyMissingTransportRejectsBeforeProviderCall() {
+        val transport = FakeTransportProvider(
+            pullResult = ProviderOperationResult.Success(PullChangesResult.NoChanges()),
+        )
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .provider(transport)
+            .defaultStrategyProviderBindings(
+                StrategyProviderBindings(
+                    transportProviderId = transport.descriptor.id,
+                ),
+            )
+            .build()
+
+        runSuspend { dataLoom.initialize() }
+        val result = runSuspend {
+            dataLoom.synchronize(
+                request = makeNetworkOnlyRequest(SynchronizationDirection.PULL),
+                bindings = StrategyProviderBindings(),
+            )
+        }
+
+        val rejected = assertIs<StrategySynchronizationExecutionResult.Rejected>(result)
+        assertEquals(
+            StrategyExecutionRejectionReason.PROVIDER_RESOLUTION_FAILED,
+            rejected.reason,
+        )
+        assertTrue(
+            io.dataloom.api.strategy.StrategyProviderCapability.TRANSPORT in
+                rejected.missingCapabilities,
+        )
+        assertEquals(0, transport.pullCallCount)
+    }
+
+    @Test
+    fun networkOnlyDurableQueueTriggerRejectsWithoutTransportCall() {
+        val transport = FakeTransportProvider(
+            pullResult = ProviderOperationResult.Success(PullChangesResult.NoChanges()),
+        )
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .provider(transport)
+            .defaultStrategyProviderBindings(
+                StrategyProviderBindings(
+                    transportProviderId = transport.descriptor.id,
+                ),
+            )
+            .build()
+
+        runSuspend { dataLoom.initialize() }
+        val result = runSuspend {
+            dataLoom.synchronize(
+                makeNetworkOnlyRequest(
+                    direction = SynchronizationDirection.PULL,
+                    trigger = StrategyExecutionTrigger.DURABLE_QUEUE,
+                ),
+            )
+        }
+
+        val rejected = assertIs<StrategySynchronizationExecutionResult.Rejected>(result)
+        assertEquals(StrategyExecutionRejectionReason.INCOMPATIBLE_TRIGGER, rejected.reason)
+        assertEquals(0, transport.pullCallCount)
     }
 
     // =========================================================================

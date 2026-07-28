@@ -7,11 +7,13 @@ import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.queue.QueueProvider
 import io.dataloom.api.scheduling.SchedulerProvider
 import io.dataloom.api.provider.ProviderBindingFailureReason
+import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.core.provider.ProviderLifecycleCoordinator
 import io.dataloom.core.provider.ProviderRegistry
 import io.dataloom.core.provider.ProviderResolutionResult
 import io.dataloom.api.provider.SynchronizationProviderBindings
 import io.dataloom.core.provider.SynchronizationProviderResolver
+import io.dataloom.core.provider.StrategyProviderResolver
 import io.dataloom.api.runtime.RuntimeDependencies
 import io.dataloom.runtime.connectivity.SynchronizationConnectivityConfiguration
 import io.dataloom.runtime.connectivity.SynchronizationConnectivityPreflight
@@ -30,6 +32,8 @@ import io.dataloom.runtime.observation.SynchronizationObserverRegistry
 import io.dataloom.runtime.queue.DurableQueueExecutionProcessor
 import io.dataloom.runtime.queue.QueuedSynchronizationExecutionHandler
 import io.dataloom.runtime.retry.SynchronizationRetryEvaluator
+import io.dataloom.runtime.strategy.BuiltInSynchronizationStrategyEvaluator
+import io.dataloom.runtime.strategy.StrategySynchronizationExecutionCoordinator
 import io.dataloom.runtime.submission.DataLoomQueueSubmission
 import io.dataloom.runtime.submission.DefaultDataLoomQueueSubmission
 import io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder
@@ -105,6 +109,7 @@ public class DataLoomBuilder {
     private var runtimeDependencies: RuntimeDependencies? = null
     private val providerList: MutableList<DataLoomProvider> = mutableListOf()
     private var defaultProviderBindings: SynchronizationProviderBindings? = null
+    private var defaultStrategyProviderBindings: StrategyProviderBindings? = null
     private var outboundConfiguration: OutboundPushPipelineConfiguration? = null
     private var inboundConfiguration: InboundPullPipelineConfiguration? = null
     private var bidirectionalConfiguration: BidirectionalPipelineConfiguration? = null
@@ -179,6 +184,18 @@ public class DataLoomBuilder {
         apply {
             defaultProviderBindings = bindings
         }
+
+    /**
+     * Sets plan-aware default provider bindings for strategy synchronization.
+     *
+     * Every role is optional at configuration time. The evaluated strategy
+     * plan determines which roles must resolve for an individual call.
+     */
+    public fun defaultStrategyProviderBindings(
+        bindings: StrategyProviderBindings,
+    ): DataLoomBuilder = apply {
+        defaultStrategyProviderBindings = bindings
+    }
 
     /**
      * Overrides the outbound push pipeline configuration used when no custom
@@ -377,8 +394,11 @@ public class DataLoomBuilder {
         }
 
         val bindings = defaultProviderBindings
+        val strategyBindings = defaultStrategyProviderBindings
+            ?: bindings?.toStrategyProviderBindings()
             ?: throw DataLoomBuildException(
-                "DataLoomBuilder requires defaultProviderBindings. Call defaultProviderBindings(...) before build().",
+                "DataLoomBuilder requires defaultProviderBindings or " +
+                    "defaultStrategyProviderBindings before build().",
             )
 
         // --- 2. Build ProviderRegistry (throws IllegalArgumentException for duplicate IDs) ---
@@ -386,7 +406,7 @@ public class DataLoomBuilder {
 
         // --- 3. Validate default bindings structurally ---
         val resolver = SynchronizationProviderResolver(registry)
-        val resolutionResult = resolver.resolve(bindings)
+        val resolutionResult = bindings?.let(resolver::resolve)
         if (resolutionResult is ProviderResolutionResult.Failure) {
             val failureDescription = resolutionResult.bindingFailures.joinToString("; ") { failure ->
                 val reason = failure.reason
@@ -406,6 +426,8 @@ public class DataLoomBuilder {
                 "DataLoomBuilder default provider binding validation failed: $failureDescription",
             )
         }
+
+        val strategyResolver = StrategyProviderResolver(registry)
 
         // --- 4. Build observer infrastructure (optional) ---
         val lifecycleEventEmitter = if (observerList.isNotEmpty()) {
@@ -445,13 +467,24 @@ public class DataLoomBuilder {
             connectivityConfiguration = effectiveConnectivityConfiguration,
             connectivityPreflight = connectivityPreflight,
         )
+        val strategyExecutionCoordinator = StrategySynchronizationExecutionCoordinator(
+            lifecycleCoordinator = lifecycleCoordinator,
+            evaluator = BuiltInSynchronizationStrategyEvaluator(),
+            providerResolver = strategyResolver,
+            clock = deps.clock,
+        )
 
         // --- 9. Build optional queue worker ---
         val queueWorker = queueWorkerSpec?.let { spec ->
+            val legacyBindings = bindings
+                ?: throw DataLoomBuildException(
+                    "DataLoomBuilder queueWorkerConfiguration currently requires " +
+                        "defaultProviderBindings.",
+                )
             buildQueueWorker(
                 spec = spec,
                 registry = registry,
-                bindings = bindings,
+                bindings = legacyBindings,
                 deps = deps,
                 executionCoordinator = executionCoordinator,
             )
@@ -459,17 +492,24 @@ public class DataLoomBuilder {
 
         // --- 10. Build optional queue submission ---
         val queueSubmission = queueSubmissionEncoderValue?.let { encoder ->
+            val legacyBindings = bindings
+                ?: throw DataLoomBuildException(
+                    "DataLoomBuilder queueSubmissionEncoder currently requires " +
+                        "defaultProviderBindings.",
+                )
             buildQueueSubmission(
                 encoder = encoder,
                 registry = registry,
-                bindings = bindings,
+                bindings = legacyBindings,
             )
         }
 
         return DefaultDataLoom(
             lifecycleCoordinator = lifecycleCoordinator,
             executionCoordinator = executionCoordinator,
+            strategyExecutionCoordinator = strategyExecutionCoordinator,
             defaultBindings = bindings,
+            defaultStrategyBindings = strategyBindings,
             queueWorker = queueWorker,
             queueSubmission = queueSubmission,
         )
@@ -487,6 +527,16 @@ public class DataLoomBuilder {
             )
         }
     }
+
+    private fun SynchronizationProviderBindings.toStrategyProviderBindings():
+        StrategyProviderBindings =
+        StrategyProviderBindings(
+            storageProviderId = storageProviderId,
+            transportProviderId = transportProviderId,
+            schedulerProviderId = schedulerProviderId,
+            connectivityProviderId = connectivityProviderId,
+            queueProviderId = queueProviderId,
+        )
 
     /**
      * Builds the [SynchronizationPipelineRegistry] from custom pipelines and

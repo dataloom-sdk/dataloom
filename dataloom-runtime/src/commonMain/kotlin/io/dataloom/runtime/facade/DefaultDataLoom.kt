@@ -4,9 +4,14 @@ import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.core.provider.ProviderLifecycleCoordinator
 import io.dataloom.api.provider.ProviderLifecycleCoordinatorState
 import io.dataloom.api.provider.ProviderLifecycleResult
+import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.api.provider.SynchronizationProviderBindings
+import io.dataloom.api.strategy.StrategySynchronizationRequest
 import io.dataloom.runtime.execution.SynchronizationExecutionCoordinator
 import io.dataloom.runtime.execution.SynchronizationExecutionResult
+import io.dataloom.runtime.execution.SynchronizationExecutionRejectionReason
+import io.dataloom.runtime.strategy.StrategySynchronizationExecutionCoordinator
+import io.dataloom.runtime.strategy.StrategySynchronizationExecutionResult
 import io.dataloom.runtime.submission.DataLoomQueueSubmission
 
 /**
@@ -47,7 +52,9 @@ import io.dataloom.runtime.submission.DataLoomQueueSubmission
 internal class DefaultDataLoom(
     private val lifecycleCoordinator: ProviderLifecycleCoordinator,
     private val executionCoordinator: SynchronizationExecutionCoordinator,
-    private val defaultBindings: SynchronizationProviderBindings,
+    private val strategyExecutionCoordinator: StrategySynchronizationExecutionCoordinator,
+    private val defaultBindings: SynchronizationProviderBindings?,
+    private val defaultStrategyBindings: StrategyProviderBindings,
     override val queueWorker: DataLoomQueueWorker?,
     override val queueSubmission: DataLoomQueueSubmission?,
 ) : DataLoom {
@@ -60,14 +67,30 @@ internal class DefaultDataLoom(
 
     override suspend fun synchronize(
         request: SynchronizationRequest,
-    ): SynchronizationExecutionResult =
-        executionCoordinator.execute(request, defaultBindings)
+    ): SynchronizationExecutionResult {
+        val bindings = defaultBindings
+            ?: return SynchronizationExecutionResult.Rejected(
+                reason = SynchronizationExecutionRejectionReason.DEFAULT_PROVIDER_BINDINGS_NOT_CONFIGURED,
+            )
+        return executionCoordinator.execute(request, bindings)
+    }
 
     override suspend fun synchronize(
         request: SynchronizationRequest,
         bindings: SynchronizationProviderBindings,
     ): SynchronizationExecutionResult =
         executionCoordinator.execute(request, bindings)
+
+    override suspend fun synchronize(
+        request: StrategySynchronizationRequest,
+    ): StrategySynchronizationExecutionResult =
+        strategyExecutionCoordinator.execute(request, defaultStrategyBindings)
+
+    override suspend fun synchronize(
+        request: StrategySynchronizationRequest,
+        bindings: StrategyProviderBindings,
+    ): StrategySynchronizationExecutionResult =
+        strategyExecutionCoordinator.execute(request, bindings)
 
     override suspend fun shutdown(): ProviderLifecycleResult =
         lifecycleCoordinator.shutdown()

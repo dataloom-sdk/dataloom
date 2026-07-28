@@ -297,6 +297,14 @@ public final class io/dataloom/api/context/ExecutionContext {
 	public fun toString ()Ljava/lang/String;
 }
 
+public abstract interface class io/dataloom/api/execution/StrategyProviderSet {
+	public abstract fun getConnectivityProvider ()Lio/dataloom/api/connectivity/ConnectivityProvider;
+	public abstract fun getQueueProvider ()Lio/dataloom/api/queue/QueueProvider;
+	public abstract fun getSchedulerProvider ()Lio/dataloom/api/scheduling/SchedulerProvider;
+	public abstract fun getStorageProvider ()Lio/dataloom/api/storage/StorageProvider;
+	public abstract fun getTransportProvider ()Lio/dataloom/api/transport/TransportProvider;
+}
+
 public abstract interface class io/dataloom/api/execution/SynchronizationProviderSet {
 	public abstract fun getConnectivityProvider ()Lio/dataloom/api/connectivity/ConnectivityProvider;
 	public abstract fun getQueueProvider ()Lio/dataloom/api/queue/QueueProvider;
@@ -1216,6 +1224,19 @@ public final class io/dataloom/api/strategy/StrategyExecutionPlan {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/api/strategy/StrategyExecutionTrigger : java/lang/Enum {
+	public static final field CONNECTIVITY Lio/dataloom/api/strategy/StrategyExecutionTrigger;
+	public static final field DIRECT Lio/dataloom/api/strategy/StrategyExecutionTrigger;
+	public static final field DURABLE_QUEUE Lio/dataloom/api/strategy/StrategyExecutionTrigger;
+	public static final field EXTERNAL Lio/dataloom/api/strategy/StrategyExecutionTrigger;
+	public static final field LIFECYCLE Lio/dataloom/api/strategy/StrategyExecutionTrigger;
+	public static final field MANUAL Lio/dataloom/api/strategy/StrategyExecutionTrigger;
+	public static final field PLATFORM_SCHEDULE Lio/dataloom/api/strategy/StrategyExecutionTrigger;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/strategy/StrategyExecutionTrigger;
+	public static fun values ()[Lio/dataloom/api/strategy/StrategyExecutionTrigger;
+}
+
 public final class io/dataloom/api/strategy/StrategyOperation : java/lang/Enum {
 	public static final field ACCEPT_LOCAL Lio/dataloom/api/strategy/StrategyOperation;
 	public static final field ENQUEUE_DURABLE_WORK Lio/dataloom/api/strategy/StrategyOperation;
@@ -1229,6 +1250,29 @@ public final class io/dataloom/api/strategy/StrategyOperation : java/lang/Enum {
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/strategy/StrategyOperation;
 	public static fun values ()[Lio/dataloom/api/strategy/StrategyOperation;
+}
+
+public abstract interface class io/dataloom/api/strategy/StrategyOperationInput {
+}
+
+public final class io/dataloom/api/strategy/StrategyOperationInput$DirectTransport : io/dataloom/api/strategy/StrategyOperationInput {
+	public fun <init> ()V
+	public fun <init> (Lio/dataloom/api/change/ChangeSet;Ljava/util/Set;Ljava/lang/Integer;Lio/dataloom/api/synchronization/SynchronizationCheckpoint;)V
+	public synthetic fun <init> (Lio/dataloom/api/change/ChangeSet;Ljava/util/Set;Ljava/lang/Integer;Lio/dataloom/api/synchronization/SynchronizationCheckpoint;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCheckpoint ()Lio/dataloom/api/synchronization/SynchronizationCheckpoint;
+	public final fun getEntityTypes ()Ljava/util/Set;
+	public final fun getMaxEvents ()Ljava/lang/Integer;
+	public final fun getOutboundChangeSet ()Lio/dataloom/api/change/ChangeSet;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/strategy/StrategyOperationInput$ProviderBacked : io/dataloom/api/strategy/StrategyOperationInput {
+	public static final field INSTANCE Lio/dataloom/api/strategy/StrategyOperationInput$ProviderBacked;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/dataloom/api/strategy/StrategyPlanId {
@@ -1336,6 +1380,69 @@ public final class io/dataloom/api/strategy/StrategyRuntimeEvidence {
 	public final fun getTransportHealth ()Lio/dataloom/api/strategy/StrategyProviderHealth;
 	public fun hashCode ()I
 	public final fun isBackgroundExecutionAvailable ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/strategy/StrategySynchronizationRequest {
+	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/strategy/SynchronizationStrategyProfile;Lio/dataloom/api/strategy/StrategyRuntimeEvidence;Lio/dataloom/api/strategy/StrategyExecutionTrigger;Lio/dataloom/api/strategy/StrategyOperationInput;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/strategy/SynchronizationStrategyProfile;Lio/dataloom/api/strategy/StrategyRuntimeEvidence;Lio/dataloom/api/strategy/StrategyExecutionTrigger;Lio/dataloom/api/strategy/StrategyOperationInput;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun component2-F9AG820 ()Ljava/lang/String;
+	public final fun component3-msoz1rs ()Ljava/lang/String;
+	public final fun component4 ()Lio/dataloom/api/strategy/SynchronizationStrategyProfile;
+	public final fun component5 ()Lio/dataloom/api/strategy/StrategyRuntimeEvidence;
+	public final fun component6 ()Lio/dataloom/api/strategy/StrategyExecutionTrigger;
+	public final fun component7 ()Lio/dataloom/api/strategy/StrategyOperationInput;
+	public final fun copy-FVUEvz8 (Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/strategy/SynchronizationStrategyProfile;Lio/dataloom/api/strategy/StrategyRuntimeEvidence;Lio/dataloom/api/strategy/StrategyExecutionTrigger;Lio/dataloom/api/strategy/StrategyOperationInput;)Lio/dataloom/api/strategy/StrategySynchronizationRequest;
+	public static synthetic fun copy-FVUEvz8$default (Lio/dataloom/api/strategy/StrategySynchronizationRequest;Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/strategy/SynchronizationStrategyProfile;Lio/dataloom/api/strategy/StrategyRuntimeEvidence;Lio/dataloom/api/strategy/StrategyExecutionTrigger;Lio/dataloom/api/strategy/StrategyOperationInput;ILjava/lang/Object;)Lio/dataloom/api/strategy/StrategySynchronizationRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun evaluationRequest ()Lio/dataloom/api/strategy/StrategyEvaluationRequest;
+	public final fun getDecisionId-F9AG820 ()Ljava/lang/String;
+	public final fun getEvidence ()Lio/dataloom/api/strategy/StrategyRuntimeEvidence;
+	public final fun getInput ()Lio/dataloom/api/strategy/StrategyOperationInput;
+	public final fun getPlanId-msoz1rs ()Ljava/lang/String;
+	public final fun getProfile ()Lio/dataloom/api/strategy/SynchronizationStrategyProfile;
+	public final fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun getTrigger ()Lio/dataloom/api/strategy/StrategyExecutionTrigger;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/strategy/StrategyTransportOutput {
+}
+
+public final class io/dataloom/api/strategy/StrategyTransportOutput$Bidirectional : io/dataloom/api/strategy/StrategyTransportOutput {
+	public fun <init> (Lio/dataloom/api/synchronization/ChangeSetAcknowledgement;Lio/dataloom/api/transport/PullChangesResult;)V
+	public final fun component1 ()Lio/dataloom/api/synchronization/ChangeSetAcknowledgement;
+	public final fun component2 ()Lio/dataloom/api/transport/PullChangesResult;
+	public final fun copy (Lio/dataloom/api/synchronization/ChangeSetAcknowledgement;Lio/dataloom/api/transport/PullChangesResult;)Lio/dataloom/api/strategy/StrategyTransportOutput$Bidirectional;
+	public static synthetic fun copy$default (Lio/dataloom/api/strategy/StrategyTransportOutput$Bidirectional;Lio/dataloom/api/synchronization/ChangeSetAcknowledgement;Lio/dataloom/api/transport/PullChangesResult;ILjava/lang/Object;)Lio/dataloom/api/strategy/StrategyTransportOutput$Bidirectional;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAcknowledgement ()Lio/dataloom/api/synchronization/ChangeSetAcknowledgement;
+	public final fun getPullResult ()Lio/dataloom/api/transport/PullChangesResult;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/strategy/StrategyTransportOutput$Pulled : io/dataloom/api/strategy/StrategyTransportOutput {
+	public fun <init> (Lio/dataloom/api/transport/PullChangesResult;)V
+	public final fun component1 ()Lio/dataloom/api/transport/PullChangesResult;
+	public final fun copy (Lio/dataloom/api/transport/PullChangesResult;)Lio/dataloom/api/strategy/StrategyTransportOutput$Pulled;
+	public static synthetic fun copy$default (Lio/dataloom/api/strategy/StrategyTransportOutput$Pulled;Lio/dataloom/api/transport/PullChangesResult;ILjava/lang/Object;)Lio/dataloom/api/strategy/StrategyTransportOutput$Pulled;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getResult ()Lio/dataloom/api/transport/PullChangesResult;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/strategy/StrategyTransportOutput$Pushed : io/dataloom/api/strategy/StrategyTransportOutput {
+	public fun <init> (Lio/dataloom/api/synchronization/ChangeSetAcknowledgement;)V
+	public final fun component1 ()Lio/dataloom/api/synchronization/ChangeSetAcknowledgement;
+	public final fun copy (Lio/dataloom/api/synchronization/ChangeSetAcknowledgement;)Lio/dataloom/api/strategy/StrategyTransportOutput$Pushed;
+	public static synthetic fun copy$default (Lio/dataloom/api/strategy/StrategyTransportOutput$Pushed;Lio/dataloom/api/synchronization/ChangeSetAcknowledgement;ILjava/lang/Object;)Lio/dataloom/api/strategy/StrategyTransportOutput$Pushed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAcknowledgement ()Lio/dataloom/api/synchronization/ChangeSetAcknowledgement;
+	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 

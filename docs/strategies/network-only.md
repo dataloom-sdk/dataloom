@@ -1,10 +1,10 @@
 # Network-Only Strategy
 
 > [!WARNING]
-> Network-only is a mandatory built-in V1 strategy. Its plan contract rejects
-> storage, queue, local, persistence, refresh, and reconciliation operations.
-> The current facade/provider resolver still requires storage, so end-to-end
-> network-only execution remains open.
+> Direct network-only `PUSH`, `PULL`, and `BIDIRECTIONAL` execution is
+> implemented with transport-only, plan-aware resolution. Complete V1
+> operational events, enriched origin/durability metadata, bounded retry, and
+> the full cross-platform qualification matrix remain open.
 
 [Strategy index](./README.md) · [Remote-first](./remote-first.md) ·
 [Hybrid](./hybrid.md) · [Adaptive](./adaptive.md)
@@ -33,25 +33,28 @@ Direction, transfer mode, and trigger remain distinct:
 
 ## Current repository
 
-Current
-[`SynchronizationProviderBindings`](../api/provider-bindings.md) requires both
-a storage provider ID and a transport provider ID. The coordinator resolves
-that complete set before it selects and invokes a direction pipeline. See
-[Provider Resolution](../architecture/provider-resolution.md) and
-[Execution Coordinator](../architecture/execution-coordinator.md).
+The strategy facade accepts `StrategySynchronizationRequest` with explicit
+`StrategyOperationInput.DirectTransport` input. `StrategyProviderBindings`
+contains optional provider IDs, and the strategy resolver uses only the
+capabilities required by the evaluated plan.
 
-The built-in paths then:
+For network-only, the required set contains transport alone. Storage, queue,
+scheduler, and connectivity bindings—even invalid extra IDs—are not resolved.
+The executor then:
 
-- read local storage before PUSH and acknowledge storage after transport; and
-- read a local checkpoint before PULL, apply remote changes locally, and write
-  the checkpoint.
+- sends the caller-owned `ChangeSet` directly for `PUSH`;
+- returns the canonical `PullChangesResult` directly for `PULL`; and
+- performs push before pull for `BIDIRECTIONAL`.
 
-See [Outbound Push Pipeline](../api/outbound-push-pipeline.md) and
-[Inbound Pull Pipeline](../api/inbound-pull-pipeline.md).
+It validates that a successful push acknowledgement belongs to the submitted
+change set and accounts for every submitted event. A pull failure after a
+successful bidirectional push preserves the completed `PUSH_REMOTE` operation
+and exact acknowledgement as partial output.
 
-A custom pipeline that ignores the resolved storage instance, or a dummy
-storage provider, is an application workaround. Neither is supported
-network-only product behavior.
+The legacy `SynchronizationRequest` facade and its
+[`SynchronizationProviderBindings`](../api/provider-bindings.md) remain
+unchanged for storage-backed direction pipelines. They are not used to
+implement network-only.
 
 ## V1 required behavior
 
@@ -167,7 +170,11 @@ call will resume.
 
 ## Result and event metadata
 
-Results must include:
+The current typed result includes the evaluated decision/plan, completion time,
+transport output or canonical error, whether transport was attempted, provider
+resolution failures, and completed-operation/partial-output evidence.
+
+The complete V1 result contract must additionally include:
 
 - effective strategy `NETWORK_ONLY`;
 - origin `REMOTE`;
@@ -178,10 +185,11 @@ Results must include:
 - `durable=false`, `queued=false`, `localPersisted=false`, and
   `fallbackActivated=false` or equivalent typed fields.
 
-Required events include network-only plan selected, connectivity decision,
-remote attempt started/completed, bounded in-call retry when applicable, and
-terminal outcome. There are no cache-served, local-persisted, queued, deferred,
-or background-refresh events.
+Required events still to be integrated include network-only plan selected,
+connectivity decision, remote attempt started/completed, bounded in-call retry
+when applicable, and terminal outcome. There must be no cache-served,
+local-persisted, queued, deferred, or background-refresh event for an executed
+network-only call.
 
 ## Platform parity
 
@@ -195,20 +203,18 @@ result instead of selecting remote-first or offline-first.
 
 ## Acceptance gates
 
-- Strict spies fail the test on every storage, queue, outbox, checkpoint, or
-  DataLoom scheduler call.
-- Transport success produces `REMOTE` origin and truthful acknowledgement
-  metadata.
-- Offline, constrained, unknown, timeout, auth, validation, integrity,
-  partial-effect, and cancellation cases return canonical typed outcomes.
-- No failure path submits or reschedules queue work.
-- A DataLoom durable-queue trigger is rejected before strategy execution.
-- Any permitted in-call retry is bounded and disappears on cancellation or
-  process death; results never claim restart recovery.
-- PUSH, PULL, BIDIRECTIONAL, FULL, and DELTA pass with caller/remote-owned
-  inputs and cursors.
-- Native Android, KMP Android, and KMP iOS pass identical zero-local-call
-  contract tests.
+| Gate | Current status |
+|---|---|
+| Plan resolves transport without resolving storage, queue, scheduler, or connectivity | Implemented and locally tested |
+| Transport success returns the exact acknowledgement or pull result | Implemented and locally tested |
+| Bidirectional push precedes pull; pull failure preserves the completed push | Implemented and locally tested |
+| Missing transport and durable-queue trigger reject before transport | Implemented and locally tested |
+| JVM plus iOS Arm64, simulator Arm64, and simulator x64 compilation | Passing locally |
+| Complete offline/constrained/timeout/auth/integrity/cancellation outcome matrix | Pending |
+| Complete lifecycle/progress/retry/terminal event dispatch | Pending |
+| Enriched origin/durable/queued/local-persisted/fallback metadata | Pending |
+| Bounded in-call retry contract and tests | Pending |
+| Native Android and Apple runtime qualification in repository CI | Pending publication of this slice |
 
 ## Related documentation
 

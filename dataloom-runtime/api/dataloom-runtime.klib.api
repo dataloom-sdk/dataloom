@@ -35,6 +35,7 @@ final enum class io.dataloom.runtime.execution/SynchronizationExecutionRejection
     enum entry CONNECTIVITY_CHECK_FAILED // io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason.CONNECTIVITY_CHECK_FAILED|null[0]
     enum entry CONNECTIVITY_PROVIDER_NOT_CONFIGURED // io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason.CONNECTIVITY_PROVIDER_NOT_CONFIGURED|null[0]
     enum entry CONNECTIVITY_REQUIREMENT_NOT_MET // io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason.CONNECTIVITY_REQUIREMENT_NOT_MET|null[0]
+    enum entry DEFAULT_PROVIDER_BINDINGS_NOT_CONFIGURED // io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason.DEFAULT_PROVIDER_BINDINGS_NOT_CONFIGURED|null[0]
     enum entry PIPELINE_NOT_FOUND // io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason.PIPELINE_NOT_FOUND|null[0]
     enum entry PROVIDERS_NOT_INITIALIZED // io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason.PROVIDERS_NOT_INITIALIZED|null[0]
     enum entry PROVIDER_RESOLUTION_FAILED // io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason.PROVIDER_RESOLUTION_FAILED|null[0]
@@ -83,6 +84,21 @@ final enum class io.dataloom.runtime.retry/RetryOrchestrationStatus : kotlin/Enu
 
     final fun valueOf(kotlin/String): io.dataloom.runtime.retry/RetryOrchestrationStatus // io.dataloom.runtime.retry/RetryOrchestrationStatus.valueOf|valueOf#static(kotlin.String){}[0]
     final fun values(): kotlin/Array<io.dataloom.runtime.retry/RetryOrchestrationStatus> // io.dataloom.runtime.retry/RetryOrchestrationStatus.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.runtime.strategy/StrategyExecutionRejectionReason : kotlin/Enum<io.dataloom.runtime.strategy/StrategyExecutionRejectionReason> { // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason|null[0]
+    enum entry INCOMPATIBLE_INPUT // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT|null[0]
+    enum entry INCOMPATIBLE_TRIGGER // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.INCOMPATIBLE_TRIGGER|null[0]
+    enum entry PROVIDERS_NOT_INITIALIZED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.PROVIDERS_NOT_INITIALIZED|null[0]
+    enum entry PROVIDER_RESOLUTION_FAILED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.PROVIDER_RESOLUTION_FAILED|null[0]
+    enum entry STRATEGY_REJECTED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.STRATEGY_REJECTED|null[0]
+    enum entry UNSUPPORTED_PLAN // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.UNSUPPORTED_PLAN|null[0]
+
+    final val entries // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.strategy/StrategyExecutionRejectionReason> // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.strategy/StrategyExecutionRejectionReason // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.strategy/StrategyExecutionRejectionReason> // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.values|values#static(){}[0]
 }
 
 final enum class io.dataloom.runtime.submission/QueueSubmissionFailureStage : kotlin/Enum<io.dataloom.runtime.submission/QueueSubmissionFailureStage> { // io.dataloom.runtime.submission/QueueSubmissionFailureStage|null[0]
@@ -152,6 +168,8 @@ abstract interface io.dataloom.runtime.facade/DataLoom { // io.dataloom.runtime.
     abstract suspend fun shutdown(): io.dataloom.api.provider/ProviderLifecycleResult // io.dataloom.runtime.facade/DataLoom.shutdown|shutdown(){}[0]
     abstract suspend fun synchronize(io.dataloom.api.model/SynchronizationRequest): io.dataloom.runtime.execution/SynchronizationExecutionResult // io.dataloom.runtime.facade/DataLoom.synchronize|synchronize(io.dataloom.api.model.SynchronizationRequest){}[0]
     abstract suspend fun synchronize(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.provider/SynchronizationProviderBindings): io.dataloom.runtime.execution/SynchronizationExecutionResult // io.dataloom.runtime.facade/DataLoom.synchronize|synchronize(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.provider.SynchronizationProviderBindings){}[0]
+    abstract suspend fun synchronize(io.dataloom.api.strategy/StrategySynchronizationRequest): io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult // io.dataloom.runtime.facade/DataLoom.synchronize|synchronize(io.dataloom.api.strategy.StrategySynchronizationRequest){}[0]
+    abstract suspend fun synchronize(io.dataloom.api.strategy/StrategySynchronizationRequest, io.dataloom.api.provider/StrategyProviderBindings): io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult // io.dataloom.runtime.facade/DataLoom.synchronize|synchronize(io.dataloom.api.strategy.StrategySynchronizationRequest;io.dataloom.api.provider.StrategyProviderBindings){}[0]
 }
 
 abstract interface io.dataloom.runtime.facade/DataLoomQueueWorker { // io.dataloom.runtime.facade/DataLoomQueueWorker|null[0]
@@ -591,6 +609,88 @@ sealed interface io.dataloom.runtime.retry/SynchronizationRetryEvaluation { // i
     }
 }
 
+sealed interface io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult { // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult|null[0]
+    abstract val completedAt // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.completedAt|{}completedAt[0]
+        abstract fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
+    abstract val evaluation // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.evaluation|{}evaluation[0]
+        abstract fun <get-evaluation>(): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.evaluation.<get-evaluation>|<get-evaluation>(){}[0]
+
+    final class Deferred : io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult { // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred|null[0]
+        constructor <init>(io.dataloom.api.strategy/StrategyEvaluationResult, io.dataloom.api.time/DataLoomInstant) // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.<init>|<init>(io.dataloom.api.strategy.StrategyEvaluationResult;io.dataloom.api.time.DataLoomInstant){}[0]
+
+        final val completedAt // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.completedAt|{}completedAt[0]
+            final fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
+        final val evaluation // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.evaluation|{}evaluation[0]
+            final fun <get-evaluation>(): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.evaluation.<get-evaluation>|<get-evaluation>(){}[0]
+
+        final fun component1(): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.strategy/StrategyEvaluationResult = ..., io.dataloom.api.time/DataLoomInstant = ...): io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.copy|copy(io.dataloom.api.strategy.StrategyEvaluationResult;io.dataloom.api.time.DataLoomInstant){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.toString|toString(){}[0]
+    }
+
+    final class Executed : io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult { // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Executed|null[0]
+        constructor <init>(io.dataloom.api.strategy/StrategyEvaluationResult, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.strategy/StrategyTransportOutput) // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Executed.<init>|<init>(io.dataloom.api.strategy.StrategyEvaluationResult;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.strategy.StrategyTransportOutput){}[0]
+
+        final val completedAt // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Executed.completedAt|{}completedAt[0]
+            final fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Executed.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
+        final val evaluation // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Executed.evaluation|{}evaluation[0]
+            final fun <get-evaluation>(): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Executed.evaluation.<get-evaluation>|<get-evaluation>(){}[0]
+        final val output // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Executed.output|{}output[0]
+            final fun <get-output>(): io.dataloom.api.strategy/StrategyTransportOutput // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Executed.output.<get-output>|<get-output>(){}[0]
+
+        final fun component1(): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Executed.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Executed.component2|component2(){}[0]
+        final fun component3(): io.dataloom.api.strategy/StrategyTransportOutput // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Executed.component3|component3(){}[0]
+        final fun copy(io.dataloom.api.strategy/StrategyEvaluationResult = ..., io.dataloom.api.time/DataLoomInstant = ..., io.dataloom.api.strategy/StrategyTransportOutput = ...): io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Executed // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Executed.copy|copy(io.dataloom.api.strategy.StrategyEvaluationResult;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.strategy.StrategyTransportOutput){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Executed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Executed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Executed.toString|toString(){}[0]
+    }
+
+    final class Failed : io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult { // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Failed|null[0]
+        constructor <init>(io.dataloom.api.strategy/StrategyEvaluationResult, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.error/DataLoomError, kotlin/Boolean, kotlin.collections/List<io.dataloom.api.strategy/StrategyOperation> = ..., io.dataloom.api.strategy/StrategyTransportOutput? = ...) // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Failed.<init>|<init>(io.dataloom.api.strategy.StrategyEvaluationResult;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.error.DataLoomError;kotlin.Boolean;kotlin.collections.List<io.dataloom.api.strategy.StrategyOperation>;io.dataloom.api.strategy.StrategyTransportOutput?){}[0]
+
+        final val completedAt // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Failed.completedAt|{}completedAt[0]
+            final fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Failed.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
+        final val completedOperations // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Failed.completedOperations|{}completedOperations[0]
+            final fun <get-completedOperations>(): kotlin.collections/List<io.dataloom.api.strategy/StrategyOperation> // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Failed.completedOperations.<get-completedOperations>|<get-completedOperations>(){}[0]
+        final val error // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Failed.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Failed.error.<get-error>|<get-error>(){}[0]
+        final val evaluation // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Failed.evaluation|{}evaluation[0]
+            final fun <get-evaluation>(): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Failed.evaluation.<get-evaluation>|<get-evaluation>(){}[0]
+        final val partialOutput // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Failed.partialOutput|{}partialOutput[0]
+            final fun <get-partialOutput>(): io.dataloom.api.strategy/StrategyTransportOutput? // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Failed.partialOutput.<get-partialOutput>|<get-partialOutput>(){}[0]
+        final val transportAttempted // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Failed.transportAttempted|{}transportAttempted[0]
+            final fun <get-transportAttempted>(): kotlin/Boolean // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Failed.transportAttempted.<get-transportAttempted>|<get-transportAttempted>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Failed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Failed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Failed.toString|toString(){}[0]
+    }
+
+    final class Rejected : io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult { // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Rejected|null[0]
+        constructor <init>(io.dataloom.api.strategy/StrategyEvaluationResult, io.dataloom.api.time/DataLoomInstant, io.dataloom.runtime.strategy/StrategyExecutionRejectionReason, kotlin.collections/Set<io.dataloom.api.strategy/StrategyProviderCapability> = ..., kotlin.collections/List<io.dataloom.api.provider/ProviderBindingFailure> = ...) // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Rejected.<init>|<init>(io.dataloom.api.strategy.StrategyEvaluationResult;io.dataloom.api.time.DataLoomInstant;io.dataloom.runtime.strategy.StrategyExecutionRejectionReason;kotlin.collections.Set<io.dataloom.api.strategy.StrategyProviderCapability>;kotlin.collections.List<io.dataloom.api.provider.ProviderBindingFailure>){}[0]
+
+        final val bindingFailures // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Rejected.bindingFailures|{}bindingFailures[0]
+            final fun <get-bindingFailures>(): kotlin.collections/List<io.dataloom.api.provider/ProviderBindingFailure> // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Rejected.bindingFailures.<get-bindingFailures>|<get-bindingFailures>(){}[0]
+        final val completedAt // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Rejected.completedAt|{}completedAt[0]
+            final fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Rejected.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
+        final val evaluation // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Rejected.evaluation|{}evaluation[0]
+            final fun <get-evaluation>(): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Rejected.evaluation.<get-evaluation>|<get-evaluation>(){}[0]
+        final val missingCapabilities // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Rejected.missingCapabilities|{}missingCapabilities[0]
+            final fun <get-missingCapabilities>(): kotlin.collections/Set<io.dataloom.api.strategy/StrategyProviderCapability> // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Rejected.missingCapabilities.<get-missingCapabilities>|<get-missingCapabilities>(){}[0]
+        final val reason // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Rejected.reason|{}reason[0]
+            final fun <get-reason>(): io.dataloom.runtime.strategy/StrategyExecutionRejectionReason // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Rejected.reason.<get-reason>|<get-reason>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Rejected.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Rejected.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Rejected.toString|toString(){}[0]
+    }
+}
+
 sealed interface io.dataloom.runtime.submission/QueueSubmissionResult { // io.dataloom.runtime.submission/QueueSubmissionResult|null[0]
     final class ContractViolation : io.dataloom.runtime.submission/QueueSubmissionResult { // io.dataloom.runtime.submission/QueueSubmissionResult.ContractViolation|null[0]
         constructor <init>(io.dataloom.api.error/DataLoomError, io.dataloom.api.identifier/QueueEntryId?) // io.dataloom.runtime.submission/QueueSubmissionResult.ContractViolation.<init>|<init>(io.dataloom.api.error.DataLoomError;io.dataloom.api.identifier.QueueEntryId?){}[0]
@@ -1023,6 +1123,7 @@ final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.
     final fun build(): io.dataloom.runtime.facade/DataLoom // io.dataloom.runtime.facade/DataLoomBuilder.build|build(){}[0]
     final fun connectivityConfiguration(io.dataloom.runtime.connectivity/SynchronizationConnectivityConfiguration): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.connectivityConfiguration|connectivityConfiguration(io.dataloom.runtime.connectivity.SynchronizationConnectivityConfiguration){}[0]
     final fun defaultProviderBindings(io.dataloom.api.provider/SynchronizationProviderBindings): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.defaultProviderBindings|defaultProviderBindings(io.dataloom.api.provider.SynchronizationProviderBindings){}[0]
+    final fun defaultStrategyProviderBindings(io.dataloom.api.provider/StrategyProviderBindings): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.defaultStrategyProviderBindings|defaultStrategyProviderBindings(io.dataloom.api.provider.StrategyProviderBindings){}[0]
     final fun inboundConfiguration(io.dataloom.runtime.execution.inbound/InboundPullPipelineConfiguration): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.inboundConfiguration|inboundConfiguration(io.dataloom.runtime.execution.inbound.InboundPullPipelineConfiguration){}[0]
     final fun observer(io.dataloom.api.observation/SynchronizationObserver): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.observer|observer(io.dataloom.api.observation.SynchronizationObserver){}[0]
     final fun observers(kotlin/Array<out io.dataloom.api.observation/SynchronizationObserver>...): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.observers|observers(kotlin.Array<out|io.dataloom.api.observation.SynchronizationObserver>...){}[0]

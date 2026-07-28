@@ -282,6 +282,22 @@ final enum class io.dataloom.api.strategy/StrategyDisposition : kotlin/Enum<io.d
     final fun values(): kotlin/Array<io.dataloom.api.strategy/StrategyDisposition> // io.dataloom.api.strategy/StrategyDisposition.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.api.strategy/StrategyExecutionTrigger : kotlin/Enum<io.dataloom.api.strategy/StrategyExecutionTrigger> { // io.dataloom.api.strategy/StrategyExecutionTrigger|null[0]
+    enum entry CONNECTIVITY // io.dataloom.api.strategy/StrategyExecutionTrigger.CONNECTIVITY|null[0]
+    enum entry DIRECT // io.dataloom.api.strategy/StrategyExecutionTrigger.DIRECT|null[0]
+    enum entry DURABLE_QUEUE // io.dataloom.api.strategy/StrategyExecutionTrigger.DURABLE_QUEUE|null[0]
+    enum entry EXTERNAL // io.dataloom.api.strategy/StrategyExecutionTrigger.EXTERNAL|null[0]
+    enum entry LIFECYCLE // io.dataloom.api.strategy/StrategyExecutionTrigger.LIFECYCLE|null[0]
+    enum entry MANUAL // io.dataloom.api.strategy/StrategyExecutionTrigger.MANUAL|null[0]
+    enum entry PLATFORM_SCHEDULE // io.dataloom.api.strategy/StrategyExecutionTrigger.PLATFORM_SCHEDULE|null[0]
+
+    final val entries // io.dataloom.api.strategy/StrategyExecutionTrigger.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.strategy/StrategyExecutionTrigger> // io.dataloom.api.strategy/StrategyExecutionTrigger.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.strategy/StrategyExecutionTrigger // io.dataloom.api.strategy/StrategyExecutionTrigger.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.strategy/StrategyExecutionTrigger> // io.dataloom.api.strategy/StrategyExecutionTrigger.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.api.strategy/StrategyOperation : kotlin/Enum<io.dataloom.api.strategy/StrategyOperation> { // io.dataloom.api.strategy/StrategyOperation|null[0]
     enum entry ACCEPT_LOCAL // io.dataloom.api.strategy/StrategyOperation.ACCEPT_LOCAL|null[0]
     enum entry ENQUEUE_DURABLE_WORK // io.dataloom.api.strategy/StrategyOperation.ENQUEUE_DURABLE_WORK|null[0]
@@ -460,6 +476,19 @@ abstract interface io.dataloom.api.connectivity/ConnectivityProvider : io.datalo
         abstract fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.api.connectivity/ConnectivityProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
 
     abstract suspend fun currentConnectivity(io.dataloom.api.connectivity/ConnectivityCheckRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.connectivity/ConnectivitySnapshot> // io.dataloom.api.connectivity/ConnectivityProvider.currentConnectivity|currentConnectivity(io.dataloom.api.connectivity.ConnectivityCheckRequest){}[0]
+}
+
+abstract interface io.dataloom.api.execution/StrategyProviderSet { // io.dataloom.api.execution/StrategyProviderSet|null[0]
+    abstract val connectivityProvider // io.dataloom.api.execution/StrategyProviderSet.connectivityProvider|{}connectivityProvider[0]
+        abstract fun <get-connectivityProvider>(): io.dataloom.api.connectivity/ConnectivityProvider? // io.dataloom.api.execution/StrategyProviderSet.connectivityProvider.<get-connectivityProvider>|<get-connectivityProvider>(){}[0]
+    abstract val queueProvider // io.dataloom.api.execution/StrategyProviderSet.queueProvider|{}queueProvider[0]
+        abstract fun <get-queueProvider>(): io.dataloom.api.queue/QueueProvider? // io.dataloom.api.execution/StrategyProviderSet.queueProvider.<get-queueProvider>|<get-queueProvider>(){}[0]
+    abstract val schedulerProvider // io.dataloom.api.execution/StrategyProviderSet.schedulerProvider|{}schedulerProvider[0]
+        abstract fun <get-schedulerProvider>(): io.dataloom.api.scheduling/SchedulerProvider? // io.dataloom.api.execution/StrategyProviderSet.schedulerProvider.<get-schedulerProvider>|<get-schedulerProvider>(){}[0]
+    abstract val storageProvider // io.dataloom.api.execution/StrategyProviderSet.storageProvider|{}storageProvider[0]
+        abstract fun <get-storageProvider>(): io.dataloom.api.storage/StorageProvider? // io.dataloom.api.execution/StrategyProviderSet.storageProvider.<get-storageProvider>|<get-storageProvider>(){}[0]
+    abstract val transportProvider // io.dataloom.api.execution/StrategyProviderSet.transportProvider|{}transportProvider[0]
+        abstract fun <get-transportProvider>(): io.dataloom.api.transport/TransportProvider? // io.dataloom.api.execution/StrategyProviderSet.transportProvider.<get-transportProvider>|<get-transportProvider>(){}[0]
 }
 
 abstract interface io.dataloom.api.execution/SynchronizationProviderSet { // io.dataloom.api.execution/SynchronizationProviderSet|null[0]
@@ -702,6 +731,75 @@ sealed interface io.dataloom.api.storage/OutboundChangeReadResult { // io.datalo
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.storage/OutboundChangeReadResult.NoChanges.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.api.storage/OutboundChangeReadResult.NoChanges.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.api.storage/OutboundChangeReadResult.NoChanges.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.strategy/StrategyOperationInput { // io.dataloom.api.strategy/StrategyOperationInput|null[0]
+    final class DirectTransport : io.dataloom.api.strategy/StrategyOperationInput { // io.dataloom.api.strategy/StrategyOperationInput.DirectTransport|null[0]
+        constructor <init>(io.dataloom.api.change/ChangeSet? = ..., kotlin.collections/Set<io.dataloom.api.identifier/EntityType> = ..., kotlin/Int? = ..., io.dataloom.api.synchronization/SynchronizationCheckpoint? = ...) // io.dataloom.api.strategy/StrategyOperationInput.DirectTransport.<init>|<init>(io.dataloom.api.change.ChangeSet?;kotlin.collections.Set<io.dataloom.api.identifier.EntityType>;kotlin.Int?;io.dataloom.api.synchronization.SynchronizationCheckpoint?){}[0]
+
+        final val checkpoint // io.dataloom.api.strategy/StrategyOperationInput.DirectTransport.checkpoint|{}checkpoint[0]
+            final fun <get-checkpoint>(): io.dataloom.api.synchronization/SynchronizationCheckpoint? // io.dataloom.api.strategy/StrategyOperationInput.DirectTransport.checkpoint.<get-checkpoint>|<get-checkpoint>(){}[0]
+        final val entityTypes // io.dataloom.api.strategy/StrategyOperationInput.DirectTransport.entityTypes|{}entityTypes[0]
+            final fun <get-entityTypes>(): kotlin.collections/Set<io.dataloom.api.identifier/EntityType> // io.dataloom.api.strategy/StrategyOperationInput.DirectTransport.entityTypes.<get-entityTypes>|<get-entityTypes>(){}[0]
+        final val maxEvents // io.dataloom.api.strategy/StrategyOperationInput.DirectTransport.maxEvents|{}maxEvents[0]
+            final fun <get-maxEvents>(): kotlin/Int? // io.dataloom.api.strategy/StrategyOperationInput.DirectTransport.maxEvents.<get-maxEvents>|<get-maxEvents>(){}[0]
+        final val outboundChangeSet // io.dataloom.api.strategy/StrategyOperationInput.DirectTransport.outboundChangeSet|{}outboundChangeSet[0]
+            final fun <get-outboundChangeSet>(): io.dataloom.api.change/ChangeSet? // io.dataloom.api.strategy/StrategyOperationInput.DirectTransport.outboundChangeSet.<get-outboundChangeSet>|<get-outboundChangeSet>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyOperationInput.DirectTransport.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyOperationInput.DirectTransport.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyOperationInput.DirectTransport.toString|toString(){}[0]
+    }
+
+    final object ProviderBacked : io.dataloom.api.strategy/StrategyOperationInput { // io.dataloom.api.strategy/StrategyOperationInput.ProviderBacked|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyOperationInput.ProviderBacked.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyOperationInput.ProviderBacked.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyOperationInput.ProviderBacked.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.strategy/StrategyTransportOutput { // io.dataloom.api.strategy/StrategyTransportOutput|null[0]
+    final class Bidirectional : io.dataloom.api.strategy/StrategyTransportOutput { // io.dataloom.api.strategy/StrategyTransportOutput.Bidirectional|null[0]
+        constructor <init>(io.dataloom.api.synchronization/ChangeSetAcknowledgement, io.dataloom.api.transport/PullChangesResult) // io.dataloom.api.strategy/StrategyTransportOutput.Bidirectional.<init>|<init>(io.dataloom.api.synchronization.ChangeSetAcknowledgement;io.dataloom.api.transport.PullChangesResult){}[0]
+
+        final val acknowledgement // io.dataloom.api.strategy/StrategyTransportOutput.Bidirectional.acknowledgement|{}acknowledgement[0]
+            final fun <get-acknowledgement>(): io.dataloom.api.synchronization/ChangeSetAcknowledgement // io.dataloom.api.strategy/StrategyTransportOutput.Bidirectional.acknowledgement.<get-acknowledgement>|<get-acknowledgement>(){}[0]
+        final val pullResult // io.dataloom.api.strategy/StrategyTransportOutput.Bidirectional.pullResult|{}pullResult[0]
+            final fun <get-pullResult>(): io.dataloom.api.transport/PullChangesResult // io.dataloom.api.strategy/StrategyTransportOutput.Bidirectional.pullResult.<get-pullResult>|<get-pullResult>(){}[0]
+
+        final fun component1(): io.dataloom.api.synchronization/ChangeSetAcknowledgement // io.dataloom.api.strategy/StrategyTransportOutput.Bidirectional.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.transport/PullChangesResult // io.dataloom.api.strategy/StrategyTransportOutput.Bidirectional.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.synchronization/ChangeSetAcknowledgement = ..., io.dataloom.api.transport/PullChangesResult = ...): io.dataloom.api.strategy/StrategyTransportOutput.Bidirectional // io.dataloom.api.strategy/StrategyTransportOutput.Bidirectional.copy|copy(io.dataloom.api.synchronization.ChangeSetAcknowledgement;io.dataloom.api.transport.PullChangesResult){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyTransportOutput.Bidirectional.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyTransportOutput.Bidirectional.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyTransportOutput.Bidirectional.toString|toString(){}[0]
+    }
+
+    final class Pulled : io.dataloom.api.strategy/StrategyTransportOutput { // io.dataloom.api.strategy/StrategyTransportOutput.Pulled|null[0]
+        constructor <init>(io.dataloom.api.transport/PullChangesResult) // io.dataloom.api.strategy/StrategyTransportOutput.Pulled.<init>|<init>(io.dataloom.api.transport.PullChangesResult){}[0]
+
+        final val result // io.dataloom.api.strategy/StrategyTransportOutput.Pulled.result|{}result[0]
+            final fun <get-result>(): io.dataloom.api.transport/PullChangesResult // io.dataloom.api.strategy/StrategyTransportOutput.Pulled.result.<get-result>|<get-result>(){}[0]
+
+        final fun component1(): io.dataloom.api.transport/PullChangesResult // io.dataloom.api.strategy/StrategyTransportOutput.Pulled.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.transport/PullChangesResult = ...): io.dataloom.api.strategy/StrategyTransportOutput.Pulled // io.dataloom.api.strategy/StrategyTransportOutput.Pulled.copy|copy(io.dataloom.api.transport.PullChangesResult){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyTransportOutput.Pulled.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyTransportOutput.Pulled.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyTransportOutput.Pulled.toString|toString(){}[0]
+    }
+
+    final class Pushed : io.dataloom.api.strategy/StrategyTransportOutput { // io.dataloom.api.strategy/StrategyTransportOutput.Pushed|null[0]
+        constructor <init>(io.dataloom.api.synchronization/ChangeSetAcknowledgement) // io.dataloom.api.strategy/StrategyTransportOutput.Pushed.<init>|<init>(io.dataloom.api.synchronization.ChangeSetAcknowledgement){}[0]
+
+        final val acknowledgement // io.dataloom.api.strategy/StrategyTransportOutput.Pushed.acknowledgement|{}acknowledgement[0]
+            final fun <get-acknowledgement>(): io.dataloom.api.synchronization/ChangeSetAcknowledgement // io.dataloom.api.strategy/StrategyTransportOutput.Pushed.acknowledgement.<get-acknowledgement>|<get-acknowledgement>(){}[0]
+
+        final fun component1(): io.dataloom.api.synchronization/ChangeSetAcknowledgement // io.dataloom.api.strategy/StrategyTransportOutput.Pushed.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.synchronization/ChangeSetAcknowledgement = ...): io.dataloom.api.strategy/StrategyTransportOutput.Pushed // io.dataloom.api.strategy/StrategyTransportOutput.Pushed.copy|copy(io.dataloom.api.synchronization.ChangeSetAcknowledgement){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyTransportOutput.Pushed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyTransportOutput.Pushed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyTransportOutput.Pushed.toString|toString(){}[0]
     }
 }
 
@@ -1983,6 +2081,38 @@ final class io.dataloom.api.strategy/StrategyRuntimeEvidence { // io.dataloom.ap
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyRuntimeEvidence.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyRuntimeEvidence.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyRuntimeEvidence.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.strategy/StrategySynchronizationRequest { // io.dataloom.api.strategy/StrategySynchronizationRequest|null[0]
+    constructor <init>(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.strategy/StrategyDecisionId, io.dataloom.api.strategy/StrategyPlanId, io.dataloom.api.strategy/SynchronizationStrategyProfile, io.dataloom.api.strategy/StrategyRuntimeEvidence, io.dataloom.api.strategy/StrategyExecutionTrigger = ..., io.dataloom.api.strategy/StrategyOperationInput = ...) // io.dataloom.api.strategy/StrategySynchronizationRequest.<init>|<init>(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.strategy.StrategyDecisionId;io.dataloom.api.strategy.StrategyPlanId;io.dataloom.api.strategy.SynchronizationStrategyProfile;io.dataloom.api.strategy.StrategyRuntimeEvidence;io.dataloom.api.strategy.StrategyExecutionTrigger;io.dataloom.api.strategy.StrategyOperationInput){}[0]
+
+    final val decisionId // io.dataloom.api.strategy/StrategySynchronizationRequest.decisionId|{}decisionId[0]
+        final fun <get-decisionId>(): io.dataloom.api.strategy/StrategyDecisionId // io.dataloom.api.strategy/StrategySynchronizationRequest.decisionId.<get-decisionId>|<get-decisionId>(){}[0]
+    final val evidence // io.dataloom.api.strategy/StrategySynchronizationRequest.evidence|{}evidence[0]
+        final fun <get-evidence>(): io.dataloom.api.strategy/StrategyRuntimeEvidence // io.dataloom.api.strategy/StrategySynchronizationRequest.evidence.<get-evidence>|<get-evidence>(){}[0]
+    final val input // io.dataloom.api.strategy/StrategySynchronizationRequest.input|{}input[0]
+        final fun <get-input>(): io.dataloom.api.strategy/StrategyOperationInput // io.dataloom.api.strategy/StrategySynchronizationRequest.input.<get-input>|<get-input>(){}[0]
+    final val planId // io.dataloom.api.strategy/StrategySynchronizationRequest.planId|{}planId[0]
+        final fun <get-planId>(): io.dataloom.api.strategy/StrategyPlanId // io.dataloom.api.strategy/StrategySynchronizationRequest.planId.<get-planId>|<get-planId>(){}[0]
+    final val profile // io.dataloom.api.strategy/StrategySynchronizationRequest.profile|{}profile[0]
+        final fun <get-profile>(): io.dataloom.api.strategy/SynchronizationStrategyProfile // io.dataloom.api.strategy/StrategySynchronizationRequest.profile.<get-profile>|<get-profile>(){}[0]
+    final val request // io.dataloom.api.strategy/StrategySynchronizationRequest.request|{}request[0]
+        final fun <get-request>(): io.dataloom.api.model/SynchronizationRequest // io.dataloom.api.strategy/StrategySynchronizationRequest.request.<get-request>|<get-request>(){}[0]
+    final val trigger // io.dataloom.api.strategy/StrategySynchronizationRequest.trigger|{}trigger[0]
+        final fun <get-trigger>(): io.dataloom.api.strategy/StrategyExecutionTrigger // io.dataloom.api.strategy/StrategySynchronizationRequest.trigger.<get-trigger>|<get-trigger>(){}[0]
+
+    final fun component1(): io.dataloom.api.model/SynchronizationRequest // io.dataloom.api.strategy/StrategySynchronizationRequest.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.strategy/StrategyDecisionId // io.dataloom.api.strategy/StrategySynchronizationRequest.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.strategy/StrategyPlanId // io.dataloom.api.strategy/StrategySynchronizationRequest.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.strategy/SynchronizationStrategyProfile // io.dataloom.api.strategy/StrategySynchronizationRequest.component4|component4(){}[0]
+    final fun component5(): io.dataloom.api.strategy/StrategyRuntimeEvidence // io.dataloom.api.strategy/StrategySynchronizationRequest.component5|component5(){}[0]
+    final fun component6(): io.dataloom.api.strategy/StrategyExecutionTrigger // io.dataloom.api.strategy/StrategySynchronizationRequest.component6|component6(){}[0]
+    final fun component7(): io.dataloom.api.strategy/StrategyOperationInput // io.dataloom.api.strategy/StrategySynchronizationRequest.component7|component7(){}[0]
+    final fun copy(io.dataloom.api.model/SynchronizationRequest = ..., io.dataloom.api.strategy/StrategyDecisionId = ..., io.dataloom.api.strategy/StrategyPlanId = ..., io.dataloom.api.strategy/SynchronizationStrategyProfile = ..., io.dataloom.api.strategy/StrategyRuntimeEvidence = ..., io.dataloom.api.strategy/StrategyExecutionTrigger = ..., io.dataloom.api.strategy/StrategyOperationInput = ...): io.dataloom.api.strategy/StrategySynchronizationRequest // io.dataloom.api.strategy/StrategySynchronizationRequest.copy|copy(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.strategy.StrategyDecisionId;io.dataloom.api.strategy.StrategyPlanId;io.dataloom.api.strategy.SynchronizationStrategyProfile;io.dataloom.api.strategy.StrategyRuntimeEvidence;io.dataloom.api.strategy.StrategyExecutionTrigger;io.dataloom.api.strategy.StrategyOperationInput){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategySynchronizationRequest.equals|equals(kotlin.Any?){}[0]
+    final fun evaluationRequest(): io.dataloom.api.strategy/StrategyEvaluationRequest // io.dataloom.api.strategy/StrategySynchronizationRequest.evaluationRequest|evaluationRequest(){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategySynchronizationRequest.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategySynchronizationRequest.toString|toString(){}[0]
 }
 
 final class io.dataloom.api.synchronization/ChangeEventAcknowledgement { // io.dataloom.api.synchronization/ChangeEventAcknowledgement|null[0]
