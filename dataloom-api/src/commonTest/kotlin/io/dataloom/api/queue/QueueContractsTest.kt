@@ -726,6 +726,34 @@ class QueueContractsTest {
     }
 
     // -------------------------------------------------------------------------
+    // QueueDeferralRequest
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `QueueDeferralRequest preserves non-retry transition properties`() {
+        val request = QueueDeferralRequest(
+            entryId = entryId,
+            leaseId = leaseId,
+            availableAt = t2,
+            reason = QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET,
+        )
+
+        assertEquals(entryId, request.entryId)
+        assertEquals(leaseId, request.leaseId)
+        assertEquals(t2, request.availableAt)
+        assertEquals(QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET, request.reason)
+        assertEquals(DataLoomMetadata.Empty, request.metadata)
+    }
+
+    @Test
+    fun `QueueDeferralReason exposes stable connectivity requirement name`() {
+        assertEquals(
+            setOf("CONNECTIVITY_REQUIREMENT_NOT_MET"),
+            QueueDeferralReason.entries.map { it.name }.toSet(),
+        )
+    }
+
+    // -------------------------------------------------------------------------
     // QueueFailureDisposition
     // -------------------------------------------------------------------------
 

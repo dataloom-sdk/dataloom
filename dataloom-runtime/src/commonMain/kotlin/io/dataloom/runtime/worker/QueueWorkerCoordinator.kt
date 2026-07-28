@@ -51,8 +51,8 @@ import io.dataloom.runtime.queue.QueueProcessingResult
  *
  * Wake-up decisions are based only on
  * [QueueProcessingResult.Processed.acquisitionLimitReached] and
- * [QueueProcessingResult.Processed.earliestRescheduledAt]. Failed transitions
- * do not contribute continuation evidence.
+ * successfully persisted retry/deferral availability evidence. Failed
+ * transitions do not contribute continuation evidence.
  *
  * ## Scheduler failure isolation
  *
@@ -96,8 +96,8 @@ import io.dataloom.runtime.queue.QueueProcessingResult
  *   [QueueWorkerSchedulingResult.SchedulerNotConfigured] is returned when a
  *   wake-up is required.
  * @param clock the injected [DataLoomClock] used to calculate the delay to
- *   the earliest rescheduled-entry availability. Required. Not read when no
- *   rescheduled entry timestamp is present.
+ *   the earliest retry or deferral availability. Required. Not read when no
+ *   future-availability timestamp is present.
  * @param configuration immutable configuration carrying scheduling parameters
  *   and the recovery flag. Required.
  */
@@ -193,20 +193,20 @@ public class QueueWorkerCoordinator(
      * Builds a [QueueWorkerWakeUpPlan] from the continuation evidence in
      * [processed].
      *
-     * Reads the [clock] at most once — only when [processed.earliestRescheduledAt]
-     * is non-null.
+     * Reads the [clock] at most once — only when retry or deferral
+     * availability evidence exists.
      */
     private fun buildWakeUpPlan(processed: QueueProcessingResult.Processed): QueueWorkerWakeUpPlan {
         val limitReached = processed.acquisitionLimitReached
-        val reschedAt = processed.earliestRescheduledAt
+        val futureAvailability = earliestFutureAvailability(processed)
 
         return when {
-            !limitReached && reschedAt == null -> {
+            !limitReached && futureAvailability == null -> {
                 // Neither condition: no wake-up required.
                 QueueWorkerWakeUpPlan.NoWakeUp
             }
 
-            limitReached && reschedAt == null -> {
+            limitReached && futureAvailability == null -> {
                 // Only acquisition limit reached: use the configured continuation delay.
                 QueueWorkerWakeUpPlan.Schedule(
                     reason = QueueWorkerWakeUpReason.ACQUISITION_LIMIT_REACHED,
@@ -217,11 +217,10 @@ public class QueueWorkerCoordinator(
                 )
             }
 
-            !limitReached && reschedAt != null -> {
-                // Only rescheduled entry: calculate delay from clock.
-                val delay = calculateRescheduleDelay(reschedAt)
+            !limitReached && futureAvailability != null -> {
+                val delay = calculateAvailabilityDelay(futureAvailability.availableAt)
                 QueueWorkerWakeUpPlan.Schedule(
-                    reason = QueueWorkerWakeUpReason.RESCHEDULED_ENTRY_AVAILABLE,
+                    reason = futureAvailability.reason,
                     delay = delay,
                     scheduleId = configuration.scheduleId,
                     constraints = configuration.constraints,
@@ -231,13 +230,13 @@ public class QueueWorkerCoordinator(
 
             else -> {
                 // Both conditions: pick the earlier candidate delay.
-                val reschedDelay = calculateRescheduleDelay(reschedAt!!)
+                val futureDelay = calculateAvailabilityDelay(futureAvailability!!.availableAt)
                 val continuationMs = configuration.continuationDelay.milliseconds
-                val reschedMs = reschedDelay.milliseconds
-                val selectedDelay = if (continuationMs <= reschedMs) {
+                val futureMs = futureDelay.milliseconds
+                val selectedDelay = if (continuationMs <= futureMs) {
                     configuration.continuationDelay
                 } else {
-                    reschedDelay
+                    futureDelay
                 }
                 QueueWorkerWakeUpPlan.Schedule(
                     reason = QueueWorkerWakeUpReason.BOTH,
@@ -250,18 +249,46 @@ public class QueueWorkerCoordinator(
         }
     }
 
+    private fun earliestFutureAvailability(
+        processed: QueueProcessingResult.Processed,
+    ): FutureAvailability? {
+        val retryAt = processed.earliestRescheduledAt
+        val deferredAt = processed.earliestDeferredAt
+        return when {
+            retryAt == null && deferredAt == null -> null
+            retryAt != null && deferredAt == null -> FutureAvailability(
+                availableAt = retryAt,
+                reason = QueueWorkerWakeUpReason.RESCHEDULED_ENTRY_AVAILABLE,
+            )
+            retryAt == null && deferredAt != null -> FutureAvailability(
+                availableAt = deferredAt,
+                reason = QueueWorkerWakeUpReason.DEFERRED_ENTRY_AVAILABLE,
+            )
+            else -> FutureAvailability(
+                availableAt = if (
+                    retryAt!!.epochMilliseconds <= deferredAt!!.epochMilliseconds
+                ) {
+                    retryAt
+                } else {
+                    deferredAt
+                },
+                reason = QueueWorkerWakeUpReason.RETRY_AND_DEFERRAL_AVAILABLE,
+            )
+        }
+    }
+
     /**
-     * Calculates `max(0, earliestRescheduledAt - now)` using the injected
+     * Calculates `max(0, earliestAvailableAt - now)` using the injected
      * [clock].
      *
      * Uses overflow-safe arithmetic. Returns [SchedulingDelay.ZERO] when the
      * timestamp is already due or when overflow would occur.
      */
-    private fun calculateRescheduleDelay(
-        earliestRescheduledAt: io.dataloom.api.time.DataLoomInstant,
+    private fun calculateAvailabilityDelay(
+        earliestAvailableAt: io.dataloom.api.time.DataLoomInstant,
     ): SchedulingDelay {
         val nowMs = clock.now().epochMilliseconds
-        val targetMs = earliestRescheduledAt.epochMilliseconds
+        val targetMs = earliestAvailableAt.epochMilliseconds
         val delayMs = targetMs - nowMs
         return if (delayMs <= 0L) {
             SchedulingDelay.ZERO
@@ -269,6 +296,11 @@ public class QueueWorkerCoordinator(
             SchedulingDelay(delayMs)
         }
     }
+
+    private data class FutureAvailability(
+        val availableAt: io.dataloom.api.time.DataLoomInstant,
+        val reason: QueueWorkerWakeUpReason,
+    )
 
     // =========================================================================
     // Scheduling

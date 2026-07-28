@@ -3,8 +3,8 @@
 [API reference index](./README.md)
 
 > **Status:** Available queue-to-runtime integration foundation. Standard
-> retry/circuit behavior and retry-history-safe constraint deferral are not
-> complete.
+> retry/circuit behavior remains incomplete; connectivity deferral is a
+> distinct non-retry outcome that preserves attempt history.
 
 ## Overview
 
@@ -20,14 +20,15 @@ DurableQueueExecutionProcessor
   -> QueuedSynchronizationExecutionHandler
      1) QueuedSynchronizationWorkResolver.resolve(entry)
      2) SynchronizationExecutionCoordinator.execute(request, bindings)
-     3) map SynchronizationResult to QueueEntryExecutionOutcome
+     3) map connectivity RequirementNotMet -> Deferred
+     4) map SynchronizationResult to QueueEntryExecutionOutcome
         - Succeeded / Skipped    -> Completed
         - Cancelled              -> Cancelled
         - Failed / PartiallySucceeded
             -> SynchronizationRetryEvaluator.evaluate(...)
                - ShouldRetry  -> Reschedule
                - StopRetry    -> Failed
-     4) return QueueEntryExecutionOutcome
+     5) return QueueEntryExecutionOutcome
 ```
 
 ---
@@ -79,11 +80,14 @@ parameters:
 | `executionCoordinator` | `SynchronizationExecutionCoordinator` | Runs the synchronization pipeline. |
 | `retryEvaluator` | `SynchronizationRetryEvaluator` | Evaluates retry eligibility. Contains its own injected `DataLoomClock`. |
 | `retryOperation` | `RetryOperation` | Stable operation name passed to retry policy. |
+| `connectivityConfiguration` | `SynchronizationConnectivityConfiguration?` | Supplies the queued offline-deferral delay. |
+| `clock` | `DataLoomClock?` | Computes non-retry deferral availability. |
 
-The handler does not read the clock directly. The completion instant for
-`Completed` outcomes is taken from `SynchronizationResult.completedAt`, which
-was recorded by the pipeline. Clock access for retry availability timestamps
-is performed solely by `SynchronizationRetryEvaluator`.
+The handler reads its optional clock only for connectivity deferral.
+The completion instant for `Completed` outcomes is taken from
+`SynchronizationResult.completedAt`, which was recorded by the pipeline.
+Clock access for retry availability timestamps is performed by
+`SynchronizationRetryEvaluator`.
 
 ---
 
@@ -146,7 +150,8 @@ Behavior:
 | `PartiallySucceeded` | `ShouldRetry` | `Reschedule` |
 | `PartiallySucceeded` | `StopRetry` | `Failed` |
 | Resolver `Rejected` | — | `Failed` |
-| Coordinator `Rejected` | — | `Failed` |
+| Coordinator `CONNECTIVITY_REQUIREMENT_NOT_MET` | No retry evaluation | `Deferred` |
+| Other coordinator `Rejected` | — | `Failed` |
 
 ---
 
@@ -156,6 +161,9 @@ Behavior:
   the exact `DataLoomError` from the resolver.
 - Coordinator structural rejection (e.g. providers not initialized) maps to
   `QueueEntryExecutionOutcome.Failed` with the coordinator's canonical error.
+- An unmet configured connectivity requirement maps to
+  `QueueEntryExecutionOutcome.Deferred`; it creates neither a retry attempt nor
+  a retry error.
 - `QueueProvider` is never invoked directly by the handler.
 - `SchedulerProvider` is never invoked.
 - No payload or sensitive data is exposed through any outcome.

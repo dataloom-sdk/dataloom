@@ -48,9 +48,10 @@ Changing a persisted name is therefore a schema compatibility change.
 | `acquire` | `PENDING` or `RETRY_WAITING`, available now | `LEASED` with the supplied lease |
 | `complete` | `LEASED` with matching lease ID | `COMPLETED` |
 | `reschedule` | `LEASED` with matching lease ID | `RETRY_WAITING` |
+| `defer` | `LEASED` with matching lease ID | `PENDING` if attempt is null; otherwise `RETRY_WAITING` |
 | `fail` | `LEASED` with matching lease ID | `FAILED` or `DEAD_LETTER` |
 | `cancel` | `PENDING` or `RETRY_WAITING` | `CANCELLED` |
-| `recoverExpiredLeases` | `LEASED` with expiry before `currentTime` | `PENDING` |
+| `recoverExpiredLeases` | `LEASED` with expiry before `currentTime` | `PENDING` if attempt is null; otherwise `RETRY_WAITING` |
 
 ### Atomic acquisition
 
@@ -61,15 +62,24 @@ availability before assigning the lease.
 
 ### Guarded lease transitions
 
-`complete`, `reschedule`, and `fail` include the lease ID in the SQL predicate.
-A stale or mismatched lease affects zero rows and returns
+`complete`, `defer`, `reschedule`, and `fail` include the lease ID in the SQL
+predicate. A stale or mismatched lease affects zero rows and returns
 `QUEUE_STALE_LEASE`.
 
 ### Expired-lease recovery
 
 Recovery uses one SQL update and only recovers leases whose expiry is strictly
-earlier than the supplied `currentTime`. The implementation always returns
-recovered work to `PENDING`; it does not execute that work.
+earlier than the supplied `currentTime`. It preserves `retry_attempt_number`
+exactly: null history returns to `PENDING`, while retry N returns to
+`RETRY_WAITING`. It clears the expired lease and last error but does not
+execute the work or reset its retry budget.
+
+### Non-retry deferral
+
+`defer` uses one guarded SQL update. It changes availability and clears the
+active lease and last error without writing `retry_attempt_number`. Repeated
+connectivity deferrals therefore remain `PENDING` with a null attempt, while a
+deferral after retry N remains `RETRY_WAITING` with attempt N.
 
 ## Execution and cancellation
 

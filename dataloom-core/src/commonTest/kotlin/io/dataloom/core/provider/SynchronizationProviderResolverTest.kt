@@ -29,6 +29,7 @@ import io.dataloom.api.queue.QueueAcquireRequest
 import io.dataloom.api.queue.QueueAcquireResult
 import io.dataloom.api.queue.QueueCancellationRequest
 import io.dataloom.api.queue.QueueCompletionRequest
+import io.dataloom.api.queue.QueueDeferralRequest
 import io.dataloom.api.queue.QueueEnqueueRequest
 import io.dataloom.api.queue.QueueFailureRequest
 import io.dataloom.api.queue.QueueRescheduleRequest
@@ -269,6 +270,9 @@ class SynchronizationProviderResolverTest {
             ProviderOperationResult.Failure(FakeError())
 
         override suspend fun reschedule(request: QueueRescheduleRequest): ProviderOperationResult<Unit> =
+            ProviderOperationResult.Failure(FakeError())
+
+        override suspend fun defer(request: QueueDeferralRequest): ProviderOperationResult<Unit> =
             ProviderOperationResult.Failure(FakeError())
 
         override suspend fun fail(request: QueueFailureRequest): ProviderOperationResult<Unit> =

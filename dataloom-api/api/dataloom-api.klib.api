@@ -113,6 +113,16 @@ final enum class io.dataloom.api.model/WorkflowPriority : kotlin/Enum<io.dataloo
     final fun values(): kotlin/Array<io.dataloom.api.model/WorkflowPriority> // io.dataloom.api.model/WorkflowPriority.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.api.queue/QueueDeferralReason : kotlin/Enum<io.dataloom.api.queue/QueueDeferralReason> { // io.dataloom.api.queue/QueueDeferralReason|null[0]
+    enum entry CONNECTIVITY_REQUIREMENT_NOT_MET // io.dataloom.api.queue/QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET|null[0]
+
+    final val entries // io.dataloom.api.queue/QueueDeferralReason.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.queue/QueueDeferralReason> // io.dataloom.api.queue/QueueDeferralReason.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.queue/QueueDeferralReason // io.dataloom.api.queue/QueueDeferralReason.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.queue/QueueDeferralReason> // io.dataloom.api.queue/QueueDeferralReason.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.api.queue/QueueEntryState : kotlin/Enum<io.dataloom.api.queue/QueueEntryState> { // io.dataloom.api.queue/QueueEntryState|null[0]
     enum entry CANCELLED // io.dataloom.api.queue/QueueEntryState.CANCELLED|null[0]
     enum entry COMPLETED // io.dataloom.api.queue/QueueEntryState.COMPLETED|null[0]
@@ -519,6 +529,7 @@ abstract interface io.dataloom.api.queue/QueueProvider : io.dataloom.api.provide
     abstract suspend fun acquire(io.dataloom.api.queue/QueueAcquireRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.queue/QueueAcquireResult> // io.dataloom.api.queue/QueueProvider.acquire|acquire(io.dataloom.api.queue.QueueAcquireRequest){}[0]
     abstract suspend fun cancel(io.dataloom.api.queue/QueueCancellationRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.api.queue/QueueProvider.cancel|cancel(io.dataloom.api.queue.QueueCancellationRequest){}[0]
     abstract suspend fun complete(io.dataloom.api.queue/QueueCompletionRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.api.queue/QueueProvider.complete|complete(io.dataloom.api.queue.QueueCompletionRequest){}[0]
+    abstract suspend fun defer(io.dataloom.api.queue/QueueDeferralRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.api.queue/QueueProvider.defer|defer(io.dataloom.api.queue.QueueDeferralRequest){}[0]
     abstract suspend fun enqueue(io.dataloom.api.queue/QueueEnqueueRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.api.queue/QueueProvider.enqueue|enqueue(io.dataloom.api.queue.QueueEnqueueRequest){}[0]
     abstract suspend fun fail(io.dataloom.api.queue/QueueFailureRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.api.queue/QueueProvider.fail|fail(io.dataloom.api.queue.QueueFailureRequest){}[0]
     abstract suspend fun recoverExpiredLeases(io.dataloom.api.queue/ExpiredLeaseRecoveryRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.queue/ExpiredLeaseRecoveryResult> // io.dataloom.api.queue/QueueProvider.recoverExpiredLeases|recoverExpiredLeases(io.dataloom.api.queue.ExpiredLeaseRecoveryRequest){}[0]
@@ -1541,6 +1552,31 @@ final class io.dataloom.api.queue/QueueCompletionRequest { // io.dataloom.api.qu
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.queue/QueueCompletionRequest.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.queue/QueueCompletionRequest.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.queue/QueueCompletionRequest.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.queue/QueueDeferralRequest { // io.dataloom.api.queue/QueueDeferralRequest|null[0]
+    constructor <init>(io.dataloom.api.identifier/QueueEntryId, io.dataloom.api.identifier/QueueLeaseId, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.queue/QueueDeferralReason, io.dataloom.api.context/DataLoomMetadata = ...) // io.dataloom.api.queue/QueueDeferralRequest.<init>|<init>(io.dataloom.api.identifier.QueueEntryId;io.dataloom.api.identifier.QueueLeaseId;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.queue.QueueDeferralReason;io.dataloom.api.context.DataLoomMetadata){}[0]
+
+    final val availableAt // io.dataloom.api.queue/QueueDeferralRequest.availableAt|{}availableAt[0]
+        final fun <get-availableAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.queue/QueueDeferralRequest.availableAt.<get-availableAt>|<get-availableAt>(){}[0]
+    final val entryId // io.dataloom.api.queue/QueueDeferralRequest.entryId|{}entryId[0]
+        final fun <get-entryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.api.queue/QueueDeferralRequest.entryId.<get-entryId>|<get-entryId>(){}[0]
+    final val leaseId // io.dataloom.api.queue/QueueDeferralRequest.leaseId|{}leaseId[0]
+        final fun <get-leaseId>(): io.dataloom.api.identifier/QueueLeaseId // io.dataloom.api.queue/QueueDeferralRequest.leaseId.<get-leaseId>|<get-leaseId>(){}[0]
+    final val metadata // io.dataloom.api.queue/QueueDeferralRequest.metadata|{}metadata[0]
+        final fun <get-metadata>(): io.dataloom.api.context/DataLoomMetadata // io.dataloom.api.queue/QueueDeferralRequest.metadata.<get-metadata>|<get-metadata>(){}[0]
+    final val reason // io.dataloom.api.queue/QueueDeferralRequest.reason|{}reason[0]
+        final fun <get-reason>(): io.dataloom.api.queue/QueueDeferralReason // io.dataloom.api.queue/QueueDeferralRequest.reason.<get-reason>|<get-reason>(){}[0]
+
+    final fun component1(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.api.queue/QueueDeferralRequest.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.identifier/QueueLeaseId // io.dataloom.api.queue/QueueDeferralRequest.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.queue/QueueDeferralRequest.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.queue/QueueDeferralReason // io.dataloom.api.queue/QueueDeferralRequest.component4|component4(){}[0]
+    final fun component5(): io.dataloom.api.context/DataLoomMetadata // io.dataloom.api.queue/QueueDeferralRequest.component5|component5(){}[0]
+    final fun copy(io.dataloom.api.identifier/QueueEntryId = ..., io.dataloom.api.identifier/QueueLeaseId = ..., io.dataloom.api.time/DataLoomInstant = ..., io.dataloom.api.queue/QueueDeferralReason = ..., io.dataloom.api.context/DataLoomMetadata = ...): io.dataloom.api.queue/QueueDeferralRequest // io.dataloom.api.queue/QueueDeferralRequest.copy|copy(io.dataloom.api.identifier.QueueEntryId;io.dataloom.api.identifier.QueueLeaseId;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.queue.QueueDeferralReason;io.dataloom.api.context.DataLoomMetadata){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.queue/QueueDeferralRequest.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.queue/QueueDeferralRequest.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.queue/QueueDeferralRequest.toString|toString(){}[0]
 }
 
 final class io.dataloom.api.queue/QueueEnqueueRequest { // io.dataloom.api.queue/QueueEnqueueRequest|null[0]

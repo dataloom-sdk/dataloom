@@ -12,8 +12,12 @@ package io.dataloom.runtime.worker
  * - [RESCHEDULED_ENTRY_AVAILABLE] — one or more entries were successfully
  *   persisted into a future rescheduled state. The earliest availability time
  *   is known from the processing result.
- * - [BOTH] — both continuation conditions exist simultaneously. A single
- *   schedule operation covers both.
+ * - [DEFERRED_ENTRY_AVAILABLE] — one or more entries were successfully
+ *   deferred without consuming retry history.
+ * - [RETRY_AND_DEFERRAL_AVAILABLE] — both retry and deferral availability
+ *   evidence exists; the earlier instant is selected.
+ * - [BOTH] — the acquisition limit and at least one future-availability
+ *   condition exist simultaneously.
  *
  * ## Ordinal contract
  *
@@ -45,8 +49,20 @@ public enum class QueueWorkerWakeUpReason {
     RESCHEDULED_ENTRY_AVAILABLE,
 
     /**
-     * Both [ACQUISITION_LIMIT_REACHED] and [RESCHEDULED_ENTRY_AVAILABLE]
-     * conditions exist simultaneously.
+     * One or more entries were deferred without consuming retry history.
+     */
+    DEFERRED_ENTRY_AVAILABLE,
+
+    /**
+     * Both retry-rescheduled and non-retry deferred entries were persisted.
+     *
+     * The earlier availability instant is used for scheduling.
+     */
+    RETRY_AND_DEFERRAL_AVAILABLE,
+
+    /**
+     * Both [ACQUISITION_LIMIT_REACHED] and at least one retry or deferral
+     * availability condition exist simultaneously.
      *
      * A single schedule operation covers both; the earlier of the two
      * candidate delays is selected.

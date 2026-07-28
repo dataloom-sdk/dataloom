@@ -62,6 +62,7 @@ final enum class io.dataloom.runtime.queue/QueueProcessingFailureStage : kotlin/
     enum entry ACQUISITION_VALIDATION // io.dataloom.runtime.queue/QueueProcessingFailureStage.ACQUISITION_VALIDATION|null[0]
     enum entry CANCELLATION_TRANSITION // io.dataloom.runtime.queue/QueueProcessingFailureStage.CANCELLATION_TRANSITION|null[0]
     enum entry COMPLETION_TRANSITION // io.dataloom.runtime.queue/QueueProcessingFailureStage.COMPLETION_TRANSITION|null[0]
+    enum entry DEFERRAL_TRANSITION // io.dataloom.runtime.queue/QueueProcessingFailureStage.DEFERRAL_TRANSITION|null[0]
     enum entry FAILURE_TRANSITION // io.dataloom.runtime.queue/QueueProcessingFailureStage.FAILURE_TRANSITION|null[0]
     enum entry RESCHEDULE_TRANSITION // io.dataloom.runtime.queue/QueueProcessingFailureStage.RESCHEDULE_TRANSITION|null[0]
 
@@ -117,7 +118,9 @@ final enum class io.dataloom.runtime.submission/QueueSubmissionFailureStage : ko
 final enum class io.dataloom.runtime.worker/QueueWorkerWakeUpReason : kotlin/Enum<io.dataloom.runtime.worker/QueueWorkerWakeUpReason> { // io.dataloom.runtime.worker/QueueWorkerWakeUpReason|null[0]
     enum entry ACQUISITION_LIMIT_REACHED // io.dataloom.runtime.worker/QueueWorkerWakeUpReason.ACQUISITION_LIMIT_REACHED|null[0]
     enum entry BOTH // io.dataloom.runtime.worker/QueueWorkerWakeUpReason.BOTH|null[0]
+    enum entry DEFERRED_ENTRY_AVAILABLE // io.dataloom.runtime.worker/QueueWorkerWakeUpReason.DEFERRED_ENTRY_AVAILABLE|null[0]
     enum entry RESCHEDULED_ENTRY_AVAILABLE // io.dataloom.runtime.worker/QueueWorkerWakeUpReason.RESCHEDULED_ENTRY_AVAILABLE|null[0]
+    enum entry RETRY_AND_DEFERRAL_AVAILABLE // io.dataloom.runtime.worker/QueueWorkerWakeUpReason.RETRY_AND_DEFERRAL_AVAILABLE|null[0]
 
     final val entries // io.dataloom.runtime.worker/QueueWorkerWakeUpReason.entries|#static{}entries[0]
         final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.worker/QueueWorkerWakeUpReason> // io.dataloom.runtime.worker/QueueWorkerWakeUpReason.entries.<get-entries>|<get-entries>#static(){}[0]
@@ -438,6 +441,22 @@ sealed interface io.dataloom.runtime.queue/QueueEntryExecutionOutcome { // io.da
         final fun toString(): kotlin/String // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Completed.toString|toString(){}[0]
     }
 
+    final class Deferred : io.dataloom.runtime.queue/QueueEntryExecutionOutcome { // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Deferred|null[0]
+        constructor <init>(io.dataloom.api.time/DataLoomInstant, io.dataloom.api.queue/QueueDeferralReason) // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Deferred.<init>|<init>(io.dataloom.api.time.DataLoomInstant;io.dataloom.api.queue.QueueDeferralReason){}[0]
+
+        final val availableAt // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Deferred.availableAt|{}availableAt[0]
+            final fun <get-availableAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Deferred.availableAt.<get-availableAt>|<get-availableAt>(){}[0]
+        final val reason // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Deferred.reason|{}reason[0]
+            final fun <get-reason>(): io.dataloom.api.queue/QueueDeferralReason // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Deferred.reason.<get-reason>|<get-reason>(){}[0]
+
+        final fun component1(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Deferred.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.queue/QueueDeferralReason // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Deferred.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.time/DataLoomInstant = ..., io.dataloom.api.queue/QueueDeferralReason = ...): io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Deferred // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Deferred.copy|copy(io.dataloom.api.time.DataLoomInstant;io.dataloom.api.queue.QueueDeferralReason){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Deferred.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Deferred.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Deferred.toString|toString(){}[0]
+    }
+
     final class Failed : io.dataloom.runtime.queue/QueueEntryExecutionOutcome { // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Failed|null[0]
         constructor <init>(io.dataloom.api.error/DataLoomError, io.dataloom.api.queue/QueueFailureDisposition) // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Failed.<init>|<init>(io.dataloom.api.error.DataLoomError;io.dataloom.api.queue.QueueFailureDisposition){}[0]
 
@@ -476,10 +495,14 @@ sealed interface io.dataloom.runtime.queue/QueueEntryExecutionOutcome { // io.da
 
 sealed interface io.dataloom.runtime.queue/QueueProcessingResult { // io.dataloom.runtime.queue/QueueProcessingResult|null[0]
     final class Processed : io.dataloom.runtime.queue/QueueProcessingResult { // io.dataloom.runtime.queue/QueueProcessingResult.Processed|null[0]
-        constructor <init>(io.dataloom.runtime.queue/QueueProcessingSummary, kotlin/Boolean = ..., io.dataloom.api.time/DataLoomInstant? = ...) // io.dataloom.runtime.queue/QueueProcessingResult.Processed.<init>|<init>(io.dataloom.runtime.queue.QueueProcessingSummary;kotlin.Boolean;io.dataloom.api.time.DataLoomInstant?){}[0]
+        constructor <init>(io.dataloom.runtime.queue/QueueProcessingSummary, kotlin/Boolean = ..., io.dataloom.api.time/DataLoomInstant? = ..., io.dataloom.api.time/DataLoomInstant? = ...) // io.dataloom.runtime.queue/QueueProcessingResult.Processed.<init>|<init>(io.dataloom.runtime.queue.QueueProcessingSummary;kotlin.Boolean;io.dataloom.api.time.DataLoomInstant?;io.dataloom.api.time.DataLoomInstant?){}[0]
 
         final val acquisitionLimitReached // io.dataloom.runtime.queue/QueueProcessingResult.Processed.acquisitionLimitReached|{}acquisitionLimitReached[0]
             final fun <get-acquisitionLimitReached>(): kotlin/Boolean // io.dataloom.runtime.queue/QueueProcessingResult.Processed.acquisitionLimitReached.<get-acquisitionLimitReached>|<get-acquisitionLimitReached>(){}[0]
+        final val earliestDeferredAt // io.dataloom.runtime.queue/QueueProcessingResult.Processed.earliestDeferredAt|{}earliestDeferredAt[0]
+            final fun <get-earliestDeferredAt>(): io.dataloom.api.time/DataLoomInstant? // io.dataloom.runtime.queue/QueueProcessingResult.Processed.earliestDeferredAt.<get-earliestDeferredAt>|<get-earliestDeferredAt>(){}[0]
+        final val earliestNextAvailableAt // io.dataloom.runtime.queue/QueueProcessingResult.Processed.earliestNextAvailableAt|{}earliestNextAvailableAt[0]
+            final fun <get-earliestNextAvailableAt>(): io.dataloom.api.time/DataLoomInstant? // io.dataloom.runtime.queue/QueueProcessingResult.Processed.earliestNextAvailableAt.<get-earliestNextAvailableAt>|<get-earliestNextAvailableAt>(){}[0]
         final val earliestRescheduledAt // io.dataloom.runtime.queue/QueueProcessingResult.Processed.earliestRescheduledAt|{}earliestRescheduledAt[0]
             final fun <get-earliestRescheduledAt>(): io.dataloom.api.time/DataLoomInstant? // io.dataloom.runtime.queue/QueueProcessingResult.Processed.earliestRescheduledAt.<get-earliestRescheduledAt>|<get-earliestRescheduledAt>(){}[0]
         final val summary // io.dataloom.runtime.queue/QueueProcessingResult.Processed.summary|{}summary[0]
@@ -488,7 +511,8 @@ sealed interface io.dataloom.runtime.queue/QueueProcessingResult { // io.dataloo
         final fun component1(): io.dataloom.runtime.queue/QueueProcessingSummary // io.dataloom.runtime.queue/QueueProcessingResult.Processed.component1|component1(){}[0]
         final fun component2(): kotlin/Boolean // io.dataloom.runtime.queue/QueueProcessingResult.Processed.component2|component2(){}[0]
         final fun component3(): io.dataloom.api.time/DataLoomInstant? // io.dataloom.runtime.queue/QueueProcessingResult.Processed.component3|component3(){}[0]
-        final fun copy(io.dataloom.runtime.queue/QueueProcessingSummary = ..., kotlin/Boolean = ..., io.dataloom.api.time/DataLoomInstant? = ...): io.dataloom.runtime.queue/QueueProcessingResult.Processed // io.dataloom.runtime.queue/QueueProcessingResult.Processed.copy|copy(io.dataloom.runtime.queue.QueueProcessingSummary;kotlin.Boolean;io.dataloom.api.time.DataLoomInstant?){}[0]
+        final fun component4(): io.dataloom.api.time/DataLoomInstant? // io.dataloom.runtime.queue/QueueProcessingResult.Processed.component4|component4(){}[0]
+        final fun copy(io.dataloom.runtime.queue/QueueProcessingSummary = ..., kotlin/Boolean = ..., io.dataloom.api.time/DataLoomInstant? = ..., io.dataloom.api.time/DataLoomInstant? = ...): io.dataloom.runtime.queue/QueueProcessingResult.Processed // io.dataloom.runtime.queue/QueueProcessingResult.Processed.copy|copy(io.dataloom.runtime.queue.QueueProcessingSummary;kotlin.Boolean;io.dataloom.api.time.DataLoomInstant?;io.dataloom.api.time.DataLoomInstant?){}[0]
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.queue/QueueProcessingResult.Processed.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingResult.Processed.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.runtime.queue/QueueProcessingResult.Processed.toString|toString(){}[0]
@@ -1320,7 +1344,7 @@ final class io.dataloom.runtime.queue/QueueProcessingRequest { // io.dataloom.ru
 }
 
 final class io.dataloom.runtime.queue/QueueProcessingSummary { // io.dataloom.runtime.queue/QueueProcessingSummary|null[0]
-    constructor <init>(kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int) // io.dataloom.runtime.queue/QueueProcessingSummary.<init>|<init>(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+    constructor <init>(kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int = ...) // io.dataloom.runtime.queue/QueueProcessingSummary.<init>|<init>(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
 
     final val acquired // io.dataloom.runtime.queue/QueueProcessingSummary.acquired|{}acquired[0]
         final fun <get-acquired>(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingSummary.acquired.<get-acquired>|<get-acquired>(){}[0]
@@ -1328,6 +1352,8 @@ final class io.dataloom.runtime.queue/QueueProcessingSummary { // io.dataloom.ru
         final fun <get-cancelled>(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingSummary.cancelled.<get-cancelled>|<get-cancelled>(){}[0]
     final val completed // io.dataloom.runtime.queue/QueueProcessingSummary.completed|{}completed[0]
         final fun <get-completed>(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingSummary.completed.<get-completed>|<get-completed>(){}[0]
+    final val deferred // io.dataloom.runtime.queue/QueueProcessingSummary.deferred|{}deferred[0]
+        final fun <get-deferred>(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingSummary.deferred.<get-deferred>|<get-deferred>(){}[0]
     final val executed // io.dataloom.runtime.queue/QueueProcessingSummary.executed|{}executed[0]
         final fun <get-executed>(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingSummary.executed.<get-executed>|<get-executed>(){}[0]
     final val failed // io.dataloom.runtime.queue/QueueProcessingSummary.failed|{}failed[0]
@@ -1341,7 +1367,8 @@ final class io.dataloom.runtime.queue/QueueProcessingSummary { // io.dataloom.ru
     final fun component4(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingSummary.component4|component4(){}[0]
     final fun component5(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingSummary.component5|component5(){}[0]
     final fun component6(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingSummary.component6|component6(){}[0]
-    final fun copy(kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...): io.dataloom.runtime.queue/QueueProcessingSummary // io.dataloom.runtime.queue/QueueProcessingSummary.copy|copy(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+    final fun component7(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingSummary.component7|component7(){}[0]
+    final fun copy(kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...): io.dataloom.runtime.queue/QueueProcessingSummary // io.dataloom.runtime.queue/QueueProcessingSummary.copy|copy(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.queue/QueueProcessingSummary.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingSummary.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.runtime.queue/QueueProcessingSummary.toString|toString(){}[0]

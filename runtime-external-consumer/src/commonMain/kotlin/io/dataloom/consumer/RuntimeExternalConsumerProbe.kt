@@ -5,8 +5,11 @@ import io.dataloom.api.execution.SynchronizationProviderSet
 import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.api.provider.ProviderBindingFailure
 import io.dataloom.api.provider.ProviderLifecycleResult
+import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.api.provider.SynchronizationProviderBindings
+import io.dataloom.api.queue.QueueDeferralRequest
+import io.dataloom.api.queue.QueueProvider
 import io.dataloom.api.runtime.RuntimeDependencies
 import io.dataloom.api.strategy.ClassifiedStrategyRemoteError
 import io.dataloom.api.strategy.StrategyFallbackPlan
@@ -70,4 +73,13 @@ internal fun compileRemoteFirstRuntimeConsumer(
         result.completedOperations
     }
     return remoteError.remoteOutcome
+}
+
+/** Compile-only use of the public non-retry queue-deferral contract. */
+internal suspend fun compileQueueDeferralConsumer(
+    queueProvider: QueueProvider,
+    request: QueueDeferralRequest,
+): ProviderOperationResult<Unit> {
+    request.reason
+    return queueProvider.defer(request)
 }

@@ -5,6 +5,7 @@ import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
+import io.dataloom.api.queue.QueueDeferralReason
 import io.dataloom.api.queue.QueueEntry
 import io.dataloom.api.queue.QueueFailureDisposition
 import io.dataloom.api.retry.RetryAttempt
@@ -83,7 +84,7 @@ import io.dataloom.runtime.retry.SynchronizationRetryEvaluator
  *
  * When [connectivityConfiguration] is provided with a non-NONE requirement,
  * [clock] is read exactly once when a connectivity rejection is mapped to
- * [QueueEntryExecutionOutcome.Reschedule]. The completion instant for
+ * [QueueEntryExecutionOutcome.Deferred]. The completion instant for
  * [QueueEntryExecutionOutcome.Completed] is taken from
  * [io.dataloom.api.synchronization.SynchronizationResult.completedAt], which
  * was recorded by the synchronization pipeline at the point of completion.
@@ -166,7 +167,7 @@ internal class QueuedSynchronizationExecutionHandler(
         // Step 3–4: Execute synchronization; map coordinator rejections.
         val executionResult = executionCoordinator.execute(work.request, work.bindings)
         if (executionResult is SynchronizationExecutionResult.Rejected) {
-            return mapCoordinatorRejection(executionResult, entry)
+            return mapCoordinatorRejection(executionResult)
         }
 
         // Step 5: Map the pipeline result to a queue outcome.
@@ -180,8 +181,8 @@ internal class QueuedSynchronizationExecutionHandler(
      *
      * - [SynchronizationExecutionRejectionReason.CONNECTIVITY_REQUIREMENT_NOT_MET]:
      *   when [connectivityConfiguration] and [clock] are both available,
-     *   returns [QueueEntryExecutionOutcome.Reschedule] using the offline
-     *   reschedule delay. Otherwise returns [QueueEntryExecutionOutcome.Failed].
+     *   returns [QueueEntryExecutionOutcome.Deferred] using the offline
+     *   deferral delay. Otherwise returns [QueueEntryExecutionOutcome.Failed].
      * - [SynchronizationExecutionRejectionReason.CONNECTIVITY_PROVIDER_NOT_CONFIGURED]:
      *   returns [QueueEntryExecutionOutcome.Failed] with a structural
      *   configuration error.
@@ -193,14 +194,13 @@ internal class QueuedSynchronizationExecutionHandler(
      */
     private fun mapCoordinatorRejection(
         rejected: SynchronizationExecutionResult.Rejected,
-        entry: QueueEntry,
     ): QueueEntryExecutionOutcome = when (rejected.reason) {
 
         SynchronizationExecutionRejectionReason.CONNECTIVITY_REQUIREMENT_NOT_MET -> {
             val config = connectivityConfiguration
             val offlineClock = clock
             if (config != null && offlineClock != null) {
-                offlineDeferralReschedule(config, offlineClock, entry)
+                offlineDeferral(config, offlineClock)
             } else {
                 QueueEntryExecutionOutcome.Failed(
                     error = structuralRejectionError(rejected),
@@ -229,30 +229,27 @@ internal class QueuedSynchronizationExecutionHandler(
     }
 
     /**
-     * Computes an offline deferral [QueueEntryExecutionOutcome.Reschedule].
+     * Computes an offline [QueueEntryExecutionOutcome.Deferred].
      *
      * Reads [clock] exactly once. Calculates next availability as
      * `clock.now().epochMilliseconds + config.offlineRescheduleDelay.milliseconds`
-     * using overflow-safe arithmetic. The retry attempt is taken from the
-     * entry without increment.
+     * using overflow-safe arithmetic. Retry history is intentionally absent
+     * from the outcome and is preserved by the queue provider.
      *
      * [io.dataloom.api.retry.RetryPolicy] is not invoked.
      * [io.dataloom.api.scheduling.SchedulerProvider] is not invoked.
      * [io.dataloom.api.queue.QueueProvider] is not invoked.
      */
-    private fun offlineDeferralReschedule(
+    private fun offlineDeferral(
         config: SynchronizationConnectivityConfiguration,
         offlineClock: DataLoomClock,
-        entry: QueueEntry,
-    ): QueueEntryExecutionOutcome.Reschedule {
+    ): QueueEntryExecutionOutcome.Deferred {
         val nowMillis = offlineClock.now().epochMilliseconds
         val delayMillis = config.offlineRescheduleDelay.milliseconds
         val availableAtMillis = addMillisOverflowSafe(nowMillis, delayMillis)
-        val deferralAttempt = entry.retryAttempt ?: RetryAttempt(1)
-        return QueueEntryExecutionOutcome.Reschedule(
-            retryAttempt = deferralAttempt,
+        return QueueEntryExecutionOutcome.Deferred(
             availableAt = DataLoomInstant(epochMilliseconds = availableAtMillis),
-            error = offlineDeferralError(),
+            reason = QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET,
         )
     }
 
@@ -361,15 +358,6 @@ internal class QueuedSynchronizationExecutionHandler(
     private fun connectivityProviderMissingError(): DataLoomError = ConnectivityProviderMissingError()
 
     /**
-     * Produces a canonical [DataLoomError] for an offline deferral.
-     *
-     * Used as the error on a [QueueEntryExecutionOutcome.Reschedule] when the
-     * connectivity requirement was not met and the entry is deferred.
-     * Exposes only a stable error code and safe structural metadata.
-     */
-    private fun offlineDeferralError(): DataLoomError = OfflineDeferralError()
-
-    /**
      * Minimal canonical [DataLoomError] synthesized from a
      * [io.dataloom.runtime.execution.SynchronizationExecutionRejectionReason].
      *
@@ -407,21 +395,4 @@ internal class QueuedSynchronizationExecutionHandler(
         override val cause: Throwable? = null
     }
 
-    /**
-     * Minimal canonical [DataLoomError] for an offline connectivity deferral.
-     *
-     * Attached to [QueueEntryExecutionOutcome.Reschedule] when the
-     * connectivity requirement was not satisfied and the entry is deferred
-     * to a future availability time. Exposes only a stable error code and
-     * safe structural metadata.
-     */
-    private class OfflineDeferralError : DataLoomError {
-        override val code: ErrorCode = ErrorCode("DL-CONNECTIVITY-REQUIREMENT-NOT-MET")
-        override val category: ErrorCategory = ErrorCategory.NETWORK
-        override val severity: ErrorSeverity = ErrorSeverity.WARNING
-        override val recoverability: Recoverability = Recoverability.RECOVERABLE
-        override val message: String =
-            "Connectivity requirement not satisfied; synchronization deferred for offline retry."
-        override val cause: Throwable? = null
-    }
 }

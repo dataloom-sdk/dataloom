@@ -44,7 +44,7 @@ schemas and ownership boundaries must remain separate.
 
 - Persisting `QueueEntry` records in durable storage.
 - Atomically acquiring eligible entries and assigning exclusive leases.
-- Completing, rescheduling, failing, and cancelling entries.
+- Completing, deferring, rescheduling, failing, and cancelling entries.
 - Recovering entries whose leases have expired after process death.
 - Validating active lease identifiers on all lease-protected operations.
 
@@ -69,16 +69,18 @@ stateDiagram-v2
     RetryWaiting --> Leased: acquire
     Leased --> Completed: complete
     Leased --> RetryWaiting: reschedule
+    Leased --> Pending: defer or recover, no retry history
+    Leased --> RetryWaiting: defer or recover, retry N exists
     Leased --> Failed: fail
     Leased --> Cancelled: cancel
-    Leased --> Pending: recover lease
     Completed --> [*]
     Failed --> [*]
     Cancelled --> [*]
 ```
 
-V1 must correct retry-history preservation during non-retry deferral and lease
-recovery before this lifecycle is production-safe.
+Deferral and lease recovery preserve retry history: null remains null and
+attempt N remains N. Wider retry/circuit state and persistence qualification
+remain V1 work.
 
 ---
 
@@ -93,6 +95,8 @@ The DataLoom runtime owns:
 - Dependency ordering.
 - Evaluating `RetryPolicy` and supplying `RetryAttempt` and `availableAt`
   to `QueueProvider.reschedule`.
+- Classifying unmet execution constraints and supplying `availableAt` and a
+  stable reason to `QueueProvider.defer` without creating an attempt.
 - Choosing `QueueFailureDisposition` based on policy.
 - Triggering `recoverExpiredLeases` after detecting potential process death.
 
@@ -158,6 +162,18 @@ QueueProvider.fail()
 `QueueProvider.reschedule` receives a `RetryAttempt` and `availableAt`
 supplied by the runtime. It must persist them without re-evaluating policy.
 
+Constraint deferral follows a separate path:
+
+```text
+Execution constraint not met before pipeline execution
+      ↓
+QueueEntryExecutionOutcome.Deferred
+      ↓
+QueueProvider.defer()
+      ↓
+Preserve retryAttempt exactly
+```
+
 ---
 
 ## Process-Death Recovery Boundary
@@ -183,8 +199,9 @@ Recovery requirements:
 - Based on persisted lease information only.
 - In-memory state must not be assumed to survive.
 - Unexpired leases must not be recovered.
-- Concrete implementations must document the recovered state transition
-  (`PENDING` or `RETRY_WAITING`) and their transactional guarantees.
+- Preserve `retryAttempt` exactly.
+- Return to `PENDING` when the attempt is null and to `RETRY_WAITING` when
+  attempt N exists.
 
 ---
 

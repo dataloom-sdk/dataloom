@@ -40,10 +40,9 @@ sequenceDiagram
 Recovery and processing are bounded to one call. A future wake-up is scheduled
 only when the processing summary provides continuation evidence.
 
-> [!CAUTION]
-> The current Room and in-memory expired-lease recovery paths clear persisted
-> retry attempts. V1 must preserve a null or genuine attempt exactly so process
-> death cannot reset a retry budget.
+Room and in-memory recovery preserve retry history exactly. A recovered entry
+returns to `PENDING` when its attempt is null and to `RETRY_WAITING` when
+attempt N exists, so process death cannot reset a retry budget.
 
 ---
 
@@ -90,6 +89,7 @@ Caller
       │                summary.acquired=5,
       │                acquisitionLimitReached=true,
       │                earliestRescheduledAt=null,
+      │                earliestDeferredAt=null,
       │            )
       │
       ├─ Wake-up plan: Schedule(
@@ -130,6 +130,7 @@ Caller
       │                summary.acquired=2, summary.rescheduled=2,
       │                acquisitionLimitReached=false,
       │                earliestRescheduledAt=<earliest availableAt>,
+      │                earliestDeferredAt=null,
       │            )
       │
       ├─ → DataLoomClock.now()    [read exactly once]
@@ -153,7 +154,77 @@ Caller
 
 ---
 
-## Sequence 4: Scheduler failure after durable processing
+## Sequence 4: Deferred-entry wake-up
+
+Triggered when one or more entries were durably deferred because an execution
+constraint was not met. Deferral does not consume retry history.
+
+```text
+Caller
+  → QueueWorkerCoordinator.run(request)
+      │
+      ├─ → DurableQueueExecutionProcessor.process(processingRequest)
+      │         → QueueProvider.acquire(acquireRequest)
+      │               ← ProviderOperationResult.Success(Entries[1 entry])
+      │         [handler returns Deferred]
+      │         → QueueProvider.defer(entry)
+      │               ← ProviderOperationResult.Success(Unit)
+      │         ← QueueProcessingResult.Processed(
+      │                summary.acquired=1, summary.deferred=1,
+      │                acquisitionLimitReached=false,
+      │                earliestRescheduledAt=null,
+      │                earliestDeferredAt=<availableAt>,
+      │            )
+      │
+      ├─ → DataLoomClock.now()    [read exactly once]
+      │         ← DataLoomInstant(nowMs)
+      │
+      ├─ delay = max(0, earliestDeferredAt − nowMs)
+      │
+      ├─ Wake-up plan: Schedule(
+      │     reason=DEFERRED_ENTRY_AVAILABLE,
+      │     delay=SchedulingDelay(delayMs),
+      │     scheduleId=..., constraints=..., existingSchedulePolicy=...,
+      │   )
+      │
+      ├─ → SchedulerProvider.schedule(ScheduleRequest)
+      │         ← ProviderOperationResult.Success(ScheduleReceipt)
+      │
+      └─ ← QueueWorkerRunResult.ProcessingCompleted(
+               schedulingResult = Scheduled(receipt, plan),
+           )
+```
+
+---
+
+## Sequence 5: Retry and deferral in the same cycle
+
+When both kinds of future availability exist, the coordinator schedules once
+at the earlier successfully persisted timestamp.
+
+```text
+QueueProcessingResult.Processed(
+    earliestRescheduledAt=<retryAt>,
+    earliestDeferredAt=<deferredAt>,
+)
+        ↓
+earliest = min(retryAt, deferredAt)
+        ↓
+QueueWorkerWakeUpPlan.Schedule(
+    reason=RETRY_AND_DEFERRAL_AVAILABLE,
+    delay=max(0, earliest − now),
+)
+        ↓
+SchedulerProvider.schedule(...) exactly once
+```
+
+If the acquisition limit was also reached, the reason is `BOTH` and the one
+scheduled delay is the minimum of the continuation delay and future-entry
+delay.
+
+---
+
+## Sequence 6: Scheduler failure after durable processing
 
 Durable queue state is **not** rolled back. The coordinator returns
 `ProcessingCompleted` with `SchedulerFailed` inside `schedulingResult`.
@@ -181,7 +252,7 @@ Caller
 
 ---
 
-## Sequence 5: Recovery failure
+## Sequence 7: Recovery failure
 
 Recovery failure stops the cycle. No acquisition or scheduling follows.
 
@@ -200,7 +271,7 @@ Caller
 
 ---
 
-## Sequence 6: Cancellation during scheduler invocation
+## Sequence 8: Cancellation during scheduler invocation
 
 Durable queue transitions that succeeded before cancellation are not rolled
 back. Cancellation propagates normally.
@@ -231,15 +302,20 @@ Caller
 When only acquisitionLimitReached:
     delay = configuration.continuationDelay
 
-When only earliestRescheduledAt:
-    now   = DataLoomClock.now()     [read exactly once]
-    delay = max(0, earliestRescheduledAt − now)
+When retry or deferral availability exists:
+    earliest = minimum non-null value of:
+               earliestRescheduledAt, earliestDeferredAt
+    now      = DataLoomClock.now()     [read exactly once]
+    delay    = max(0, earliest − now)
+    reason   = RESCHEDULED_ENTRY_AVAILABLE,
+               DEFERRED_ENTRY_AVAILABLE, or
+               RETRY_AND_DEFERRAL_AVAILABLE
 
-When both:
+When acquisitionLimitReached and future availability both exist:
     continuationMs = configuration.continuationDelay.milliseconds
     now            = DataLoomClock.now()     [read exactly once]
-    reschedMs      = max(0, earliestRescheduledAt − now)
-    selectedDelay  = min(continuationMs, reschedMs)
+    futureMs       = max(0, earliest − now)
+    selectedDelay  = min(continuationMs, futureMs)
     reason         = BOTH
 ```
 
@@ -273,8 +349,10 @@ Already-due timestamps produce `SchedulingDelay.ZERO`.
 |---|---|
 | `acquisitionLimitReached` | `acquiredCount >= QueueAcquireRequest.maxEntries` |
 | `earliestRescheduledAt` | Minimum `availableAt` from **successfully persisted** reschedule transitions only |
+| `earliestDeferredAt` | Minimum `availableAt` from **successfully persisted** deferral transitions only |
+| `earliestNextAvailableAt` | Derived minimum non-null retry or deferral timestamp |
 
-Failed reschedule transitions do not contribute a timestamp.
+Failed reschedule or deferral transitions do not contribute a timestamp.
 
 ---
 

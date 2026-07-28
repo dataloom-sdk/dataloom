@@ -2,9 +2,9 @@
 
 [API reference index](./README.md)
 
-> **Status:** Available queue contracts. Complete retry-history-safe deferral,
-> recovery, migrations, and cross-platform durable implementations remain V1
-> work.
+> **Status:** Available queue contracts. Retry-history-safe deferral and
+> recovery are implemented; migrations, complete retry/circuit state, and
+> cross-platform durable implementations remain V1 work.
 
 This document describes the immutable public contracts for durable queue entry
 lifecycle management introduced in DL-015.
@@ -92,7 +92,7 @@ queue entry. Introduced to support `QueueEntry` and `QueueRescheduleRequest`.
 
 ## QueueEntryState
 
-**Package:** `io.dataloom.api.queue`  
+**Package:** `io.dataloom.api.queue`
 **Type:** `QueueEntryState` (enum class)
 
 Closed set of lifecycle states for a `QueueEntry`.
@@ -119,7 +119,7 @@ Closed set of lifecycle states for a `QueueEntry`.
 
 ## QueueLease
 
-**Package:** `io.dataloom.api.queue`  
+**Package:** `io.dataloom.api.queue`
 **Type:** `QueueLease` (data class)
 
 Immutable exclusive lease held by a consumer over a `QueueEntry`.
@@ -323,11 +323,50 @@ Immutable request to reschedule a failed entry for a future retry attempt.
 - A successful operation transitions the entry to `RETRY_WAITING` and clears
   the active lease.
 
-The contract above is retry-specific. The current offline-deferral path also
-uses it without policy evaluation and fabricates attempt 1 for a new entry;
-that is a confirmed pre-V1 defect, not a valid reinterpretation of
-`RetryAttempt`. See
-[Queue Provider](./queue-provider.md#current-retry-history-limitation).
+The contract is retry-specific. Constraint or connectivity deferral uses
+`QueueDeferralRequest` instead and does not consume an attempt.
+
+---
+
+## QueueDeferralReason
+
+**Package:** `io.dataloom.api.queue`
+
+**Type:** `QueueDeferralReason` (enum class)
+
+Stable reason taxonomy for making leased work available later without
+recording a retry failure.
+
+| Value | Meaning |
+|---|---|
+| `CONNECTIVITY_REQUIREMENT_NOT_MET` | Pipeline execution did not start because its connectivity requirement was not satisfied. |
+
+Enum ordinals are not a persistence or compatibility contract.
+
+---
+
+## QueueDeferralRequest
+
+**Package:** `io.dataloom.api.queue`
+
+**Type:** `QueueDeferralRequest` (data class)
+
+Immutable request for a lease-guarded, non-retry deferral.
+
+| Member | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `entryId` | `QueueEntryId` | Yes | — | Entry to defer. |
+| `leaseId` | `QueueLeaseId` | Yes | — | Active lease identifier. |
+| `availableAt` | `DataLoomInstant` | Yes | — | Next eligibility instant. |
+| `reason` | `QueueDeferralReason` | Yes | — | Stable non-retry reason. |
+| `metadata` | `DataLoomMetadata` | No | `Empty` | Safe contextual attributes. |
+
+### Rules
+
+- The provider verifies the active lease and clears it on success.
+- The provider preserves `retryAttempt` exactly.
+- A null attempt returns to `PENDING`; attempt N returns to `RETRY_WAITING`.
+- No retry policy is evaluated and no error or attempt is manufactured.
 
 ---
 
@@ -421,6 +460,8 @@ Immutable request to recover queue entries whose leases have expired.
 - Construction does not access storage or read the system clock.
 - The provider compares each leased entry's `expiresAt` against `currentTime`
   to determine which entries are eligible for recovery.
+- Recovery preserves the stored retry attempt exactly: null history returns to
+  `PENDING`, while attempt N returns to `RETRY_WAITING`.
 
 ---
 

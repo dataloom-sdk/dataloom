@@ -88,11 +88,13 @@ public final class io/dataloom/testing/queue/InMemoryQueueProvider : io/dataloom
 	public final fun clearRecordings ()V
 	public fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun complete (Lio/dataloom/api/queue/QueueCompletionRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun defer (Lio/dataloom/api/queue/QueueDeferralRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun enqueue (Lio/dataloom/api/queue/QueueEnqueueRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun fail (Lio/dataloom/api/queue/QueueFailureRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun getAcquireRequests ()Ljava/util/List;
 	public final fun getCancellationRequests ()Ljava/util/List;
 	public final fun getCompletionRequests ()Ljava/util/List;
+	public final fun getDeferralRequests ()Ljava/util/List;
 	public fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
 	public final fun getEnqueueRequests ()Ljava/util/List;
 	public final fun getEntryCount ()I

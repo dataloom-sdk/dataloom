@@ -27,6 +27,8 @@ import io.dataloom.api.queue.ExpiredLeaseRecoveryRequest
 import io.dataloom.api.queue.QueueAcquireRequest
 import io.dataloom.api.queue.QueueAcquireResult
 import io.dataloom.api.queue.QueueCompletionRequest
+import io.dataloom.api.queue.QueueDeferralReason
+import io.dataloom.api.queue.QueueDeferralRequest
 import io.dataloom.api.queue.QueueEnqueueRequest
 import io.dataloom.api.queue.QueueEntry
 import io.dataloom.api.queue.QueueEntryState
@@ -213,6 +215,7 @@ class RoomQueueProviderInstrumentedTest {
             acquire(3_000L, leaseId = "recovered-lease"),
         )
         assertEquals(listOf("expired"), reacquired.entries.map { it.id.value })
+        assertNull(reacquired.entries.single().retryAttempt)
     }
 
     @Test
@@ -236,7 +239,7 @@ class RoomQueueProviderInstrumentedTest {
     }
 
     @Test
-    fun reschedulePersistsCanonicalErrorAndRecoveryClearsRetryState() = runBlocking<Unit> {
+    fun reschedulePersistsCanonicalErrorAndRecoveryPreservesRetryState() = runBlocking<Unit> {
         enqueue(makeEntry("retry", enqueuedAt = 1_000L))
         assertIs<QueueAcquireResult.Entries>(
             acquire(1_000L, leaseId = "first-lease"),
@@ -289,8 +292,103 @@ class RoomQueueProviderInstrumentedTest {
         val recovered = assertIs<QueueAcquireResult.Entries>(
             acquire(4_000L, leaseId = "recovered-lease"),
         ).entries.single()
-        assertNull(recovered.retryAttempt)
+        assertEquals(RetryAttempt(2), recovered.retryAttempt)
         assertNull(recovered.lastError)
+    }
+
+    @Test
+    fun initialAndRepeatedDeferralPreserveNullRetryHistory() = runBlocking<Unit> {
+        enqueue(makeEntry("deferred-new", enqueuedAt = 1_000L))
+        assertIs<QueueAcquireResult.Entries>(
+            acquire(1_000L, leaseId = "first-deferral-lease"),
+        )
+
+        assertIs<ProviderOperationResult.Success<Unit>>(
+            provider.defer(
+                QueueDeferralRequest(
+                    entryId = QueueEntryId("deferred-new"),
+                    leaseId = QueueLeaseId("first-deferral-lease"),
+                    availableAt = DataLoomInstant(2_000L),
+                    reason = QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET,
+                ),
+            ),
+        )
+
+        val firstReacquisition = assertIs<QueueAcquireResult.Entries>(
+            acquire(2_000L, leaseId = "second-deferral-lease"),
+        ).entries.single()
+        assertNull(firstReacquisition.retryAttempt)
+
+        assertIs<ProviderOperationResult.Success<Unit>>(
+            provider.defer(
+                QueueDeferralRequest(
+                    entryId = QueueEntryId("deferred-new"),
+                    leaseId = QueueLeaseId("second-deferral-lease"),
+                    availableAt = DataLoomInstant(3_000L),
+                    reason = QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET,
+                ),
+            ),
+        )
+
+        val secondReacquisition = assertIs<QueueAcquireResult.Entries>(
+            acquire(3_000L, leaseId = "third-deferral-lease"),
+        ).entries.single()
+        assertNull(secondReacquisition.retryAttempt)
+    }
+
+    @Test
+    fun deferralAfterRetryPreservesAttemptAndRetryWaitingState() = runBlocking<Unit> {
+        enqueue(makeEntry("deferred-retry", enqueuedAt = 1_000L))
+        assertIs<QueueAcquireResult.Entries>(
+            acquire(1_000L, leaseId = "initial-lease"),
+        )
+        assertIs<ProviderOperationResult.Success<Unit>>(
+            provider.reschedule(
+                QueueRescheduleRequest(
+                    entryId = QueueEntryId("deferred-retry"),
+                    leaseId = QueueLeaseId("initial-lease"),
+                    retryAttempt = RetryAttempt(2),
+                    availableAt = DataLoomInstant(2_000L),
+                    error = TestDataLoomError(
+                        code = ErrorCode("NETWORK_TEMPORARY"),
+                        category = ErrorCategory.NETWORK,
+                        severity = ErrorSeverity.WARNING,
+                        recoverability = Recoverability.RECOVERABLE,
+                        message = "Retry later.",
+                    ),
+                ),
+            ),
+        )
+        assertIs<QueueAcquireResult.Entries>(
+            acquire(2_000L, leaseId = "retry-deferral-lease"),
+        )
+
+        assertIs<ProviderOperationResult.Success<Unit>>(
+            provider.defer(
+                QueueDeferralRequest(
+                    entryId = QueueEntryId("deferred-retry"),
+                    leaseId = QueueLeaseId("retry-deferral-lease"),
+                    availableAt = DataLoomInstant(3_000L),
+                    reason = QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET,
+                ),
+            ),
+        )
+
+        database.openHelper.readableDatabase.query(
+            """
+            SELECT state, retry_attempt_number
+            FROM queue_entries
+            WHERE entry_id = 'deferred-retry'
+            """.trimIndent(),
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("RETRY_WAITING", cursor.getString(0))
+            assertEquals(2, cursor.getInt(1))
+        }
+        val reacquired = assertIs<QueueAcquireResult.Entries>(
+            acquire(3_000L, leaseId = "post-deferral-lease"),
+        ).entries.single()
+        assertEquals(RetryAttempt(2), reacquired.retryAttempt)
     }
 
     @Test

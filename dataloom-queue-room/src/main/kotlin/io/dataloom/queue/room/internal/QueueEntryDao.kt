@@ -154,6 +154,34 @@ internal abstract class QueueEntryDao {
     @Query(
         """
         UPDATE queue_entries
+        SET state = CASE
+                WHEN retry_attempt_number IS NULL THEN 'PENDING'
+                ELSE 'RETRY_WAITING'
+            END,
+            available_at_ms = :availableAtMs,
+            lease_id = NULL,
+            lease_consumer_id = NULL,
+            lease_acquired_at_ms = NULL,
+            lease_expires_at_ms = NULL,
+            last_error_code = NULL,
+            last_error_category = NULL,
+            last_error_severity = NULL,
+            last_error_recoverability = NULL,
+            last_error_message = NULL
+        WHERE entry_id = :entryId
+          AND state = 'LEASED'
+          AND lease_id = :leaseId
+        """,
+    )
+    abstract suspend fun deferEntry(
+        entryId: String,
+        leaseId: String,
+        availableAtMs: Long,
+    ): Int
+
+    @Query(
+        """
+        UPDATE queue_entries
         SET state = :targetState,
             last_error_code = :errorCode,
             last_error_category = :errorCategory,
@@ -198,8 +226,10 @@ internal abstract class QueueEntryDao {
     @Query(
         """
         UPDATE queue_entries
-        SET state = 'PENDING',
-            retry_attempt_number = NULL,
+        SET state = CASE
+                WHEN retry_attempt_number IS NULL THEN 'PENDING'
+                ELSE 'RETRY_WAITING'
+            END,
             lease_id = NULL,
             lease_consumer_id = NULL,
             lease_acquired_at_ms = NULL,

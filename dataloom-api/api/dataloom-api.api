@@ -531,6 +531,33 @@ public final class io/dataloom/api/queue/QueueCompletionRequest {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/api/queue/QueueDeferralReason : java/lang/Enum {
+	public static final field CONNECTIVITY_REQUIREMENT_NOT_MET Lio/dataloom/api/queue/QueueDeferralReason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/queue/QueueDeferralReason;
+	public static fun values ()[Lio/dataloom/api/queue/QueueDeferralReason;
+}
+
+public final class io/dataloom/api/queue/QueueDeferralRequest {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/queue/QueueDeferralReason;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/queue/QueueDeferralReason;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-ARA1dI0 ()Ljava/lang/String;
+	public final fun component2-__BVD4c ()Ljava/lang/String;
+	public final fun component3 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component4 ()Lio/dataloom/api/queue/QueueDeferralReason;
+	public final fun component5 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy-7BwK9zg (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/queue/QueueDeferralReason;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/queue/QueueDeferralRequest;
+	public static synthetic fun copy-7BwK9zg$default (Lio/dataloom/api/queue/QueueDeferralRequest;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/queue/QueueDeferralReason;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/queue/QueueDeferralRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAvailableAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getEntryId-ARA1dI0 ()Ljava/lang/String;
+	public final fun getLeaseId-__BVD4c ()Ljava/lang/String;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun getReason ()Lio/dataloom/api/queue/QueueDeferralReason;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/api/queue/QueueEnqueueRequest {
 	public fun <init> (Lio/dataloom/api/queue/QueueEntry;)V
 	public final fun component1 ()Lio/dataloom/api/queue/QueueEntry;
@@ -632,6 +659,7 @@ public abstract interface class io/dataloom/api/queue/QueueProvider : io/dataloo
 	public abstract fun acquire (Lio/dataloom/api/queue/QueueAcquireRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun cancel (Lio/dataloom/api/queue/QueueCancellationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun complete (Lio/dataloom/api/queue/QueueCompletionRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun defer (Lio/dataloom/api/queue/QueueDeferralRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun enqueue (Lio/dataloom/api/queue/QueueEnqueueRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun fail (Lio/dataloom/api/queue/QueueFailureRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;

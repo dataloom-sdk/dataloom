@@ -202,42 +202,41 @@ The repository documentation explicitly states that the retry engine and
 built-in algorithms are not implemented. The later runtime work added policy
 evaluation and rescheduling, but it did not close the full requirements.
 
-Two confirmed correctness defects make the current durable retry count
-untrustworthy:
+The two retry-history defects identified by this audit now have a bounded
+implementation correction:
 
-- Initial queued offline deferral occurs before pipeline execution and without
-  `RetryPolicy.evaluate()`, but the runtime fabricates and persists
-  `RetryAttempt(1)`. When connectivity later returns, the first genuine
-  synchronization failure is therefore evaluated as attempt 2 and loses one
-  configured retry.
-- Room and in-memory expired-lease recovery clear an existing persisted
-  `retryAttempt`. Process death can therefore reset a genuine retry budget and
-  allow more retries than policy permits.
+- Queued connectivity rejection produces a distinct non-retry `Deferred`
+  outcome and `QueueProvider.defer` transition. It no longer fabricates
+  `RetryAttempt(1)`.
+- Room and in-memory expired-lease recovery preserve an existing
+  `retryAttempt` and return work to `PENDING` only when the attempt is null,
+  otherwise to `RETRY_WAITING`.
 
-Both are V1 release blockers. Constraint deferral must preserve the existing
-attempt exactly—`null` before any retry evaluation or `N` after retry N—and
-expired-lease recovery must preserve the same durable history.
+Focused common tests cover offline → online first failure as attempt 1 and
+retry N → offline → online failure as N+1. In-memory and Room tests cover null
+and N parity across repeated deferral and lease recovery. This closes those
+two defects; it does not complete the broader retry/circuit subsystem.
 
 | ID | Requirement | Status | Repository finding / V1 gap |
 |---|---|---|---|
 | FR-RETRY-001 | Failure classification | Partial | Canonical error category/recoverability fields exist, but there is no complete enforced classifier for recoverable, non-recoverable, policy-blocked, authentication, conflict, and cancellation outcomes. |
 | FR-RETRY-002 | Retry strategies | Missing | An app-provided `RetryPolicy` exists; built-in immediate, fixed, linear, and exponential strategies do not. |
 | FR-RETRY-003 | Jitter | Missing | No standard jitter modes, random source abstraction, or deterministic jitter tests exist. |
-| FR-RETRY-004 | Attempt limits | Partial | Attempt data is carried and persisted during ordinary retry rescheduling, but limits are not trustworthy: initial offline deferral fabricates attempt 1 without policy evaluation, while expired-lease recovery clears genuine attempt history. Maximum attempts and maximum elapsed retry time are also not enforced by a standard runtime policy. |
+| FR-RETRY-004 | Attempt limits | Partial | Deferral and expired-lease recovery now preserve attempt history correctly. Maximum attempts and maximum elapsed retry time are still not enforced by a standard runtime policy. |
 | FR-RETRY-005 | Server hints | Missing | No bounded parsing/application of `Retry-After` or equivalent provider hints exists. |
 | FR-RETRY-006 | Timeout separation | Missing | No complete independent connection, request, idle, workflow, provider, and policy timeout model exists. |
 | FR-RETRY-007 | Circuit breaker | Missing | No closed/open state machine, failure threshold/window, rejection behavior, or persistence exists. |
 | FR-RETRY-008 | Half-open probe | Missing | No controlled half-open probe or recovery transition exists. |
-| FR-RETRY-009 | Retry persistence | Partial | Room persists retry attempt and availability during ordinary rescheduling, but offline deferral is incorrectly encoded as a retry and both Room and in-memory expired-lease recovery reset attempt history. Generic policy state, elapsed limits, circuit state, and restart-safe recovery metadata are also absent. |
+| FR-RETRY-009 | Retry persistence | Partial | Room and in-memory providers preserve retry attempts across retry rescheduling, non-retry deferral, and expired-lease recovery. Generic policy state, elapsed limits, circuit state, and restart-safe circuit metadata are still absent. |
 | FR-RETRY-010 | Retry observability | Partial | `RetryScheduled` events contain useful data, but structured logs, metrics, traces, stable reason taxonomy, and full correlation are absent. |
 | FR-RETRY-011 | Manual retry | Missing | No authorized requeue service with immutable attempt history and audit exists. |
 | FR-RETRY-012 | Non-retryable protection | Partial | A policy may stop, but the runtime does not centrally block retries of non-recoverable failures unless an authorized reclassification is recorded. |
 
 Required acceptance sequence:
 
-1. Separate non-retry constraint deferral from retry-policy rescheduling and
-   preserve attempt history across deferral, acquisition, process death, and
-   expired-lease recovery.
+1. **Implemented:** Separate non-retry constraint deferral from retry-policy
+   rescheduling and preserve attempt history across deferral, acquisition,
+   process death, and expired-lease recovery.
 2. Deterministic delay strategies with overflow-safe clamping and injectable
    randomness.
 3. Attempt/elapsed-time enforcement and safe server-hint handling.

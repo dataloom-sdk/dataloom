@@ -35,6 +35,7 @@ import io.dataloom.api.provider.ProviderName
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.provider.ProviderVersion
+import io.dataloom.api.queue.QueueDeferralReason
 import io.dataloom.api.queue.QueueEntry
 import io.dataloom.api.queue.QueueEntryState
 import io.dataloom.api.queue.QueueFailureDisposition
@@ -419,11 +420,11 @@ class ConnectivityAwareQueuedHandlerTest {
     }
 
     // =========================================================================
-    // Offline deferral: CONNECTIVITY_REQUIREMENT_NOT_MET → Reschedule
+    // Offline deferral: CONNECTIVITY_REQUIREMENT_NOT_MET → Deferred
     // =========================================================================
 
     @Test
-    fun `unmet connectivity maps to Reschedule outcome`() {
+    fun `unmet connectivity maps to Deferred outcome`() {
         val offlineClock = FixedClock(t0)
         val provider = FakeConnectivityProvider(
             result = ProviderOperationResult.Success(
@@ -436,7 +437,7 @@ class ConnectivityAwareQueuedHandlerTest {
         )
         val (handler, _, _) = buildConnectivityScenario(config, provider, offlineClock)
         val outcome = runSuspend { handler.execute(makeLeasedEntry()) }
-        assertIs<QueueEntryExecutionOutcome.Reschedule>(outcome)
+        assertIs<QueueEntryExecutionOutcome.Deferred>(outcome)
     }
 
     @Test
@@ -454,7 +455,7 @@ class ConnectivityAwareQueuedHandlerTest {
             offlineRescheduleDelay = delay,
         )
         val (handler, _, _) = buildConnectivityScenario(config, provider, offlineClock)
-        val outcome = runSuspend { handler.execute(makeLeasedEntry()) } as QueueEntryExecutionOutcome.Reschedule
+        val outcome = runSuspend { handler.execute(makeLeasedEntry()) } as QueueEntryExecutionOutcome.Deferred
         val expectedMillis = now.epochMilliseconds + delay.milliseconds
         assertEquals(expectedMillis, outcome.availableAt.epochMilliseconds)
     }
@@ -477,7 +478,7 @@ class ConnectivityAwareQueuedHandlerTest {
     }
 
     @Test
-    fun `offline deferral retry attempt is taken from entry without increment`() {
+    fun `offline deferral has the stable connectivity reason with existing retry history`() {
         val offlineClock = FixedClock(t0)
         val provider = FakeConnectivityProvider(
             result = ProviderOperationResult.Success(
@@ -489,14 +490,13 @@ class ConnectivityAwareQueuedHandlerTest {
             offlineRescheduleDelay = SchedulingDelay(10_000L),
         )
         val (handler, _, _) = buildConnectivityScenario(config, provider, offlineClock)
-        // Entry with existing retry attempt 2 — should NOT increment
         val entry = makeLeasedEntry(retryAttempt = RetryAttempt(2))
-        val outcome = runSuspend { handler.execute(entry) } as QueueEntryExecutionOutcome.Reschedule
-        assertEquals(RetryAttempt(2), outcome.retryAttempt)
+        val outcome = runSuspend { handler.execute(entry) } as QueueEntryExecutionOutcome.Deferred
+        assertEquals(QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET, outcome.reason)
     }
 
     @Test
-    fun `offline deferral retry attempt defaults to 1 when entry has no prior attempt`() {
+    fun `offline deferral has the same stable reason without retry history`() {
         val offlineClock = FixedClock(t0)
         val provider = FakeConnectivityProvider(
             result = ProviderOperationResult.Success(
@@ -509,8 +509,8 @@ class ConnectivityAwareQueuedHandlerTest {
         )
         val (handler, _, _) = buildConnectivityScenario(config, provider, offlineClock)
         val entry = makeLeasedEntry(retryAttempt = null)
-        val outcome = runSuspend { handler.execute(entry) } as QueueEntryExecutionOutcome.Reschedule
-        assertEquals(RetryAttempt(1), outcome.retryAttempt)
+        val outcome = runSuspend { handler.execute(entry) } as QueueEntryExecutionOutcome.Deferred
+        assertEquals(QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET, outcome.reason)
     }
 
     @Test
@@ -564,7 +564,7 @@ class ConnectivityAwareQueuedHandlerTest {
         )
         val (handler, _, _) = buildConnectivityScenario(config, provider, offlineClock)
         val outcome = runSuspend { handler.execute(makeLeasedEntry()) }
-        assertIs<QueueEntryExecutionOutcome.Reschedule>(outcome)
+        assertIs<QueueEntryExecutionOutcome.Deferred>(outcome)
         // Result should be Long.MAX_VALUE (overflow-safe)
         assertEquals(Long.MAX_VALUE, outcome.availableAt.epochMilliseconds)
     }
@@ -624,7 +624,7 @@ class ConnectivityAwareQueuedHandlerTest {
     }
 
     @Test
-    fun `connectivity provider failure does not map to Reschedule`() {
+    fun `connectivity provider failure does not map to Deferred`() {
         val offlineClock = FixedClock(t0)
         val provider = FakeConnectivityProvider(
             result = ProviderOperationResult.Failure(FakeError()),
@@ -635,7 +635,7 @@ class ConnectivityAwareQueuedHandlerTest {
         )
         val (handler, _, _) = buildConnectivityScenario(config, provider, offlineClock)
         val outcome = runSuspend { handler.execute(makeLeasedEntry()) }
-        // Failure should NOT be treated as RequirementNotMet → Reschedule
+        // Failure should NOT be treated as RequirementNotMet → Deferred
         assertIs<QueueEntryExecutionOutcome.Failed>(outcome)
     }
 
@@ -676,6 +676,106 @@ class ConnectivityAwareQueuedHandlerTest {
         assertEquals(expectedMillis, outcome.availableAt.epochMilliseconds)
         // RetryPolicy was invoked
         assertEquals(1, alwaysRetry.evaluateCallCount)
+    }
+
+    @Test
+    fun `offline then online first genuine failure is retry attempt 1`() {
+        val config = SynchronizationConnectivityConfiguration(
+            requirement = ConnectivityRequirement.AVAILABLE,
+            offlineRescheduleDelay = SchedulingDelay(10_000L),
+        )
+        val offlineProvider = FakeConnectivityProvider(
+            ProviderOperationResult.Success(
+                ConnectivitySnapshot(ConnectivityStatus.UNAVAILABLE, isMetered = null),
+            ),
+        )
+        val (offlineHandler, _, _) = buildConnectivityScenario(
+            config,
+            offlineProvider,
+            FixedClock(t0),
+        )
+        val deferred = runSuspend { offlineHandler.execute(makeLeasedEntry(retryAttempt = null)) }
+        assertIs<QueueEntryExecutionOutcome.Deferred>(deferred)
+
+        val onlineProvider = FakeConnectivityProvider(
+            ProviderOperationResult.Success(
+                ConnectivitySnapshot(ConnectivityStatus.AVAILABLE, isMetered = null),
+            ),
+        )
+        val failedPipeline = RecordingPipeline(
+            result = {
+                SynchronizationResult.Failed(
+                    request = sampleRequest,
+                    completedAt = t1,
+                    summary = SynchronizationSummary(),
+                    error = FakeError(),
+                )
+            },
+        )
+        val (onlineHandler, _, _) = buildConnectivityScenario(
+            config,
+            onlineProvider,
+            FixedClock(t0),
+            pipeline = failedPipeline,
+            retryPolicy = AlwaysRetryPolicy(),
+        )
+
+        val firstFailure = runSuspend {
+            onlineHandler.execute(makeLeasedEntry(retryAttempt = null))
+        }
+        assertIs<QueueEntryExecutionOutcome.Reschedule>(firstFailure)
+        assertEquals(RetryAttempt(1), firstFailure.retryAttempt)
+    }
+
+    @Test
+    fun `retry N then offline then online failure is retry attempt N plus 1`() {
+        val config = SynchronizationConnectivityConfiguration(
+            requirement = ConnectivityRequirement.AVAILABLE,
+            offlineRescheduleDelay = SchedulingDelay(10_000L),
+        )
+        val offlineProvider = FakeConnectivityProvider(
+            ProviderOperationResult.Success(
+                ConnectivitySnapshot(ConnectivityStatus.UNAVAILABLE, isMetered = null),
+            ),
+        )
+        val (offlineHandler, _, _) = buildConnectivityScenario(
+            config,
+            offlineProvider,
+            FixedClock(t0),
+        )
+        val deferred = runSuspend {
+            offlineHandler.execute(makeLeasedEntry(retryAttempt = RetryAttempt(2)))
+        }
+        assertIs<QueueEntryExecutionOutcome.Deferred>(deferred)
+
+        val onlineProvider = FakeConnectivityProvider(
+            ProviderOperationResult.Success(
+                ConnectivitySnapshot(ConnectivityStatus.AVAILABLE, isMetered = null),
+            ),
+        )
+        val failedPipeline = RecordingPipeline(
+            result = {
+                SynchronizationResult.Failed(
+                    request = sampleRequest,
+                    completedAt = t1,
+                    summary = SynchronizationSummary(),
+                    error = FakeError(),
+                )
+            },
+        )
+        val (onlineHandler, _, _) = buildConnectivityScenario(
+            config,
+            onlineProvider,
+            FixedClock(t0),
+            pipeline = failedPipeline,
+            retryPolicy = AlwaysRetryPolicy(),
+        )
+
+        val nextFailure = runSuspend {
+            onlineHandler.execute(makeLeasedEntry(retryAttempt = RetryAttempt(2)))
+        }
+        assertIs<QueueEntryExecutionOutcome.Reschedule>(nextFailure)
+        assertEquals(RetryAttempt(3), nextFailure.retryAttempt)
     }
 
     @Test

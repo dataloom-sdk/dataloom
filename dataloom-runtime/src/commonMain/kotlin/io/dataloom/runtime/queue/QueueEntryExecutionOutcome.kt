@@ -2,6 +2,7 @@ package io.dataloom.runtime.queue
 
 import io.dataloom.api.context.ExecutionContext
 import io.dataloom.api.error.DataLoomError
+import io.dataloom.api.queue.QueueDeferralReason
 import io.dataloom.api.queue.QueueFailureDisposition
 import io.dataloom.api.retry.RetryAttempt
 import io.dataloom.api.time.DataLoomInstant
@@ -20,6 +21,8 @@ import io.dataloom.api.time.DataLoomInstant
  *   [io.dataloom.api.queue.QueueCompletionRequest].
  * - [Reschedule] — the entry should be retried at a future time. Maps to
  *   [io.dataloom.api.queue.QueueRescheduleRequest].
+ * - [Deferred] — execution constraints were not satisfied before an attempt.
+ *   Maps to [io.dataloom.api.queue.QueueDeferralRequest].
  * - [Failed] — the entry processing failed permanently or should be
  *   dead-lettered. Maps to [io.dataloom.api.queue.QueueFailureRequest].
  * - [Cancelled] — the entry was explicitly cancelled by the handler. Maps to
@@ -88,6 +91,21 @@ public sealed interface QueueEntryExecutionOutcome {
 
         /** Required canonical error that caused the reschedule. */
         public val error: DataLoomError,
+    ) : QueueEntryExecutionOutcome
+
+    /**
+     * The entry could not begin execution because a declared constraint was
+     * not satisfied.
+     *
+     * Maps to [io.dataloom.api.queue.QueueDeferralRequest]. This outcome does
+     * not contain or consume a retry attempt.
+     *
+     * @param availableAt instant at which the entry becomes eligible again.
+     * @param reason stable reason for the non-retry deferral.
+     */
+    public data class Deferred(
+        public val availableAt: DataLoomInstant,
+        public val reason: QueueDeferralReason,
     ) : QueueEntryExecutionOutcome
 
     /**

@@ -3,8 +3,8 @@
 [API reference index](./README.md)
 
 > **Status:** Available execution foundation. Direct preflight and queued
-> offline deferral exist; complete platform parity and retry-history-safe
-> constraint deferral remain V1 work.
+> offline deferral exist, and deferral now preserves retry history. Complete
+> platform parity and V1 qualification remain open.
 
 DataLoom can prevent network-dependent synchronization when the configured
 connectivity requirement is not satisfied. This document describes the
@@ -22,7 +22,7 @@ queued offline-deferral behavior introduced in DL-031.
 - [Missing Provider Behavior](#missing-provider-behavior)
 - [Provider Failure Behavior](#provider-failure-behavior)
 - [Direct Execution Rejection](#direct-execution-rejection)
-- [Queued Offline Rescheduling](#queued-offline-rescheduling)
+- [Queued Offline Deferral](#queued-offline-deferral)
 - [Offline Delay and Clock Calculation](#offline-delay-and-clock-calculation)
 - [SchedulerProvider Boundary](#schedulerprovider-boundary)
 - [QueueProvider Boundary](#queueprovider-boundary)
@@ -179,39 +179,35 @@ receiving a connectivity rejection.
 
 ---
 
-## Queued Offline Rescheduling
+## Queued Offline Deferral
 
 `QueuedSynchronizationExecutionHandler` maps connectivity rejections to
 `QueueEntryExecutionOutcome` as follows:
 
 | Coordinator rejection reason | Queue outcome |
 |---|---|
-| `CONNECTIVITY_REQUIREMENT_NOT_MET` | `QueueEntryExecutionOutcome.Reschedule` |
+| `CONNECTIVITY_REQUIREMENT_NOT_MET` | `QueueEntryExecutionOutcome.Deferred` |
 | `CONNECTIVITY_PROVIDER_NOT_CONFIGURED` | `QueueEntryExecutionOutcome.Failed` |
 | `CONNECTIVITY_CHECK_FAILED` | `QueueEntryExecutionOutcome.Failed` |
 
-When the outcome is `Reschedule`:
+When the outcome is `Deferred`:
 
 - `RetryPolicy` is **not** invoked.
 - The handler does **not** invoke `SchedulerProvider` directly.
 - `DataLoomClock.now()` is read exactly once from the injected clock.
 - `availableAt` = `clock.now().epochMilliseconds + offlineRescheduleDelay.milliseconds`
   (overflow-safe; see below).
-- `retryAttempt` is taken from the existing `QueueEntry.retryAttempt`, or
-  defaults to `RetryAttempt(1)` when the entry has no prior attempt.
-
-The default above describes current behavior, not the intended V1 retry
-contract. Connectivity rejection occurs before pipeline execution and without
-retry-policy evaluation, so manufacturing attempt 1 consumes a phantom retry.
-V1 must use a non-retry constraint-deferral transition that preserves the
-existing attempt exactly: `null` before any retry evaluation or `N` after
-retry N. See [Queue Provider](./queue-provider.md#current-retry-history-limitation).
+- `reason` is
+  `QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET`.
+- No retry attempt or failure is manufactured.
 
 `DurableQueueExecutionProcessor` remains responsible for calling
-`QueueProvider.reschedule()`. The handler never calls `QueueProvider` directly.
+`QueueProvider.defer()`. The provider preserves the stored attempt exactly:
+`null` remains `null`, while retry `N` remains `N`. The handler never calls
+`QueueProvider` directly.
 After that transition is persisted, `QueueWorkerCoordinator` may create one
 wake-up schedule from
-`QueueProcessingResult.Processed.earliestRescheduledAt`.
+`QueueProcessingResult.Processed.earliestDeferredAt`.
 
 ---
 
@@ -244,14 +240,14 @@ directly for offline queue deferral.
 Queued offline deferral uses:
 
 ```
-QueueEntryExecutionOutcome.Reschedule
+QueueEntryExecutionOutcome.Deferred
     → DurableQueueExecutionProcessor
-    → QueueProvider.reschedule()
+    → QueueProvider.defer()
 ```
 
 No `ScheduleRequest`, WorkManager call, or other background scheduling occurs
-inside the handler. After the processor persists the reschedule,
-`QueueWorkerCoordinator` may use the recorded `earliestRescheduledAt` to
+inside the handler. After the processor persists the deferral,
+`QueueWorkerCoordinator` may use the recorded `earliestDeferredAt` to
 schedule the next bounded worker wake-up.
 
 ---
@@ -262,6 +258,8 @@ schedule the next bounded worker wake-up.
 
 `DurableQueueExecutionProcessor` is responsible for all queue persistence
 transitions based on the `QueueEntryExecutionOutcome` returned by the handler.
+Its deferral transition is lease-guarded and separate from retry rescheduling,
+so repeated offline checks do not consume retry budget.
 
 ---
 

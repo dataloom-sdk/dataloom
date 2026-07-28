@@ -17,6 +17,7 @@ import io.dataloom.api.queue.QueueAcquireRequest
 import io.dataloom.api.queue.QueueAcquireResult
 import io.dataloom.api.queue.QueueCancellationRequest
 import io.dataloom.api.queue.QueueCompletionRequest
+import io.dataloom.api.queue.QueueDeferralRequest
 import io.dataloom.api.queue.QueueEnqueueRequest
 import io.dataloom.api.queue.QueueFailureDisposition
 import io.dataloom.api.queue.QueueFailureRequest
@@ -47,17 +48,17 @@ import kotlinx.coroutines.withContext
  *
  * ## Guarded transitions
  *
- * [complete], [reschedule], and [fail] include the lease identifier in the
- * SQL `WHERE` clause. A stale or mismatched lease yields zero affected rows,
- * which is mapped to a [io.dataloom.api.error.DataLoomError] with code
+ * [complete], [defer], [reschedule], and [fail] include the lease identifier
+ * in the SQL `WHERE` clause. A stale or mismatched lease yields zero affected
+ * rows, which is mapped to a [io.dataloom.api.error.DataLoomError] with code
  * `QUEUE_STALE_LEASE`.
  *
  * ## Expired-lease recovery
  *
- * [recoverExpiredLeases] transitions LEASED entries with an expired lease
- * back to PENDING state in a single SQL UPDATE. The provider does not process
- * any entry — it only resets the lease columns. The exact recovered state is
- * always PENDING for this implementation.
+ * [recoverExpiredLeases] transitions LEASED entries with an expired lease in
+ * one SQL update. Entries without retry history return to PENDING; entries
+ * with a preserved retry attempt return to RETRY_WAITING. Retry history is
+ * never cleared by recovery.
  *
  * ## What this provider does NOT do
  *
@@ -168,6 +169,20 @@ public class RoomQueueProvider(
                 errorSeverity = request.error.severity.name,
                 errorRecoverability = request.error.recoverability.name,
                 errorMessage = request.error.message,
+            ),
+            request.entryId.value,
+        )
+    }
+
+    /** Defers an entry without changing its persisted retry attempt. */
+    override suspend fun defer(
+        request: QueueDeferralRequest,
+    ): ProviderOperationResult<Unit> = executeDatabaseOperation {
+        guardedTransitionResult(
+            dao.deferEntry(
+                entryId = request.entryId.value,
+                leaseId = request.leaseId.value,
+                availableAtMs = request.availableAt.epochMilliseconds,
             ),
             request.entryId.value,
         )

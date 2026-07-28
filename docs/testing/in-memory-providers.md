@@ -88,6 +88,10 @@ assertEquals(
 
 `pendingEntry`, `acquireRequest`, and `completedAt` are test-fixture values.
 Acquisition orders eligible entries by availability and then insertion order.
+`defer()` records `QueueDeferralRequest`, clears the lease, and preserves retry
+history exactly. A null attempt returns to `PENDING`; attempt N returns to
+`RETRY_WAITING`. Expired-lease recovery follows the same state rule, matching
+the Room provider.
 
 ## Connectivity example
 

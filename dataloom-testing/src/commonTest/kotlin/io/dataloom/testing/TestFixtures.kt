@@ -49,6 +49,8 @@ import io.dataloom.api.provider.ProviderVersion
 import io.dataloom.api.queue.QueueAcquireRequest
 import io.dataloom.api.queue.QueueCancellationRequest
 import io.dataloom.api.queue.QueueCompletionRequest
+import io.dataloom.api.queue.QueueDeferralReason
+import io.dataloom.api.queue.QueueDeferralRequest
 import io.dataloom.api.queue.QueueEnqueueRequest
 import io.dataloom.api.queue.QueueEntry
 import io.dataloom.api.queue.QueueEntryState
@@ -273,6 +275,17 @@ internal fun sampleQueueRescheduleRequest(
     retryAttempt = RetryAttempt(2),
     availableAt = DataLoomInstant(50_000L),
     error = FakeDataLoomError(message = "Retry later."),
+)
+
+internal fun sampleQueueDeferralRequest(
+    entryId: String = "entry-001",
+    leaseId: String = "lease-001",
+    availableAt: Long = 50_000L,
+): QueueDeferralRequest = QueueDeferralRequest(
+    entryId = QueueEntryId(entryId),
+    leaseId = QueueLeaseId(leaseId),
+    availableAt = DataLoomInstant(availableAt),
+    reason = QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET,
 )
 
 internal fun sampleQueueFailureRequest(

@@ -3,8 +3,9 @@
 [API reference index](./README.md)
 
 > **Status:** Available SPI with a Room implementation and in-memory test
-> provider. Full restart-safe retry history and V1 persistence qualification
-> remain open.
+> provider. Constraint deferral and expired-lease recovery preserve retry
+> attempt history; complete retry/circuit state and V1 persistence
+> qualification remain open.
 
 This document describes the `QueueProvider` interface introduced in DL-015.
 
@@ -22,15 +23,17 @@ flowchart LR
     Waiting[RETRY_WAITING] -->|acquire| Leased
     Leased -->|complete| Completed[COMPLETED]
     Leased -->|reschedule| Waiting
+    Leased -->|defer, no retry history| Pending
+    Leased -->|defer, retry N exists| Waiting
     Leased -->|fail| Failed[FAILED]
     Leased -->|dead letter| Dead[DEAD_LETTER]
     Pending -->|cancel| Cancelled[CANCELLED]
     Waiting -->|cancel| Cancelled
-    Leased -->|expired lease recovery in current providers| Pending
+    Leased -->|expired lease, no retry history| Pending
+    Leased -->|expired lease, retry N exists| Waiting
 ```
 
-The diagram shows current Room and in-memory provider behavior. The SPI allows
-a concrete provider to document recovery to `PENDING` or `RETRY_WAITING`.
+Room and the in-memory provider implement this same state machine.
 
 ---
 
@@ -54,7 +57,7 @@ See [Application Storage Boundary](#application-storage-boundary) below.
 
 ## Interface Declaration
 
-**Package:** `io.dataloom.api.provider`  
+**Package:** `io.dataloom.api.queue`
 **Type:** `QueueProvider` (interface)  
 **Extends:** `DataLoomProvider`
 
@@ -66,6 +69,7 @@ public interface QueueProvider : DataLoomProvider {
     suspend fun acquire(request: QueueAcquireRequest): ProviderOperationResult<QueueAcquireResult>
     suspend fun complete(request: QueueCompletionRequest): ProviderOperationResult<Unit>
     suspend fun reschedule(request: QueueRescheduleRequest): ProviderOperationResult<Unit>
+    suspend fun defer(request: QueueDeferralRequest): ProviderOperationResult<Unit>
     suspend fun fail(request: QueueFailureRequest): ProviderOperationResult<Unit>
     suspend fun cancel(request: QueueCancellationRequest): ProviderOperationResult<Unit>
     suspend fun recoverExpiredLeases(request: ExpiredLeaseRecoveryRequest): ProviderOperationResult<ExpiredLeaseRecoveryResult>
@@ -85,23 +89,22 @@ This is a pre-release public API addition introduced in DL-015.
 
 ---
 
-## Current retry-history limitation
+## Retry-history invariant
 
-The current queue API has a retry reschedule transition but no distinct
-non-retry constraint-deferral transition. Queued offline deferral therefore
-defaults an entry with no previous policy evaluation to `RetryAttempt(1)` and
-persists it as `RETRY_WAITING`. The first later synchronization failure can be
-evaluated as attempt 2 even though no earlier retry occurred.
+Retry rescheduling and constraint deferral are distinct transitions:
 
-Current Room and in-memory expired-lease recovery also clear a previously
-persisted retry attempt when moving an entry back to `PENDING`. A process death
-can therefore reset genuine retry history.
+| Transition | Retry attempt before | Retry attempt after | Result state |
+|---|---:|---:|---|
+| `reschedule` after policy decision | `null` or `N` | supplied next attempt | `RETRY_WAITING` |
+| `defer` before any retry | `null` | `null` | `PENDING` |
+| `defer` after retry N | `N` | `N` | `RETRY_WAITING` |
+| expired-lease recovery before any retry | `null` | `null` | `PENDING` |
+| expired-lease recovery after retry N | `N` | `N` | `RETRY_WAITING` |
 
-These are confirmed pre-V1 correctness gaps, not intended retry semantics.
-V1 must preserve `null` before the first retry evaluation and preserve attempt
-`N` across constraint deferral, acquisition, and expired-lease recovery. The
-first genuine failure after initial offline deferral must still be evaluated as
-attempt 1.
+The provider must not fabricate, increment, or clear an attempt during
+deferral or recovery. Therefore the first genuine failure after any number of
+initial offline deferrals is evaluated as attempt 1, while failure after retry
+N is evaluated as N+1.
 
 ---
 
@@ -210,6 +213,24 @@ QueueProvider.reschedule()
 
 ---
 
+### `defer`
+
+```kotlin
+suspend fun defer(request: QueueDeferralRequest): ProviderOperationResult<Unit>
+```
+
+Makes leased work eligible at a later instant without recording a failed
+attempt.
+
+- The provider must verify the active lease.
+- The provider stores `availableAt`, clears the lease and last error, and
+  preserves the existing retry attempt exactly.
+- A null attempt returns to `PENDING`; attempt N returns to `RETRY_WAITING`.
+- The provider must not evaluate retry policy or encode the deferral reason as
+  a retry failure.
+
+---
+
 ### `fail`
 
 ```kotlin
@@ -273,15 +294,17 @@ Entry becomes recoverable
 - Recovery must not assume in-memory state survived.
 - Expired leases must not remain permanently stuck.
 - Recovery must not process an unexpired lease.
-- Implementations must document the recovered state transition (`PENDING` or
-  `RETRY_WAITING`) and their transactional guarantees.
+- Recovery must preserve the stored retry attempt exactly.
+- An entry with no retry history returns to `PENDING`; an entry with attempt N
+  returns to `RETRY_WAITING`.
 - Returns an `ExpiredLeaseRecoveryResult` with the count of recovered entries.
 
 ---
 
 ## Lease-Protected Updates
 
-Operations that modify a leased entry (`complete`, `reschedule`, `fail`) must
+Operations that modify a leased entry (`complete`, `defer`, `reschedule`,
+`fail`) must
 verify that the supplied `leaseId` matches the currently active entry lease.
 
 A stale or mismatched lease must result in a canonical `DataLoomError` failure.

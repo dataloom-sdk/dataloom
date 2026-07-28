@@ -6,6 +6,7 @@ import io.dataloom.api.queue.QueueAcquireRequest
 import io.dataloom.api.queue.QueueAcquireResult
 import io.dataloom.api.queue.QueueCancellationRequest
 import io.dataloom.api.queue.QueueCompletionRequest
+import io.dataloom.api.queue.QueueDeferralRequest
 import io.dataloom.api.queue.QueueEnqueueRequest
 import io.dataloom.api.queue.QueueFailureRequest
 import io.dataloom.api.queue.QueueRescheduleRequest
@@ -31,9 +32,9 @@ import io.dataloom.api.provider.ProviderType
  *
  * ## Responsibilities
  *
- * [QueueProvider] persists, acquires, completes, reschedules, fails, cancels,
- * and recovers DataLoom queue execution records. It is infrastructure storage
- * for the DataLoom runtime itself.
+ * [QueueProvider] persists, acquires, completes, defers, reschedules, fails,
+ * cancels, and recovers DataLoom queue execution records. It is infrastructure
+ * storage for the DataLoom runtime itself.
  *
  * [QueueProvider] is distinct from
  * [io.dataloom.api.storage.StorageProvider], which adapts application-controlled
@@ -58,9 +59,9 @@ import io.dataloom.api.provider.ProviderType
  *
  * ## Lease-protected updates
  *
- * Operations that modify a leased entry ([complete], [reschedule], [fail])
- * must verify that the supplied lease identifier matches the currently active
- * entry lease. A stale or mismatched lease must result in a canonical
+ * Operations that modify a leased entry ([complete], [defer], [reschedule],
+ * [fail]) must verify that the supplied lease identifier matches the currently
+ * active entry lease. A stale or mismatched lease must result in a canonical
  * [io.dataloom.api.error.DataLoomError] failure.
  *
  * ## Application storage boundary
@@ -210,6 +211,31 @@ public interface QueueProvider : DataLoomProvider {
      */
     public suspend fun reschedule(
         request: QueueRescheduleRequest,
+    ): ProviderOperationResult<Unit>
+
+    /**
+     * Defers a leased queue entry without consuming or changing retry history.
+     *
+     * This transition represents an unmet execution constraint before a
+     * synchronization attempt, not a retry-policy decision.
+     *
+     * A successful operation:
+     * - Verifies that the supplied lease is still active.
+     * - Stores [QueueDeferralRequest.availableAt].
+     * - Clears the active lease.
+     * - Preserves the stored retry attempt exactly.
+     * - Uses [QueueEntryState.PENDING] when no retry attempt exists.
+     * - Uses [QueueEntryState.RETRY_WAITING] when a prior attempt exists.
+     *
+     * The provider must not fabricate a retry attempt, evaluate retry policy,
+     * or report the deferral as a retry failure.
+     *
+     * @param request immutable non-retry deferral request.
+     * @return [ProviderOperationResult.Success] when the guarded transition
+     *   succeeds, or [ProviderOperationResult.Failure] with a canonical error.
+     */
+    public suspend fun defer(
+        request: QueueDeferralRequest,
     ): ProviderOperationResult<Unit>
 
     /**
