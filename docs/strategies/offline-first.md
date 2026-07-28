@@ -1,9 +1,10 @@
 # Offline-First Strategy
 
 > [!WARNING]
-> Offline-first is a mandatory built-in V1 strategy, but the current repository
-> provides only partial foundations. Durable queueing by itself does not satisfy
-> the offline-first acceptance guarantee.
+> Offline-first is a mandatory built-in V1 strategy. Its versioned profile and
+> deterministic local-admission/deferral/reconciliation plan are implemented.
+> The runtime still needs atomic execution of local intent plus durable work
+> before the offline-first acceptance guarantee is complete.
 
 [Strategy index](./README.md) · [Remote-first](./remote-first.md) ·
 [Cache-first](./cache-first.md) · [Hybrid](./hybrid.md)

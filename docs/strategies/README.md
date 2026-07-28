@@ -1,10 +1,11 @@
 # DataLoom Synchronization Strategies
 
 > [!IMPORTANT]
-> This documentation defines the mandatory V1 product contract. It is not a
-> claim that the current repository implements the complete strategy engine.
-> Every page separates **Current repository** behavior from **V1 required
-> behavior**.
+> This documentation defines the mandatory V1 product contract. The repository
+> now contains versioned profile, evidence, decision, execution-plan, and
+> durable-decision contracts plus a deterministic planner for all six
+> strategies. Plan-aware execution, persistence, and full platform
+> qualification are still required before the engine is complete.
 
 DataLoom's primary product purpose is to provide one deterministic,
 policy-driven synchronization engine with six complete built-in strategies.
@@ -12,12 +13,12 @@ All six are required for V1:
 
 | Strategy | Choose it when | Current repository |
 |---|---|---|
-| [Offline-first](./offline-first.md) | Eligible local work must be durable before remote availability is required. | Partial foundations |
-| [Remote-first](./remote-first.md) | The remote path is authoritative and must be attempted before an explicit local fallback. | Ordering primitive only |
-| [Cache-first](./cache-first.md) | Local synchronized state may be used under explicit freshness and refresh rules. | Not implemented |
-| [Network-only](./network-only.md) | Remote execution must succeed without local storage or queue access. | Not implemented |
-| [Hybrid](./hybrid.md) | A declared primary source, fallback, return rule, persistence rule, and coherence rule must be composed. | Not implemented |
-| [Adaptive](./adaptive.md) | A bounded policy must select deterministically from approved concrete strategies. | Not implemented |
+| [Offline-first](./offline-first.md) | Eligible local work must be durable before remote availability is required. | Contract and plan evaluation implemented; atomic execution pending |
+| [Remote-first](./remote-first.md) | The remote path is authoritative and must be attempted before an explicit local fallback. | Contract and typed plan evaluation implemented; execution pending |
+| [Cache-first](./cache-first.md) | Local synchronized state may be used under explicit freshness and refresh rules. | Contract and freshness decision matrix implemented; execution pending |
+| [Network-only](./network-only.md) | Remote execution must succeed without local storage or queue access. | Contract and storage/queue-free plan validation implemented; execution pending |
+| [Hybrid](./hybrid.md) | A declared primary source, fallback, return rule, persistence rule, and coherence rule must be composed. | Contract and finite source plan evaluation implemented; execution pending |
+| [Adaptive](./adaptive.md) | A bounded policy must select deterministically from approved concrete strategies. | Deterministic allowlisted selection implemented; durable admission pending |
 
 None of these strategies may be deferred to V2, reduced to application-owned
 replacement code, or considered complete merely because a custom pipeline can
@@ -26,6 +27,8 @@ be registered. The governing decisions are
 [V1 production-readiness audit](../audits/DL-AUDIT-004-v1-production-readiness.md).
 Implementation and qualification are tracked by
 [GitHub issue #102](https://github.com/dataloom-sdk/dataloom/issues/102).
+The implemented contracts and examples are documented in the
+[Synchronization Strategy API](../api/synchronization-strategy.md).
 
 ## Decision guide
 
@@ -70,19 +73,32 @@ Strategy must not be inferred from direction, transfer mode, or trigger:
 | **Transfer mode** | What transfer scope is requested? | `FULL`, `DELTA` | Local-first versus remote-first behavior |
 | **Trigger** | What caused admission or execution? | Direct call, durable queue, platform schedule, lifecycle signal, connectivity signal, manual action | Strategy, direction, or transfer scope |
 
-The current public
-[`SynchronizationRequest`](../api/synchronization-request.md) carries direction
-and transfer mode but no strategy. Trigger is currently represented by the
-entry path rather than by one canonical public contract. V1 must retain all
-four as separate decision inputs. A combination may be rejected by capability
-validation—for example, a DataLoom durable-queue trigger is incompatible with
-network-only's zero-queue-call guarantee—but rejection must never silently
-change the selected strategy.
+The public strategy evaluator accepts a versioned profile separately from
+direction and transfer mode, preserving those axes as independent decision
+inputs. The existing
+[`SynchronizationRequest`](../api/synchronization-request.md) has not yet been
+wired to that evaluator, and trigger is still represented by the entry path
+rather than one canonical public contract. A combination may be rejected by
+capability validation—for example, a DataLoom durable-queue trigger is
+incompatible with network-only's zero-queue-call guarantee—but rejection must
+never silently change the selected strategy.
 
 ## Current repository
 
-The repository provides useful execution foundations, but they do not compose
-a complete strategy engine:
+The repository now provides a deterministic strategy-policy layer in addition
+to its execution foundations:
+
+- `SynchronizationStrategyProfile` defines immutable, versioned profiles for
+  offline-first, remote-first, cache-first, network-only, hybrid, and adaptive.
+- `StrategyRuntimeEvidence`, `StrategyEvaluationResult`, and
+  `StrategyExecutionPlan` provide bounded evidence, explainable typed
+  decisions, ordered operations, and plan-derived provider capabilities.
+- `BuiltInSynchronizationStrategyEvaluator` evaluates all six profiles without
+  provider calls, clock reads, randomness, or exception-derived fallback.
+- `PersistedStrategyDecision` defines the non-sensitive identity durable work
+  must retain across retry, lease recovery, and restart.
+
+The remaining foundations do not yet execute those plans end to end:
 
 - Pipeline lookup is keyed by direction; `FULL` and `DELTA` do not select a
   different pipeline. See

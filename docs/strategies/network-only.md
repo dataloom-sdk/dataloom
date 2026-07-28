@@ -1,9 +1,10 @@
 # Network-Only Strategy
 
 > [!WARNING]
-> Network-only is a mandatory built-in V1 strategy and is not implemented by
-> the current runtime. Current provider resolution requires storage and
-> transport, and the built-in pipelines always touch local storage.
+> Network-only is a mandatory built-in V1 strategy. Its plan contract rejects
+> storage, queue, local, persistence, refresh, and reconciliation operations.
+> The current facade/provider resolver still requires storage, so end-to-end
+> network-only execution remains open.
 
 [Strategy index](./README.md) · [Remote-first](./remote-first.md) ·
 [Hybrid](./hybrid.md) · [Adaptive](./adaptive.md)

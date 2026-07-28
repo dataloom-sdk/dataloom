@@ -1,9 +1,9 @@
 # Hybrid Strategy
 
 > [!WARNING]
-> Hybrid is a mandatory built-in V1 strategy and is not implemented in the
-> current repository. “Try remote, catch, then use local” is not an acceptable
-> hybrid contract.
+> Hybrid is a mandatory built-in V1 strategy. Its primary/fallback source,
+> persistence, coherence, and reconciliation plan is finite and deterministic.
+> Plan-aware execution and durable reconciliation remain open.
 
 [Strategy index](./README.md) · [Offline-first](./offline-first.md) ·
 [Remote-first](./remote-first.md) · [Cache-first](./cache-first.md) ·

@@ -1,9 +1,10 @@
 # Cache-First Strategy
 
 > [!WARNING]
-> Cache-first is a mandatory built-in V1 strategy and is not implemented in the
-> current repository. Existing storage and pull pipelines do not define cache
-> freshness, stale use, miss behavior, or observable background refresh.
+> Cache-first is a mandatory built-in V1 strategy. Fresh, stale, missing, and
+> unknown cache decisions plus durable refresh planning are implemented.
+> Storage freshness evidence, plan execution, and refresh persistence remain
+> open.
 
 [Strategy index](./README.md) · [Remote-first](./remote-first.md) ·
 [Offline-first](./offline-first.md) · [Hybrid](./hybrid.md)
