@@ -1,9 +1,10 @@
 # Adaptive Strategy
 
 > [!WARNING]
-> Adaptive is a mandatory built-in V1 strategy and is not implemented in the
-> current repository. Connectivity preflight is a constraint check; it is not
-> an adaptive strategy evaluator.
+> Adaptive is a mandatory built-in V1 strategy. Bounded deterministic selection
+> from unique concrete profile IDs is implemented with an explicit safe
+> default and no nested adaptive policy. Admission still needs to persist and
+> replay the selected decision end to end.
 
 [Strategy index](./README.md) · [Offline-first](./offline-first.md) ·
 [Remote-first](./remote-first.md) · [Cache-first](./cache-first.md) ·

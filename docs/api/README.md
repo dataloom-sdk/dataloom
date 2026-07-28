@@ -62,7 +62,8 @@ complete V1 strategy, asset, plugin, governance, or observability engine.
 | [Foundational contracts](./foundational-contracts.md) | Available contract | Common identifiers, workflow state, direction, mode, and priority foundations. |
 | [Error model](./error-model.md) | Available contract | Canonical error shape, categories, severity, and recoverability. |
 | [Execution context](./execution-context.md) | Available contract | Correlation, identity, version, locale, and metadata context. |
-| [Synchronization request](./synchronization-request.md) | Available contract | Direction, mode, priority, and execution intent. It has no complete V1 strategy plan. |
+| [Synchronization request](./synchronization-request.md) | Available contract | Direction, mode, priority, and execution intent. Strategy evaluation is currently a separate contract. |
+| [Synchronization strategy](./synchronization-strategy.md) | Partial implementation | Versioned six-profile contract, bounded evidence, typed decisions, immutable plans, durable identity, and deterministic planner; facade/provider execution integration remains. |
 | [Payload contracts](./payload-contracts.md) | Available contract | Opaque payload and media-type boundaries. |
 | [Change model](./change-model.md) | Available contract | Change events, sets, operations, versions, and entity references. |
 | [Acknowledgement contracts](./acknowledgement-contracts.md) | Available contract | Per-event remote acknowledgement results. |

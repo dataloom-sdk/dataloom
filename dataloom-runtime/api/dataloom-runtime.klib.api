@@ -1239,6 +1239,12 @@ final class io.dataloom.runtime.retry/SynchronizationRetryRequest { // io.datalo
     final fun toString(): kotlin/String // io.dataloom.runtime.retry/SynchronizationRetryRequest.toString|toString(){}[0]
 }
 
+final class io.dataloom.runtime.strategy/BuiltInSynchronizationStrategyEvaluator : io.dataloom.api.strategy/SynchronizationStrategyEvaluator { // io.dataloom.runtime.strategy/BuiltInSynchronizationStrategyEvaluator|null[0]
+    constructor <init>() // io.dataloom.runtime.strategy/BuiltInSynchronizationStrategyEvaluator.<init>|<init>(){}[0]
+
+    final fun evaluate(io.dataloom.api.strategy/StrategyEvaluationRequest): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/BuiltInSynchronizationStrategyEvaluator.evaluate|evaluate(io.dataloom.api.strategy.StrategyEvaluationRequest){}[0]
+}
+
 final class io.dataloom.runtime.submission/QueuedSynchronizationSubmission { // io.dataloom.runtime.submission/QueuedSynchronizationSubmission|null[0]
     constructor <init>(io.dataloom.api.identifier/QueueEntryId, io.dataloom.runtime.queue/QueuedSynchronizationWork, io.dataloom.api.time/DataLoomInstant) // io.dataloom.runtime.submission/QueuedSynchronizationSubmission.<init>|<init>(io.dataloom.api.identifier.QueueEntryId;io.dataloom.runtime.queue.QueuedSynchronizationWork;io.dataloom.api.time.DataLoomInstant){}[0]
 

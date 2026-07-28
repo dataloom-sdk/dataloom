@@ -774,6 +774,11 @@ public final class io/dataloom/runtime/retry/SynchronizationRetryRequest {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/runtime/strategy/BuiltInSynchronizationStrategyEvaluator : io/dataloom/api/strategy/SynchronizationStrategyEvaluator {
+	public fun <init> ()V
+	public fun evaluate (Lio/dataloom/api/strategy/StrategyEvaluationRequest;)Lio/dataloom/api/strategy/StrategyEvaluationResult;
+}
+
 public abstract interface class io/dataloom/runtime/submission/DataLoomQueueSubmission {
 	public abstract fun submit (Lio/dataloom/runtime/submission/QueuedSynchronizationSubmission;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }

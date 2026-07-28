@@ -1,9 +1,9 @@
 # Remote-First Strategy
 
 > [!WARNING]
-> Remote-first is a mandatory built-in V1 strategy. The current
-> `INBOUND_THEN_OUTBOUND` bidirectional order is a useful primitive, but it is
-> not a complete remote-first implementation.
+> Remote-first is a mandatory built-in V1 strategy. Its versioned profile,
+> typed fallback allowlist, unknown-connectivity policy, and deterministic plan
+> are implemented. Plan-aware provider resolution and execution remain open.
 
 [Strategy index](./README.md) · [Network-only](./network-only.md) ·
 [Cache-first](./cache-first.md) · [Hybrid](./hybrid.md)

@@ -57,9 +57,11 @@ flowchart LR
 
 The diagram is the approved V1 product model. The current repository implements
 the shared runtime foundation, provider contracts, push/pull/bidirectional
-pipelines, durable queue processing, Android adapters, and Apple compilation
-paths. It does not yet implement the complete strategy evaluator and plan
-model.
+pipelines, durable queue processing, Android adapters, Apple compilation
+paths, and the versioned six-strategy contract plus deterministic built-in
+planner. Plan-aware provider resolution, strategy operation execution, durable
+decision persistence, and platform qualification remain required before the
+strategy engine is complete.
 
 ## Current capability
 
@@ -67,7 +69,7 @@ model.
 |---|---|---|
 | Shared contracts and runtime | Implemented foundation | Stable, published, qualified API |
 | Push, pull, bidirectional flows | Implemented foundation | Strategy-aware deterministic plans |
-| Six synchronization strategies | Partial or missing | All six built in and fully qualified |
+| Six synchronization strategies | Versioned contracts and deterministic planner implemented; execution integration pending | All six built in and fully qualified |
 | Durable queue | Implemented foundation | Correct deferral, recovery, migration, and restart semantics |
 | Retry and circuit breaking | Custom contracts/orchestration are partial | Standard backoff, jitter, budgets, hints, and durable circuit state |
 | Conflict handling | Custom contracts/orchestration are partial | Built-in generic policies, persistence, recovery, and audit |
