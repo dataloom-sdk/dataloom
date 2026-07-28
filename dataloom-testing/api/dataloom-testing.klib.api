@@ -5,7 +5,7 @@
 // - Show manifest properties: true
 // - Show declarations: true
 
-// Library unique name: <dataloom-testing>
+// Library unique name: <dataloom:dataloom-testing>
 final class <#A: kotlin/Any?> io.dataloom.testing.identifier/ConstantIdentifierGenerator : io.dataloom.api.identifier/IdentifierGenerator<#A> { // io.dataloom.testing.identifier/ConstantIdentifierGenerator|null[0]
     constructor <init>(#A) // io.dataloom.testing.identifier/ConstantIdentifierGenerator.<init>|<init>(1:0){}[0]
 

@@ -5,7 +5,7 @@
 // - Show manifest properties: true
 // - Show declarations: true
 
-// Library unique name: <dataloom-model>
+// Library unique name: <dataloom:dataloom-model>
 final enum class io.dataloom.api.error/ErrorCategory : kotlin/Enum<io.dataloom.api.error/ErrorCategory> { // io.dataloom.api.error/ErrorCategory|null[0]
     enum entry AUTHENTICATION // io.dataloom.api.error/ErrorCategory.AUTHENTICATION|null[0]
     enum entry AUTHORIZATION // io.dataloom.api.error/ErrorCategory.AUTHORIZATION|null[0]

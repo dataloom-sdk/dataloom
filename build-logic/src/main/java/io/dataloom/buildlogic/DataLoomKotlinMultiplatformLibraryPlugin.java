@@ -99,11 +99,16 @@ public final class DataLoomKotlinMultiplatformLibraryPlugin
                                                 .getBuildDirectory()
                                                 .file("kotlin/abi/dataloom-runtime.api")
                                 );
-                                task.getAbiDumps().from(
-                                        project.getLayout()
-                                                .getBuildDirectory()
-                                                .file("kotlin/abi/dataloom-runtime.klib.api")
-                                );
+                                // Linux/JVM validation does not configure Native targets,
+                                // so Kotlin does not generate a KLib dump there. Apple
+                                // hosts and explicit cross-compilation still require it.
+                                if (isAppleHost || crossCompileAppleKlibs) {
+                                    task.getAbiDumps().from(
+                                            project.getLayout()
+                                                    .getBuildDirectory()
+                                                    .file("kotlin/abi/dataloom-runtime.klib.api")
+                                    );
+                                }
                                 task.getForbiddenMarkers().set(
                                         Set.of(
                                                 "io/dataloom/core/",
