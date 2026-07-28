@@ -92,15 +92,22 @@ import io.dataloom.api.provider.SynchronizationProviderBindings
 import io.dataloom.api.runtime.RuntimeDependencies
 import io.dataloom.api.runtime.RuntimeIdentifierGenerators
 import io.dataloom.api.strategy.NetworkOnlyStrategyProfile
+import io.dataloom.api.strategy.ClassifiedStrategyRemoteError
+import io.dataloom.api.strategy.RemoteFirstStrategyProfile
+import io.dataloom.api.strategy.StrategyCacheState
 import io.dataloom.api.strategy.StrategyConfigurationVersion
 import io.dataloom.api.strategy.StrategyConnectivity
 import io.dataloom.api.strategy.StrategyDecisionId
 import io.dataloom.api.strategy.StrategyExecutionTrigger
 import io.dataloom.api.strategy.StrategyOperation
 import io.dataloom.api.strategy.StrategyOperationInput
+import io.dataloom.api.strategy.StrategyLocalFallbackProvider
+import io.dataloom.api.strategy.StrategyLocalFallbackRequest
+import io.dataloom.api.strategy.StrategyLocalFallbackResult
 import io.dataloom.api.strategy.StrategyPlanId
 import io.dataloom.api.strategy.StrategyProfileId
 import io.dataloom.api.strategy.StrategyRuntimeEvidence
+import io.dataloom.api.strategy.StrategyRemoteOutcome
 import io.dataloom.api.strategy.StrategySynchronizationRequest
 import io.dataloom.api.strategy.StrategyTransportOutput
 import io.dataloom.runtime.connectivity.SynchronizationConnectivityConfiguration
@@ -186,6 +193,16 @@ class DataLoomBuilderTest {
         override val cause: Throwable? = null,
     ) : DataLoomError
 
+    private data class FakeRemoteError(
+        override val remoteOutcome: StrategyRemoteOutcome,
+        override val code: ErrorCode = ErrorCode("DL-FAKE-REMOTE"),
+        override val category: ErrorCategory = ErrorCategory.NETWORK,
+        override val severity: ErrorSeverity = ErrorSeverity.ERROR,
+        override val recoverability: Recoverability = Recoverability.RECOVERABLE,
+        override val message: String = "Classified remote failure.",
+        override val cause: Throwable? = null,
+    ) : ClassifiedStrategyRemoteError
+
     // =========================================================================
     // Fake providers
     // =========================================================================
@@ -196,7 +213,26 @@ class DataLoomBuilderTest {
         var closeCallCount: Int = 0,
         var initializeResult: ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit),
         var closeResult: ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit),
-    ) : StorageProvider {
+        var readResult: ProviderOperationResult<OutboundChangeReadResult> =
+            ProviderOperationResult.Failure(FakeError()),
+        var applyResult: ProviderOperationResult<Unit> =
+            ProviderOperationResult.Failure(FakeError()),
+        var acknowledgeResult: ProviderOperationResult<Unit> =
+            ProviderOperationResult.Failure(FakeError()),
+        var writeResult: ProviderOperationResult<Unit> =
+            ProviderOperationResult.Failure(FakeError()),
+        var fallbackResult: ProviderOperationResult<StrategyLocalFallbackResult> =
+            ProviderOperationResult.Success(
+                StrategyLocalFallbackResult.Unavailable(StrategyCacheState.MISSING),
+            ),
+        val operationOrder: MutableList<String> = mutableListOf(),
+    ) : StrategyLocalFallbackProvider {
+        var readCallCount: Int = 0
+        var applyCallCount: Int = 0
+        var acknowledgeCallCount: Int = 0
+        var checkpointReadCallCount: Int = 0
+        var checkpointWriteCallCount: Int = 0
+        var fallbackCallCount: Int = 0
         override val descriptor = ProviderDescriptor(
             id = ProviderId(id),
             name = ProviderName("Storage $id"),
@@ -217,20 +253,53 @@ class DataLoomBuilderTest {
             return closeResult
         }
 
-        override suspend fun readOutboundChanges(request: OutboundChangeReadRequest): ProviderOperationResult<OutboundChangeReadResult> =
-            ProviderOperationResult.Failure(FakeError())
+        override suspend fun readOutboundChanges(
+            request: OutboundChangeReadRequest,
+        ): ProviderOperationResult<OutboundChangeReadResult> {
+            readCallCount++
+            operationOrder += "read-local"
+            return readResult
+        }
 
-        override suspend fun applyInboundChanges(request: InboundChangeApplyRequest): ProviderOperationResult<Unit> =
-            ProviderOperationResult.Failure(FakeError())
+        override suspend fun applyInboundChanges(
+            request: InboundChangeApplyRequest,
+        ): ProviderOperationResult<Unit> {
+            applyCallCount++
+            operationOrder += "persist-remote"
+            return applyResult
+        }
 
-        override suspend fun acknowledgeOutboundChanges(request: OutboundChangeAcknowledgementRequest): ProviderOperationResult<Unit> =
-            ProviderOperationResult.Failure(FakeError())
+        override suspend fun acknowledgeOutboundChanges(
+            request: OutboundChangeAcknowledgementRequest,
+        ): ProviderOperationResult<Unit> {
+            acknowledgeCallCount++
+            operationOrder += "acknowledge"
+            return acknowledgeResult
+        }
 
-        override suspend fun readCheckpoint(request: CheckpointReadRequest): ProviderOperationResult<SynchronizationCheckpoint?> =
-            ProviderOperationResult.Success(null)
+        override suspend fun readCheckpoint(
+            request: CheckpointReadRequest,
+        ): ProviderOperationResult<SynchronizationCheckpoint?> {
+            checkpointReadCallCount++
+            operationOrder += "read-checkpoint"
+            return ProviderOperationResult.Success(null)
+        }
 
-        override suspend fun writeCheckpoint(request: CheckpointWriteRequest): ProviderOperationResult<Unit> =
-            ProviderOperationResult.Failure(FakeError())
+        override suspend fun writeCheckpoint(
+            request: CheckpointWriteRequest,
+        ): ProviderOperationResult<Unit> {
+            checkpointWriteCallCount++
+            operationOrder += "write-checkpoint"
+            return writeResult
+        }
+
+        override suspend fun evaluateLocalFallback(
+            request: StrategyLocalFallbackRequest,
+        ): ProviderOperationResult<StrategyLocalFallbackResult> {
+            fallbackCallCount++
+            operationOrder += "fallback"
+            return fallbackResult
+        }
     }
 
     private class FakeTransportProvider(
@@ -241,10 +310,10 @@ class DataLoomBuilderTest {
             ProviderOperationResult.Failure(FakeError()),
         var pullResult: ProviderOperationResult<PullChangesResult> =
             ProviderOperationResult.Failure(FakeError()),
+        val operationOrder: MutableList<String> = mutableListOf(),
     ) : TransportProvider {
         var pushCallCount: Int = 0
         var pullCallCount: Int = 0
-        val operationOrder: MutableList<String> = mutableListOf()
         var lastPushRequest: PushChangesRequest? = null
         var lastPullRequest: PullChangesRequest? = null
 
@@ -520,6 +589,31 @@ class DataLoomBuilderTest {
             ),
             trigger = trigger,
             input = input,
+        )
+
+    private fun makeRemoteFirstRequest(
+        direction: SynchronizationDirection = SynchronizationDirection.PULL,
+        fallbackOn: Set<StrategyRemoteOutcome> = emptySet(),
+        persistRemoteResult: Boolean = false,
+        evidence: StrategyRuntimeEvidence = StrategyRuntimeEvidence(
+            connectivity = StrategyConnectivity.AVAILABLE,
+            cacheState = StrategyCacheState.MISSING,
+        ),
+        trigger: StrategyExecutionTrigger = StrategyExecutionTrigger.DIRECT,
+    ): StrategySynchronizationRequest =
+        StrategySynchronizationRequest(
+            request = makeRequest(direction),
+            decisionId = StrategyDecisionId("remote-decision-001"),
+            planId = StrategyPlanId("remote-plan-001"),
+            profile = RemoteFirstStrategyProfile(
+                id = StrategyProfileId("remote-first"),
+                configurationVersion = StrategyConfigurationVersion(1),
+                fallbackOn = fallbackOn,
+                persistRemoteResult = persistRemoteResult,
+            ),
+            evidence = evidence,
+            trigger = trigger,
+            input = StrategyOperationInput.ProviderBacked,
         )
 
     private fun makeMinimalBuilder(
@@ -1693,6 +1787,405 @@ class DataLoomBuilderTest {
         val rejected = assertIs<StrategySynchronizationExecutionResult.Rejected>(result)
         assertEquals(StrategyExecutionRejectionReason.INCOMPATIBLE_TRIGGER, rejected.reason)
         assertEquals(0, transport.pullCallCount)
+    }
+
+    // =========================================================================
+    // Strategy-aware remote-first execution
+    // =========================================================================
+
+    @Test
+    fun remoteFirstNonPersistingPullUsesTransportOnly() {
+        val transport = FakeTransportProvider(
+            pullResult = ProviderOperationResult.Success(PullChangesResult.NoChanges()),
+        )
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .provider(transport)
+            .defaultStrategyProviderBindings(
+                StrategyProviderBindings(
+                    transportProviderId = transport.descriptor.id,
+                ),
+            )
+            .build()
+
+        runSuspend { dataLoom.initialize() }
+        val result = runSuspend {
+            dataLoom.synchronize(makeRemoteFirstRequest())
+        }
+
+        val executed = assertIs<StrategySynchronizationExecutionResult.Executed>(result)
+        assertIs<StrategyTransportOutput.Pulled>(executed.output)
+        assertEquals(1, transport.pullCallCount)
+        assertEquals(0, transport.pushCallCount)
+    }
+
+    @Test
+    fun remoteFirstAllowlistedTimeoutActivatesFallbackAfterTransport() {
+        val order = mutableListOf<String>()
+        val remoteError = FakeRemoteError(StrategyRemoteOutcome.TIMEOUT)
+        val storage = FakeStorageProvider(
+            fallbackResult = ProviderOperationResult.Success(
+                StrategyLocalFallbackResult.Available(StrategyCacheState.STALE),
+            ),
+            operationOrder = order,
+        )
+        val transport = FakeTransportProvider(
+            pullResult = ProviderOperationResult.Failure(remoteError),
+            operationOrder = order,
+        )
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(storage, transport)
+            .defaultStrategyProviderBindings(
+                StrategyProviderBindings(
+                    storageProviderId = storage.descriptor.id,
+                    transportProviderId = transport.descriptor.id,
+                ),
+            )
+            .build()
+
+        runSuspend { dataLoom.initialize() }
+        val result = runSuspend {
+            dataLoom.synchronize(
+                makeRemoteFirstRequest(
+                    fallbackOn = setOf(StrategyRemoteOutcome.TIMEOUT),
+                    evidence = StrategyRuntimeEvidence(
+                        connectivity = StrategyConnectivity.AVAILABLE,
+                        cacheState = StrategyCacheState.STALE,
+                    ),
+                ),
+            )
+        }
+
+        val fallback = assertIs<StrategySynchronizationExecutionResult.FallbackActivated>(result)
+        assertEquals(StrategyRemoteOutcome.TIMEOUT, fallback.remoteOutcome)
+        assertTrue(fallback.remoteAttempted)
+        assertSame(remoteError, fallback.primaryError)
+        assertEquals(StrategyCacheState.STALE, fallback.cacheState)
+        assertEquals(listOf("pull", "fallback"), order)
+    }
+
+    @Test
+    fun remoteFirstAuthenticationFailureCannotActivateAvailabilityFallback() {
+        val order = mutableListOf<String>()
+        val remoteError = FakeRemoteError(
+            remoteOutcome = StrategyRemoteOutcome.AUTHENTICATION_FAILURE,
+            category = ErrorCategory.AUTHENTICATION,
+        )
+        val storage = FakeStorageProvider(
+            fallbackResult = ProviderOperationResult.Success(
+                StrategyLocalFallbackResult.Available(StrategyCacheState.FRESH),
+            ),
+            operationOrder = order,
+        )
+        val transport = FakeTransportProvider(
+            pullResult = ProviderOperationResult.Failure(remoteError),
+            operationOrder = order,
+        )
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(storage, transport)
+            .defaultStrategyProviderBindings(
+                StrategyProviderBindings(
+                    storageProviderId = storage.descriptor.id,
+                    transportProviderId = transport.descriptor.id,
+                ),
+            )
+            .build()
+
+        runSuspend { dataLoom.initialize() }
+        val result = runSuspend {
+            dataLoom.synchronize(
+                makeRemoteFirstRequest(
+                    fallbackOn = setOf(StrategyRemoteOutcome.TIMEOUT),
+                    evidence = StrategyRuntimeEvidence(
+                        connectivity = StrategyConnectivity.AVAILABLE,
+                        cacheState = StrategyCacheState.FRESH,
+                    ),
+                ),
+            )
+        }
+
+        val failed = assertIs<StrategySynchronizationExecutionResult.Failed>(result)
+        assertSame(remoteError, failed.error)
+        assertEquals(
+            StrategyRemoteOutcome.AUTHENTICATION_FAILURE,
+            failed.remoteOutcome,
+        )
+        assertEquals(0, storage.fallbackCallCount)
+        assertEquals(listOf("pull"), order)
+    }
+
+    @Test
+    fun remoteFirstGenericNetworkErrorIsNotGuessedAsUnavailable() {
+        val genericNetworkError = FakeError(
+            category = ErrorCategory.NETWORK,
+            recoverability = Recoverability.RECOVERABLE,
+        )
+        val storage = FakeStorageProvider(
+            fallbackResult = ProviderOperationResult.Success(
+                StrategyLocalFallbackResult.Available(StrategyCacheState.FRESH),
+            ),
+        )
+        val transport = FakeTransportProvider(
+            pullResult = ProviderOperationResult.Failure(genericNetworkError),
+        )
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(storage, transport)
+            .defaultStrategyProviderBindings(
+                StrategyProviderBindings(
+                    storageProviderId = storage.descriptor.id,
+                    transportProviderId = transport.descriptor.id,
+                ),
+            )
+            .build()
+
+        runSuspend { dataLoom.initialize() }
+        val result = runSuspend {
+            dataLoom.synchronize(
+                makeRemoteFirstRequest(
+                    fallbackOn = setOf(StrategyRemoteOutcome.UNAVAILABLE),
+                    evidence = StrategyRuntimeEvidence(
+                        connectivity = StrategyConnectivity.AVAILABLE,
+                        cacheState = StrategyCacheState.FRESH,
+                    ),
+                ),
+            )
+        }
+
+        val failed = assertIs<StrategySynchronizationExecutionResult.Failed>(result)
+        assertSame(genericNetworkError, failed.error)
+        assertEquals(StrategyRemoteOutcome.UNKNOWN_FAILURE, failed.remoteOutcome)
+        assertEquals(0, storage.fallbackCallCount)
+    }
+
+    @Test
+    fun remoteFirstUnavailableEvidenceActivatesFallbackWithoutTransport() {
+        val storage = FakeStorageProvider(
+            fallbackResult = ProviderOperationResult.Success(
+                StrategyLocalFallbackResult.Available(StrategyCacheState.STALE),
+            ),
+        )
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .provider(storage)
+            .defaultStrategyProviderBindings(
+                StrategyProviderBindings(
+                    storageProviderId = storage.descriptor.id,
+                ),
+            )
+            .build()
+
+        runSuspend { dataLoom.initialize() }
+        val result = runSuspend {
+            dataLoom.synchronize(
+                makeRemoteFirstRequest(
+                    fallbackOn = setOf(StrategyRemoteOutcome.UNAVAILABLE),
+                    evidence = StrategyRuntimeEvidence(
+                        connectivity = StrategyConnectivity.UNAVAILABLE,
+                        cacheState = StrategyCacheState.STALE,
+                    ),
+                ),
+            )
+        }
+
+        val fallback = assertIs<StrategySynchronizationExecutionResult.FallbackActivated>(result)
+        assertEquals(StrategyRemoteOutcome.UNAVAILABLE, fallback.remoteOutcome)
+        assertTrue(!fallback.remoteAttempted)
+        assertNull(fallback.primaryError)
+        assertEquals(1, storage.fallbackCallCount)
+    }
+
+    @Test
+    fun remoteFirstMissingFallbackContractRejectsBeforeTransport() {
+        val delegate = FakeStorageProvider()
+        val plainStorage = object : StorageProvider by delegate {}
+        val transport = FakeTransportProvider(
+            pullResult = ProviderOperationResult.Success(PullChangesResult.NoChanges()),
+        )
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(plainStorage, transport)
+            .defaultStrategyProviderBindings(
+                StrategyProviderBindings(
+                    storageProviderId = plainStorage.descriptor.id,
+                    transportProviderId = transport.descriptor.id,
+                ),
+            )
+            .build()
+
+        runSuspend { dataLoom.initialize() }
+        val result = runSuspend {
+            dataLoom.synchronize(
+                makeRemoteFirstRequest(
+                    fallbackOn = setOf(StrategyRemoteOutcome.TIMEOUT),
+                    evidence = StrategyRuntimeEvidence(
+                        connectivity = StrategyConnectivity.AVAILABLE,
+                        cacheState = StrategyCacheState.FRESH,
+                    ),
+                ),
+            )
+        }
+
+        val rejected = assertIs<StrategySynchronizationExecutionResult.Rejected>(result)
+        assertEquals(
+            StrategyExecutionRejectionReason.LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED,
+            rejected.reason,
+        )
+        assertEquals(0, transport.pullCallCount)
+    }
+
+    @Test
+    fun remoteFirstPushNeverConvertsRemoteFailureToLocalSuccess() {
+        val order = mutableListOf<String>()
+        val changeSet = makeChangeSet()
+        val remoteError = FakeRemoteError(StrategyRemoteOutcome.TIMEOUT)
+        val storage = FakeStorageProvider(
+            readResult = ProviderOperationResult.Success(
+                OutboundChangeReadResult.Changes(changeSet, hasMore = false),
+            ),
+            fallbackResult = ProviderOperationResult.Success(
+                StrategyLocalFallbackResult.Available(StrategyCacheState.FRESH),
+            ),
+            operationOrder = order,
+        )
+        val transport = FakeTransportProvider(
+            pushResult = ProviderOperationResult.Failure(remoteError),
+            operationOrder = order,
+        )
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(storage, transport)
+            .defaultStrategyProviderBindings(
+                StrategyProviderBindings(
+                    storageProviderId = storage.descriptor.id,
+                    transportProviderId = transport.descriptor.id,
+                ),
+            )
+            .build()
+
+        runSuspend { dataLoom.initialize() }
+        val result = runSuspend {
+            dataLoom.synchronize(
+                makeRemoteFirstRequest(
+                    direction = SynchronizationDirection.PUSH,
+                    fallbackOn = setOf(StrategyRemoteOutcome.TIMEOUT),
+                ),
+            )
+        }
+
+        val failed = assertIs<StrategySynchronizationExecutionResult.Failed>(result)
+        assertSame(remoteError, failed.error)
+        assertEquals(StrategyRemoteOutcome.TIMEOUT, failed.remoteOutcome)
+        assertEquals(0, storage.fallbackCallCount)
+        assertEquals(listOf("read-local", "push"), order)
+    }
+
+    @Test
+    fun remoteFirstBidirectionalFallbackPreservesCompletedPushOutput() {
+        val order = mutableListOf<String>()
+        val changeSet = makeChangeSet()
+        val acknowledgement = makeAcknowledgement(changeSet)
+        val storage = FakeStorageProvider(
+            readResult = ProviderOperationResult.Success(
+                OutboundChangeReadResult.Changes(changeSet, hasMore = false),
+            ),
+            acknowledgeResult = ProviderOperationResult.Success(Unit),
+            fallbackResult = ProviderOperationResult.Success(
+                StrategyLocalFallbackResult.Available(StrategyCacheState.FRESH),
+            ),
+            operationOrder = order,
+        )
+        val transport = FakeTransportProvider(
+            pushResult = ProviderOperationResult.Success(acknowledgement),
+            pullResult = ProviderOperationResult.Failure(
+                FakeRemoteError(StrategyRemoteOutcome.TIMEOUT),
+            ),
+            operationOrder = order,
+        )
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(storage, transport)
+            .defaultStrategyProviderBindings(
+                StrategyProviderBindings(
+                    storageProviderId = storage.descriptor.id,
+                    transportProviderId = transport.descriptor.id,
+                ),
+            )
+            .build()
+
+        runSuspend { dataLoom.initialize() }
+        val result = runSuspend {
+            dataLoom.synchronize(
+                makeRemoteFirstRequest(
+                    direction = SynchronizationDirection.BIDIRECTIONAL,
+                    fallbackOn = setOf(StrategyRemoteOutcome.TIMEOUT),
+                    evidence = StrategyRuntimeEvidence(
+                        connectivity = StrategyConnectivity.AVAILABLE,
+                        cacheState = StrategyCacheState.FRESH,
+                    ),
+                ),
+            )
+        }
+
+        val fallback = assertIs<StrategySynchronizationExecutionResult.FallbackActivated>(result)
+        val partial = assertIs<StrategyTransportOutput.ProviderBacked>(
+            fallback.partialOutput,
+        )
+        assertIs<SynchronizationResult.Succeeded>(partial.result)
+        assertEquals(
+            listOf(
+                StrategyOperation.PUSH_REMOTE,
+                StrategyOperation.SERVE_LOCAL,
+            ),
+            fallback.completedOperations,
+        )
+        assertEquals(
+            listOf("read-local", "push", "acknowledge", "pull", "fallback"),
+            order,
+        )
+    }
+
+    @Test
+    fun remoteFirstPersistingPullAppliesRemoteChangesAfterTransport() {
+        val order = mutableListOf<String>()
+        val storage = FakeStorageProvider(
+            applyResult = ProviderOperationResult.Success(Unit),
+            operationOrder = order,
+        )
+        val transport = FakeTransportProvider(
+            pullResult = ProviderOperationResult.Success(
+                PullChangesResult.Changes(
+                    changeSet = makeChangeSet(),
+                    hasMore = false,
+                ),
+            ),
+            operationOrder = order,
+        )
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(storage, transport)
+            .defaultStrategyProviderBindings(
+                StrategyProviderBindings(
+                    storageProviderId = storage.descriptor.id,
+                    transportProviderId = transport.descriptor.id,
+                ),
+            )
+            .build()
+
+        runSuspend { dataLoom.initialize() }
+        val result = runSuspend {
+            dataLoom.synchronize(
+                makeRemoteFirstRequest(persistRemoteResult = true),
+            )
+        }
+
+        val executed = assertIs<StrategySynchronizationExecutionResult.Executed>(result)
+        val output = assertIs<StrategyTransportOutput.ProviderBacked>(executed.output)
+        assertIs<SynchronizationResult.Succeeded>(output.result)
+        assertEquals(1, storage.applyCallCount)
+        assertEquals(listOf("read-checkpoint", "pull", "persist-remote"), order)
     }
 
     // =========================================================================

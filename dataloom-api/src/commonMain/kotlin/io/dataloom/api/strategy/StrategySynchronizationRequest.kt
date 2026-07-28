@@ -6,6 +6,7 @@ import io.dataloom.api.model.SynchronizationDirection
 import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.api.synchronization.ChangeSetAcknowledgement
 import io.dataloom.api.synchronization.SynchronizationCheckpoint
+import io.dataloom.api.synchronization.SynchronizationResult
 import io.dataloom.api.transport.PullChangesResult
 
 /** Origin of one strategy admission without conflating it with strategy. */
@@ -129,6 +130,19 @@ public sealed interface StrategyTransportOutput {
 
     public data class Bidirectional(
         public val acknowledgement: ChangeSetAcknowledgement,
+        public val pullResult: PullChangesResult,
+    ) : StrategyTransportOutput
+
+    /** Exact terminal output from a provider-backed synchronization pipeline. */
+    public data class ProviderBacked(
+        public val result: SynchronizationResult,
+    ) : StrategyTransportOutput
+
+    /**
+     * Provider-backed outbound result followed by a non-persisting remote pull.
+     */
+    public data class RemoteFirstBidirectional(
+        public val pushResult: SynchronizationResult,
         public val pullResult: PullChangesResult,
     ) : StrategyTransportOutput
 }

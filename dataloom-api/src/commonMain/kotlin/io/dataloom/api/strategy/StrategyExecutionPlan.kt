@@ -14,9 +14,11 @@ public enum class StrategyProviderCapability {
     CONFLICT_STATE,
     EVENT_OUTBOX,
 }
+
 /** Ordered, side-effecting or observable operations in a strategy plan. */
 public enum class StrategyOperation {
     READ_LOCAL,
+    READ_CHECKPOINT,
     ACCEPT_LOCAL,
     SERVE_LOCAL,
     ENQUEUE_DURABLE_WORK,
@@ -55,6 +57,66 @@ public enum class StrategyRejectionReason {
 }
 
 /**
+ * Finite fallback branch admitted with a primary strategy plan.
+ *
+ * [remoteOutcomes] is an explicit allowlist. Runtime failures that are not
+ * classified into one of these outcomes must not enter [operations].
+ */
+public class StrategyFallbackPlan(
+    remoteOutcomes: Set<StrategyRemoteOutcome>,
+    operations: List<StrategyOperation>,
+    public val dataOrigin: StrategyDataOrigin,
+) {
+    private val remoteOutcomeSnapshot: Set<StrategyRemoteOutcome> =
+        remoteOutcomes.toSet()
+    private val operationSnapshot: List<StrategyOperation> = operations.toList()
+
+    init {
+        require(remoteOutcomeSnapshot.isNotEmpty()) {
+            "StrategyFallbackPlan requires at least one remote outcome."
+        }
+        require(operationSnapshot.isNotEmpty()) {
+            "StrategyFallbackPlan requires at least one fallback operation."
+        }
+        require(dataOrigin != StrategyDataOrigin.REMOTE) {
+            "A fallback branch must not claim REMOTE data origin."
+        }
+        require(
+            operationSnapshot.none {
+                it == StrategyOperation.PUSH_REMOTE ||
+                    it == StrategyOperation.PULL_REMOTE ||
+                    it == StrategyOperation.PERSIST_REMOTE
+            },
+        ) {
+            "A local fallback branch must not contain remote operations."
+        }
+    }
+
+    public val remoteOutcomes: Set<StrategyRemoteOutcome>
+        get() = remoteOutcomeSnapshot.toSet()
+
+    public val operations: List<StrategyOperation>
+        get() = operationSnapshot.toList()
+
+    override fun equals(other: Any?): Boolean =
+        other is StrategyFallbackPlan &&
+            remoteOutcomeSnapshot == other.remoteOutcomeSnapshot &&
+            operationSnapshot == other.operationSnapshot &&
+            dataOrigin == other.dataOrigin
+
+    override fun hashCode(): Int {
+        var result = remoteOutcomeSnapshot.hashCode()
+        result = 31 * result + operationSnapshot.hashCode()
+        result = 31 * result + dataOrigin.hashCode()
+        return result
+    }
+
+    override fun toString(): String =
+        "StrategyFallbackPlan(remoteOutcomes=$remoteOutcomeSnapshot, " +
+            "operations=$operationSnapshot, dataOrigin=$dataOrigin)"
+}
+
+/**
  * Immutable execution plan produced before provider resolution.
  *
  * Provider requirements are derived from [operations], not from a universal
@@ -75,6 +137,7 @@ public class StrategyExecutionPlan(
     public val consistency: StrategyConsistency,
     public val deferralReason: StrategyDeferralReason? = null,
     public val rejectionReason: StrategyRejectionReason? = null,
+    public val fallbackPlan: StrategyFallbackPlan? = null,
 ) {
     private val orderedOperations: List<StrategyOperation> = operations.toList()
     private val providerCapabilities: Set<StrategyProviderCapability> =
@@ -111,7 +174,15 @@ public class StrategyExecutionPlan(
         ) {
             "Non-rejected strategy plans require at least one operation."
         }
+        require(
+            fallbackPlan == null || disposition == StrategyDisposition.EXECUTE,
+        ) {
+            "Only executable strategy plans may define a fallback branch."
+        }
         if (effectiveStrategy == BuiltInSynchronizationStrategy.NETWORK_ONLY) {
+            require(fallbackPlan == null) {
+                "Network-only plans must not define a fallback branch."
+            }
             require(StrategyProviderCapability.STORAGE !in providerCapabilities) {
                 "Network-only plans must not require storage."
             }
@@ -121,6 +192,7 @@ public class StrategyExecutionPlan(
             require(
                 orderedOperations.none {
                     it == StrategyOperation.READ_LOCAL ||
+                        it == StrategyOperation.READ_CHECKPOINT ||
                         it == StrategyOperation.ACCEPT_LOCAL ||
                         it == StrategyOperation.SERVE_LOCAL ||
                         it == StrategyOperation.ENQUEUE_DURABLE_WORK ||
@@ -155,7 +227,8 @@ public class StrategyExecutionPlan(
             dataOrigin == other.dataOrigin &&
             consistency == other.consistency &&
             deferralReason == other.deferralReason &&
-            rejectionReason == other.rejectionReason
+            rejectionReason == other.rejectionReason &&
+            fallbackPlan == other.fallbackPlan
 
     override fun hashCode(): Int {
         var result = id.hashCode()
@@ -172,6 +245,7 @@ public class StrategyExecutionPlan(
         result = 31 * result + consistency.hashCode()
         result = 31 * result + (deferralReason?.hashCode() ?: 0)
         result = 31 * result + (rejectionReason?.hashCode() ?: 0)
+        result = 31 * result + (fallbackPlan?.hashCode() ?: 0)
         return result
     }
 
@@ -182,5 +256,5 @@ public class StrategyExecutionPlan(
             "disposition=$disposition, operations=$orderedOperations, " +
             "requiredCapabilities=$providerCapabilities, dataOrigin=$dataOrigin, " +
             "consistency=$consistency, deferralReason=$deferralReason, " +
-            "rejectionReason=$rejectionReason)"
+            "rejectionReason=$rejectionReason, fallbackPlan=$fallbackPlan)"
 }

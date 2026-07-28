@@ -1,9 +1,11 @@
 # Remote-First Strategy
 
-> [!WARNING]
-> Remote-first is a mandatory built-in V1 strategy. Its versioned profile,
-> typed fallback allowlist, unknown-connectivity policy, and deterministic plan
-> are implemented. Plan-aware provider resolution and execution remain open.
+> [!IMPORTANT]
+> Direct provider-backed remote-first execution is implemented in common
+> Kotlin for `PUSH`, `PULL`, and `BIDIRECTIONAL`. Typed local fallback is
+> implemented for the pull path. This is not yet the complete V1 gate:
+> durable replay, retry/circuit orchestration, conflict persistence, complete
+> strategy events, and platform contract-kit qualification remain open.
 
 [Strategy index](./README.md) · [Network-only](./network-only.md) ·
 [Cache-first](./cache-first.md) · [Hybrid](./hybrid.md)
@@ -29,26 +31,46 @@ Direction, mode, and trigger remain orthogonal:
 - Direct, queued, scheduled, or platform triggers do not change which source is
   authoritative.
 
-## Current repository
+## Current implementation
 
-The repository can configure bidirectional work as
-`INBOUND_THEN_OUTBOUND`. See
-[Bidirectional Pipeline](../api/bidirectional-pipeline.md) and
-[Bidirectional Flow](../architecture/bidirectional-flow.md).
+`DataLoom.synchronize(StrategySynchronizationRequest, StrategyProviderBindings)`
+now evaluates the profile before provider resolution and dispatches an admitted
+`REMOTE_FIRST` plan to a dedicated executor. The supported direct path:
 
-That setting controls call order only. The current runtime still:
+- resolves only capabilities required by the primary and possible fallback
+  branches;
+- uses canonical provider-backed pipelines for outbound reads and configured
+  inbound persistence;
+- permits a transport-only pull when `persistRemoteResult` is `false` and no
+  fallback is configured;
+- preserves exact provider-backed or pull output;
+- classifies provider failures without catching unexpected exceptions;
+- activates local state only when the classified outcome is in the immutable
+  profile allowlist; and
+- records whether transport ran, the primary error, fallback outcome,
+  freshness, and completed operations in typed results.
 
-- resolves both storage and transport for every execution;
-- selects pipelines by direction rather than strategy;
-- applies pulled remote changes to local storage before pull success;
-- lacks typed local-fallback classification and freshness rules;
-- does not persist an effective strategy/configuration decision with queued
-  work; and
-- has no result field for requested/effective strategy, data origin, or
-  fallback evidence.
+The local fallback adapter implements `StrategyLocalFallbackProvider`. It
+reports only `FRESH`, `STALE`, or unavailable synchronized local state;
+application repositories continue to own domain queries and payload delivery.
+The adapter is validated before the remote attempt whenever the admitted plan
+may need it.
 
-Consequently, `INBOUND_THEN_OUTBOUND` must not be documented or tested as proof
-of remote-first product support.
+The following boundaries remain:
+
+| Area | Current status | Remaining V1 gate |
+|---|---|---|
+| Direct `PUSH`, `PULL`, `BIDIRECTIONAL` | Implemented | Full cross-platform contract matrix |
+| Persisted pull | Uses the canonical inbound pipeline | Crash-safe strategy decision and outstanding-effect replay |
+| Typed pull fallback | Implemented for pre-call unavailability and allowlisted provider outcomes | Durable fallback transition/event record |
+| Push failure | Always remains a failure; it cannot become local-read success | Retry/circuit and durable rescheduling policy |
+| Durable/platform triggers | Rejected by the strategy coordinator | Persisted-plan reacquisition and restart orchestration |
+| Conflict | Protected from fallback | Built-in persistence/orchestration around application domain resolvers |
+| Events | Existing pipeline lifecycle/phase events run on provider-backed paths | Strategy decision, classification, fallback, and recovery events |
+
+`INBOUND_THEN_OUTBOUND` remains an ordering option in the legacy bidirectional
+pipeline. Ordering alone is not a remote-first policy and is not used as proof
+of this strategy implementation.
 
 ## V1 required behavior
 
@@ -119,7 +141,7 @@ no local persistence can be transport-only. A remote-first PUSH may still
 require storage as its outbound source; “remote-first” does not erase
 operation-specific input requirements.
 
-## Guarantees
+## V1 target guarantees
 
 - The remote operation is attempted before local fallback.
 - A missing or unhealthy transport is not silently treated as local success.
@@ -150,6 +172,22 @@ defines and can durably support an offline fallback or deferral branch.
 | Remote succeeds, local persistence fails | Return partial/recoverable persistence state or fail according to the declared consistency boundary. Preserve the remote receipt/idempotency evidence. |
 | Conflict with local changes | Persist and resolve through the configured conflict policy before reporting convergence. |
 | Cancellation | Propagate cancellation; do not activate fallback. |
+
+### Failure classification contract
+
+Transport adapters should return an error implementing
+`ClassifiedStrategyRemoteError` when they can prove an exact
+`StrategyRemoteOutcome`, such as `TIMEOUT`, `RATE_LIMITED`, or
+`SERVER_FAILURE`. Generic errors are mapped conservatively:
+
+- authentication, authorization, validation, integrity/security, and conflict
+  categories map to their protected outcomes;
+- everything else maps to `UNKNOWN_FAILURE`; and
+- no message parsing, exception-name matching, or platform heuristic is used.
+
+`UNKNOWN_FAILURE` can activate fallback only when the application explicitly
+places that outcome in `fallbackOn`. A missing fallback capability is rejected
+before transport, rather than failing after a remote side effect.
 
 ## Persistence and restart
 

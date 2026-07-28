@@ -19,6 +19,7 @@ import io.dataloom.api.strategy.StrategyDisposition
 import io.dataloom.api.strategy.StrategyEvaluationRequest
 import io.dataloom.api.strategy.StrategyEvaluationResult
 import io.dataloom.api.strategy.StrategyExecutionPlan
+import io.dataloom.api.strategy.StrategyFallbackPlan
 import io.dataloom.api.strategy.StrategyOperation
 import io.dataloom.api.strategy.StrategyProviderCapability
 import io.dataloom.api.strategy.StrategyProviderHealth
@@ -279,6 +280,7 @@ public class BuiltInSynchronizationStrategyEvaluator : SynchronizationStrategyEv
             request.direction,
             persistRemote = profile.persistRemoteResult,
         )
+        val fallbackPlan = remoteFallbackPlan(profile, request.direction)
         return result(
             request,
             requestedStrategy,
@@ -287,6 +289,7 @@ public class BuiltInSynchronizationStrategyEvaluator : SynchronizationStrategyEv
             operations,
             remoteOrigin(request.direction),
             StrategyConsistency.REMOTE_AUTHORITATIVE,
+            fallbackPlan = fallbackPlan,
             reasons = leadingReasons + "remote-first.remote-selected",
         )
     }
@@ -641,9 +644,12 @@ public class BuiltInSynchronizationStrategyEvaluator : SynchronizationStrategyEv
         consistency: StrategyConsistency,
         deferralReason: StrategyDeferralReason? = null,
         rejectionReason: StrategyRejectionReason? = null,
+        fallbackPlan: StrategyFallbackPlan? = null,
         reasons: List<String>,
     ): StrategyEvaluationResult {
-        val capabilities = deriveCapabilities(operations)
+        val capabilities = deriveCapabilities(
+            operations + (fallbackPlan?.operations ?: emptyList()),
+        )
         return StrategyEvaluationResult(
             decisionId = request.decisionId,
             plan = StrategyExecutionPlan(
@@ -661,6 +667,7 @@ public class BuiltInSynchronizationStrategyEvaluator : SynchronizationStrategyEv
                 consistency = consistency,
                 deferralReason = deferralReason,
                 rejectionReason = rejectionReason,
+                fallbackPlan = fallbackPlan,
             ),
             reasonCodes = reasons,
         )
@@ -673,6 +680,7 @@ public class BuiltInSynchronizationStrategyEvaluator : SynchronizationStrategyEv
         operations.forEach { operation ->
             when (operation) {
                 StrategyOperation.READ_LOCAL,
+                StrategyOperation.READ_CHECKPOINT,
                 StrategyOperation.ACCEPT_LOCAL,
                 StrategyOperation.SERVE_LOCAL,
                 StrategyOperation.PERSIST_REMOTE,
@@ -707,17 +715,33 @@ public class BuiltInSynchronizationStrategyEvaluator : SynchronizationStrategyEv
                 operations += StrategyOperation.PUSH_REMOTE
             }
             SynchronizationDirection.PULL -> {
+                if (persistRemote) operations += StrategyOperation.READ_CHECKPOINT
                 operations += StrategyOperation.PULL_REMOTE
                 if (persistRemote) operations += StrategyOperation.PERSIST_REMOTE
             }
             SynchronizationDirection.BIDIRECTIONAL -> {
                 operations += StrategyOperation.READ_LOCAL
                 operations += StrategyOperation.PUSH_REMOTE
+                if (persistRemote) operations += StrategyOperation.READ_CHECKPOINT
                 operations += StrategyOperation.PULL_REMOTE
                 if (persistRemote) operations += StrategyOperation.PERSIST_REMOTE
             }
         }
         return operations
+    }
+
+    private fun remoteFallbackPlan(
+        profile: RemoteFirstStrategyProfile,
+        direction: SynchronizationDirection,
+    ): StrategyFallbackPlan? {
+        if (profile.fallbackOn.isEmpty() || direction == SynchronizationDirection.PUSH) {
+            return null
+        }
+        return StrategyFallbackPlan(
+            remoteOutcomes = profile.fallbackOn,
+            operations = localFallbackOperations(direction),
+            dataOrigin = localOrigin(direction),
+        )
     }
 
     private fun networkOnlyOperations(

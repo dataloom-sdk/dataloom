@@ -158,9 +158,9 @@ The following are product commitments, not descriptions of completed APIs:
 | Mandatory V1 capability | Current repository status |
 |---|---|
 | Offline-first strategy | Complete built-in strategy and qualification not implemented |
-| Remote-first strategy | Complete built-in strategy and qualification not implemented |
+| Remote-first strategy | Direct provider-backed runtime and typed pull fallback implemented; durable replay, retry/circuit, conflict persistence, strategy events, and full qualification remain |
 | Cache-first strategy | Complete built-in strategy and qualification not implemented |
-| Network-only strategy | Complete built-in strategy and qualification not implemented |
+| Network-only strategy | Direct transport-only runtime implemented; full event/result and platform qualification remain |
 | Hybrid strategy | Complete built-in strategy and qualification not implemented |
 | Adaptive strategy | Complete built-in strategy and qualification not implemented |
 | Standard retry and durable circuit breaker | Partial contracts/orchestration only |
