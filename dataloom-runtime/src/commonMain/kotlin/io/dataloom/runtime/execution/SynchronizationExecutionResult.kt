@@ -63,8 +63,8 @@ public sealed interface SynchronizationExecutionResult {
      * Execution was rejected before any pipeline was invoked.
      *
      * [reason] classifies why execution was rejected. [providerBindingFailures]
-     * contains the ordered [ProviderBindingFailure] records produced by the
-     * [io.dataloom.core.provider.SynchronizationProviderResolver] when
+     * contains the ordered [ProviderBindingFailure] records produced during
+     * provider binding when
      * [reason] is [SynchronizationExecutionRejectionReason.PROVIDER_RESOLUTION_FAILED].
      * For all other rejection reasons, [providerBindingFailures] is empty.
      *

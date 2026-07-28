@@ -1,9 +1,12 @@
 package io.dataloom.buildlogic;
 
+import java.util.Set;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.testing.Test;
+import org.gradle.api.tasks.TaskProvider;
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget;
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension;
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget;
@@ -59,5 +62,28 @@ public final class DataLoomKotlinMultiplatformLibraryPlugin
         });
 
         project.getTasks().withType(Test.class).configureEach(Test::useJUnitPlatform);
+
+        if ("dataloom-runtime".equals(project.getName())) {
+            Configuration runtimeClasspath =
+                    project.getConfigurations().getByName("jvmRuntimeClasspath");
+            TaskProvider<ResolvedDependencyBoundaryCheckTask> boundaryCheck =
+                    project.getTasks().register(
+                            "checkResolvedDependencyBoundaries",
+                            ResolvedDependencyBoundaryCheckTask.class,
+                            task -> {
+                                task.setGroup("verification");
+                                task.setDescription(
+                                        "Rejects testing artifacts on the production runtime classpath."
+                                );
+                                task.getRuntimeClasspath().from(runtimeClasspath);
+                                task.getForbiddenFileMarkers().set(
+                                        Set.of("dataloom-testing")
+                                );
+                            }
+                    );
+            project.getTasks().named("check").configure(
+                    task -> task.dependsOn(boundaryCheck)
+            );
+        }
     }
 }

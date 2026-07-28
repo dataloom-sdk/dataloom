@@ -52,12 +52,12 @@ import io.dataloom.runtime.execution.lifecycle.SynchronizationLifecycleEventEmit
  *
  * ## KMP compatibility
  *
- * Uses Kotlin standard-library and DataLoom API and core types only. Safe for
- * use in Kotlin Multiplatform common code.
+ * Uses Kotlin standard-library and public DataLoom API types only. Safe for use
+ * in Kotlin Multiplatform common code.
  *
  * @param request the [SynchronizationRequest] that triggered this execution.
- * @param providers the fully resolved provider set produced by
- *   [io.dataloom.core.provider.SynchronizationProviderResolver].
+ * @param providers the fully resolved provider set produced during runtime
+ *   provider binding.
  * @param runtimeDependencies the [RuntimeDependencies] instance injected into
  *   the coordinator.
  * @param lifecycleEventEmitter the optional [SynchronizationLifecycleEventEmitter]

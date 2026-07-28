@@ -30,8 +30,8 @@ import io.dataloom.runtime.submission.DataLoomQueueSubmission
  *
  * ## Shutdown
  *
- * Call [shutdown] when the runtime is no longer needed. Shutdown uses
- * reverse initialization order as documented in [io.dataloom.core.provider.ProviderLifecycleCoordinator].
+ * Call [shutdown] when the runtime is no longer needed. Providers shut down
+ * in reverse initialization order.
  *
  * ## Concurrency
  *
@@ -108,8 +108,8 @@ public interface DataLoom {
     /**
      * Initializes all registered providers in registration order.
      *
-     * Delegates to [io.dataloom.core.provider.ProviderLifecycleCoordinator.initialize]
-     * and returns the result unchanged.
+     * Initializes the internal provider lifecycle coordinator and returns its
+     * result unchanged.
      *
      * Callers must serialize this call with [shutdown]. Concurrent lifecycle
      * calls produce undefined behavior.
@@ -168,8 +168,8 @@ public interface DataLoom {
      * Shuts down all successfully initialized providers in reverse
      * initialization order.
      *
-     * Delegates to [io.dataloom.core.provider.ProviderLifecycleCoordinator.shutdown]
-     * and returns the result unchanged.
+     * Shuts down the internal provider lifecycle coordinator and returns its
+     * result unchanged.
      *
      * Callers must serialize this call with [initialize]. Concurrent lifecycle
      * calls produce undefined behavior.

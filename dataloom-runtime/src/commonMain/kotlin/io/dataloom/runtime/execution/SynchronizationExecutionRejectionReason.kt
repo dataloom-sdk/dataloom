@@ -25,20 +25,19 @@ package io.dataloom.runtime.execution
 public enum class SynchronizationExecutionRejectionReason {
 
     /**
-     * The [io.dataloom.core.provider.ProviderLifecycleCoordinator] is not in
-     * the [io.dataloom.api.provider.ProviderLifecycleCoordinatorState.INITIALIZED]
+     * The provider lifecycle is not in the
+     * [io.dataloom.api.provider.ProviderLifecycleCoordinatorState.INITIALIZED]
      * state.
      *
      * Applications must call
-     * [io.dataloom.core.provider.ProviderLifecycleCoordinator.initialize]
-     * and confirm a successful result before calling
-     * [SynchronizationExecutionCoordinator.execute].
+     * [io.dataloom.runtime.facade.DataLoom.initialize] and confirm a successful
+     * result before requesting synchronization.
      */
     PROVIDERS_NOT_INITIALIZED,
 
     /**
-     * The [io.dataloom.core.provider.SynchronizationProviderResolver] returned
-     * one or more [io.dataloom.api.provider.ProviderBindingFailure] records.
+     * Internal provider resolution returned one or more
+     * [io.dataloom.api.provider.ProviderBindingFailure] records.
      *
      * Provider resolution is attempted only after lifecycle initialization is
      * confirmed. When resolution fails, a

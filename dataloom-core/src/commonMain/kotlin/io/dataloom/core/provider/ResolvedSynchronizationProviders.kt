@@ -45,9 +45,9 @@ import io.dataloom.api.transport.TransportProvider
  * ## Lifecycle boundary
  *
  * [ResolvedSynchronizationProviders] does not guarantee that providers have
- * been initialized. The future synchronization runtime is responsible for
- * ensuring that [io.dataloom.core.provider.ProviderLifecycleCoordinator] has
- * initialized all required providers before using the resolved instances.
+ * been initialized. The synchronization runtime is responsible for ensuring
+ * that all required providers are initialized before using the resolved
+ * instances.
  *
  * ## Security restrictions
  *
