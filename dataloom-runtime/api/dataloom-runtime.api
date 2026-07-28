@@ -786,6 +786,7 @@ public final class io/dataloom/runtime/strategy/BuiltInSynchronizationStrategyEv
 public final class io/dataloom/runtime/strategy/StrategyExecutionRejectionReason : java/lang/Enum {
 	public static final field INCOMPATIBLE_INPUT Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field INCOMPATIBLE_TRIGGER Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
+	public static final field LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field PROVIDERS_NOT_INITIALIZED Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field PROVIDER_RESOLUTION_FAILED Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field STRATEGY_REJECTED Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
@@ -798,6 +799,21 @@ public final class io/dataloom/runtime/strategy/StrategyExecutionRejectionReason
 public abstract interface class io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult {
 	public abstract fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
 	public abstract fun getEvaluation ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
+}
+
+public final class io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$Cancelled : io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult {
+	public fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyTransportOutput$ProviderBacked;)V
+	public final fun component1 ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
+	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component3 ()Lio/dataloom/api/strategy/StrategyTransportOutput$ProviderBacked;
+	public final fun copy (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyTransportOutput$ProviderBacked;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$Cancelled;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$Cancelled;Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyTransportOutput$ProviderBacked;ILjava/lang/Object;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$Cancelled;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun getEvaluation ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
+	public final fun getOutput ()Lio/dataloom/api/strategy/StrategyTransportOutput$ProviderBacked;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$Deferred : io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult {
@@ -829,15 +845,58 @@ public final class io/dataloom/runtime/strategy/StrategySynchronizationExecution
 }
 
 public final class io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$Failed : io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult {
-	public fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/error/DataLoomError;ZLjava/util/List;Lio/dataloom/api/strategy/StrategyTransportOutput;)V
-	public synthetic fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/error/DataLoomError;ZLjava/util/List;Lio/dataloom/api/strategy/StrategyTransportOutput;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/error/DataLoomError;ZLjava/util/List;Lio/dataloom/api/strategy/StrategyTransportOutput;Lio/dataloom/api/strategy/StrategyRemoteOutcome;Lio/dataloom/api/error/DataLoomError;Z)V
+	public synthetic fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/error/DataLoomError;ZLjava/util/List;Lio/dataloom/api/strategy/StrategyTransportOutput;Lio/dataloom/api/strategy/StrategyRemoteOutcome;Lio/dataloom/api/error/DataLoomError;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
 	public final fun getCompletedOperations ()Ljava/util/List;
 	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
 	public fun getEvaluation ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
+	public final fun getFallbackAttempted ()Z
 	public final fun getPartialOutput ()Lio/dataloom/api/strategy/StrategyTransportOutput;
+	public final fun getPrimaryError ()Lio/dataloom/api/error/DataLoomError;
+	public final fun getRemoteOutcome ()Lio/dataloom/api/strategy/StrategyRemoteOutcome;
 	public final fun getTransportAttempted ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$FallbackActivated : io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult {
+	public fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyRemoteOutcome;ZLio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/api/error/DataLoomError;Ljava/util/List;Lio/dataloom/api/strategy/StrategyTransportOutput;)V
+	public synthetic fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyRemoteOutcome;ZLio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/api/error/DataLoomError;Ljava/util/List;Lio/dataloom/api/strategy/StrategyTransportOutput;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCacheState ()Lio/dataloom/api/strategy/StrategyCacheState;
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getCompletedOperations ()Ljava/util/List;
+	public fun getEvaluation ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
+	public final fun getPartialOutput ()Lio/dataloom/api/strategy/StrategyTransportOutput;
+	public final fun getPrimaryError ()Lio/dataloom/api/error/DataLoomError;
+	public final fun getRemoteAttempted ()Z
+	public final fun getRemoteOutcome ()Lio/dataloom/api/strategy/StrategyRemoteOutcome;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$FallbackUnavailable : io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult {
+	public fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyRemoteOutcome;ZLio/dataloom/api/strategy/StrategyLocalFallbackResult$Unavailable;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/strategy/StrategyTransportOutput;)V
+	public synthetic fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyRemoteOutcome;ZLio/dataloom/api/strategy/StrategyLocalFallbackResult$Unavailable;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/strategy/StrategyTransportOutput;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
+	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component3 ()Lio/dataloom/api/strategy/StrategyRemoteOutcome;
+	public final fun component4 ()Z
+	public final fun component5 ()Lio/dataloom/api/strategy/StrategyLocalFallbackResult$Unavailable;
+	public final fun component6 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun component7 ()Lio/dataloom/api/strategy/StrategyTransportOutput;
+	public final fun copy (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyRemoteOutcome;ZLio/dataloom/api/strategy/StrategyLocalFallbackResult$Unavailable;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/strategy/StrategyTransportOutput;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$FallbackUnavailable;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$FallbackUnavailable;Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyRemoteOutcome;ZLio/dataloom/api/strategy/StrategyLocalFallbackResult$Unavailable;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/strategy/StrategyTransportOutput;ILjava/lang/Object;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$FallbackUnavailable;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun getEvaluation ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
+	public final fun getLocalResult ()Lio/dataloom/api/strategy/StrategyLocalFallbackResult$Unavailable;
+	public final fun getPartialOutput ()Lio/dataloom/api/strategy/StrategyTransportOutput;
+	public final fun getPrimaryError ()Lio/dataloom/api/error/DataLoomError;
+	public final fun getRemoteAttempted ()Z
+	public final fun getRemoteOutcome ()Lio/dataloom/api/strategy/StrategyRemoteOutcome;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }

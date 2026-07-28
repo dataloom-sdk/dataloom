@@ -66,6 +66,57 @@ class StrategyContractsTest {
     }
 
     @Test
+    fun fallbackPlanDefensivelyCopiesItsFiniteLocalBranch() {
+        val outcomes = mutableSetOf(StrategyRemoteOutcome.UNAVAILABLE)
+        val operations = mutableListOf(StrategyOperation.SERVE_LOCAL)
+        val fallback = StrategyFallbackPlan(
+            remoteOutcomes = outcomes,
+            operations = operations,
+            dataOrigin = StrategyDataOrigin.LOCAL,
+        )
+
+        outcomes += StrategyRemoteOutcome.TIMEOUT
+        operations += StrategyOperation.PULL_REMOTE
+
+        assertEquals(setOf(StrategyRemoteOutcome.UNAVAILABLE), fallback.remoteOutcomes)
+        assertEquals(listOf(StrategyOperation.SERVE_LOCAL), fallback.operations)
+        assertNotSame(outcomes, fallback.remoteOutcomes)
+        assertNotSame(operations, fallback.operations)
+    }
+
+    @Test
+    fun fallbackPlanRejectsRemoteOperationsAndRemoteOrigin() {
+        assertFailsWith<IllegalArgumentException> {
+            StrategyFallbackPlan(
+                remoteOutcomes = setOf(StrategyRemoteOutcome.TIMEOUT),
+                operations = listOf(StrategyOperation.PULL_REMOTE),
+                dataOrigin = StrategyDataOrigin.LOCAL,
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            StrategyFallbackPlan(
+                remoteOutcomes = setOf(StrategyRemoteOutcome.TIMEOUT),
+                operations = listOf(StrategyOperation.SERVE_LOCAL),
+                dataOrigin = StrategyDataOrigin.REMOTE,
+            )
+        }
+    }
+
+    @Test
+    fun localFallbackAvailabilityStatesAreUnambiguous() {
+        StrategyLocalFallbackResult.Available(StrategyCacheState.FRESH)
+        StrategyLocalFallbackResult.Available(StrategyCacheState.STALE)
+        StrategyLocalFallbackResult.Unavailable(StrategyCacheState.MISSING)
+
+        assertFailsWith<IllegalArgumentException> {
+            StrategyLocalFallbackResult.Available(StrategyCacheState.MISSING)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            StrategyLocalFallbackResult.Unavailable(StrategyCacheState.FRESH)
+        }
+    }
+
+    @Test
     fun hybridRequiresDifferentPrimaryAndFallbackSources() {
         assertFailsWith<IllegalArgumentException> {
             HybridStrategyProfile(

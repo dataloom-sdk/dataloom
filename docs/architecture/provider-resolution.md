@@ -150,9 +150,17 @@ For `StrategyProviderResolver`, no role is universally required. The plan's
 
 - a required capability with no binding is reported in
   `missingCapabilities`;
+- capabilities needed by an admitted fallback branch are included before the
+  primary remote operation begins;
 - a required bound ID is structurally validated;
 - an unrequired role is not looked up, even when its optional ID is present;
 - resolution returns no provider instance for unrequired roles.
+
+Remote-first adds one semantic check after structural resolution: when the
+plan admits local fallback, the resolved storage provider must also implement
+`StrategyLocalFallbackProvider`. If it does not, execution is rejected before
+transport. This preserves exact resolver role semantics while preventing a
+late fallback-capability failure after a remote side effect.
 
 ---
 

@@ -472,6 +472,9 @@ public class DataLoomBuilder {
             evaluator = BuiltInSynchronizationStrategyEvaluator(),
             providerResolver = strategyResolver,
             clock = deps.clock,
+            runtimeDependencies = deps,
+            pipelineRegistry = buildStrategyPipelineRegistry(),
+            lifecycleEventEmitter = lifecycleEventEmitter,
         )
 
         // --- 9. Build optional queue worker ---
@@ -592,6 +595,29 @@ public class DataLoomBuilder {
 
         // SynchronizationPipelineRegistry throws IllegalArgumentException for duplicate directions.
         return SynchronizationPipelineRegistry(pipelines)
+    }
+
+    /**
+     * Builds canonical strategy pipelines without custom direction overrides.
+     *
+     * Built-in strategy semantics must not silently change because an
+     * application registered a legacy custom pipeline.
+     */
+    private fun buildStrategyPipelineRegistry(): SynchronizationPipelineRegistry {
+        val outbound = OutboundPushSynchronizationPipeline(
+            outboundConfiguration ?: OutboundPushPipelineConfiguration(),
+        )
+        val inbound = InboundPullSynchronizationPipeline(
+            inboundConfiguration ?: InboundPullPipelineConfiguration(),
+        )
+        val bidirectional = BidirectionalSynchronizationPipeline(
+            outboundPipeline = outbound,
+            inboundPipeline = inbound,
+            configuration = BidirectionalPipelineConfiguration(),
+        )
+        return SynchronizationPipelineRegistry(
+            listOf(outbound, inbound, bidirectional),
+        )
     }
 
     /**

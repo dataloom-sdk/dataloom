@@ -4,9 +4,10 @@
 > This documentation defines the mandatory V1 product contract. The repository
 > now contains versioned profile, evidence, decision, execution-plan, and
 > durable-decision contracts plus a deterministic planner for all six
-> strategies. Plan-aware direct network-only execution is also implemented.
-> The other strategy runtimes, persistence, events, and full platform
-> qualification are still required before the engine is complete.
+> strategies. Plan-aware direct network-only execution and direct
+> provider-backed remote-first execution are implemented. The remaining
+> strategy runtimes, durable recovery, events, and full platform qualification
+> are still required before the engine is complete.
 
 DataLoom's primary product purpose is to provide one deterministic,
 policy-driven synchronization engine with six complete built-in strategies.
@@ -15,7 +16,7 @@ All six are required for V1:
 | Strategy | Choose it when | Current repository |
 |---|---|---|
 | [Offline-first](./offline-first.md) | Eligible local work must be durable before remote availability is required. | Contract and plan evaluation implemented; atomic execution pending |
-| [Remote-first](./remote-first.md) | The remote path is authoritative and must be attempted before an explicit local fallback. | Contract and typed plan evaluation implemented; execution pending |
+| [Remote-first](./remote-first.md) | The remote path is authoritative and must be attempted before an explicit local fallback. | Direct provider-backed execution and typed pull fallback implemented; durable replay, retry/circuit, conflict persistence, and complete strategy events remain |
 | [Cache-first](./cache-first.md) | Local synchronized state may be used under explicit freshness and refresh rules. | Contract and freshness decision matrix implemented; execution pending |
 | [Network-only](./network-only.md) | Remote execution must succeed without local storage or queue access. | Direct transport-only PUSH, PULL, and BIDIRECTIONAL execution implemented; full event/result qualification pending |
 | [Hybrid](./hybrid.md) | A declared primary source, fallback, return rule, persistence rule, and coherence rule must be composed. | Contract and finite source plan evaluation implemented; execution pending |
@@ -102,8 +103,11 @@ to its execution foundations:
 - `DataLoom.synchronize(StrategySynchronizationRequest)` executes direct
   network-only PUSH, PULL, and BIDIRECTIONAL plans through transport alone and
   preserves completed push evidence when a later pull fails.
+- The same strategy facade executes direct provider-backed remote-first plans,
+  including configured pull persistence and finite typed local fallback.
 
-The remaining strategies do not yet execute their plans end to end:
+Offline-first, cache-first, hybrid, and adaptive do not yet execute their plans
+end to end. Remote-first still needs its durable-trigger and recovery gates:
 
 - The legacy facade still uses direction-keyed pipelines and universal
   storage-plus-transport bindings. It remains separate from strategy

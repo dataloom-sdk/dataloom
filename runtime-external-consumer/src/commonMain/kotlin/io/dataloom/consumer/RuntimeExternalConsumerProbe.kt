@@ -8,6 +8,10 @@ import io.dataloom.api.provider.ProviderLifecycleResult
 import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.api.provider.SynchronizationProviderBindings
 import io.dataloom.api.runtime.RuntimeDependencies
+import io.dataloom.api.strategy.ClassifiedStrategyRemoteError
+import io.dataloom.api.strategy.StrategyFallbackPlan
+import io.dataloom.api.strategy.StrategyLocalFallbackProvider
+import io.dataloom.api.strategy.StrategyRemoteOutcome
 import io.dataloom.api.strategy.StrategySynchronizationRequest
 import io.dataloom.runtime.execution.SynchronizationExecutionResult
 import io.dataloom.runtime.facade.DataLoom
@@ -49,4 +53,21 @@ internal suspend fun compileStrategyRuntimeConsumer(
 ): StrategySynchronizationExecutionResult {
     providers.transportProvider
     return dataLoom.synchronize(request, bindings)
+}
+
+/** Compile-only use of the public remote-first fallback surface. */
+internal fun compileRemoteFirstRuntimeConsumer(
+    fallbackPlan: StrategyFallbackPlan,
+    fallbackProvider: StrategyLocalFallbackProvider,
+    remoteError: ClassifiedStrategyRemoteError,
+    result: StrategySynchronizationExecutionResult,
+): StrategyRemoteOutcome {
+    fallbackPlan.operations
+    fallbackPlan.remoteOutcomes
+    fallbackProvider.descriptor
+    if (result is StrategySynchronizationExecutionResult.FallbackActivated) {
+        result.cacheState
+        result.completedOperations
+    }
+    return remoteError.remoteOutcome
 }

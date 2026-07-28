@@ -131,7 +131,7 @@ Provider requirements are derived from ordered plan operations:
 
 | Operation | Required capability |
 |---|---|
-| `READ_LOCAL`, `ACCEPT_LOCAL`, `SERVE_LOCAL`, `PERSIST_REMOTE` | Storage |
+| `READ_LOCAL`, `READ_CHECKPOINT`, `ACCEPT_LOCAL`, `SERVE_LOCAL`, `PERSIST_REMOTE` | Storage |
 | `PUSH_REMOTE`, `PULL_REMOTE` | Transport |
 | `ENQUEUE_DURABLE_WORK` | Queue |
 | `SCHEDULE_REFRESH` | Queue and scheduler |
@@ -178,8 +178,9 @@ strategy.
 ## Current integration boundary
 
 The profile contracts, deterministic planner, plan-aware provider resolution,
-and direct network-only execution are implemented in common Kotlin and shared
-by native Android, KMP Android, and KMP iOS.
+direct network-only execution, and direct provider-backed remote-first
+execution are implemented in common Kotlin and shared by native Android, KMP
+Android, and KMP iOS.
 
 `StrategyProviderBindings` makes every provider role optional. After policy
 evaluation, `StrategyProviderResolver` resolves only the capabilities in the
@@ -196,12 +197,12 @@ sequenceDiagram
 
     Caller->>Facade: StrategySynchronizationRequest
     Facade->>Policy: Evaluate immutable profile + evidence
-    Policy-->>Facade: NETWORK_ONLY plan (Transport required)
+    Policy-->>Facade: Concrete plan + finite fallback branch
     Facade->>Resolver: Resolve required capabilities only
-    Resolver-->>Facade: Transport provider
-    Facade->>Transport: PUSH, PULL, or PUSH then PULL
-    Transport-->>Facade: Canonical acknowledgement / pull result
-    Facade-->>Caller: Executed, Failed, Deferred, or Rejected
+    Resolver-->>Facade: Only providers admitted by the plan
+    Facade->>Transport: Execute primary remote operation
+    Transport-->>Facade: Canonical output or classified failure
+    Facade-->>Caller: Executed, fallback, failed, deferred, or rejected
 ```
 
 Direct network-only calls use `StrategyOperationInput.DirectTransport`.
@@ -216,8 +217,18 @@ acknowledgement in `partialOutput`. Callers can therefore avoid blindly
 repeating a completed remote effect.
 
 The legacy `DataLoom.synchronize(SynchronizationRequest)` pipeline remains
-available and continues to use `SynchronizationProviderBindings`. Remote-first,
-cache-first, offline-first, hybrid, and adaptive runtime execution, durable
-decision encoding, and complete strategy event/result enrichment remain
-separate integration gates; unsupported effective plans are rejected rather
-than silently executed through the legacy pipeline.
+available and continues to use `SynchronizationProviderBindings`.
+
+Remote-first uses `StrategyOperationInput.ProviderBacked`. A pull can skip
+local persistence through `persistRemoteResult = false`; otherwise the
+canonical inbound pipeline reads the checkpoint, pulls, applies, and writes the
+checkpoint. A possible local fallback requires the selected storage adapter to
+implement `StrategyLocalFallbackProvider`. The fallback contract reports
+availability and freshness only—application repositories still own domain
+reads.
+
+Remote-first durable triggers, cache-first, offline-first, hybrid, and adaptive
+runtime execution, durable decision encoding, retry/circuit rescheduling,
+conflict persistence, and complete strategy event enrichment remain separate
+integration gates. Unsupported plans and triggers are rejected rather than
+silently executed through the legacy pipeline.

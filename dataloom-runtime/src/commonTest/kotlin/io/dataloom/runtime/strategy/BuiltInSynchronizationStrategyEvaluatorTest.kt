@@ -113,6 +113,76 @@ class BuiltInSynchronizationStrategyEvaluatorTest {
     }
 
     @Test
+    fun remoteFirstAdmitsFiniteFallbackAndResolvesItsCapabilitiesUpFront() {
+        val result = evaluate(
+            profile = remote(
+                fallbackOn = setOf(
+                    StrategyRemoteOutcome.UNAVAILABLE,
+                    StrategyRemoteOutcome.TIMEOUT,
+                ),
+                persistRemoteResult = false,
+            ),
+            direction = SynchronizationDirection.PULL,
+            evidence = evidence(
+                connectivity = StrategyConnectivity.AVAILABLE,
+                cacheState = StrategyCacheState.STALE,
+            ),
+        )
+
+        assertEquals(
+            listOf(StrategyOperation.PULL_REMOTE),
+            result.plan.operations,
+        )
+        assertEquals(
+            setOf(
+                StrategyProviderCapability.TRANSPORT,
+                StrategyProviderCapability.STORAGE,
+            ),
+            result.plan.requiredCapabilities,
+        )
+        assertEquals(
+            setOf(
+                StrategyRemoteOutcome.UNAVAILABLE,
+                StrategyRemoteOutcome.TIMEOUT,
+            ),
+            result.plan.fallbackPlan?.remoteOutcomes,
+        )
+        assertEquals(
+            listOf(StrategyOperation.SERVE_LOCAL),
+            result.plan.fallbackPlan?.operations,
+        )
+    }
+
+    @Test
+    fun persistedRemoteFirstPullReadsCheckpointBeforeTransportAndPersistence() {
+        val result = evaluate(
+            profile = RemoteFirstStrategyProfile(
+                id = StrategyProfileId("remote-persisted"),
+                configurationVersion = version(),
+                persistRemoteResult = true,
+            ),
+            direction = SynchronizationDirection.PULL,
+            evidence = evidence(connectivity = StrategyConnectivity.AVAILABLE),
+        )
+
+        assertEquals(
+            listOf(
+                StrategyOperation.READ_CHECKPOINT,
+                StrategyOperation.PULL_REMOTE,
+                StrategyOperation.PERSIST_REMOTE,
+            ),
+            result.plan.operations,
+        )
+        assertEquals(
+            setOf(
+                StrategyProviderCapability.STORAGE,
+                StrategyProviderCapability.TRANSPORT,
+            ),
+            result.plan.requiredCapabilities,
+        )
+    }
+
+    @Test
     fun remoteFirstUnknownConnectivityPolicyIsExplicit() {
         val deferred = evaluate(
             profile = remote(unknown = UnknownConnectivityPolicy.DEFER),
@@ -422,11 +492,13 @@ class BuiltInSynchronizationStrategyEvaluatorTest {
     private fun remote(
         fallbackOn: Set<StrategyRemoteOutcome> = emptySet(),
         unknown: UnknownConnectivityPolicy = UnknownConnectivityPolicy.ATTEMPT_REMOTE,
+        persistRemoteResult: Boolean = true,
     ): RemoteFirstStrategyProfile = RemoteFirstStrategyProfile(
         id = StrategyProfileId("remote"),
         configurationVersion = version(),
         fallbackOn = fallbackOn,
         unknownConnectivityPolicy = unknown,
+        persistRemoteResult = persistRemoteResult,
     )
 
     private fun cache(): CacheFirstStrategyProfile = CacheFirstStrategyProfile(

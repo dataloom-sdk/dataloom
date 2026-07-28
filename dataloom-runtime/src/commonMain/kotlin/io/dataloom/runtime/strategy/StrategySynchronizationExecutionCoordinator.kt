@@ -7,10 +7,13 @@ import io.dataloom.api.strategy.StrategyDisposition
 import io.dataloom.api.strategy.StrategyExecutionTrigger
 import io.dataloom.api.strategy.StrategyOperationInput
 import io.dataloom.api.strategy.StrategySynchronizationRequest
+import io.dataloom.api.runtime.RuntimeDependencies
 import io.dataloom.api.time.DataLoomClock
 import io.dataloom.core.provider.ProviderLifecycleCoordinator
 import io.dataloom.core.provider.StrategyProviderResolutionResult
 import io.dataloom.core.provider.StrategyProviderResolver
+import io.dataloom.runtime.execution.SynchronizationPipelineRegistry
+import io.dataloom.runtime.execution.lifecycle.SynchronizationLifecycleEventEmitter
 
 /** Admits a strategy request before resolving or invoking any provider. */
 internal class StrategySynchronizationExecutionCoordinator(
@@ -18,6 +21,9 @@ internal class StrategySynchronizationExecutionCoordinator(
     private val evaluator: BuiltInSynchronizationStrategyEvaluator,
     private val providerResolver: StrategyProviderResolver,
     private val clock: DataLoomClock,
+    private val runtimeDependencies: RuntimeDependencies,
+    private val pipelineRegistry: SynchronizationPipelineRegistry,
+    private val lifecycleEventEmitter: SynchronizationLifecycleEventEmitter?,
 ) {
     public suspend fun execute(
         request: StrategySynchronizationRequest,
@@ -46,22 +52,32 @@ internal class StrategySynchronizationExecutionCoordinator(
             -> Unit
         }
 
-        if (evaluation.plan.effectiveStrategy != BuiltInSynchronizationStrategy.NETWORK_ONLY) {
-            return rejected(
-                evaluation = evaluation,
-                reason = StrategyExecutionRejectionReason.UNSUPPORTED_PLAN,
-            )
-        }
         if (request.trigger == StrategyExecutionTrigger.DURABLE_QUEUE) {
             return rejected(
                 evaluation = evaluation,
                 reason = StrategyExecutionRejectionReason.INCOMPATIBLE_TRIGGER,
             )
         }
-        if (request.input !is StrategyOperationInput.DirectTransport) {
-            return rejected(
+        when (evaluation.plan.effectiveStrategy) {
+            BuiltInSynchronizationStrategy.NETWORK_ONLY -> {
+                if (request.input !is StrategyOperationInput.DirectTransport) {
+                    return rejected(
+                        evaluation = evaluation,
+                        reason = StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT,
+                    )
+                }
+            }
+            BuiltInSynchronizationStrategy.REMOTE_FIRST -> {
+                if (request.input !is StrategyOperationInput.ProviderBacked) {
+                    return rejected(
+                        evaluation = evaluation,
+                        reason = StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT,
+                    )
+                }
+            }
+            else -> return rejected(
                 evaluation = evaluation,
-                reason = StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT,
+                reason = StrategyExecutionRejectionReason.UNSUPPORTED_PLAN,
             )
         }
 
@@ -83,10 +99,34 @@ internal class StrategySynchronizationExecutionCoordinator(
             }
         }
 
-        return NetworkOnlyStrategyExecutor(clock).execute(
-            request = request,
+        if (
+            evaluation.plan.effectiveStrategy ==
+            BuiltInSynchronizationStrategy.NETWORK_ONLY
+        ) {
+            return NetworkOnlyStrategyExecutor(clock).execute(
+                request = request,
+                evaluation = evaluation,
+                providers = providers,
+            )
+        }
+        if (
+            evaluation.plan.effectiveStrategy ==
+            BuiltInSynchronizationStrategy.REMOTE_FIRST
+        ) {
+            return RemoteFirstStrategyExecutor(
+                clock = clock,
+                runtimeDependencies = runtimeDependencies,
+                pipelineRegistry = pipelineRegistry,
+                lifecycleEventEmitter = lifecycleEventEmitter,
+            ).execute(
+                request = request,
+                evaluation = evaluation,
+                providers = providers,
+            )
+        }
+        return rejected(
             evaluation = evaluation,
-            providers = providers,
+            reason = StrategyExecutionRejectionReason.UNSUPPORTED_PLAN,
         )
     }
 
