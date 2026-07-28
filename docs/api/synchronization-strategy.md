@@ -177,10 +177,47 @@ strategy.
 
 ## Current integration boundary
 
-The profile and evaluation contracts and deterministic built-in planner are
-implemented in common Kotlin and are shared by native Android, KMP Android,
-and KMP iOS. The existing `DataLoom.synchronize` facade and
-`SynchronizationProviderResolver` still execute direction-based pipelines with
-universal storage-plus-transport bindings. Plan-aware provider resolution,
-operation execution, durable decision encoding, result/event enrichment, and
-platform qualification are the next integration gates.
+The profile contracts, deterministic planner, plan-aware provider resolution,
+and direct network-only execution are implemented in common Kotlin and shared
+by native Android, KMP Android, and KMP iOS.
+
+`StrategyProviderBindings` makes every provider role optional. After policy
+evaluation, `StrategyProviderResolver` resolves only the capabilities in the
+immutable plan. An unused storage, queue, connectivity, or scheduler binding is
+not looked up and cannot block a network-only call.
+
+```mermaid
+sequenceDiagram
+    participant Caller
+    participant Facade as DataLoom
+    participant Policy as Strategy evaluator
+    participant Resolver as Plan-aware resolver
+    participant Transport
+
+    Caller->>Facade: StrategySynchronizationRequest
+    Facade->>Policy: Evaluate immutable profile + evidence
+    Policy-->>Facade: NETWORK_ONLY plan (Transport required)
+    Facade->>Resolver: Resolve required capabilities only
+    Resolver-->>Facade: Transport provider
+    Facade->>Transport: PUSH, PULL, or PUSH then PULL
+    Transport-->>Facade: Canonical acknowledgement / pull result
+    Facade-->>Caller: Executed, Failed, Deferred, or Rejected
+```
+
+Direct network-only calls use `StrategyOperationInput.DirectTransport`.
+Outbound changes are caller-owned for `PUSH` and `BIDIRECTIONAL`; pull filters,
+limits, and checkpoints remain caller/remote-owned. The runtime performs no
+storage, queue, scheduler, or connectivity-provider operation on this path.
+
+For a bidirectional call, push completes before pull starts. If pull then
+fails, `StrategySynchronizationExecutionResult.Failed` records
+`PUSH_REMOTE` in `completedOperations` and returns the exact push
+acknowledgement in `partialOutput`. Callers can therefore avoid blindly
+repeating a completed remote effect.
+
+The legacy `DataLoom.synchronize(SynchronizationRequest)` pipeline remains
+available and continues to use `SynchronizationProviderBindings`. Remote-first,
+cache-first, offline-first, hybrid, and adaptive runtime execution, durable
+decision encoding, and complete strategy event/result enrichment remain
+separate integration gates; unsupported effective plans are rejected rather
+than silently executed through the legacy pipeline.

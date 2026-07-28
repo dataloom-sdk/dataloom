@@ -3,8 +3,11 @@ package io.dataloom.runtime.facade
 import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.api.provider.ProviderLifecycleCoordinatorState
 import io.dataloom.api.provider.ProviderLifecycleResult
+import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.api.provider.SynchronizationProviderBindings
+import io.dataloom.api.strategy.StrategySynchronizationRequest
 import io.dataloom.runtime.execution.SynchronizationExecutionResult
+import io.dataloom.runtime.strategy.StrategySynchronizationExecutionResult
 import io.dataloom.runtime.submission.DataLoomQueueSubmission
 
 /**
@@ -163,6 +166,26 @@ public interface DataLoom {
         request: SynchronizationRequest,
         bindings: SynchronizationProviderBindings,
     ): SynchronizationExecutionResult
+
+    /**
+     * Evaluates and executes a strategy request using the configured default
+     * strategy provider bindings.
+     *
+     * Provider roles are resolved from the evaluated plan. A network-only
+     * request therefore resolves transport without resolving storage or queue.
+     */
+    public suspend fun synchronize(
+        request: StrategySynchronizationRequest,
+    ): StrategySynchronizationExecutionResult
+
+    /**
+     * Evaluates and executes a strategy request using explicit plan-aware
+     * provider bindings.
+     */
+    public suspend fun synchronize(
+        request: StrategySynchronizationRequest,
+        bindings: StrategyProviderBindings,
+    ): StrategySynchronizationExecutionResult
 
     /**
      * Shuts down all successfully initialized providers in reverse

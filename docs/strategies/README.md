@@ -4,7 +4,8 @@
 > This documentation defines the mandatory V1 product contract. The repository
 > now contains versioned profile, evidence, decision, execution-plan, and
 > durable-decision contracts plus a deterministic planner for all six
-> strategies. Plan-aware execution, persistence, and full platform
+> strategies. Plan-aware direct network-only execution is also implemented.
+> The other strategy runtimes, persistence, events, and full platform
 > qualification are still required before the engine is complete.
 
 DataLoom's primary product purpose is to provide one deterministic,
@@ -16,7 +17,7 @@ All six are required for V1:
 | [Offline-first](./offline-first.md) | Eligible local work must be durable before remote availability is required. | Contract and plan evaluation implemented; atomic execution pending |
 | [Remote-first](./remote-first.md) | The remote path is authoritative and must be attempted before an explicit local fallback. | Contract and typed plan evaluation implemented; execution pending |
 | [Cache-first](./cache-first.md) | Local synchronized state may be used under explicit freshness and refresh rules. | Contract and freshness decision matrix implemented; execution pending |
-| [Network-only](./network-only.md) | Remote execution must succeed without local storage or queue access. | Contract and storage/queue-free plan validation implemented; execution pending |
+| [Network-only](./network-only.md) | Remote execution must succeed without local storage or queue access. | Direct transport-only PUSH, PULL, and BIDIRECTIONAL execution implemented; full event/result qualification pending |
 | [Hybrid](./hybrid.md) | A declared primary source, fallback, return rule, persistence rule, and coherence rule must be composed. | Contract and finite source plan evaluation implemented; execution pending |
 | [Adaptive](./adaptive.md) | A bounded policy must select deterministically from approved concrete strategies. | Deterministic allowlisted selection implemented; durable admission pending |
 
@@ -73,13 +74,12 @@ Strategy must not be inferred from direction, transfer mode, or trigger:
 | **Transfer mode** | What transfer scope is requested? | `FULL`, `DELTA` | Local-first versus remote-first behavior |
 | **Trigger** | What caused admission or execution? | Direct call, durable queue, platform schedule, lifecycle signal, connectivity signal, manual action | Strategy, direction, or transfer scope |
 
-The public strategy evaluator accepts a versioned profile separately from
-direction and transfer mode, preserving those axes as independent decision
-inputs. The existing
-[`SynchronizationRequest`](../api/synchronization-request.md) has not yet been
-wired to that evaluator, and trigger is still represented by the entry path
-rather than one canonical public contract. A combination may be rejected by
-capability validation—for example, a DataLoom durable-queue trigger is
+`StrategySynchronizationRequest` accepts a versioned profile, direction,
+transfer mode, trigger, runtime evidence, and operation input as separate
+axes. The legacy
+[`SynchronizationRequest`](../api/synchronization-request.md) facade remains
+available for direction-based storage pipelines. A combination may be rejected
+by capability validation—for example, a DataLoom durable-queue trigger is
 incompatible with network-only's zero-queue-call guarantee—but rejection must
 never silently change the selected strategy.
 
@@ -97,14 +97,18 @@ to its execution foundations:
   provider calls, clock reads, randomness, or exception-derived fallback.
 - `PersistedStrategyDecision` defines the non-sensitive identity durable work
   must retain across retry, lease recovery, and restart.
+- `StrategyProviderBindings` and `StrategyProviderResolver` resolve only the
+  capabilities required by the evaluated plan.
+- `DataLoom.synchronize(StrategySynchronizationRequest)` executes direct
+  network-only PUSH, PULL, and BIDIRECTIONAL plans through transport alone and
+  preserves completed push evidence when a later pull fails.
 
-The remaining foundations do not yet execute those plans end to end:
+The remaining strategies do not yet execute their plans end to end:
 
-- Pipeline lookup is keyed by direction; `FULL` and `DELTA` do not select a
-  different pipeline. See
-  [Execution Coordinator](../architecture/execution-coordinator.md).
-- Storage and transport are required in every current provider binding. See
-  [Provider Bindings](../api/provider-bindings.md) and
+- The legacy facade still uses direction-keyed pipelines and universal
+  storage-plus-transport bindings. It remains separate from strategy
+  execution. See [Execution Coordinator](../architecture/execution-coordinator.md),
+  [Provider Bindings](../api/provider-bindings.md), and
   [Provider Resolution](../architecture/provider-resolution.md).
 - The built-in push path reads local storage, calls transport, and acknowledges
   storage. See [Outbound Push Pipeline](../api/outbound-push-pipeline.md).
@@ -122,9 +126,10 @@ The remaining foundations do not yet execute those plans end to end:
   automatically enqueue work. See
   [Connectivity-Aware Execution](../api/connectivity-aware-execution.md).
 
-These foundations explain why the current repository is strongest around an
-offline-oriented storage-to-transport flow, yet still does not provide the
-atomic admission guarantee required for complete offline-first behavior.
+These foundations now provide both the original storage-to-transport flow and
+a strict transport-only path. They still do not provide the atomic admission
+guarantee required for complete offline-first behavior or the local-fallback
+semantics required by remote-first and hybrid.
 
 ## V1 common orchestration contract
 

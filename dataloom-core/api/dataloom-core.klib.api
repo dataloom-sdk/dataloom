@@ -5,7 +5,7 @@
 // - Show manifest properties: true
 // - Show declarations: true
 
-// Library unique name: <dataloom:dataloom-core>
+// Library unique name: <dataloom-strategy-abi:core>
 sealed interface io.dataloom.core.provider/ProviderResolutionResult { // io.dataloom.core.provider/ProviderResolutionResult|null[0]
     final class Failure : io.dataloom.core.provider/ProviderResolutionResult { // io.dataloom.core.provider/ProviderResolutionResult.Failure|null[0]
         constructor <init>(kotlin.collections/List<io.dataloom.api.provider/ProviderBindingFailure>) // io.dataloom.core.provider/ProviderResolutionResult.Failure.<init>|<init>(kotlin.collections.List<io.dataloom.api.provider.ProviderBindingFailure>){}[0]
@@ -33,6 +33,34 @@ sealed interface io.dataloom.core.provider/ProviderResolutionResult { // io.data
     }
 }
 
+sealed interface io.dataloom.core.provider/StrategyProviderResolutionResult { // io.dataloom.core.provider/StrategyProviderResolutionResult|null[0]
+    final class Failure : io.dataloom.core.provider/StrategyProviderResolutionResult { // io.dataloom.core.provider/StrategyProviderResolutionResult.Failure|null[0]
+        constructor <init>(kotlin.collections/Set<io.dataloom.api.strategy/StrategyProviderCapability> = ..., kotlin.collections/List<io.dataloom.api.provider/ProviderBindingFailure> = ...) // io.dataloom.core.provider/StrategyProviderResolutionResult.Failure.<init>|<init>(kotlin.collections.Set<io.dataloom.api.strategy.StrategyProviderCapability>;kotlin.collections.List<io.dataloom.api.provider.ProviderBindingFailure>){}[0]
+
+        final val bindingFailures // io.dataloom.core.provider/StrategyProviderResolutionResult.Failure.bindingFailures|{}bindingFailures[0]
+            final fun <get-bindingFailures>(): kotlin.collections/List<io.dataloom.api.provider/ProviderBindingFailure> // io.dataloom.core.provider/StrategyProviderResolutionResult.Failure.bindingFailures.<get-bindingFailures>|<get-bindingFailures>(){}[0]
+        final val missingCapabilities // io.dataloom.core.provider/StrategyProviderResolutionResult.Failure.missingCapabilities|{}missingCapabilities[0]
+            final fun <get-missingCapabilities>(): kotlin.collections/Set<io.dataloom.api.strategy/StrategyProviderCapability> // io.dataloom.core.provider/StrategyProviderResolutionResult.Failure.missingCapabilities.<get-missingCapabilities>|<get-missingCapabilities>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.core.provider/StrategyProviderResolutionResult.Failure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.core.provider/StrategyProviderResolutionResult.Failure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.core.provider/StrategyProviderResolutionResult.Failure.toString|toString(){}[0]
+    }
+
+    final class Success : io.dataloom.core.provider/StrategyProviderResolutionResult { // io.dataloom.core.provider/StrategyProviderResolutionResult.Success|null[0]
+        constructor <init>(io.dataloom.core.provider/ResolvedStrategyProviders) // io.dataloom.core.provider/StrategyProviderResolutionResult.Success.<init>|<init>(io.dataloom.core.provider.ResolvedStrategyProviders){}[0]
+
+        final val providers // io.dataloom.core.provider/StrategyProviderResolutionResult.Success.providers|{}providers[0]
+            final fun <get-providers>(): io.dataloom.core.provider/ResolvedStrategyProviders // io.dataloom.core.provider/StrategyProviderResolutionResult.Success.providers.<get-providers>|<get-providers>(){}[0]
+
+        final fun component1(): io.dataloom.core.provider/ResolvedStrategyProviders // io.dataloom.core.provider/StrategyProviderResolutionResult.Success.component1|component1(){}[0]
+        final fun copy(io.dataloom.core.provider/ResolvedStrategyProviders = ...): io.dataloom.core.provider/StrategyProviderResolutionResult.Success // io.dataloom.core.provider/StrategyProviderResolutionResult.Success.copy|copy(io.dataloom.core.provider.ResolvedStrategyProviders){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.core.provider/StrategyProviderResolutionResult.Success.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.core.provider/StrategyProviderResolutionResult.Success.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.core.provider/StrategyProviderResolutionResult.Success.toString|toString(){}[0]
+    }
+}
+
 final class io.dataloom.core.provider/ProviderLifecycleCoordinator { // io.dataloom.core.provider/ProviderLifecycleCoordinator|null[0]
     constructor <init>(io.dataloom.core.provider/ProviderRegistry, io.dataloom.api.provider/ProviderInitializationContext) // io.dataloom.core.provider/ProviderLifecycleCoordinator.<init>|<init>(io.dataloom.core.provider.ProviderRegistry;io.dataloom.api.provider.ProviderInitializationContext){}[0]
 
@@ -56,6 +84,31 @@ final class io.dataloom.core.provider/ProviderRegistry { // io.dataloom.core.pro
     final fun isEmpty(): kotlin/Boolean // io.dataloom.core.provider/ProviderRegistry.isEmpty|isEmpty(){}[0]
 }
 
+final class io.dataloom.core.provider/ResolvedStrategyProviders : io.dataloom.api.execution/StrategyProviderSet { // io.dataloom.core.provider/ResolvedStrategyProviders|null[0]
+    constructor <init>(io.dataloom.api.storage/StorageProvider? = ..., io.dataloom.api.transport/TransportProvider? = ..., io.dataloom.api.scheduling/SchedulerProvider? = ..., io.dataloom.api.connectivity/ConnectivityProvider? = ..., io.dataloom.api.queue/QueueProvider? = ...) // io.dataloom.core.provider/ResolvedStrategyProviders.<init>|<init>(io.dataloom.api.storage.StorageProvider?;io.dataloom.api.transport.TransportProvider?;io.dataloom.api.scheduling.SchedulerProvider?;io.dataloom.api.connectivity.ConnectivityProvider?;io.dataloom.api.queue.QueueProvider?){}[0]
+
+    final val connectivityProvider // io.dataloom.core.provider/ResolvedStrategyProviders.connectivityProvider|{}connectivityProvider[0]
+        final fun <get-connectivityProvider>(): io.dataloom.api.connectivity/ConnectivityProvider? // io.dataloom.core.provider/ResolvedStrategyProviders.connectivityProvider.<get-connectivityProvider>|<get-connectivityProvider>(){}[0]
+    final val queueProvider // io.dataloom.core.provider/ResolvedStrategyProviders.queueProvider|{}queueProvider[0]
+        final fun <get-queueProvider>(): io.dataloom.api.queue/QueueProvider? // io.dataloom.core.provider/ResolvedStrategyProviders.queueProvider.<get-queueProvider>|<get-queueProvider>(){}[0]
+    final val schedulerProvider // io.dataloom.core.provider/ResolvedStrategyProviders.schedulerProvider|{}schedulerProvider[0]
+        final fun <get-schedulerProvider>(): io.dataloom.api.scheduling/SchedulerProvider? // io.dataloom.core.provider/ResolvedStrategyProviders.schedulerProvider.<get-schedulerProvider>|<get-schedulerProvider>(){}[0]
+    final val storageProvider // io.dataloom.core.provider/ResolvedStrategyProviders.storageProvider|{}storageProvider[0]
+        final fun <get-storageProvider>(): io.dataloom.api.storage/StorageProvider? // io.dataloom.core.provider/ResolvedStrategyProviders.storageProvider.<get-storageProvider>|<get-storageProvider>(){}[0]
+    final val transportProvider // io.dataloom.core.provider/ResolvedStrategyProviders.transportProvider|{}transportProvider[0]
+        final fun <get-transportProvider>(): io.dataloom.api.transport/TransportProvider? // io.dataloom.core.provider/ResolvedStrategyProviders.transportProvider.<get-transportProvider>|<get-transportProvider>(){}[0]
+
+    final fun component1(): io.dataloom.api.storage/StorageProvider? // io.dataloom.core.provider/ResolvedStrategyProviders.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.transport/TransportProvider? // io.dataloom.core.provider/ResolvedStrategyProviders.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.scheduling/SchedulerProvider? // io.dataloom.core.provider/ResolvedStrategyProviders.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.connectivity/ConnectivityProvider? // io.dataloom.core.provider/ResolvedStrategyProviders.component4|component4(){}[0]
+    final fun component5(): io.dataloom.api.queue/QueueProvider? // io.dataloom.core.provider/ResolvedStrategyProviders.component5|component5(){}[0]
+    final fun copy(io.dataloom.api.storage/StorageProvider? = ..., io.dataloom.api.transport/TransportProvider? = ..., io.dataloom.api.scheduling/SchedulerProvider? = ..., io.dataloom.api.connectivity/ConnectivityProvider? = ..., io.dataloom.api.queue/QueueProvider? = ...): io.dataloom.core.provider/ResolvedStrategyProviders // io.dataloom.core.provider/ResolvedStrategyProviders.copy|copy(io.dataloom.api.storage.StorageProvider?;io.dataloom.api.transport.TransportProvider?;io.dataloom.api.scheduling.SchedulerProvider?;io.dataloom.api.connectivity.ConnectivityProvider?;io.dataloom.api.queue.QueueProvider?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.core.provider/ResolvedStrategyProviders.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.core.provider/ResolvedStrategyProviders.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.core.provider/ResolvedStrategyProviders.toString|toString(){}[0]
+}
+
 final class io.dataloom.core.provider/ResolvedSynchronizationProviders : io.dataloom.api.execution/SynchronizationProviderSet { // io.dataloom.core.provider/ResolvedSynchronizationProviders|null[0]
     constructor <init>(io.dataloom.api.storage/StorageProvider, io.dataloom.api.transport/TransportProvider, io.dataloom.api.scheduling/SchedulerProvider?, io.dataloom.api.connectivity/ConnectivityProvider?, io.dataloom.api.queue/QueueProvider?) // io.dataloom.core.provider/ResolvedSynchronizationProviders.<init>|<init>(io.dataloom.api.storage.StorageProvider;io.dataloom.api.transport.TransportProvider;io.dataloom.api.scheduling.SchedulerProvider?;io.dataloom.api.connectivity.ConnectivityProvider?;io.dataloom.api.queue.QueueProvider?){}[0]
 
@@ -71,6 +124,12 @@ final class io.dataloom.core.provider/ResolvedSynchronizationProviders : io.data
         final fun <get-transportProvider>(): io.dataloom.api.transport/TransportProvider // io.dataloom.core.provider/ResolvedSynchronizationProviders.transportProvider.<get-transportProvider>|<get-transportProvider>(){}[0]
 
     final fun toString(): kotlin/String // io.dataloom.core.provider/ResolvedSynchronizationProviders.toString|toString(){}[0]
+}
+
+final class io.dataloom.core.provider/StrategyProviderResolver { // io.dataloom.core.provider/StrategyProviderResolver|null[0]
+    constructor <init>(io.dataloom.core.provider/ProviderRegistry) // io.dataloom.core.provider/StrategyProviderResolver.<init>|<init>(io.dataloom.core.provider.ProviderRegistry){}[0]
+
+    final fun resolve(io.dataloom.api.provider/StrategyProviderBindings, kotlin.collections/Set<io.dataloom.api.strategy/StrategyProviderCapability>): io.dataloom.core.provider/StrategyProviderResolutionResult // io.dataloom.core.provider/StrategyProviderResolver.resolve|resolve(io.dataloom.api.provider.StrategyProviderBindings;kotlin.collections.Set<io.dataloom.api.strategy.StrategyProviderCapability>){}[0]
 }
 
 final class io.dataloom.core.provider/SynchronizationProviderResolver { // io.dataloom.core.provider/SynchronizationProviderResolver|null[0]

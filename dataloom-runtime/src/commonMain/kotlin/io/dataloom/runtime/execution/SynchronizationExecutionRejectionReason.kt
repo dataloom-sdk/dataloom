@@ -25,6 +25,12 @@ package io.dataloom.runtime.execution
 public enum class SynchronizationExecutionRejectionReason {
 
     /**
+     * This runtime was assembled with strategy provider bindings only, so the
+     * legacy storage-plus-transport default binding is unavailable.
+     */
+    DEFAULT_PROVIDER_BINDINGS_NOT_CONFIGURED,
+
+    /**
      * The provider lifecycle is not in the
      * [io.dataloom.api.provider.ProviderLifecycleCoordinatorState.INITIALIZED]
      * state.

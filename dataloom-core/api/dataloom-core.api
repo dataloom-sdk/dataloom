@@ -38,6 +38,27 @@ public final class io/dataloom/core/provider/ProviderResolutionResult$Success : 
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/core/provider/ResolvedStrategyProviders : io/dataloom/api/execution/StrategyProviderSet {
+	public fun <init> ()V
+	public fun <init> (Lio/dataloom/api/storage/StorageProvider;Lio/dataloom/api/transport/TransportProvider;Lio/dataloom/api/scheduling/SchedulerProvider;Lio/dataloom/api/connectivity/ConnectivityProvider;Lio/dataloom/api/queue/QueueProvider;)V
+	public synthetic fun <init> (Lio/dataloom/api/storage/StorageProvider;Lio/dataloom/api/transport/TransportProvider;Lio/dataloom/api/scheduling/SchedulerProvider;Lio/dataloom/api/connectivity/ConnectivityProvider;Lio/dataloom/api/queue/QueueProvider;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/storage/StorageProvider;
+	public final fun component2 ()Lio/dataloom/api/transport/TransportProvider;
+	public final fun component3 ()Lio/dataloom/api/scheduling/SchedulerProvider;
+	public final fun component4 ()Lio/dataloom/api/connectivity/ConnectivityProvider;
+	public final fun component5 ()Lio/dataloom/api/queue/QueueProvider;
+	public final fun copy (Lio/dataloom/api/storage/StorageProvider;Lio/dataloom/api/transport/TransportProvider;Lio/dataloom/api/scheduling/SchedulerProvider;Lio/dataloom/api/connectivity/ConnectivityProvider;Lio/dataloom/api/queue/QueueProvider;)Lio/dataloom/core/provider/ResolvedStrategyProviders;
+	public static synthetic fun copy$default (Lio/dataloom/core/provider/ResolvedStrategyProviders;Lio/dataloom/api/storage/StorageProvider;Lio/dataloom/api/transport/TransportProvider;Lio/dataloom/api/scheduling/SchedulerProvider;Lio/dataloom/api/connectivity/ConnectivityProvider;Lio/dataloom/api/queue/QueueProvider;ILjava/lang/Object;)Lio/dataloom/core/provider/ResolvedStrategyProviders;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getConnectivityProvider ()Lio/dataloom/api/connectivity/ConnectivityProvider;
+	public fun getQueueProvider ()Lio/dataloom/api/queue/QueueProvider;
+	public fun getSchedulerProvider ()Lio/dataloom/api/scheduling/SchedulerProvider;
+	public fun getStorageProvider ()Lio/dataloom/api/storage/StorageProvider;
+	public fun getTransportProvider ()Lio/dataloom/api/transport/TransportProvider;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/core/provider/ResolvedSynchronizationProviders : io/dataloom/api/execution/SynchronizationProviderSet {
 	public fun <init> (Lio/dataloom/api/storage/StorageProvider;Lio/dataloom/api/transport/TransportProvider;Lio/dataloom/api/scheduling/SchedulerProvider;Lio/dataloom/api/connectivity/ConnectivityProvider;Lio/dataloom/api/queue/QueueProvider;)V
 	public fun getConnectivityProvider ()Lio/dataloom/api/connectivity/ConnectivityProvider;
@@ -46,6 +67,36 @@ public final class io/dataloom/core/provider/ResolvedSynchronizationProviders : 
 	public fun getStorageProvider ()Lio/dataloom/api/storage/StorageProvider;
 	public fun getTransportProvider ()Lio/dataloom/api/transport/TransportProvider;
 	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/core/provider/StrategyProviderResolutionResult {
+}
+
+public final class io/dataloom/core/provider/StrategyProviderResolutionResult$Failure : io/dataloom/core/provider/StrategyProviderResolutionResult {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/Set;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/util/Set;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBindingFailures ()Ljava/util/List;
+	public final fun getMissingCapabilities ()Ljava/util/Set;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/core/provider/StrategyProviderResolutionResult$Success : io/dataloom/core/provider/StrategyProviderResolutionResult {
+	public fun <init> (Lio/dataloom/core/provider/ResolvedStrategyProviders;)V
+	public final fun component1 ()Lio/dataloom/core/provider/ResolvedStrategyProviders;
+	public final fun copy (Lio/dataloom/core/provider/ResolvedStrategyProviders;)Lio/dataloom/core/provider/StrategyProviderResolutionResult$Success;
+	public static synthetic fun copy$default (Lio/dataloom/core/provider/StrategyProviderResolutionResult$Success;Lio/dataloom/core/provider/ResolvedStrategyProviders;ILjava/lang/Object;)Lio/dataloom/core/provider/StrategyProviderResolutionResult$Success;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getProviders ()Lio/dataloom/core/provider/ResolvedStrategyProviders;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/core/provider/StrategyProviderResolver {
+	public fun <init> (Lio/dataloom/core/provider/ProviderRegistry;)V
+	public final fun resolve (Lio/dataloom/api/provider/StrategyProviderBindings;Ljava/util/Set;)Lio/dataloom/core/provider/StrategyProviderResolutionResult;
 }
 
 public final class io/dataloom/core/provider/SynchronizationProviderResolver {

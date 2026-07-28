@@ -2,11 +2,17 @@
 
 ## Overview
 
-`SynchronizationProviderResolver` resolves explicit provider bindings declared
-in `SynchronizationProviderBindings` against a `ProviderRegistry`. It
-validates each binding structurally and returns a `ProviderResolutionResult`
-containing either the fully resolved provider set or a deterministic ordered
-list of binding failures.
+DataLoom has two explicit resolver contracts:
+
+- `SynchronizationProviderResolver` resolves legacy
+  `SynchronizationProviderBindings`, where storage and transport are
+  universally required.
+- `StrategyProviderResolver` resolves `StrategyProviderBindings` against the
+  required capabilities of one immutable evaluated plan.
+
+Both use exact `ProviderId` lookup and the same structural checks. The strategy
+resolver additionally reports missing required capabilities and never resolves
+an optional role that the plan does not require.
 
 ---
 
@@ -17,6 +23,7 @@ list of binding failures.
 | `ProviderRegistry` | Stores provider references; immutable after construction. |
 | `ProviderLifecycleCoordinator` | Initializes and shuts down providers in registration order. |
 | `SynchronizationProviderResolver` | Resolves explicit `ProviderId` bindings to provider instances. |
+| `StrategyProviderResolver` | Resolves only provider roles required by an evaluated strategy plan. |
 | `SynchronizationExecutionCoordinator` | Ensures lifecycle initialization is complete before using resolved providers. |
 
 ---
@@ -137,6 +144,15 @@ interface, `PROVIDER_CONTRACT_MISMATCH` is recorded.
 | Scheduler | No | `null`; not validated; no failure |
 | Connectivity | No | `null`; not validated; no failure |
 | Queue | No | `null`; not validated; no failure |
+
+For `StrategyProviderResolver`, no role is universally required. The plan's
+`requiredCapabilities` set is authoritative:
+
+- a required capability with no binding is reported in
+  `missingCapabilities`;
+- a required bound ID is structurally validated;
+- an unrequired role is not looked up, even when its optional ID is present;
+- resolution returns no provider instance for unrequired roles.
 
 ---
 
