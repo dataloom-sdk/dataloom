@@ -6,7 +6,13 @@ Android-first, Jetpack-style product strategy with a Kotlin Multiplatform-ready 
 
 ## Status
 
-Accepted
+Superseded in part by ADR-0002
+
+The Android-first principle, platform-neutral shared logic, and provider-based
+boundaries remain accepted. ADR-0002 supersedes this record's four-module
+allocation, Apple/KMP deferral, V1 platform scope, and implementation
+sequence. V1 now requires native Android plus KMP Android and KMP iOS consumer
+paths; native Swift distribution is a separate optional packaging decision.
 
 ## Date
 
@@ -28,6 +34,25 @@ Kotlin Multiplatform-ready shared core. Android is the primary reference and
 adoption platform. Shared contracts and runtime foundations remain
 platform-independent where technically appropriate.
 
+```mermaid
+flowchart TD
+    shared[Platform-neutral KMP core]
+    android[Android reference platform]
+    androidProviders[Android providers]
+    otherTargets[Additional KMP targets]
+
+    shared --> android
+    shared --> otherTargets
+    android --> androidProviders
+
+    style shared fill:#DCCCFF,stroke:#874FFF
+    style android fill:#CDF4D3,stroke:#66D575
+    style otherTargets fill:#F5F5F5,stroke:#B3B3B3
+```
+
+ADR-0002 later made KMP Android and KMP iOS mandatory V1 paths and replaced the
+historical module allocation below.
+
 ## Decision Drivers
 
 - Preserve Android-first adoption and developer experience.
@@ -36,7 +61,7 @@ platform-independent where technically appropriate.
 - Avoid coupling shared modules to Android APIs.
 - Deliver a usable Android vertical slice before additional platform targets.
 
-## Architecture
+## Historical architecture allocation (superseded for V1)
 
 - Shared modules:
   - `dataloom-api`
@@ -70,7 +95,7 @@ platform-independent where technically appropriate.
   failure injection, and deterministic testing support; production modules must
   not depend on this module.
 
-## Android Modules
+## Historical Android module plan (superseded for V1)
 
 - `dataloom-android`: Android initialization, lifecycle integration,
   connectivity integration, Android runtime configuration, diagnostics, and
@@ -86,7 +111,7 @@ platform-independent where technically appropriate.
 - `sample-android`: Android reference integration sample for offline-first
   behavior, scheduling, providers, state observation, and failure/retry flows.
 
-## Future KMP Modules
+## Historical future KMP modules (superseded for V1)
 
 - `dataloom-ktor`: future multiplatform transport provider.
 - `dataloom-sqldelight`: future multiplatform storage provider.
@@ -94,7 +119,9 @@ platform-independent where technically appropriate.
   integration.
 - `sample-kmp`: future shared Android and iOS reference sample.
 
-These are roadmap items only and are not part of the current release.
+This deferral no longer applies. ADR-0002 makes `dataloom-ios` and the Android
+and iOS KMP consumer paths mandatory V1 work. `dataloom-apple` is limited to
+optional native Swift/XCFramework distribution assembly.
 
 ## Provider Strategy
 
@@ -124,8 +151,9 @@ delivery path.
 - Additional module boundaries increase planning and integration overhead.
 - Some platform features require adapter layers rather than direct use in
   shared code.
-- Additional platform targets are intentionally deferred until Android slice
-  readiness.
+- The original sequence deferred additional platform targets until Android
+  slice readiness. ADR-0002 retains Android as the reference sequence but
+  blocks V1 production release until KMP Android and KMP iOS are complete.
 
 ## Rejected Alternatives
 
@@ -144,29 +172,35 @@ delivery path.
 - No public API semantics, module dependencies, platform targets, Gradle
   versions, or dependency versions are changed by this ADR.
 
-## Implementation Sequence
+## Historical implementation sequence (superseded for V1)
 
-Shared public contracts
-        ↓
-Shared runtime foundations
-        ↓
-Provider contracts
-        ↓
-Queue and retry foundations
-        ↓
-Android platform adapter
-        ↓
-WorkManager scheduler integration
-        ↓
-Room storage provider
-        ↓
-Retrofit transport provider
-        ↓
-Android reference application
-        ↓
-Android developer preview
-        ↓
-Additional KMP integrations
+```mermaid
+flowchart TD
+    contracts[Shared contracts]
+    runtime[Shared runtime]
+    providers[Provider contracts]
+    resilience[Queue and retry]
+    android[Android adapter]
+    scheduler[WorkManager]
+    storage[Room]
+    transport[Retrofit]
+    sample[Android sample]
+    preview[Developer preview]
+    kmp[Additional KMP integrations]
+
+    contracts --> runtime
+    runtime --> providers
+    providers --> resilience
+    resilience --> android
+    android --> scheduler
+    scheduler --> storage
+    storage --> transport
+    transport --> sample
+    sample --> preview
+    preview --> kmp
+```
+
+The active sequence is defined in ADR-0002 and the V1 readiness audit.
 
 ## Review Triggers
 

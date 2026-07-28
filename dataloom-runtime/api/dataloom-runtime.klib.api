@@ -1,0 +1,1302 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <dataloom:dataloom-runtime>
+final enum class io.dataloom.runtime.conflict/ConflictOrchestrationStatus : kotlin/Enum<io.dataloom.runtime.conflict/ConflictOrchestrationStatus> { // io.dataloom.runtime.conflict/ConflictOrchestrationStatus|null[0]
+    enum entry DETECTOR_NOT_FOUND // io.dataloom.runtime.conflict/ConflictOrchestrationStatus.DETECTOR_NOT_FOUND|null[0]
+    enum entry NO_CONFLICT // io.dataloom.runtime.conflict/ConflictOrchestrationStatus.NO_CONFLICT|null[0]
+    enum entry RESOLVED // io.dataloom.runtime.conflict/ConflictOrchestrationStatus.RESOLVED|null[0]
+    enum entry RESOLVER_NOT_CONFIGURED // io.dataloom.runtime.conflict/ConflictOrchestrationStatus.RESOLVER_NOT_CONFIGURED|null[0]
+    enum entry RESOLVER_NOT_FOUND // io.dataloom.runtime.conflict/ConflictOrchestrationStatus.RESOLVER_NOT_FOUND|null[0]
+
+    final val entries // io.dataloom.runtime.conflict/ConflictOrchestrationStatus.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.conflict/ConflictOrchestrationStatus> // io.dataloom.runtime.conflict/ConflictOrchestrationStatus.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.conflict/ConflictOrchestrationStatus // io.dataloom.runtime.conflict/ConflictOrchestrationStatus.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.conflict/ConflictOrchestrationStatus> // io.dataloom.runtime.conflict/ConflictOrchestrationStatus.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.runtime.execution.bidirectional/BidirectionalExecutionOrder : kotlin/Enum<io.dataloom.runtime.execution.bidirectional/BidirectionalExecutionOrder> { // io.dataloom.runtime.execution.bidirectional/BidirectionalExecutionOrder|null[0]
+    enum entry INBOUND_THEN_OUTBOUND // io.dataloom.runtime.execution.bidirectional/BidirectionalExecutionOrder.INBOUND_THEN_OUTBOUND|null[0]
+    enum entry OUTBOUND_THEN_INBOUND // io.dataloom.runtime.execution.bidirectional/BidirectionalExecutionOrder.OUTBOUND_THEN_INBOUND|null[0]
+
+    final val entries // io.dataloom.runtime.execution.bidirectional/BidirectionalExecutionOrder.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.execution.bidirectional/BidirectionalExecutionOrder> // io.dataloom.runtime.execution.bidirectional/BidirectionalExecutionOrder.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.execution.bidirectional/BidirectionalExecutionOrder // io.dataloom.runtime.execution.bidirectional/BidirectionalExecutionOrder.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.execution.bidirectional/BidirectionalExecutionOrder> // io.dataloom.runtime.execution.bidirectional/BidirectionalExecutionOrder.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason : kotlin/Enum<io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason> { // io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason|null[0]
+    enum entry CONNECTIVITY_CHECK_FAILED // io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason.CONNECTIVITY_CHECK_FAILED|null[0]
+    enum entry CONNECTIVITY_PROVIDER_NOT_CONFIGURED // io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason.CONNECTIVITY_PROVIDER_NOT_CONFIGURED|null[0]
+    enum entry CONNECTIVITY_REQUIREMENT_NOT_MET // io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason.CONNECTIVITY_REQUIREMENT_NOT_MET|null[0]
+    enum entry PIPELINE_NOT_FOUND // io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason.PIPELINE_NOT_FOUND|null[0]
+    enum entry PROVIDERS_NOT_INITIALIZED // io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason.PROVIDERS_NOT_INITIALIZED|null[0]
+    enum entry PROVIDER_RESOLUTION_FAILED // io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason.PROVIDER_RESOLUTION_FAILED|null[0]
+
+    final val entries // io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason> // io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason // io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason> // io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason : kotlin/Enum<io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason> { // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason|null[0]
+    enum entry OBSERVER_CALLBACK_FAILED // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason.OBSERVER_CALLBACK_FAILED|null[0]
+
+    final val entries // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason> // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason> // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.runtime.queue/QueueProcessingFailureStage : kotlin/Enum<io.dataloom.runtime.queue/QueueProcessingFailureStage> { // io.dataloom.runtime.queue/QueueProcessingFailureStage|null[0]
+    enum entry ACQUISITION // io.dataloom.runtime.queue/QueueProcessingFailureStage.ACQUISITION|null[0]
+    enum entry ACQUISITION_VALIDATION // io.dataloom.runtime.queue/QueueProcessingFailureStage.ACQUISITION_VALIDATION|null[0]
+    enum entry CANCELLATION_TRANSITION // io.dataloom.runtime.queue/QueueProcessingFailureStage.CANCELLATION_TRANSITION|null[0]
+    enum entry COMPLETION_TRANSITION // io.dataloom.runtime.queue/QueueProcessingFailureStage.COMPLETION_TRANSITION|null[0]
+    enum entry FAILURE_TRANSITION // io.dataloom.runtime.queue/QueueProcessingFailureStage.FAILURE_TRANSITION|null[0]
+    enum entry RESCHEDULE_TRANSITION // io.dataloom.runtime.queue/QueueProcessingFailureStage.RESCHEDULE_TRANSITION|null[0]
+
+    final val entries // io.dataloom.runtime.queue/QueueProcessingFailureStage.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.queue/QueueProcessingFailureStage> // io.dataloom.runtime.queue/QueueProcessingFailureStage.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.queue/QueueProcessingFailureStage // io.dataloom.runtime.queue/QueueProcessingFailureStage.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.queue/QueueProcessingFailureStage> // io.dataloom.runtime.queue/QueueProcessingFailureStage.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.runtime.retry/RetryOrchestrationStatus : kotlin/Enum<io.dataloom.runtime.retry/RetryOrchestrationStatus> { // io.dataloom.runtime.retry/RetryOrchestrationStatus|null[0]
+    enum entry NOT_REQUIRED // io.dataloom.runtime.retry/RetryOrchestrationStatus.NOT_REQUIRED|null[0]
+    enum entry SCHEDULED // io.dataloom.runtime.retry/RetryOrchestrationStatus.SCHEDULED|null[0]
+    enum entry SCHEDULER_FAILED // io.dataloom.runtime.retry/RetryOrchestrationStatus.SCHEDULER_FAILED|null[0]
+    enum entry SCHEDULER_NOT_CONFIGURED // io.dataloom.runtime.retry/RetryOrchestrationStatus.SCHEDULER_NOT_CONFIGURED|null[0]
+    enum entry STOPPED // io.dataloom.runtime.retry/RetryOrchestrationStatus.STOPPED|null[0]
+
+    final val entries // io.dataloom.runtime.retry/RetryOrchestrationStatus.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.retry/RetryOrchestrationStatus> // io.dataloom.runtime.retry/RetryOrchestrationStatus.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.retry/RetryOrchestrationStatus // io.dataloom.runtime.retry/RetryOrchestrationStatus.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.retry/RetryOrchestrationStatus> // io.dataloom.runtime.retry/RetryOrchestrationStatus.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.runtime.submission/QueueSubmissionFailureStage : kotlin/Enum<io.dataloom.runtime.submission/QueueSubmissionFailureStage> { // io.dataloom.runtime.submission/QueueSubmissionFailureStage|null[0]
+    enum entry ENCODED_REQUEST_VALIDATION // io.dataloom.runtime.submission/QueueSubmissionFailureStage.ENCODED_REQUEST_VALIDATION|null[0]
+    enum entry ENCODING // io.dataloom.runtime.submission/QueueSubmissionFailureStage.ENCODING|null[0]
+    enum entry QUEUE_PROVIDER_ENQUEUE // io.dataloom.runtime.submission/QueueSubmissionFailureStage.QUEUE_PROVIDER_ENQUEUE|null[0]
+
+    final val entries // io.dataloom.runtime.submission/QueueSubmissionFailureStage.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.submission/QueueSubmissionFailureStage> // io.dataloom.runtime.submission/QueueSubmissionFailureStage.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.submission/QueueSubmissionFailureStage // io.dataloom.runtime.submission/QueueSubmissionFailureStage.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.submission/QueueSubmissionFailureStage> // io.dataloom.runtime.submission/QueueSubmissionFailureStage.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.runtime.worker/QueueWorkerWakeUpReason : kotlin/Enum<io.dataloom.runtime.worker/QueueWorkerWakeUpReason> { // io.dataloom.runtime.worker/QueueWorkerWakeUpReason|null[0]
+    enum entry ACQUISITION_LIMIT_REACHED // io.dataloom.runtime.worker/QueueWorkerWakeUpReason.ACQUISITION_LIMIT_REACHED|null[0]
+    enum entry BOTH // io.dataloom.runtime.worker/QueueWorkerWakeUpReason.BOTH|null[0]
+    enum entry RESCHEDULED_ENTRY_AVAILABLE // io.dataloom.runtime.worker/QueueWorkerWakeUpReason.RESCHEDULED_ENTRY_AVAILABLE|null[0]
+
+    final val entries // io.dataloom.runtime.worker/QueueWorkerWakeUpReason.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.worker/QueueWorkerWakeUpReason> // io.dataloom.runtime.worker/QueueWorkerWakeUpReason.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.worker/QueueWorkerWakeUpReason // io.dataloom.runtime.worker/QueueWorkerWakeUpReason.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.worker/QueueWorkerWakeUpReason> // io.dataloom.runtime.worker/QueueWorkerWakeUpReason.values|values#static(){}[0]
+}
+
+abstract fun interface io.dataloom.runtime.queue/QueueEntryExecutionHandler { // io.dataloom.runtime.queue/QueueEntryExecutionHandler|null[0]
+    abstract suspend fun execute(io.dataloom.api.queue/QueueEntry): io.dataloom.runtime.queue/QueueEntryExecutionOutcome // io.dataloom.runtime.queue/QueueEntryExecutionHandler.execute|execute(io.dataloom.api.queue.QueueEntry){}[0]
+}
+
+abstract fun interface io.dataloom.runtime.queue/QueuedSynchronizationWorkResolver { // io.dataloom.runtime.queue/QueuedSynchronizationWorkResolver|null[0]
+    abstract fun resolve(io.dataloom.api.queue/QueueEntry): io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution // io.dataloom.runtime.queue/QueuedSynchronizationWorkResolver.resolve|resolve(io.dataloom.api.queue.QueueEntry){}[0]
+}
+
+abstract fun interface io.dataloom.runtime.submission/QueuedSynchronizationWorkEncoder { // io.dataloom.runtime.submission/QueuedSynchronizationWorkEncoder|null[0]
+    abstract fun encode(io.dataloom.runtime.submission/QueuedSynchronizationSubmission): io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult // io.dataloom.runtime.submission/QueuedSynchronizationWorkEncoder.encode|encode(io.dataloom.runtime.submission.QueuedSynchronizationSubmission){}[0]
+}
+
+abstract interface io.dataloom.runtime.execution.lifecycle/SynchronizationLifecycleEventEmitter { // io.dataloom.runtime.execution.lifecycle/SynchronizationLifecycleEventEmitter|null[0]
+    abstract suspend fun emitCompleted(io.dataloom.runtime.execution/SynchronizationExecutionContext, io.dataloom.api.synchronization/SynchronizationResult): io.dataloom.runtime.observation/SynchronizationEventDispatchResult // io.dataloom.runtime.execution.lifecycle/SynchronizationLifecycleEventEmitter.emitCompleted|emitCompleted(io.dataloom.runtime.execution.SynchronizationExecutionContext;io.dataloom.api.synchronization.SynchronizationResult){}[0]
+    abstract suspend fun emitPhaseChanged(io.dataloom.runtime.execution/SynchronizationExecutionContext, io.dataloom.api.synchronization/SynchronizationPhase): io.dataloom.runtime.observation/SynchronizationEventDispatchResult // io.dataloom.runtime.execution.lifecycle/SynchronizationLifecycleEventEmitter.emitPhaseChanged|emitPhaseChanged(io.dataloom.runtime.execution.SynchronizationExecutionContext;io.dataloom.api.synchronization.SynchronizationPhase){}[0]
+    abstract suspend fun emitStarted(io.dataloom.runtime.execution/SynchronizationExecutionContext): io.dataloom.runtime.observation/SynchronizationEventDispatchResult // io.dataloom.runtime.execution.lifecycle/SynchronizationLifecycleEventEmitter.emitStarted|emitStarted(io.dataloom.runtime.execution.SynchronizationExecutionContext){}[0]
+}
+
+abstract interface io.dataloom.runtime.execution.lifecycle/SynchronizationRuntimeEventEmitter : io.dataloom.runtime.execution.lifecycle/SynchronizationLifecycleEventEmitter { // io.dataloom.runtime.execution.lifecycle/SynchronizationRuntimeEventEmitter|null[0]
+    abstract suspend fun emitConflictDetected(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.conflict/SynchronizationConflict): io.dataloom.runtime.observation/SynchronizationEventDispatchResult // io.dataloom.runtime.execution.lifecycle/SynchronizationRuntimeEventEmitter.emitConflictDetected|emitConflictDetected(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.conflict.SynchronizationConflict){}[0]
+    abstract suspend fun emitProgressUpdated(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.synchronization/SynchronizationProgress): io.dataloom.runtime.observation/SynchronizationEventDispatchResult // io.dataloom.runtime.execution.lifecycle/SynchronizationRuntimeEventEmitter.emitProgressUpdated|emitProgressUpdated(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.synchronization.SynchronizationProgress){}[0]
+    abstract suspend fun emitRetryScheduled(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.retry/RetryAttempt, io.dataloom.api.scheduling/SchedulingDelay, io.dataloom.api.error/DataLoomError): io.dataloom.runtime.observation/SynchronizationEventDispatchResult // io.dataloom.runtime.execution.lifecycle/SynchronizationRuntimeEventEmitter.emitRetryScheduled|emitRetryScheduled(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.retry.RetryAttempt;io.dataloom.api.scheduling.SchedulingDelay;io.dataloom.api.error.DataLoomError){}[0]
+}
+
+abstract interface io.dataloom.runtime.execution/SynchronizationPipeline { // io.dataloom.runtime.execution/SynchronizationPipeline|null[0]
+    abstract val direction // io.dataloom.runtime.execution/SynchronizationPipeline.direction|{}direction[0]
+        abstract fun <get-direction>(): io.dataloom.api.model/SynchronizationDirection // io.dataloom.runtime.execution/SynchronizationPipeline.direction.<get-direction>|<get-direction>(){}[0]
+
+    abstract suspend fun execute(io.dataloom.runtime.execution/SynchronizationExecutionContext): io.dataloom.api.synchronization/SynchronizationResult // io.dataloom.runtime.execution/SynchronizationPipeline.execute|execute(io.dataloom.runtime.execution.SynchronizationExecutionContext){}[0]
+}
+
+abstract interface io.dataloom.runtime.facade/DataLoom { // io.dataloom.runtime.facade/DataLoom|null[0]
+    abstract val providerLifecycleState // io.dataloom.runtime.facade/DataLoom.providerLifecycleState|{}providerLifecycleState[0]
+        abstract fun <get-providerLifecycleState>(): io.dataloom.api.provider/ProviderLifecycleCoordinatorState // io.dataloom.runtime.facade/DataLoom.providerLifecycleState.<get-providerLifecycleState>|<get-providerLifecycleState>(){}[0]
+    abstract val queueSubmission // io.dataloom.runtime.facade/DataLoom.queueSubmission|{}queueSubmission[0]
+        abstract fun <get-queueSubmission>(): io.dataloom.runtime.submission/DataLoomQueueSubmission? // io.dataloom.runtime.facade/DataLoom.queueSubmission.<get-queueSubmission>|<get-queueSubmission>(){}[0]
+    abstract val queueWorker // io.dataloom.runtime.facade/DataLoom.queueWorker|{}queueWorker[0]
+        abstract fun <get-queueWorker>(): io.dataloom.runtime.facade/DataLoomQueueWorker? // io.dataloom.runtime.facade/DataLoom.queueWorker.<get-queueWorker>|<get-queueWorker>(){}[0]
+
+    abstract suspend fun initialize(): io.dataloom.api.provider/ProviderLifecycleResult // io.dataloom.runtime.facade/DataLoom.initialize|initialize(){}[0]
+    abstract suspend fun shutdown(): io.dataloom.api.provider/ProviderLifecycleResult // io.dataloom.runtime.facade/DataLoom.shutdown|shutdown(){}[0]
+    abstract suspend fun synchronize(io.dataloom.api.model/SynchronizationRequest): io.dataloom.runtime.execution/SynchronizationExecutionResult // io.dataloom.runtime.facade/DataLoom.synchronize|synchronize(io.dataloom.api.model.SynchronizationRequest){}[0]
+    abstract suspend fun synchronize(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.provider/SynchronizationProviderBindings): io.dataloom.runtime.execution/SynchronizationExecutionResult // io.dataloom.runtime.facade/DataLoom.synchronize|synchronize(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.provider.SynchronizationProviderBindings){}[0]
+}
+
+abstract interface io.dataloom.runtime.facade/DataLoomQueueWorker { // io.dataloom.runtime.facade/DataLoomQueueWorker|null[0]
+    abstract suspend fun run(io.dataloom.runtime.worker/QueueWorkerRunRequest): io.dataloom.runtime.worker/QueueWorkerRunResult // io.dataloom.runtime.facade/DataLoomQueueWorker.run|run(io.dataloom.runtime.worker.QueueWorkerRunRequest){}[0]
+}
+
+abstract interface io.dataloom.runtime.submission/DataLoomQueueSubmission { // io.dataloom.runtime.submission/DataLoomQueueSubmission|null[0]
+    abstract suspend fun submit(io.dataloom.runtime.submission/QueuedSynchronizationSubmission): io.dataloom.runtime.submission/QueueSubmissionResult // io.dataloom.runtime.submission/DataLoomQueueSubmission.submit|submit(io.dataloom.runtime.submission.QueuedSynchronizationSubmission){}[0]
+}
+
+sealed interface io.dataloom.runtime.conflict/ConflictOrchestrationResult { // io.dataloom.runtime.conflict/ConflictOrchestrationResult|null[0]
+    final class DetectorNotFound : io.dataloom.runtime.conflict/ConflictOrchestrationResult { // io.dataloom.runtime.conflict/ConflictOrchestrationResult.DetectorNotFound|null[0]
+        constructor <init>(io.dataloom.api.identifier/ConflictDetectorId) // io.dataloom.runtime.conflict/ConflictOrchestrationResult.DetectorNotFound.<init>|<init>(io.dataloom.api.identifier.ConflictDetectorId){}[0]
+
+        final val detectorId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.DetectorNotFound.detectorId|{}detectorId[0]
+            final fun <get-detectorId>(): io.dataloom.api.identifier/ConflictDetectorId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.DetectorNotFound.detectorId.<get-detectorId>|<get-detectorId>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/ConflictDetectorId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.DetectorNotFound.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.identifier/ConflictDetectorId = ...): io.dataloom.runtime.conflict/ConflictOrchestrationResult.DetectorNotFound // io.dataloom.runtime.conflict/ConflictOrchestrationResult.DetectorNotFound.copy|copy(io.dataloom.api.identifier.ConflictDetectorId){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictOrchestrationResult.DetectorNotFound.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictOrchestrationResult.DetectorNotFound.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictOrchestrationResult.DetectorNotFound.toString|toString(){}[0]
+    }
+
+    final class NoConflict : io.dataloom.runtime.conflict/ConflictOrchestrationResult { // io.dataloom.runtime.conflict/ConflictOrchestrationResult.NoConflict|null[0]
+        constructor <init>(io.dataloom.api.identifier/ConflictDetectorId) // io.dataloom.runtime.conflict/ConflictOrchestrationResult.NoConflict.<init>|<init>(io.dataloom.api.identifier.ConflictDetectorId){}[0]
+
+        final val detectorId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.NoConflict.detectorId|{}detectorId[0]
+            final fun <get-detectorId>(): io.dataloom.api.identifier/ConflictDetectorId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.NoConflict.detectorId.<get-detectorId>|<get-detectorId>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/ConflictDetectorId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.NoConflict.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.identifier/ConflictDetectorId = ...): io.dataloom.runtime.conflict/ConflictOrchestrationResult.NoConflict // io.dataloom.runtime.conflict/ConflictOrchestrationResult.NoConflict.copy|copy(io.dataloom.api.identifier.ConflictDetectorId){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictOrchestrationResult.NoConflict.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictOrchestrationResult.NoConflict.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictOrchestrationResult.NoConflict.toString|toString(){}[0]
+    }
+
+    final class Resolved : io.dataloom.runtime.conflict/ConflictOrchestrationResult { // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved|null[0]
+        constructor <init>(io.dataloom.api.conflict/SynchronizationConflict, io.dataloom.api.conflict/ConflictResolutionDecision, io.dataloom.api.identifier/ConflictDetectorId, io.dataloom.api.identifier/ConflictResolverId) // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.<init>|<init>(io.dataloom.api.conflict.SynchronizationConflict;io.dataloom.api.conflict.ConflictResolutionDecision;io.dataloom.api.identifier.ConflictDetectorId;io.dataloom.api.identifier.ConflictResolverId){}[0]
+
+        final val conflict // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.conflict|{}conflict[0]
+            final fun <get-conflict>(): io.dataloom.api.conflict/SynchronizationConflict // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.conflict.<get-conflict>|<get-conflict>(){}[0]
+        final val decision // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.decision|{}decision[0]
+            final fun <get-decision>(): io.dataloom.api.conflict/ConflictResolutionDecision // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.decision.<get-decision>|<get-decision>(){}[0]
+        final val detectorId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.detectorId|{}detectorId[0]
+            final fun <get-detectorId>(): io.dataloom.api.identifier/ConflictDetectorId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.detectorId.<get-detectorId>|<get-detectorId>(){}[0]
+        final val resolverId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.resolverId|{}resolverId[0]
+            final fun <get-resolverId>(): io.dataloom.api.identifier/ConflictResolverId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.resolverId.<get-resolverId>|<get-resolverId>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.toString|toString(){}[0]
+    }
+
+    final class ResolverNotConfigured : io.dataloom.runtime.conflict/ConflictOrchestrationResult { // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotConfigured|null[0]
+        constructor <init>(io.dataloom.api.conflict/SynchronizationConflict, io.dataloom.api.identifier/ConflictDetectorId) // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotConfigured.<init>|<init>(io.dataloom.api.conflict.SynchronizationConflict;io.dataloom.api.identifier.ConflictDetectorId){}[0]
+
+        final val conflict // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotConfigured.conflict|{}conflict[0]
+            final fun <get-conflict>(): io.dataloom.api.conflict/SynchronizationConflict // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotConfigured.conflict.<get-conflict>|<get-conflict>(){}[0]
+        final val detectorId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotConfigured.detectorId|{}detectorId[0]
+            final fun <get-detectorId>(): io.dataloom.api.identifier/ConflictDetectorId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotConfigured.detectorId.<get-detectorId>|<get-detectorId>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotConfigured.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotConfigured.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotConfigured.toString|toString(){}[0]
+    }
+
+    final class ResolverNotFound : io.dataloom.runtime.conflict/ConflictOrchestrationResult { // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound|null[0]
+        constructor <init>(io.dataloom.api.conflict/SynchronizationConflict, io.dataloom.api.identifier/ConflictResolverId) // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound.<init>|<init>(io.dataloom.api.conflict.SynchronizationConflict;io.dataloom.api.identifier.ConflictResolverId){}[0]
+
+        final val conflict // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound.conflict|{}conflict[0]
+            final fun <get-conflict>(): io.dataloom.api.conflict/SynchronizationConflict // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound.conflict.<get-conflict>|<get-conflict>(){}[0]
+        final val resolverId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound.resolverId|{}resolverId[0]
+            final fun <get-resolverId>(): io.dataloom.api.identifier/ConflictResolverId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound.resolverId.<get-resolverId>|<get-resolverId>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.runtime.connectivity/ConnectivityPreflightResult { // io.dataloom.runtime.connectivity/ConnectivityPreflightResult|null[0]
+    final class CheckFailed : io.dataloom.runtime.connectivity/ConnectivityPreflightResult { // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.CheckFailed|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.CheckFailed.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.CheckFailed.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.CheckFailed.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.CheckFailed.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.runtime.connectivity/ConnectivityPreflightResult.CheckFailed // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.CheckFailed.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.CheckFailed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.CheckFailed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.CheckFailed.toString|toString(){}[0]
+    }
+
+    final class RequirementNotMet : io.dataloom.runtime.connectivity/ConnectivityPreflightResult { // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.RequirementNotMet|null[0]
+        constructor <init>(io.dataloom.api.connectivity/ConnectivityRequirement, io.dataloom.api.connectivity/ConnectivityStatus) // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.RequirementNotMet.<init>|<init>(io.dataloom.api.connectivity.ConnectivityRequirement;io.dataloom.api.connectivity.ConnectivityStatus){}[0]
+
+        final val requirement // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.RequirementNotMet.requirement|{}requirement[0]
+            final fun <get-requirement>(): io.dataloom.api.connectivity/ConnectivityRequirement // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.RequirementNotMet.requirement.<get-requirement>|<get-requirement>(){}[0]
+        final val status // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.RequirementNotMet.status|{}status[0]
+            final fun <get-status>(): io.dataloom.api.connectivity/ConnectivityStatus // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.RequirementNotMet.status.<get-status>|<get-status>(){}[0]
+
+        final fun component1(): io.dataloom.api.connectivity/ConnectivityRequirement // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.RequirementNotMet.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.connectivity/ConnectivityStatus // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.RequirementNotMet.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.connectivity/ConnectivityRequirement = ..., io.dataloom.api.connectivity/ConnectivityStatus = ...): io.dataloom.runtime.connectivity/ConnectivityPreflightResult.RequirementNotMet // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.RequirementNotMet.copy|copy(io.dataloom.api.connectivity.ConnectivityRequirement;io.dataloom.api.connectivity.ConnectivityStatus){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.RequirementNotMet.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.RequirementNotMet.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.RequirementNotMet.toString|toString(){}[0]
+    }
+
+    final class Satisfied : io.dataloom.runtime.connectivity/ConnectivityPreflightResult { // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.Satisfied|null[0]
+        constructor <init>(io.dataloom.api.connectivity/ConnectivitySnapshot) // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.Satisfied.<init>|<init>(io.dataloom.api.connectivity.ConnectivitySnapshot){}[0]
+
+        final val snapshot // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.Satisfied.snapshot|{}snapshot[0]
+            final fun <get-snapshot>(): io.dataloom.api.connectivity/ConnectivitySnapshot // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.Satisfied.snapshot.<get-snapshot>|<get-snapshot>(){}[0]
+
+        final fun component1(): io.dataloom.api.connectivity/ConnectivitySnapshot // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.Satisfied.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.connectivity/ConnectivitySnapshot = ...): io.dataloom.runtime.connectivity/ConnectivityPreflightResult.Satisfied // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.Satisfied.copy|copy(io.dataloom.api.connectivity.ConnectivitySnapshot){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.Satisfied.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.Satisfied.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.Satisfied.toString|toString(){}[0]
+    }
+
+    final object NotRequired : io.dataloom.runtime.connectivity/ConnectivityPreflightResult { // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.NotRequired|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.NotRequired.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.NotRequired.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.NotRequired.toString|toString(){}[0]
+    }
+
+    final object ProviderNotConfigured : io.dataloom.runtime.connectivity/ConnectivityPreflightResult { // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.ProviderNotConfigured|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.ProviderNotConfigured.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.ProviderNotConfigured.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.connectivity/ConnectivityPreflightResult.ProviderNotConfigured.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.runtime.execution/SynchronizationExecutionResult { // io.dataloom.runtime.execution/SynchronizationExecutionResult|null[0]
+    final class Executed : io.dataloom.runtime.execution/SynchronizationExecutionResult { // io.dataloom.runtime.execution/SynchronizationExecutionResult.Executed|null[0]
+        constructor <init>(io.dataloom.api.synchronization/SynchronizationResult) // io.dataloom.runtime.execution/SynchronizationExecutionResult.Executed.<init>|<init>(io.dataloom.api.synchronization.SynchronizationResult){}[0]
+
+        final val result // io.dataloom.runtime.execution/SynchronizationExecutionResult.Executed.result|{}result[0]
+            final fun <get-result>(): io.dataloom.api.synchronization/SynchronizationResult // io.dataloom.runtime.execution/SynchronizationExecutionResult.Executed.result.<get-result>|<get-result>(){}[0]
+
+        final fun component1(): io.dataloom.api.synchronization/SynchronizationResult // io.dataloom.runtime.execution/SynchronizationExecutionResult.Executed.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.synchronization/SynchronizationResult = ...): io.dataloom.runtime.execution/SynchronizationExecutionResult.Executed // io.dataloom.runtime.execution/SynchronizationExecutionResult.Executed.copy|copy(io.dataloom.api.synchronization.SynchronizationResult){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.execution/SynchronizationExecutionResult.Executed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.execution/SynchronizationExecutionResult.Executed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.execution/SynchronizationExecutionResult.Executed.toString|toString(){}[0]
+    }
+
+    final class Rejected : io.dataloom.runtime.execution/SynchronizationExecutionResult { // io.dataloom.runtime.execution/SynchronizationExecutionResult.Rejected|null[0]
+        constructor <init>(io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason, kotlin.collections/List<io.dataloom.api.provider/ProviderBindingFailure> = ..., io.dataloom.api.error/DataLoomError? = ...) // io.dataloom.runtime.execution/SynchronizationExecutionResult.Rejected.<init>|<init>(io.dataloom.runtime.execution.SynchronizationExecutionRejectionReason;kotlin.collections.List<io.dataloom.api.provider.ProviderBindingFailure>;io.dataloom.api.error.DataLoomError?){}[0]
+
+        final val connectivityCheckError // io.dataloom.runtime.execution/SynchronizationExecutionResult.Rejected.connectivityCheckError|{}connectivityCheckError[0]
+            final fun <get-connectivityCheckError>(): io.dataloom.api.error/DataLoomError? // io.dataloom.runtime.execution/SynchronizationExecutionResult.Rejected.connectivityCheckError.<get-connectivityCheckError>|<get-connectivityCheckError>(){}[0]
+        final val providerBindingFailures // io.dataloom.runtime.execution/SynchronizationExecutionResult.Rejected.providerBindingFailures|{}providerBindingFailures[0]
+            final fun <get-providerBindingFailures>(): kotlin.collections/List<io.dataloom.api.provider/ProviderBindingFailure> // io.dataloom.runtime.execution/SynchronizationExecutionResult.Rejected.providerBindingFailures.<get-providerBindingFailures>|<get-providerBindingFailures>(){}[0]
+        final val reason // io.dataloom.runtime.execution/SynchronizationExecutionResult.Rejected.reason|{}reason[0]
+            final fun <get-reason>(): io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason // io.dataloom.runtime.execution/SynchronizationExecutionResult.Rejected.reason.<get-reason>|<get-reason>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.execution/SynchronizationExecutionResult.Rejected.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.execution/SynchronizationExecutionResult.Rejected.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.execution/SynchronizationExecutionResult.Rejected.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.runtime.observation/SynchronizationEventDispatchResult { // io.dataloom.runtime.observation/SynchronizationEventDispatchResult|null[0]
+    abstract val eventId // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.eventId|{}eventId[0]
+        abstract fun <get-eventId>(): io.dataloom.api.identifier/SynchronizationEventId // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.eventId.<get-eventId>|<get-eventId>(){}[0]
+    abstract val summary // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.summary|{}summary[0]
+        abstract fun <get-summary>(): io.dataloom.runtime.observation/SynchronizationEventDispatchSummary // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.summary.<get-summary>|<get-summary>(){}[0]
+
+    final class Delivered : io.dataloom.runtime.observation/SynchronizationEventDispatchResult { // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.Delivered|null[0]
+        constructor <init>(io.dataloom.api.identifier/SynchronizationEventId, io.dataloom.runtime.observation/SynchronizationEventDispatchSummary) // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.Delivered.<init>|<init>(io.dataloom.api.identifier.SynchronizationEventId;io.dataloom.runtime.observation.SynchronizationEventDispatchSummary){}[0]
+
+        final val eventId // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.Delivered.eventId|{}eventId[0]
+            final fun <get-eventId>(): io.dataloom.api.identifier/SynchronizationEventId // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.Delivered.eventId.<get-eventId>|<get-eventId>(){}[0]
+        final val failures // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.Delivered.failures|{}failures[0]
+            final fun <get-failures>(): kotlin.collections/List<io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure> // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.Delivered.failures.<get-failures>|<get-failures>(){}[0]
+        final val summary // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.Delivered.summary|{}summary[0]
+            final fun <get-summary>(): io.dataloom.runtime.observation/SynchronizationEventDispatchSummary // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.Delivered.summary.<get-summary>|<get-summary>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/SynchronizationEventId // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.Delivered.component1|component1(){}[0]
+        final fun component2(): io.dataloom.runtime.observation/SynchronizationEventDispatchSummary // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.Delivered.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.identifier/SynchronizationEventId = ..., io.dataloom.runtime.observation/SynchronizationEventDispatchSummary = ...): io.dataloom.runtime.observation/SynchronizationEventDispatchResult.Delivered // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.Delivered.copy|copy(io.dataloom.api.identifier.SynchronizationEventId;io.dataloom.runtime.observation.SynchronizationEventDispatchSummary){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.Delivered.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.Delivered.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.Delivered.toString|toString(){}[0]
+    }
+
+    final class DeliveryFailed : io.dataloom.runtime.observation/SynchronizationEventDispatchResult { // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.DeliveryFailed|null[0]
+        constructor <init>(io.dataloom.api.identifier/SynchronizationEventId, io.dataloom.runtime.observation/SynchronizationEventDispatchSummary, kotlin.collections/List<io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure>) // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.DeliveryFailed.<init>|<init>(io.dataloom.api.identifier.SynchronizationEventId;io.dataloom.runtime.observation.SynchronizationEventDispatchSummary;kotlin.collections.List<io.dataloom.runtime.observation.SynchronizationObserverDispatchFailure>){}[0]
+
+        final val eventId // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.DeliveryFailed.eventId|{}eventId[0]
+            final fun <get-eventId>(): io.dataloom.api.identifier/SynchronizationEventId // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.DeliveryFailed.eventId.<get-eventId>|<get-eventId>(){}[0]
+        final val failures // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.DeliveryFailed.failures|{}failures[0]
+            final fun <get-failures>(): kotlin.collections/List<io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure> // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.DeliveryFailed.failures.<get-failures>|<get-failures>(){}[0]
+        final val summary // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.DeliveryFailed.summary|{}summary[0]
+            final fun <get-summary>(): io.dataloom.runtime.observation/SynchronizationEventDispatchSummary // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.DeliveryFailed.summary.<get-summary>|<get-summary>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.DeliveryFailed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.DeliveryFailed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.DeliveryFailed.toString|toString(){}[0]
+    }
+
+    final class NoObservers : io.dataloom.runtime.observation/SynchronizationEventDispatchResult { // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.NoObservers|null[0]
+        constructor <init>(io.dataloom.api.identifier/SynchronizationEventId, io.dataloom.runtime.observation/SynchronizationEventDispatchSummary) // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.NoObservers.<init>|<init>(io.dataloom.api.identifier.SynchronizationEventId;io.dataloom.runtime.observation.SynchronizationEventDispatchSummary){}[0]
+
+        final val eventId // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.NoObservers.eventId|{}eventId[0]
+            final fun <get-eventId>(): io.dataloom.api.identifier/SynchronizationEventId // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.NoObservers.eventId.<get-eventId>|<get-eventId>(){}[0]
+        final val failures // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.NoObservers.failures|{}failures[0]
+            final fun <get-failures>(): kotlin.collections/List<io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure> // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.NoObservers.failures.<get-failures>|<get-failures>(){}[0]
+        final val summary // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.NoObservers.summary|{}summary[0]
+            final fun <get-summary>(): io.dataloom.runtime.observation/SynchronizationEventDispatchSummary // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.NoObservers.summary.<get-summary>|<get-summary>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/SynchronizationEventId // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.NoObservers.component1|component1(){}[0]
+        final fun component2(): io.dataloom.runtime.observation/SynchronizationEventDispatchSummary // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.NoObservers.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.identifier/SynchronizationEventId = ..., io.dataloom.runtime.observation/SynchronizationEventDispatchSummary = ...): io.dataloom.runtime.observation/SynchronizationEventDispatchResult.NoObservers // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.NoObservers.copy|copy(io.dataloom.api.identifier.SynchronizationEventId;io.dataloom.runtime.observation.SynchronizationEventDispatchSummary){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.NoObservers.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.NoObservers.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.NoObservers.toString|toString(){}[0]
+    }
+
+    final class PartiallyDelivered : io.dataloom.runtime.observation/SynchronizationEventDispatchResult { // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.PartiallyDelivered|null[0]
+        constructor <init>(io.dataloom.api.identifier/SynchronizationEventId, io.dataloom.runtime.observation/SynchronizationEventDispatchSummary, kotlin.collections/List<io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure>) // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.PartiallyDelivered.<init>|<init>(io.dataloom.api.identifier.SynchronizationEventId;io.dataloom.runtime.observation.SynchronizationEventDispatchSummary;kotlin.collections.List<io.dataloom.runtime.observation.SynchronizationObserverDispatchFailure>){}[0]
+
+        final val eventId // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.PartiallyDelivered.eventId|{}eventId[0]
+            final fun <get-eventId>(): io.dataloom.api.identifier/SynchronizationEventId // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.PartiallyDelivered.eventId.<get-eventId>|<get-eventId>(){}[0]
+        final val failures // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.PartiallyDelivered.failures|{}failures[0]
+            final fun <get-failures>(): kotlin.collections/List<io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure> // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.PartiallyDelivered.failures.<get-failures>|<get-failures>(){}[0]
+        final val summary // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.PartiallyDelivered.summary|{}summary[0]
+            final fun <get-summary>(): io.dataloom.runtime.observation/SynchronizationEventDispatchSummary // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.PartiallyDelivered.summary.<get-summary>|<get-summary>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.PartiallyDelivered.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.PartiallyDelivered.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.PartiallyDelivered.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.runtime.queue/QueueEntryExecutionOutcome { // io.dataloom.runtime.queue/QueueEntryExecutionOutcome|null[0]
+    final class Cancelled : io.dataloom.runtime.queue/QueueEntryExecutionOutcome { // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Cancelled|null[0]
+        constructor <init>(io.dataloom.api.context/ExecutionContext) // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Cancelled.<init>|<init>(io.dataloom.api.context.ExecutionContext){}[0]
+
+        final val context // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Cancelled.context|{}context[0]
+            final fun <get-context>(): io.dataloom.api.context/ExecutionContext // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Cancelled.context.<get-context>|<get-context>(){}[0]
+
+        final fun component1(): io.dataloom.api.context/ExecutionContext // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Cancelled.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.context/ExecutionContext = ...): io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Cancelled // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Cancelled.copy|copy(io.dataloom.api.context.ExecutionContext){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Cancelled.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Cancelled.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Cancelled.toString|toString(){}[0]
+    }
+
+    final class Completed : io.dataloom.runtime.queue/QueueEntryExecutionOutcome { // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Completed|null[0]
+        constructor <init>(io.dataloom.api.time/DataLoomInstant) // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Completed.<init>|<init>(io.dataloom.api.time.DataLoomInstant){}[0]
+
+        final val completedAt // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Completed.completedAt|{}completedAt[0]
+            final fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Completed.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
+
+        final fun component1(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Completed.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.time/DataLoomInstant = ...): io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Completed // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Completed.copy|copy(io.dataloom.api.time.DataLoomInstant){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Completed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Completed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Completed.toString|toString(){}[0]
+    }
+
+    final class Failed : io.dataloom.runtime.queue/QueueEntryExecutionOutcome { // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Failed|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError, io.dataloom.api.queue/QueueFailureDisposition) // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Failed.<init>|<init>(io.dataloom.api.error.DataLoomError;io.dataloom.api.queue.QueueFailureDisposition){}[0]
+
+        final val disposition // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Failed.disposition|{}disposition[0]
+            final fun <get-disposition>(): io.dataloom.api.queue/QueueFailureDisposition // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Failed.disposition.<get-disposition>|<get-disposition>(){}[0]
+        final val error // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Failed.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Failed.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Failed.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.queue/QueueFailureDisposition // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Failed.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ..., io.dataloom.api.queue/QueueFailureDisposition = ...): io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Failed // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Failed.copy|copy(io.dataloom.api.error.DataLoomError;io.dataloom.api.queue.QueueFailureDisposition){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Failed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Failed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Failed.toString|toString(){}[0]
+    }
+
+    final class Reschedule : io.dataloom.runtime.queue/QueueEntryExecutionOutcome { // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule|null[0]
+        constructor <init>(io.dataloom.api.retry/RetryAttempt, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.error/DataLoomError) // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.<init>|<init>(io.dataloom.api.retry.RetryAttempt;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.error.DataLoomError){}[0]
+
+        final val availableAt // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.availableAt|{}availableAt[0]
+            final fun <get-availableAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.availableAt.<get-availableAt>|<get-availableAt>(){}[0]
+        final val error // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.error.<get-error>|<get-error>(){}[0]
+        final val retryAttempt // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.retryAttempt|{}retryAttempt[0]
+            final fun <get-retryAttempt>(): io.dataloom.api.retry/RetryAttempt // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.retryAttempt.<get-retryAttempt>|<get-retryAttempt>(){}[0]
+
+        final fun component1(): io.dataloom.api.retry/RetryAttempt // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.component2|component2(){}[0]
+        final fun component3(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.component3|component3(){}[0]
+        final fun copy(io.dataloom.api.retry/RetryAttempt = ..., io.dataloom.api.time/DataLoomInstant = ..., io.dataloom.api.error/DataLoomError = ...): io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.copy|copy(io.dataloom.api.retry.RetryAttempt;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.runtime.queue/QueueProcessingResult { // io.dataloom.runtime.queue/QueueProcessingResult|null[0]
+    final class Processed : io.dataloom.runtime.queue/QueueProcessingResult { // io.dataloom.runtime.queue/QueueProcessingResult.Processed|null[0]
+        constructor <init>(io.dataloom.runtime.queue/QueueProcessingSummary, kotlin/Boolean = ..., io.dataloom.api.time/DataLoomInstant? = ...) // io.dataloom.runtime.queue/QueueProcessingResult.Processed.<init>|<init>(io.dataloom.runtime.queue.QueueProcessingSummary;kotlin.Boolean;io.dataloom.api.time.DataLoomInstant?){}[0]
+
+        final val acquisitionLimitReached // io.dataloom.runtime.queue/QueueProcessingResult.Processed.acquisitionLimitReached|{}acquisitionLimitReached[0]
+            final fun <get-acquisitionLimitReached>(): kotlin/Boolean // io.dataloom.runtime.queue/QueueProcessingResult.Processed.acquisitionLimitReached.<get-acquisitionLimitReached>|<get-acquisitionLimitReached>(){}[0]
+        final val earliestRescheduledAt // io.dataloom.runtime.queue/QueueProcessingResult.Processed.earliestRescheduledAt|{}earliestRescheduledAt[0]
+            final fun <get-earliestRescheduledAt>(): io.dataloom.api.time/DataLoomInstant? // io.dataloom.runtime.queue/QueueProcessingResult.Processed.earliestRescheduledAt.<get-earliestRescheduledAt>|<get-earliestRescheduledAt>(){}[0]
+        final val summary // io.dataloom.runtime.queue/QueueProcessingResult.Processed.summary|{}summary[0]
+            final fun <get-summary>(): io.dataloom.runtime.queue/QueueProcessingSummary // io.dataloom.runtime.queue/QueueProcessingResult.Processed.summary.<get-summary>|<get-summary>(){}[0]
+
+        final fun component1(): io.dataloom.runtime.queue/QueueProcessingSummary // io.dataloom.runtime.queue/QueueProcessingResult.Processed.component1|component1(){}[0]
+        final fun component2(): kotlin/Boolean // io.dataloom.runtime.queue/QueueProcessingResult.Processed.component2|component2(){}[0]
+        final fun component3(): io.dataloom.api.time/DataLoomInstant? // io.dataloom.runtime.queue/QueueProcessingResult.Processed.component3|component3(){}[0]
+        final fun copy(io.dataloom.runtime.queue/QueueProcessingSummary = ..., kotlin/Boolean = ..., io.dataloom.api.time/DataLoomInstant? = ...): io.dataloom.runtime.queue/QueueProcessingResult.Processed // io.dataloom.runtime.queue/QueueProcessingResult.Processed.copy|copy(io.dataloom.runtime.queue.QueueProcessingSummary;kotlin.Boolean;io.dataloom.api.time.DataLoomInstant?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.queue/QueueProcessingResult.Processed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingResult.Processed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.queue/QueueProcessingResult.Processed.toString|toString(){}[0]
+    }
+
+    final class QueueContractViolation : io.dataloom.runtime.queue/QueueProcessingResult { // io.dataloom.runtime.queue/QueueProcessingResult.QueueContractViolation|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError, io.dataloom.runtime.queue/QueueProcessingSummary) // io.dataloom.runtime.queue/QueueProcessingResult.QueueContractViolation.<init>|<init>(io.dataloom.api.error.DataLoomError;io.dataloom.runtime.queue.QueueProcessingSummary){}[0]
+
+        final val error // io.dataloom.runtime.queue/QueueProcessingResult.QueueContractViolation.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.queue/QueueProcessingResult.QueueContractViolation.error.<get-error>|<get-error>(){}[0]
+        final val summary // io.dataloom.runtime.queue/QueueProcessingResult.QueueContractViolation.summary|{}summary[0]
+            final fun <get-summary>(): io.dataloom.runtime.queue/QueueProcessingSummary // io.dataloom.runtime.queue/QueueProcessingResult.QueueContractViolation.summary.<get-summary>|<get-summary>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.queue/QueueProcessingResult.QueueContractViolation.component1|component1(){}[0]
+        final fun component2(): io.dataloom.runtime.queue/QueueProcessingSummary // io.dataloom.runtime.queue/QueueProcessingResult.QueueContractViolation.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ..., io.dataloom.runtime.queue/QueueProcessingSummary = ...): io.dataloom.runtime.queue/QueueProcessingResult.QueueContractViolation // io.dataloom.runtime.queue/QueueProcessingResult.QueueContractViolation.copy|copy(io.dataloom.api.error.DataLoomError;io.dataloom.runtime.queue.QueueProcessingSummary){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.queue/QueueProcessingResult.QueueContractViolation.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingResult.QueueContractViolation.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.queue/QueueProcessingResult.QueueContractViolation.toString|toString(){}[0]
+    }
+
+    final class QueueProviderFailure : io.dataloom.runtime.queue/QueueProcessingResult { // io.dataloom.runtime.queue/QueueProcessingResult.QueueProviderFailure|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError, io.dataloom.runtime.queue/QueueProcessingFailureStage, io.dataloom.runtime.queue/QueueProcessingSummary, io.dataloom.api.identifier/QueueEntryId? = ..., io.dataloom.api.identifier/QueueLeaseId? = ...) // io.dataloom.runtime.queue/QueueProcessingResult.QueueProviderFailure.<init>|<init>(io.dataloom.api.error.DataLoomError;io.dataloom.runtime.queue.QueueProcessingFailureStage;io.dataloom.runtime.queue.QueueProcessingSummary;io.dataloom.api.identifier.QueueEntryId?;io.dataloom.api.identifier.QueueLeaseId?){}[0]
+
+        final val affectedEntryId // io.dataloom.runtime.queue/QueueProcessingResult.QueueProviderFailure.affectedEntryId|{}affectedEntryId[0]
+            final fun <get-affectedEntryId>(): io.dataloom.api.identifier/QueueEntryId? // io.dataloom.runtime.queue/QueueProcessingResult.QueueProviderFailure.affectedEntryId.<get-affectedEntryId>|<get-affectedEntryId>(){}[0]
+        final val error // io.dataloom.runtime.queue/QueueProcessingResult.QueueProviderFailure.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.queue/QueueProcessingResult.QueueProviderFailure.error.<get-error>|<get-error>(){}[0]
+        final val leaseId // io.dataloom.runtime.queue/QueueProcessingResult.QueueProviderFailure.leaseId|{}leaseId[0]
+            final fun <get-leaseId>(): io.dataloom.api.identifier/QueueLeaseId? // io.dataloom.runtime.queue/QueueProcessingResult.QueueProviderFailure.leaseId.<get-leaseId>|<get-leaseId>(){}[0]
+        final val stage // io.dataloom.runtime.queue/QueueProcessingResult.QueueProviderFailure.stage|{}stage[0]
+            final fun <get-stage>(): io.dataloom.runtime.queue/QueueProcessingFailureStage // io.dataloom.runtime.queue/QueueProcessingResult.QueueProviderFailure.stage.<get-stage>|<get-stage>(){}[0]
+        final val summary // io.dataloom.runtime.queue/QueueProcessingResult.QueueProviderFailure.summary|{}summary[0]
+            final fun <get-summary>(): io.dataloom.runtime.queue/QueueProcessingSummary // io.dataloom.runtime.queue/QueueProcessingResult.QueueProviderFailure.summary.<get-summary>|<get-summary>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.queue/QueueProcessingResult.QueueProviderFailure.component1|component1(){}[0]
+        final fun component2(): io.dataloom.runtime.queue/QueueProcessingFailureStage // io.dataloom.runtime.queue/QueueProcessingResult.QueueProviderFailure.component2|component2(){}[0]
+        final fun component3(): io.dataloom.runtime.queue/QueueProcessingSummary // io.dataloom.runtime.queue/QueueProcessingResult.QueueProviderFailure.component3|component3(){}[0]
+        final fun component4(): io.dataloom.api.identifier/QueueEntryId? // io.dataloom.runtime.queue/QueueProcessingResult.QueueProviderFailure.component4|component4(){}[0]
+        final fun component5(): io.dataloom.api.identifier/QueueLeaseId? // io.dataloom.runtime.queue/QueueProcessingResult.QueueProviderFailure.component5|component5(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ..., io.dataloom.runtime.queue/QueueProcessingFailureStage = ..., io.dataloom.runtime.queue/QueueProcessingSummary = ..., io.dataloom.api.identifier/QueueEntryId? = ..., io.dataloom.api.identifier/QueueLeaseId? = ...): io.dataloom.runtime.queue/QueueProcessingResult.QueueProviderFailure // io.dataloom.runtime.queue/QueueProcessingResult.QueueProviderFailure.copy|copy(io.dataloom.api.error.DataLoomError;io.dataloom.runtime.queue.QueueProcessingFailureStage;io.dataloom.runtime.queue.QueueProcessingSummary;io.dataloom.api.identifier.QueueEntryId?;io.dataloom.api.identifier.QueueLeaseId?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.queue/QueueProcessingResult.QueueProviderFailure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingResult.QueueProviderFailure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.queue/QueueProcessingResult.QueueProviderFailure.toString|toString(){}[0]
+    }
+
+    final object NoWork : io.dataloom.runtime.queue/QueueProcessingResult { // io.dataloom.runtime.queue/QueueProcessingResult.NoWork|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.queue/QueueProcessingResult.NoWork.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingResult.NoWork.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.queue/QueueProcessingResult.NoWork.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution { // io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution|null[0]
+    final class Rejected : io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution { // io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution.Rejected|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution.Rejected.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution.Rejected.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution.Rejected.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution.Rejected.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution.Rejected // io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution.Rejected.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution.Rejected.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution.Rejected.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution.Rejected.toString|toString(){}[0]
+    }
+
+    final class Resolved : io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution { // io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution.Resolved|null[0]
+        constructor <init>(io.dataloom.runtime.queue/QueuedSynchronizationWork) // io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution.Resolved.<init>|<init>(io.dataloom.runtime.queue.QueuedSynchronizationWork){}[0]
+
+        final val work // io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution.Resolved.work|{}work[0]
+            final fun <get-work>(): io.dataloom.runtime.queue/QueuedSynchronizationWork // io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution.Resolved.work.<get-work>|<get-work>(){}[0]
+
+        final fun component1(): io.dataloom.runtime.queue/QueuedSynchronizationWork // io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution.Resolved.component1|component1(){}[0]
+        final fun copy(io.dataloom.runtime.queue/QueuedSynchronizationWork = ...): io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution.Resolved // io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution.Resolved.copy|copy(io.dataloom.runtime.queue.QueuedSynchronizationWork){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution.Resolved.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution.Resolved.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution.Resolved.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.runtime.retry/SynchronizationRetryEvaluation { // io.dataloom.runtime.retry/SynchronizationRetryEvaluation|null[0]
+    final class ShouldRetry : io.dataloom.runtime.retry/SynchronizationRetryEvaluation { // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry|null[0]
+        constructor <init>(io.dataloom.api.retry/RetryAttempt, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.error/DataLoomError, kotlin.collections/List<io.dataloom.api.retry/RetryDecision>, io.dataloom.api.scheduling/SchedulingDelay) // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.<init>|<init>(io.dataloom.api.retry.RetryAttempt;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.error.DataLoomError;kotlin.collections.List<io.dataloom.api.retry.RetryDecision>;io.dataloom.api.scheduling.SchedulingDelay){}[0]
+
+        final val availableAt // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.availableAt|{}availableAt[0]
+            final fun <get-availableAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.availableAt.<get-availableAt>|<get-availableAt>(){}[0]
+        final val decisions // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.decisions|{}decisions[0]
+            final fun <get-decisions>(): kotlin.collections/List<io.dataloom.api.retry/RetryDecision> // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.decisions.<get-decisions>|<get-decisions>(){}[0]
+        final val error // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.error.<get-error>|<get-error>(){}[0]
+        final val retryAttempt // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.retryAttempt|{}retryAttempt[0]
+            final fun <get-retryAttempt>(): io.dataloom.api.retry/RetryAttempt // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.retryAttempt.<get-retryAttempt>|<get-retryAttempt>(){}[0]
+        final val selectedDelay // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.selectedDelay|{}selectedDelay[0]
+            final fun <get-selectedDelay>(): io.dataloom.api.scheduling/SchedulingDelay // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.selectedDelay.<get-selectedDelay>|<get-selectedDelay>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.toString|toString(){}[0]
+    }
+
+    final class StopRetry : io.dataloom.runtime.retry/SynchronizationRetryEvaluation { // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.StopRetry|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError, kotlin.collections/List<io.dataloom.api.retry/RetryDecision>) // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.StopRetry.<init>|<init>(io.dataloom.api.error.DataLoomError;kotlin.collections.List<io.dataloom.api.retry.RetryDecision>){}[0]
+
+        final val decisions // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.StopRetry.decisions|{}decisions[0]
+            final fun <get-decisions>(): kotlin.collections/List<io.dataloom.api.retry/RetryDecision> // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.StopRetry.decisions.<get-decisions>|<get-decisions>(){}[0]
+        final val error // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.StopRetry.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.StopRetry.error.<get-error>|<get-error>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.StopRetry.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.StopRetry.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.StopRetry.toString|toString(){}[0]
+    }
+
+    final object NotRequired : io.dataloom.runtime.retry/SynchronizationRetryEvaluation { // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.NotRequired|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.NotRequired.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.NotRequired.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.NotRequired.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.runtime.submission/QueueSubmissionResult { // io.dataloom.runtime.submission/QueueSubmissionResult|null[0]
+    final class ContractViolation : io.dataloom.runtime.submission/QueueSubmissionResult { // io.dataloom.runtime.submission/QueueSubmissionResult.ContractViolation|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError, io.dataloom.api.identifier/QueueEntryId?) // io.dataloom.runtime.submission/QueueSubmissionResult.ContractViolation.<init>|<init>(io.dataloom.api.error.DataLoomError;io.dataloom.api.identifier.QueueEntryId?){}[0]
+
+        final val error // io.dataloom.runtime.submission/QueueSubmissionResult.ContractViolation.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.submission/QueueSubmissionResult.ContractViolation.error.<get-error>|<get-error>(){}[0]
+        final val queueEntryId // io.dataloom.runtime.submission/QueueSubmissionResult.ContractViolation.queueEntryId|{}queueEntryId[0]
+            final fun <get-queueEntryId>(): io.dataloom.api.identifier/QueueEntryId? // io.dataloom.runtime.submission/QueueSubmissionResult.ContractViolation.queueEntryId.<get-queueEntryId>|<get-queueEntryId>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.submission/QueueSubmissionResult.ContractViolation.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.identifier/QueueEntryId? // io.dataloom.runtime.submission/QueueSubmissionResult.ContractViolation.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ..., io.dataloom.api.identifier/QueueEntryId? = ...): io.dataloom.runtime.submission/QueueSubmissionResult.ContractViolation // io.dataloom.runtime.submission/QueueSubmissionResult.ContractViolation.copy|copy(io.dataloom.api.error.DataLoomError;io.dataloom.api.identifier.QueueEntryId?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.submission/QueueSubmissionResult.ContractViolation.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.submission/QueueSubmissionResult.ContractViolation.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.submission/QueueSubmissionResult.ContractViolation.toString|toString(){}[0]
+    }
+
+    final class EncodingRejected : io.dataloom.runtime.submission/QueueSubmissionResult { // io.dataloom.runtime.submission/QueueSubmissionResult.EncodingRejected|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.runtime.submission/QueueSubmissionResult.EncodingRejected.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.runtime.submission/QueueSubmissionResult.EncodingRejected.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.submission/QueueSubmissionResult.EncodingRejected.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.submission/QueueSubmissionResult.EncodingRejected.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.runtime.submission/QueueSubmissionResult.EncodingRejected // io.dataloom.runtime.submission/QueueSubmissionResult.EncodingRejected.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.submission/QueueSubmissionResult.EncodingRejected.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.submission/QueueSubmissionResult.EncodingRejected.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.submission/QueueSubmissionResult.EncodingRejected.toString|toString(){}[0]
+    }
+
+    final class Enqueued : io.dataloom.runtime.submission/QueueSubmissionResult { // io.dataloom.runtime.submission/QueueSubmissionResult.Enqueued|null[0]
+        constructor <init>(io.dataloom.api.identifier/QueueEntryId, io.dataloom.api.provider/ProviderOperationResult.Success<kotlin/Unit>) // io.dataloom.runtime.submission/QueueSubmissionResult.Enqueued.<init>|<init>(io.dataloom.api.identifier.QueueEntryId;io.dataloom.api.provider.ProviderOperationResult.Success<kotlin.Unit>){}[0]
+
+        final val providerResult // io.dataloom.runtime.submission/QueueSubmissionResult.Enqueued.providerResult|{}providerResult[0]
+            final fun <get-providerResult>(): io.dataloom.api.provider/ProviderOperationResult.Success<kotlin/Unit> // io.dataloom.runtime.submission/QueueSubmissionResult.Enqueued.providerResult.<get-providerResult>|<get-providerResult>(){}[0]
+        final val queueEntryId // io.dataloom.runtime.submission/QueueSubmissionResult.Enqueued.queueEntryId|{}queueEntryId[0]
+            final fun <get-queueEntryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.submission/QueueSubmissionResult.Enqueued.queueEntryId.<get-queueEntryId>|<get-queueEntryId>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.submission/QueueSubmissionResult.Enqueued.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.provider/ProviderOperationResult.Success<kotlin/Unit> // io.dataloom.runtime.submission/QueueSubmissionResult.Enqueued.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.identifier/QueueEntryId = ..., io.dataloom.api.provider/ProviderOperationResult.Success<kotlin/Unit> = ...): io.dataloom.runtime.submission/QueueSubmissionResult.Enqueued // io.dataloom.runtime.submission/QueueSubmissionResult.Enqueued.copy|copy(io.dataloom.api.identifier.QueueEntryId;io.dataloom.api.provider.ProviderOperationResult.Success<kotlin.Unit>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.submission/QueueSubmissionResult.Enqueued.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.submission/QueueSubmissionResult.Enqueued.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.submission/QueueSubmissionResult.Enqueued.toString|toString(){}[0]
+    }
+
+    final class QueueProviderFailure : io.dataloom.runtime.submission/QueueSubmissionResult { // io.dataloom.runtime.submission/QueueSubmissionResult.QueueProviderFailure|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError, io.dataloom.api.identifier/QueueEntryId, io.dataloom.runtime.submission/QueueSubmissionFailureStage) // io.dataloom.runtime.submission/QueueSubmissionResult.QueueProviderFailure.<init>|<init>(io.dataloom.api.error.DataLoomError;io.dataloom.api.identifier.QueueEntryId;io.dataloom.runtime.submission.QueueSubmissionFailureStage){}[0]
+
+        final val error // io.dataloom.runtime.submission/QueueSubmissionResult.QueueProviderFailure.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.submission/QueueSubmissionResult.QueueProviderFailure.error.<get-error>|<get-error>(){}[0]
+        final val failureStage // io.dataloom.runtime.submission/QueueSubmissionResult.QueueProviderFailure.failureStage|{}failureStage[0]
+            final fun <get-failureStage>(): io.dataloom.runtime.submission/QueueSubmissionFailureStage // io.dataloom.runtime.submission/QueueSubmissionResult.QueueProviderFailure.failureStage.<get-failureStage>|<get-failureStage>(){}[0]
+        final val queueEntryId // io.dataloom.runtime.submission/QueueSubmissionResult.QueueProviderFailure.queueEntryId|{}queueEntryId[0]
+            final fun <get-queueEntryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.submission/QueueSubmissionResult.QueueProviderFailure.queueEntryId.<get-queueEntryId>|<get-queueEntryId>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.submission/QueueSubmissionResult.QueueProviderFailure.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.submission/QueueSubmissionResult.QueueProviderFailure.component2|component2(){}[0]
+        final fun component3(): io.dataloom.runtime.submission/QueueSubmissionFailureStage // io.dataloom.runtime.submission/QueueSubmissionResult.QueueProviderFailure.component3|component3(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ..., io.dataloom.api.identifier/QueueEntryId = ..., io.dataloom.runtime.submission/QueueSubmissionFailureStage = ...): io.dataloom.runtime.submission/QueueSubmissionResult.QueueProviderFailure // io.dataloom.runtime.submission/QueueSubmissionResult.QueueProviderFailure.copy|copy(io.dataloom.api.error.DataLoomError;io.dataloom.api.identifier.QueueEntryId;io.dataloom.runtime.submission.QueueSubmissionFailureStage){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.submission/QueueSubmissionResult.QueueProviderFailure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.submission/QueueSubmissionResult.QueueProviderFailure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.submission/QueueSubmissionResult.QueueProviderFailure.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult { // io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult|null[0]
+    final class Encoded : io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult { // io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult.Encoded|null[0]
+        constructor <init>(io.dataloom.api.queue/QueueEnqueueRequest) // io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult.Encoded.<init>|<init>(io.dataloom.api.queue.QueueEnqueueRequest){}[0]
+
+        final val request // io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult.Encoded.request|{}request[0]
+            final fun <get-request>(): io.dataloom.api.queue/QueueEnqueueRequest // io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult.Encoded.request.<get-request>|<get-request>(){}[0]
+
+        final fun component1(): io.dataloom.api.queue/QueueEnqueueRequest // io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult.Encoded.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.queue/QueueEnqueueRequest = ...): io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult.Encoded // io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult.Encoded.copy|copy(io.dataloom.api.queue.QueueEnqueueRequest){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult.Encoded.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult.Encoded.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult.Encoded.toString|toString(){}[0]
+    }
+
+    final class Rejected : io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult { // io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult.Rejected|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult.Rejected.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult.Rejected.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult.Rejected.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult.Rejected.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult.Rejected // io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult.Rejected.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult.Rejected.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult.Rejected.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult.Rejected.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.runtime.worker/QueueWorkerRunResult { // io.dataloom.runtime.worker/QueueWorkerRunResult|null[0]
+    final class ProcessingCompleted : io.dataloom.runtime.worker/QueueWorkerRunResult { // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingCompleted|null[0]
+        constructor <init>(io.dataloom.api.queue/ExpiredLeaseRecoveryResult?, io.dataloom.runtime.queue/QueueProcessingResult, io.dataloom.runtime.worker/QueueWorkerSchedulingResult) // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingCompleted.<init>|<init>(io.dataloom.api.queue.ExpiredLeaseRecoveryResult?;io.dataloom.runtime.queue.QueueProcessingResult;io.dataloom.runtime.worker.QueueWorkerSchedulingResult){}[0]
+
+        final val processingResult // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingCompleted.processingResult|{}processingResult[0]
+            final fun <get-processingResult>(): io.dataloom.runtime.queue/QueueProcessingResult // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingCompleted.processingResult.<get-processingResult>|<get-processingResult>(){}[0]
+        final val recoveryResult // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingCompleted.recoveryResult|{}recoveryResult[0]
+            final fun <get-recoveryResult>(): io.dataloom.api.queue/ExpiredLeaseRecoveryResult? // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingCompleted.recoveryResult.<get-recoveryResult>|<get-recoveryResult>(){}[0]
+        final val schedulingResult // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingCompleted.schedulingResult|{}schedulingResult[0]
+            final fun <get-schedulingResult>(): io.dataloom.runtime.worker/QueueWorkerSchedulingResult // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingCompleted.schedulingResult.<get-schedulingResult>|<get-schedulingResult>(){}[0]
+
+        final fun component1(): io.dataloom.api.queue/ExpiredLeaseRecoveryResult? // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingCompleted.component1|component1(){}[0]
+        final fun component2(): io.dataloom.runtime.queue/QueueProcessingResult // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingCompleted.component2|component2(){}[0]
+        final fun component3(): io.dataloom.runtime.worker/QueueWorkerSchedulingResult // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingCompleted.component3|component3(){}[0]
+        final fun copy(io.dataloom.api.queue/ExpiredLeaseRecoveryResult? = ..., io.dataloom.runtime.queue/QueueProcessingResult = ..., io.dataloom.runtime.worker/QueueWorkerSchedulingResult = ...): io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingCompleted // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingCompleted.copy|copy(io.dataloom.api.queue.ExpiredLeaseRecoveryResult?;io.dataloom.runtime.queue.QueueProcessingResult;io.dataloom.runtime.worker.QueueWorkerSchedulingResult){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingCompleted.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingCompleted.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingCompleted.toString|toString(){}[0]
+    }
+
+    final class ProcessingFailed : io.dataloom.runtime.worker/QueueWorkerRunResult { // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingFailed|null[0]
+        constructor <init>(io.dataloom.api.queue/ExpiredLeaseRecoveryResult?, io.dataloom.runtime.queue/QueueProcessingResult) // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingFailed.<init>|<init>(io.dataloom.api.queue.ExpiredLeaseRecoveryResult?;io.dataloom.runtime.queue.QueueProcessingResult){}[0]
+
+        final val processingResult // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingFailed.processingResult|{}processingResult[0]
+            final fun <get-processingResult>(): io.dataloom.runtime.queue/QueueProcessingResult // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingFailed.processingResult.<get-processingResult>|<get-processingResult>(){}[0]
+        final val recoveryResult // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingFailed.recoveryResult|{}recoveryResult[0]
+            final fun <get-recoveryResult>(): io.dataloom.api.queue/ExpiredLeaseRecoveryResult? // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingFailed.recoveryResult.<get-recoveryResult>|<get-recoveryResult>(){}[0]
+
+        final fun component1(): io.dataloom.api.queue/ExpiredLeaseRecoveryResult? // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingFailed.component1|component1(){}[0]
+        final fun component2(): io.dataloom.runtime.queue/QueueProcessingResult // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingFailed.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.queue/ExpiredLeaseRecoveryResult? = ..., io.dataloom.runtime.queue/QueueProcessingResult = ...): io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingFailed // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingFailed.copy|copy(io.dataloom.api.queue.ExpiredLeaseRecoveryResult?;io.dataloom.runtime.queue.QueueProcessingResult){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingFailed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingFailed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingFailed.toString|toString(){}[0]
+    }
+
+    final class RecoveryFailed : io.dataloom.runtime.worker/QueueWorkerRunResult { // io.dataloom.runtime.worker/QueueWorkerRunResult.RecoveryFailed|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.runtime.worker/QueueWorkerRunResult.RecoveryFailed.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.runtime.worker/QueueWorkerRunResult.RecoveryFailed.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.worker/QueueWorkerRunResult.RecoveryFailed.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.worker/QueueWorkerRunResult.RecoveryFailed.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.runtime.worker/QueueWorkerRunResult.RecoveryFailed // io.dataloom.runtime.worker/QueueWorkerRunResult.RecoveryFailed.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/QueueWorkerRunResult.RecoveryFailed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/QueueWorkerRunResult.RecoveryFailed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.worker/QueueWorkerRunResult.RecoveryFailed.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.runtime.worker/QueueWorkerSchedulingResult { // io.dataloom.runtime.worker/QueueWorkerSchedulingResult|null[0]
+    final class Scheduled : io.dataloom.runtime.worker/QueueWorkerSchedulingResult { // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.Scheduled|null[0]
+        constructor <init>(io.dataloom.api.scheduling/ScheduleReceipt, io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule) // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.Scheduled.<init>|<init>(io.dataloom.api.scheduling.ScheduleReceipt;io.dataloom.runtime.worker.QueueWorkerWakeUpPlan.Schedule){}[0]
+
+        final val plan // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.Scheduled.plan|{}plan[0]
+            final fun <get-plan>(): io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.Scheduled.plan.<get-plan>|<get-plan>(){}[0]
+        final val receipt // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.Scheduled.receipt|{}receipt[0]
+            final fun <get-receipt>(): io.dataloom.api.scheduling/ScheduleReceipt // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.Scheduled.receipt.<get-receipt>|<get-receipt>(){}[0]
+
+        final fun component1(): io.dataloom.api.scheduling/ScheduleReceipt // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.Scheduled.component1|component1(){}[0]
+        final fun component2(): io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.Scheduled.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.scheduling/ScheduleReceipt = ..., io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule = ...): io.dataloom.runtime.worker/QueueWorkerSchedulingResult.Scheduled // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.Scheduled.copy|copy(io.dataloom.api.scheduling.ScheduleReceipt;io.dataloom.runtime.worker.QueueWorkerWakeUpPlan.Schedule){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.Scheduled.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.Scheduled.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.Scheduled.toString|toString(){}[0]
+    }
+
+    final class SchedulerFailed : io.dataloom.runtime.worker/QueueWorkerSchedulingResult { // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.SchedulerFailed|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError, io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule) // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.SchedulerFailed.<init>|<init>(io.dataloom.api.error.DataLoomError;io.dataloom.runtime.worker.QueueWorkerWakeUpPlan.Schedule){}[0]
+
+        final val error // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.SchedulerFailed.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.SchedulerFailed.error.<get-error>|<get-error>(){}[0]
+        final val plan // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.SchedulerFailed.plan|{}plan[0]
+            final fun <get-plan>(): io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.SchedulerFailed.plan.<get-plan>|<get-plan>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.SchedulerFailed.component1|component1(){}[0]
+        final fun component2(): io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.SchedulerFailed.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ..., io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule = ...): io.dataloom.runtime.worker/QueueWorkerSchedulingResult.SchedulerFailed // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.SchedulerFailed.copy|copy(io.dataloom.api.error.DataLoomError;io.dataloom.runtime.worker.QueueWorkerWakeUpPlan.Schedule){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.SchedulerFailed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.SchedulerFailed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.SchedulerFailed.toString|toString(){}[0]
+    }
+
+    final class SchedulerNotConfigured : io.dataloom.runtime.worker/QueueWorkerSchedulingResult { // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.SchedulerNotConfigured|null[0]
+        constructor <init>(io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule) // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.SchedulerNotConfigured.<init>|<init>(io.dataloom.runtime.worker.QueueWorkerWakeUpPlan.Schedule){}[0]
+
+        final val plan // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.SchedulerNotConfigured.plan|{}plan[0]
+            final fun <get-plan>(): io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.SchedulerNotConfigured.plan.<get-plan>|<get-plan>(){}[0]
+
+        final fun component1(): io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.SchedulerNotConfigured.component1|component1(){}[0]
+        final fun copy(io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule = ...): io.dataloom.runtime.worker/QueueWorkerSchedulingResult.SchedulerNotConfigured // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.SchedulerNotConfigured.copy|copy(io.dataloom.runtime.worker.QueueWorkerWakeUpPlan.Schedule){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.SchedulerNotConfigured.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.SchedulerNotConfigured.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.SchedulerNotConfigured.toString|toString(){}[0]
+    }
+
+    final object NotRequired : io.dataloom.runtime.worker/QueueWorkerSchedulingResult { // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.NotRequired|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.NotRequired.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.NotRequired.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.NotRequired.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.runtime.worker/QueueWorkerWakeUpPlan { // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan|null[0]
+    final class Schedule : io.dataloom.runtime.worker/QueueWorkerWakeUpPlan { // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule|null[0]
+        constructor <init>(io.dataloom.runtime.worker/QueueWorkerWakeUpReason, io.dataloom.api.scheduling/SchedulingDelay, io.dataloom.api.identifier/ScheduleId, io.dataloom.api.scheduling/ScheduleConstraints, io.dataloom.api.scheduling/ExistingSchedulePolicy) // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule.<init>|<init>(io.dataloom.runtime.worker.QueueWorkerWakeUpReason;io.dataloom.api.scheduling.SchedulingDelay;io.dataloom.api.identifier.ScheduleId;io.dataloom.api.scheduling.ScheduleConstraints;io.dataloom.api.scheduling.ExistingSchedulePolicy){}[0]
+
+        final val constraints // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule.constraints|{}constraints[0]
+            final fun <get-constraints>(): io.dataloom.api.scheduling/ScheduleConstraints // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule.constraints.<get-constraints>|<get-constraints>(){}[0]
+        final val delay // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule.delay|{}delay[0]
+            final fun <get-delay>(): io.dataloom.api.scheduling/SchedulingDelay // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule.delay.<get-delay>|<get-delay>(){}[0]
+        final val existingSchedulePolicy // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule.existingSchedulePolicy|{}existingSchedulePolicy[0]
+            final fun <get-existingSchedulePolicy>(): io.dataloom.api.scheduling/ExistingSchedulePolicy // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule.existingSchedulePolicy.<get-existingSchedulePolicy>|<get-existingSchedulePolicy>(){}[0]
+        final val reason // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule.reason|{}reason[0]
+            final fun <get-reason>(): io.dataloom.runtime.worker/QueueWorkerWakeUpReason // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule.reason.<get-reason>|<get-reason>(){}[0]
+        final val scheduleId // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule.scheduleId|{}scheduleId[0]
+            final fun <get-scheduleId>(): io.dataloom.api.identifier/ScheduleId // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule.scheduleId.<get-scheduleId>|<get-scheduleId>(){}[0]
+
+        final fun component1(): io.dataloom.runtime.worker/QueueWorkerWakeUpReason // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.scheduling/SchedulingDelay // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule.component2|component2(){}[0]
+        final fun component3(): io.dataloom.api.identifier/ScheduleId // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule.component3|component3(){}[0]
+        final fun component4(): io.dataloom.api.scheduling/ScheduleConstraints // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule.component4|component4(){}[0]
+        final fun component5(): io.dataloom.api.scheduling/ExistingSchedulePolicy // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule.component5|component5(){}[0]
+        final fun copy(io.dataloom.runtime.worker/QueueWorkerWakeUpReason = ..., io.dataloom.api.scheduling/SchedulingDelay = ..., io.dataloom.api.identifier/ScheduleId = ..., io.dataloom.api.scheduling/ScheduleConstraints = ..., io.dataloom.api.scheduling/ExistingSchedulePolicy = ...): io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule.copy|copy(io.dataloom.runtime.worker.QueueWorkerWakeUpReason;io.dataloom.api.scheduling.SchedulingDelay;io.dataloom.api.identifier.ScheduleId;io.dataloom.api.scheduling.ScheduleConstraints;io.dataloom.api.scheduling.ExistingSchedulePolicy){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule.toString|toString(){}[0]
+    }
+
+    final object NoWakeUp : io.dataloom.runtime.worker/QueueWorkerWakeUpPlan { // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.NoWakeUp|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.NoWakeUp.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.NoWakeUp.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.NoWakeUp.toString|toString(){}[0]
+    }
+}
+
+final class io.dataloom.runtime.conflict/ConflictDetectorRegistry { // io.dataloom.runtime.conflict/ConflictDetectorRegistry|null[0]
+    constructor <init>(kotlin.collections/Collection<io.dataloom.api.conflict/ConflictDetector>) // io.dataloom.runtime.conflict/ConflictDetectorRegistry.<init>|<init>(kotlin.collections.Collection<io.dataloom.api.conflict.ConflictDetector>){}[0]
+
+    final val detectors // io.dataloom.runtime.conflict/ConflictDetectorRegistry.detectors|{}detectors[0]
+        final fun <get-detectors>(): kotlin.collections/List<io.dataloom.api.conflict/ConflictDetector> // io.dataloom.runtime.conflict/ConflictDetectorRegistry.detectors.<get-detectors>|<get-detectors>(){}[0]
+
+    final fun lookup(io.dataloom.api.identifier/ConflictDetectorId): io.dataloom.api.conflict/ConflictDetector? // io.dataloom.runtime.conflict/ConflictDetectorRegistry.lookup|lookup(io.dataloom.api.identifier.ConflictDetectorId){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictDetectorRegistry.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.conflict/ConflictOrchestrationBindings { // io.dataloom.runtime.conflict/ConflictOrchestrationBindings|null[0]
+    constructor <init>(io.dataloom.api.identifier/ConflictDetectorId, io.dataloom.api.identifier/ConflictResolverId?) // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.<init>|<init>(io.dataloom.api.identifier.ConflictDetectorId;io.dataloom.api.identifier.ConflictResolverId?){}[0]
+
+    final val detectorId // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.detectorId|{}detectorId[0]
+        final fun <get-detectorId>(): io.dataloom.api.identifier/ConflictDetectorId // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.detectorId.<get-detectorId>|<get-detectorId>(){}[0]
+    final val resolverId // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.resolverId|{}resolverId[0]
+        final fun <get-resolverId>(): io.dataloom.api.identifier/ConflictResolverId? // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.resolverId.<get-resolverId>|<get-resolverId>(){}[0]
+
+    final fun component1(): io.dataloom.api.identifier/ConflictDetectorId // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.identifier/ConflictResolverId? // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.component2|component2(){}[0]
+    final fun copy(io.dataloom.api.identifier/ConflictDetectorId = ..., io.dataloom.api.identifier/ConflictResolverId? = ...): io.dataloom.runtime.conflict/ConflictOrchestrationBindings // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.copy|copy(io.dataloom.api.identifier.ConflictDetectorId;io.dataloom.api.identifier.ConflictResolverId?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.conflict/ConflictOrchestrationRequest { // io.dataloom.runtime.conflict/ConflictOrchestrationRequest|null[0]
+    constructor <init>(io.dataloom.api.conflict/ConflictDetectionRequest, io.dataloom.runtime.conflict/ConflictOrchestrationBindings) // io.dataloom.runtime.conflict/ConflictOrchestrationRequest.<init>|<init>(io.dataloom.api.conflict.ConflictDetectionRequest;io.dataloom.runtime.conflict.ConflictOrchestrationBindings){}[0]
+
+    final val bindings // io.dataloom.runtime.conflict/ConflictOrchestrationRequest.bindings|{}bindings[0]
+        final fun <get-bindings>(): io.dataloom.runtime.conflict/ConflictOrchestrationBindings // io.dataloom.runtime.conflict/ConflictOrchestrationRequest.bindings.<get-bindings>|<get-bindings>(){}[0]
+    final val detectionRequest // io.dataloom.runtime.conflict/ConflictOrchestrationRequest.detectionRequest|{}detectionRequest[0]
+        final fun <get-detectionRequest>(): io.dataloom.api.conflict/ConflictDetectionRequest // io.dataloom.runtime.conflict/ConflictOrchestrationRequest.detectionRequest.<get-detectionRequest>|<get-detectionRequest>(){}[0]
+
+    final fun component1(): io.dataloom.api.conflict/ConflictDetectionRequest // io.dataloom.runtime.conflict/ConflictOrchestrationRequest.component1|component1(){}[0]
+    final fun component2(): io.dataloom.runtime.conflict/ConflictOrchestrationBindings // io.dataloom.runtime.conflict/ConflictOrchestrationRequest.component2|component2(){}[0]
+    final fun copy(io.dataloom.api.conflict/ConflictDetectionRequest = ..., io.dataloom.runtime.conflict/ConflictOrchestrationBindings = ...): io.dataloom.runtime.conflict/ConflictOrchestrationRequest // io.dataloom.runtime.conflict/ConflictOrchestrationRequest.copy|copy(io.dataloom.api.conflict.ConflictDetectionRequest;io.dataloom.runtime.conflict.ConflictOrchestrationBindings){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictOrchestrationRequest.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictOrchestrationRequest.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictOrchestrationRequest.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.conflict/ConflictResolverRegistry { // io.dataloom.runtime.conflict/ConflictResolverRegistry|null[0]
+    constructor <init>(kotlin.collections/Collection<io.dataloom.api.conflict/ConflictResolver>) // io.dataloom.runtime.conflict/ConflictResolverRegistry.<init>|<init>(kotlin.collections.Collection<io.dataloom.api.conflict.ConflictResolver>){}[0]
+
+    final val resolvers // io.dataloom.runtime.conflict/ConflictResolverRegistry.resolvers|{}resolvers[0]
+        final fun <get-resolvers>(): kotlin.collections/List<io.dataloom.api.conflict/ConflictResolver> // io.dataloom.runtime.conflict/ConflictResolverRegistry.resolvers.<get-resolvers>|<get-resolvers>(){}[0]
+
+    final fun lookup(io.dataloom.api.identifier/ConflictResolverId): io.dataloom.api.conflict/ConflictResolver? // io.dataloom.runtime.conflict/ConflictResolverRegistry.lookup|lookup(io.dataloom.api.identifier.ConflictResolverId){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictResolverRegistry.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.conflict/SynchronizationConflictOrchestrator { // io.dataloom.runtime.conflict/SynchronizationConflictOrchestrator|null[0]
+    constructor <init>(io.dataloom.runtime.conflict/ConflictDetectorRegistry, io.dataloom.runtime.conflict/ConflictResolverRegistry, io.dataloom.runtime.execution.lifecycle/SynchronizationRuntimeEventEmitter? = ...) // io.dataloom.runtime.conflict/SynchronizationConflictOrchestrator.<init>|<init>(io.dataloom.runtime.conflict.ConflictDetectorRegistry;io.dataloom.runtime.conflict.ConflictResolverRegistry;io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitter?){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.runtime.conflict/SynchronizationConflictOrchestrator.toString|toString(){}[0]
+    final suspend fun detectAndResolve(io.dataloom.runtime.conflict/ConflictOrchestrationRequest): io.dataloom.runtime.conflict/ConflictOrchestrationResult // io.dataloom.runtime.conflict/SynchronizationConflictOrchestrator.detectAndResolve|detectAndResolve(io.dataloom.runtime.conflict.ConflictOrchestrationRequest){}[0]
+}
+
+final class io.dataloom.runtime.connectivity/SynchronizationConnectivityConfiguration { // io.dataloom.runtime.connectivity/SynchronizationConnectivityConfiguration|null[0]
+    constructor <init>(io.dataloom.api.connectivity/ConnectivityRequirement, io.dataloom.api.scheduling/SchedulingDelay) // io.dataloom.runtime.connectivity/SynchronizationConnectivityConfiguration.<init>|<init>(io.dataloom.api.connectivity.ConnectivityRequirement;io.dataloom.api.scheduling.SchedulingDelay){}[0]
+
+    final val offlineRescheduleDelay // io.dataloom.runtime.connectivity/SynchronizationConnectivityConfiguration.offlineRescheduleDelay|{}offlineRescheduleDelay[0]
+        final fun <get-offlineRescheduleDelay>(): io.dataloom.api.scheduling/SchedulingDelay // io.dataloom.runtime.connectivity/SynchronizationConnectivityConfiguration.offlineRescheduleDelay.<get-offlineRescheduleDelay>|<get-offlineRescheduleDelay>(){}[0]
+    final val requirement // io.dataloom.runtime.connectivity/SynchronizationConnectivityConfiguration.requirement|{}requirement[0]
+        final fun <get-requirement>(): io.dataloom.api.connectivity/ConnectivityRequirement // io.dataloom.runtime.connectivity/SynchronizationConnectivityConfiguration.requirement.<get-requirement>|<get-requirement>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.connectivity/SynchronizationConnectivityConfiguration.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.connectivity/SynchronizationConnectivityConfiguration.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.connectivity/SynchronizationConnectivityConfiguration.toString|toString(){}[0]
+
+    final object Companion { // io.dataloom.runtime.connectivity/SynchronizationConnectivityConfiguration.Companion|null[0]
+        final val NONE // io.dataloom.runtime.connectivity/SynchronizationConnectivityConfiguration.Companion.NONE|{}NONE[0]
+            final fun <get-NONE>(): io.dataloom.runtime.connectivity/SynchronizationConnectivityConfiguration // io.dataloom.runtime.connectivity/SynchronizationConnectivityConfiguration.Companion.NONE.<get-NONE>|<get-NONE>(){}[0]
+    }
+}
+
+final class io.dataloom.runtime.connectivity/SynchronizationConnectivityPreflight { // io.dataloom.runtime.connectivity/SynchronizationConnectivityPreflight|null[0]
+    constructor <init>() // io.dataloom.runtime.connectivity/SynchronizationConnectivityPreflight.<init>|<init>(){}[0]
+
+    final suspend fun evaluate(io.dataloom.api.connectivity/ConnectivityRequirement, io.dataloom.api.connectivity/ConnectivityProvider?, io.dataloom.api.model/SynchronizationRequest): io.dataloom.runtime.connectivity/ConnectivityPreflightResult // io.dataloom.runtime.connectivity/SynchronizationConnectivityPreflight.evaluate|evaluate(io.dataloom.api.connectivity.ConnectivityRequirement;io.dataloom.api.connectivity.ConnectivityProvider?;io.dataloom.api.model.SynchronizationRequest){}[0]
+}
+
+final class io.dataloom.runtime.execution.bidirectional/BidirectionalPipelineConfiguration { // io.dataloom.runtime.execution.bidirectional/BidirectionalPipelineConfiguration|null[0]
+    constructor <init>(io.dataloom.runtime.execution.bidirectional/BidirectionalExecutionOrder = ...) // io.dataloom.runtime.execution.bidirectional/BidirectionalPipelineConfiguration.<init>|<init>(io.dataloom.runtime.execution.bidirectional.BidirectionalExecutionOrder){}[0]
+
+    final val executionOrder // io.dataloom.runtime.execution.bidirectional/BidirectionalPipelineConfiguration.executionOrder|{}executionOrder[0]
+        final fun <get-executionOrder>(): io.dataloom.runtime.execution.bidirectional/BidirectionalExecutionOrder // io.dataloom.runtime.execution.bidirectional/BidirectionalPipelineConfiguration.executionOrder.<get-executionOrder>|<get-executionOrder>(){}[0]
+
+    final fun component1(): io.dataloom.runtime.execution.bidirectional/BidirectionalExecutionOrder // io.dataloom.runtime.execution.bidirectional/BidirectionalPipelineConfiguration.component1|component1(){}[0]
+    final fun copy(io.dataloom.runtime.execution.bidirectional/BidirectionalExecutionOrder = ...): io.dataloom.runtime.execution.bidirectional/BidirectionalPipelineConfiguration // io.dataloom.runtime.execution.bidirectional/BidirectionalPipelineConfiguration.copy|copy(io.dataloom.runtime.execution.bidirectional.BidirectionalExecutionOrder){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.execution.bidirectional/BidirectionalPipelineConfiguration.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.execution.bidirectional/BidirectionalPipelineConfiguration.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.execution.bidirectional/BidirectionalPipelineConfiguration.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.execution.bidirectional/BidirectionalSynchronizationPipeline : io.dataloom.runtime.execution/SynchronizationPipeline { // io.dataloom.runtime.execution.bidirectional/BidirectionalSynchronizationPipeline|null[0]
+    constructor <init>(io.dataloom.runtime.execution/SynchronizationPipeline, io.dataloom.runtime.execution/SynchronizationPipeline, io.dataloom.runtime.execution.bidirectional/BidirectionalPipelineConfiguration) // io.dataloom.runtime.execution.bidirectional/BidirectionalSynchronizationPipeline.<init>|<init>(io.dataloom.runtime.execution.SynchronizationPipeline;io.dataloom.runtime.execution.SynchronizationPipeline;io.dataloom.runtime.execution.bidirectional.BidirectionalPipelineConfiguration){}[0]
+
+    final val direction // io.dataloom.runtime.execution.bidirectional/BidirectionalSynchronizationPipeline.direction|{}direction[0]
+        final fun <get-direction>(): io.dataloom.api.model/SynchronizationDirection // io.dataloom.runtime.execution.bidirectional/BidirectionalSynchronizationPipeline.direction.<get-direction>|<get-direction>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.runtime.execution.bidirectional/BidirectionalSynchronizationPipeline.toString|toString(){}[0]
+    final suspend fun execute(io.dataloom.runtime.execution/SynchronizationExecutionContext): io.dataloom.api.synchronization/SynchronizationResult // io.dataloom.runtime.execution.bidirectional/BidirectionalSynchronizationPipeline.execute|execute(io.dataloom.runtime.execution.SynchronizationExecutionContext){}[0]
+}
+
+final class io.dataloom.runtime.execution.inbound/InboundPullPipelineConfiguration { // io.dataloom.runtime.execution.inbound/InboundPullPipelineConfiguration|null[0]
+    constructor <init>(kotlin.collections/Set<io.dataloom.api.identifier/EntityType> = ..., kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.runtime.execution.inbound/InboundPullPipelineConfiguration.<init>|<init>(kotlin.collections.Set<io.dataloom.api.identifier.EntityType>;kotlin.Int;kotlin.Int){}[0]
+
+    final val entityTypes // io.dataloom.runtime.execution.inbound/InboundPullPipelineConfiguration.entityTypes|{}entityTypes[0]
+        final fun <get-entityTypes>(): kotlin.collections/Set<io.dataloom.api.identifier/EntityType> // io.dataloom.runtime.execution.inbound/InboundPullPipelineConfiguration.entityTypes.<get-entityTypes>|<get-entityTypes>(){}[0]
+    final val maxBatchesPerExecution // io.dataloom.runtime.execution.inbound/InboundPullPipelineConfiguration.maxBatchesPerExecution|{}maxBatchesPerExecution[0]
+        final fun <get-maxBatchesPerExecution>(): kotlin/Int // io.dataloom.runtime.execution.inbound/InboundPullPipelineConfiguration.maxBatchesPerExecution.<get-maxBatchesPerExecution>|<get-maxBatchesPerExecution>(){}[0]
+    final val maxEventsPerBatch // io.dataloom.runtime.execution.inbound/InboundPullPipelineConfiguration.maxEventsPerBatch|{}maxEventsPerBatch[0]
+        final fun <get-maxEventsPerBatch>(): kotlin/Int // io.dataloom.runtime.execution.inbound/InboundPullPipelineConfiguration.maxEventsPerBatch.<get-maxEventsPerBatch>|<get-maxEventsPerBatch>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.execution.inbound/InboundPullPipelineConfiguration.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.execution.inbound/InboundPullPipelineConfiguration.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.execution.inbound/InboundPullPipelineConfiguration.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.execution.inbound/InboundPullSynchronizationPipeline : io.dataloom.runtime.execution/SynchronizationPipeline { // io.dataloom.runtime.execution.inbound/InboundPullSynchronizationPipeline|null[0]
+    constructor <init>(io.dataloom.runtime.execution.inbound/InboundPullPipelineConfiguration) // io.dataloom.runtime.execution.inbound/InboundPullSynchronizationPipeline.<init>|<init>(io.dataloom.runtime.execution.inbound.InboundPullPipelineConfiguration){}[0]
+
+    final val direction // io.dataloom.runtime.execution.inbound/InboundPullSynchronizationPipeline.direction|{}direction[0]
+        final fun <get-direction>(): io.dataloom.api.model/SynchronizationDirection // io.dataloom.runtime.execution.inbound/InboundPullSynchronizationPipeline.direction.<get-direction>|<get-direction>(){}[0]
+
+    final suspend fun execute(io.dataloom.runtime.execution/SynchronizationExecutionContext): io.dataloom.api.synchronization/SynchronizationResult // io.dataloom.runtime.execution.inbound/InboundPullSynchronizationPipeline.execute|execute(io.dataloom.runtime.execution.SynchronizationExecutionContext){}[0]
+}
+
+final class io.dataloom.runtime.execution.lifecycle/DispatchingSynchronizationLifecycleEventEmitter : io.dataloom.runtime.execution.lifecycle/SynchronizationRuntimeEventEmitter { // io.dataloom.runtime.execution.lifecycle/DispatchingSynchronizationLifecycleEventEmitter|null[0]
+    constructor <init>(io.dataloom.runtime.observation/SynchronizationEventDispatcher, io.dataloom.api.time/DataLoomClock, io.dataloom.api.identifier/IdentifierGenerator<io.dataloom.api.identifier/SynchronizationEventId>) // io.dataloom.runtime.execution.lifecycle/DispatchingSynchronizationLifecycleEventEmitter.<init>|<init>(io.dataloom.runtime.observation.SynchronizationEventDispatcher;io.dataloom.api.time.DataLoomClock;io.dataloom.api.identifier.IdentifierGenerator<io.dataloom.api.identifier.SynchronizationEventId>){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.runtime.execution.lifecycle/DispatchingSynchronizationLifecycleEventEmitter.toString|toString(){}[0]
+    final suspend fun emitCompleted(io.dataloom.runtime.execution/SynchronizationExecutionContext, io.dataloom.api.synchronization/SynchronizationResult): io.dataloom.runtime.observation/SynchronizationEventDispatchResult // io.dataloom.runtime.execution.lifecycle/DispatchingSynchronizationLifecycleEventEmitter.emitCompleted|emitCompleted(io.dataloom.runtime.execution.SynchronizationExecutionContext;io.dataloom.api.synchronization.SynchronizationResult){}[0]
+    final suspend fun emitConflictDetected(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.conflict/SynchronizationConflict): io.dataloom.runtime.observation/SynchronizationEventDispatchResult // io.dataloom.runtime.execution.lifecycle/DispatchingSynchronizationLifecycleEventEmitter.emitConflictDetected|emitConflictDetected(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.conflict.SynchronizationConflict){}[0]
+    final suspend fun emitPhaseChanged(io.dataloom.runtime.execution/SynchronizationExecutionContext, io.dataloom.api.synchronization/SynchronizationPhase): io.dataloom.runtime.observation/SynchronizationEventDispatchResult // io.dataloom.runtime.execution.lifecycle/DispatchingSynchronizationLifecycleEventEmitter.emitPhaseChanged|emitPhaseChanged(io.dataloom.runtime.execution.SynchronizationExecutionContext;io.dataloom.api.synchronization.SynchronizationPhase){}[0]
+    final suspend fun emitProgressUpdated(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.synchronization/SynchronizationProgress): io.dataloom.runtime.observation/SynchronizationEventDispatchResult // io.dataloom.runtime.execution.lifecycle/DispatchingSynchronizationLifecycleEventEmitter.emitProgressUpdated|emitProgressUpdated(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.synchronization.SynchronizationProgress){}[0]
+    final suspend fun emitRetryScheduled(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.retry/RetryAttempt, io.dataloom.api.scheduling/SchedulingDelay, io.dataloom.api.error/DataLoomError): io.dataloom.runtime.observation/SynchronizationEventDispatchResult // io.dataloom.runtime.execution.lifecycle/DispatchingSynchronizationLifecycleEventEmitter.emitRetryScheduled|emitRetryScheduled(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.retry.RetryAttempt;io.dataloom.api.scheduling.SchedulingDelay;io.dataloom.api.error.DataLoomError){}[0]
+    final suspend fun emitStarted(io.dataloom.runtime.execution/SynchronizationExecutionContext): io.dataloom.runtime.observation/SynchronizationEventDispatchResult // io.dataloom.runtime.execution.lifecycle/DispatchingSynchronizationLifecycleEventEmitter.emitStarted|emitStarted(io.dataloom.runtime.execution.SynchronizationExecutionContext){}[0]
+}
+
+final class io.dataloom.runtime.execution.outbound/OutboundPushPipelineConfiguration { // io.dataloom.runtime.execution.outbound/OutboundPushPipelineConfiguration|null[0]
+    constructor <init>(kotlin.collections/Set<io.dataloom.api.identifier/EntityType> = ..., kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.runtime.execution.outbound/OutboundPushPipelineConfiguration.<init>|<init>(kotlin.collections.Set<io.dataloom.api.identifier.EntityType>;kotlin.Int;kotlin.Int){}[0]
+
+    final val entityTypes // io.dataloom.runtime.execution.outbound/OutboundPushPipelineConfiguration.entityTypes|{}entityTypes[0]
+        final fun <get-entityTypes>(): kotlin.collections/Set<io.dataloom.api.identifier/EntityType> // io.dataloom.runtime.execution.outbound/OutboundPushPipelineConfiguration.entityTypes.<get-entityTypes>|<get-entityTypes>(){}[0]
+    final val maxBatchesPerExecution // io.dataloom.runtime.execution.outbound/OutboundPushPipelineConfiguration.maxBatchesPerExecution|{}maxBatchesPerExecution[0]
+        final fun <get-maxBatchesPerExecution>(): kotlin/Int // io.dataloom.runtime.execution.outbound/OutboundPushPipelineConfiguration.maxBatchesPerExecution.<get-maxBatchesPerExecution>|<get-maxBatchesPerExecution>(){}[0]
+    final val maxEventsPerBatch // io.dataloom.runtime.execution.outbound/OutboundPushPipelineConfiguration.maxEventsPerBatch|{}maxEventsPerBatch[0]
+        final fun <get-maxEventsPerBatch>(): kotlin/Int // io.dataloom.runtime.execution.outbound/OutboundPushPipelineConfiguration.maxEventsPerBatch.<get-maxEventsPerBatch>|<get-maxEventsPerBatch>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.execution.outbound/OutboundPushPipelineConfiguration.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.execution.outbound/OutboundPushPipelineConfiguration.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.execution.outbound/OutboundPushPipelineConfiguration.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.execution.outbound/OutboundPushSynchronizationPipeline : io.dataloom.runtime.execution/SynchronizationPipeline { // io.dataloom.runtime.execution.outbound/OutboundPushSynchronizationPipeline|null[0]
+    constructor <init>(io.dataloom.runtime.execution.outbound/OutboundPushPipelineConfiguration) // io.dataloom.runtime.execution.outbound/OutboundPushSynchronizationPipeline.<init>|<init>(io.dataloom.runtime.execution.outbound.OutboundPushPipelineConfiguration){}[0]
+
+    final val direction // io.dataloom.runtime.execution.outbound/OutboundPushSynchronizationPipeline.direction|{}direction[0]
+        final fun <get-direction>(): io.dataloom.api.model/SynchronizationDirection // io.dataloom.runtime.execution.outbound/OutboundPushSynchronizationPipeline.direction.<get-direction>|<get-direction>(){}[0]
+
+    final suspend fun execute(io.dataloom.runtime.execution/SynchronizationExecutionContext): io.dataloom.api.synchronization/SynchronizationResult // io.dataloom.runtime.execution.outbound/OutboundPushSynchronizationPipeline.execute|execute(io.dataloom.runtime.execution.SynchronizationExecutionContext){}[0]
+}
+
+final class io.dataloom.runtime.execution/SynchronizationExecutionContext { // io.dataloom.runtime.execution/SynchronizationExecutionContext|null[0]
+    constructor <init>(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.execution/SynchronizationProviderSet, io.dataloom.api.runtime/RuntimeDependencies, io.dataloom.runtime.execution.lifecycle/SynchronizationLifecycleEventEmitter? = ...) // io.dataloom.runtime.execution/SynchronizationExecutionContext.<init>|<init>(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.execution.SynchronizationProviderSet;io.dataloom.api.runtime.RuntimeDependencies;io.dataloom.runtime.execution.lifecycle.SynchronizationLifecycleEventEmitter?){}[0]
+
+    final val lifecycleEventEmitter // io.dataloom.runtime.execution/SynchronizationExecutionContext.lifecycleEventEmitter|{}lifecycleEventEmitter[0]
+        final fun <get-lifecycleEventEmitter>(): io.dataloom.runtime.execution.lifecycle/SynchronizationLifecycleEventEmitter? // io.dataloom.runtime.execution/SynchronizationExecutionContext.lifecycleEventEmitter.<get-lifecycleEventEmitter>|<get-lifecycleEventEmitter>(){}[0]
+    final val providers // io.dataloom.runtime.execution/SynchronizationExecutionContext.providers|{}providers[0]
+        final fun <get-providers>(): io.dataloom.api.execution/SynchronizationProviderSet // io.dataloom.runtime.execution/SynchronizationExecutionContext.providers.<get-providers>|<get-providers>(){}[0]
+    final val request // io.dataloom.runtime.execution/SynchronizationExecutionContext.request|{}request[0]
+        final fun <get-request>(): io.dataloom.api.model/SynchronizationRequest // io.dataloom.runtime.execution/SynchronizationExecutionContext.request.<get-request>|<get-request>(){}[0]
+    final val runtimeDependencies // io.dataloom.runtime.execution/SynchronizationExecutionContext.runtimeDependencies|{}runtimeDependencies[0]
+        final fun <get-runtimeDependencies>(): io.dataloom.api.runtime/RuntimeDependencies // io.dataloom.runtime.execution/SynchronizationExecutionContext.runtimeDependencies.<get-runtimeDependencies>|<get-runtimeDependencies>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.runtime.execution/SynchronizationExecutionContext.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.execution/SynchronizationPipelineRegistry { // io.dataloom.runtime.execution/SynchronizationPipelineRegistry|null[0]
+    constructor <init>(kotlin.collections/Collection<io.dataloom.runtime.execution/SynchronizationPipeline>) // io.dataloom.runtime.execution/SynchronizationPipelineRegistry.<init>|<init>(kotlin.collections.Collection<io.dataloom.runtime.execution.SynchronizationPipeline>){}[0]
+
+    final val pipelines // io.dataloom.runtime.execution/SynchronizationPipelineRegistry.pipelines|{}pipelines[0]
+        final fun <get-pipelines>(): kotlin.collections/List<io.dataloom.runtime.execution/SynchronizationPipeline> // io.dataloom.runtime.execution/SynchronizationPipelineRegistry.pipelines.<get-pipelines>|<get-pipelines>(){}[0]
+
+    final fun lookup(io.dataloom.api.model/SynchronizationDirection): io.dataloom.runtime.execution/SynchronizationPipeline? // io.dataloom.runtime.execution/SynchronizationPipelineRegistry.lookup|lookup(io.dataloom.api.model.SynchronizationDirection){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.execution/SynchronizationPipelineRegistry.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.facade/DataLoomBuildException : kotlin/IllegalStateException { // io.dataloom.runtime.facade/DataLoomBuildException|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.runtime.facade/DataLoomBuildException.<init>|<init>(kotlin.String){}[0]
+}
+
+final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.facade/DataLoomBuilder|null[0]
+    constructor <init>() // io.dataloom.runtime.facade/DataLoomBuilder.<init>|<init>(){}[0]
+
+    final fun bidirectionalConfiguration(io.dataloom.runtime.execution.bidirectional/BidirectionalPipelineConfiguration): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.bidirectionalConfiguration|bidirectionalConfiguration(io.dataloom.runtime.execution.bidirectional.BidirectionalPipelineConfiguration){}[0]
+    final fun build(): io.dataloom.runtime.facade/DataLoom // io.dataloom.runtime.facade/DataLoomBuilder.build|build(){}[0]
+    final fun connectivityConfiguration(io.dataloom.runtime.connectivity/SynchronizationConnectivityConfiguration): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.connectivityConfiguration|connectivityConfiguration(io.dataloom.runtime.connectivity.SynchronizationConnectivityConfiguration){}[0]
+    final fun defaultProviderBindings(io.dataloom.api.provider/SynchronizationProviderBindings): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.defaultProviderBindings|defaultProviderBindings(io.dataloom.api.provider.SynchronizationProviderBindings){}[0]
+    final fun inboundConfiguration(io.dataloom.runtime.execution.inbound/InboundPullPipelineConfiguration): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.inboundConfiguration|inboundConfiguration(io.dataloom.runtime.execution.inbound.InboundPullPipelineConfiguration){}[0]
+    final fun observer(io.dataloom.api.observation/SynchronizationObserver): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.observer|observer(io.dataloom.api.observation.SynchronizationObserver){}[0]
+    final fun observers(kotlin/Array<out io.dataloom.api.observation/SynchronizationObserver>...): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.observers|observers(kotlin.Array<out|io.dataloom.api.observation.SynchronizationObserver>...){}[0]
+    final fun outboundConfiguration(io.dataloom.runtime.execution.outbound/OutboundPushPipelineConfiguration): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.outboundConfiguration|outboundConfiguration(io.dataloom.runtime.execution.outbound.OutboundPushPipelineConfiguration){}[0]
+    final fun pipeline(io.dataloom.runtime.execution/SynchronizationPipeline): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.pipeline|pipeline(io.dataloom.runtime.execution.SynchronizationPipeline){}[0]
+    final fun provider(io.dataloom.api.provider/DataLoomProvider): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.provider|provider(io.dataloom.api.provider.DataLoomProvider){}[0]
+    final fun providers(kotlin/Array<out io.dataloom.api.provider/DataLoomProvider>...): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.providers|providers(kotlin.Array<out|io.dataloom.api.provider.DataLoomProvider>...){}[0]
+    final fun queueSubmissionEncoder(io.dataloom.runtime.submission/QueuedSynchronizationWorkEncoder): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.queueSubmissionEncoder|queueSubmissionEncoder(io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder){}[0]
+    final fun queueWorkerConfiguration(io.dataloom.runtime.facade/DataLoomQueueWorkerSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.queueWorkerConfiguration|queueWorkerConfiguration(io.dataloom.runtime.facade.DataLoomQueueWorkerSpec){}[0]
+    final fun runtimeDependencies(io.dataloom.api.runtime/RuntimeDependencies): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.runtimeDependencies|runtimeDependencies(io.dataloom.api.runtime.RuntimeDependencies){}[0]
+}
+
+final class io.dataloom.runtime.facade/DataLoomQueueWorkerSpec { // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec|null[0]
+    constructor <init>(io.dataloom.runtime.queue/QueuedSynchronizationWorkResolver, io.dataloom.api.retry/RetryPolicy, io.dataloom.api.retry/RetryOperation, io.dataloom.runtime.worker/QueueWorkerConfiguration) // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec.<init>|<init>(io.dataloom.runtime.queue.QueuedSynchronizationWorkResolver;io.dataloom.api.retry.RetryPolicy;io.dataloom.api.retry.RetryOperation;io.dataloom.runtime.worker.QueueWorkerConfiguration){}[0]
+
+    final val configuration // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec.configuration|{}configuration[0]
+        final fun <get-configuration>(): io.dataloom.runtime.worker/QueueWorkerConfiguration // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec.configuration.<get-configuration>|<get-configuration>(){}[0]
+    final val retryOperation // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec.retryOperation|{}retryOperation[0]
+        final fun <get-retryOperation>(): io.dataloom.api.retry/RetryOperation // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec.retryOperation.<get-retryOperation>|<get-retryOperation>(){}[0]
+    final val retryPolicy // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec.retryPolicy|{}retryPolicy[0]
+        final fun <get-retryPolicy>(): io.dataloom.api.retry/RetryPolicy // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec.retryPolicy.<get-retryPolicy>|<get-retryPolicy>(){}[0]
+    final val workResolver // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec.workResolver|{}workResolver[0]
+        final fun <get-workResolver>(): io.dataloom.runtime.queue/QueuedSynchronizationWorkResolver // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec.workResolver.<get-workResolver>|<get-workResolver>(){}[0]
+}
+
+final class io.dataloom.runtime.observation/SynchronizationEventDispatchSummary { // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary|null[0]
+    constructor <init>(kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int) // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.<init>|<init>(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+
+    final val attemptedObserverCount // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.attemptedObserverCount|{}attemptedObserverCount[0]
+        final fun <get-attemptedObserverCount>(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.attemptedObserverCount.<get-attemptedObserverCount>|<get-attemptedObserverCount>(){}[0]
+    final val deliveredObserverCount // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.deliveredObserverCount|{}deliveredObserverCount[0]
+        final fun <get-deliveredObserverCount>(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.deliveredObserverCount.<get-deliveredObserverCount>|<get-deliveredObserverCount>(){}[0]
+    final val failedObserverCount // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.failedObserverCount|{}failedObserverCount[0]
+        final fun <get-failedObserverCount>(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.failedObserverCount.<get-failedObserverCount>|<get-failedObserverCount>(){}[0]
+    final val registeredObserverCount // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.registeredObserverCount|{}registeredObserverCount[0]
+        final fun <get-registeredObserverCount>(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.registeredObserverCount.<get-registeredObserverCount>|<get-registeredObserverCount>(){}[0]
+
+    final fun component1(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.component1|component1(){}[0]
+    final fun component2(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.component2|component2(){}[0]
+    final fun component3(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.component3|component3(){}[0]
+    final fun component4(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.component4|component4(){}[0]
+    final fun copy(kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...): io.dataloom.runtime.observation/SynchronizationEventDispatchSummary // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.copy|copy(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.toString|toString(){}[0]
+
+    final object Companion { // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.Companion|null[0]
+        final val Zero // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.Companion.Zero|{}Zero[0]
+            final fun <get-Zero>(): io.dataloom.runtime.observation/SynchronizationEventDispatchSummary // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.Companion.Zero.<get-Zero>|<get-Zero>(){}[0]
+    }
+}
+
+final class io.dataloom.runtime.observation/SynchronizationEventDispatcher { // io.dataloom.runtime.observation/SynchronizationEventDispatcher|null[0]
+    constructor <init>(io.dataloom.runtime.observation/SynchronizationObserverRegistry) // io.dataloom.runtime.observation/SynchronizationEventDispatcher.<init>|<init>(io.dataloom.runtime.observation.SynchronizationObserverRegistry){}[0]
+
+    final fun dispatch(io.dataloom.api.synchronization/SynchronizationEvent): io.dataloom.runtime.observation/SynchronizationEventDispatchResult // io.dataloom.runtime.observation/SynchronizationEventDispatcher.dispatch|dispatch(io.dataloom.api.synchronization.SynchronizationEvent){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.observation/SynchronizationEventDispatcher.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure { // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure|null[0]
+    constructor <init>(io.dataloom.api.identifier/SynchronizationObserverId, io.dataloom.api.identifier/SynchronizationEventId, io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason, io.dataloom.api.error/DataLoomError) // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.<init>|<init>(io.dataloom.api.identifier.SynchronizationObserverId;io.dataloom.api.identifier.SynchronizationEventId;io.dataloom.runtime.observation.SynchronizationObserverDispatchFailureReason;io.dataloom.api.error.DataLoomError){}[0]
+
+    final val error // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.error|{}error[0]
+        final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.error.<get-error>|<get-error>(){}[0]
+    final val eventId // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.eventId|{}eventId[0]
+        final fun <get-eventId>(): io.dataloom.api.identifier/SynchronizationEventId // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.eventId.<get-eventId>|<get-eventId>(){}[0]
+    final val observerId // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.observerId|{}observerId[0]
+        final fun <get-observerId>(): io.dataloom.api.identifier/SynchronizationObserverId // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.observerId.<get-observerId>|<get-observerId>(){}[0]
+    final val reason // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.reason|{}reason[0]
+        final fun <get-reason>(): io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.reason.<get-reason>|<get-reason>(){}[0]
+
+    final fun component1(): io.dataloom.api.identifier/SynchronizationObserverId // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.identifier/SynchronizationEventId // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.component2|component2(){}[0]
+    final fun component3(): io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.component4|component4(){}[0]
+    final fun copy(io.dataloom.api.identifier/SynchronizationObserverId = ..., io.dataloom.api.identifier/SynchronizationEventId = ..., io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason = ..., io.dataloom.api.error/DataLoomError = ...): io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.copy|copy(io.dataloom.api.identifier.SynchronizationObserverId;io.dataloom.api.identifier.SynchronizationEventId;io.dataloom.runtime.observation.SynchronizationObserverDispatchFailureReason;io.dataloom.api.error.DataLoomError){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.observation/SynchronizationObserverRegistry { // io.dataloom.runtime.observation/SynchronizationObserverRegistry|null[0]
+    constructor <init>(kotlin.collections/Collection<io.dataloom.api.observation/SynchronizationObserver>) // io.dataloom.runtime.observation/SynchronizationObserverRegistry.<init>|<init>(kotlin.collections.Collection<io.dataloom.api.observation.SynchronizationObserver>){}[0]
+
+    final val observers // io.dataloom.runtime.observation/SynchronizationObserverRegistry.observers|{}observers[0]
+        final fun <get-observers>(): kotlin.collections/List<io.dataloom.api.observation/SynchronizationObserver> // io.dataloom.runtime.observation/SynchronizationObserverRegistry.observers.<get-observers>|<get-observers>(){}[0]
+    final val size // io.dataloom.runtime.observation/SynchronizationObserverRegistry.size|{}size[0]
+        final fun <get-size>(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationObserverRegistry.size.<get-size>|<get-size>(){}[0]
+
+    final fun isEmpty(): kotlin/Boolean // io.dataloom.runtime.observation/SynchronizationObserverRegistry.isEmpty|isEmpty(){}[0]
+    final fun lookup(io.dataloom.api.identifier/SynchronizationObserverId): io.dataloom.api.observation/SynchronizationObserver? // io.dataloom.runtime.observation/SynchronizationObserverRegistry.lookup|lookup(io.dataloom.api.identifier.SynchronizationObserverId){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.observation/SynchronizationObserverRegistry.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.queue/DurableQueueExecutionProcessor { // io.dataloom.runtime.queue/DurableQueueExecutionProcessor|null[0]
+    constructor <init>(io.dataloom.api.queue/QueueProvider, io.dataloom.runtime.queue/QueueEntryExecutionHandler) // io.dataloom.runtime.queue/DurableQueueExecutionProcessor.<init>|<init>(io.dataloom.api.queue.QueueProvider;io.dataloom.runtime.queue.QueueEntryExecutionHandler){}[0]
+
+    final suspend fun process(io.dataloom.runtime.queue/QueueProcessingRequest): io.dataloom.runtime.queue/QueueProcessingResult // io.dataloom.runtime.queue/DurableQueueExecutionProcessor.process|process(io.dataloom.runtime.queue.QueueProcessingRequest){}[0]
+}
+
+final class io.dataloom.runtime.queue/QueueProcessingRequest { // io.dataloom.runtime.queue/QueueProcessingRequest|null[0]
+    constructor <init>(io.dataloom.api.queue/QueueAcquireRequest) // io.dataloom.runtime.queue/QueueProcessingRequest.<init>|<init>(io.dataloom.api.queue.QueueAcquireRequest){}[0]
+
+    final val acquireRequest // io.dataloom.runtime.queue/QueueProcessingRequest.acquireRequest|{}acquireRequest[0]
+        final fun <get-acquireRequest>(): io.dataloom.api.queue/QueueAcquireRequest // io.dataloom.runtime.queue/QueueProcessingRequest.acquireRequest.<get-acquireRequest>|<get-acquireRequest>(){}[0]
+
+    final fun component1(): io.dataloom.api.queue/QueueAcquireRequest // io.dataloom.runtime.queue/QueueProcessingRequest.component1|component1(){}[0]
+    final fun copy(io.dataloom.api.queue/QueueAcquireRequest = ...): io.dataloom.runtime.queue/QueueProcessingRequest // io.dataloom.runtime.queue/QueueProcessingRequest.copy|copy(io.dataloom.api.queue.QueueAcquireRequest){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.queue/QueueProcessingRequest.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingRequest.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.queue/QueueProcessingRequest.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.queue/QueueProcessingSummary { // io.dataloom.runtime.queue/QueueProcessingSummary|null[0]
+    constructor <init>(kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int) // io.dataloom.runtime.queue/QueueProcessingSummary.<init>|<init>(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+
+    final val acquired // io.dataloom.runtime.queue/QueueProcessingSummary.acquired|{}acquired[0]
+        final fun <get-acquired>(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingSummary.acquired.<get-acquired>|<get-acquired>(){}[0]
+    final val cancelled // io.dataloom.runtime.queue/QueueProcessingSummary.cancelled|{}cancelled[0]
+        final fun <get-cancelled>(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingSummary.cancelled.<get-cancelled>|<get-cancelled>(){}[0]
+    final val completed // io.dataloom.runtime.queue/QueueProcessingSummary.completed|{}completed[0]
+        final fun <get-completed>(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingSummary.completed.<get-completed>|<get-completed>(){}[0]
+    final val executed // io.dataloom.runtime.queue/QueueProcessingSummary.executed|{}executed[0]
+        final fun <get-executed>(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingSummary.executed.<get-executed>|<get-executed>(){}[0]
+    final val failed // io.dataloom.runtime.queue/QueueProcessingSummary.failed|{}failed[0]
+        final fun <get-failed>(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingSummary.failed.<get-failed>|<get-failed>(){}[0]
+    final val rescheduled // io.dataloom.runtime.queue/QueueProcessingSummary.rescheduled|{}rescheduled[0]
+        final fun <get-rescheduled>(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingSummary.rescheduled.<get-rescheduled>|<get-rescheduled>(){}[0]
+
+    final fun component1(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingSummary.component1|component1(){}[0]
+    final fun component2(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingSummary.component2|component2(){}[0]
+    final fun component3(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingSummary.component3|component3(){}[0]
+    final fun component4(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingSummary.component4|component4(){}[0]
+    final fun component5(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingSummary.component5|component5(){}[0]
+    final fun component6(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingSummary.component6|component6(){}[0]
+    final fun copy(kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...): io.dataloom.runtime.queue/QueueProcessingSummary // io.dataloom.runtime.queue/QueueProcessingSummary.copy|copy(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.queue/QueueProcessingSummary.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.queue/QueueProcessingSummary.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.queue/QueueProcessingSummary.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.queue/QueuedSynchronizationWork { // io.dataloom.runtime.queue/QueuedSynchronizationWork|null[0]
+    constructor <init>(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.provider/SynchronizationProviderBindings) // io.dataloom.runtime.queue/QueuedSynchronizationWork.<init>|<init>(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.provider.SynchronizationProviderBindings){}[0]
+
+    final val bindings // io.dataloom.runtime.queue/QueuedSynchronizationWork.bindings|{}bindings[0]
+        final fun <get-bindings>(): io.dataloom.api.provider/SynchronizationProviderBindings // io.dataloom.runtime.queue/QueuedSynchronizationWork.bindings.<get-bindings>|<get-bindings>(){}[0]
+    final val request // io.dataloom.runtime.queue/QueuedSynchronizationWork.request|{}request[0]
+        final fun <get-request>(): io.dataloom.api.model/SynchronizationRequest // io.dataloom.runtime.queue/QueuedSynchronizationWork.request.<get-request>|<get-request>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.queue/QueuedSynchronizationWork.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.queue/QueuedSynchronizationWork.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.queue/QueuedSynchronizationWork.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.retry/RetryOrchestrationResult { // io.dataloom.runtime.retry/RetryOrchestrationResult|null[0]
+    constructor <init>(io.dataloom.runtime.retry/RetryOrchestrationStatus, kotlin.collections/List<io.dataloom.api.retry/RetryDecision>, io.dataloom.api.scheduling/SchedulingDelay?, io.dataloom.api.scheduling/ScheduleReceipt?, io.dataloom.api.error/DataLoomError?) // io.dataloom.runtime.retry/RetryOrchestrationResult.<init>|<init>(io.dataloom.runtime.retry.RetryOrchestrationStatus;kotlin.collections.List<io.dataloom.api.retry.RetryDecision>;io.dataloom.api.scheduling.SchedulingDelay?;io.dataloom.api.scheduling.ScheduleReceipt?;io.dataloom.api.error.DataLoomError?){}[0]
+
+    final val decisions // io.dataloom.runtime.retry/RetryOrchestrationResult.decisions|{}decisions[0]
+        final fun <get-decisions>(): kotlin.collections/List<io.dataloom.api.retry/RetryDecision> // io.dataloom.runtime.retry/RetryOrchestrationResult.decisions.<get-decisions>|<get-decisions>(){}[0]
+    final val scheduleReceipt // io.dataloom.runtime.retry/RetryOrchestrationResult.scheduleReceipt|{}scheduleReceipt[0]
+        final fun <get-scheduleReceipt>(): io.dataloom.api.scheduling/ScheduleReceipt? // io.dataloom.runtime.retry/RetryOrchestrationResult.scheduleReceipt.<get-scheduleReceipt>|<get-scheduleReceipt>(){}[0]
+    final val schedulerError // io.dataloom.runtime.retry/RetryOrchestrationResult.schedulerError|{}schedulerError[0]
+        final fun <get-schedulerError>(): io.dataloom.api.error/DataLoomError? // io.dataloom.runtime.retry/RetryOrchestrationResult.schedulerError.<get-schedulerError>|<get-schedulerError>(){}[0]
+    final val selectedDelay // io.dataloom.runtime.retry/RetryOrchestrationResult.selectedDelay|{}selectedDelay[0]
+        final fun <get-selectedDelay>(): io.dataloom.api.scheduling/SchedulingDelay? // io.dataloom.runtime.retry/RetryOrchestrationResult.selectedDelay.<get-selectedDelay>|<get-selectedDelay>(){}[0]
+    final val status // io.dataloom.runtime.retry/RetryOrchestrationResult.status|{}status[0]
+        final fun <get-status>(): io.dataloom.runtime.retry/RetryOrchestrationStatus // io.dataloom.runtime.retry/RetryOrchestrationResult.status.<get-status>|<get-status>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.runtime.retry/RetryOrchestrationResult.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.retry/RetrySchedulingConfiguration { // io.dataloom.runtime.retry/RetrySchedulingConfiguration|null[0]
+    constructor <init>(io.dataloom.api.scheduling/ScheduleConstraints, io.dataloom.api.scheduling/ExistingSchedulePolicy) // io.dataloom.runtime.retry/RetrySchedulingConfiguration.<init>|<init>(io.dataloom.api.scheduling.ScheduleConstraints;io.dataloom.api.scheduling.ExistingSchedulePolicy){}[0]
+
+    final val constraints // io.dataloom.runtime.retry/RetrySchedulingConfiguration.constraints|{}constraints[0]
+        final fun <get-constraints>(): io.dataloom.api.scheduling/ScheduleConstraints // io.dataloom.runtime.retry/RetrySchedulingConfiguration.constraints.<get-constraints>|<get-constraints>(){}[0]
+    final val existingSchedulePolicy // io.dataloom.runtime.retry/RetrySchedulingConfiguration.existingSchedulePolicy|{}existingSchedulePolicy[0]
+        final fun <get-existingSchedulePolicy>(): io.dataloom.api.scheduling/ExistingSchedulePolicy // io.dataloom.runtime.retry/RetrySchedulingConfiguration.existingSchedulePolicy.<get-existingSchedulePolicy>|<get-existingSchedulePolicy>(){}[0]
+
+    final fun component1(): io.dataloom.api.scheduling/ScheduleConstraints // io.dataloom.runtime.retry/RetrySchedulingConfiguration.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.scheduling/ExistingSchedulePolicy // io.dataloom.runtime.retry/RetrySchedulingConfiguration.component2|component2(){}[0]
+    final fun copy(io.dataloom.api.scheduling/ScheduleConstraints = ..., io.dataloom.api.scheduling/ExistingSchedulePolicy = ...): io.dataloom.runtime.retry/RetrySchedulingConfiguration // io.dataloom.runtime.retry/RetrySchedulingConfiguration.copy|copy(io.dataloom.api.scheduling.ScheduleConstraints;io.dataloom.api.scheduling.ExistingSchedulePolicy){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/RetrySchedulingConfiguration.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/RetrySchedulingConfiguration.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.retry/RetrySchedulingConfiguration.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.retry/SynchronizationRetryEvaluator { // io.dataloom.runtime.retry/SynchronizationRetryEvaluator|null[0]
+    constructor <init>(io.dataloom.api.retry/RetryPolicy, io.dataloom.api.time/DataLoomClock) // io.dataloom.runtime.retry/SynchronizationRetryEvaluator.<init>|<init>(io.dataloom.api.retry.RetryPolicy;io.dataloom.api.time.DataLoomClock){}[0]
+
+    final fun evaluate(io.dataloom.api.synchronization/SynchronizationResult, io.dataloom.api.retry/RetryAttempt, io.dataloom.api.retry/RetryOperation): io.dataloom.runtime.retry/SynchronizationRetryEvaluation // io.dataloom.runtime.retry/SynchronizationRetryEvaluator.evaluate|evaluate(io.dataloom.api.synchronization.SynchronizationResult;io.dataloom.api.retry.RetryAttempt;io.dataloom.api.retry.RetryOperation){}[0]
+}
+
+final class io.dataloom.runtime.retry/SynchronizationRetryOrchestrator { // io.dataloom.runtime.retry/SynchronizationRetryOrchestrator|null[0]
+    constructor <init>(io.dataloom.api.retry/RetryPolicy, io.dataloom.api.scheduling/SchedulerProvider?, io.dataloom.runtime.retry/RetrySchedulingConfiguration, io.dataloom.runtime.execution.lifecycle/SynchronizationRuntimeEventEmitter? = ...) // io.dataloom.runtime.retry/SynchronizationRetryOrchestrator.<init>|<init>(io.dataloom.api.retry.RetryPolicy;io.dataloom.api.scheduling.SchedulerProvider?;io.dataloom.runtime.retry.RetrySchedulingConfiguration;io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitter?){}[0]
+
+    final suspend fun evaluateAndSchedule(io.dataloom.runtime.retry/SynchronizationRetryRequest): io.dataloom.runtime.retry/RetryOrchestrationResult // io.dataloom.runtime.retry/SynchronizationRetryOrchestrator.evaluateAndSchedule|evaluateAndSchedule(io.dataloom.runtime.retry.SynchronizationRetryRequest){}[0]
+}
+
+final class io.dataloom.runtime.retry/SynchronizationRetryRequest { // io.dataloom.runtime.retry/SynchronizationRetryRequest|null[0]
+    constructor <init>(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.synchronization/SynchronizationResult, io.dataloom.api.retry/RetryOperation, io.dataloom.api.retry/RetryAttempt, io.dataloom.api.identifier/ScheduleId) // io.dataloom.runtime.retry/SynchronizationRetryRequest.<init>|<init>(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.synchronization.SynchronizationResult;io.dataloom.api.retry.RetryOperation;io.dataloom.api.retry.RetryAttempt;io.dataloom.api.identifier.ScheduleId){}[0]
+
+    final val retryAttempt // io.dataloom.runtime.retry/SynchronizationRetryRequest.retryAttempt|{}retryAttempt[0]
+        final fun <get-retryAttempt>(): io.dataloom.api.retry/RetryAttempt // io.dataloom.runtime.retry/SynchronizationRetryRequest.retryAttempt.<get-retryAttempt>|<get-retryAttempt>(){}[0]
+    final val retryOperation // io.dataloom.runtime.retry/SynchronizationRetryRequest.retryOperation|{}retryOperation[0]
+        final fun <get-retryOperation>(): io.dataloom.api.retry/RetryOperation // io.dataloom.runtime.retry/SynchronizationRetryRequest.retryOperation.<get-retryOperation>|<get-retryOperation>(){}[0]
+    final val scheduleId // io.dataloom.runtime.retry/SynchronizationRetryRequest.scheduleId|{}scheduleId[0]
+        final fun <get-scheduleId>(): io.dataloom.api.identifier/ScheduleId // io.dataloom.runtime.retry/SynchronizationRetryRequest.scheduleId.<get-scheduleId>|<get-scheduleId>(){}[0]
+    final val synchronizationRequest // io.dataloom.runtime.retry/SynchronizationRetryRequest.synchronizationRequest|{}synchronizationRequest[0]
+        final fun <get-synchronizationRequest>(): io.dataloom.api.model/SynchronizationRequest // io.dataloom.runtime.retry/SynchronizationRetryRequest.synchronizationRequest.<get-synchronizationRequest>|<get-synchronizationRequest>(){}[0]
+    final val synchronizationResult // io.dataloom.runtime.retry/SynchronizationRetryRequest.synchronizationResult|{}synchronizationResult[0]
+        final fun <get-synchronizationResult>(): io.dataloom.api.synchronization/SynchronizationResult // io.dataloom.runtime.retry/SynchronizationRetryRequest.synchronizationResult.<get-synchronizationResult>|<get-synchronizationResult>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.runtime.retry/SynchronizationRetryRequest.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.submission/QueuedSynchronizationSubmission { // io.dataloom.runtime.submission/QueuedSynchronizationSubmission|null[0]
+    constructor <init>(io.dataloom.api.identifier/QueueEntryId, io.dataloom.runtime.queue/QueuedSynchronizationWork, io.dataloom.api.time/DataLoomInstant) // io.dataloom.runtime.submission/QueuedSynchronizationSubmission.<init>|<init>(io.dataloom.api.identifier.QueueEntryId;io.dataloom.runtime.queue.QueuedSynchronizationWork;io.dataloom.api.time.DataLoomInstant){}[0]
+
+    final val availableAt // io.dataloom.runtime.submission/QueuedSynchronizationSubmission.availableAt|{}availableAt[0]
+        final fun <get-availableAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.submission/QueuedSynchronizationSubmission.availableAt.<get-availableAt>|<get-availableAt>(){}[0]
+    final val queueEntryId // io.dataloom.runtime.submission/QueuedSynchronizationSubmission.queueEntryId|{}queueEntryId[0]
+        final fun <get-queueEntryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.submission/QueuedSynchronizationSubmission.queueEntryId.<get-queueEntryId>|<get-queueEntryId>(){}[0]
+    final val work // io.dataloom.runtime.submission/QueuedSynchronizationSubmission.work|{}work[0]
+        final fun <get-work>(): io.dataloom.runtime.queue/QueuedSynchronizationWork // io.dataloom.runtime.submission/QueuedSynchronizationSubmission.work.<get-work>|<get-work>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.submission/QueuedSynchronizationSubmission.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.submission/QueuedSynchronizationSubmission.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.submission/QueuedSynchronizationSubmission.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.worker/QueueWorkerConfiguration { // io.dataloom.runtime.worker/QueueWorkerConfiguration|null[0]
+    constructor <init>(io.dataloom.api.identifier/ScheduleId, io.dataloom.api.scheduling/ScheduleConstraints, io.dataloom.api.scheduling/ExistingSchedulePolicy, io.dataloom.api.scheduling/SchedulingDelay, kotlin/Boolean) // io.dataloom.runtime.worker/QueueWorkerConfiguration.<init>|<init>(io.dataloom.api.identifier.ScheduleId;io.dataloom.api.scheduling.ScheduleConstraints;io.dataloom.api.scheduling.ExistingSchedulePolicy;io.dataloom.api.scheduling.SchedulingDelay;kotlin.Boolean){}[0]
+
+    final val constraints // io.dataloom.runtime.worker/QueueWorkerConfiguration.constraints|{}constraints[0]
+        final fun <get-constraints>(): io.dataloom.api.scheduling/ScheduleConstraints // io.dataloom.runtime.worker/QueueWorkerConfiguration.constraints.<get-constraints>|<get-constraints>(){}[0]
+    final val continuationDelay // io.dataloom.runtime.worker/QueueWorkerConfiguration.continuationDelay|{}continuationDelay[0]
+        final fun <get-continuationDelay>(): io.dataloom.api.scheduling/SchedulingDelay // io.dataloom.runtime.worker/QueueWorkerConfiguration.continuationDelay.<get-continuationDelay>|<get-continuationDelay>(){}[0]
+    final val existingSchedulePolicy // io.dataloom.runtime.worker/QueueWorkerConfiguration.existingSchedulePolicy|{}existingSchedulePolicy[0]
+        final fun <get-existingSchedulePolicy>(): io.dataloom.api.scheduling/ExistingSchedulePolicy // io.dataloom.runtime.worker/QueueWorkerConfiguration.existingSchedulePolicy.<get-existingSchedulePolicy>|<get-existingSchedulePolicy>(){}[0]
+    final val recoverExpiredLeasesBeforeProcessing // io.dataloom.runtime.worker/QueueWorkerConfiguration.recoverExpiredLeasesBeforeProcessing|{}recoverExpiredLeasesBeforeProcessing[0]
+        final fun <get-recoverExpiredLeasesBeforeProcessing>(): kotlin/Boolean // io.dataloom.runtime.worker/QueueWorkerConfiguration.recoverExpiredLeasesBeforeProcessing.<get-recoverExpiredLeasesBeforeProcessing>|<get-recoverExpiredLeasesBeforeProcessing>(){}[0]
+    final val scheduleId // io.dataloom.runtime.worker/QueueWorkerConfiguration.scheduleId|{}scheduleId[0]
+        final fun <get-scheduleId>(): io.dataloom.api.identifier/ScheduleId // io.dataloom.runtime.worker/QueueWorkerConfiguration.scheduleId.<get-scheduleId>|<get-scheduleId>(){}[0]
+
+    final fun component1(): io.dataloom.api.identifier/ScheduleId // io.dataloom.runtime.worker/QueueWorkerConfiguration.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.scheduling/ScheduleConstraints // io.dataloom.runtime.worker/QueueWorkerConfiguration.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.scheduling/ExistingSchedulePolicy // io.dataloom.runtime.worker/QueueWorkerConfiguration.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.scheduling/SchedulingDelay // io.dataloom.runtime.worker/QueueWorkerConfiguration.component4|component4(){}[0]
+    final fun component5(): kotlin/Boolean // io.dataloom.runtime.worker/QueueWorkerConfiguration.component5|component5(){}[0]
+    final fun copy(io.dataloom.api.identifier/ScheduleId = ..., io.dataloom.api.scheduling/ScheduleConstraints = ..., io.dataloom.api.scheduling/ExistingSchedulePolicy = ..., io.dataloom.api.scheduling/SchedulingDelay = ..., kotlin/Boolean = ...): io.dataloom.runtime.worker/QueueWorkerConfiguration // io.dataloom.runtime.worker/QueueWorkerConfiguration.copy|copy(io.dataloom.api.identifier.ScheduleId;io.dataloom.api.scheduling.ScheduleConstraints;io.dataloom.api.scheduling.ExistingSchedulePolicy;io.dataloom.api.scheduling.SchedulingDelay;kotlin.Boolean){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/QueueWorkerConfiguration.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/QueueWorkerConfiguration.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.worker/QueueWorkerConfiguration.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.worker/QueueWorkerCoordinator { // io.dataloom.runtime.worker/QueueWorkerCoordinator|null[0]
+    constructor <init>(io.dataloom.api.queue/QueueProvider, io.dataloom.runtime.queue/DurableQueueExecutionProcessor, io.dataloom.api.scheduling/SchedulerProvider?, io.dataloom.api.time/DataLoomClock, io.dataloom.runtime.worker/QueueWorkerConfiguration) // io.dataloom.runtime.worker/QueueWorkerCoordinator.<init>|<init>(io.dataloom.api.queue.QueueProvider;io.dataloom.runtime.queue.DurableQueueExecutionProcessor;io.dataloom.api.scheduling.SchedulerProvider?;io.dataloom.api.time.DataLoomClock;io.dataloom.runtime.worker.QueueWorkerConfiguration){}[0]
+
+    final suspend fun run(io.dataloom.runtime.worker/QueueWorkerRunRequest): io.dataloom.runtime.worker/QueueWorkerRunResult // io.dataloom.runtime.worker/QueueWorkerCoordinator.run|run(io.dataloom.runtime.worker.QueueWorkerRunRequest){}[0]
+}
+
+final class io.dataloom.runtime.worker/QueueWorkerRunRequest { // io.dataloom.runtime.worker/QueueWorkerRunRequest|null[0]
+    constructor <init>(io.dataloom.runtime.queue/QueueProcessingRequest, io.dataloom.api.queue/ExpiredLeaseRecoveryRequest?) // io.dataloom.runtime.worker/QueueWorkerRunRequest.<init>|<init>(io.dataloom.runtime.queue.QueueProcessingRequest;io.dataloom.api.queue.ExpiredLeaseRecoveryRequest?){}[0]
+
+    final val processingRequest // io.dataloom.runtime.worker/QueueWorkerRunRequest.processingRequest|{}processingRequest[0]
+        final fun <get-processingRequest>(): io.dataloom.runtime.queue/QueueProcessingRequest // io.dataloom.runtime.worker/QueueWorkerRunRequest.processingRequest.<get-processingRequest>|<get-processingRequest>(){}[0]
+    final val recoveryRequest // io.dataloom.runtime.worker/QueueWorkerRunRequest.recoveryRequest|{}recoveryRequest[0]
+        final fun <get-recoveryRequest>(): io.dataloom.api.queue/ExpiredLeaseRecoveryRequest? // io.dataloom.runtime.worker/QueueWorkerRunRequest.recoveryRequest.<get-recoveryRequest>|<get-recoveryRequest>(){}[0]
+
+    final fun component1(): io.dataloom.runtime.queue/QueueProcessingRequest // io.dataloom.runtime.worker/QueueWorkerRunRequest.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.queue/ExpiredLeaseRecoveryRequest? // io.dataloom.runtime.worker/QueueWorkerRunRequest.component2|component2(){}[0]
+    final fun copy(io.dataloom.runtime.queue/QueueProcessingRequest = ..., io.dataloom.api.queue/ExpiredLeaseRecoveryRequest? = ...): io.dataloom.runtime.worker/QueueWorkerRunRequest // io.dataloom.runtime.worker/QueueWorkerRunRequest.copy|copy(io.dataloom.runtime.queue.QueueProcessingRequest;io.dataloom.api.queue.ExpiredLeaseRecoveryRequest?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/QueueWorkerRunRequest.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/QueueWorkerRunRequest.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.worker/QueueWorkerRunRequest.toString|toString(){}[0]
+}

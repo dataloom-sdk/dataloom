@@ -17,20 +17,33 @@ The coordinator sits between platform scheduling triggers and
 
 ## Sequence overview
 
-```text
-Platform Trigger (WorkManager, AlarmManager, or host)
-     │
-     ▼
-QueueWorkerCoordinator.run(QueueWorkerRunRequest)
-     │
-     ├─ [optional] QueueProvider.recoverExpiredLeases()
-     │
-     ├─ DurableQueueExecutionProcessor.process()
-     │
-     ├─ Build QueueWorkerWakeUpPlan
-     │
-     └─ [optional] SchedulerProvider.schedule()
+```mermaid
+sequenceDiagram
+    title Queue worker cycle
+    participant Trigger
+    participant Coordinator
+    participant QueueProvider
+    participant Processor
+    participant SchedulerProvider
+
+    Trigger->>Coordinator: run request
+    Coordinator->>QueueProvider: recover expired leases
+    QueueProvider-->>Coordinator: recovery result
+    Coordinator->>Processor: process one batch
+    Processor-->>Coordinator: processing result
+    Coordinator->>Coordinator: build wake-up plan
+    Coordinator->>SchedulerProvider: schedule when required
+    SchedulerProvider-->>Coordinator: scheduling result
+    Coordinator-->>Trigger: structured run result
 ```
+
+Recovery and processing are bounded to one call. A future wake-up is scheduled
+only when the processing summary provides continuation evidence.
+
+> [!CAUTION]
+> The current Room and in-memory expired-lease recovery paths clear persisted
+> retry attempts. V1 must preserve a null or genuine attempt exactly so process
+> death cannot reset a retry budget.
 
 ---
 

@@ -28,7 +28,7 @@ import io.dataloom.runtime.worker.QueueWorkerRunResult
  * ## Queue submission boundary
  *
  * [DataLoomQueueWorker] does not expose a queue-submission API. Applications
- * must use their [io.dataloom.api.provider.QueueProvider] directly until a
+ * must use their [io.dataloom.api.queue.QueueProvider] directly until a
  * public enqueue API is introduced in a future issue.
  *
  * ## Cancellation

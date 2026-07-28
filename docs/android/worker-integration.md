@@ -1,26 +1,50 @@
-# Worker Integration (DL-037)
+# WorkManager worker integration
 
-The `dataloom-scheduler-workmanager` module provides
-`DataLoomCoroutineWorker` and `DataLoomWorkerFactory` for integrating a
-DataLoom queue worker with AndroidX WorkManager.
+> **Audience:** Android developers integrating DataLoom queue processing with
+> WorkManager
+> **Purpose:** Configure explicit worker injection and one bounded queue-worker
+> invocation
+> **Status:** Current bridge foundation; application lifecycle and end-to-end
+> V1 qualification remain open
 
-## Overview
+[← Android overview](README.md) ·
+[WorkManager scheduler](workmanager-scheduler.md) ·
+[Room queue provider](room-queue-provider.md)
 
-```text
-WorkManager triggers DataLoomCoroutineWorker
-    → QueueWorkerRunRequestFactory creates a fresh request
-    → DataLoomQueueWorker.run(request) executes once
-    → QueueWorkerRunResult maps to WorkManager Result
+The `dataloom-scheduler-workmanager` module supplies
+`DataLoomCoroutineWorker`, `DataLoomWorkerFactory`, and
+`QueueWorkerRunRequestFactory`. No global DataLoom singleton or reflection
+lookup is used.
+
+## Worker lifecycle
+
+```mermaid
+sequenceDiagram
+    participant WorkManager
+    participant WorkerFactory
+    participant Worker
+    participant RequestFactory
+    participant QueueWorker
+
+    WorkManager->>WorkerFactory: Create worker
+    WorkerFactory-->>WorkManager: Injected worker
+    WorkManager->>Worker: Run work
+    Worker->>RequestFactory: Create request
+    RequestFactory-->>Worker: Fresh run request
+    Worker->>QueueWorker: Run one cycle
+    QueueWorker-->>Worker: Run result
+    Worker-->>WorkManager: Work result
 ```
 
-Each WorkManager invocation performs one bounded queue-worker cycle. The bridge
-does not start the DataLoom runtime, loop until the queue is empty, add a second
-retry state machine, or look up a global DataLoom singleton.
+Every invocation performs one bounded queue-worker cycle. The bridge does not
+drain the queue in a loop, initialize providers, select a synchronization
+strategy, or introduce a second retry state machine.
 
-## Disable WorkManager's default initializer
+## Disable only WorkManager's initializer
 
-A custom `WorkerFactory` requires custom WorkManager configuration. Remove only
-WorkManager's AndroidX Startup initializer in the application manifest:
+A custom `WorkerFactory` requires custom WorkManager configuration. Remove
+WorkManager's AndroidX Startup initializer, not the whole
+`InitializationProvider`:
 
 ```xml
 <manifest
@@ -42,14 +66,11 @@ WorkManager's AndroidX Startup initializer in the application manifest:
 </manifest>
 ```
 
-Do not remove the whole `InitializationProvider` when the application uses
-AndroidX Startup for other components.
-
-## Supply DataLoomWorkerFactory
+## Supply the worker factory
 
 Implement `Configuration.Provider` on the application. WorkManager discovers
-this configuration when the host calls `WorkManager.getInstance(context)`;
-the application must not call `WorkManager.initialize()` itself.
+the configuration through `WorkManager.getInstance(context)`; do not also call
+`WorkManager.initialize()` manually.
 
 ```kotlin
 class MyApplication : Application(), Configuration.Provider {
@@ -88,21 +109,48 @@ class MyApplication : Application(), Configuration.Provider {
 }
 ```
 
-The request factory runs when the worker executes. It must generate a fresh
-lease identifier and timestamps on every call. Set `recoveryRequest` to
-`null` instead when the DataLoom queue-worker configuration disables
-expired-lease recovery.
+`buildDataLoom()` is an application-supplied placeholder. The request factory
+runs at worker execution time and must create a fresh lease ID and timestamps
+for every call. Set `recoveryRequest` to `null` when the configured
+queue-worker disables expired-lease recovery.
+
+If the application already has another custom worker factory, compose the
+factories rather than silently replacing the existing one.
+`DataLoomWorkerFactory` returns `null` for worker class names it does not own.
+
+## Lifecycle responsibility
+
+The bridge never calls `DataLoom.initialize()` or `shutdown()`. The host must
+prove that required providers are initialized before WorkManager can run this
+worker and that process recreation restores the same configuration safely.
+The snippet demonstrates wiring, not a complete production lifecycle
+solution; that lifecycle remains a V1 reference-application and qualification
+gate.
 
 ## Result mapping
 
-| `QueueWorkerRunResult` | WorkManager `Result` |
+| `QueueWorkerRunResult` | WorkManager result |
 |---|---|
 | `ProcessingCompleted` | `Result.success()` |
 | `RecoveryFailed` | `Result.failure()` |
 | `ProcessingFailed` | `Result.failure()` |
 
-## Scheduling and retries
+The bridge never returns `Result.retry()`. DataLoom's queue and retry
+orchestration own rescheduling. When another bounded cycle is needed, the
+queue-worker coordinator requests a follow-up schedule through
+`SchedulerProvider`.
 
-The bridge never returns `Result.retry()`. DataLoom's durable queue owns retry
-and rescheduling state. When another bounded cycle is useful, the queue-worker
-coordinator requests a follow-up schedule through `SchedulerProvider`.
+## Current limits
+
+- WorkManager input data does not carry or reconstruct a complete
+  `SynchronizationRequest`.
+- One invocation executes one queue-worker cycle only.
+- WorkManager acceptance does not mean synchronization has run or succeeded.
+- No current integration test proves process-death restoration, background
+  constraints, or all six V1 synchronization profiles.
+
+## Related documentation
+
+- [WorkManager scheduler](workmanager-scheduler.md)
+- [Queue worker boundaries](../architecture/background-execution-boundaries.md)
+- [Room queue provider](room-queue-provider.md)

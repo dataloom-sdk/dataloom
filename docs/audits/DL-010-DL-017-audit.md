@@ -1,5 +1,12 @@
 # DL-AUDIT-001: Audit of DL-010 through DL-017 Implementation
 
+> [!IMPORTANT]
+> **Historical evidence:** this audit is frozen to the commit named below. Its
+> present-tense verdicts do not describe the current branch or full V1 product
+> readiness. Use the [audit index](./README.md) and
+> [DL-AUDIT-004](./DL-AUDIT-004-v1-production-readiness.md) for the current
+> release decision.
+
 **Audit date:** 2026-07-22  
 **Auditor:** Copilot Coding Agent (DL-AUDIT-001)  
 **Scope:** Issues DL-010 through DL-017  
@@ -27,7 +34,7 @@ implemented** and **six were merged without any production code**.
 **The repository is NOT ready for the next runtime-development issue** until
 DL-011 through DL-013 and DL-015 through DL-017 are implemented.
 
-An additional out-of-scope finding is documented in [Appendix A](#appendix-a-dl-009-not-implemented):
+An additional out-of-scope finding is documented in [Appendix A](#appendix-a--dl-009-not-implemented):
 DL-009 (Storage Provider SPI, issue #18, PR #19) was also merged without
 implementation.
 
@@ -518,7 +525,7 @@ plan" commit. `StorageProvider`, `OutboundChangeReadRequest`, and
 `InboundChangeApplyRequest` do not exist. The transport-provider documentation
 references `StorageProvider.readOutboundChanges()` and
 `StorageProvider.applyInboundChanges()` as conceptual flow steps, but there is
-no actual contract. See [Appendix A](#appendix-a-dl-009-not-implemented).
+no actual contract. See [Appendix A](#appendix-a--dl-009-not-implemented).
 
 ### Finding 3: `TransportProvider.pushChanges` return type will break on DL-011 implementation
 

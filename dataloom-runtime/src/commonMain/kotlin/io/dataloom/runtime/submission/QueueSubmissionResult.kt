@@ -35,14 +35,14 @@ public sealed interface QueueSubmissionResult {
      * [queueEntryId] is the exact identifier supplied in the
      * [QueuedSynchronizationSubmission]. [providerResult] is the exact
      * [ProviderOperationResult.Success] returned by
-     * [io.dataloom.api.provider.QueueProvider.enqueue].
+     * [io.dataloom.api.queue.QueueProvider.enqueue].
      *
      * No worker is started automatically. No scheduler is invoked. The
      * caller is responsible for triggering the queue worker when appropriate.
      *
      * @param queueEntryId the exact [QueueEntryId] from the submission.
      * @param providerResult the exact successful result from the
-     *   [io.dataloom.api.provider.QueueProvider].
+     *   [io.dataloom.api.queue.QueueProvider].
      */
     public data class Enqueued(
         /** The exact [QueueEntryId] from the submission. */
@@ -50,7 +50,7 @@ public sealed interface QueueSubmissionResult {
 
         /**
          * The exact [ProviderOperationResult.Success] returned by
-         * [io.dataloom.api.provider.QueueProvider.enqueue].
+         * [io.dataloom.api.queue.QueueProvider.enqueue].
          */
         public val providerResult: ProviderOperationResult.Success<Unit>,
     ) : QueueSubmissionResult
@@ -60,7 +60,7 @@ public sealed interface QueueSubmissionResult {
      *
      * [error] is the canonical [DataLoomError] supplied by the encoder in its
      * [QueuedSynchronizationWorkEncodingResult.Rejected] result. No
-     * [io.dataloom.api.provider.QueueProvider] operation was performed.
+     * [io.dataloom.api.queue.QueueProvider] operation was performed.
      *
      * @param error the exact canonical [DataLoomError] from the encoder's
      *   rejection.
@@ -78,7 +78,7 @@ public sealed interface QueueSubmissionResult {
      * [queueEntryId] is the identifier from the submission when it can be
      * safely included in diagnostics.
      *
-     * No [io.dataloom.api.provider.QueueProvider] operation was performed.
+     * No [io.dataloom.api.queue.QueueProvider] operation was performed.
      *
      * @param error a safe canonical [DataLoomError] describing the violation.
      * @param queueEntryId the [QueueEntryId] from the submission, where safe.
@@ -92,8 +92,8 @@ public sealed interface QueueSubmissionResult {
     ) : QueueSubmissionResult
 
     /**
-     * The [io.dataloom.api.provider.QueueProvider] returned a canonical
-     * failure from [io.dataloom.api.provider.QueueProvider.enqueue].
+     * The [io.dataloom.api.queue.QueueProvider] returned a canonical
+     * failure from [io.dataloom.api.queue.QueueProvider.enqueue].
      *
      * [error] is the exact [DataLoomError] from the provider failure. The
      * provider is not retried automatically. No new [QueueEntryId] is

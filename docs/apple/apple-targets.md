@@ -1,97 +1,100 @@
-# DataLoom Apple Targets (DL-036)
+# Apple compilation targets
 
-## Supported Targets
+> **Audience:** KMP maintainers and contributors changing the Apple build graph
+> **Purpose:** Record declared targets, source-set hierarchy, and host
+> restrictions
+> **Status:** Producer compilation baseline; not a production iOS support claim
 
-DataLoom declares three explicit Apple targets in every relevant KMP module:
+[← Apple guide](README.md) ·
+[Apple testing](apple-testing.md) ·
+[XCFramework integration](xcframework-integration.md)
 
-| Target | Architecture | Purpose |
+## Declared targets
+
+Every relevant KMP module declares these targets on a macOS host:
+
+| Target | Architecture | Build purpose |
 |---|---|---|
-| `iosArm64` | ARM64 | Physical iPhone and iPad devices |
-| `iosSimulatorArm64` | ARM64 | Apple-silicon iOS simulator |
-| `iosX64` | x86_64 | Intel iOS simulator (Rosetta / legacy runners) |
+| `iosArm64` | ARM64 | Physical iPhone and iPad framework slice |
+| `iosSimulatorArm64` | ARM64 | Apple-silicon iOS Simulator |
+| `iosX64` | x86_64 | Intel iOS Simulator and merged simulator compatibility |
 
-These targets are declared explicitly.  Deprecated shortcuts such as `ios()`,
-`presets`, or manual source-set duplication are not used.
+Explicit target functions are used; deprecated presets and the old `ios()`
+shortcut are not.
 
-## iosX64 Inclusion
+These are producer targets. Their presence does not prove Apple lifecycle,
+connectivity, persistence, background execution, device behavior, packaging,
+or end-to-end consumer support.
 
-`iosX64` is included because:
+## Source-set hierarchy
 
-- Kotlin 2.4.10 supports `iosX64` on the macOS CI runner.
-- It enables Intel-simulator compatibility for developers on Intel Macs and
-  for CI runners that use Rosetta.
-- The Apple SDK and LLVM toolchain available on `macos-15` runners cover the
-  `iosX64` target.
+Kotlin 2.4.10 applies the default hierarchy template to the declared targets:
 
-If `iosX64` becomes unsupported by a future Kotlin or Xcode version, document
-the reason and remove it from all module declarations.
+```mermaid
+flowchart TB
+    commonMain["commonMain"] --> nativeMain["nativeMain"]
+    nativeMain --> appleMain["appleMain"]
+    appleMain --> iosMain["iosMain"]
+    iosMain --> armMain["iosArm64Main"]
+    iosMain --> simArmMain["iosSimulatorArm64Main"]
+    iosMain --> x64Main["iosX64Main"]
 
-## Source-Set Hierarchy
-
-Kotlin 2.4.10 applies the default hierarchy template automatically when
-`iosArm64`, `iosSimulatorArm64`, and `iosX64` are declared.  The resulting
-shared source sets are:
-
-```
-commonMain
-└── nativeMain
-    └── appleMain
-        └── iosMain         ← shared by all three iOS targets
-            ├── iosArm64Main
-            ├── iosSimulatorArm64Main
-            └── iosX64Main
-
-commonTest
-└── nativeTest
-    └── appleTest
-        └── iosTest         ← shared test source set
-            ├── iosArm64Test
-            ├── iosSimulatorArm64Test
-            └── iosX64Test
+    commonTest["commonTest"] --> nativeTest["nativeTest"]
+    nativeTest --> appleTest["appleTest"]
+    appleTest --> iosTest["iosTest"]
+    iosTest --> armTest["iosArm64Test"]
+    iosTest --> simArmTest["iosSimulatorArm64Test"]
+    iosTest --> x64Test["iosX64Test"]
 ```
 
-## Affected Modules
+Put platform-neutral production code in `commonMain`. Use `iosMain` only for
+behavior shared by all declared iOS targets, and use a target-specific source
+set only when architecture-specific behavior is unavoidable.
 
-Apple targets are added to:
+## Modules
 
-| Module | Role |
+| Module | Apple role |
 |---|---|
-| `dataloom-api` | Stable public contracts |
-| `dataloom-core` | Platform-independent runtime foundations |
-| `dataloom-runtime` | Synchronization runtime and facade |
-| `dataloom-testing` | Test utilities (not exported to XCFramework) |
-| `dataloom-apple` | Apple umbrella/export module |
+| `dataloom-model` | Dependency-root models, errors, metadata, identifiers, and time contracts |
+| `dataloom-provider-api` | Minimal public provider lifecycle and binding SPI |
+| `dataloom-api` | Current public contracts; not yet V1-frozen |
+| `dataloom-core` | Internal platform-independent implementation; never exported by the umbrella |
+| `dataloom-runtime` | Runtime facade and orchestration foundations |
+| `dataloom-testing` | Shared test utilities; excluded from XCFramework |
+| `dataloom-apple` | Static XCFramework umbrella/export module |
 
-## Host Restrictions
+## Host gating
 
-Apple targets are declared **only on macOS hosts** because:
+The shared convention plugin declares Apple targets only on macOS. The root
+settings also include `dataloom-apple` only on macOS.
 
-- Kotlin/Native linking for Apple targets requires the Apple SDK (`ld`,
-  `xcrun`, `lipo`) which is only available on macOS.
-- iOS simulator test execution requires macOS.
-- XCFramework assembly requires Xcode's `xcodebuild`.
+This gate exists because Kotlin/Native linking, iOS Simulator execution,
+`lipo`, and XCFramework assembly need Xcode and Apple SDKs. Linux and Windows
+therefore see the JVM targets only.
 
-On Linux and Windows, the convention plugin declares only the JVM target.
-The macOS CI job validates all Apple-specific compilation and testing.
+The configuration lives in:
 
-## Common-Code Compatibility
-
-All production `commonMain` source files were audited for DL-036-scoped
-JVM-only API usage.  No `java.*`, `javax.*`, `java.time`, `System.currentTimeMillis()`,
-`UUID.randomUUID()`, JVM reflection, JVM synchronization primitives, Android
-classes, or Android annotations were found in any `commonMain` source set.
-
-Existing common abstractions (`DataLoomClock`, `IdentifierGenerator`) are
-used throughout for clock reads and identifier generation, making the common
-code platform-independent.
-
-## Convention Plugin
-
-Apple targets are configured in:
-
-```
-build-logic/src/main/kotlin/io.dataloom.kotlin.multiplatform-library.gradle.kts
+```text
+build-logic/src/main/java/io/dataloom/buildlogic/DataLoomKotlinMultiplatformLibraryPlugin.java
 ```
 
-The plugin detects the host operating system and declares iOS targets only on
-macOS.  The JVM target is always declared on all hosts.
+## Why `iosX64` is present
+
+The current Kotlin 2.4.10 and macOS validation environment compile `iosX64`.
+It contributes the x86_64 architecture to the combined simulator framework
+slice. Removing it changes the approved compatibility matrix and requires an
+ADR plus replacement evidence.
+
+## Common-code boundary
+
+Shared code must not read the system clock, generate random identifiers, or
+import Android/JVM/Apple APIs directly. Current abstractions such as
+`DataLoomClock` and `IdentifierGenerator` keep those dependencies explicit.
+Passing compilation is necessary evidence, but it does not replace real Apple
+adapter and consumer tests.
+
+## Related documentation
+
+- [Apple testing](apple-testing.md)
+- [XCFramework integration](xcframework-integration.md)
+- [Module architecture](../architecture/modules.md)

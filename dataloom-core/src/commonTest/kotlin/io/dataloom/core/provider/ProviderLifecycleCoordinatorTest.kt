@@ -12,6 +12,10 @@ import io.dataloom.api.provider.ProviderHealth
 import io.dataloom.api.provider.ProviderHealthStatus
 import io.dataloom.api.provider.ProviderId
 import io.dataloom.api.provider.ProviderInitializationContext
+import io.dataloom.api.provider.ProviderLifecycleCoordinatorState
+import io.dataloom.api.provider.ProviderLifecycleFailure
+import io.dataloom.api.provider.ProviderLifecycleOperation
+import io.dataloom.api.provider.ProviderLifecycleResult
 import io.dataloom.api.provider.ProviderName
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderType

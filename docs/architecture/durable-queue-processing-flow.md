@@ -12,15 +12,23 @@ orchestration.
 
 ## Processing sequence
 
-```text
-Caller
-  -> DurableQueueExecutionProcessor.process(QueueProcessingRequest)
-     1) QueueProvider.acquire(acquireRequest)                 [exactly once]
-     2) validate acquisition result
-     3) for each acquired entry, in order:
-          a) QueueEntryExecutionHandler.execute(entry)
-          b) persist one transition by outcome
-     4) return QueueProcessingResult
+```mermaid
+sequenceDiagram
+    title One durable queue cycle
+    participant Caller
+    participant Processor
+    participant QueueProvider
+    participant Handler
+
+    Caller->>Processor: process request
+    Processor->>QueueProvider: acquire once
+    QueueProvider-->>Processor: leased entries
+    Processor->>Processor: validate batch
+    Processor->>Handler: execute entry
+    Handler-->>Processor: execution outcome
+    Processor->>QueueProvider: persist one transition
+    QueueProvider-->>Processor: transition result
+    Processor-->>Caller: processing result
 ```
 
 ---
@@ -47,6 +55,9 @@ performs no queue transition.
 | `Cancelled` | `QueueProvider.cancel` |
 
 Each entry produces exactly one transition request.
+
+The processor stops after the first transition failure. Its summary must stay
+truthful about entries already executed and transitioned.
 
 ---
 

@@ -1,5 +1,10 @@
 # Conflict Orchestration (DL-025)
 
+[API reference index](./README.md)
+
+> **Status:** Partial V1 subsystem. Exact custom detector/resolver orchestration
+> exists; the complete built-in and durable conflict engine does not.
+
 **Package:** `io.dataloom.runtime.conflict`  
 **Module:** `dataloom-runtime`
 
@@ -11,6 +16,21 @@ DL-025 provides deterministic conflict detection and resolution orchestration
 for DataLoom. It coordinates application-supplied detectors and resolvers
 through immutable registries and an explicit ID-based binding model.
 
+```mermaid
+flowchart LR
+    Request[ConflictOrchestrationRequest] --> DetectorLookup{Detector found}
+    DetectorLookup -->|No| DetectorMissing[DetectorNotFound]
+    DetectorLookup -->|Yes| Detect[Detect once]
+    Detect -->|No conflict| NoConflict[NoConflict]
+    Detect -->|Conflict| Event[Optional ConflictDetected event]
+    Event --> ResolverConfigured{Resolver configured}
+    ResolverConfigured -->|No| NotConfigured[ResolverNotConfigured]
+    ResolverConfigured -->|Yes| ResolverLookup{Resolver found}
+    ResolverLookup -->|No| ResolverMissing[ResolverNotFound]
+    ResolverLookup -->|Yes| Resolve[Resolve once]
+    Resolve --> Decision[Resolved with exact decision]
+```
+
 The orchestrator does **not**:
 
 - Apply resolution decisions to application storage.
@@ -20,9 +40,14 @@ The orchestrator does **not**:
 - Acknowledge outbound changes.
 - Evaluate or schedule retry policy.
 - Process queue entries.
-- Dispatch synchronization events.
+- Persist, replay, or independently route synchronization events.
 - Initialize or shut down providers.
 - Discover or create detector or resolver implementations.
+
+An optional runtime event emitter reports actual conflict detection before
+resolver lookup. The current orchestrator still does not apply the resulting
+decision or provide the mandatory V1 built-in policy, persistence, audit,
+precedence, convergence, loop-protection, or quarantine engine.
 
 ---
 
@@ -31,7 +56,7 @@ The orchestrator does **not**:
 ### ConflictDetectorRegistry
 
 Immutable registry of
-[`ConflictDetector`](./conflict-contracts.md#conflictdetector) instances,
+[`ConflictDetector`](./conflict-contracts.md#conflict-detector) instances,
 keyed by [`ConflictDetectorId`](./conflict-contracts.md#conflict-identifiers).
 
 **Package:** `io.dataloom.runtime.conflict`
@@ -75,7 +100,7 @@ discovery.
 ### ConflictResolverRegistry
 
 Immutable registry of
-[`ConflictResolver`](./conflict-contracts.md#conflictresolver) instances,
+[`ConflictResolver`](./conflict-contracts.md#conflict-resolver) instances,
 keyed by [`ConflictResolverId`](./conflict-contracts.md#conflict-identifiers).
 
 **Package:** `io.dataloom.runtime.conflict`
@@ -277,8 +302,9 @@ optional resolution for a single cycle.
 class SynchronizationConflictOrchestrator(
     private val detectorRegistry: ConflictDetectorRegistry,
     private val resolverRegistry: ConflictResolverRegistry,
+    private val eventEmitter: SynchronizationRuntimeEventEmitter? = null,
 ) {
-    fun detectAndResolve(request: ConflictOrchestrationRequest): ConflictOrchestrationResult
+    suspend fun detectAndResolve(request: ConflictOrchestrationRequest): ConflictOrchestrationResult
 }
 ```
 
@@ -291,6 +317,7 @@ detectAndResolve(request)
     → invoke detector.detect(detectionRequest) exactly once
     → if NoConflict: return NoConflict
     → if ConflictDetected:
+        → optionally emit ConflictDetected
         → if resolverId is null: return ResolverNotConfigured
         → look up resolver by resolverId
         → if absent: return ResolverNotFound
@@ -315,10 +342,10 @@ detectAndResolve(request)
 Unexpected exceptions from `ConflictDetector` or `ConflictResolver` propagate
 normally. They are never converted into a `ConflictOrchestrationResult` variant.
 
-Because the DL-014 contracts are synchronous (`fun`, not `suspend fun`),
-`CancellationException` does not apply to detector or resolver invocations
-directly. If contracts become suspend in a future revision, cancellation must
-still propagate normally.
+Detector and resolver contracts are synchronous, but `detectAndResolve` is
+suspending because optional event delivery is suspending. A
+`CancellationException` from event delivery propagates normally; resolver
+lookup and invocation do not continue.
 
 #### Boundaries
 
@@ -333,15 +360,18 @@ The orchestrator must not call:
 - `SynchronizationPipeline`
 - `SynchronizationExecutionCoordinator`
 - Any lifecycle coordinator
-- Any event dispatcher or observer
+- Any event dispatcher or observer directly; optional event delivery is
+  delegated through `SynchronizationRuntimeEventEmitter`
 
 ---
 
 ## No automatic resolution
 
 DataLoom coordinates conflict orchestration, but does not apply resolution
-decisions automatically. The application or a future integration layer is
-responsible for consuming the `ConflictResolutionDecision` and acting on it.
+decisions automatically. The caller currently consumes the
+`ConflictResolutionDecision`. V1 requires an atomic runtime application and
+durable unresolved-conflict path rather than leaving the product engine at
+this boundary.
 
 ---
 

@@ -10,7 +10,7 @@ import io.dataloom.api.time.DataLoomInstant
  * an exclusive lease.
  *
  * Construction does not acquire any entries. Acquisition is performed
- * atomically by the [io.dataloom.api.provider.QueueProvider] that receives
+ * atomically by the [io.dataloom.api.queue.QueueProvider] that receives
  * this request.
  *
  * ## Atomic acquisition invariant

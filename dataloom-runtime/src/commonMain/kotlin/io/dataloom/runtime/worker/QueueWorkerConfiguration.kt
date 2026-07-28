@@ -45,7 +45,7 @@ import io.dataloom.api.scheduling.SchedulingDelay
  *   limit was reached and another bounded processing cycle may be useful.
  *   Must satisfy [SchedulingDelay] invariants (zero or greater).
  * @param recoverExpiredLeasesBeforeProcessing when `true`, the coordinator
- *   calls [io.dataloom.api.provider.QueueProvider.recoverExpiredLeases]
+ *   calls [io.dataloom.api.queue.QueueProvider.recoverExpiredLeases]
  *   exactly once before invoking the queue processor. When `false`, no
  *   recovery operation is performed.
  */
@@ -72,7 +72,7 @@ public data class QueueWorkerConfiguration(
 
     /**
      * When `true`, the coordinator calls
-     * [io.dataloom.api.provider.QueueProvider.recoverExpiredLeases] exactly
+     * [io.dataloom.api.queue.QueueProvider.recoverExpiredLeases] exactly
      * once before invoking the queue processor.
      *
      * When `false`, no recovery operation is performed.

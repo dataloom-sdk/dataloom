@@ -1,83 +1,108 @@
-# Testing Toolkit Overview (DL-035)
+# Testing toolkit
 
-**Module:** `dataloom-testing`
+> **Audience:** Contributors and application developers testing DataLoom
+> integrations
+> **Purpose:** Index deterministic fakes, scripts, recorders, clocks, and
+> identifiers in `dataloom-testing`
+> **Status:** Current test-only utilities; never production providers
 
-## Overview
+[Project overview](../../README.md) ·
+[Local build guide](../development/building.md) ·
+[Apple testing](../apple/apple-testing.md)
 
-DL-035 extends the testing module with deterministic provider, policy, and
-observer utilities for common tests. The toolkit remains multiplatform-friendly,
-uses no external dependencies, and avoids platform-specific APIs.
+`dataloom-testing` supplies platform-neutral utilities for shared unit and
+integration-style tests. The module has no external service dependency and
+owns no background coroutine scope.
 
-## Included utilities
+## Guide map
 
-- `TestProviderLifecycleController`
-- `InMemoryStorageProvider`
-- `ScriptedTransportProvider`
-- `InMemoryQueueProvider`
-- `RecordingSchedulerProvider`
-- `MutableConnectivityProvider`
-- `ScriptedRetryPolicy`
-- `ScriptedConflictDetector`
-- `ScriptedConflictResolver`
-- `RecordingSynchronizationObserver`
+| Guide | Focus |
+|---|---|
+| [Clocks and identifiers](clock-and-identifiers.md) | Deterministic time and ID generation |
+| [In-memory providers](in-memory-providers.md) | Inspectable storage, queue, and connectivity state |
+| [Scripted and recording utilities](scripted-and-recording-utilities.md) | Transport, retry, conflict, scheduler, and event assertions |
 
-## Design goals
+## Utility inventory
 
-- Deterministic state transitions
-- CommonMain compatibility
-- No reflection or ServiceLoader usage
-- No global mutable state
-- Explicit recording and reset hooks for tests
+| Area | Utilities | Primary test use |
+|---|---|---|
+| Provider lifecycle | `TestProviderLifecycleController` | Script initialize/health/close outcomes and inspect calls |
+| Storage | `InMemoryStorageProvider` | Script change operations and retain checkpoints in memory |
+| Transport | `ScriptedTransportProvider` | Dequeue push/pull results and record requests |
+| Queue | `InMemoryQueueProvider` | Exercise deterministic lease-aware state transitions |
+| Scheduling | `RecordingSchedulerProvider` | Capture schedule/cancel requests without dispatching work |
+| Connectivity | `MutableConnectivityProvider` | Change snapshots or inject a fixed failure |
+| Retry | `ScriptedRetryPolicy` | Return ordered decisions or an explicit fallback |
+| Conflict | `ScriptedConflictDetector`, `ScriptedConflictResolver` | Return ordered detection/resolution outcomes |
+| Observation | `RecordingSynchronizationObserver` | Assert event order and callback behavior |
+| Time | `FixedDataLoomClock`, `MutableDataLoomClock` | Control timestamps without sleeping |
+| Identifiers | `SequenceIdentifierGenerator`, `ConstantIdentifierGenerator` | Remove randomness from creation paths |
+
+## Guarantees
+
+- All utilities are usable from common Kotlin tests.
+- Inputs and calls are explicit and inspectable.
+- No reflection, `ServiceLoader`, platform API, real network, or filesystem is
+  used.
+- No global mutable singleton is created.
+- Script exhaustion fails fast unless a utility explicitly supports a
+  fallback.
+- Snapshot accessors return copies rather than mutable backing collections.
 
 ## Limitations
 
-> **These utilities are for testing only.**
+> These utilities are for tests only.
 
-- **Memory-only.** No state survives process restart. There is no persistence,
-  encryption, or durability guarantee of any kind.
-- **Caller-serialized.** Mutable test utilities are not thread-safe. Tests must
-  serialize all mutation and inspection calls. Do not share a single instance
-  across concurrent coroutines without external synchronization.
-- **Non-production.** Do not wire these implementations into a production
-  application or configure them in release builds.
-- **No background work.** No owned `CoroutineScope`, background loop, thread,
-  or polling mechanism exists. All behavior is synchronous and caller-driven.
+- Mutable utilities are caller-serialized, not thread-safe.
+- State is memory-only and disappears with the process.
+- No durability, encryption, transaction isolation, scheduler dispatch, or
+  production lifecycle guarantee is provided.
+- Do not package or wire `dataloom-testing` into a release application.
 
-## Typical usage
+## Relationship to V1 strategies
 
-Use the utilities to script provider outcomes, inspect recorded requests, and
-exercise runtime orchestration in unit or integration-style common tests.
+The toolkit can script inputs and assert orchestration needed by future
+strategy tests. It does not itself implement offline-first, remote-first,
+cache-first, network-only, hybrid, or adaptive behavior.
+
+V1 requires real built-in strategy tests and parity across native Android, KMP
+Android, and KMP iOS. Fake-backed tests are necessary for determinism but
+cannot replace platform persistence, lifecycle, network, background, and
+relaunch qualification. Optional native Swift testing remains a separate
+distribution concern.
+
+## Typical pattern
 
 ```kotlin
-val clock    = MutableDataLoomClock(DataLoomInstant(1_000L))
-val storage  = InMemoryStorageProvider()
+val clock = MutableDataLoomClock(DataLoomInstant(1_000L))
+val storage = InMemoryStorageProvider()
 val transport = ScriptedTransportProvider()
-val observer = RecordingSynchronizationObserver(SynchronizationObserverId("test"))
+val observer = RecordingSynchronizationObserver(
+    SynchronizationObserverId("test-observer"),
+)
 
-// Script the outcomes that the runtime will consume.
 storage.enqueueReadOutboundResult(
     ProviderOperationResult.Success(
-        OutboundChangeReadResult.Changes(changeSet, hasMore = false)
-    )
+        OutboundChangeReadResult.Changes(changeSet, hasMore = false),
+    ),
 )
-storage.enqueueAcknowledgeResult(ProviderOperationResult.Success(Unit))
-transport.enqueuePushResult(ProviderOperationResult.Success(acknowledgement))
+transport.enqueuePushResult(
+    ProviderOperationResult.Success(acknowledgement),
+)
 
-// Wire utilities into the runtime, run synchronization, then assert.
-val events  = observer.events           // List<SynchronizationEvent> in order
-val reads   = storage.readOutboundRequests  // List<OutboundChangeReadRequest>
-val pushes  = transport.pushRequests    // List<PushChangesRequest>
+// Run the production component under test.
+
+assertEquals(1, storage.readOutboundRequests.size)
+assertEquals(1, transport.pushRequests.size)
+assertEquals(expectedEvents, observer.events)
 ```
 
-### Resetting between tests
+`changeSet`, `acknowledgement`, and the runtime invocation are
+test-fixture-specific placeholders.
 
-```kotlin
-// Clear recorded calls without changing scripted results or stored state.
-storage.clearRecordings()
-transport.clearRecordings()
-observer.clearRecordings()
+## Reset semantics
 
-// Clear everything — scripted results, stored state, and recordings.
-storage.resetState()
-transport.resetState()
-```
+Use `clearRecordings()` when a utility should retain scripts or stored state
+but forget previous calls. Use `resetState()` where available to clear both
+recordings and mutable state/scripts. `RecordingSynchronizationObserver`
+exposes `clearRecordings()` only.

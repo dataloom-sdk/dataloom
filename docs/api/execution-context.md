@@ -1,5 +1,10 @@
 # DataLoom Execution Context (DL-005)
 
+[API reference index](./README.md)
+
+> **Status:** Available public contract. Complete trace propagation, tenant
+> enforcement, and governance policy are not supplied by this model alone.
+
 `ExecutionContext` is an immutable public contract in `dataloom-api` for
 carrying caller-provided synchronization context.
 

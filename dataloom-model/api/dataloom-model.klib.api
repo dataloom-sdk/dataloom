@@ -1,0 +1,416 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <dataloom:dataloom-model>
+final enum class io.dataloom.api.error/ErrorCategory : kotlin/Enum<io.dataloom.api.error/ErrorCategory> { // io.dataloom.api.error/ErrorCategory|null[0]
+    enum entry AUTHENTICATION // io.dataloom.api.error/ErrorCategory.AUTHENTICATION|null[0]
+    enum entry AUTHORIZATION // io.dataloom.api.error/ErrorCategory.AUTHORIZATION|null[0]
+    enum entry CONFIGURATION // io.dataloom.api.error/ErrorCategory.CONFIGURATION|null[0]
+    enum entry CONFLICT // io.dataloom.api.error/ErrorCategory.CONFLICT|null[0]
+    enum entry INTERNAL // io.dataloom.api.error/ErrorCategory.INTERNAL|null[0]
+    enum entry NETWORK // io.dataloom.api.error/ErrorCategory.NETWORK|null[0]
+    enum entry PLUGIN // io.dataloom.api.error/ErrorCategory.PLUGIN|null[0]
+    enum entry POLICY // io.dataloom.api.error/ErrorCategory.POLICY|null[0]
+    enum entry PROVIDER // io.dataloom.api.error/ErrorCategory.PROVIDER|null[0]
+    enum entry QUEUE // io.dataloom.api.error/ErrorCategory.QUEUE|null[0]
+    enum entry SCHEDULER // io.dataloom.api.error/ErrorCategory.SCHEDULER|null[0]
+    enum entry SECURITY // io.dataloom.api.error/ErrorCategory.SECURITY|null[0]
+    enum entry SERIALIZATION // io.dataloom.api.error/ErrorCategory.SERIALIZATION|null[0]
+    enum entry STATE // io.dataloom.api.error/ErrorCategory.STATE|null[0]
+    enum entry STORAGE // io.dataloom.api.error/ErrorCategory.STORAGE|null[0]
+    enum entry VALIDATION // io.dataloom.api.error/ErrorCategory.VALIDATION|null[0]
+
+    final val entries // io.dataloom.api.error/ErrorCategory.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.error/ErrorCategory> // io.dataloom.api.error/ErrorCategory.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.error/ErrorCategory // io.dataloom.api.error/ErrorCategory.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.error/ErrorCategory> // io.dataloom.api.error/ErrorCategory.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.api.error/ErrorSeverity : kotlin/Enum<io.dataloom.api.error/ErrorSeverity> { // io.dataloom.api.error/ErrorSeverity|null[0]
+    enum entry CRITICAL // io.dataloom.api.error/ErrorSeverity.CRITICAL|null[0]
+    enum entry ERROR // io.dataloom.api.error/ErrorSeverity.ERROR|null[0]
+    enum entry WARNING // io.dataloom.api.error/ErrorSeverity.WARNING|null[0]
+
+    final val entries // io.dataloom.api.error/ErrorSeverity.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.error/ErrorSeverity> // io.dataloom.api.error/ErrorSeverity.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.error/ErrorSeverity // io.dataloom.api.error/ErrorSeverity.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.error/ErrorSeverity> // io.dataloom.api.error/ErrorSeverity.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.api.error/Recoverability : kotlin/Enum<io.dataloom.api.error/Recoverability> { // io.dataloom.api.error/Recoverability|null[0]
+    enum entry NON_RECOVERABLE // io.dataloom.api.error/Recoverability.NON_RECOVERABLE|null[0]
+    enum entry RECOVERABLE // io.dataloom.api.error/Recoverability.RECOVERABLE|null[0]
+    enum entry UNKNOWN // io.dataloom.api.error/Recoverability.UNKNOWN|null[0]
+
+    final val entries // io.dataloom.api.error/Recoverability.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.error/Recoverability> // io.dataloom.api.error/Recoverability.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.error/Recoverability // io.dataloom.api.error/Recoverability.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.error/Recoverability> // io.dataloom.api.error/Recoverability.values|values#static(){}[0]
+}
+
+abstract interface <#A: kotlin/Any?> io.dataloom.api.identifier/IdentifierGenerator { // io.dataloom.api.identifier/IdentifierGenerator|null[0]
+    abstract fun generate(): #A // io.dataloom.api.identifier/IdentifierGenerator.generate|generate(){}[0]
+}
+
+abstract interface io.dataloom.api.error/DataLoomError { // io.dataloom.api.error/DataLoomError|null[0]
+    abstract val category // io.dataloom.api.error/DataLoomError.category|{}category[0]
+        abstract fun <get-category>(): io.dataloom.api.error/ErrorCategory // io.dataloom.api.error/DataLoomError.category.<get-category>|<get-category>(){}[0]
+    abstract val cause // io.dataloom.api.error/DataLoomError.cause|{}cause[0]
+        abstract fun <get-cause>(): kotlin/Throwable? // io.dataloom.api.error/DataLoomError.cause.<get-cause>|<get-cause>(){}[0]
+    abstract val code // io.dataloom.api.error/DataLoomError.code|{}code[0]
+        abstract fun <get-code>(): io.dataloom.api.error/ErrorCode // io.dataloom.api.error/DataLoomError.code.<get-code>|<get-code>(){}[0]
+    abstract val message // io.dataloom.api.error/DataLoomError.message|{}message[0]
+        abstract fun <get-message>(): kotlin/String // io.dataloom.api.error/DataLoomError.message.<get-message>|<get-message>(){}[0]
+    abstract val recoverability // io.dataloom.api.error/DataLoomError.recoverability|{}recoverability[0]
+        abstract fun <get-recoverability>(): io.dataloom.api.error/Recoverability // io.dataloom.api.error/DataLoomError.recoverability.<get-recoverability>|<get-recoverability>(){}[0]
+    abstract val severity // io.dataloom.api.error/DataLoomError.severity|{}severity[0]
+        abstract fun <get-severity>(): io.dataloom.api.error/ErrorSeverity // io.dataloom.api.error/DataLoomError.severity.<get-severity>|<get-severity>(){}[0]
+}
+
+abstract interface io.dataloom.api.time/DataLoomClock { // io.dataloom.api.time/DataLoomClock|null[0]
+    abstract fun now(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.time/DataLoomClock.now|now(){}[0]
+}
+
+final class io.dataloom.api.context/DataLoomMetadata { // io.dataloom.api.context/DataLoomMetadata|null[0]
+    final val entries // io.dataloom.api.context/DataLoomMetadata.entries|{}entries[0]
+        final fun <get-entries>(): kotlin.collections/Map<kotlin/String, kotlin/String> // io.dataloom.api.context/DataLoomMetadata.entries.<get-entries>|<get-entries>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.context/DataLoomMetadata.equals|equals(kotlin.Any?){}[0]
+    final fun get(kotlin/String): kotlin/String? // io.dataloom.api.context/DataLoomMetadata.get|get(kotlin.String){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.context/DataLoomMetadata.hashCode|hashCode(){}[0]
+    final fun isEmpty(): kotlin/Boolean // io.dataloom.api.context/DataLoomMetadata.isEmpty|isEmpty(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.context/DataLoomMetadata.toString|toString(){}[0]
+
+    final object Companion { // io.dataloom.api.context/DataLoomMetadata.Companion|null[0]
+        final val Empty // io.dataloom.api.context/DataLoomMetadata.Companion.Empty|{}Empty[0]
+            final fun <get-Empty>(): io.dataloom.api.context/DataLoomMetadata // io.dataloom.api.context/DataLoomMetadata.Companion.Empty.<get-Empty>|<get-Empty>(){}[0]
+
+        final fun of(kotlin.collections/Map<kotlin/String, kotlin/String>): io.dataloom.api.context/DataLoomMetadata // io.dataloom.api.context/DataLoomMetadata.Companion.of|of(kotlin.collections.Map<kotlin.String,kotlin.String>){}[0]
+    }
+}
+
+final class io.dataloom.api.time/DataLoomInstant { // io.dataloom.api.time/DataLoomInstant|null[0]
+    constructor <init>(kotlin/Long) // io.dataloom.api.time/DataLoomInstant.<init>|<init>(kotlin.Long){}[0]
+
+    final val epochMilliseconds // io.dataloom.api.time/DataLoomInstant.epochMilliseconds|{}epochMilliseconds[0]
+        final fun <get-epochMilliseconds>(): kotlin/Long // io.dataloom.api.time/DataLoomInstant.epochMilliseconds.<get-epochMilliseconds>|<get-epochMilliseconds>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.time/DataLoomInstant.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.time/DataLoomInstant.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.time/DataLoomInstant.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.error/ErrorCode { // io.dataloom.api.error/ErrorCode|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.error/ErrorCode.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.error/ErrorCode.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.error/ErrorCode.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.error/ErrorCode.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.error/ErrorCode.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.error/ErrorCode.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/ChangeEventId { // io.dataloom.api.identifier/ChangeEventId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/ChangeEventId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/ChangeEventId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/ChangeEventId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/ChangeEventId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/ChangeEventId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/ChangeEventId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/ChangeSetId { // io.dataloom.api.identifier/ChangeSetId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/ChangeSetId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/ChangeSetId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/ChangeSetId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/ChangeSetId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/ChangeSetId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/ChangeSetId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/CheckpointKey { // io.dataloom.api.identifier/CheckpointKey|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/CheckpointKey.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/CheckpointKey.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/CheckpointKey.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/CheckpointKey.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/CheckpointKey.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/CheckpointKey.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/CheckpointToken { // io.dataloom.api.identifier/CheckpointToken|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/CheckpointToken.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/CheckpointToken.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/CheckpointToken.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/CheckpointToken.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/CheckpointToken.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/CheckpointToken.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/ConfigurationVersion { // io.dataloom.api.identifier/ConfigurationVersion|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/ConfigurationVersion.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/ConfigurationVersion.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/ConfigurationVersion.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/ConfigurationVersion.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/ConfigurationVersion.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/ConfigurationVersion.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/ConflictDetectorId { // io.dataloom.api.identifier/ConflictDetectorId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/ConflictDetectorId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/ConflictDetectorId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/ConflictDetectorId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/ConflictDetectorId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/ConflictDetectorId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/ConflictDetectorId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/ConflictId { // io.dataloom.api.identifier/ConflictId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/ConflictId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/ConflictId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/ConflictId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/ConflictId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/ConflictId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/ConflictId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/ConflictResolverId { // io.dataloom.api.identifier/ConflictResolverId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/ConflictResolverId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/ConflictResolverId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/ConflictResolverId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/ConflictResolverId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/ConflictResolverId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/ConflictResolverId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/CorrelationId { // io.dataloom.api.identifier/CorrelationId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/CorrelationId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/CorrelationId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/CorrelationId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/CorrelationId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/CorrelationId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/CorrelationId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/EntityId { // io.dataloom.api.identifier/EntityId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/EntityId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/EntityId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/EntityId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/EntityId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/EntityId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/EntityId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/EntityType { // io.dataloom.api.identifier/EntityType|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/EntityType.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/EntityType.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/EntityType.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/EntityType.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/EntityType.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/EntityType.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/ExecutionId { // io.dataloom.api.identifier/ExecutionId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/ExecutionId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/ExecutionId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/ExecutionId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/ExecutionId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/ExecutionId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/ExecutionId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/LocaleTag { // io.dataloom.api.identifier/LocaleTag|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/LocaleTag.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/LocaleTag.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/LocaleTag.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/LocaleTag.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/LocaleTag.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/LocaleTag.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/QueueConsumerId { // io.dataloom.api.identifier/QueueConsumerId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/QueueConsumerId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/QueueConsumerId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/QueueConsumerId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/QueueConsumerId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/QueueConsumerId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/QueueConsumerId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/QueueEntryId { // io.dataloom.api.identifier/QueueEntryId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/QueueEntryId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/QueueEntryId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/QueueEntryId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/QueueEntryId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/QueueEntryId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/QueueEntryId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/QueueLeaseId { // io.dataloom.api.identifier/QueueLeaseId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/QueueLeaseId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/QueueLeaseId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/QueueLeaseId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/QueueLeaseId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/QueueLeaseId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/QueueLeaseId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/RequestId { // io.dataloom.api.identifier/RequestId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/RequestId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/RequestId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/RequestId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/RequestId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/RequestId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/RequestId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/RetryPolicyId { // io.dataloom.api.identifier/RetryPolicyId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/RetryPolicyId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/RetryPolicyId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/RetryPolicyId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/RetryPolicyId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/RetryPolicyId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/RetryPolicyId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/RuntimeVersion { // io.dataloom.api.identifier/RuntimeVersion|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/RuntimeVersion.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/RuntimeVersion.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/RuntimeVersion.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/RuntimeVersion.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/RuntimeVersion.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/RuntimeVersion.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/ScheduleId { // io.dataloom.api.identifier/ScheduleId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/ScheduleId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/ScheduleId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/ScheduleId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/ScheduleId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/ScheduleId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/ScheduleId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/SynchronizationEventId { // io.dataloom.api.identifier/SynchronizationEventId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/SynchronizationEventId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/SynchronizationEventId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/SynchronizationEventId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/SynchronizationEventId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/SynchronizationEventId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/SynchronizationEventId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/SynchronizationObserverId { // io.dataloom.api.identifier/SynchronizationObserverId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/SynchronizationObserverId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/SynchronizationObserverId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/SynchronizationObserverId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/SynchronizationObserverId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/SynchronizationObserverId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/SynchronizationObserverId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/SynchronizationSessionId { // io.dataloom.api.identifier/SynchronizationSessionId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/SynchronizationSessionId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/SynchronizationSessionId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/SynchronizationSessionId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/SynchronizationSessionId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/SynchronizationSessionId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/SynchronizationSessionId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/TenantId { // io.dataloom.api.identifier/TenantId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/TenantId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/TenantId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/TenantId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/TenantId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/TenantId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/TenantId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/TraceId { // io.dataloom.api.identifier/TraceId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/TraceId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/TraceId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/TraceId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/TraceId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/TraceId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/TraceId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/UserId { // io.dataloom.api.identifier/UserId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/UserId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/UserId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/UserId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/UserId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/UserId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/UserId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/WorkflowId { // io.dataloom.api.identifier/WorkflowId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/WorkflowId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/WorkflowId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/WorkflowId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/WorkflowId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/WorkflowId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/WorkflowId.toString|toString(){}[0]
+}

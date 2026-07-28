@@ -1,15 +1,19 @@
 # Bidirectional Pipeline (DL-023)
 
+[API reference index](./README.md)
+
+> **Status:** Available execution foundation. Ordered push/pull composition is
+> not proof of the mandatory six-strategy V1 architecture.
+
 `BidirectionalSynchronizationPipeline` is the third concrete
 `SynchronizationPipeline` implementation. It composes an existing outbound
 push pipeline and an existing inbound pull pipeline into a single, sequential
 bidirectional synchronization execution.
 
-DL-023 implements bidirectional pipeline composition only. It delegates all
+This component implements bidirectional pipeline composition only. It delegates all
 provider operations to its two child pipelines and performs no provider calls
-directly. Retry execution, queue processing, scheduling, connectivity checks,
-conflict detection or resolution, lifecycle-event dispatch, and observer
-registration are out of scope and deferred to other issues.
+directly. Separate runtime components own retry, queue, scheduling,
+connectivity admission, conflict orchestration, and event delivery.
 
 ---
 
@@ -60,6 +64,11 @@ Executes the inbound pull pipeline first, then the outbound push pipeline.
 Use this order when the application requires server-authoritative
 synchronization or when receiving the latest remote state before sending local
 changes is necessary for correct conflict handling.
+
+This setting changes child-pipeline order only. It does not by itself implement
+a remote-first strategy: it does not define remote authority, freshness,
+fallback, persistence, queueing, or cache-coherence semantics. Those are owned
+by the versioned V1 strategy contract in ADR-0002/#102.
 
 ---
 

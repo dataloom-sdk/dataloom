@@ -1,0 +1,354 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <dataloom:dataloom-provider-api>
+final enum class io.dataloom.api.provider/ProviderBindingFailureReason : kotlin/Enum<io.dataloom.api.provider/ProviderBindingFailureReason> { // io.dataloom.api.provider/ProviderBindingFailureReason|null[0]
+    enum entry PROVIDER_CONTRACT_MISMATCH // io.dataloom.api.provider/ProviderBindingFailureReason.PROVIDER_CONTRACT_MISMATCH|null[0]
+    enum entry PROVIDER_NOT_FOUND // io.dataloom.api.provider/ProviderBindingFailureReason.PROVIDER_NOT_FOUND|null[0]
+    enum entry PROVIDER_TYPE_MISMATCH // io.dataloom.api.provider/ProviderBindingFailureReason.PROVIDER_TYPE_MISMATCH|null[0]
+
+    final val entries // io.dataloom.api.provider/ProviderBindingFailureReason.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.provider/ProviderBindingFailureReason> // io.dataloom.api.provider/ProviderBindingFailureReason.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.provider/ProviderBindingFailureReason // io.dataloom.api.provider/ProviderBindingFailureReason.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.provider/ProviderBindingFailureReason> // io.dataloom.api.provider/ProviderBindingFailureReason.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.api.provider/ProviderHealthStatus : kotlin/Enum<io.dataloom.api.provider/ProviderHealthStatus> { // io.dataloom.api.provider/ProviderHealthStatus|null[0]
+    enum entry DEGRADED // io.dataloom.api.provider/ProviderHealthStatus.DEGRADED|null[0]
+    enum entry HEALTHY // io.dataloom.api.provider/ProviderHealthStatus.HEALTHY|null[0]
+    enum entry UNHEALTHY // io.dataloom.api.provider/ProviderHealthStatus.UNHEALTHY|null[0]
+    enum entry UNKNOWN // io.dataloom.api.provider/ProviderHealthStatus.UNKNOWN|null[0]
+
+    final val entries // io.dataloom.api.provider/ProviderHealthStatus.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.provider/ProviderHealthStatus> // io.dataloom.api.provider/ProviderHealthStatus.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.provider/ProviderHealthStatus // io.dataloom.api.provider/ProviderHealthStatus.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.provider/ProviderHealthStatus> // io.dataloom.api.provider/ProviderHealthStatus.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.api.provider/ProviderLifecycleCoordinatorState : kotlin/Enum<io.dataloom.api.provider/ProviderLifecycleCoordinatorState> { // io.dataloom.api.provider/ProviderLifecycleCoordinatorState|null[0]
+    enum entry FAILED // io.dataloom.api.provider/ProviderLifecycleCoordinatorState.FAILED|null[0]
+    enum entry INITIALIZED // io.dataloom.api.provider/ProviderLifecycleCoordinatorState.INITIALIZED|null[0]
+    enum entry INITIALIZING // io.dataloom.api.provider/ProviderLifecycleCoordinatorState.INITIALIZING|null[0]
+    enum entry NOT_INITIALIZED // io.dataloom.api.provider/ProviderLifecycleCoordinatorState.NOT_INITIALIZED|null[0]
+    enum entry SHUTTING_DOWN // io.dataloom.api.provider/ProviderLifecycleCoordinatorState.SHUTTING_DOWN|null[0]
+    enum entry SHUT_DOWN // io.dataloom.api.provider/ProviderLifecycleCoordinatorState.SHUT_DOWN|null[0]
+
+    final val entries // io.dataloom.api.provider/ProviderLifecycleCoordinatorState.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.provider/ProviderLifecycleCoordinatorState> // io.dataloom.api.provider/ProviderLifecycleCoordinatorState.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.provider/ProviderLifecycleCoordinatorState // io.dataloom.api.provider/ProviderLifecycleCoordinatorState.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.provider/ProviderLifecycleCoordinatorState> // io.dataloom.api.provider/ProviderLifecycleCoordinatorState.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.api.provider/ProviderLifecycleOperation : kotlin/Enum<io.dataloom.api.provider/ProviderLifecycleOperation> { // io.dataloom.api.provider/ProviderLifecycleOperation|null[0]
+    enum entry INITIALIZE // io.dataloom.api.provider/ProviderLifecycleOperation.INITIALIZE|null[0]
+    enum entry SHUTDOWN // io.dataloom.api.provider/ProviderLifecycleOperation.SHUTDOWN|null[0]
+
+    final val entries // io.dataloom.api.provider/ProviderLifecycleOperation.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.provider/ProviderLifecycleOperation> // io.dataloom.api.provider/ProviderLifecycleOperation.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.provider/ProviderLifecycleOperation // io.dataloom.api.provider/ProviderLifecycleOperation.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.provider/ProviderLifecycleOperation> // io.dataloom.api.provider/ProviderLifecycleOperation.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.api.provider/ProviderLifecycleState : kotlin/Enum<io.dataloom.api.provider/ProviderLifecycleState> { // io.dataloom.api.provider/ProviderLifecycleState|null[0]
+    enum entry CLOSED // io.dataloom.api.provider/ProviderLifecycleState.CLOSED|null[0]
+    enum entry CLOSING // io.dataloom.api.provider/ProviderLifecycleState.CLOSING|null[0]
+    enum entry CREATED // io.dataloom.api.provider/ProviderLifecycleState.CREATED|null[0]
+    enum entry DEGRADED // io.dataloom.api.provider/ProviderLifecycleState.DEGRADED|null[0]
+    enum entry FAILED // io.dataloom.api.provider/ProviderLifecycleState.FAILED|null[0]
+    enum entry INITIALIZING // io.dataloom.api.provider/ProviderLifecycleState.INITIALIZING|null[0]
+    enum entry READY // io.dataloom.api.provider/ProviderLifecycleState.READY|null[0]
+
+    final val entries // io.dataloom.api.provider/ProviderLifecycleState.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.provider/ProviderLifecycleState> // io.dataloom.api.provider/ProviderLifecycleState.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.provider/ProviderLifecycleState // io.dataloom.api.provider/ProviderLifecycleState.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.provider/ProviderLifecycleState> // io.dataloom.api.provider/ProviderLifecycleState.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.api.provider/ProviderType : kotlin/Enum<io.dataloom.api.provider/ProviderType> { // io.dataloom.api.provider/ProviderType|null[0]
+    enum entry AUTHENTICATION // io.dataloom.api.provider/ProviderType.AUTHENTICATION|null[0]
+    enum entry COMPRESSION // io.dataloom.api.provider/ProviderType.COMPRESSION|null[0]
+    enum entry CONNECTIVITY // io.dataloom.api.provider/ProviderType.CONNECTIVITY|null[0]
+    enum entry ENCRYPTION // io.dataloom.api.provider/ProviderType.ENCRYPTION|null[0]
+    enum entry LOGGING // io.dataloom.api.provider/ProviderType.LOGGING|null[0]
+    enum entry MONITORING // io.dataloom.api.provider/ProviderType.MONITORING|null[0]
+    enum entry QUEUE // io.dataloom.api.provider/ProviderType.QUEUE|null[0]
+    enum entry SCHEDULER // io.dataloom.api.provider/ProviderType.SCHEDULER|null[0]
+    enum entry SERIALIZATION // io.dataloom.api.provider/ProviderType.SERIALIZATION|null[0]
+    enum entry STORAGE // io.dataloom.api.provider/ProviderType.STORAGE|null[0]
+    enum entry TRANSPORT // io.dataloom.api.provider/ProviderType.TRANSPORT|null[0]
+
+    final val entries // io.dataloom.api.provider/ProviderType.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.provider/ProviderType> // io.dataloom.api.provider/ProviderType.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.provider/ProviderType // io.dataloom.api.provider/ProviderType.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.provider/ProviderType> // io.dataloom.api.provider/ProviderType.values|values#static(){}[0]
+}
+
+abstract interface io.dataloom.api.provider/DataLoomProvider { // io.dataloom.api.provider/DataLoomProvider|null[0]
+    abstract val descriptor // io.dataloom.api.provider/DataLoomProvider.descriptor|{}descriptor[0]
+        abstract fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.api.provider/DataLoomProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    abstract suspend fun close(): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.api.provider/DataLoomProvider.close|close(){}[0]
+    abstract suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.api.provider/DataLoomProvider.health|health(){}[0]
+    abstract suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.api.provider/DataLoomProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
+}
+
+sealed interface <#A: out kotlin/Any?> io.dataloom.api.provider/ProviderOperationResult { // io.dataloom.api.provider/ProviderOperationResult|null[0]
+    final class <#A1: kotlin/Any?> Success : io.dataloom.api.provider/ProviderOperationResult<#A1> { // io.dataloom.api.provider/ProviderOperationResult.Success|null[0]
+        constructor <init>(#A1) // io.dataloom.api.provider/ProviderOperationResult.Success.<init>|<init>(1:0){}[0]
+
+        final val value // io.dataloom.api.provider/ProviderOperationResult.Success.value|{}value[0]
+            final fun <get-value>(): #A1 // io.dataloom.api.provider/ProviderOperationResult.Success.value.<get-value>|<get-value>(){}[0]
+
+        final fun component1(): #A1 // io.dataloom.api.provider/ProviderOperationResult.Success.component1|component1(){}[0]
+        final fun copy(#A1 = ...): io.dataloom.api.provider/ProviderOperationResult.Success<#A1> // io.dataloom.api.provider/ProviderOperationResult.Success.copy|copy(1:0){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.provider/ProviderOperationResult.Success.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.provider/ProviderOperationResult.Success.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.provider/ProviderOperationResult.Success.toString|toString(){}[0]
+    }
+
+    final class Failure : io.dataloom.api.provider/ProviderOperationResult<kotlin/Nothing> { // io.dataloom.api.provider/ProviderOperationResult.Failure|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.api.provider/ProviderOperationResult.Failure.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.api.provider/ProviderOperationResult.Failure.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.api.provider/ProviderOperationResult.Failure.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.api.provider/ProviderOperationResult.Failure.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.api.provider/ProviderOperationResult.Failure // io.dataloom.api.provider/ProviderOperationResult.Failure.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.provider/ProviderOperationResult.Failure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.provider/ProviderOperationResult.Failure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.provider/ProviderOperationResult.Failure.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.provider/ProviderLifecycleResult { // io.dataloom.api.provider/ProviderLifecycleResult|null[0]
+    final class InitializeFailure : io.dataloom.api.provider/ProviderLifecycleResult { // io.dataloom.api.provider/ProviderLifecycleResult.InitializeFailure|null[0]
+        constructor <init>(io.dataloom.api.provider/ProviderLifecycleFailure, kotlin.collections/List<io.dataloom.api.provider/ProviderLifecycleFailure> = ...) // io.dataloom.api.provider/ProviderLifecycleResult.InitializeFailure.<init>|<init>(io.dataloom.api.provider.ProviderLifecycleFailure;kotlin.collections.List<io.dataloom.api.provider.ProviderLifecycleFailure>){}[0]
+
+        final val primaryFailure // io.dataloom.api.provider/ProviderLifecycleResult.InitializeFailure.primaryFailure|{}primaryFailure[0]
+            final fun <get-primaryFailure>(): io.dataloom.api.provider/ProviderLifecycleFailure // io.dataloom.api.provider/ProviderLifecycleResult.InitializeFailure.primaryFailure.<get-primaryFailure>|<get-primaryFailure>(){}[0]
+        final val rollbackFailures // io.dataloom.api.provider/ProviderLifecycleResult.InitializeFailure.rollbackFailures|{}rollbackFailures[0]
+            final fun <get-rollbackFailures>(): kotlin.collections/List<io.dataloom.api.provider/ProviderLifecycleFailure> // io.dataloom.api.provider/ProviderLifecycleResult.InitializeFailure.rollbackFailures.<get-rollbackFailures>|<get-rollbackFailures>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.provider/ProviderLifecycleResult.InitializeFailure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.provider/ProviderLifecycleResult.InitializeFailure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.provider/ProviderLifecycleResult.InitializeFailure.toString|toString(){}[0]
+    }
+
+    final class InvalidOperation : io.dataloom.api.provider/ProviderLifecycleResult { // io.dataloom.api.provider/ProviderLifecycleResult.InvalidOperation|null[0]
+        constructor <init>(io.dataloom.api.provider/ProviderLifecycleCoordinatorState, io.dataloom.api.provider/ProviderLifecycleOperation) // io.dataloom.api.provider/ProviderLifecycleResult.InvalidOperation.<init>|<init>(io.dataloom.api.provider.ProviderLifecycleCoordinatorState;io.dataloom.api.provider.ProviderLifecycleOperation){}[0]
+
+        final val operation // io.dataloom.api.provider/ProviderLifecycleResult.InvalidOperation.operation|{}operation[0]
+            final fun <get-operation>(): io.dataloom.api.provider/ProviderLifecycleOperation // io.dataloom.api.provider/ProviderLifecycleResult.InvalidOperation.operation.<get-operation>|<get-operation>(){}[0]
+        final val state // io.dataloom.api.provider/ProviderLifecycleResult.InvalidOperation.state|{}state[0]
+            final fun <get-state>(): io.dataloom.api.provider/ProviderLifecycleCoordinatorState // io.dataloom.api.provider/ProviderLifecycleResult.InvalidOperation.state.<get-state>|<get-state>(){}[0]
+
+        final fun component1(): io.dataloom.api.provider/ProviderLifecycleCoordinatorState // io.dataloom.api.provider/ProviderLifecycleResult.InvalidOperation.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.provider/ProviderLifecycleOperation // io.dataloom.api.provider/ProviderLifecycleResult.InvalidOperation.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.provider/ProviderLifecycleCoordinatorState = ..., io.dataloom.api.provider/ProviderLifecycleOperation = ...): io.dataloom.api.provider/ProviderLifecycleResult.InvalidOperation // io.dataloom.api.provider/ProviderLifecycleResult.InvalidOperation.copy|copy(io.dataloom.api.provider.ProviderLifecycleCoordinatorState;io.dataloom.api.provider.ProviderLifecycleOperation){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.provider/ProviderLifecycleResult.InvalidOperation.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.provider/ProviderLifecycleResult.InvalidOperation.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.provider/ProviderLifecycleResult.InvalidOperation.toString|toString(){}[0]
+    }
+
+    final class ShutdownFailure : io.dataloom.api.provider/ProviderLifecycleResult { // io.dataloom.api.provider/ProviderLifecycleResult.ShutdownFailure|null[0]
+        constructor <init>(kotlin.collections/List<io.dataloom.api.provider/ProviderLifecycleFailure>) // io.dataloom.api.provider/ProviderLifecycleResult.ShutdownFailure.<init>|<init>(kotlin.collections.List<io.dataloom.api.provider.ProviderLifecycleFailure>){}[0]
+
+        final val failures // io.dataloom.api.provider/ProviderLifecycleResult.ShutdownFailure.failures|{}failures[0]
+            final fun <get-failures>(): kotlin.collections/List<io.dataloom.api.provider/ProviderLifecycleFailure> // io.dataloom.api.provider/ProviderLifecycleResult.ShutdownFailure.failures.<get-failures>|<get-failures>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.provider/ProviderLifecycleResult.ShutdownFailure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.provider/ProviderLifecycleResult.ShutdownFailure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.provider/ProviderLifecycleResult.ShutdownFailure.toString|toString(){}[0]
+    }
+
+    final object InitializeSuccess : io.dataloom.api.provider/ProviderLifecycleResult { // io.dataloom.api.provider/ProviderLifecycleResult.InitializeSuccess|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.provider/ProviderLifecycleResult.InitializeSuccess.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.provider/ProviderLifecycleResult.InitializeSuccess.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.provider/ProviderLifecycleResult.InitializeSuccess.toString|toString(){}[0]
+    }
+
+    final object ShutdownSuccess : io.dataloom.api.provider/ProviderLifecycleResult { // io.dataloom.api.provider/ProviderLifecycleResult.ShutdownSuccess|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.provider/ProviderLifecycleResult.ShutdownSuccess.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.provider/ProviderLifecycleResult.ShutdownSuccess.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.provider/ProviderLifecycleResult.ShutdownSuccess.toString|toString(){}[0]
+    }
+}
+
+final class io.dataloom.api.provider/ProviderBindingFailure { // io.dataloom.api.provider/ProviderBindingFailure|null[0]
+    constructor <init>(io.dataloom.api.provider/ProviderId, io.dataloom.api.provider/ProviderType, io.dataloom.api.provider/ProviderType?, io.dataloom.api.provider/ProviderBindingFailureReason) // io.dataloom.api.provider/ProviderBindingFailure.<init>|<init>(io.dataloom.api.provider.ProviderId;io.dataloom.api.provider.ProviderType;io.dataloom.api.provider.ProviderType?;io.dataloom.api.provider.ProviderBindingFailureReason){}[0]
+
+    final val actualType // io.dataloom.api.provider/ProviderBindingFailure.actualType|{}actualType[0]
+        final fun <get-actualType>(): io.dataloom.api.provider/ProviderType? // io.dataloom.api.provider/ProviderBindingFailure.actualType.<get-actualType>|<get-actualType>(){}[0]
+    final val expectedType // io.dataloom.api.provider/ProviderBindingFailure.expectedType|{}expectedType[0]
+        final fun <get-expectedType>(): io.dataloom.api.provider/ProviderType // io.dataloom.api.provider/ProviderBindingFailure.expectedType.<get-expectedType>|<get-expectedType>(){}[0]
+    final val reason // io.dataloom.api.provider/ProviderBindingFailure.reason|{}reason[0]
+        final fun <get-reason>(): io.dataloom.api.provider/ProviderBindingFailureReason // io.dataloom.api.provider/ProviderBindingFailure.reason.<get-reason>|<get-reason>(){}[0]
+    final val requestedId // io.dataloom.api.provider/ProviderBindingFailure.requestedId|{}requestedId[0]
+        final fun <get-requestedId>(): io.dataloom.api.provider/ProviderId // io.dataloom.api.provider/ProviderBindingFailure.requestedId.<get-requestedId>|<get-requestedId>(){}[0]
+
+    final fun component1(): io.dataloom.api.provider/ProviderId // io.dataloom.api.provider/ProviderBindingFailure.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.provider/ProviderType // io.dataloom.api.provider/ProviderBindingFailure.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.provider/ProviderType? // io.dataloom.api.provider/ProviderBindingFailure.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.provider/ProviderBindingFailureReason // io.dataloom.api.provider/ProviderBindingFailure.component4|component4(){}[0]
+    final fun copy(io.dataloom.api.provider/ProviderId = ..., io.dataloom.api.provider/ProviderType = ..., io.dataloom.api.provider/ProviderType? = ..., io.dataloom.api.provider/ProviderBindingFailureReason = ...): io.dataloom.api.provider/ProviderBindingFailure // io.dataloom.api.provider/ProviderBindingFailure.copy|copy(io.dataloom.api.provider.ProviderId;io.dataloom.api.provider.ProviderType;io.dataloom.api.provider.ProviderType?;io.dataloom.api.provider.ProviderBindingFailureReason){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.provider/ProviderBindingFailure.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.provider/ProviderBindingFailure.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.provider/ProviderBindingFailure.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.provider/ProviderDescriptor { // io.dataloom.api.provider/ProviderDescriptor|null[0]
+    constructor <init>(io.dataloom.api.provider/ProviderId, io.dataloom.api.provider/ProviderName, io.dataloom.api.provider/ProviderType, io.dataloom.api.provider/ProviderVersion, kotlin.collections/Set<io.dataloom.api.provider/ProviderCapability> = ..., io.dataloom.api.context/DataLoomMetadata = ...) // io.dataloom.api.provider/ProviderDescriptor.<init>|<init>(io.dataloom.api.provider.ProviderId;io.dataloom.api.provider.ProviderName;io.dataloom.api.provider.ProviderType;io.dataloom.api.provider.ProviderVersion;kotlin.collections.Set<io.dataloom.api.provider.ProviderCapability>;io.dataloom.api.context.DataLoomMetadata){}[0]
+
+    final val capabilities // io.dataloom.api.provider/ProviderDescriptor.capabilities|{}capabilities[0]
+        final fun <get-capabilities>(): kotlin.collections/Set<io.dataloom.api.provider/ProviderCapability> // io.dataloom.api.provider/ProviderDescriptor.capabilities.<get-capabilities>|<get-capabilities>(){}[0]
+    final val id // io.dataloom.api.provider/ProviderDescriptor.id|{}id[0]
+        final fun <get-id>(): io.dataloom.api.provider/ProviderId // io.dataloom.api.provider/ProviderDescriptor.id.<get-id>|<get-id>(){}[0]
+    final val metadata // io.dataloom.api.provider/ProviderDescriptor.metadata|{}metadata[0]
+        final fun <get-metadata>(): io.dataloom.api.context/DataLoomMetadata // io.dataloom.api.provider/ProviderDescriptor.metadata.<get-metadata>|<get-metadata>(){}[0]
+    final val name // io.dataloom.api.provider/ProviderDescriptor.name|{}name[0]
+        final fun <get-name>(): io.dataloom.api.provider/ProviderName // io.dataloom.api.provider/ProviderDescriptor.name.<get-name>|<get-name>(){}[0]
+    final val type // io.dataloom.api.provider/ProviderDescriptor.type|{}type[0]
+        final fun <get-type>(): io.dataloom.api.provider/ProviderType // io.dataloom.api.provider/ProviderDescriptor.type.<get-type>|<get-type>(){}[0]
+    final val version // io.dataloom.api.provider/ProviderDescriptor.version|{}version[0]
+        final fun <get-version>(): io.dataloom.api.provider/ProviderVersion // io.dataloom.api.provider/ProviderDescriptor.version.<get-version>|<get-version>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.provider/ProviderDescriptor.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.provider/ProviderDescriptor.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.provider/ProviderDescriptor.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.provider/ProviderHealth { // io.dataloom.api.provider/ProviderHealth|null[0]
+    constructor <init>(io.dataloom.api.provider/ProviderHealthStatus, io.dataloom.api.error/DataLoomError? = ..., io.dataloom.api.context/DataLoomMetadata = ...) // io.dataloom.api.provider/ProviderHealth.<init>|<init>(io.dataloom.api.provider.ProviderHealthStatus;io.dataloom.api.error.DataLoomError?;io.dataloom.api.context.DataLoomMetadata){}[0]
+
+    final val details // io.dataloom.api.provider/ProviderHealth.details|{}details[0]
+        final fun <get-details>(): io.dataloom.api.context/DataLoomMetadata // io.dataloom.api.provider/ProviderHealth.details.<get-details>|<get-details>(){}[0]
+    final val error // io.dataloom.api.provider/ProviderHealth.error|{}error[0]
+        final fun <get-error>(): io.dataloom.api.error/DataLoomError? // io.dataloom.api.provider/ProviderHealth.error.<get-error>|<get-error>(){}[0]
+    final val status // io.dataloom.api.provider/ProviderHealth.status|{}status[0]
+        final fun <get-status>(): io.dataloom.api.provider/ProviderHealthStatus // io.dataloom.api.provider/ProviderHealth.status.<get-status>|<get-status>(){}[0]
+
+    final fun component1(): io.dataloom.api.provider/ProviderHealthStatus // io.dataloom.api.provider/ProviderHealth.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.error/DataLoomError? // io.dataloom.api.provider/ProviderHealth.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.context/DataLoomMetadata // io.dataloom.api.provider/ProviderHealth.component3|component3(){}[0]
+    final fun copy(io.dataloom.api.provider/ProviderHealthStatus = ..., io.dataloom.api.error/DataLoomError? = ..., io.dataloom.api.context/DataLoomMetadata = ...): io.dataloom.api.provider/ProviderHealth // io.dataloom.api.provider/ProviderHealth.copy|copy(io.dataloom.api.provider.ProviderHealthStatus;io.dataloom.api.error.DataLoomError?;io.dataloom.api.context.DataLoomMetadata){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.provider/ProviderHealth.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.provider/ProviderHealth.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.provider/ProviderHealth.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.provider/ProviderInitializationContext { // io.dataloom.api.provider/ProviderInitializationContext|null[0]
+    constructor <init>(io.dataloom.api.identifier/RuntimeVersion? = ..., io.dataloom.api.identifier/ConfigurationVersion? = ..., io.dataloom.api.context/DataLoomMetadata = ...) // io.dataloom.api.provider/ProviderInitializationContext.<init>|<init>(io.dataloom.api.identifier.RuntimeVersion?;io.dataloom.api.identifier.ConfigurationVersion?;io.dataloom.api.context.DataLoomMetadata){}[0]
+
+    final val configurationVersion // io.dataloom.api.provider/ProviderInitializationContext.configurationVersion|{}configurationVersion[0]
+        final fun <get-configurationVersion>(): io.dataloom.api.identifier/ConfigurationVersion? // io.dataloom.api.provider/ProviderInitializationContext.configurationVersion.<get-configurationVersion>|<get-configurationVersion>(){}[0]
+    final val metadata // io.dataloom.api.provider/ProviderInitializationContext.metadata|{}metadata[0]
+        final fun <get-metadata>(): io.dataloom.api.context/DataLoomMetadata // io.dataloom.api.provider/ProviderInitializationContext.metadata.<get-metadata>|<get-metadata>(){}[0]
+    final val runtimeVersion // io.dataloom.api.provider/ProviderInitializationContext.runtimeVersion|{}runtimeVersion[0]
+        final fun <get-runtimeVersion>(): io.dataloom.api.identifier/RuntimeVersion? // io.dataloom.api.provider/ProviderInitializationContext.runtimeVersion.<get-runtimeVersion>|<get-runtimeVersion>(){}[0]
+
+    final fun component1(): io.dataloom.api.identifier/RuntimeVersion? // io.dataloom.api.provider/ProviderInitializationContext.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.identifier/ConfigurationVersion? // io.dataloom.api.provider/ProviderInitializationContext.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.context/DataLoomMetadata // io.dataloom.api.provider/ProviderInitializationContext.component3|component3(){}[0]
+    final fun copy(io.dataloom.api.identifier/RuntimeVersion? = ..., io.dataloom.api.identifier/ConfigurationVersion? = ..., io.dataloom.api.context/DataLoomMetadata = ...): io.dataloom.api.provider/ProviderInitializationContext // io.dataloom.api.provider/ProviderInitializationContext.copy|copy(io.dataloom.api.identifier.RuntimeVersion?;io.dataloom.api.identifier.ConfigurationVersion?;io.dataloom.api.context.DataLoomMetadata){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.provider/ProviderInitializationContext.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.provider/ProviderInitializationContext.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.provider/ProviderInitializationContext.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.provider/ProviderLifecycleFailure { // io.dataloom.api.provider/ProviderLifecycleFailure|null[0]
+    constructor <init>(io.dataloom.api.provider/ProviderId, io.dataloom.api.provider/ProviderLifecycleOperation, io.dataloom.api.error/DataLoomError) // io.dataloom.api.provider/ProviderLifecycleFailure.<init>|<init>(io.dataloom.api.provider.ProviderId;io.dataloom.api.provider.ProviderLifecycleOperation;io.dataloom.api.error.DataLoomError){}[0]
+
+    final val error // io.dataloom.api.provider/ProviderLifecycleFailure.error|{}error[0]
+        final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.api.provider/ProviderLifecycleFailure.error.<get-error>|<get-error>(){}[0]
+    final val operation // io.dataloom.api.provider/ProviderLifecycleFailure.operation|{}operation[0]
+        final fun <get-operation>(): io.dataloom.api.provider/ProviderLifecycleOperation // io.dataloom.api.provider/ProviderLifecycleFailure.operation.<get-operation>|<get-operation>(){}[0]
+    final val providerId // io.dataloom.api.provider/ProviderLifecycleFailure.providerId|{}providerId[0]
+        final fun <get-providerId>(): io.dataloom.api.provider/ProviderId // io.dataloom.api.provider/ProviderLifecycleFailure.providerId.<get-providerId>|<get-providerId>(){}[0]
+
+    final fun component1(): io.dataloom.api.provider/ProviderId // io.dataloom.api.provider/ProviderLifecycleFailure.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.provider/ProviderLifecycleOperation // io.dataloom.api.provider/ProviderLifecycleFailure.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.error/DataLoomError // io.dataloom.api.provider/ProviderLifecycleFailure.component3|component3(){}[0]
+    final fun copy(io.dataloom.api.provider/ProviderId = ..., io.dataloom.api.provider/ProviderLifecycleOperation = ..., io.dataloom.api.error/DataLoomError = ...): io.dataloom.api.provider/ProviderLifecycleFailure // io.dataloom.api.provider/ProviderLifecycleFailure.copy|copy(io.dataloom.api.provider.ProviderId;io.dataloom.api.provider.ProviderLifecycleOperation;io.dataloom.api.error.DataLoomError){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.provider/ProviderLifecycleFailure.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.provider/ProviderLifecycleFailure.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.provider/ProviderLifecycleFailure.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.provider/SynchronizationProviderBindings { // io.dataloom.api.provider/SynchronizationProviderBindings|null[0]
+    constructor <init>(io.dataloom.api.provider/ProviderId, io.dataloom.api.provider/ProviderId, io.dataloom.api.provider/ProviderId? = ..., io.dataloom.api.provider/ProviderId? = ..., io.dataloom.api.provider/ProviderId? = ...) // io.dataloom.api.provider/SynchronizationProviderBindings.<init>|<init>(io.dataloom.api.provider.ProviderId;io.dataloom.api.provider.ProviderId;io.dataloom.api.provider.ProviderId?;io.dataloom.api.provider.ProviderId?;io.dataloom.api.provider.ProviderId?){}[0]
+
+    final val connectivityProviderId // io.dataloom.api.provider/SynchronizationProviderBindings.connectivityProviderId|{}connectivityProviderId[0]
+        final fun <get-connectivityProviderId>(): io.dataloom.api.provider/ProviderId? // io.dataloom.api.provider/SynchronizationProviderBindings.connectivityProviderId.<get-connectivityProviderId>|<get-connectivityProviderId>(){}[0]
+    final val queueProviderId // io.dataloom.api.provider/SynchronizationProviderBindings.queueProviderId|{}queueProviderId[0]
+        final fun <get-queueProviderId>(): io.dataloom.api.provider/ProviderId? // io.dataloom.api.provider/SynchronizationProviderBindings.queueProviderId.<get-queueProviderId>|<get-queueProviderId>(){}[0]
+    final val schedulerProviderId // io.dataloom.api.provider/SynchronizationProviderBindings.schedulerProviderId|{}schedulerProviderId[0]
+        final fun <get-schedulerProviderId>(): io.dataloom.api.provider/ProviderId? // io.dataloom.api.provider/SynchronizationProviderBindings.schedulerProviderId.<get-schedulerProviderId>|<get-schedulerProviderId>(){}[0]
+    final val storageProviderId // io.dataloom.api.provider/SynchronizationProviderBindings.storageProviderId|{}storageProviderId[0]
+        final fun <get-storageProviderId>(): io.dataloom.api.provider/ProviderId // io.dataloom.api.provider/SynchronizationProviderBindings.storageProviderId.<get-storageProviderId>|<get-storageProviderId>(){}[0]
+    final val transportProviderId // io.dataloom.api.provider/SynchronizationProviderBindings.transportProviderId|{}transportProviderId[0]
+        final fun <get-transportProviderId>(): io.dataloom.api.provider/ProviderId // io.dataloom.api.provider/SynchronizationProviderBindings.transportProviderId.<get-transportProviderId>|<get-transportProviderId>(){}[0]
+
+    final fun component1(): io.dataloom.api.provider/ProviderId // io.dataloom.api.provider/SynchronizationProviderBindings.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.provider/ProviderId // io.dataloom.api.provider/SynchronizationProviderBindings.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.provider/ProviderId? // io.dataloom.api.provider/SynchronizationProviderBindings.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.provider/ProviderId? // io.dataloom.api.provider/SynchronizationProviderBindings.component4|component4(){}[0]
+    final fun component5(): io.dataloom.api.provider/ProviderId? // io.dataloom.api.provider/SynchronizationProviderBindings.component5|component5(){}[0]
+    final fun copy(io.dataloom.api.provider/ProviderId = ..., io.dataloom.api.provider/ProviderId = ..., io.dataloom.api.provider/ProviderId? = ..., io.dataloom.api.provider/ProviderId? = ..., io.dataloom.api.provider/ProviderId? = ...): io.dataloom.api.provider/SynchronizationProviderBindings // io.dataloom.api.provider/SynchronizationProviderBindings.copy|copy(io.dataloom.api.provider.ProviderId;io.dataloom.api.provider.ProviderId;io.dataloom.api.provider.ProviderId?;io.dataloom.api.provider.ProviderId?;io.dataloom.api.provider.ProviderId?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.provider/SynchronizationProviderBindings.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.provider/SynchronizationProviderBindings.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.provider/SynchronizationProviderBindings.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.provider/ProviderCapability { // io.dataloom.api.provider/ProviderCapability|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.provider/ProviderCapability.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.provider/ProviderCapability.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.provider/ProviderCapability.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.provider/ProviderCapability.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.provider/ProviderCapability.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.provider/ProviderCapability.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.provider/ProviderId { // io.dataloom.api.provider/ProviderId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.provider/ProviderId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.provider/ProviderId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.provider/ProviderId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.provider/ProviderId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.provider/ProviderId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.provider/ProviderId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.provider/ProviderName { // io.dataloom.api.provider/ProviderName|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.provider/ProviderName.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.provider/ProviderName.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.provider/ProviderName.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.provider/ProviderName.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.provider/ProviderName.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.provider/ProviderName.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.provider/ProviderVersion { // io.dataloom.api.provider/ProviderVersion|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.provider/ProviderVersion.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.provider/ProviderVersion.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.provider/ProviderVersion.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.provider/ProviderVersion.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.provider/ProviderVersion.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.provider/ProviderVersion.toString|toString(){}[0]
+}

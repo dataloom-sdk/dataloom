@@ -9,7 +9,7 @@ import io.dataloom.api.time.DataLoomInstant
  * Immutable request to mark a leased [QueueEntry] as successfully completed.
  *
  * Construction does not update storage. Persistence is the responsibility of
- * the [io.dataloom.api.provider.QueueProvider] that receives this request.
+ * the [io.dataloom.api.queue.QueueProvider] that receives this request.
  *
  * ## Lease validation
  *

@@ -1,83 +1,112 @@
-# Scripted and Recording Utilities (DL-035)
+# Scripted and recording test utilities
 
-## Scripted utilities
+> **Audience:** Developers asserting transport, retry, conflict, scheduling,
+> and event interactions
+> **Purpose:** Document ordered scripts, recordings, fallbacks, and reset
+> semantics
+> **Status:** Current test-only utilities; no real I/O or background dispatch
 
-### `ScriptedTransportProvider`
+[← Testing toolkit](testing-toolkit.md) ·
+[In-memory providers](in-memory-providers.md) ·
+[Clocks and identifiers](clock-and-identifiers.md)
 
-Scripts push and pull results independently. Exhaustion fails fast so tests do
-not silently continue with unexpected behaviour.
+## Utility behavior
 
-### `ScriptedRetryPolicy`
+| Utility | Script or recording behavior |
+|---|---|
+| `ScriptedTransportProvider` | Dequeues push and pull results independently; exhaustion fails fast |
+| `ScriptedRetryPolicy` | Dequeues retry decisions; optional fallback after exhaustion |
+| `ScriptedConflictDetector` | Dequeues detection results; optional fallback after exhaustion |
+| `ScriptedConflictResolver` | Dequeues resolution decisions; optional fallback after exhaustion |
+| `RecordingSchedulerProvider` | Records schedule/cancel requests without dispatching platform work |
+| `RecordingSynchronizationObserver` | Records events in order and optionally invokes a callback |
 
-Dequeues retry decisions in order and optionally falls back to a final decision
-when the script is exhausted.
+All mutable utilities are caller-serialized and memory-only. They do not
+perform network I/O, sleep, schedule background work, or provide production
+durability.
 
-### `ScriptedConflictDetector` / `ScriptedConflictResolver`
-
-Provide deterministic conflict outcomes without runtime I/O.
-
-## Limitations
-
-> **These utilities are for testing only.**
-
-- **Memory-only.** Scripted results and recorded requests exist only within the
-  in-memory instance.
-- **Caller-serialized.** Utilities are not thread-safe. Confine each instance
-  to a single test or serialize access externally.
-- **Non-production.** Do not wire scripted or recording utilities into release
-  builds. They carry no production intent.
-- **No scheduling, I/O, or network.** `RecordingSchedulerProvider` records
-  requests without dispatching work. `MutableConnectivityProvider` performs no
-  real network check.
-
-## Example: scripted transport with retry
+## Script transport and retry
 
 ```kotlin
-val transport   = ScriptedTransportProvider()
-val retryPolicy = ScriptedRetryPolicy(RetryPolicyId("policy-001"))
+val transport = ScriptedTransportProvider()
+val retry = ScriptedRetryPolicy(RetryPolicyId("retry-test"))
 
 transport.enqueuePushResult(
-    ProviderOperationResult.Failure(transientError)
+    ProviderOperationResult.Failure(transientError),
 )
-retryPolicy.enqueueDecision(RetryDecision.Retry(delay = SchedulingDelay(500L)))
-transport.enqueuePushResult(
-    ProviderOperationResult.Success(acknowledgement)
+retry.enqueueDecision(
+    RetryDecision.Retry(delay = SchedulingDelay(500L)),
 )
 
-// Run code under test, then assert:
-assertEquals(2, transport.pushRequests.size)
-assertEquals(1, retryPolicy.evaluationRequests.size)
+// Run the production component under test.
+
+assertEquals(pushRequest, transport.pushRequests.single())
+assertEquals(retryRequest, retry.evaluationRequests.single())
 ```
 
-## Example: conflict detection and resolution
+`transientError`, `pushRequest`, and `retryRequest` are test-fixture values.
+The test must explicitly drive the production retry orchestration; scripting a
+decision does not schedule or repeat an operation.
+
+## Script conflict handling
 
 ```kotlin
-val detector = ScriptedConflictDetector(ConflictDetectorId("detector-001"))
-val resolver = ScriptedConflictResolver(ConflictResolverId("resolver-001"))
+val detector = ScriptedConflictDetector(
+    ConflictDetectorId("detector-test"),
+)
+val resolver = ScriptedConflictResolver(
+    ConflictResolverId("resolver-test"),
+)
 
-detector.enqueueResult(ConflictDetectionResult.Conflict(conflict))
-resolver.enqueueDecision(ConflictResolutionDecision.UseLocal)
+detector.enqueueResult(
+    ConflictDetectionResult.ConflictDetected(conflict),
+)
+resolver.enqueueDecision(
+    ConflictResolutionDecision.UseLocal(),
+)
 
-// Run code under test, then assert:
-assertEquals(1, detector.detectionRequests.size)
-assertEquals(1, resolver.resolutionRequests.size)
-assertSame(conflict, detector.detectionRequests[0].localChange.let { it })
+val detection = detector.detect(detectionRequest)
+val decision = resolver.resolve(resolutionRequest)
+
+assertIs<ConflictDetectionResult.ConflictDetected>(detection)
+assertIs<ConflictResolutionDecision.UseLocal>(decision)
+assertEquals(detectionRequest, detector.detectionRequests.single())
+assertEquals(resolutionRequest, resolver.resolutionRequests.single())
 ```
 
-## Example: observer event ordering
+These fakes return decisions only. They do not persist a conflict, apply a
+change, or implement application business rules.
+
+## Record event order
 
 ```kotlin
-val observer = RecordingSynchronizationObserver(SynchronizationObserverId("obs-001"))
+val observer = RecordingSynchronizationObserver(
+    SynchronizationObserverId("observer-test"),
+)
 
-// Emit events from code under test, then assert ordering:
-assertEquals(3, observer.eventCount)
-assertIs<SynchronizationEvent.Started>(observer.events[0])
-assertIs<SynchronizationEvent.ProgressUpdated>(observer.events[1])
-assertIs<SynchronizationEvent.Completed>(observer.events[2])
+events.forEach(observer::onEvent)
+
+assertEquals(events, observer.events)
+assertEquals(events.lastOrNull(), observer.latestEvent)
 ```
+
+The optional observer callback runs after the event is recorded. Callback
+exceptions propagate to the caller.
 
 ## Reset semantics
 
-Call `clearRecordings()` to retain scripted results while resetting recorded
-request lists. Call `resetState()` to clear both scripted results and
-recordings.
+- `clearRecordings()` retains unconsumed scripts and removes prior call/event
+  history.
+- `resetState()` clears scripts plus recordings where the utility exposes it.
+- `RecordingSynchronizationObserver` exposes `clearRecordings()` rather than
+  `resetState()`.
+
+Prefer a new utility instance for each test unless retained state is the
+behavior under test.
+
+## Strategy boundary
+
+Scripted retry and conflict outcomes help test orchestration, but they are not
+built-in offline-first, remote-first, cache-first, network-only, hybrid, or
+adaptive policies. V1 strategy behavior requires production implementations
+and cross-platform qualification.

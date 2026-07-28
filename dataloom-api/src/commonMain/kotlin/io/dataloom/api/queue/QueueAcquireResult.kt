@@ -1,7 +1,7 @@
 package io.dataloom.api.queue
 
 /**
- * Sealed result returned by [io.dataloom.api.provider.QueueProvider.acquire].
+ * Sealed result returned by [io.dataloom.api.queue.QueueProvider.acquire].
  *
  * A [QueueAcquireResult] is either [NoEntries] when no eligible queue entries
  * are currently available, or [Entries] when the provider atomically acquired

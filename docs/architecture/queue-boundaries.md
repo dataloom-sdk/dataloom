@@ -16,12 +16,21 @@ confused:
 | Application domain data (entities, changes) | `StorageProvider` | Host application |
 | DataLoom workflow execution records | `QueueProvider` | DataLoom runtime |
 
-```text
-StorageProvider
-→ Reads and applies application synchronization changes
+```mermaid
+flowchart LR
+    runtime[DataLoom runtime]
+    storage[StorageProvider]
+    queue[QueueProvider]
+    domain[(Application data)]
+    workflow[(Workflow records)]
 
-QueueProvider
-→ Persists DataLoom workflow execution records
+    runtime -->|Read and apply changes| storage
+    runtime -->|Acquire and transition work| queue
+    storage --> domain
+    queue --> workflow
+
+    style storage fill:#C2E5FF,stroke:#3DADFF
+    style queue fill:#DCCCFF,stroke:#874FFF
 ```
 
 A Room implementation may physically reside in the same database file, but
@@ -49,6 +58,27 @@ schemas and ownership boundaries must remain separate.
 - Automatically remove terminal entries.
 - Select threads or dispatchers.
 - Expose platform-specific types through its public API.
+
+The durable lifecycle is lease-guarded:
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> Pending
+    Pending --> Leased: acquire
+    RetryWaiting --> Leased: acquire
+    Leased --> Completed: complete
+    Leased --> RetryWaiting: reschedule
+    Leased --> Failed: fail
+    Leased --> Cancelled: cancel
+    Leased --> Pending: recover lease
+    Completed --> [*]
+    Failed --> [*]
+    Cancelled --> [*]
+```
+
+V1 must correct retry-history preservation during non-retry deferral and lease
+recovery before this lifecycle is production-safe.
 
 ---
 
@@ -194,20 +224,25 @@ Enum ordinals in `QueueEntryState`, `QueueFailureDisposition`, and
 
 ### Android
 
-A future `dataloom-room` module may implement `QueueProvider` using Room.
+The current `dataloom-queue-room` module implements `QueueProvider` using
+Room. The current `dataloom-scheduler-workmanager` module supplies the
+WorkManager scheduler and worker bridge that can:
 
-A future WorkManager integration may:
 1. Acquire leased work via `QueueProvider.acquire`.
 2. Execute synchronization through the shared runtime.
 3. Complete, reschedule, or fail the entry.
 
+These modules are current foundations; they do not establish a published
+aggregate or complete V1 qualification.
+
 WorkManager, Worker, AlarmManager, JobScheduler, or other platform-specific
 types must not be exposed through the `QueueProvider` public API.
 
-### KMP
+### KMP and iOS
 
-A future `dataloom-sqldelight` module may implement `QueueProvider` using
-SQLDelight for cross-platform durable persistence.
+The cross-platform persistence technology, including whether SQLDelight is
+used, remains unresolved. Durable queue persistence and recovery for the
+mandatory KMP iOS path must be implemented and qualified for V1.
 
 ---
 

@@ -5,7 +5,7 @@ package io.dataloom.api.queue
  *
  * [ExpiredLeaseRecoveryResult] reports how many queue entries were recovered
  * from an expired-lease state during a
- * [io.dataloom.api.provider.QueueProvider.recoverExpiredLeases] operation.
+ * [io.dataloom.api.queue.QueueProvider.recoverExpiredLeases] operation.
  *
  * ## Constraints
  *

@@ -1,5 +1,10 @@
 # Queue Submission (DL-034)
 
+[API reference index](./README.md)
+
+> **Status:** Available queue-submission foundation. Applications still own
+> work encoding; publication and complete consumer qualification remain open.
+
 ## Overview
 
 The queue-submission capability allows applications to submit synchronization

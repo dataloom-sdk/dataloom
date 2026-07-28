@@ -1,87 +1,114 @@
-# Room Queue Provider (DL-037)
+# Room queue provider
 
-`RoomQueueProvider` implements the DataLoom `QueueProvider` contract using
-AndroidX Room backed by SQLite.
+> **Audience:** Android developers and maintainers of durable queue behavior
+> **Purpose:** Explain the current Room-backed `QueueProvider`, its state
+> transitions, and its durability limits
+> **Status:** Implemented Android queue foundation; not a general
+> `StorageProvider` or complete V1 persistence layer
 
-## Module
+[← Android overview](README.md) ·
+[Worker integration](worker-integration.md) ·
+[Security and R8](security-and-r8.md)
 
-`dataloom-queue-room`
+`RoomQueueProvider` implements the shared `QueueProvider` contract with
+AndroidX Room and SQLite.
 
-## Dependency
+## Module and setup
 
 ```kotlin
 implementation(project(":dataloom-queue-room"))
 ```
 
-## Setup
-
 ```kotlin
-// Create the database (hold as singleton)
 val database = DataLoomDatabaseBuilder.build(context)
-
-// Create the provider
-val provider = RoomQueueProvider(database)
+val queueProvider = RoomQueueProvider(database)
 ```
+
+Hold the database as an application-process singleton. `RoomQueueProvider`
+does not own or close the database lifecycle. Published V1 coordinates are not
+available yet.
 
 ## Schema
 
-- Database name: `dataloom-queue.db` (default, configurable via
-  `DataLoomDatabaseBuilder.build(context, name = "...")`).
-- Schema version: 1.
-- Schema export enabled; committed JSON at
-  `schemas/io.dataloom.queue.room.internal.DataLoomRoomDatabase/1.json`.
+| Property | Current value |
+|---|---|
+| Default database name | `dataloom-queue.db` |
+| Schema version | `1` |
+| Schema export | Enabled |
+| Committed schema | `dataloom-queue-room/schemas/io.dataloom.queue.room.internal.DataLoomRoomDatabase/1.json` |
 
-## State storage
+`QueueEntryState` and the persisted error enums use enum names, never ordinals.
+Changing a persisted name is therefore a schema compatibility change.
 
-`QueueEntryState` is stored as the enum constant **name**, not the ordinal.
-Ordinal-based storage is fragile when enum values are reordered or added.
-Name-based storage is stable across SDK versions.
+## Queue transitions
 
-## Atomic acquisition
+| Operation | Required source state | Result |
+|---|---|---|
+| `enqueue` | New identifier | Persisted entry; duplicate identifiers fail |
+| `acquire` | `PENDING` or `RETRY_WAITING`, available now | `LEASED` with the supplied lease |
+| `complete` | `LEASED` with matching lease ID | `COMPLETED` |
+| `reschedule` | `LEASED` with matching lease ID | `RETRY_WAITING` |
+| `fail` | `LEASED` with matching lease ID | `FAILED` or `DEAD_LETTER` |
+| `cancel` | `PENDING` or `RETRY_WAITING` | `CANCELLED` |
+| `recoverExpiredLeases` | `LEASED` with expiry before `currentTime` | `PENDING` |
 
-`acquire()` uses a `@Transaction` DAO function that:
-1. Selects PENDING and RETRY_WAITING entries where `availableAt <= acquiredAt`,
-   ordered by `availableAt ASC`, limited to `maxEntries`.
-2. Updates each row to LEASED state with lease columns set, matching on
-   both `entry_id` and current eligible state.
+### Atomic acquisition
 
-The SELECT and all UPDATEs execute within a single SQLite transaction.
-Concurrent acquisition attempts cannot observe the same row twice.
+`acquire` runs selection and guarded updates in one Room transaction. Eligible
+entries are ordered by `availableAt`, then enqueue time, then entry ID, and are
+limited by `maxEntries`. Each update rechecks the entry ID, eligible state, and
+availability before assigning the lease.
 
-## Guarded transitions
+### Guarded lease transitions
 
-`complete()`, `reschedule()`, and `fail()` include the **lease identifier** in
-the SQL `WHERE` clause. If the lease is stale or mismatched, zero rows are
-affected and the provider returns a `QUEUE_STALE_LEASE` error.
+`complete`, `reschedule`, and `fail` include the lease ID in the SQL predicate.
+A stale or mismatched lease affects zero rows and returns
+`QUEUE_STALE_LEASE`.
 
-## Expired-lease recovery
+### Expired-lease recovery
 
-`recoverExpiredLeases()` issues a single SQL UPDATE that transitions LEASED
-entries with `leaseExpiresAt < currentTime` back to PENDING state. The
-recovered state is always PENDING for this implementation.
+Recovery uses one SQL update and only recovers leases whose expiry is strictly
+earlier than the supplied `currentTime`. The implementation always returns
+recovered work to `PENDING`; it does not execute that work.
 
-## Cancellation
+## Execution and cancellation
 
-`cancel()` transitions entries in PENDING or RETRY_WAITING state to CANCELLED.
-Entries in LEASED or terminal states are refused with `QUEUE_CANCELLATION_REJECTED`.
-
-## Thread safety
-
-All operations dispatch to `Dispatchers.IO`. No Room operation runs on the
-main thread. The database instance is thread-safe as long as it is held as a
-singleton.
+All database operations run on `Dispatchers.IO`. Coroutine cancellation
+propagates and is not converted into a provider failure. Unexpected database
+exceptions become `QUEUE_DATABASE_FAILURE`.
 
 ## Migration policy
 
-Destructive migration fallback is disabled. Every schema version increment must
-ship a corresponding `Migration` object. Never call `fallbackToDestructiveMigration()`
-on a `DataLoomDatabaseBuilder`-created instance in production.
+Destructive migration fallback is not enabled. SDK maintainers must add and
+test an explicit Room migration whenever the schema version changes and keep
+the committed JSON schema synchronized with generated output. The current
+`DataLoomDatabaseBuilder` exposes only database name selection; it does not
+offer a host hook for custom migrations or an encrypted
+`SupportSQLiteOpenHelper.Factory`.
 
-## Error codes
+## Security boundary
 
-| Code | Description |
+The current database is not encrypted by DataLoom. Queue payloads, metadata,
+and sanitized error fields are persisted. Applications requiring SDK-managed
+encrypted queue storage need an alternative `QueueProvider` until an encrypted
+construction boundary is implemented and qualified. See
+[Security and R8](security-and-r8.md#data-at-rest).
+
+## Canonical error codes
+
+| Code | Meaning |
 |---|---|
-| `QUEUE_DUPLICATE_ENTRY` | Entry with same ID already exists (enqueue) |
-| `QUEUE_DATABASE_FAILURE` | Unexpected database error |
-| `QUEUE_STALE_LEASE` | Lease mismatch on complete/reschedule/fail |
-| `QUEUE_CANCELLATION_REJECTED` | Entry cannot be cancelled in current state |
+| `QUEUE_DUPLICATE_ENTRY` | The entry ID already exists |
+| `QUEUE_DATABASE_FAILURE` | An unexpected database operation failed |
+| `QUEUE_STALE_LEASE` | A guarded transition used a missing or stale lease |
+| `QUEUE_CANCELLATION_REJECTED` | The current state cannot be cancelled |
+
+This module supplies Android queue durability only. It does not implement
+application domain storage, KMP iOS persistence, strategy selection, retry
+policy, scheduling, or synchronization execution.
+
+## Related documentation
+
+- [Queue provider contract](../api/queue-provider.md)
+- [Queue boundaries](../architecture/queue-boundaries.md)
+- [WorkManager worker integration](worker-integration.md)

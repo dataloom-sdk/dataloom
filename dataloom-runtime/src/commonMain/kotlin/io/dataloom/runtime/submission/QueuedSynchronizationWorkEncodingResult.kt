@@ -42,7 +42,7 @@ public sealed interface QueuedSynchronizationWorkEncodingResult {
      *
      * [request] is the exact [QueueEnqueueRequest] produced by the encoder,
      * ready for structural validation and persistence by the
-     * [io.dataloom.api.provider.QueueProvider].
+     * [io.dataloom.api.queue.QueueProvider].
      *
      * ## Construction restrictions
      *
@@ -61,7 +61,7 @@ public sealed interface QueuedSynchronizationWorkEncodingResult {
      * Encoding was rejected due to a known structural or policy condition.
      *
      * [error] is the canonical [DataLoomError] describing the rejection reason.
-     * No [io.dataloom.api.provider.QueueProvider] operation is performed when
+     * No [io.dataloom.api.queue.QueueProvider] operation is performed when
      * encoding is rejected.
      *
      * ## Security restrictions

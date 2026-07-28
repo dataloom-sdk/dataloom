@@ -1,0 +1,256 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <dataloom:dataloom-testing>
+final class <#A: kotlin/Any?> io.dataloom.testing.identifier/ConstantIdentifierGenerator : io.dataloom.api.identifier/IdentifierGenerator<#A> { // io.dataloom.testing.identifier/ConstantIdentifierGenerator|null[0]
+    constructor <init>(#A) // io.dataloom.testing.identifier/ConstantIdentifierGenerator.<init>|<init>(1:0){}[0]
+
+    final val value // io.dataloom.testing.identifier/ConstantIdentifierGenerator.value|{}value[0]
+        final fun <get-value>(): #A // io.dataloom.testing.identifier/ConstantIdentifierGenerator.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.testing.identifier/ConstantIdentifierGenerator.equals|equals(kotlin.Any?){}[0]
+    final fun generate(): #A // io.dataloom.testing.identifier/ConstantIdentifierGenerator.generate|generate(){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.testing.identifier/ConstantIdentifierGenerator.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.testing.identifier/ConstantIdentifierGenerator.toString|toString(){}[0]
+}
+
+final class <#A: kotlin/Any?> io.dataloom.testing.identifier/SequenceIdentifierGenerator : io.dataloom.api.identifier/IdentifierGenerator<#A> { // io.dataloom.testing.identifier/SequenceIdentifierGenerator|null[0]
+    constructor <init>(kotlin.collections/Iterable<#A>) // io.dataloom.testing.identifier/SequenceIdentifierGenerator.<init>|<init>(kotlin.collections.Iterable<1:0>){}[0]
+
+    final fun generate(): #A // io.dataloom.testing.identifier/SequenceIdentifierGenerator.generate|generate(){}[0]
+}
+
+final class io.dataloom.testing.conflict/ScriptedConflictDetector : io.dataloom.api.conflict/ConflictDetector { // io.dataloom.testing.conflict/ScriptedConflictDetector|null[0]
+    constructor <init>(io.dataloom.api.identifier/ConflictDetectorId, kotlin.collections/MutableList<io.dataloom.api.conflict/ConflictDetectionResult> = ..., io.dataloom.api.conflict/ConflictDetectionResult? = ...) // io.dataloom.testing.conflict/ScriptedConflictDetector.<init>|<init>(io.dataloom.api.identifier.ConflictDetectorId;kotlin.collections.MutableList<io.dataloom.api.conflict.ConflictDetectionResult>;io.dataloom.api.conflict.ConflictDetectionResult?){}[0]
+
+    final val detectionRequests // io.dataloom.testing.conflict/ScriptedConflictDetector.detectionRequests|{}detectionRequests[0]
+        final fun <get-detectionRequests>(): kotlin.collections/List<io.dataloom.api.conflict/ConflictDetectionRequest> // io.dataloom.testing.conflict/ScriptedConflictDetector.detectionRequests.<get-detectionRequests>|<get-detectionRequests>(){}[0]
+    final val id // io.dataloom.testing.conflict/ScriptedConflictDetector.id|{}id[0]
+        final fun <get-id>(): io.dataloom.api.identifier/ConflictDetectorId // io.dataloom.testing.conflict/ScriptedConflictDetector.id.<get-id>|<get-id>(){}[0]
+
+    final fun clearRecordings() // io.dataloom.testing.conflict/ScriptedConflictDetector.clearRecordings|clearRecordings(){}[0]
+    final fun detect(io.dataloom.api.conflict/ConflictDetectionRequest): io.dataloom.api.conflict/ConflictDetectionResult // io.dataloom.testing.conflict/ScriptedConflictDetector.detect|detect(io.dataloom.api.conflict.ConflictDetectionRequest){}[0]
+    final fun enqueueResult(io.dataloom.api.conflict/ConflictDetectionResult) // io.dataloom.testing.conflict/ScriptedConflictDetector.enqueueResult|enqueueResult(io.dataloom.api.conflict.ConflictDetectionResult){}[0]
+    final fun resetState() // io.dataloom.testing.conflict/ScriptedConflictDetector.resetState|resetState(){}[0]
+}
+
+final class io.dataloom.testing.conflict/ScriptedConflictResolver : io.dataloom.api.conflict/ConflictResolver { // io.dataloom.testing.conflict/ScriptedConflictResolver|null[0]
+    constructor <init>(io.dataloom.api.identifier/ConflictResolverId, kotlin.collections/MutableList<io.dataloom.api.conflict/ConflictResolutionDecision> = ..., io.dataloom.api.conflict/ConflictResolutionDecision? = ...) // io.dataloom.testing.conflict/ScriptedConflictResolver.<init>|<init>(io.dataloom.api.identifier.ConflictResolverId;kotlin.collections.MutableList<io.dataloom.api.conflict.ConflictResolutionDecision>;io.dataloom.api.conflict.ConflictResolutionDecision?){}[0]
+
+    final val id // io.dataloom.testing.conflict/ScriptedConflictResolver.id|{}id[0]
+        final fun <get-id>(): io.dataloom.api.identifier/ConflictResolverId // io.dataloom.testing.conflict/ScriptedConflictResolver.id.<get-id>|<get-id>(){}[0]
+    final val resolutionRequests // io.dataloom.testing.conflict/ScriptedConflictResolver.resolutionRequests|{}resolutionRequests[0]
+        final fun <get-resolutionRequests>(): kotlin.collections/List<io.dataloom.api.conflict/ConflictResolutionRequest> // io.dataloom.testing.conflict/ScriptedConflictResolver.resolutionRequests.<get-resolutionRequests>|<get-resolutionRequests>(){}[0]
+
+    final fun clearRecordings() // io.dataloom.testing.conflict/ScriptedConflictResolver.clearRecordings|clearRecordings(){}[0]
+    final fun enqueueDecision(io.dataloom.api.conflict/ConflictResolutionDecision) // io.dataloom.testing.conflict/ScriptedConflictResolver.enqueueDecision|enqueueDecision(io.dataloom.api.conflict.ConflictResolutionDecision){}[0]
+    final fun resetState() // io.dataloom.testing.conflict/ScriptedConflictResolver.resetState|resetState(){}[0]
+    final fun resolve(io.dataloom.api.conflict/ConflictResolutionRequest): io.dataloom.api.conflict/ConflictResolutionDecision // io.dataloom.testing.conflict/ScriptedConflictResolver.resolve|resolve(io.dataloom.api.conflict.ConflictResolutionRequest){}[0]
+}
+
+final class io.dataloom.testing.connectivity/MutableConnectivityProvider : io.dataloom.api.connectivity/ConnectivityProvider { // io.dataloom.testing.connectivity/MutableConnectivityProvider|null[0]
+    constructor <init>(io.dataloom.api.connectivity/ConnectivitySnapshot, io.dataloom.api.provider/ProviderDescriptor = ..., io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.connectivity/ConnectivitySnapshot>? = ..., io.dataloom.testing.provider/TestProviderLifecycleController = ...) // io.dataloom.testing.connectivity/MutableConnectivityProvider.<init>|<init>(io.dataloom.api.connectivity.ConnectivitySnapshot;io.dataloom.api.provider.ProviderDescriptor;io.dataloom.api.provider.ProviderOperationResult<io.dataloom.api.connectivity.ConnectivitySnapshot>?;io.dataloom.testing.provider.TestProviderLifecycleController){}[0]
+
+    final val connectivityRequests // io.dataloom.testing.connectivity/MutableConnectivityProvider.connectivityRequests|{}connectivityRequests[0]
+        final fun <get-connectivityRequests>(): kotlin.collections/List<io.dataloom.api.connectivity/ConnectivityCheckRequest> // io.dataloom.testing.connectivity/MutableConnectivityProvider.connectivityRequests.<get-connectivityRequests>|<get-connectivityRequests>(){}[0]
+    final val descriptor // io.dataloom.testing.connectivity/MutableConnectivityProvider.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.testing.connectivity/MutableConnectivityProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    final fun clearRecordings() // io.dataloom.testing.connectivity/MutableConnectivityProvider.clearRecordings|clearRecordings(){}[0]
+    final fun resetState() // io.dataloom.testing.connectivity/MutableConnectivityProvider.resetState|resetState(){}[0]
+    final fun setSnapshot(io.dataloom.api.connectivity/ConnectivitySnapshot) // io.dataloom.testing.connectivity/MutableConnectivityProvider.setSnapshot|setSnapshot(io.dataloom.api.connectivity.ConnectivitySnapshot){}[0]
+    final suspend fun close(): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.connectivity/MutableConnectivityProvider.close|close(){}[0]
+    final suspend fun currentConnectivity(io.dataloom.api.connectivity/ConnectivityCheckRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.connectivity/ConnectivitySnapshot> // io.dataloom.testing.connectivity/MutableConnectivityProvider.currentConnectivity|currentConnectivity(io.dataloom.api.connectivity.ConnectivityCheckRequest){}[0]
+    final suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.testing.connectivity/MutableConnectivityProvider.health|health(){}[0]
+    final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.connectivity/MutableConnectivityProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
+}
+
+final class io.dataloom.testing.observation/RecordingSynchronizationObserver : io.dataloom.api.observation/SynchronizationObserver { // io.dataloom.testing.observation/RecordingSynchronizationObserver|null[0]
+    constructor <init>(io.dataloom.api.identifier/SynchronizationObserverId, kotlin/Function1<io.dataloom.api.synchronization/SynchronizationEvent, kotlin/Unit>? = ...) // io.dataloom.testing.observation/RecordingSynchronizationObserver.<init>|<init>(io.dataloom.api.identifier.SynchronizationObserverId;kotlin.Function1<io.dataloom.api.synchronization.SynchronizationEvent,kotlin.Unit>?){}[0]
+
+    final val eventCount // io.dataloom.testing.observation/RecordingSynchronizationObserver.eventCount|{}eventCount[0]
+        final fun <get-eventCount>(): kotlin/Int // io.dataloom.testing.observation/RecordingSynchronizationObserver.eventCount.<get-eventCount>|<get-eventCount>(){}[0]
+    final val events // io.dataloom.testing.observation/RecordingSynchronizationObserver.events|{}events[0]
+        final fun <get-events>(): kotlin.collections/List<io.dataloom.api.synchronization/SynchronizationEvent> // io.dataloom.testing.observation/RecordingSynchronizationObserver.events.<get-events>|<get-events>(){}[0]
+    final val id // io.dataloom.testing.observation/RecordingSynchronizationObserver.id|{}id[0]
+        final fun <get-id>(): io.dataloom.api.identifier/SynchronizationObserverId // io.dataloom.testing.observation/RecordingSynchronizationObserver.id.<get-id>|<get-id>(){}[0]
+    final val latestEvent // io.dataloom.testing.observation/RecordingSynchronizationObserver.latestEvent|{}latestEvent[0]
+        final fun <get-latestEvent>(): io.dataloom.api.synchronization/SynchronizationEvent? // io.dataloom.testing.observation/RecordingSynchronizationObserver.latestEvent.<get-latestEvent>|<get-latestEvent>(){}[0]
+
+    final fun clearRecordings() // io.dataloom.testing.observation/RecordingSynchronizationObserver.clearRecordings|clearRecordings(){}[0]
+    final fun onEvent(io.dataloom.api.synchronization/SynchronizationEvent) // io.dataloom.testing.observation/RecordingSynchronizationObserver.onEvent|onEvent(io.dataloom.api.synchronization.SynchronizationEvent){}[0]
+}
+
+final class io.dataloom.testing.provider/TestProviderLifecycleController { // io.dataloom.testing.provider/TestProviderLifecycleController|null[0]
+    constructor <init>(io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> = ..., io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> = ..., io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> = ...) // io.dataloom.testing.provider/TestProviderLifecycleController.<init>|<init>(io.dataloom.api.provider.ProviderOperationResult<kotlin.Unit>;io.dataloom.api.provider.ProviderOperationResult<io.dataloom.api.provider.ProviderHealth>;io.dataloom.api.provider.ProviderOperationResult<kotlin.Unit>){}[0]
+
+    final val closeCallCount // io.dataloom.testing.provider/TestProviderLifecycleController.closeCallCount|{}closeCallCount[0]
+        final fun <get-closeCallCount>(): kotlin/Int // io.dataloom.testing.provider/TestProviderLifecycleController.closeCallCount.<get-closeCallCount>|<get-closeCallCount>(){}[0]
+    final val healthCallCount // io.dataloom.testing.provider/TestProviderLifecycleController.healthCallCount|{}healthCallCount[0]
+        final fun <get-healthCallCount>(): kotlin/Int // io.dataloom.testing.provider/TestProviderLifecycleController.healthCallCount.<get-healthCallCount>|<get-healthCallCount>(){}[0]
+    final val initializationContexts // io.dataloom.testing.provider/TestProviderLifecycleController.initializationContexts|{}initializationContexts[0]
+        final fun <get-initializationContexts>(): kotlin.collections/List<io.dataloom.api.provider/ProviderInitializationContext> // io.dataloom.testing.provider/TestProviderLifecycleController.initializationContexts.<get-initializationContexts>|<get-initializationContexts>(){}[0]
+    final val initializeCallCount // io.dataloom.testing.provider/TestProviderLifecycleController.initializeCallCount|{}initializeCallCount[0]
+        final fun <get-initializeCallCount>(): kotlin/Int // io.dataloom.testing.provider/TestProviderLifecycleController.initializeCallCount.<get-initializeCallCount>|<get-initializeCallCount>(){}[0]
+    final val lifecycleCalls // io.dataloom.testing.provider/TestProviderLifecycleController.lifecycleCalls|{}lifecycleCalls[0]
+        final fun <get-lifecycleCalls>(): kotlin.collections/List<kotlin/String> // io.dataloom.testing.provider/TestProviderLifecycleController.lifecycleCalls.<get-lifecycleCalls>|<get-lifecycleCalls>(){}[0]
+    final val lifecycleState // io.dataloom.testing.provider/TestProviderLifecycleController.lifecycleState|{}lifecycleState[0]
+        final fun <get-lifecycleState>(): io.dataloom.api.provider/ProviderLifecycleState // io.dataloom.testing.provider/TestProviderLifecycleController.lifecycleState.<get-lifecycleState>|<get-lifecycleState>(){}[0]
+
+    final fun clearRecordings() // io.dataloom.testing.provider/TestProviderLifecycleController.clearRecordings|clearRecordings(){}[0]
+    final suspend fun close(): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.provider/TestProviderLifecycleController.close|close(){}[0]
+    final suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.testing.provider/TestProviderLifecycleController.health|health(){}[0]
+    final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.provider/TestProviderLifecycleController.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
+}
+
+final class io.dataloom.testing.queue/InMemoryQueueProvider : io.dataloom.api.queue/QueueProvider { // io.dataloom.testing.queue/InMemoryQueueProvider|null[0]
+    constructor <init>(io.dataloom.api.provider/ProviderDescriptor = ..., io.dataloom.testing.provider/TestProviderLifecycleController = ...) // io.dataloom.testing.queue/InMemoryQueueProvider.<init>|<init>(io.dataloom.api.provider.ProviderDescriptor;io.dataloom.testing.provider.TestProviderLifecycleController){}[0]
+
+    final val acquireRequests // io.dataloom.testing.queue/InMemoryQueueProvider.acquireRequests|{}acquireRequests[0]
+        final fun <get-acquireRequests>(): kotlin.collections/List<io.dataloom.api.queue/QueueAcquireRequest> // io.dataloom.testing.queue/InMemoryQueueProvider.acquireRequests.<get-acquireRequests>|<get-acquireRequests>(){}[0]
+    final val cancellationRequests // io.dataloom.testing.queue/InMemoryQueueProvider.cancellationRequests|{}cancellationRequests[0]
+        final fun <get-cancellationRequests>(): kotlin.collections/List<io.dataloom.api.queue/QueueCancellationRequest> // io.dataloom.testing.queue/InMemoryQueueProvider.cancellationRequests.<get-cancellationRequests>|<get-cancellationRequests>(){}[0]
+    final val completionRequests // io.dataloom.testing.queue/InMemoryQueueProvider.completionRequests|{}completionRequests[0]
+        final fun <get-completionRequests>(): kotlin.collections/List<io.dataloom.api.queue/QueueCompletionRequest> // io.dataloom.testing.queue/InMemoryQueueProvider.completionRequests.<get-completionRequests>|<get-completionRequests>(){}[0]
+    final val descriptor // io.dataloom.testing.queue/InMemoryQueueProvider.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.testing.queue/InMemoryQueueProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+    final val enqueueRequests // io.dataloom.testing.queue/InMemoryQueueProvider.enqueueRequests|{}enqueueRequests[0]
+        final fun <get-enqueueRequests>(): kotlin.collections/List<io.dataloom.api.queue/QueueEnqueueRequest> // io.dataloom.testing.queue/InMemoryQueueProvider.enqueueRequests.<get-enqueueRequests>|<get-enqueueRequests>(){}[0]
+    final val entryCount // io.dataloom.testing.queue/InMemoryQueueProvider.entryCount|{}entryCount[0]
+        final fun <get-entryCount>(): kotlin/Int // io.dataloom.testing.queue/InMemoryQueueProvider.entryCount.<get-entryCount>|<get-entryCount>(){}[0]
+    final val expiredLeaseRecoveryRequests // io.dataloom.testing.queue/InMemoryQueueProvider.expiredLeaseRecoveryRequests|{}expiredLeaseRecoveryRequests[0]
+        final fun <get-expiredLeaseRecoveryRequests>(): kotlin.collections/List<io.dataloom.api.queue/ExpiredLeaseRecoveryRequest> // io.dataloom.testing.queue/InMemoryQueueProvider.expiredLeaseRecoveryRequests.<get-expiredLeaseRecoveryRequests>|<get-expiredLeaseRecoveryRequests>(){}[0]
+    final val failureRequests // io.dataloom.testing.queue/InMemoryQueueProvider.failureRequests|{}failureRequests[0]
+        final fun <get-failureRequests>(): kotlin.collections/List<io.dataloom.api.queue/QueueFailureRequest> // io.dataloom.testing.queue/InMemoryQueueProvider.failureRequests.<get-failureRequests>|<get-failureRequests>(){}[0]
+    final val rescheduleRequests // io.dataloom.testing.queue/InMemoryQueueProvider.rescheduleRequests|{}rescheduleRequests[0]
+        final fun <get-rescheduleRequests>(): kotlin.collections/List<io.dataloom.api.queue/QueueRescheduleRequest> // io.dataloom.testing.queue/InMemoryQueueProvider.rescheduleRequests.<get-rescheduleRequests>|<get-rescheduleRequests>(){}[0]
+
+    final fun clearRecordings() // io.dataloom.testing.queue/InMemoryQueueProvider.clearRecordings|clearRecordings(){}[0]
+    final fun resetState() // io.dataloom.testing.queue/InMemoryQueueProvider.resetState|resetState(){}[0]
+    final fun snapshotEntryIds(): kotlin.collections/List<io.dataloom.api.identifier/QueueEntryId> // io.dataloom.testing.queue/InMemoryQueueProvider.snapshotEntryIds|snapshotEntryIds(){}[0]
+    final fun snapshotStates(): kotlin.collections/Map<io.dataloom.api.identifier/QueueEntryId, io.dataloom.api.queue/QueueEntryState> // io.dataloom.testing.queue/InMemoryQueueProvider.snapshotStates|snapshotStates(){}[0]
+    final suspend fun acquire(io.dataloom.api.queue/QueueAcquireRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.queue/QueueAcquireResult> // io.dataloom.testing.queue/InMemoryQueueProvider.acquire|acquire(io.dataloom.api.queue.QueueAcquireRequest){}[0]
+    final suspend fun cancel(io.dataloom.api.queue/QueueCancellationRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.queue/InMemoryQueueProvider.cancel|cancel(io.dataloom.api.queue.QueueCancellationRequest){}[0]
+    final suspend fun close(): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.queue/InMemoryQueueProvider.close|close(){}[0]
+    final suspend fun complete(io.dataloom.api.queue/QueueCompletionRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.queue/InMemoryQueueProvider.complete|complete(io.dataloom.api.queue.QueueCompletionRequest){}[0]
+    final suspend fun enqueue(io.dataloom.api.queue/QueueEnqueueRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.queue/InMemoryQueueProvider.enqueue|enqueue(io.dataloom.api.queue.QueueEnqueueRequest){}[0]
+    final suspend fun fail(io.dataloom.api.queue/QueueFailureRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.queue/InMemoryQueueProvider.fail|fail(io.dataloom.api.queue.QueueFailureRequest){}[0]
+    final suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.testing.queue/InMemoryQueueProvider.health|health(){}[0]
+    final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.queue/InMemoryQueueProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
+    final suspend fun recoverExpiredLeases(io.dataloom.api.queue/ExpiredLeaseRecoveryRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.queue/ExpiredLeaseRecoveryResult> // io.dataloom.testing.queue/InMemoryQueueProvider.recoverExpiredLeases|recoverExpiredLeases(io.dataloom.api.queue.ExpiredLeaseRecoveryRequest){}[0]
+    final suspend fun reschedule(io.dataloom.api.queue/QueueRescheduleRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.queue/InMemoryQueueProvider.reschedule|reschedule(io.dataloom.api.queue.QueueRescheduleRequest){}[0]
+}
+
+final class io.dataloom.testing.retry/ScriptedRetryPolicy : io.dataloom.api.retry/RetryPolicy { // io.dataloom.testing.retry/ScriptedRetryPolicy|null[0]
+    constructor <init>(io.dataloom.api.identifier/RetryPolicyId, kotlin.collections/MutableList<io.dataloom.api.retry/RetryDecision> = ..., io.dataloom.api.retry/RetryDecision? = ...) // io.dataloom.testing.retry/ScriptedRetryPolicy.<init>|<init>(io.dataloom.api.identifier.RetryPolicyId;kotlin.collections.MutableList<io.dataloom.api.retry.RetryDecision>;io.dataloom.api.retry.RetryDecision?){}[0]
+
+    final val evaluationRequests // io.dataloom.testing.retry/ScriptedRetryPolicy.evaluationRequests|{}evaluationRequests[0]
+        final fun <get-evaluationRequests>(): kotlin.collections/List<io.dataloom.api.retry/RetryEvaluationRequest> // io.dataloom.testing.retry/ScriptedRetryPolicy.evaluationRequests.<get-evaluationRequests>|<get-evaluationRequests>(){}[0]
+    final val id // io.dataloom.testing.retry/ScriptedRetryPolicy.id|{}id[0]
+        final fun <get-id>(): io.dataloom.api.identifier/RetryPolicyId // io.dataloom.testing.retry/ScriptedRetryPolicy.id.<get-id>|<get-id>(){}[0]
+
+    final fun clearRecordings() // io.dataloom.testing.retry/ScriptedRetryPolicy.clearRecordings|clearRecordings(){}[0]
+    final fun enqueueDecision(io.dataloom.api.retry/RetryDecision) // io.dataloom.testing.retry/ScriptedRetryPolicy.enqueueDecision|enqueueDecision(io.dataloom.api.retry.RetryDecision){}[0]
+    final fun evaluate(io.dataloom.api.retry/RetryEvaluationRequest): io.dataloom.api.retry/RetryDecision // io.dataloom.testing.retry/ScriptedRetryPolicy.evaluate|evaluate(io.dataloom.api.retry.RetryEvaluationRequest){}[0]
+    final fun resetState() // io.dataloom.testing.retry/ScriptedRetryPolicy.resetState|resetState(){}[0]
+}
+
+final class io.dataloom.testing.scheduling/RecordingSchedulerProvider : io.dataloom.api.scheduling/SchedulerProvider { // io.dataloom.testing.scheduling/RecordingSchedulerProvider|null[0]
+    constructor <init>(io.dataloom.api.provider/ProviderDescriptor = ..., io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.scheduling/ScheduleReceipt>? = ..., io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> = ..., io.dataloom.testing.provider/TestProviderLifecycleController = ...) // io.dataloom.testing.scheduling/RecordingSchedulerProvider.<init>|<init>(io.dataloom.api.provider.ProviderDescriptor;io.dataloom.api.provider.ProviderOperationResult<io.dataloom.api.scheduling.ScheduleReceipt>?;io.dataloom.api.provider.ProviderOperationResult<kotlin.Unit>;io.dataloom.testing.provider.TestProviderLifecycleController){}[0]
+
+    final val cancellationRequests // io.dataloom.testing.scheduling/RecordingSchedulerProvider.cancellationRequests|{}cancellationRequests[0]
+        final fun <get-cancellationRequests>(): kotlin.collections/List<io.dataloom.api.scheduling/ScheduleCancellationRequest> // io.dataloom.testing.scheduling/RecordingSchedulerProvider.cancellationRequests.<get-cancellationRequests>|<get-cancellationRequests>(){}[0]
+    final val descriptor // io.dataloom.testing.scheduling/RecordingSchedulerProvider.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.testing.scheduling/RecordingSchedulerProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+    final val scheduleRequests // io.dataloom.testing.scheduling/RecordingSchedulerProvider.scheduleRequests|{}scheduleRequests[0]
+        final fun <get-scheduleRequests>(): kotlin.collections/List<io.dataloom.api.scheduling/ScheduleRequest> // io.dataloom.testing.scheduling/RecordingSchedulerProvider.scheduleRequests.<get-scheduleRequests>|<get-scheduleRequests>(){}[0]
+
+    final fun clearRecordings() // io.dataloom.testing.scheduling/RecordingSchedulerProvider.clearRecordings|clearRecordings(){}[0]
+    final fun enqueueScheduleResult(io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.scheduling/ScheduleReceipt>) // io.dataloom.testing.scheduling/RecordingSchedulerProvider.enqueueScheduleResult|enqueueScheduleResult(io.dataloom.api.provider.ProviderOperationResult<io.dataloom.api.scheduling.ScheduleReceipt>){}[0]
+    final fun resetState() // io.dataloom.testing.scheduling/RecordingSchedulerProvider.resetState|resetState(){}[0]
+    final suspend fun cancel(io.dataloom.api.scheduling/ScheduleCancellationRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.scheduling/RecordingSchedulerProvider.cancel|cancel(io.dataloom.api.scheduling.ScheduleCancellationRequest){}[0]
+    final suspend fun close(): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.scheduling/RecordingSchedulerProvider.close|close(){}[0]
+    final suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.testing.scheduling/RecordingSchedulerProvider.health|health(){}[0]
+    final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.scheduling/RecordingSchedulerProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
+    final suspend fun schedule(io.dataloom.api.scheduling/ScheduleRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.scheduling/ScheduleReceipt> // io.dataloom.testing.scheduling/RecordingSchedulerProvider.schedule|schedule(io.dataloom.api.scheduling.ScheduleRequest){}[0]
+}
+
+final class io.dataloom.testing.storage/InMemoryStorageProvider : io.dataloom.api.storage/StorageProvider { // io.dataloom.testing.storage/InMemoryStorageProvider|null[0]
+    constructor <init>(io.dataloom.api.provider/ProviderDescriptor = ..., io.dataloom.testing.provider/TestProviderLifecycleController = ...) // io.dataloom.testing.storage/InMemoryStorageProvider.<init>|<init>(io.dataloom.api.provider.ProviderDescriptor;io.dataloom.testing.provider.TestProviderLifecycleController){}[0]
+
+    final val acknowledgeRequests // io.dataloom.testing.storage/InMemoryStorageProvider.acknowledgeRequests|{}acknowledgeRequests[0]
+        final fun <get-acknowledgeRequests>(): kotlin.collections/List<io.dataloom.api.synchronization/OutboundChangeAcknowledgementRequest> // io.dataloom.testing.storage/InMemoryStorageProvider.acknowledgeRequests.<get-acknowledgeRequests>|<get-acknowledgeRequests>(){}[0]
+    final val applyInboundRequests // io.dataloom.testing.storage/InMemoryStorageProvider.applyInboundRequests|{}applyInboundRequests[0]
+        final fun <get-applyInboundRequests>(): kotlin.collections/List<io.dataloom.api.storage/InboundChangeApplyRequest> // io.dataloom.testing.storage/InMemoryStorageProvider.applyInboundRequests.<get-applyInboundRequests>|<get-applyInboundRequests>(){}[0]
+    final val checkpointReadRequests // io.dataloom.testing.storage/InMemoryStorageProvider.checkpointReadRequests|{}checkpointReadRequests[0]
+        final fun <get-checkpointReadRequests>(): kotlin.collections/List<io.dataloom.api.synchronization/CheckpointReadRequest> // io.dataloom.testing.storage/InMemoryStorageProvider.checkpointReadRequests.<get-checkpointReadRequests>|<get-checkpointReadRequests>(){}[0]
+    final val checkpointWriteRequests // io.dataloom.testing.storage/InMemoryStorageProvider.checkpointWriteRequests|{}checkpointWriteRequests[0]
+        final fun <get-checkpointWriteRequests>(): kotlin.collections/List<io.dataloom.api.synchronization/CheckpointWriteRequest> // io.dataloom.testing.storage/InMemoryStorageProvider.checkpointWriteRequests.<get-checkpointWriteRequests>|<get-checkpointWriteRequests>(){}[0]
+    final val descriptor // io.dataloom.testing.storage/InMemoryStorageProvider.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.testing.storage/InMemoryStorageProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+    final val readOutboundRequests // io.dataloom.testing.storage/InMemoryStorageProvider.readOutboundRequests|{}readOutboundRequests[0]
+        final fun <get-readOutboundRequests>(): kotlin.collections/List<io.dataloom.api.storage/OutboundChangeReadRequest> // io.dataloom.testing.storage/InMemoryStorageProvider.readOutboundRequests.<get-readOutboundRequests>|<get-readOutboundRequests>(){}[0]
+
+    final fun clearRecordings() // io.dataloom.testing.storage/InMemoryStorageProvider.clearRecordings|clearRecordings(){}[0]
+    final fun enqueueAcknowledgeResult(io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit>) // io.dataloom.testing.storage/InMemoryStorageProvider.enqueueAcknowledgeResult|enqueueAcknowledgeResult(io.dataloom.api.provider.ProviderOperationResult<kotlin.Unit>){}[0]
+    final fun enqueueApplyInboundResult(io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit>) // io.dataloom.testing.storage/InMemoryStorageProvider.enqueueApplyInboundResult|enqueueApplyInboundResult(io.dataloom.api.provider.ProviderOperationResult<kotlin.Unit>){}[0]
+    final fun enqueueReadOutboundResult(io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.storage/OutboundChangeReadResult>) // io.dataloom.testing.storage/InMemoryStorageProvider.enqueueReadOutboundResult|enqueueReadOutboundResult(io.dataloom.api.provider.ProviderOperationResult<io.dataloom.api.storage.OutboundChangeReadResult>){}[0]
+    final fun resetState() // io.dataloom.testing.storage/InMemoryStorageProvider.resetState|resetState(){}[0]
+    final fun setCheckpointReadFailure(io.dataloom.api.error/DataLoomError?) // io.dataloom.testing.storage/InMemoryStorageProvider.setCheckpointReadFailure|setCheckpointReadFailure(io.dataloom.api.error.DataLoomError?){}[0]
+    final fun setCheckpointWriteFailure(io.dataloom.api.error/DataLoomError?) // io.dataloom.testing.storage/InMemoryStorageProvider.setCheckpointWriteFailure|setCheckpointWriteFailure(io.dataloom.api.error.DataLoomError?){}[0]
+    final suspend fun acknowledgeOutboundChanges(io.dataloom.api.synchronization/OutboundChangeAcknowledgementRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.storage/InMemoryStorageProvider.acknowledgeOutboundChanges|acknowledgeOutboundChanges(io.dataloom.api.synchronization.OutboundChangeAcknowledgementRequest){}[0]
+    final suspend fun applyInboundChanges(io.dataloom.api.storage/InboundChangeApplyRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.storage/InMemoryStorageProvider.applyInboundChanges|applyInboundChanges(io.dataloom.api.storage.InboundChangeApplyRequest){}[0]
+    final suspend fun close(): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.storage/InMemoryStorageProvider.close|close(){}[0]
+    final suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.testing.storage/InMemoryStorageProvider.health|health(){}[0]
+    final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.storage/InMemoryStorageProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
+    final suspend fun readCheckpoint(io.dataloom.api.synchronization/CheckpointReadRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.synchronization/SynchronizationCheckpoint?> // io.dataloom.testing.storage/InMemoryStorageProvider.readCheckpoint|readCheckpoint(io.dataloom.api.synchronization.CheckpointReadRequest){}[0]
+    final suspend fun readOutboundChanges(io.dataloom.api.storage/OutboundChangeReadRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.storage/OutboundChangeReadResult> // io.dataloom.testing.storage/InMemoryStorageProvider.readOutboundChanges|readOutboundChanges(io.dataloom.api.storage.OutboundChangeReadRequest){}[0]
+    final suspend fun writeCheckpoint(io.dataloom.api.synchronization/CheckpointWriteRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.storage/InMemoryStorageProvider.writeCheckpoint|writeCheckpoint(io.dataloom.api.synchronization.CheckpointWriteRequest){}[0]
+}
+
+final class io.dataloom.testing.time/FixedDataLoomClock : io.dataloom.api.time/DataLoomClock { // io.dataloom.testing.time/FixedDataLoomClock|null[0]
+    constructor <init>(io.dataloom.api.time/DataLoomInstant) // io.dataloom.testing.time/FixedDataLoomClock.<init>|<init>(io.dataloom.api.time.DataLoomInstant){}[0]
+
+    final val instant // io.dataloom.testing.time/FixedDataLoomClock.instant|{}instant[0]
+        final fun <get-instant>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.testing.time/FixedDataLoomClock.instant.<get-instant>|<get-instant>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.testing.time/FixedDataLoomClock.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.testing.time/FixedDataLoomClock.hashCode|hashCode(){}[0]
+    final fun now(): io.dataloom.api.time/DataLoomInstant // io.dataloom.testing.time/FixedDataLoomClock.now|now(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.testing.time/FixedDataLoomClock.toString|toString(){}[0]
+}
+
+final class io.dataloom.testing.time/MutableDataLoomClock : io.dataloom.api.time/DataLoomClock { // io.dataloom.testing.time/MutableDataLoomClock|null[0]
+    constructor <init>(io.dataloom.api.time/DataLoomInstant) // io.dataloom.testing.time/MutableDataLoomClock.<init>|<init>(io.dataloom.api.time.DataLoomInstant){}[0]
+
+    final fun advanceBy(kotlin/Long) // io.dataloom.testing.time/MutableDataLoomClock.advanceBy|advanceBy(kotlin.Long){}[0]
+    final fun now(): io.dataloom.api.time/DataLoomInstant // io.dataloom.testing.time/MutableDataLoomClock.now|now(){}[0]
+    final fun set(io.dataloom.api.time/DataLoomInstant) // io.dataloom.testing.time/MutableDataLoomClock.set|set(io.dataloom.api.time.DataLoomInstant){}[0]
+}
+
+final class io.dataloom.testing.transport/ScriptedTransportProvider : io.dataloom.api.transport/TransportProvider { // io.dataloom.testing.transport/ScriptedTransportProvider|null[0]
+    constructor <init>(io.dataloom.api.provider/ProviderDescriptor = ..., io.dataloom.testing.provider/TestProviderLifecycleController = ...) // io.dataloom.testing.transport/ScriptedTransportProvider.<init>|<init>(io.dataloom.api.provider.ProviderDescriptor;io.dataloom.testing.provider.TestProviderLifecycleController){}[0]
+
+    final val descriptor // io.dataloom.testing.transport/ScriptedTransportProvider.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.testing.transport/ScriptedTransportProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+    final val pullRequests // io.dataloom.testing.transport/ScriptedTransportProvider.pullRequests|{}pullRequests[0]
+        final fun <get-pullRequests>(): kotlin.collections/List<io.dataloom.api.transport/PullChangesRequest> // io.dataloom.testing.transport/ScriptedTransportProvider.pullRequests.<get-pullRequests>|<get-pullRequests>(){}[0]
+    final val pushRequests // io.dataloom.testing.transport/ScriptedTransportProvider.pushRequests|{}pushRequests[0]
+        final fun <get-pushRequests>(): kotlin.collections/List<io.dataloom.api.transport/PushChangesRequest> // io.dataloom.testing.transport/ScriptedTransportProvider.pushRequests.<get-pushRequests>|<get-pushRequests>(){}[0]
+
+    final fun clearRecordings() // io.dataloom.testing.transport/ScriptedTransportProvider.clearRecordings|clearRecordings(){}[0]
+    final fun enqueuePullResult(io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.transport/PullChangesResult>) // io.dataloom.testing.transport/ScriptedTransportProvider.enqueuePullResult|enqueuePullResult(io.dataloom.api.provider.ProviderOperationResult<io.dataloom.api.transport.PullChangesResult>){}[0]
+    final fun enqueuePushResult(io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.synchronization/ChangeSetAcknowledgement>) // io.dataloom.testing.transport/ScriptedTransportProvider.enqueuePushResult|enqueuePushResult(io.dataloom.api.provider.ProviderOperationResult<io.dataloom.api.synchronization.ChangeSetAcknowledgement>){}[0]
+    final fun resetState() // io.dataloom.testing.transport/ScriptedTransportProvider.resetState|resetState(){}[0]
+    final suspend fun close(): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.transport/ScriptedTransportProvider.close|close(){}[0]
+    final suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.testing.transport/ScriptedTransportProvider.health|health(){}[0]
+    final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.transport/ScriptedTransportProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
+    final suspend fun pullChanges(io.dataloom.api.transport/PullChangesRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.transport/PullChangesResult> // io.dataloom.testing.transport/ScriptedTransportProvider.pullChanges|pullChanges(io.dataloom.api.transport.PullChangesRequest){}[0]
+    final suspend fun pushChanges(io.dataloom.api.transport/PushChangesRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.synchronization/ChangeSetAcknowledgement> // io.dataloom.testing.transport/ScriptedTransportProvider.pushChanges|pushChanges(io.dataloom.api.transport.PushChangesRequest){}[0]
+}
+
+final object io.dataloom/DataLoomTestingModule // io.dataloom/DataLoomTestingModule|null[0]

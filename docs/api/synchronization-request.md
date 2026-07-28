@@ -1,9 +1,31 @@
 # DataLoom Synchronization Request (DL-005)
 
+[API reference index](./README.md)
+
+> **Status:** Available request contract. It does not yet carry the versioned
+> plan required for all six mandatory V1 synchronization strategies.
+
 `SynchronizationRequest` is an immutable public contract in `dataloom-api`
 that describes synchronization intent.
 
 Creating a request does not execute or enqueue synchronization.
+
+```mermaid
+flowchart LR
+    Caller[Caller] --> Request[SynchronizationRequest]
+    Request --> Identity[Workflow and session IDs]
+    Request --> Direction[Push pull or bidirectional]
+    Request --> Mode[Full or delta]
+    Request --> Priority[Workflow priority]
+    Request --> Context[Execution context]
+    Request -.-> Strategy[Mandatory V1 strategy plan not implemented]
+    Strategy --> Offline[Offline-first]
+    Strategy --> Remote[Remote-first]
+    Strategy --> Cache[Cache-first]
+    Strategy --> Network[Network-only]
+    Strategy --> Hybrid[Hybrid]
+    Strategy --> Adaptive[Adaptive]
+```
 
 ## Properties
 
@@ -26,10 +48,17 @@ associated synchronization session.
 
 These values describe intent only.
 
+They do not describe offline-first, remote-first, cache-first, network-only,
+hybrid, or adaptive behavior. `FULL`/`DELTA` selects synchronization scope,
+not source priority, consistency, fallback, or durability policy. The current
+request has no synchronization-strategy field; the versioned V1 strategy and
+effective-plan contract is tracked in GitHub issue #102 and
+[ADR-0002](../adr/ADR-0002-v1-artifact-and-foundation-architecture.md).
+
 ## Priority
 
 Priority defaults to `WorkflowPriority.NORMAL`. Scheduler interpretation is
-deferred to a runtime issue.
+not currently defined by a complete V1 strategy/effective-plan contract.
 
 ## Execution context
 

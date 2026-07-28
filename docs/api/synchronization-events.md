@@ -1,18 +1,24 @@
 # DataLoom Synchronization Events Contracts (DL-016)
 
+[API reference index](./README.md)
+
+> **Status:** Available event contracts with selected runtime integration.
+> Complete durable lifecycle and operational observability is not implemented.
+
 This document defines the synchronization lifecycle event contracts
 introduced in `dataloom-api` by DL-016.
 
 These contracts represent immutable facts about synchronization execution.
-Event dispatch infrastructure, observer registration, replay, backpressure,
-and Flow-based streaming are **not implemented** in this issue.
+Sequential in-process dispatch, observer registration, and selected runtime
+emission now exist. Durable delivery, replay, filtering, back-pressure, schema
+evolution, and streaming/export adapters are not implemented.
 
 ---
 
 ## Overview
 
 `SynchronizationEvent` is a sealed public interface with one variant per
-observable lifecycle moment. Events are produced and emitted by the future
+observable lifecycle moment. Selected events are produced by the current
 DataLoom runtime; applications receive them through a
 `SynchronizationObserver`.
 
@@ -70,7 +76,7 @@ Wraps a non-blank `String` that uniquely identifies a single emitted event.
 - Blank and whitespace-only values are rejected.
 - Exact input is preserved without normalization.
 - `toString()` returns the wrapped value.
-- Ownership: future runtime or host integration.
+- Ownership: injected runtime or host identifier generation.
 
 ### SynchronizationObserverId
 
@@ -140,7 +146,7 @@ Creating this event does not accumulate progress.
 
 ### RetryScheduled
 
-Reports a retry decision already made by the future runtime.
+Reports a retry decision already made by the runtime.
 
 ```kotlin
 public data class RetryScheduled(
@@ -195,7 +201,7 @@ Runtime emits ConflictDetected
         ↓
 ConflictResolver produces a decision
         ↓
-Runtime applies the decision
+Caller consumes the decision; V1 runtime application is not implemented
 ```
 
 Creating this event:
@@ -259,17 +265,13 @@ for detailed observer semantics and boundaries.
 
 ---
 
-## Future Kotlin Flow Observation
+## Delivery boundary
 
-A dedicated runtime-observation issue will introduce a Flow-based API after
-event delivery semantics are approved:
-
-```kotlin
-public fun observe(workflowId: WorkflowId): Flow<SynchronizationEvent>
-```
-
-Do **not** add `kotlinx-coroutines-core` or expose `Flow` types in DL-016.
-Buffer, overflow, and backpressure behavior are deferred.
+The current observer contract is synchronous and in-process. It exposes no
+`Flow`, `StateFlow`, `SharedFlow`, `Channel`, durable event stream, or replay
+cursor. V1 delivery must define bounded buffering, overflow/back-pressure,
+ordering, acknowledgement, replay, filtering, isolation, and schema evolution
+before an additional streaming adapter can be treated as production API.
 
 ---
 

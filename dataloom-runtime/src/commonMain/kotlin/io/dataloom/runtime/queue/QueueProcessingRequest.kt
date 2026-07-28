@@ -8,7 +8,7 @@ import io.dataloom.api.queue.QueueAcquireRequest
  *
  * [QueueProcessingRequest] preserves the caller-supplied [acquireRequest]
  * exactly. The [DurableQueueExecutionProcessor] forwards it unchanged to
- * [io.dataloom.api.provider.QueueProvider.acquire].
+ * [io.dataloom.api.queue.QueueProvider.acquire].
  *
  * ## Constraints
  *
@@ -23,13 +23,13 @@ import io.dataloom.api.queue.QueueAcquireRequest
  * Kotlin Multiplatform common code.
  *
  * @param acquireRequest required caller-supplied acquisition request. Preserved
- *   verbatim and forwarded to [io.dataloom.api.provider.QueueProvider.acquire].
+ *   verbatim and forwarded to [io.dataloom.api.queue.QueueProvider.acquire].
  */
 public data class QueueProcessingRequest(
     /**
      * Required caller-supplied acquisition request.
      *
-     * Forwarded unchanged to [io.dataloom.api.provider.QueueProvider.acquire].
+     * Forwarded unchanged to [io.dataloom.api.queue.QueueProvider.acquire].
      */
     public val acquireRequest: QueueAcquireRequest,
 )

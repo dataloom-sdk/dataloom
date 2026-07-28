@@ -5,7 +5,7 @@ This document describes the operational event integration flows introduced in
 
 DL-030 extends the DL-029 lifecycle event infrastructure with `ProgressUpdated`,
 `RetryScheduled`, and `ConflictDetected` event generation at durable operation
-boundaries. It reuses DL-029 event-ID generation, timestamp generation, and
+or defined decision boundaries. It reuses DL-029 event-ID generation, timestamp generation, and
 observer dispatch without duplication.
 
 ---
@@ -20,6 +20,35 @@ DL-030 wires three operational event types into the DataLoom execution runtime:
 | ProgressUpdated    | InboundPullSynchronizationPipeline     | After durable inbound apply and checkpoint   |
 | RetryScheduled     | SynchronizationRetryOrchestrator       | After SchedulerProvider.schedule() succeeds  |
 | ConflictDetected   | SynchronizationConflictOrchestrator    | After conflict detected, before resolution   |
+
+```mermaid
+flowchart LR
+    operation[Runtime operation]
+    durable{Emission boundary reached?}
+    event{Event type}
+    progress[ProgressUpdated]
+    retry[RetryScheduled]
+    conflict[ConflictDetected]
+    dispatcher[Event dispatcher]
+    observers[Observers]
+
+    operation --> durable
+    durable -->|No| operation
+    durable -->|Yes| event
+    event --> progress
+    event --> retry
+    event --> conflict
+    progress --> dispatcher
+    retry --> dispatcher
+    conflict --> dispatcher
+    dispatcher --> observers
+
+    style durable fill:#FFECBD,stroke:#FFC943
+    style dispatcher fill:#C2E5FF,stroke:#3DADFF
+```
+
+Events describe work at defined boundaries; they do not cause storage, queue,
+scheduler, or conflict transitions themselves.
 
 ---
 

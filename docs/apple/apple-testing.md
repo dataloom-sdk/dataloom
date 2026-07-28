@@ -1,78 +1,115 @@
-# DataLoom Apple Testing (DL-036)
+# Apple testing
 
-## Strategy
+> **Audience:** Contributors validating shared Kotlin code on Apple targets
+> **Purpose:** Define the current macOS test flow and distinguish it from V1
+> platform qualification
+> **Status:** Shared fake-backed simulator coverage exists; real Apple adapter
+> and executable-consumer coverage does not
 
-Shared `commonTest` files are reused across all configured Apple targets.
-Apple-specific tests belong in `iosTest` only when they cover Apple-only
-behavior, which is not the case in DL-036.
+[← Apple guide](README.md) ·
+[Apple targets](apple-targets.md) ·
+[Swift smoke fixture](../../apple-smoke/README.md)
 
-## iOS Simulator Target
+## What the current lane proves
 
-Shared tests are run on `iosSimulatorArm64`:
+Shared `commonTest` suites run on the Apple-silicon iOS Simulator. This proves
+that the covered Kotlin logic compiles and behaves consistently on
+Kotlin/Native under fake-backed tests.
 
-```bash
-./gradlew :dataloom-api:iosSimulatorArm64Test
-./gradlew :dataloom-core:iosSimulatorArm64Test
-./gradlew :dataloom-runtime:iosSimulatorArm64Test
-./gradlew :dataloom-testing:iosSimulatorArm64Test
+It does not prove real iOS lifecycle, networking, persistence, files,
+Keychain, background tasks, termination/relaunch, assets, or a production
+consumer.
+
+## Build and test flow
+
+```mermaid
+flowchart LR
+    source["Shared Kotlin"]
+    compile["Compile Apple targets"]
+    simulator["Run simulator tests"]
+    framework["Assemble XCFramework"]
+    smoke["Compile Swift fixture"]
+    kmpQualification["Qualify KMP iOS"]
+
+    source --> compile --> framework --> smoke
+    source --> simulator
+    simulator -.->|"Necessary evidence"| kmpQualification
+    smoke -.->|"Swift baseline only"| kmpQualification
 ```
 
-These tasks run the same `commonTest` suite on the Apple-silicon iOS
-simulator, validating that the shared Kotlin code behaves identically on
-Kotlin/Native as it does on JVM.
+## Run shared simulator tests
 
-## Test Scope (DL-036)
+Run from the repository root on macOS:
 
-The following behaviors are validated by the shared test suite running on iOS:
+```bash
+./gradlew \
+    :dataloom-model:iosSimulatorArm64Test \
+    :dataloom-provider-api:iosSimulatorArm64Test \
+    :dataloom-api:iosSimulatorArm64Test \
+    :dataloom-core:iosSimulatorArm64Test \
+    :dataloom-runtime:iosSimulatorArm64Test \
+    :dataloom-testing:iosSimulatorArm64Test
+```
 
-| Test Area | Coverage |
+The tasks do not exist on Linux or Windows because Apple targets are not
+declared there.
+
+## Current coverage
+
+| Area | Current shared evidence |
 |---|---|
-| dataloom-api compilation | All `commonTest` tests |
-| dataloom-core compilation | All `commonTest` tests |
-| dataloom-runtime compilation | All `commonTest` tests |
-| DataLoom facade construction | `DataLoomRuntimeModuleTest` and related |
+| Model, provider API, API, core, runtime, and testing modules | Their `commonTest` suites run on `iosSimulatorArm64` |
+| Facade construction | `DataLoomRuntimeModuleTest` and related tests |
 | Provider lifecycle | `ProviderLifecycleCoordinatorTest` |
-| Outbound synchronization | `OutboundPushPipelineConfiguration` tests |
-| Inbound synchronization | `InboundPullPipelineConfiguration` tests |
-| Bidirectional synchronization | `BidirectionalSynchronizationPipeline` tests |
-| Retry behavior | `SynchronizationRetryEvaluatorTest` and related |
-| Queue processing | `DurableQueueExecutionProcessor` tests |
-| Event delivery | `SynchronizationEventDispatcherTest` |
-| Connectivity preflight | `SynchronizationConnectivityPreflightTest` |
-| Queue submission | `DefaultDataLoomQueueSubmission` tests |
+| Inbound, outbound, and bidirectional orchestration | Shared pipeline tests |
+| Retry foundations | Evaluator and orchestrator tests |
+| Queue processing and submission | Durable processor and submission tests |
+| Conflict foundations | Detector/resolver orchestration tests |
+| Events | Dispatcher and runtime-emitter tests |
+| Connectivity preflight | Shared fake-provider tests |
 
-## Test Requirements
+The exact test inventory evolves with source. This table describes categories,
+not a frozen list of test class names.
 
-All Apple-platform tests must remain:
+## Determinism requirements
 
-- **Deterministic** — no random identifiers, no system clock
-- **Isolated** — no shared mutable state between tests
-- **Repeatable** — same result on every run
-- **Independent of production services** — no real network, database, scheduler,
-  keychain, or background task APIs
+Apple shared tests must remain:
 
-The DL-035 testing utilities (`InMemoryQueueProvider`, `FixedDataLoomClock`,
-`SequenceIdentifierGenerator`, etc.) are used in iOS simulator tests via the
-`dataloom-testing` module.
+- deterministic, with injected clocks and identifier generators;
+- isolated from mutable global state;
+- independent of production services and credentials;
+- explicit about caller-serialized mutable test utilities;
+- free of real network, database, Keychain, filesystem, and background-task
+  side effects unless placed in a dedicated platform integration fixture.
 
-## Host Restriction
+Use `FixedDataLoomClock`, `MutableDataLoomClock`,
+`SequenceIdentifierGenerator`, and the other
+[`dataloom-testing` utilities](../testing/testing-toolkit.md).
 
-iOS simulator tests run **only on macOS** (see [apple-targets.md](apple-targets.md)).
-On Linux, the convention plugin does not declare iOS targets, so no iOS test
-tasks exist.
+## Additional producer checks
 
-## macOS CI
+The repository's
+[Apple Platform Validation workflow](../../.github/workflows/apple-validation.yml)
+also compiles all three targets, validates Kotlin/KLib ABI, compiles the
+external KMP consumer for every iOS target, assembles the XCFramework, audits
+generated headers for internal namespaces and slice drift, compiles the Swift
+smoke fixture, and runs the shared regression suite. This documentation does
+not trigger that workflow.
 
-The macOS CI job (`.github/workflows/apple-validation.yml`) runs all Apple
-tests automatically on pull requests and pushes to `main`.
+For local XCFramework and Swift commands, see
+[XCFramework integration](xcframework-integration.md) and the
+[smoke fixture](../../apple-smoke/README.md).
 
-## What Tests Do NOT Use
+## V1 qualification still required
 
-- Real network connections
-- Real databases (SQLite, Core Data)
-- Real schedulers (BGTaskScheduler)
-- Keychain APIs
-- Background task APIs
-- Random identifiers (use `SequenceIdentifierGenerator`)
-- System clock (use `FixedDataLoomClock` or `MutableDataLoomClock`)
-- Production credentials or personal data
+| Required area | Evidence still missing |
+|---|---|
+| KMP iOS consumer | External executable application using published-style variants |
+| Apple providers | Real connectivity, scheduling, persistence, security, and lifecycle tests |
+| Recovery | Interruption, process termination, lease expiry, relaunch, and migration |
+| Assets | Bounded streaming, cleanup, integrity, resume, and storage-pressure behavior |
+| Strategy profiles | Offline-first, remote-first, cache-first, network-only, hybrid, and adaptive parity |
+| Platform matrix | Approved device/simulator and degraded-capability coverage |
+
+Optional native Swift runtime testing is a separate distribution gate. It does
+not replace mandatory KMP iOS qualification.

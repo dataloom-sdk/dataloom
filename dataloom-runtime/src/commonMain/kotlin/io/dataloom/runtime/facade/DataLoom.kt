@@ -1,9 +1,9 @@
 package io.dataloom.runtime.facade
 
 import io.dataloom.api.model.SynchronizationRequest
-import io.dataloom.core.provider.ProviderLifecycleCoordinatorState
-import io.dataloom.core.provider.ProviderLifecycleResult
-import io.dataloom.core.provider.SynchronizationProviderBindings
+import io.dataloom.api.provider.ProviderLifecycleCoordinatorState
+import io.dataloom.api.provider.ProviderLifecycleResult
+import io.dataloom.api.provider.SynchronizationProviderBindings
 import io.dataloom.runtime.execution.SynchronizationExecutionResult
 import io.dataloom.runtime.submission.DataLoomQueueSubmission
 
@@ -30,8 +30,8 @@ import io.dataloom.runtime.submission.DataLoomQueueSubmission
  *
  * ## Shutdown
  *
- * Call [shutdown] when the runtime is no longer needed. Shutdown uses
- * reverse initialization order as documented in [io.dataloom.core.provider.ProviderLifecycleCoordinator].
+ * Call [shutdown] when the runtime is no longer needed. Providers shut down
+ * in reverse initialization order.
  *
  * ## Concurrency
  *
@@ -89,7 +89,7 @@ public interface DataLoom {
      * The optional queue-submission capability.
      *
      * `null` when [DataLoomBuilder.queueSubmissionEncoder] was not supplied
-     * during build or when a valid [io.dataloom.api.provider.QueueProvider]
+     * during build or when a valid [io.dataloom.api.queue.QueueProvider]
      * binding was absent. Non-null when a
      * [io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder] and a
      * valid queue provider binding were both configured.
@@ -100,7 +100,7 @@ public interface DataLoom {
      * No provider is initialized automatically. Callers must invoke
      * [initialize] before submitting queue work.
      *
-     * The [io.dataloom.api.provider.QueueProvider] is not exposed through this
+     * The [io.dataloom.api.queue.QueueProvider] is not exposed through this
      * property.
      */
     public val queueSubmission: DataLoomQueueSubmission?
@@ -108,8 +108,8 @@ public interface DataLoom {
     /**
      * Initializes all registered providers in registration order.
      *
-     * Delegates to [io.dataloom.core.provider.ProviderLifecycleCoordinator.initialize]
-     * and returns the result unchanged.
+     * Initializes the internal provider lifecycle coordinator and returns its
+     * result unchanged.
      *
      * Callers must serialize this call with [shutdown]. Concurrent lifecycle
      * calls produce undefined behavior.
@@ -168,8 +168,8 @@ public interface DataLoom {
      * Shuts down all successfully initialized providers in reverse
      * initialization order.
      *
-     * Delegates to [io.dataloom.core.provider.ProviderLifecycleCoordinator.shutdown]
-     * and returns the result unchanged.
+     * Shuts down the internal provider lifecycle coordinator and returns its
+     * result unchanged.
      *
      * Callers must serialize this call with [initialize]. Concurrent lifecycle
      * calls produce undefined behavior.

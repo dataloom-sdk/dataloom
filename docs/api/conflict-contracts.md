@@ -1,21 +1,30 @@
 # DataLoom Conflict Contracts (DL-014)
 
+[API reference index](./README.md)
+
+> **Status:** Partial V1 subsystem. Custom contracts exist; built-in policies,
+> precedence, decision application, persistence, audit, and loop protection do
+> not.
+
 This document defines the conflict-detection and conflict-resolution public
 contracts introduced in `dataloom-api` by DL-014.
 
 These contracts represent conflict data, detection requests and results, and
-resolution requests and decisions only. Runtime conflict orchestration,
-storage mutation, transport operations, queue updates, retry execution, and
-built-in conflict strategies are **not implemented** in this issue.
+resolution requests and decisions. Exact custom detector/resolver
+orchestration now exists in `dataloom-runtime`; storage mutation, durable
+unresolved-conflict handling, queue/retry integration, audit, and built-in
+conflict strategies remain incomplete.
 
 ---
 
 ## Overview
 
 DataLoom coordinates conflict detection and resolution, while the host
-application owns domain-specific conflict rules and merge behavior.
+application owns its schema-specific merge knowledge. That application
+boundary does not replace the mandatory V1 built-in policy framework and safe
+standard resolution strategies.
 
-Conceptual flow (runtime orchestration is deferred):
+Current and target flow:
 
 ```text
 Local change + Remote change
@@ -31,7 +40,7 @@ ConflictDetectionResult
        ConflictResolutionDecision
           UseLocal / UseRemote / Merge / Defer / Fail
                   ↓
-       Runtime applies the decision (deferred)
+       V1 runtime applies or durably defers the decision (not implemented)
 ```
 
 ---
@@ -62,7 +71,7 @@ order-conflict-batch-3
 ### `ConflictDetectorId`
 
 Immutable value type that wraps a non-blank string identifying a
-[`ConflictDetector`](#conflictdetector) implementation.
+[`ConflictDetector`](#conflict-detector) implementation.
 
 - Value must not be blank or whitespace-only.
 - Valid input is preserved exactly as supplied.
@@ -81,7 +90,7 @@ default-conflict-detector
 ### `ConflictResolverId`
 
 Immutable value type that wraps a non-blank string identifying a
-[`ConflictResolver`](#conflictresolver) implementation.
+[`ConflictResolver`](#conflict-resolver) implementation.
 
 - Value must not be blank or whitespace-only.
 - Valid input is preserved exactly as supplied.
@@ -155,7 +164,7 @@ Canonical immutable model for a detected synchronization conflict.
 **Package:** `io.dataloom.api.conflict`
 **Type:** `ConflictDetectionRequest` (data class)
 
-Immutable request supplied to a [`ConflictDetector`](#conflictdetector).
+Immutable request supplied to a [`ConflictDetector`](#conflict-detector).
 
 ### Members
 
@@ -256,7 +265,7 @@ class EntityVersionDetector : ConflictDetector {
 **Package:** `io.dataloom.api.conflict`
 **Type:** `ConflictResolutionRequest` (data class)
 
-Immutable request supplied to a [`ConflictResolver`](#conflictresolver).
+Immutable request supplied to a [`ConflictResolver`](#conflict-resolver).
 
 ### Members
 
@@ -433,7 +442,7 @@ This keeps the contracts:
 - **Multiplatform** — safe in Kotlin Multiplatform common code.
 - **Infrastructure-independent** — decoupled from runtime scheduling.
 
-Interactive or asynchronous conflict resolution is deferred to a future issue.
+Interactive or asynchronous conflict resolution is not implemented.
 
 ---
 
@@ -452,9 +461,11 @@ The application is responsible for:
 
 DataLoom is responsible for:
 
-- Coordinating the detection and resolution workflow (runtime, deferred).
+- Coordinating the current detection and resolution workflow.
 - Providing the contracts, identifiers, and models defined in this issue.
 - Preserving payload and version opacity.
+- Providing the V1 built-in policy, persistence, audit, precedence,
+  convergence, and loop-protection engine; this work remains incomplete.
 
 ---
 
@@ -481,9 +492,9 @@ DataLoom is responsible for:
 
 ---
 
-## Not Implemented in This Issue
+## Current implementation gaps
 
-The following are deferred to future issues:
+The following are not implemented in the current repository:
 
 - Built-in client-wins resolver
 - Built-in server-wins resolver
@@ -510,7 +521,7 @@ The following are deferred to future issues:
 
 - [`ChangeEvent`](./change-model.md#changeevent) — carries local and remote changes.
 - [`EntityReference`](./change-model.md#entityreference) — identifies an entity by type, ID, and optional version.
-- [`DataLoomPayload`](./payload-contracts.md#dataLoompayload) — opaque payload.
+- [`DataLoomPayload`](./payload-contracts.md#dataloompayload) — opaque payload.
 - [`EntityVersion`](./change-model.md#entityversion) — opaque entity version.
 - [`SynchronizationRequest`](./synchronization-request.md) — originating synchronization intent.
 - [`DataLoomError`](./error-model.md) — canonical error type.

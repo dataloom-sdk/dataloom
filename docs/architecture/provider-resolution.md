@@ -17,25 +17,36 @@ list of binding failures.
 | `ProviderRegistry` | Stores provider references; immutable after construction. |
 | `ProviderLifecycleCoordinator` | Initializes and shuts down providers in registration order. |
 | `SynchronizationProviderResolver` | Resolves explicit `ProviderId` bindings to provider instances. |
-| Future synchronization runtime | Ensures lifecycle initialization is complete before using resolved providers. |
+| `SynchronizationExecutionCoordinator` | Ensures lifecycle initialization is complete before using resolved providers. |
 
 ---
 
 ## Resolution flow
 
-```text
-SynchronizationProviderBindings
-    (storageProviderId, transportProviderId, [optional IDs])
-        ↓
-SynchronizationProviderResolver.resolve(bindings)
-        ↓
-For each configured role:
-    1. Lookup by exact ProviderId in ProviderRegistry
-    2. Validate ProviderDescriptor.type
-    3. Validate specialized provider interface
-        ↓
-All pass → ProviderResolutionResult.Success(ResolvedSynchronizationProviders)
-Any fail → ProviderResolutionResult.Failure([ProviderBindingFailure, ...])
+```mermaid
+flowchart LR
+    bindings[/Explicit provider bindings/]
+    lookup[Lookup exact ProviderId]
+    exists{Provider exists?}
+    type{Descriptor type matches?}
+    interfaceCheck{Interface matches?}
+    next{More roles?}
+    success[Resolved provider set]
+    failure[Ordered binding failures]
+
+    bindings --> lookup
+    lookup --> exists
+    exists -->|No| failure
+    exists -->|Yes| type
+    type -->|No| failure
+    type -->|Yes| interfaceCheck
+    interfaceCheck -->|No| failure
+    interfaceCheck -->|Yes| next
+    next -->|Yes| lookup
+    next -->|No| success
+
+    style success fill:#CDF4D3,stroke:#66D575
+    style failure fill:#FFCDC2,stroke:#FF7556
 ```
 
 ---
@@ -188,9 +199,11 @@ does not implement provider-selection policy.
 - It does not call `DataLoomProvider.close`.
 - It does not call `DataLoomProvider.health`.
 
-Resolved providers are not guaranteed to be initialized. The future
-synchronization runtime must ensure `ProviderLifecycleCoordinator.initialize`
-has completed successfully before using the resolved instances.
+Resolved providers are not guaranteed to be initialized.
+`SynchronizationExecutionCoordinator` currently checks that
+`ProviderLifecycleCoordinator` is in `INITIALIZED` state before provider
+resolution and pipeline execution. Any other direct resolver consumer remains
+responsible for the same lifecycle precondition.
 
 ---
 
@@ -217,9 +230,11 @@ no `CoroutineScope`.
 
 ## KMP constraints
 
-All contracts are in `dataloom-core` `commonMain`. They use Kotlin
-standard-library and DataLoom API types only. No Android APIs, JVM-only types,
-Apple-specific types, or third-party libraries are required.
+Public lifecycle, binding, descriptor, and registry contracts are in
+`dataloom-provider-api` `commonMain`; resolution implementations are internal
+to `dataloom-core` `commonMain`. They use Kotlin standard-library and DataLoom
+public types only. No Android APIs, JVM-only types, Apple-specific types, or
+third-party libraries are required.
 
 ---
 
@@ -250,12 +265,14 @@ output.
 
 ## Scope restrictions
 
-DL-019 resolves structural bindings only. The following are deferred to later
-issues:
+`SynchronizationProviderResolver` still resolves structural bindings only.
+Related runtime concerns have the following current boundaries:
 
-- Lifecycle state validation
-- Provider health checking
-- Runtime provider mutation
-- Provider auto-discovery
-- Synchronization runtime
-- Retry, queue, conflict, event, and scheduling orchestration
+| Concern | Current boundary |
+|---|---|
+| Lifecycle state validation | Implemented by `SynchronizationExecutionCoordinator`, outside the resolver |
+| Provider health checking | Not performed automatically during resolution or execution |
+| Runtime provider mutation | Not implemented |
+| Provider auto-discovery | Not implemented |
+| Synchronization runtime | Implemented outside the resolver |
+| Retry, queue, conflict, event, and scheduling orchestration | Partial foundations exist in dedicated runtime components; complete V1 behavior remains open |

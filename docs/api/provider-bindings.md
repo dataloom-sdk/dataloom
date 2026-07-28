@@ -1,11 +1,31 @@
 # Provider Bindings (DL-019)
 
+[API reference index](./README.md)
+
+> **Status:** Available provider-assembly foundation. Explicit provider
+> resolution is implemented; this is not the full V1 plugin platform.
+
 ## Overview
 
 `SynchronizationProviderBindings` declares which provider instances a
 synchronization runtime must use for each runtime role. Every binding uses an
 explicit `ProviderId` so the caller controls provider selection — the runtime
 never selects a provider automatically.
+
+```mermaid
+flowchart LR
+    Providers[Registered provider instances] --> Registry[ProviderRegistry]
+    Bindings[SynchronizationProviderBindings] --> Resolver[SynchronizationProviderResolver]
+    Registry --> Resolver
+    Resolver -->|Invalid| Failures[Ordered binding failures]
+    Resolver -->|Valid| Resolved[ResolvedSynchronizationProviders]
+    Lifecycle[ProviderLifecycleCoordinator] -->|Initialization guard| Execution[Execution coordinator]
+    Resolved --> Execution
+```
+
+Assembly is explicit and in-process. There is no service discovery, manifest
+loading, permission enforcement, sandbox, or plugin lifecycle container in
+this provider-binding path.
 
 ---
 
@@ -144,9 +164,10 @@ in `SynchronizationProviderBindings`.
 #### Lifecycle boundary
 
 `ResolvedSynchronizationProviders` does not guarantee that providers have
-been initialized. The future synchronization runtime is responsible for
-ensuring that `ProviderLifecycleCoordinator` has completed initialization
-before using the resolved instances.
+been initialized. `SynchronizationExecutionCoordinator` verifies that
+`ProviderLifecycleCoordinator` is initialized before it resolves and uses the
+instances. Callers using the resolver directly remain responsible for the same
+lifecycle precondition.
 
 #### Security restrictions
 
@@ -302,7 +323,7 @@ Optional roles that are not configured produce no failure.
 | Stores provider references | `ProviderRegistry` |
 | Initializes and shuts down providers | `ProviderLifecycleCoordinator` |
 | Resolves explicit provider bindings | `SynchronizationProviderResolver` |
-| Ensures lifecycle initialization is complete | Future synchronization runtime |
+| Enforces lifecycle admission for synchronization | `SynchronizationExecutionCoordinator` |
 
 ---
 

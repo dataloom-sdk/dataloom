@@ -1,14 +1,43 @@
 # DataLoom Facade (DL-033)
 
+[API reference index](./README.md)
+
+> **Status:** Available pre-V1 facade and assembly foundation. It does not yet
+> expose or implement the complete mandatory V1 product surface.
+
 ## Overview
 
 `DataLoom` is the public platform-independent SDK facade that assembles and
-exposes the complete synchronization runtime behind a minimal, stable API.
+exposes the currently implemented synchronization runtime behind a small
+pre-V1 API.
 
 `DataLoom` is constructed through `DataLoomBuilder`, which validates all
 mandatory configuration, assembles the internal runtime graph, and returns
 an immutable facade. No provider operation, clock read, or I/O is performed
 during build.
+
+```mermaid
+flowchart TB
+    App[Application] --> Builder[DataLoomBuilder]
+    Builder --> Facade[DataLoom]
+    Facade --> Lifecycle[ProviderLifecycleCoordinator]
+    Facade --> Execution[SynchronizationExecutionCoordinator]
+    Facade --> Submission[Optional queue submission]
+    Facade --> Worker[Optional queue worker]
+    Execution --> Resolver[SynchronizationProviderResolver]
+    Execution --> Registry[SynchronizationPipelineRegistry]
+    Resolver --> Providers[Resolved providers]
+    Registry --> Push[Outbound pipeline]
+    Registry --> Pull[Inbound pipeline]
+    Registry --> Both[Bidirectional pipeline]
+```
+
+The facade currently provides lifecycle control, direct direction-based
+execution, and optional durable-queue entry points. It does not yet provide a
+versioned strategy/effective-plan API for offline-first, remote-first,
+cache-first, network-only, hybrid, or adaptive behavior. It also does not make
+the partial retry, conflict, event, asset, plugin, or governance subsystems
+complete merely by assembling their available components.
 
 ---
 

@@ -1,141 +1,131 @@
-# DataLoom Swift Interoperability (DL-036)
+# Swift interoperability
 
-## Integration Path
+> **Audience:** Maintainers reviewing the optional native Swift surface
+> **Purpose:** Explain the current Kotlin/Native bridge, selected exported
+> symbols, and blockers to supported Swift distribution
+> **Status:** Compile-only conventional Objective-C/Swift interoperability;
+> production native Swift support is not claimed
 
-The V1 Swift integration path uses the conventional Kotlin/Native
-framework interoperability (Objective-C/Swift bridging).
+[← Apple guide](README.md) ·
+[XCFramework integration](xcframework-integration.md) ·
+[Swift smoke fixture](../../apple-smoke/README.md)
 
-Experimental Swift export is **not** required for the production V1
-integration path and is not enabled in DL-036.
+Native Swift integration is optional and distinct from mandatory KMP iOS
+support. A KMP iOS application consumes KMP variants and Apple adapters; a
+native Swift application would consume a separately reviewed XCFramework or
+Swift package.
 
-## Importing DataLoom
+## Interoperability paths
 
-After integrating the XCFramework (see [xcframework-integration.md](xcframework-integration.md)):
+```mermaid
+flowchart LR
+    subgraph kmpPath["Mandatory KMP iOS"]
+        kmpCode["KMP shared source"] --> kmpVariants["Published KMP variants"]
+        kmpVariants --> iosAdapters["Apple adapters"]
+    end
+
+    subgraph swiftPath["Optional native Swift"]
+        kotlinApi["Reviewed Kotlin API"]
+        objcHeader["Objective-C header"]
+        framework["DataLoom XCFramework"]
+        swiftImport["Import DataLoom"]
+        callbackBridge["Suspend callback bridge"]
+        kotlinApi --> objcHeader --> framework --> swiftImport --> callbackBridge
+    end
+```
+
+Experimental Swift export is not enabled. The current fixture uses
+conventional Kotlin/Native Objective-C/Swift bridging.
+
+## Import
+
+After adding the locally assembled XCFramework:
 
 ```swift
 import DataLoom
 ```
 
-## Accessing the Facade and Builder
+The current framework contains no production Apple connectivity, scheduler,
+queue, storage, or lifecycle adapters.
+
+## Selected symbols checked by the smoke fixture
+
+This is not a generated-header inventory. It records the symbols referenced by
+`apple-smoke/Sources/DataLoomSwiftSmoke/DataLoomSwiftSmoke.swift`.
+
+| Area | Selected Swift-visible symbols |
+|---|---|
+| Facade construction | `DataLoomBuilder` |
+| Worker/submission capabilities | `DataLoomQueueWorker`, `DataLoomQueueSubmission` |
+| Requests and results | `SynchronizationRequest`, `SynchronizationExecutionResult` |
+| Direction and mode | `SynchronizationDirection`, `SynchronizationMode` |
+| Provider/lifecycle types | `SynchronizationProviderBindings`, `ProviderLifecycleResult` |
+| Models | `DataLoomError`, `DataLoomInstant` |
+| Runtime dependencies | `RuntimeDependencies`, `RuntimeIdentifierGenerators` |
+| Provider protocols | `ConnectivityProvider`, `StorageProvider`, `TransportProvider`, `QueueProvider`, `SchedulerProvider` |
+| Observation | `SynchronizationObserver` |
+
+`SynchronizationProviderBindings` and `ProviderLifecycleResult` come from the
+public `dataloom-provider-api` boundary. `RuntimeDependencies` and
+`RuntimeIdentifierGenerators` come from `dataloom-api`. The Apple umbrella
+does not export `dataloom-core` or `dataloom-testing`; CI audits generated
+headers so those internal namespaces cannot silently return.
+
+## Suspend functions
+
+The current conventional bridge exposes Kotlin suspend functions through
+completion callbacks rather than native Swift `async`/`await`. Conceptually:
 
 ```swift
-// DataLoomBuilder is visible and constructible.
-// Real provider implementations are required; see provider contracts below.
-let _: DataLoomBuilder.Type = DataLoomBuilder.self
-```
-
-A complete DataLoom instance requires provider implementations supplied
-by the host application.  No production providers are included in DL-036.
-
-## Exported Public Types
-
-The following public types are exported from the DataLoom XCFramework:
-
-### Facade and Builder
-
-| Kotlin Type | Swift Name |
-|---|---|
-| `DataLoom` (interface) | `DataLoom` |
-| `DataLoomBuilder` (class) | `DataLoomBuilder` |
-| `DataLoomQueueWorker` (interface) | `DataLoomQueueWorker` |
-| `DataLoomQueueSubmission` (interface) | `DataLoomQueueSubmission` |
-
-### Requests and Results
-
-| Kotlin Type | Swift Name |
-|---|---|
-| `SynchronizationRequest` | `SynchronizationRequest` |
-| `SynchronizationExecutionResult` | `SynchronizationExecutionResult` |
-| `SynchronizationProviderBindings` | `SynchronizationProviderBindings` |
-| `ProviderLifecycleResult` | `ProviderLifecycleResult` |
-
-### Models
-
-| Kotlin Type | Swift Name |
-|---|---|
-| `SynchronizationDirection` | `SynchronizationDirection` |
-| `SynchronizationMode` | `SynchronizationMode` |
-| `DataLoomError` | `DataLoomError` |
-| `DataLoomInstant` | `DataLoomInstant` |
-| `RuntimeDependencies` | `RuntimeDependencies` |
-| `RuntimeIdentifierGenerators` | `RuntimeIdentifierGenerators` |
-
-### Provider Interfaces
-
-| Kotlin Type | Swift Name |
-|---|---|
-| `ConnectivityProvider` | `ConnectivityProvider` |
-| `StorageProvider` | `StorageProvider` |
-| `TransportProvider` | `TransportProvider` |
-| `QueueProvider` | `QueueProvider` |
-| `SchedulerProvider` | `SchedulerProvider` |
-| `SynchronizationObserver` | `SynchronizationObserver` |
-
-## Suspend Functions and Coroutines
-
-DataLoom facade operations use Kotlin coroutines (`suspend` functions).
-From Swift, Kotlin/Native generates callback-based wrappers for suspend
-functions using the conventional interoperability bridge.
-
-Callers receive completion handlers rather than `async`/`await` natively.
-A full Swift concurrency adapter may be introduced in a later issue.
-
-Example of calling a suspend function from Swift:
-```swift
-// suspend fun synchronize(request: SynchronizationRequest): SynchronizationExecutionResult
-// becomes a callback in Swift:
-dataLoom.synchronize(request: req) { result, error in
-    // handle result
+// Illustrative bridge shape; generated names remain subject to header review.
+dataLoom.synchronize(request: request) { result, error in
+    // Inspect the structured result and bridge error.
 }
 ```
 
-This pattern is documented honestly.  Do not assume `async`/`await` is
-available without a Swift concurrency adapter.
+A supported native Swift distribution needs a reviewed concurrency and
+cancellation adapter plus generated-header/API compatibility checks. Do not
+assume callback naming or `async`/`await` availability without that evidence.
 
-## Cancellation Behavior
+## Error and cancellation target
 
-| Scenario | Observable Swift Behavior |
+The following is required target behavior, not behavior exercised by DL-036:
+
+| Scenario | Required supported-Swift outcome |
 |---|---|
-| Provider initialization cancelled | `ProviderLifecycleResult` representing cancellation |
-| Synchronization cancelled | `SynchronizationExecutionResult` representing cancellation |
-| Queue-worker cancelled | Result type appropriate to the cancellation boundary |
-| Queue-submission cancelled | `QueueSubmissionResult` representing cancellation |
-| Unexpected Kotlin exception | Mapped to a `DataLoomError` with appropriate category |
+| Provider lifecycle cancellation | Explicit cancellation result or mapped cancellation |
+| Synchronization cancellation | Structured cancellation without false success |
+| Queue-worker/submission cancellation | Boundary-appropriate structured outcome |
+| Unexpected Kotlin exception | Reviewed error mapping; never uncontrolled process termination |
 
-Kotlin `CancellationException` is **not** silently converted to a
-successful result.  Structured DataLoom result contracts are preserved.
+The exported builder can currently throw Kotlin exceptions and has no reviewed
+Swift-facing result/`@Throws` adapter. Native Swift support remains blocked
+until every throwing path has explicit, tested behavior.
 
-Stack traces are not exposed through public result diagnostics.
+## Known limitations
 
-## Known Limitations in DL-036
+- No native Swift `async`/`await` adapter.
+- No remote Swift package or CocoaPods podspec.
+- No production Apple platform providers.
+- No persistent Apple queue.
+- Sealed classes do not receive Swift enum ergonomics automatically.
+- Kotlin `Long` maps to `Int64`; `ByteArray` maps to `KotlinByteArray`.
+- Generated headers have automated internal-namespace and cross-slice
+  consistency gates, but still require product-level Swift API review.
+- The current smoke does not run synchronization or validate process relaunch.
 
-- No native Swift `async`/`await` integration (callback bridge only).
-- No SwiftPM remote package.
-- No CocoaPods podspec.
-- No Apple connectivity provider.
-- No Apple background scheduler.
-- No Apple persistent queue provider.
-- Sealed-class matching is by `is`-cast in Swift (no Swift enum sugar).
-- Kotlin `Long` maps to `Int64` in Swift.
-- Kotlin `ByteArray` maps to `KotlinByteArray` in Swift.
+## Security requirements
 
-## Security
+Any supported Swift distribution must prove that generated APIs, descriptions,
+logs, support bundles, and error bridges do not expose payloads, queue data,
+metadata values, credentials, checkpoint tokens, keys, personal data, provider
+state, or stack traces.
 
-The DataLoom framework does not expose through generated Apple APIs:
+`dataloom-core` and `dataloom-testing` are excluded from the current
+XCFramework, but that alone is not an API or security audit.
 
-- Payload bytes
-- Queue payloads
-- Request metadata values
-- Credentials or authorization headers
-- Checkpoint tokens or encryption keys
-- Personal data
-- Provider implementation state
-- Stack traces
+## Related documentation
 
-Testing utilities (`InMemoryQueueProvider`, `FixedDataLoomClock`, etc.)
-are absent from the production XCFramework.
-
-## Smoke Test
-
-See [../../../apple-smoke/README.md](../../../apple-smoke/README.md) for the
-Swift compile-time visibility fixture.
+- [XCFramework integration](xcframework-integration.md)
+- [Swift smoke fixture](../../apple-smoke/README.md)
+- [Apple testing](apple-testing.md)

@@ -99,7 +99,7 @@ import io.dataloom.api.time.DataLoomInstant
  * - invoke synchronization pipelines
  * - invoke [SynchronizationExecutionCoordinator][io.dataloom.runtime.execution.SynchronizationExecutionCoordinator]
  * - invoke [io.dataloom.api.scheduling.SchedulerProvider]
- * - invoke [io.dataloom.api.provider.QueueProvider]
+ * - invoke [io.dataloom.api.queue.QueueProvider]
  * - acquire queue leases or update queue entries
  * - initialize or shut down providers
  * - own a [kotlinx.coroutines.CoroutineScope] or select a dispatcher

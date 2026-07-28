@@ -10,13 +10,13 @@ package io.dataloom.runtime.submission
  * persisting a [QueuedSynchronizationSubmission] in the durable queue. It
  * delegates encoding to the application-supplied
  * [QueuedSynchronizationWorkEncoder] and persistence to the configured
- * [io.dataloom.api.provider.QueueProvider].
+ * [io.dataloom.api.queue.QueueProvider].
  *
  * ## Availability
  *
  * [io.dataloom.runtime.facade.DataLoom.queueSubmission] is `null` when
  * [io.dataloom.runtime.facade.DataLoomBuilder.queueSubmissionEncoder] was not
- * supplied or a valid [io.dataloom.api.provider.QueueProvider] binding was
+ * supplied or a valid [io.dataloom.api.queue.QueueProvider] binding was
  * not present. Non-null when all required queue dependencies are present.
  *
  * ## Submission flow
@@ -25,12 +25,12 @@ package io.dataloom.runtime.submission
  * 1. Passes the exact [QueuedSynchronizationSubmission] to the encoder exactly
  *    once.
  * 2. On encoding rejection, returns [QueueSubmissionResult.EncodingRejected]
- *    without calling the [io.dataloom.api.provider.QueueProvider].
+ *    without calling the [io.dataloom.api.queue.QueueProvider].
  * 3. Validates structural correspondence between the encoded request and the
  *    submission.
  * 4. On validation failure, returns [QueueSubmissionResult.ContractViolation]
- *    without calling the [io.dataloom.api.provider.QueueProvider].
- * 5. Calls [io.dataloom.api.provider.QueueProvider.enqueue] exactly once.
+ *    without calling the [io.dataloom.api.queue.QueueProvider].
+ * 5. Calls [io.dataloom.api.queue.QueueProvider.enqueue] exactly once.
  * 6. Returns [QueueSubmissionResult.Enqueued] on provider success or
  *    [QueueSubmissionResult.QueueProviderFailure] on provider failure.
  *
@@ -43,14 +43,14 @@ package io.dataloom.runtime.submission
  * - Initialize providers.
  * - Invoke [io.dataloom.api.retry.RetryPolicy].
  * - Check connectivity.
- * - Call [io.dataloom.api.provider.QueueProvider.acquire].
+ * - Call [io.dataloom.api.queue.QueueProvider.acquire].
  * - Process queue entries.
  * - Recover leases.
- * - Retry [io.dataloom.api.provider.QueueProvider.enqueue] automatically.
+ * - Retry [io.dataloom.api.queue.QueueProvider.enqueue] automatically.
  *
  * ## Idempotency boundary
  *
- * [submit] invokes [io.dataloom.api.provider.QueueProvider.enqueue] at most
+ * [submit] invokes [io.dataloom.api.queue.QueueProvider.enqueue] at most
  * once per call. Duplicate-entry handling belongs to the provider
  * implementation. An unknown external failure may require application-level
  * reconciliation. Use a stable [io.dataloom.api.identifier.QueueEntryId]
@@ -65,7 +65,7 @@ package io.dataloom.runtime.submission
  * ## Cancellation
  *
  * [kotlinx.coroutines.CancellationException] from
- * [io.dataloom.api.provider.QueueProvider.enqueue] propagates normally. It is
+ * [io.dataloom.api.queue.QueueProvider.enqueue] propagates normally. It is
  * never converted into a [QueueSubmissionResult].
  *
  * ## Provider lifecycle
@@ -86,7 +86,7 @@ public interface DataLoomQueueSubmission {
      *
      * Invokes the [QueuedSynchronizationWorkEncoder] exactly once, validates
      * the encoded request, and calls
-     * [io.dataloom.api.provider.QueueProvider.enqueue] at most once.
+     * [io.dataloom.api.queue.QueueProvider.enqueue] at most once.
      *
      * [kotlinx.coroutines.CancellationException] propagates normally.
      * Unexpected exceptions from the encoder or provider propagate normally.

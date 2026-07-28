@@ -93,7 +93,7 @@ import io.dataloom.runtime.retry.SynchronizationRetryEvaluator
  * ## Boundaries
  *
  * This handler must not:
- * - Access [io.dataloom.api.provider.QueueProvider] directly.
+ * - Access [io.dataloom.api.queue.QueueProvider] directly.
  * - Invoke [io.dataloom.api.scheduling.SchedulerProvider].
  * - Own a [kotlinx.coroutines.CoroutineScope] or select a dispatcher.
  * - Use global state, reflection, ServiceLoader, or a DI framework.
@@ -126,7 +126,7 @@ import io.dataloom.runtime.retry.SynchronizationRetryEvaluator
  *   [connectivityConfiguration] is non-null and its requirement may not be
  *   satisfied. Defaults to `null` for backward compatibility.
  */
-public class QueuedSynchronizationExecutionHandler(
+internal class QueuedSynchronizationExecutionHandler(
     private val workResolver: QueuedSynchronizationWorkResolver,
     private val executionCoordinator: SynchronizationExecutionCoordinator,
     private val retryEvaluator: SynchronizationRetryEvaluator,
@@ -238,7 +238,7 @@ public class QueuedSynchronizationExecutionHandler(
      *
      * [io.dataloom.api.retry.RetryPolicy] is not invoked.
      * [io.dataloom.api.scheduling.SchedulerProvider] is not invoked.
-     * [io.dataloom.api.provider.QueueProvider] is not invoked.
+     * [io.dataloom.api.queue.QueueProvider] is not invoked.
      */
     private fun offlineDeferralReschedule(
         config: SynchronizationConnectivityConfiguration,

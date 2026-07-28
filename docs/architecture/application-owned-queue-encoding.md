@@ -45,14 +45,21 @@ execution. It does not inspect, interpret, or validate the encoded bytes.
 
 ## Encoding boundary
 
-```
-Application
-    → DataLoomQueueSubmission.submit(submission)
-    → QueuedSynchronizationWorkEncoder.encode(submission)
-    → QueueEnqueueRequest
-    → validate structural correspondence
-    → QueueProvider.enqueue(request)
-    → QueueSubmissionResult
+```mermaid
+sequenceDiagram
+    title Queue submission encoding
+    participant Application
+    participant Submission
+    participant Encoder
+    participant QueueProvider
+
+    Application->>Submission: submit work
+    Submission->>Encoder: encode submission
+    Encoder-->>Submission: enqueue request
+    Submission->>Submission: validate correspondence
+    Submission->>QueueProvider: enqueue request
+    QueueProvider-->>Submission: provider result
+    Submission-->>Application: submission result
 ```
 
 The encoder receives the exact `QueuedSynchronizationSubmission` and is
@@ -69,12 +76,20 @@ responsible for:
 
 ## Resolution boundary
 
-```
-QueueWorkerCoordinator.run()
-    → QueueProvider.acquire()
-    → QueuedSynchronizationWorkResolver.resolve(entry)
-    → QueuedSynchronizationWork
-    → SynchronizationExecutionCoordinator.execute(request, bindings)
+```mermaid
+sequenceDiagram
+    title Queue entry resolution
+    participant Coordinator
+    participant QueueProvider
+    participant Resolver
+    participant Execution
+
+    Coordinator->>QueueProvider: acquire entry
+    QueueProvider-->>Coordinator: leased entry
+    Coordinator->>Resolver: resolve entry
+    Resolver-->>Coordinator: queued work
+    Coordinator->>Execution: execute request and bindings
+    Execution-->>Coordinator: execution result
 ```
 
 The resolver is the application's inverse of the encoder. It receives the

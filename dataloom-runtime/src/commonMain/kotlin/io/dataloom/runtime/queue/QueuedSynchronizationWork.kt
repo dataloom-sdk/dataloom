@@ -1,7 +1,7 @@
 package io.dataloom.runtime.queue
 
 import io.dataloom.api.model.SynchronizationRequest
-import io.dataloom.core.provider.SynchronizationProviderBindings
+import io.dataloom.api.provider.SynchronizationProviderBindings
 
 /**
  * Immutable model carrying the [SynchronizationRequest] and

@@ -7,28 +7,29 @@ orchestration and application-owned remote communication integrations.
 
 DataLoom runtime coordinates synchronization direction and workflow policy.
 
-### Push
+```mermaid
+sequenceDiagram
+    title Current transport boundary
+    participant Runtime
+    participant StorageProvider
+    participant TransportProvider
+    participant RemoteService
 
-```text
-StorageProvider.readOutboundChanges()
-        ↓
-TransportProvider.pushChanges()
-        ↓
-ChangeSetAcknowledgement
-        ↓
-StorageProvider.acknowledgeOutboundChanges()
-```
-
-### Pull
-
-```text
-StorageProvider.readCheckpoint()
-        ↓
-TransportProvider.pullChanges(checkpoint)
-        ↓
-StorageProvider.applyInboundChanges()   (when changes are returned)
-        ↓
-StorageProvider.writeCheckpoint()       (only after successful apply)
+    Runtime->>StorageProvider: read outbound changes
+    StorageProvider-->>Runtime: change set
+    Runtime->>TransportProvider: push changes
+    TransportProvider->>RemoteService: application protocol
+    RemoteService-->>TransportProvider: acknowledgement
+    TransportProvider-->>Runtime: acknowledgement
+    Runtime->>StorageProvider: persist acknowledgement
+    Runtime->>StorageProvider: read checkpoint
+    StorageProvider-->>Runtime: checkpoint
+    Runtime->>TransportProvider: pull changes
+    TransportProvider->>RemoteService: application protocol
+    RemoteService-->>TransportProvider: changes and checkpoint
+    TransportProvider-->>Runtime: pull result
+    Runtime->>StorageProvider: apply inbound changes
+    Runtime->>StorageProvider: write checkpoint
 ```
 
 ### Bidirectional
@@ -42,8 +43,9 @@ The runtime coordinates push and pull according to workflow policy.
 > associated with that checkpoint have been applied successfully.
 
 `TransportProvider` must not modify storage directly, and `StorageProvider`
-must not perform transport. This document describes the sequence only;
-runtime orchestration that enforces this order is deferred to a later issue.
+must not perform transport. The checked-in outbound and inbound pipelines
+enforce this order. Complete strategy-aware planning, streaming transports,
+and V1 qualification remain open.
 See [Checkpoint Contracts](../api/checkpoint-contracts.md) and
 [Acknowledgement Contracts](../api/acknowledgement-contracts.md).
 

@@ -49,71 +49,18 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
-      - name: Verify Gradle version
-        run: ./gradlew --version
-
-      - name: Verify project structure (includes dataloom-apple on macOS)
-        run: ./gradlew projects
-
-      # ---------------------------------------------------------------
-      # Apple target compilation
-      # ---------------------------------------------------------------
-      - name: Compile dataloom-api for iosArm64
-        run: ./gradlew :dataloom-api:compileKotlinIosArm64
-
-      - name: Compile dataloom-api for iosSimulatorArm64
-        run: ./gradlew :dataloom-api:compileKotlinIosSimulatorArm64
-
-      - name: Compile dataloom-api for iosX64
-        run: ./gradlew :dataloom-api:compileKotlinIosX64
-
-      - name: Compile dataloom-core for iosArm64
-        run: ./gradlew :dataloom-core:compileKotlinIosArm64
-
-      - name: Compile dataloom-core for iosSimulatorArm64
-        run: ./gradlew :dataloom-core:compileKotlinIosSimulatorArm64
-
-      - name: Compile dataloom-core for iosX64
-        run: ./gradlew :dataloom-core:compileKotlinIosX64
-
-      - name: Compile dataloom-runtime for iosArm64
-        run: ./gradlew :dataloom-runtime:compileKotlinIosArm64
-
-      - name: Compile dataloom-runtime for iosSimulatorArm64
-        run: ./gradlew :dataloom-runtime:compileKotlinIosSimulatorArm64
-
-      - name: Compile dataloom-runtime for iosX64
-        run: ./gradlew :dataloom-runtime:compileKotlinIosX64
-
-      - name: Compile dataloom-testing for iosArm64
-        run: ./gradlew :dataloom-testing:compileKotlinIosArm64
-
-      - name: Compile dataloom-testing for iosSimulatorArm64
-        run: ./gradlew :dataloom-testing:compileKotlinIosSimulatorArm64
-
-      - name: Compile dataloom-testing for iosX64
-        run: ./gradlew :dataloom-testing:compileKotlinIosX64
-
-      # ---------------------------------------------------------------
-      # iOS simulator tests
-      # ---------------------------------------------------------------
-      - name: Run shared tests on iosSimulatorArm64 (dataloom-api)
-        run: ./gradlew :dataloom-api:iosSimulatorArm64Test
-
-      - name: Run shared tests on iosSimulatorArm64 (dataloom-core)
-        run: ./gradlew :dataloom-core:iosSimulatorArm64Test
-
-      - name: Run shared tests on iosSimulatorArm64 (dataloom-runtime)
-        run: ./gradlew :dataloom-runtime:iosSimulatorArm64Test
-
-      - name: Run shared tests on iosSimulatorArm64 (dataloom-testing)
-        run: ./gradlew :dataloom-testing:iosSimulatorArm64Test
-
-      # ---------------------------------------------------------------
-      # XCFramework assembly
-      # ---------------------------------------------------------------
-      - name: Assemble DataLoom release XCFramework
-        run: ./gradlew :dataloom-apple:assembleDataLoomReleaseXCFramework
+      - name: Validate build, tests, ABI, and XCFramework
+        run: >-
+          ./gradlew
+          :build-logic:test
+          build
+          :runtime-external-consumer:compileKotlinIosArm64
+          :runtime-external-consumer:compileKotlinIosSimulatorArm64
+          :runtime-external-consumer:compileKotlinIosX64
+          :dataloom-apple:assembleDataLoomReleaseXCFramework
+          --configuration-cache
+          --stacktrace
+          --console=plain
 
       - name: Verify XCFramework slices exist
         run: |
@@ -149,6 +96,39 @@ jobs:
           echo "=== Info.plist ==="
           cat "$XCFW/Info.plist"
 
+      - name: Audit exported Apple headers
+        shell: bash
+        run: |
+          set -euo pipefail
+          XCFW="dataloom-apple/build/XCFrameworks/release/DataLoom.xcframework"
+          headers=()
+          while IFS= read -r header; do
+            headers+=("$header")
+          done < <(find "$XCFW" -type f -name "DataLoom.h" | sort)
+
+          if [[ "${#headers[@]}" -lt 2 ]]; then
+            echo "ERROR: Expected DataLoom headers for device and simulator slices."
+            printf '%s\n' "${headers[@]}"
+            exit 1
+          fi
+
+          forbidden='io_dataloom_core|dataloom_core|DataloomCore|io_dataloom_testing|dataloom_testing|DataloomTesting'
+          if grep -nE "$forbidden" "${headers[@]}"; then
+            echo "ERROR: Apple headers expose implementation-only core or testing symbols."
+            exit 1
+          fi
+
+          reference="${headers[0]}"
+          for header in "${headers[@]:1}"; do
+            if ! cmp -s "$reference" "$header"; then
+              echo "ERROR: Exported DataLoom headers differ between XCFramework slices."
+              diff -u "$reference" "$header" || true
+              exit 1
+            fi
+          done
+
+          echo "Verified ${#headers[@]} matching DataLoom headers with no core/testing leaks."
+
       # ---------------------------------------------------------------
       # Swift smoke test
       # ---------------------------------------------------------------
@@ -165,20 +145,3 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
             SKIP_INSTALL=YES
-
-      # ---------------------------------------------------------------
-      # Full JVM regression on macOS (ensures nothing is regressed)
-      # ---------------------------------------------------------------
-      - name: Build all modules (JVM + Apple)
-        run: ./gradlew build --configuration-cache
-
-      - name: Run all tests (JVM + Apple simulator)
-        run: >-
-          ./gradlew
-          :dataloom-api:allTests
-          :dataloom-core:allTests
-          :dataloom-runtime:allTests
-          :dataloom-testing:allTests
-
-      - name: Inspect runtime dependencies (must not include dataloom-testing)
-        run: ./gradlew :dataloom-runtime:dependencies --configuration jvmRuntimeClasspath

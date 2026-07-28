@@ -1,5 +1,10 @@
 # DataLoom Transport Provider (DL-010, DL-011)
 
+[API reference index](./README.md)
+
+> **Status:** Available remote-transport adapter contract. Authentication,
+> server hints, streaming assets, and complete V1 policy remain separate work.
+
 `dataloom-api` defines a platform-independent transport-provider SPI for moving
 synchronization changes between DataLoom runtime coordination and
 application-controlled remote integrations.
@@ -63,11 +68,13 @@ A successful `pushChanges()` result returns a `ChangeSetAcknowledgement`
 describing how the remote participant responded to each pushed event (see
 [Acknowledgement Contracts](./acknowledgement-contracts.md)). Transport
 success does **not** by itself define durable local acknowledgement,
-remote business completion, or queue deletion; the runtime is expected to
-pass the acknowledgement to
-`StorageProvider.acknowledgeOutboundChanges()` in a later issue. A successful
-provider operation may still contain event-level `RETRY` or `REJECTED`
-statuses within the acknowledgement.
+remote business completion, or queue deletion. The current
+`OutboundPushSynchronizationPipeline` validates the acknowledgement against
+the pushed batch and then passes it to
+`StorageProvider.acknowledgeOutboundChanges()`. A successful provider
+operation may still contain event-level `RETRY` or `REJECTED` statuses within
+the acknowledgement; the pipeline records them but does not perform
+event-level queue reconciliation or automatic re-push.
 
 ## Pull operations
 
@@ -134,8 +141,11 @@ protocol-specific pagination contract in the shared API.
 `hasMore` lets a provider report that another pull may return additional
 changes.
 
-Continuation tokens, delta tokens, transport cursors, and remote checkpoints
-are deferred to later issues.
+Continuation tokens, delta tokens, transport cursors, and other
+protocol-specific paging state are not modeled by this shared contract.
+Providers keep those details behind the SPI and expose only `hasMore` and the
+optional `nextCheckpoint`; DataLoom does not currently provide a generic
+continuation-token API.
 
 ## Protocol independence
 
@@ -269,13 +279,17 @@ private class ExampleTransportProvider(
 
 This example is illustrative only. It is not a concrete network provider.
 
-## Deferred acknowledgement and checkpoint semantics
+## Current orchestration and remaining transport gaps
 
-DL-011 introduces the `ChangeSetAcknowledgement` push return type and the
-optional pull checkpoint. The following transport semantics remain deferred
-to follow-up issues:
+The current outbound pipeline validates and records transport
+acknowledgements. The current inbound pipeline reads the stored checkpoint,
+passes it to `pullChanges()`, applies returned changes, and writes the next
+checkpoint only after successful application. These are runtime
+responsibilities; a transport provider must not update storage itself.
 
-- Runtime orchestration that records acknowledgements and advances checkpoints
+The following behavior is still absent from this transport boundary or remains
+incomplete for V1:
+
 - Queue deletion rules
 - Remote idempotency keys
 - Streaming subscriptions

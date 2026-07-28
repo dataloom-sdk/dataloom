@@ -1,5 +1,10 @@
 # DataLoom Provider SPI (DL-007)
 
+[API reference index](./README.md)
+
+> **Status:** Available base and specialized provider contracts. The provider
+> SPI is not the mandatory V1 permission-bounded plugin platform.
+
 `dataloom-api` now defines a foundational, platform-independent Service
 Provider Interface (SPI) for DataLoom integrations.
 
@@ -143,17 +148,21 @@ private class ExampleProvider(
 }
 ```
 
-## Deferred specialized provider contracts
+## DL-007 follow-up status
 
-The following contracts are planned follow-up issues and are not implemented in
-DL-007:
+DL-007 introduced the base provider SPI and intentionally left specialized
+contracts and integrations to follow-up work. In the current repository:
 
-- Implement storage-provider contracts
-- Implement scheduler and connectivity-provider contracts
-- Implement provider registry
-- Implement provider lifecycle orchestration
-- Add Android platform module
-- Add WorkManager provider
-- Add Room provider
-- Add Retrofit provider
-- Add future KMP provider integrations
+- Storage, transport, queue, scheduler, and connectivity contracts exist as
+  shared foundations.
+- Provider registry and lifecycle orchestration exist.
+- Android connectivity, WorkManager scheduling/worker bridging, and
+  Room-backed queue modules exist.
+- The reference transport provider and its technology have not been selected
+  and qualified.
+- An explicit KMP Android target and the iOS provider/consumer paths remain
+  mandatory V1 work and are not yet qualified.
+- Provider registration does not supply plugin manifests, permissions,
+  lifecycle isolation, execution bounds, ordering, compatibility validation,
+  audit, hot disable, or certification. Those remain mandatory V1 plugin
+  platform work.

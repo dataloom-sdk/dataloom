@@ -23,7 +23,7 @@ import io.dataloom.api.provider.ProviderId
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.provider.ProviderVersion
-import io.dataloom.api.provider.QueueProvider
+import io.dataloom.api.queue.QueueProvider
 import io.dataloom.api.queue.ExpiredLeaseRecoveryRequest
 import io.dataloom.api.queue.ExpiredLeaseRecoveryResult
 import io.dataloom.api.queue.QueueAcquireRequest
@@ -40,7 +40,7 @@ import io.dataloom.api.identifier.QueueConsumerId
 import io.dataloom.api.identifier.QueueLeaseId
 import io.dataloom.api.retry.RetryAttempt
 import io.dataloom.api.time.DataLoomInstant
-import io.dataloom.core.provider.SynchronizationProviderBindings
+import io.dataloom.api.provider.SynchronizationProviderBindings
 import io.dataloom.runtime.queue.QueuedSynchronizationWork
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext

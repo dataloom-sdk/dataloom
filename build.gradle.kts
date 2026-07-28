@@ -1,6 +1,7 @@
-// Root plugin declarations keep the Kotlin, Android, and KSP plugin artifacts
-// on one build classpath. This is required by AGP 9 built-in Kotlin when the
-// repository also uses Kotlin Multiplatform convention plugins.
+// Root declarations keep Kotlin, AGP, and KSP on one build classpath.
+// AGP 9 built-in Kotlin creates KotlinAndroidTarget during Android plugin
+// application, and that KGP type references AGP's BaseVariant API. Resolving
+// the plugins in separate project classloaders therefore fails at configuration.
 plugins {
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.android.library) apply false

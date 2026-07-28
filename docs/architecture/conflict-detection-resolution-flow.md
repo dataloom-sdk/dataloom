@@ -10,44 +10,45 @@ This document describes the deterministic conflict detection and resolution
 flow introduced in DL-025. The orchestration is performed by
 [`SynchronizationConflictOrchestrator`](../api/conflict-orchestration.md#synchronizationconflictorchestrator)
 using application-supplied
-[`ConflictDetector`](../api/conflict-contracts.md#conflictdetector) and
-[`ConflictResolver`](../api/conflict-contracts.md#conflictresolver)
+[`ConflictDetector`](../api/conflict-contracts.md#conflict-detector) and
+[`ConflictResolver`](../api/conflict-contracts.md#conflict-resolver)
 implementations registered in immutable registries.
 
 ---
 
 ## Primary flow
 
-```
-SynchronizationConflictOrchestrator
-    │
-    ├─ 1. ConflictDetectorRegistry.lookup(detectorId)
-    │       │
-    │       ├─ ABSENT  ──────────────────────────► DetectorNotFound
-    │       │
-    │       └─ FOUND
-    │               │
-    │               ▼
-    │       2. ConflictDetector.detect(detectionRequest)
-    │               │
-    │               ├─ NoConflict ───────────────► NoConflict
-    │               │
-    │               └─ ConflictDetected
-    │                       │
-    │                       ├─ resolverId is null ─► ResolverNotConfigured
-    │                       │
-    │                       ▼
-    │               3. ConflictResolverRegistry.lookup(resolverId)
-    │                       │
-    │                       ├─ ABSENT ───────────► ResolverNotFound
-    │                       │
-    │                       └─ FOUND
-    │                               │
-    │                               ▼
-    │                       4. ConflictResolver.resolve(resolutionRequest)
-    │                               │
-    │                               └─ decision ──► Resolved
-    │
+```mermaid
+flowchart LR
+    request[/Detection request/]
+    detector{Detector found?}
+    detect[Detect conflict]
+    conflict{Conflict detected?}
+    configured{Resolver configured?}
+    resolver{Resolver found?}
+    resolve[Resolve conflict]
+    noDetector[Detector not found]
+    noConflict[No conflict]
+    noConfig[Resolver not configured]
+    noResolver[Resolver not found]
+    resolved[Resolved decision]
+
+    request --> detector
+    detector -->|No| noDetector
+    detector -->|Yes| detect
+    detect --> conflict
+    conflict -->|No| noConflict
+    conflict -->|Yes| configured
+    configured -->|No| noConfig
+    configured -->|Yes| resolver
+    resolver -->|No| noResolver
+    resolver -->|Yes| resolve
+    resolve --> resolved
+
+    style resolved fill:#CDF4D3,stroke:#66D575
+    style noDetector fill:#FFCDC2,stroke:#FF7556
+    style noConfig fill:#FFECBD,stroke:#FFC943
+    style noResolver fill:#FFCDC2,stroke:#FF7556
 ```
 
 ---
@@ -175,8 +176,8 @@ The orchestrator does **not** invoke `RetryPolicy` when:
 - The resolver throws.
 - The resolver returns an unresolved or deferred decision.
 
-Conflict retry and manual-resolution workflows belong to later orchestration
-layers not implemented in DL-025.
+Conflict retry, durable deferral, and manual-resolution workflows remain V1
+orchestration gaps outside this component.
 
 ---
 

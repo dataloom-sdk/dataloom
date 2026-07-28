@@ -1,12 +1,17 @@
 # DataLoom Change Model (DL-008)
 
+[API reference index](./README.md)
+
+> **Status:** Available public contract. Serialization, asset transfer, and
+> complete strategy-policy behavior are separate V1 concerns.
+
 This document defines the change-model public contracts introduced in
 `dataloom-api` by DL-008.
 
-These contracts represent synchronization change data only. Storage,
-transport, conflict resolution, queueing, retry, and synchronization
-execution are **not implemented** in this issue. Each of those concerns will
-be addressed in dedicated follow-up issues.
+These contracts represent synchronization change data only. Current storage,
+transport, queue, and pipeline components consume them, but the models do not
+perform those operations or supply complete conflict, retry, asset, or
+strategy policy.
 
 ## EntityVersion
 
@@ -230,32 +235,18 @@ Do not place credentials, tokens, encryption keys, personal data, or full
 payload content in metadata. See
 [Foundational Contracts](./foundational-contracts.md) for metadata rules.
 
-## Not implemented in this issue
+## Contract boundary
 
-The following concerns are intentionally deferred to future issues:
+Storage, transport, result, queue, retry, conflict, scheduler, and runtime
+contracts now exist in their dedicated packages. They consume `ChangeEvent`
+and `ChangeSet`; these data classes do not perform those operations.
 
-- Storage-provider contracts
-- Synchronization-result contracts
-- Conflict models and conflict resolution
-- Durable queue models
-- Retry models
-- Runtime execution
-- Scheduler integration
-- Serialization-provider contracts
-
-## Follow-up issues
-
-```
-Implement storage-provider contracts
-Implement synchronization-result contracts
-Implement scheduler and connectivity-provider contracts
-Implement durable queue models
-Implement conflict contracts
-Implement serialization-provider contracts
-```
+A standard serialization-provider contract and the complete V1 asset,
+strategy, conflict-policy, retry/circuit, plugin, and governance engines remain
+outside this change model.
 
 ## Related contracts
 
 - [`PayloadContentType`](./payload-contracts.md#payloadcontenttype)
-- [`DataLoomPayload`](./payload-contracts.md#dataLoomPayload)
+- [`DataLoomPayload`](./payload-contracts.md#dataloompayload)
 - [`ChangeOperation`](./foundational-contracts.md#change-operations)

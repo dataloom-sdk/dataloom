@@ -1,130 +1,137 @@
-# DataLoom XCFramework Integration (DL-036)
+# XCFramework integration
 
-## Overview
+> **Audience:** Maintainers assembling the optional native Apple artifact and
+> developers reproducing the Swift compile smoke
+> **Purpose:** Document the current static XCFramework boundary and exact local
+> assembly steps
+> **Status:** Producer and compile-smoke artifact only; not a production
+> distribution
 
-The DataLoom SDK is distributed to Apple platforms as a single XCFramework.
+[← Apple guide](README.md) ·
+[Swift interoperability](swift-interop.md) ·
+[Swift smoke fixture](../../apple-smoke/README.md)
 
-| Property | Value |
+KMP iOS applications consume KMP-published variants and future
+`dataloom-ios` adapters. The XCFramework described here is a separate,
+optional native Swift/Objective-C path.
+
+## Artifact properties
+
+| Property | Current value |
 |---|---|
-| Framework name | `DataLoom` |
+| Framework/module name | `DataLoom` |
 | Bundle identifier | `io.dataloom.sdk` |
 | Linkage | Static |
-| Module | `dataloom-apple` |
-| Targets | `iosArm64`, `iosSimulatorArm64`, `iosX64` |
+| Producer module | `dataloom-apple` |
+| Slices | `iosArm64`, `iosSimulatorArm64`, `iosX64` |
 
-## Static Linkage
+## Export topology
 
-The XCFramework uses **static linkage** (`isStatic = true`).
-
-Rationale:
-- Host applications do not need to embed or copy a separate dynamic framework.
-- Each slice is self-contained.
-- Static linking avoids dynamic loader complexity in single-framework integrations.
-- No Kotlin runtime duplication occurs because the SDK is delivered as a single
-  XCFramework that includes all exported modules.
-
-## Exported Modules
-
-The XCFramework exports:
-
-- `dataloom-api` — public contracts, identifiers, models, provider interfaces
-- `dataloom-core` — runtime dependency container, provider registry, lifecycle
-- `dataloom-runtime` — synchronization facade, pipelines, queue, retry, observer
-
-`dataloom-testing` is intentionally **not exported** so that test utilities
-(`InMemoryQueueProvider`, `FixedDataLoomClock`, etc.) are absent from the
-production framework.
-
-## Umbrella Module
-
-`dataloom-apple` is the umbrella module:
-
-```
-dataloom-apple/
-  build.gradle.kts          ← XCFramework and export configuration
-  src/commonMain/kotlin/
-    io/dataloom/apple/
-      DataLoomAppleModule.kt  ← Minimal internal marker (required by Kotlin/Native)
+```mermaid
+flowchart TD
+    model["dataloom-model"] --> appleUmbrella["Apple umbrella"]
+    providerApi["dataloom-provider-api"] --> appleUmbrella
+    api["dataloom-api"] --> appleUmbrella
+    runtime["dataloom-runtime"] --> appleUmbrella
+    appleUmbrella --> framework["Static XCFramework"]
+    framework --> swiftSmoke["Swift compile smoke"]
 ```
 
-The umbrella module:
-- Uses `api()` dependencies so that exported declarations appear in generated headers.
-- Contains no synchronization logic.
-- Contains no provider implementation.
-- Contains no global singleton or service locator.
+`dataloom-testing` is intentionally absent from this graph because it is not
+exported.
 
-## Local Assembly
+## Current exports
 
-Assemble the release XCFramework from the repository root on a macOS machine:
+| Module | Reason it is present | Boundary status |
+|---|---|---|
+| `dataloom-model` | Canonical dependency-root types | Current public foundation |
+| `dataloom-provider-api` | Provider lifecycle, descriptor, and binding contracts | Current public SPI foundation |
+| `dataloom-api` | Contracts, identifiers, models, and synchronization interfaces | Current public foundation |
+| `dataloom-runtime` | Facade and orchestration foundations | Current export under review |
+
+`dataloom-core` and `dataloom-testing` are intentionally absent. The
+XCFramework contains no Apple platform provider implementation and no global
+singleton.
+
+## Why static linkage
+
+`isStatic = true` keeps each framework slice self-contained and avoids
+embedding a separate dynamic DataLoom library. Applications linking multiple
+Kotlin/Native frameworks still need explicit duplicate-runtime and static-link
+compatibility analysis.
+
+## Assemble locally
+
+Run from the repository root on macOS:
 
 ```bash
 ./gradlew :dataloom-apple:assembleDataLoomReleaseXCFramework
 ```
 
-The output path:
-```
+Release output:
+
+```text
 dataloom-apple/build/XCFrameworks/release/DataLoom.xcframework/
 ```
 
-The debug XCFramework:
+For a debug artifact:
+
 ```bash
 ./gradlew :dataloom-apple:assembleDataLoomDebugXCFramework
 ```
 
-Output:
-```
+Debug output:
+
+```text
 dataloom-apple/build/XCFrameworks/debug/DataLoom.xcframework/
 ```
 
-## XCFramework Structure
+## Expected structure
 
-A successfully assembled release XCFramework contains:
-
-```
+```text
 DataLoom.xcframework/
-  Info.plist
-  ios-arm64/
-    DataLoom.framework/     ← physical device slice
-  ios-arm64_x86_64-simulator/
-    DataLoom.framework/     ← combined simulator slice
+├── Info.plist
+├── ios-arm64/
+│   └── DataLoom.framework/
+└── ios-arm64_x86_64-simulator/
+    └── DataLoom.framework/
 ```
 
-The simulator slice merges `iosSimulatorArm64` (ARM64) and `iosX64` (x86_64)
-into one fat binary using `lipo`.
+The simulator framework combines `iosSimulatorArm64` and `iosX64`.
 
-## Gradle Task Name
+## Compile-only Xcode integration
 
-The exact Gradle task generated for the release XCFramework:
+1. Assemble the XCFramework.
+2. Add `DataLoom.xcframework` to the Xcode project.
+3. Link it as **Do Not Embed** because it is static.
+4. Add `import DataLoom` to Swift sources.
+5. Compile against the intended device and simulator destinations.
 
-```bash
-./gradlew :dataloom-apple:assembleDataLoomReleaseXCFramework
-```
+These steps prove linking and symbol visibility only. They do not establish
+runtime initialization, provider behavior, background execution, persistence,
+relaunch recovery, signing, or App Store readiness.
 
-This task name follows Kotlin Multiplatform's `assemble<FrameworkName><BuildType>XCFramework`
-naming convention where `FrameworkName = DataLoom` and `BuildType = Release`.
+## Generated artifacts
 
-## Generated Artifacts
+Do not commit generated frameworks or archives. The repository ignores:
 
-Generated XCFramework binaries must **not** be committed to the repository.
-The following paths are listed in `.gitignore`:
-
-```
+```text
 *.xcframework/
 *.xcarchive/
 dataloom-apple/build/XCFrameworks/
 apple-smoke/DataLoom.xcframework/
 ```
 
-## Including in an Xcode Project
+## Not yet available
 
-1. Assemble the XCFramework locally.
-2. Drag `DataLoom.xcframework` into your Xcode project.
-3. Embed as "Do Not Embed" (static linking).
-4. `import DataLoom` in Swift files.
+- Production `dataloom-ios` platform adapters.
+- Published KMP iOS variants and an external executable KMP consumer.
+- A reviewed Swift-facing API beyond the current compile-smoke selection.
+- Reviewed generated-header compatibility after the automated internal-type
+  and slice-consistency gates.
+- Executable Swift runtime, cancellation, relaunch, and background tests.
+- Remote SwiftPM or CocoaPods distribution.
+- Apple signing, provisioning, or release publication.
 
-## Not Yet Available in DL-036
-
-- SwiftPM remote package (requires separate issue)
-- CocoaPods podspec (requires separate issue)
-- GitHub release publication (requires separate issue)
-- Apple signing or provisioning (requires separate issue)
+Optional Swift distribution cannot substitute for the mandatory KMP iOS
+consumer path.

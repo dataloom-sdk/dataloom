@@ -1,13 +1,20 @@
 # DataLoom Acknowledgement Contracts (DL-011)
 
+[API reference index](./README.md)
+
+> **Status:** Available contract with outbound-pipeline integration. Complete
+> V1 retry, reconciliation, and strategy policy remains open.
+
 This document defines the platform-independent change-acknowledgement
 contracts introduced in `dataloom-api` by DL-011.
 
 These contracts represent remote acceptance or rejection of pushed change
 events and the storage acknowledgement request used to record them in
-application-controlled storage. Runtime orchestration, durable queue
-processing, retry execution, and concrete storage or transport providers are
-**not implemented** in this issue.
+application-controlled storage. The current outbound pipeline coordinates the
+read, push, validation, and storage-acknowledgement path. Durable queue policy,
+retry evaluation, and queue execution exist as separate runtime components,
+but acknowledgement-status-to-queue reconciliation and qualified reference
+storage/transport providers remain incomplete.
 
 ---
 
@@ -18,7 +25,7 @@ outbound synchronization operation. DataLoom separates *transport success*
 (the push call itself succeeded) from *event-level acceptance* (whether the
 remote participant accepted each individual change).
 
-Conceptual flow (runtime orchestration is deferred):
+Current outbound orchestration flow:
 
 ```text
 StorageProvider.readOutboundChanges()
@@ -32,7 +39,8 @@ StorageProvider.acknowledgeOutboundChanges()
 
 - Transport must not directly modify storage.
 - Storage must not perform transport.
-- The DataLoom runtime will coordinate the two providers in a later issue.
+- `OutboundPushSynchronizationPipeline` coordinates the providers and preserves
+  the acknowledgement boundary.
 
 ---
 
@@ -105,12 +113,14 @@ public class ChangeSetAcknowledgement(
 
 ### Partial Acknowledgement
 
-A `ChangeSetAcknowledgement` does not need to contain every event from the
-original change set. A remote participant may acknowledge a subset of events
-in a single response (for example, when it processes events individually or
-enforces a partial-batch limit). Completeness validation — deciding whether
-every originally pushed event has an acknowledgement — is a **runtime
-responsibility** deferred to a later issue.
+The model can represent an acknowledgement containing only a subset of an
+original change set because it does not receive the original set at
+construction time. The current
+`OutboundPushSynchronizationPipeline`, however, validates every transport
+response against the pushed batch before storage is updated. It requires the
+same change-set ID, exactly one acknowledgement for every pushed event, and no
+unknown event IDs. A partial acknowledgement therefore fails the current
+outbound execution rather than being persisted.
 
 ---
 
@@ -153,7 +163,9 @@ Acknowledgement handling is implementation-defined:
 - `RETRY` events must remain eligible for later processing.
 - `REJECTED` events must remain inspectable according to application policy.
 - The contract does not dictate SQL, Room, DataStore, or file operations.
-- Rejected-event policy is application configurable in future work.
+- Rejected-event disposition is application-owned at this boundary. DataLoom
+  does not currently supply a generic built-in discard, quarantine, or
+  user-intervention policy.
 
 ---
 
@@ -177,14 +189,18 @@ converted into a normal failure.
 
 ---
 
-## Retry and Rejection Boundaries
+## Retry, Queue, and Rejection Boundaries
 
-- Retry timing is not defined in this issue.
-- Server-directed retry delays are deferred.
-- No retry engine, queue implementation, or automatic re-push is
-  implemented.
-- Rejected-event application policy (for example, discard, quarantine, or
-  surface to the user) is deferred to future work.
+- Custom retry-policy evaluation, scheduler-backed rescheduling, durable queue
+  processing, and Android Room queue persistence exist as separate runtime
+  components.
+- The outbound pipeline records `RETRY` and `REJECTED` statuses and returns a
+  partial result, but it does not translate individual event statuses into
+  queue transitions or automatically re-push them.
+- Standard backoff, jitter, attempt limits, server-directed delays, and circuit
+  behavior remain mandatory V1 gaps.
+- Rejected-event disposition is application-owned; DataLoom has no generic
+  built-in discard, quarantine, or user-intervention policy.
 
 ---
 
@@ -237,16 +253,15 @@ when (val result = storageProvider.acknowledgeOutboundChanges(acknowledgementReq
 
 ---
 
-## Deferred Behavior
+## Current gaps
 
-The following are explicitly deferred to later issues:
+The following remain incomplete:
 
-- Retry engine and retry timing
-- Durable queue processing
-- Queue deletion rules
-- Rejected-event application policy
-- Runtime orchestration linking push, acknowledgement, and storage
-- Conflict resolution
+- Standard retry, jitter, limit, server-hint, and circuit policies
+- Event-level acknowledgement-to-queue reconciliation and deletion rules
+- Generic built-in rejected-event disposition
+- Complete conflict-policy integration
+- Durable restart and end-to-end reconciliation qualification
 
 ---
 

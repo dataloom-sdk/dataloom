@@ -60,7 +60,7 @@ import io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitte
  * - [io.dataloom.api.provider.TransportProvider]
  * - [io.dataloom.api.scheduling.SchedulerProvider]
  * - [io.dataloom.api.connectivity.ConnectivityProvider]
- * - [io.dataloom.api.provider.QueueProvider]
+ * - [io.dataloom.api.queue.QueueProvider]
  * - [io.dataloom.api.retry.RetryPolicy]
  * - [io.dataloom.runtime.execution.SynchronizationPipeline]
  * - [io.dataloom.runtime.execution.SynchronizationExecutionCoordinator]

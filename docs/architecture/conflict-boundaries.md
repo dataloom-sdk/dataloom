@@ -3,9 +3,11 @@
 This document describes the architectural responsibility boundaries for
 conflict detection and resolution in DataLoom.
 
-> **Important:** Conflict orchestration is not implemented in this release.
-> This document describes the intended architecture and the boundaries that
-> govern future implementation.
+> [!IMPORTANT]
+> Custom detector/resolver registries and runtime orchestration are now present.
+> Complete V1 conflict handling is still open: built-in generic policies,
+> durable conflict records, recovery, policy versioning, administration, and
+> audit evidence are not implemented.
 
 ---
 
@@ -15,22 +17,32 @@ DataLoom coordinates conflict detection and resolution, while the host
 application owns domain-specific conflict rules and merge behavior. Each
 component has a clearly defined responsibility boundary.
 
-```text
-Application
-  ├── ConflictDetector implementation (domain rules)
-  └── ConflictResolver implementation (domain policies)
+```mermaid
+flowchart LR
+    local[/Local change/]
+    remote[/Remote change/]
+    detector[ConflictDetector]
+    detected{Conflict?}
+    resolver[ConflictResolver]
+    decision{Resolution decision}
+    continueSync[Continue]
+    apply[Apply selected change]
+    defer[Persist and defer in V1]
+    fail[Fail with canonical error]
 
-DataLoom Runtime (deferred)
-  ├── Invokes ConflictDetector with ConflictDetectionRequest
-  ├── Evaluates ConflictDetectionResult
-  ├── Invokes ConflictResolver with ConflictResolutionRequest
-  └── Applies ConflictResolutionDecision
+    local --> detector
+    remote --> detector
+    detector --> detected
+    detected -->|No| continueSync
+    detected -->|Yes| resolver
+    resolver --> decision
+    decision -->|Use or merge| apply
+    decision -->|Defer| defer
+    decision -->|Fail| fail
 
-Storage Provider (deferred)
-  └── May apply the resolved change when instructed by the runtime
-
-Transport Provider (deferred)
-  └── May report remote conflicts through canonical errors
+    style detector fill:#C2E5FF,stroke:#3DADFF
+    style resolver fill:#DCCCFF,stroke:#874FFF
+    style defer fill:#FFECBD,stroke:#FFC943
 ```
 
 ---
@@ -50,8 +62,8 @@ A `ConflictDetector`:
 - Does **not** assume entity-version ordering.
 - Does **not** generate conflict identifiers unless explicitly configured.
 
-The application supplies the detector implementation. DataLoom does not
-include a built-in detector in this release.
+The application can supply a detector implementation. DataLoom does not yet
+include the complete built-in generic detector set required for V1.
 
 ---
 
@@ -70,14 +82,14 @@ A `ConflictResolver`:
 - Does **not** call retry policy.
 - Does **not** depend on platform-specific types.
 
-The application supplies the resolver implementation. DataLoom does not
-include a built-in resolver strategy in this release.
+The application can supply a resolver implementation. DataLoom does not yet
+include the complete built-in generic resolver policies required for V1.
 
 ---
 
-## Runtime Responsibility (Deferred)
+## Runtime Responsibility
 
-The future synchronization runtime will:
+The current conflict orchestrator:
 
 1. Identify that local and remote changes may conflict.
 2. Construct a `ConflictDetectionRequest` from available change information.
@@ -87,14 +99,15 @@ The future synchronization runtime will:
    - `ConflictDetected` → construct a `ConflictResolutionRequest` and invoke
      the resolver.
 5. Invoke `ConflictResolver.resolve(request)`.
-6. Apply the `ConflictResolutionDecision`:
+6. Returns the `ConflictResolutionDecision` to its caller:
    - `UseLocal` → apply the conflict's local change.
    - `UseRemote` → apply the conflict's remote change.
    - `Merge` → apply the resolver-supplied merged `ChangeEvent`.
    - `Defer` → leave the conflict unresolved for later handling.
    - `Fail` → handle the canonical error without automatic retry.
 
-This orchestration flow is **not implemented** in DL-014.
+Pipeline integration, durable application of decisions, deferred-conflict
+storage, restart recovery, and built-in policy selection remain V1 work.
 
 ---
 
@@ -126,7 +139,7 @@ coordinated by the runtime.
 - A failed conflict resolution (`ConflictResolutionDecision.Fail`) is **not**
   automatically retryable.
 - Retry policy uses the canonical `DataLoomError`.
-- The future runtime may evaluate retry policy after a conflict decision.
+- The surrounding runtime may evaluate retry policy after a conflict decision.
 - `ConflictResolver` must **not** call `RetryPolicy`.
 - `RetryPolicy` must **not** resolve conflicts.
 - Queue and scheduling behavior remains deferred.
@@ -167,9 +180,13 @@ Rules:
 - Public conflict types must **not** expose Android, JVM-specific, Apple, or
   other platform-specific types.
 - Shared contracts must **not** depend on Android APIs.
-- Android-specific conflict integration (for example, WorkManager-backed
-  deferral) belongs in a dedicated Android module (planned, not implemented).
-- KMP compatibility must **not** delay the Android-first vertical slice.
+- Platform-specific conflict integration belongs in the appropriate platform
+  module or provider implementation.
+- Full Android and iOS conflict integration has not yet been qualified.
+- Android implementation may land first, but V1 remains blocked until native
+  Android, KMP Android, and KMP iOS have equivalent qualified behavior.
+- A platform limitation must produce an explicit unsupported or degraded
+  outcome rather than silently changing conflict semantics.
 - New platform targets require an approved issue.
 
 ---
@@ -187,9 +204,10 @@ Rules:
 
 ---
 
-## Deferred Conflict Features
+## Current V1 conflict gaps
 
-The following are not implemented in DL-014:
+DL-014 introduced contracts and later work added custom orchestration. The
+following complete-engine capabilities remain absent or incomplete:
 
 - Built-in client-wins resolver
 - Built-in server-wins resolver

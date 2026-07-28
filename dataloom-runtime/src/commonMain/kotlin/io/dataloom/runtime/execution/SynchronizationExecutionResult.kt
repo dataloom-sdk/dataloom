@@ -1,8 +1,8 @@
 package io.dataloom.runtime.execution
 
 import io.dataloom.api.error.DataLoomError
+import io.dataloom.api.provider.ProviderBindingFailure
 import io.dataloom.api.synchronization.SynchronizationResult
-import io.dataloom.core.provider.ProviderBindingFailure
 
 /**
  * Sealed result of a synchronization execution attempt by the
@@ -63,8 +63,8 @@ public sealed interface SynchronizationExecutionResult {
      * Execution was rejected before any pipeline was invoked.
      *
      * [reason] classifies why execution was rejected. [providerBindingFailures]
-     * contains the ordered [ProviderBindingFailure] records produced by the
-     * [io.dataloom.core.provider.SynchronizationProviderResolver] when
+     * contains the ordered [ProviderBindingFailure] records produced during
+     * provider binding when
      * [reason] is [SynchronizationExecutionRejectionReason.PROVIDER_RESOLUTION_FAILED].
      * For all other rejection reasons, [providerBindingFailures] is empty.
      *

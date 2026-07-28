@@ -1,0 +1,1381 @@
+public final class io/dataloom/api/change/ChangeEvent {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/change/EntityReference;Lio/dataloom/api/model/ChangeOperation;Lio/dataloom/api/payload/DataLoomPayload;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/change/EntityReference;Lio/dataloom/api/model/ChangeOperation;Lio/dataloom/api/payload/DataLoomPayload;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-FRL3GXQ ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/change/EntityReference;
+	public final fun component3 ()Lio/dataloom/api/model/ChangeOperation;
+	public final fun component4 ()Lio/dataloom/api/payload/DataLoomPayload;
+	public final fun component5 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy-lTulIso (Ljava/lang/String;Lio/dataloom/api/change/EntityReference;Lio/dataloom/api/model/ChangeOperation;Lio/dataloom/api/payload/DataLoomPayload;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/change/ChangeEvent;
+	public static synthetic fun copy-lTulIso$default (Lio/dataloom/api/change/ChangeEvent;Ljava/lang/String;Lio/dataloom/api/change/EntityReference;Lio/dataloom/api/model/ChangeOperation;Lio/dataloom/api/payload/DataLoomPayload;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/change/ChangeEvent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntity ()Lio/dataloom/api/change/EntityReference;
+	public final fun getId-FRL3GXQ ()Ljava/lang/String;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun getOperation ()Lio/dataloom/api/model/ChangeOperation;
+	public final fun getPayload ()Lio/dataloom/api/payload/DataLoomPayload;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/change/ChangeSet {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEvents ()Ljava/util/List;
+	public final fun getId-K7rkNfg ()Ljava/lang/String;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/change/EntityReference {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-ljejvTE ()Ljava/lang/String;
+	public final fun component2-TLcFPyM ()Ljava/lang/String;
+	public final fun component3-lWxTxh0 ()Ljava/lang/String;
+	public final fun copy-FSUaFWU (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/dataloom/api/change/EntityReference;
+	public static synthetic fun copy-FSUaFWU$default (Lio/dataloom/api/change/EntityReference;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/change/EntityReference;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId-TLcFPyM ()Ljava/lang/String;
+	public final fun getType-ljejvTE ()Ljava/lang/String;
+	public final fun getVersion-lWxTxh0 ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictDetectionRequest {
+	public fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun component2 ()Lio/dataloom/api/change/ChangeEvent;
+	public final fun component3 ()Lio/dataloom/api/change/ChangeEvent;
+	public final fun component4 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/conflict/ConflictDetectionRequest;
+	public static synthetic fun copy$default (Lio/dataloom/api/conflict/ConflictDetectionRequest;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictDetectionRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLocalChange ()Lio/dataloom/api/change/ChangeEvent;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun getRemoteChange ()Lio/dataloom/api/change/ChangeEvent;
+	public final fun getSynchronizationRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/conflict/ConflictDetectionResult {
+}
+
+public final class io/dataloom/api/conflict/ConflictDetectionResult$ConflictDetected : io/dataloom/api/conflict/ConflictDetectionResult {
+	public fun <init> (Lio/dataloom/api/conflict/SynchronizationConflict;)V
+	public final fun component1 ()Lio/dataloom/api/conflict/SynchronizationConflict;
+	public final fun copy (Lio/dataloom/api/conflict/SynchronizationConflict;)Lio/dataloom/api/conflict/ConflictDetectionResult$ConflictDetected;
+	public static synthetic fun copy$default (Lio/dataloom/api/conflict/ConflictDetectionResult$ConflictDetected;Lio/dataloom/api/conflict/SynchronizationConflict;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictDetectionResult$ConflictDetected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConflict ()Lio/dataloom/api/conflict/SynchronizationConflict;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictDetectionResult$NoConflict : io/dataloom/api/conflict/ConflictDetectionResult {
+	public static final field INSTANCE Lio/dataloom/api/conflict/ConflictDetectionResult$NoConflict;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/conflict/ConflictDetector {
+	public abstract fun detect (Lio/dataloom/api/conflict/ConflictDetectionRequest;)Lio/dataloom/api/conflict/ConflictDetectionResult;
+	public abstract fun getId-SQTsAXs ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/conflict/ConflictResolutionDecision {
+}
+
+public final class io/dataloom/api/conflict/ConflictResolutionDecision$Defer : io/dataloom/api/conflict/ConflictResolutionDecision {
+	public fun <init> ()V
+	public fun <init> (Lio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/conflict/ConflictResolutionDecision$Defer;
+	public static synthetic fun copy$default (Lio/dataloom/api/conflict/ConflictResolutionDecision$Defer;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictResolutionDecision$Defer;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictResolutionDecision$Fail : io/dataloom/api/conflict/ConflictResolutionDecision {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun component2 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/conflict/ConflictResolutionDecision$Fail;
+	public static synthetic fun copy$default (Lio/dataloom/api/conflict/ConflictResolutionDecision$Fail;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictResolutionDecision$Fail;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictResolutionDecision$Merge : io/dataloom/api/conflict/ConflictResolutionDecision {
+	public fun <init> (Lio/dataloom/api/change/EntityReference;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Lio/dataloom/api/change/EntityReference;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/change/EntityReference;
+	public final fun component2 ()Lio/dataloom/api/change/ChangeEvent;
+	public final fun component3 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (Lio/dataloom/api/change/EntityReference;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/conflict/ConflictResolutionDecision$Merge;
+	public static synthetic fun copy$default (Lio/dataloom/api/conflict/ConflictResolutionDecision$Merge;Lio/dataloom/api/change/EntityReference;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictResolutionDecision$Merge;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExpectedEntity ()Lio/dataloom/api/change/EntityReference;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun getResolvedChange ()Lio/dataloom/api/change/ChangeEvent;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictResolutionDecision$UseLocal : io/dataloom/api/conflict/ConflictResolutionDecision {
+	public fun <init> ()V
+	public fun <init> (Lio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/conflict/ConflictResolutionDecision$UseLocal;
+	public static synthetic fun copy$default (Lio/dataloom/api/conflict/ConflictResolutionDecision$UseLocal;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictResolutionDecision$UseLocal;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictResolutionDecision$UseRemote : io/dataloom/api/conflict/ConflictResolutionDecision {
+	public fun <init> ()V
+	public fun <init> (Lio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/conflict/ConflictResolutionDecision$UseRemote;
+	public static synthetic fun copy$default (Lio/dataloom/api/conflict/ConflictResolutionDecision$UseRemote;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictResolutionDecision$UseRemote;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictResolutionRequest {
+	public fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/conflict/SynchronizationConflict;Lio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/conflict/SynchronizationConflict;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun component2 ()Lio/dataloom/api/conflict/SynchronizationConflict;
+	public final fun component3 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/conflict/SynchronizationConflict;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/conflict/ConflictResolutionRequest;
+	public static synthetic fun copy$default (Lio/dataloom/api/conflict/ConflictResolutionRequest;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/conflict/SynchronizationConflict;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictResolutionRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConflict ()Lio/dataloom/api/conflict/SynchronizationConflict;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun getSynchronizationRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/conflict/ConflictResolver {
+	public abstract fun getId-wOiKSnc ()Ljava/lang/String;
+	public abstract fun resolve (Lio/dataloom/api/conflict/ConflictResolutionRequest;)Lio/dataloom/api/conflict/ConflictResolutionDecision;
+}
+
+public final class io/dataloom/api/conflict/ConflictType : java/lang/Enum {
+	public static final field CONCURRENT_CHANGE Lio/dataloom/api/conflict/ConflictType;
+	public static final field CREATE_COLLISION Lio/dataloom/api/conflict/ConflictType;
+	public static final field CUSTOM Lio/dataloom/api/conflict/ConflictType;
+	public static final field DELETE_UPDATE Lio/dataloom/api/conflict/ConflictType;
+	public static final field UPDATE_DELETE Lio/dataloom/api/conflict/ConflictType;
+	public static final field VERSION_MISMATCH Lio/dataloom/api/conflict/ConflictType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/conflict/ConflictType;
+	public static fun values ()[Lio/dataloom/api/conflict/ConflictType;
+}
+
+public final class io/dataloom/api/conflict/SynchronizationConflict {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/conflict/ConflictType;Lio/dataloom/api/change/EntityReference;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/conflict/ConflictType;Lio/dataloom/api/change/EntityReference;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-AkQi5Yo ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/conflict/ConflictType;
+	public final fun component3 ()Lio/dataloom/api/change/EntityReference;
+	public final fun component4 ()Lio/dataloom/api/change/ChangeEvent;
+	public final fun component5 ()Lio/dataloom/api/change/ChangeEvent;
+	public final fun component6 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy-t9sWfKQ (Ljava/lang/String;Lio/dataloom/api/conflict/ConflictType;Lio/dataloom/api/change/EntityReference;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/conflict/SynchronizationConflict;
+	public static synthetic fun copy-t9sWfKQ$default (Lio/dataloom/api/conflict/SynchronizationConflict;Ljava/lang/String;Lio/dataloom/api/conflict/ConflictType;Lio/dataloom/api/change/EntityReference;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/conflict/SynchronizationConflict;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntity ()Lio/dataloom/api/change/EntityReference;
+	public final fun getId-AkQi5Yo ()Ljava/lang/String;
+	public final fun getLocalChange ()Lio/dataloom/api/change/ChangeEvent;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun getRemoteChange ()Lio/dataloom/api/change/ChangeEvent;
+	public final fun getType ()Lio/dataloom/api/conflict/ConflictType;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/connectivity/ConnectivityCheckRequest {
+	public fun <init> (Lio/dataloom/api/context/ExecutionContext;)V
+	public final fun component1 ()Lio/dataloom/api/context/ExecutionContext;
+	public final fun copy (Lio/dataloom/api/context/ExecutionContext;)Lio/dataloom/api/connectivity/ConnectivityCheckRequest;
+	public static synthetic fun copy$default (Lio/dataloom/api/connectivity/ConnectivityCheckRequest;Lio/dataloom/api/context/ExecutionContext;ILjava/lang/Object;)Lio/dataloom/api/connectivity/ConnectivityCheckRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContext ()Lio/dataloom/api/context/ExecutionContext;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/connectivity/ConnectivityProvider : io/dataloom/api/provider/DataLoomProvider {
+	public abstract fun currentConnectivity (Lio/dataloom/api/connectivity/ConnectivityCheckRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+}
+
+public final class io/dataloom/api/connectivity/ConnectivityRequirement : java/lang/Enum {
+	public static final field AVAILABLE Lio/dataloom/api/connectivity/ConnectivityRequirement;
+	public static final field NONE Lio/dataloom/api/connectivity/ConnectivityRequirement;
+	public static final field UNMETERED Lio/dataloom/api/connectivity/ConnectivityRequirement;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/connectivity/ConnectivityRequirement;
+	public static fun values ()[Lio/dataloom/api/connectivity/ConnectivityRequirement;
+}
+
+public final class io/dataloom/api/connectivity/ConnectivitySnapshot {
+	public fun <init> (Lio/dataloom/api/connectivity/ConnectivityStatus;Ljava/lang/Boolean;Lio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Lio/dataloom/api/connectivity/ConnectivityStatus;Ljava/lang/Boolean;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/connectivity/ConnectivityStatus;
+	public final fun component2 ()Ljava/lang/Boolean;
+	public final fun component3 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (Lio/dataloom/api/connectivity/ConnectivityStatus;Ljava/lang/Boolean;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/connectivity/ConnectivitySnapshot;
+	public static synthetic fun copy$default (Lio/dataloom/api/connectivity/ConnectivitySnapshot;Lio/dataloom/api/connectivity/ConnectivityStatus;Ljava/lang/Boolean;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/connectivity/ConnectivitySnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun getStatus ()Lio/dataloom/api/connectivity/ConnectivityStatus;
+	public fun hashCode ()I
+	public final fun isMetered ()Ljava/lang/Boolean;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/connectivity/ConnectivityStatus : java/lang/Enum {
+	public static final field AVAILABLE Lio/dataloom/api/connectivity/ConnectivityStatus;
+	public static final field LIMITED Lio/dataloom/api/connectivity/ConnectivityStatus;
+	public static final field UNAVAILABLE Lio/dataloom/api/connectivity/ConnectivityStatus;
+	public static final field UNKNOWN Lio/dataloom/api/connectivity/ConnectivityStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/connectivity/ConnectivityStatus;
+	public static fun values ()[Lio/dataloom/api/connectivity/ConnectivityStatus;
+}
+
+public final class io/dataloom/api/context/ExecutionContext {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-_s34tUE ()Ljava/lang/String;
+	public final fun component10 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun component2-RwjzmdE ()Ljava/lang/String;
+	public final fun component3-rhgDUuU ()Ljava/lang/String;
+	public final fun component4--2_ni_4 ()Ljava/lang/String;
+	public final fun component5-FOnZjVk ()Ljava/lang/String;
+	public final fun component6-F1amAz0 ()Ljava/lang/String;
+	public final fun component7-25T9NaE ()Ljava/lang/String;
+	public final fun component8-vZrNJ34 ()Ljava/lang/String;
+	public final fun component9-im0FcQU ()Ljava/lang/String;
+	public final fun copy-3j_A8d8 (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/context/ExecutionContext;
+	public static synthetic fun copy-3j_A8d8$default (Lio/dataloom/api/context/ExecutionContext;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/context/ExecutionContext;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConfigurationVersion-im0FcQU ()Ljava/lang/String;
+	public final fun getCorrelationId-RwjzmdE ()Ljava/lang/String;
+	public final fun getExecutionId-_s34tUE ()Ljava/lang/String;
+	public final fun getLocaleTag-25T9NaE ()Ljava/lang/String;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun getRequestId--2_ni_4 ()Ljava/lang/String;
+	public final fun getRuntimeVersion-vZrNJ34 ()Ljava/lang/String;
+	public final fun getTenantId-FOnZjVk ()Ljava/lang/String;
+	public final fun getTraceId-rhgDUuU ()Ljava/lang/String;
+	public final fun getUserId-F1amAz0 ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/execution/SynchronizationProviderSet {
+	public abstract fun getConnectivityProvider ()Lio/dataloom/api/connectivity/ConnectivityProvider;
+	public abstract fun getQueueProvider ()Lio/dataloom/api/queue/QueueProvider;
+	public abstract fun getSchedulerProvider ()Lio/dataloom/api/scheduling/SchedulerProvider;
+	public abstract fun getStorageProvider ()Lio/dataloom/api/storage/StorageProvider;
+	public abstract fun getTransportProvider ()Lio/dataloom/api/transport/TransportProvider;
+}
+
+public final class io/dataloom/api/model/ChangeOperation : java/lang/Enum {
+	public static final field CREATE Lio/dataloom/api/model/ChangeOperation;
+	public static final field DELETE Lio/dataloom/api/model/ChangeOperation;
+	public static final field MERGE Lio/dataloom/api/model/ChangeOperation;
+	public static final field RESTORE Lio/dataloom/api/model/ChangeOperation;
+	public static final field UPDATE Lio/dataloom/api/model/ChangeOperation;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/model/ChangeOperation;
+	public static fun values ()[Lio/dataloom/api/model/ChangeOperation;
+}
+
+public final class io/dataloom/api/model/SynchronizationDirection : java/lang/Enum {
+	public static final field BIDIRECTIONAL Lio/dataloom/api/model/SynchronizationDirection;
+	public static final field PULL Lio/dataloom/api/model/SynchronizationDirection;
+	public static final field PUSH Lio/dataloom/api/model/SynchronizationDirection;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/model/SynchronizationDirection;
+	public static fun values ()[Lio/dataloom/api/model/SynchronizationDirection;
+}
+
+public final class io/dataloom/api/model/SynchronizationMode : java/lang/Enum {
+	public static final field DELTA Lio/dataloom/api/model/SynchronizationMode;
+	public static final field FULL Lio/dataloom/api/model/SynchronizationMode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/model/SynchronizationMode;
+	public static fun values ()[Lio/dataloom/api/model/SynchronizationMode;
+}
+
+public final class io/dataloom/api/model/SynchronizationRequest {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/model/SynchronizationDirection;Lio/dataloom/api/model/SynchronizationMode;Lio/dataloom/api/model/WorkflowPriority;Lio/dataloom/api/context/ExecutionContext;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/model/SynchronizationDirection;Lio/dataloom/api/model/SynchronizationMode;Lio/dataloom/api/model/WorkflowPriority;Lio/dataloom/api/context/ExecutionContext;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-AO9uWSE ()Ljava/lang/String;
+	public final fun component2-i5HvtV4 ()Ljava/lang/String;
+	public final fun component3 ()Lio/dataloom/api/model/SynchronizationDirection;
+	public final fun component4 ()Lio/dataloom/api/model/SynchronizationMode;
+	public final fun component5 ()Lio/dataloom/api/model/WorkflowPriority;
+	public final fun component6 ()Lio/dataloom/api/context/ExecutionContext;
+	public final fun copy-vEwLta8 (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/model/SynchronizationDirection;Lio/dataloom/api/model/SynchronizationMode;Lio/dataloom/api/model/WorkflowPriority;Lio/dataloom/api/context/ExecutionContext;)Lio/dataloom/api/model/SynchronizationRequest;
+	public static synthetic fun copy-vEwLta8$default (Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/model/SynchronizationDirection;Lio/dataloom/api/model/SynchronizationMode;Lio/dataloom/api/model/WorkflowPriority;Lio/dataloom/api/context/ExecutionContext;ILjava/lang/Object;)Lio/dataloom/api/model/SynchronizationRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContext ()Lio/dataloom/api/context/ExecutionContext;
+	public final fun getDirection ()Lio/dataloom/api/model/SynchronizationDirection;
+	public final fun getMode ()Lio/dataloom/api/model/SynchronizationMode;
+	public final fun getPriority ()Lio/dataloom/api/model/WorkflowPriority;
+	public final fun getSessionId-i5HvtV4 ()Ljava/lang/String;
+	public final fun getWorkflowId-AO9uWSE ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/model/WorkflowLifecycleState : java/lang/Enum {
+	public static final field CANCELLED Lio/dataloom/api/model/WorkflowLifecycleState;
+	public static final field CREATED Lio/dataloom/api/model/WorkflowLifecycleState;
+	public static final field FAILED Lio/dataloom/api/model/WorkflowLifecycleState;
+	public static final field QUEUED Lio/dataloom/api/model/WorkflowLifecycleState;
+	public static final field RUNNING Lio/dataloom/api/model/WorkflowLifecycleState;
+	public static final field SCHEDULED Lio/dataloom/api/model/WorkflowLifecycleState;
+	public static final field SUCCEEDED Lio/dataloom/api/model/WorkflowLifecycleState;
+	public static final field VALIDATED Lio/dataloom/api/model/WorkflowLifecycleState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/model/WorkflowLifecycleState;
+	public static fun values ()[Lio/dataloom/api/model/WorkflowLifecycleState;
+}
+
+public final class io/dataloom/api/model/WorkflowPriority : java/lang/Enum {
+	public static final field CRITICAL Lio/dataloom/api/model/WorkflowPriority;
+	public static final field HIGH Lio/dataloom/api/model/WorkflowPriority;
+	public static final field LOW Lio/dataloom/api/model/WorkflowPriority;
+	public static final field NORMAL Lio/dataloom/api/model/WorkflowPriority;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/model/WorkflowPriority;
+	public static fun values ()[Lio/dataloom/api/model/WorkflowPriority;
+}
+
+public abstract interface class io/dataloom/api/observation/SynchronizationObserver {
+	public abstract fun getId-9boBKdU ()Ljava/lang/String;
+	public abstract fun onEvent (Lio/dataloom/api/synchronization/SynchronizationEvent;)V
+}
+
+public final class io/dataloom/api/payload/DataLoomPayload {
+	public synthetic fun <init> (Ljava/lang/String;[BLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun copyBytes ()[B
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContentType-Gw-UFxA ()Ljava/lang/String;
+	public final fun getSize ()I
+	public fun hashCode ()I
+	public final fun isEmpty ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/payload/EntityVersion {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/payload/EntityVersion;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/payload/PayloadContentType {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/payload/PayloadContentType;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/queue/ExpiredLeaseRecoveryRequest {
+	public fun <init> (Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component2 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/queue/ExpiredLeaseRecoveryRequest;
+	public static synthetic fun copy$default (Lio/dataloom/api/queue/ExpiredLeaseRecoveryRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/queue/ExpiredLeaseRecoveryRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCurrentTime ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/queue/ExpiredLeaseRecoveryResult {
+	public fun <init> (I)V
+	public final fun component1 ()I
+	public final fun copy (I)Lio/dataloom/api/queue/ExpiredLeaseRecoveryResult;
+	public static synthetic fun copy$default (Lio/dataloom/api/queue/ExpiredLeaseRecoveryResult;IILjava/lang/Object;)Lio/dataloom/api/queue/ExpiredLeaseRecoveryResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecoveredEntries ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/queue/QueueAcquireRequest {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;ILio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;ILio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-fjIhat0 ()Ljava/lang/String;
+	public final fun component2-__BVD4c ()Ljava/lang/String;
+	public final fun component3 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component4 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component5 ()I
+	public final fun component6 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy-TyR_6IE (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;ILio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/queue/QueueAcquireRequest;
+	public static synthetic fun copy-TyR_6IE$default (Lio/dataloom/api/queue/QueueAcquireRequest;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;ILio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/queue/QueueAcquireRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAcquiredAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getConsumerId-fjIhat0 ()Ljava/lang/String;
+	public final fun getLeaseExpiresAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getLeaseId-__BVD4c ()Ljava/lang/String;
+	public final fun getMaxEntries ()I
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/queue/QueueAcquireResult {
+}
+
+public final class io/dataloom/api/queue/QueueAcquireResult$Entries : io/dataloom/api/queue/QueueAcquireResult {
+	public fun <init> (Lio/dataloom/api/queue/QueueLease;Ljava/util/List;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntries ()Ljava/util/List;
+	public final fun getLease ()Lio/dataloom/api/queue/QueueLease;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/queue/QueueAcquireResult$NoEntries : io/dataloom/api/queue/QueueAcquireResult {
+	public static final field INSTANCE Lio/dataloom/api/queue/QueueAcquireResult$NoEntries;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/queue/QueueCancellationRequest {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/context/ExecutionContext;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/context/ExecutionContext;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-ARA1dI0 ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/context/ExecutionContext;
+	public final fun component3 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy-aRRnJZc (Ljava/lang/String;Lio/dataloom/api/context/ExecutionContext;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/queue/QueueCancellationRequest;
+	public static synthetic fun copy-aRRnJZc$default (Lio/dataloom/api/queue/QueueCancellationRequest;Ljava/lang/String;Lio/dataloom/api/context/ExecutionContext;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/queue/QueueCancellationRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContext ()Lio/dataloom/api/context/ExecutionContext;
+	public final fun getEntryId-ARA1dI0 ()Ljava/lang/String;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/queue/QueueCompletionRequest {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-ARA1dI0 ()Ljava/lang/String;
+	public final fun component2-__BVD4c ()Ljava/lang/String;
+	public final fun component3 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component4 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy-PYPgbaA (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/queue/QueueCompletionRequest;
+	public static synthetic fun copy-PYPgbaA$default (Lio/dataloom/api/queue/QueueCompletionRequest;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/queue/QueueCompletionRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getEntryId-ARA1dI0 ()Ljava/lang/String;
+	public final fun getLeaseId-__BVD4c ()Ljava/lang/String;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/queue/QueueEnqueueRequest {
+	public fun <init> (Lio/dataloom/api/queue/QueueEntry;)V
+	public final fun component1 ()Lio/dataloom/api/queue/QueueEntry;
+	public final fun copy (Lio/dataloom/api/queue/QueueEntry;)Lio/dataloom/api/queue/QueueEnqueueRequest;
+	public static synthetic fun copy$default (Lio/dataloom/api/queue/QueueEnqueueRequest;Lio/dataloom/api/queue/QueueEntry;ILjava/lang/Object;)Lio/dataloom/api/queue/QueueEnqueueRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntry ()Lio/dataloom/api/queue/QueueEntry;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/queue/QueueEntry {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/queue/QueueLease;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/queue/QueueLease;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-ARA1dI0 ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun component3 ()Lio/dataloom/api/queue/QueueEntryState;
+	public final fun component4 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component5 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component6 ()Lio/dataloom/api/retry/RetryAttempt;
+	public final fun component7 ()Lio/dataloom/api/queue/QueueLease;
+	public final fun component8 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun component9 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy-xDUmvtA (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/queue/QueueLease;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/queue/QueueEntry;
+	public static synthetic fun copy-xDUmvtA$default (Lio/dataloom/api/queue/QueueEntry;Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/queue/QueueLease;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/queue/QueueEntry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAvailableAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getEnqueuedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getId-ARA1dI0 ()Ljava/lang/String;
+	public final fun getLastError ()Lio/dataloom/api/error/DataLoomError;
+	public final fun getLease ()Lio/dataloom/api/queue/QueueLease;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun getRetryAttempt ()Lio/dataloom/api/retry/RetryAttempt;
+	public final fun getState ()Lio/dataloom/api/queue/QueueEntryState;
+	public final fun getSynchronizationRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/queue/QueueEntryState : java/lang/Enum {
+	public static final field CANCELLED Lio/dataloom/api/queue/QueueEntryState;
+	public static final field COMPLETED Lio/dataloom/api/queue/QueueEntryState;
+	public static final field DEAD_LETTER Lio/dataloom/api/queue/QueueEntryState;
+	public static final field FAILED Lio/dataloom/api/queue/QueueEntryState;
+	public static final field LEASED Lio/dataloom/api/queue/QueueEntryState;
+	public static final field PENDING Lio/dataloom/api/queue/QueueEntryState;
+	public static final field RETRY_WAITING Lio/dataloom/api/queue/QueueEntryState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/queue/QueueEntryState;
+	public static fun values ()[Lio/dataloom/api/queue/QueueEntryState;
+}
+
+public final class io/dataloom/api/queue/QueueFailureDisposition : java/lang/Enum {
+	public static final field DEAD_LETTER Lio/dataloom/api/queue/QueueFailureDisposition;
+	public static final field FAILED Lio/dataloom/api/queue/QueueFailureDisposition;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/queue/QueueFailureDisposition;
+	public static fun values ()[Lio/dataloom/api/queue/QueueFailureDisposition;
+}
+
+public final class io/dataloom/api/queue/QueueFailureRequest {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/queue/QueueFailureDisposition;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/queue/QueueFailureDisposition;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-ARA1dI0 ()Ljava/lang/String;
+	public final fun component2-__BVD4c ()Ljava/lang/String;
+	public final fun component3 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun component4 ()Lio/dataloom/api/queue/QueueFailureDisposition;
+	public final fun component5 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy-7BwK9zg (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/queue/QueueFailureDisposition;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/queue/QueueFailureRequest;
+	public static synthetic fun copy-7BwK9zg$default (Lio/dataloom/api/queue/QueueFailureRequest;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/queue/QueueFailureDisposition;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/queue/QueueFailureRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDisposition ()Lio/dataloom/api/queue/QueueFailureDisposition;
+	public final fun getEntryId-ARA1dI0 ()Ljava/lang/String;
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public final fun getLeaseId-__BVD4c ()Ljava/lang/String;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/queue/QueueLease {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-__BVD4c ()Ljava/lang/String;
+	public final fun component2-fjIhat0 ()Ljava/lang/String;
+	public final fun component3 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component4 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy-7kwLybI (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/api/queue/QueueLease;
+	public static synthetic fun copy-7kwLybI$default (Lio/dataloom/api/queue/QueueLease;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/api/queue/QueueLease;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAcquiredAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getConsumerId-fjIhat0 ()Ljava/lang/String;
+	public final fun getExpiresAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getId-__BVD4c ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/queue/QueueProvider : io/dataloom/api/provider/DataLoomProvider {
+	public abstract fun acquire (Lio/dataloom/api/queue/QueueAcquireRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun cancel (Lio/dataloom/api/queue/QueueCancellationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun complete (Lio/dataloom/api/queue/QueueCompletionRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun enqueue (Lio/dataloom/api/queue/QueueEnqueueRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun fail (Lio/dataloom/api/queue/QueueFailureRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public abstract fun recoverExpiredLeases (Lio/dataloom/api/queue/ExpiredLeaseRecoveryRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun reschedule (Lio/dataloom/api/queue/QueueRescheduleRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/api/queue/QueueRescheduleRequest {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-ARA1dI0 ()Ljava/lang/String;
+	public final fun component2-__BVD4c ()Ljava/lang/String;
+	public final fun component3 ()Lio/dataloom/api/retry/RetryAttempt;
+	public final fun component4 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component5 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun component6 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy-tZBer34 (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/queue/QueueRescheduleRequest;
+	public static synthetic fun copy-tZBer34$default (Lio/dataloom/api/queue/QueueRescheduleRequest;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/queue/QueueRescheduleRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAvailableAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getEntryId-ARA1dI0 ()Ljava/lang/String;
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public final fun getLeaseId-__BVD4c ()Ljava/lang/String;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun getRetryAttempt ()Lio/dataloom/api/retry/RetryAttempt;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/retry/RetryAttempt {
+	public fun <init> (I)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getNumber ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/retry/RetryDecision {
+}
+
+public final class io/dataloom/api/retry/RetryDecision$Retry : io/dataloom/api/retry/RetryDecision {
+	public fun <init> (Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun component2 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/retry/RetryDecision$Retry;
+	public static synthetic fun copy$default (Lio/dataloom/api/retry/RetryDecision$Retry;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/retry/RetryDecision$Retry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDelay ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/retry/RetryDecision$Stop : io/dataloom/api/retry/RetryDecision {
+	public fun <init> (Lio/dataloom/api/retry/RetryStopReason;Lio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Lio/dataloom/api/retry/RetryStopReason;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/retry/RetryStopReason;
+	public final fun component2 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (Lio/dataloom/api/retry/RetryStopReason;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/retry/RetryDecision$Stop;
+	public static synthetic fun copy$default (Lio/dataloom/api/retry/RetryDecision$Stop;Lio/dataloom/api/retry/RetryStopReason;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/retry/RetryDecision$Stop;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun getReason ()Lio/dataloom/api/retry/RetryStopReason;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/retry/RetryEvaluationRequest {
+	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun component2-TGFxZV8 ()Ljava/lang/String;
+	public final fun component3 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun component4 ()Lio/dataloom/api/retry/RetryAttempt;
+	public final fun component5 ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun component6 ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public final fun component7 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy-BPbl8hU (Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/retry/RetryEvaluationRequest;
+	public static synthetic fun copy-BPbl8hU$default (Lio/dataloom/api/retry/RetryEvaluationRequest;Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/retry/RetryEvaluationRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAttempt ()Lio/dataloom/api/retry/RetryAttempt;
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun getOperation-TGFxZV8 ()Ljava/lang/String;
+	public final fun getPreviousDelay ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun getProvider ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public final fun getSynchronizationRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/retry/RetryOperation {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/retry/RetryOperation;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/retry/RetryPolicy {
+	public abstract fun evaluate (Lio/dataloom/api/retry/RetryEvaluationRequest;)Lio/dataloom/api/retry/RetryDecision;
+	public abstract fun getId-Bqc1ZN8 ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/retry/RetryStopReason : java/lang/Enum {
+	public static final field ATTEMPT_LIMIT_REACHED Lio/dataloom/api/retry/RetryStopReason;
+	public static final field NON_RECOVERABLE Lio/dataloom/api/retry/RetryStopReason;
+	public static final field POLICY_REJECTED Lio/dataloom/api/retry/RetryStopReason;
+	public static final field UNSUPPORTED_OPERATION Lio/dataloom/api/retry/RetryStopReason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/retry/RetryStopReason;
+	public static fun values ()[Lio/dataloom/api/retry/RetryStopReason;
+}
+
+public final class io/dataloom/api/runtime/RuntimeDependencies {
+	public fun <init> (Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/runtime/RuntimeIdentifierGenerators;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getClock ()Lio/dataloom/api/time/DataLoomClock;
+	public final fun getIdentifiers ()Lio/dataloom/api/runtime/RuntimeIdentifierGenerators;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/runtime/RuntimeIdentifierGenerators {
+	public fun <init> (Lio/dataloom/api/identifier/IdentifierGenerator;Lio/dataloom/api/identifier/IdentifierGenerator;Lio/dataloom/api/identifier/IdentifierGenerator;Lio/dataloom/api/identifier/IdentifierGenerator;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConflictIds ()Lio/dataloom/api/identifier/IdentifierGenerator;
+	public final fun getQueueEntryIds ()Lio/dataloom/api/identifier/IdentifierGenerator;
+	public final fun getQueueLeaseIds ()Lio/dataloom/api/identifier/IdentifierGenerator;
+	public final fun getSynchronizationEventIds ()Lio/dataloom/api/identifier/IdentifierGenerator;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/scheduling/ExistingSchedulePolicy : java/lang/Enum {
+	public static final field KEEP Lio/dataloom/api/scheduling/ExistingSchedulePolicy;
+	public static final field REPLACE Lio/dataloom/api/scheduling/ExistingSchedulePolicy;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/scheduling/ExistingSchedulePolicy;
+	public static fun values ()[Lio/dataloom/api/scheduling/ExistingSchedulePolicy;
+}
+
+public final class io/dataloom/api/scheduling/ScheduleCancellationRequest {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/context/ExecutionContext;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-Rq7uEjc ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/context/ExecutionContext;
+	public final fun copy-grcA6FI (Ljava/lang/String;Lio/dataloom/api/context/ExecutionContext;)Lio/dataloom/api/scheduling/ScheduleCancellationRequest;
+	public static synthetic fun copy-grcA6FI$default (Lio/dataloom/api/scheduling/ScheduleCancellationRequest;Ljava/lang/String;Lio/dataloom/api/context/ExecutionContext;ILjava/lang/Object;)Lio/dataloom/api/scheduling/ScheduleCancellationRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContext ()Lio/dataloom/api/context/ExecutionContext;
+	public final fun getId-Rq7uEjc ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/scheduling/ScheduleConstraints {
+	public fun <init> ()V
+	public fun <init> (Lio/dataloom/api/connectivity/ConnectivityRequirement;ZLio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Lio/dataloom/api/connectivity/ConnectivityRequirement;ZLio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/connectivity/ConnectivityRequirement;
+	public final fun component2 ()Z
+	public final fun component3 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (Lio/dataloom/api/connectivity/ConnectivityRequirement;ZLio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/scheduling/ScheduleConstraints;
+	public static synthetic fun copy$default (Lio/dataloom/api/scheduling/ScheduleConstraints;Lio/dataloom/api/connectivity/ConnectivityRequirement;ZLio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/scheduling/ScheduleConstraints;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConnectivity ()Lio/dataloom/api/connectivity/ConnectivityRequirement;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun getRequiresCharging ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/scheduling/ScheduleReceipt {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-Rq7uEjc ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy-grcA6FI (Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/scheduling/ScheduleReceipt;
+	public static synthetic fun copy-grcA6FI$default (Lio/dataloom/api/scheduling/ScheduleReceipt;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/scheduling/ScheduleReceipt;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId-Rq7uEjc ()Ljava/lang/String;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/scheduling/ScheduleRequest {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/ScheduleConstraints;Lio/dataloom/api/scheduling/ExistingSchedulePolicy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/ScheduleConstraints;Lio/dataloom/api/scheduling/ExistingSchedulePolicy;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-Rq7uEjc ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun component3 ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun component4 ()Lio/dataloom/api/scheduling/ScheduleConstraints;
+	public final fun component5 ()Lio/dataloom/api/scheduling/ExistingSchedulePolicy;
+	public final fun copy-GYGjtXY (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/ScheduleConstraints;Lio/dataloom/api/scheduling/ExistingSchedulePolicy;)Lio/dataloom/api/scheduling/ScheduleRequest;
+	public static synthetic fun copy-GYGjtXY$default (Lio/dataloom/api/scheduling/ScheduleRequest;Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/ScheduleConstraints;Lio/dataloom/api/scheduling/ExistingSchedulePolicy;ILjava/lang/Object;)Lio/dataloom/api/scheduling/ScheduleRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConstraints ()Lio/dataloom/api/scheduling/ScheduleConstraints;
+	public final fun getDelay ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun getExistingPolicy ()Lio/dataloom/api/scheduling/ExistingSchedulePolicy;
+	public final fun getId-Rq7uEjc ()Ljava/lang/String;
+	public final fun getSynchronizationRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/scheduling/SchedulerProvider : io/dataloom/api/provider/DataLoomProvider {
+	public abstract fun cancel (Lio/dataloom/api/scheduling/ScheduleCancellationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public abstract fun schedule (Lio/dataloom/api/scheduling/ScheduleRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/api/scheduling/SchedulingDelay {
+	public static final field Companion Lio/dataloom/api/scheduling/SchedulingDelay$Companion;
+	public fun <init> (J)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMilliseconds ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/scheduling/SchedulingDelay$Companion {
+	public final fun getZERO ()Lio/dataloom/api/scheduling/SchedulingDelay;
+}
+
+public final class io/dataloom/api/storage/InboundChangeApplyRequest {
+	public fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/change/ChangeSet;)V
+	public final fun component1 ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun component2 ()Lio/dataloom/api/change/ChangeSet;
+	public final fun copy (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/change/ChangeSet;)Lio/dataloom/api/storage/InboundChangeApplyRequest;
+	public static synthetic fun copy$default (Lio/dataloom/api/storage/InboundChangeApplyRequest;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/change/ChangeSet;ILjava/lang/Object;)Lio/dataloom/api/storage/InboundChangeApplyRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChangeSet ()Lio/dataloom/api/change/ChangeSet;
+	public final fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/storage/OutboundChangeReadRequest {
+	public fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Ljava/util/Set;Ljava/lang/Integer;)V
+	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Ljava/util/Set;Ljava/lang/Integer;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntityTypes ()Ljava/util/Set;
+	public final fun getMaxEvents ()Ljava/lang/Integer;
+	public final fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/storage/OutboundChangeReadResult {
+}
+
+public final class io/dataloom/api/storage/OutboundChangeReadResult$Changes : io/dataloom/api/storage/OutboundChangeReadResult {
+	public fun <init> (Lio/dataloom/api/change/ChangeSet;Z)V
+	public final fun component1 ()Lio/dataloom/api/change/ChangeSet;
+	public final fun component2 ()Z
+	public final fun copy (Lio/dataloom/api/change/ChangeSet;Z)Lio/dataloom/api/storage/OutboundChangeReadResult$Changes;
+	public static synthetic fun copy$default (Lio/dataloom/api/storage/OutboundChangeReadResult$Changes;Lio/dataloom/api/change/ChangeSet;ZILjava/lang/Object;)Lio/dataloom/api/storage/OutboundChangeReadResult$Changes;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChangeSet ()Lio/dataloom/api/change/ChangeSet;
+	public final fun getHasMore ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/storage/OutboundChangeReadResult$NoChanges : io/dataloom/api/storage/OutboundChangeReadResult {
+	public static final field INSTANCE Lio/dataloom/api/storage/OutboundChangeReadResult$NoChanges;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/storage/StorageProvider : io/dataloom/api/provider/DataLoomProvider {
+	public abstract fun acknowledgeOutboundChanges (Lio/dataloom/api/synchronization/OutboundChangeAcknowledgementRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun applyInboundChanges (Lio/dataloom/api/storage/InboundChangeApplyRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public abstract fun readCheckpoint (Lio/dataloom/api/synchronization/CheckpointReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun readOutboundChanges (Lio/dataloom/api/storage/OutboundChangeReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun writeCheckpoint (Lio/dataloom/api/synchronization/CheckpointWriteRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/api/synchronization/ChangeAcknowledgementStatus : java/lang/Enum {
+	public static final field ACCEPTED Lio/dataloom/api/synchronization/ChangeAcknowledgementStatus;
+	public static final field REJECTED Lio/dataloom/api/synchronization/ChangeAcknowledgementStatus;
+	public static final field RETRY Lio/dataloom/api/synchronization/ChangeAcknowledgementStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/synchronization/ChangeAcknowledgementStatus;
+	public static fun values ()[Lio/dataloom/api/synchronization/ChangeAcknowledgementStatus;
+}
+
+public final class io/dataloom/api/synchronization/ChangeEventAcknowledgement {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/synchronization/ChangeAcknowledgementStatus;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/synchronization/ChangeAcknowledgementStatus;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-FRL3GXQ ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/synchronization/ChangeAcknowledgementStatus;
+	public final fun component3 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun component4 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy-LyLAl9Y (Ljava/lang/String;Lio/dataloom/api/synchronization/ChangeAcknowledgementStatus;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/synchronization/ChangeEventAcknowledgement;
+	public static synthetic fun copy-LyLAl9Y$default (Lio/dataloom/api/synchronization/ChangeEventAcknowledgement;Ljava/lang/String;Lio/dataloom/api/synchronization/ChangeAcknowledgementStatus;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/synchronization/ChangeEventAcknowledgement;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public final fun getEventId-FRL3GXQ ()Ljava/lang/String;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun getStatus ()Lio/dataloom/api/synchronization/ChangeAcknowledgementStatus;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/synchronization/ChangeSetAcknowledgement {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChangeSetId-K7rkNfg ()Ljava/lang/String;
+	public final fun getEvents ()Ljava/util/List;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/synchronization/CheckpointReadRequest {
+	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun component2-RxyHFfc ()Ljava/lang/String;
+	public final fun copy-me5gjfM (Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;)Lio/dataloom/api/synchronization/CheckpointReadRequest;
+	public static synthetic fun copy-me5gjfM$default (Lio/dataloom/api/synchronization/CheckpointReadRequest;Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/synchronization/CheckpointReadRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKey-RxyHFfc ()Ljava/lang/String;
+	public final fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/synchronization/CheckpointWriteRequest {
+	public fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/synchronization/SynchronizationCheckpoint;)V
+	public final fun component1 ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun component2 ()Lio/dataloom/api/synchronization/SynchronizationCheckpoint;
+	public final fun copy (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/synchronization/SynchronizationCheckpoint;)Lio/dataloom/api/synchronization/CheckpointWriteRequest;
+	public static synthetic fun copy$default (Lio/dataloom/api/synchronization/CheckpointWriteRequest;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/synchronization/SynchronizationCheckpoint;ILjava/lang/Object;)Lio/dataloom/api/synchronization/CheckpointWriteRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCheckpoint ()Lio/dataloom/api/synchronization/SynchronizationCheckpoint;
+	public final fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/synchronization/OutboundChangeAcknowledgementRequest {
+	public fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/synchronization/ChangeSetAcknowledgement;)V
+	public final fun component1 ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun component2 ()Lio/dataloom/api/synchronization/ChangeSetAcknowledgement;
+	public final fun copy (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/synchronization/ChangeSetAcknowledgement;)Lio/dataloom/api/synchronization/OutboundChangeAcknowledgementRequest;
+	public static synthetic fun copy$default (Lio/dataloom/api/synchronization/OutboundChangeAcknowledgementRequest;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/synchronization/ChangeSetAcknowledgement;ILjava/lang/Object;)Lio/dataloom/api/synchronization/OutboundChangeAcknowledgementRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAcknowledgement ()Lio/dataloom/api/synchronization/ChangeSetAcknowledgement;
+	public final fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/synchronization/SynchronizationCheckpoint {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-RxyHFfc ()Ljava/lang/String;
+	public final fun component2-s28x73Y ()Ljava/lang/String;
+	public final fun component3 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy-AIgPmr0 (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/synchronization/SynchronizationCheckpoint;
+	public static synthetic fun copy-AIgPmr0$default (Lio/dataloom/api/synchronization/SynchronizationCheckpoint;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/synchronization/SynchronizationCheckpoint;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKey-RxyHFfc ()Ljava/lang/String;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun getToken-s28x73Y ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/synchronization/SynchronizationEvent {
+	public abstract fun getId-SgDZU0Q ()Ljava/lang/String;
+	public abstract fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public abstract fun getOccurredAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public abstract fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+}
+
+public final class io/dataloom/api/synchronization/SynchronizationEvent$Completed : io/dataloom/api/synchronization/SynchronizationEvent {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationResult;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationResult;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-SgDZU0Q ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun component3 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component4 ()Lio/dataloom/api/synchronization/SynchronizationResult;
+	public final fun component5 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy-coVHkFU (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationResult;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/synchronization/SynchronizationEvent$Completed;
+	public static synthetic fun copy-coVHkFU$default (Lio/dataloom/api/synchronization/SynchronizationEvent$Completed;Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationResult;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/synchronization/SynchronizationEvent$Completed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getId-SgDZU0Q ()Ljava/lang/String;
+	public fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun getOccurredAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun getResult ()Lio/dataloom/api/synchronization/SynchronizationResult;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/synchronization/SynchronizationEvent$ConflictDetected : io/dataloom/api/synchronization/SynchronizationEvent {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/conflict/SynchronizationConflict;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/conflict/SynchronizationConflict;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-SgDZU0Q ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun component3 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component4 ()Lio/dataloom/api/conflict/SynchronizationConflict;
+	public final fun component5 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy-coVHkFU (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/conflict/SynchronizationConflict;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/synchronization/SynchronizationEvent$ConflictDetected;
+	public static synthetic fun copy-coVHkFU$default (Lio/dataloom/api/synchronization/SynchronizationEvent$ConflictDetected;Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/conflict/SynchronizationConflict;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/synchronization/SynchronizationEvent$ConflictDetected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConflict ()Lio/dataloom/api/conflict/SynchronizationConflict;
+	public fun getId-SgDZU0Q ()Ljava/lang/String;
+	public fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun getOccurredAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/synchronization/SynchronizationEvent$PhaseChanged : io/dataloom/api/synchronization/SynchronizationEvent {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationPhase;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationPhase;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-SgDZU0Q ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun component3 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component4 ()Lio/dataloom/api/synchronization/SynchronizationPhase;
+	public final fun component5 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy-coVHkFU (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationPhase;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/synchronization/SynchronizationEvent$PhaseChanged;
+	public static synthetic fun copy-coVHkFU$default (Lio/dataloom/api/synchronization/SynchronizationEvent$PhaseChanged;Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationPhase;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/synchronization/SynchronizationEvent$PhaseChanged;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getId-SgDZU0Q ()Ljava/lang/String;
+	public fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun getOccurredAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getPhase ()Lio/dataloom/api/synchronization/SynchronizationPhase;
+	public fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/synchronization/SynchronizationEvent$ProgressUpdated : io/dataloom/api/synchronization/SynchronizationEvent {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationProgress;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationProgress;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-SgDZU0Q ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun component3 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component4 ()Lio/dataloom/api/synchronization/SynchronizationProgress;
+	public final fun component5 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy-coVHkFU (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationProgress;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/synchronization/SynchronizationEvent$ProgressUpdated;
+	public static synthetic fun copy-coVHkFU$default (Lio/dataloom/api/synchronization/SynchronizationEvent$ProgressUpdated;Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationProgress;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/synchronization/SynchronizationEvent$ProgressUpdated;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getId-SgDZU0Q ()Ljava/lang/String;
+	public fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun getOccurredAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getProgress ()Lio/dataloom/api/synchronization/SynchronizationProgress;
+	public fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/synchronization/SynchronizationEvent$RetryScheduled : io/dataloom/api/synchronization/SynchronizationEvent {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-SgDZU0Q ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun component3 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component4 ()Lio/dataloom/api/retry/RetryAttempt;
+	public final fun component5 ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun component6 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun component7 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy-ZkamRfM (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/synchronization/SynchronizationEvent$RetryScheduled;
+	public static synthetic fun copy-ZkamRfM$default (Lio/dataloom/api/synchronization/SynchronizationEvent$RetryScheduled;Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/synchronization/SynchronizationEvent$RetryScheduled;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAttempt ()Lio/dataloom/api/retry/RetryAttempt;
+	public final fun getDelay ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun getId-SgDZU0Q ()Ljava/lang/String;
+	public fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun getOccurredAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/synchronization/SynchronizationEvent$Started : io/dataloom/api/synchronization/SynchronizationEvent {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-SgDZU0Q ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun component3 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component4 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy-tOLsmH0 (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/synchronization/SynchronizationEvent$Started;
+	public static synthetic fun copy-tOLsmH0$default (Lio/dataloom/api/synchronization/SynchronizationEvent$Started;Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/synchronization/SynchronizationEvent$Started;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getId-SgDZU0Q ()Ljava/lang/String;
+	public fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun getOccurredAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/synchronization/SynchronizationPhase : java/lang/Enum {
+	public static final field ACKNOWLEDGING_OUTBOUND Lio/dataloom/api/synchronization/SynchronizationPhase;
+	public static final field APPLYING_INBOUND Lio/dataloom/api/synchronization/SynchronizationPhase;
+	public static final field FINALIZING Lio/dataloom/api/synchronization/SynchronizationPhase;
+	public static final field PULLING Lio/dataloom/api/synchronization/SynchronizationPhase;
+	public static final field PUSHING Lio/dataloom/api/synchronization/SynchronizationPhase;
+	public static final field READING_OUTBOUND Lio/dataloom/api/synchronization/SynchronizationPhase;
+	public static final field RESOLVING_CONFLICTS Lio/dataloom/api/synchronization/SynchronizationPhase;
+	public static final field VALIDATING Lio/dataloom/api/synchronization/SynchronizationPhase;
+	public static final field WAITING_FOR_CONNECTIVITY Lio/dataloom/api/synchronization/SynchronizationPhase;
+	public static final field WAITING_FOR_RETRY Lio/dataloom/api/synchronization/SynchronizationPhase;
+	public static final field WRITING_CHECKPOINT Lio/dataloom/api/synchronization/SynchronizationPhase;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/synchronization/SynchronizationPhase;
+	public static fun values ()[Lio/dataloom/api/synchronization/SynchronizationPhase;
+}
+
+public final class io/dataloom/api/synchronization/SynchronizationProgress {
+	public fun <init> (Lio/dataloom/api/synchronization/SynchronizationPhase;JLjava/lang/Long;Lio/dataloom/api/synchronization/SynchronizationProgressUnit;Lio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Lio/dataloom/api/synchronization/SynchronizationPhase;JLjava/lang/Long;Lio/dataloom/api/synchronization/SynchronizationProgressUnit;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/synchronization/SynchronizationPhase;
+	public final fun component2 ()J
+	public final fun component3 ()Ljava/lang/Long;
+	public final fun component4 ()Lio/dataloom/api/synchronization/SynchronizationProgressUnit;
+	public final fun component5 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (Lio/dataloom/api/synchronization/SynchronizationPhase;JLjava/lang/Long;Lio/dataloom/api/synchronization/SynchronizationProgressUnit;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/synchronization/SynchronizationProgress;
+	public static synthetic fun copy$default (Lio/dataloom/api/synchronization/SynchronizationProgress;Lio/dataloom/api/synchronization/SynchronizationPhase;JLjava/lang/Long;Lio/dataloom/api/synchronization/SynchronizationProgressUnit;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/synchronization/SynchronizationProgress;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCompleted ()J
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun getPhase ()Lio/dataloom/api/synchronization/SynchronizationPhase;
+	public final fun getTotal ()Ljava/lang/Long;
+	public final fun getUnit ()Lio/dataloom/api/synchronization/SynchronizationProgressUnit;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/synchronization/SynchronizationProgressUnit : java/lang/Enum {
+	public static final field BYTES Lio/dataloom/api/synchronization/SynchronizationProgressUnit;
+	public static final field EVENTS Lio/dataloom/api/synchronization/SynchronizationProgressUnit;
+	public static final field OPERATIONS Lio/dataloom/api/synchronization/SynchronizationProgressUnit;
+	public static final field STEPS Lio/dataloom/api/synchronization/SynchronizationProgressUnit;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/synchronization/SynchronizationProgressUnit;
+	public static fun values ()[Lio/dataloom/api/synchronization/SynchronizationProgressUnit;
+}
+
+public abstract interface class io/dataloom/api/synchronization/SynchronizationResult {
+	public abstract fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public abstract fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public abstract fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public abstract fun getSummary ()Lio/dataloom/api/synchronization/SynchronizationSummary;
+}
+
+public final class io/dataloom/api/synchronization/SynchronizationResult$Cancelled : io/dataloom/api/synchronization/SynchronizationResult {
+	public fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationSummary;Lio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationSummary;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component3 ()Lio/dataloom/api/synchronization/SynchronizationSummary;
+	public final fun component4 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationSummary;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/synchronization/SynchronizationResult$Cancelled;
+	public static synthetic fun copy$default (Lio/dataloom/api/synchronization/SynchronizationResult$Cancelled;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationSummary;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/synchronization/SynchronizationResult$Cancelled;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun getSummary ()Lio/dataloom/api/synchronization/SynchronizationSummary;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/synchronization/SynchronizationResult$Failed : io/dataloom/api/synchronization/SynchronizationResult {
+	public fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationSummary;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationSummary;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component3 ()Lio/dataloom/api/synchronization/SynchronizationSummary;
+	public final fun component4 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun component5 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationSummary;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/synchronization/SynchronizationResult$Failed;
+	public static synthetic fun copy$default (Lio/dataloom/api/synchronization/SynchronizationResult$Failed;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationSummary;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/synchronization/SynchronizationResult$Failed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun getSummary ()Lio/dataloom/api/synchronization/SynchronizationSummary;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/synchronization/SynchronizationResult$PartiallySucceeded : io/dataloom/api/synchronization/SynchronizationResult {
+	public fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationSummary;Ljava/util/List;Lio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationSummary;Ljava/util/List;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getErrors ()Ljava/util/List;
+	public fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun getSummary ()Lio/dataloom/api/synchronization/SynchronizationSummary;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/synchronization/SynchronizationResult$Skipped : io/dataloom/api/synchronization/SynchronizationResult {
+	public fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationSummary;Lio/dataloom/api/synchronization/SynchronizationSkipReason;Lio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationSummary;Lio/dataloom/api/synchronization/SynchronizationSkipReason;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component3 ()Lio/dataloom/api/synchronization/SynchronizationSummary;
+	public final fun component4 ()Lio/dataloom/api/synchronization/SynchronizationSkipReason;
+	public final fun component5 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationSummary;Lio/dataloom/api/synchronization/SynchronizationSkipReason;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/synchronization/SynchronizationResult$Skipped;
+	public static synthetic fun copy$default (Lio/dataloom/api/synchronization/SynchronizationResult$Skipped;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationSummary;Lio/dataloom/api/synchronization/SynchronizationSkipReason;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/synchronization/SynchronizationResult$Skipped;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun getReason ()Lio/dataloom/api/synchronization/SynchronizationSkipReason;
+	public fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun getSummary ()Lio/dataloom/api/synchronization/SynchronizationSummary;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/synchronization/SynchronizationResult$Succeeded : io/dataloom/api/synchronization/SynchronizationResult {
+	public fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationSummary;Lio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationSummary;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component3 ()Lio/dataloom/api/synchronization/SynchronizationSummary;
+	public final fun component4 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationSummary;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/synchronization/SynchronizationResult$Succeeded;
+	public static synthetic fun copy$default (Lio/dataloom/api/synchronization/SynchronizationResult$Succeeded;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/synchronization/SynchronizationSummary;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/synchronization/SynchronizationResult$Succeeded;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun getSummary ()Lio/dataloom/api/synchronization/SynchronizationSummary;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/synchronization/SynchronizationSkipReason : java/lang/Enum {
+	public static final field CONSTRAINTS_NOT_SATISFIED Lio/dataloom/api/synchronization/SynchronizationSkipReason;
+	public static final field DUPLICATE_REQUEST Lio/dataloom/api/synchronization/SynchronizationSkipReason;
+	public static final field NO_CHANGES Lio/dataloom/api/synchronization/SynchronizationSkipReason;
+	public static final field POLICY_REJECTED Lio/dataloom/api/synchronization/SynchronizationSkipReason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/synchronization/SynchronizationSkipReason;
+	public static fun values ()[Lio/dataloom/api/synchronization/SynchronizationSkipReason;
+}
+
+public final class io/dataloom/api/synchronization/SynchronizationSummary {
+	public fun <init> ()V
+	public fun <init> (JJJJJJJILio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (JJJJJJJILio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()J
+	public final fun component2 ()J
+	public final fun component3 ()J
+	public final fun component4 ()J
+	public final fun component5 ()J
+	public final fun component6 ()J
+	public final fun component7 ()J
+	public final fun component8 ()I
+	public final fun component9 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (JJJJJJJILio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/synchronization/SynchronizationSummary;
+	public static synthetic fun copy$default (Lio/dataloom/api/synchronization/SynchronizationSummary;JJJJJJJILio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/synchronization/SynchronizationSummary;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConflictsDetected ()J
+	public final fun getInboundEventsApplied ()J
+	public final fun getInboundEventsReceived ()J
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun getOutboundEventsAccepted ()J
+	public final fun getOutboundEventsMarkedForRetry ()J
+	public final fun getOutboundEventsRead ()J
+	public final fun getOutboundEventsRejected ()J
+	public final fun getRetryAttempts ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/transport/PullChangesRequest {
+	public fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Ljava/util/Set;Ljava/lang/Integer;Lio/dataloom/api/synchronization/SynchronizationCheckpoint;)V
+	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Ljava/util/Set;Ljava/lang/Integer;Lio/dataloom/api/synchronization/SynchronizationCheckpoint;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCheckpoint ()Lio/dataloom/api/synchronization/SynchronizationCheckpoint;
+	public final fun getEntityTypes ()Ljava/util/Set;
+	public final fun getMaxEvents ()Ljava/lang/Integer;
+	public final fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/transport/PullChangesResult {
+}
+
+public final class io/dataloom/api/transport/PullChangesResult$Changes : io/dataloom/api/transport/PullChangesResult {
+	public fun <init> (Lio/dataloom/api/change/ChangeSet;ZLio/dataloom/api/synchronization/SynchronizationCheckpoint;)V
+	public synthetic fun <init> (Lio/dataloom/api/change/ChangeSet;ZLio/dataloom/api/synchronization/SynchronizationCheckpoint;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/change/ChangeSet;
+	public final fun component2 ()Z
+	public final fun component3 ()Lio/dataloom/api/synchronization/SynchronizationCheckpoint;
+	public final fun copy (Lio/dataloom/api/change/ChangeSet;ZLio/dataloom/api/synchronization/SynchronizationCheckpoint;)Lio/dataloom/api/transport/PullChangesResult$Changes;
+	public static synthetic fun copy$default (Lio/dataloom/api/transport/PullChangesResult$Changes;Lio/dataloom/api/change/ChangeSet;ZLio/dataloom/api/synchronization/SynchronizationCheckpoint;ILjava/lang/Object;)Lio/dataloom/api/transport/PullChangesResult$Changes;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChangeSet ()Lio/dataloom/api/change/ChangeSet;
+	public final fun getHasMore ()Z
+	public final fun getNextCheckpoint ()Lio/dataloom/api/synchronization/SynchronizationCheckpoint;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/transport/PullChangesResult$NoChanges : io/dataloom/api/transport/PullChangesResult {
+	public fun <init> ()V
+	public fun <init> (Lio/dataloom/api/synchronization/SynchronizationCheckpoint;)V
+	public synthetic fun <init> (Lio/dataloom/api/synchronization/SynchronizationCheckpoint;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/synchronization/SynchronizationCheckpoint;
+	public final fun copy (Lio/dataloom/api/synchronization/SynchronizationCheckpoint;)Lio/dataloom/api/transport/PullChangesResult$NoChanges;
+	public static synthetic fun copy$default (Lio/dataloom/api/transport/PullChangesResult$NoChanges;Lio/dataloom/api/synchronization/SynchronizationCheckpoint;ILjava/lang/Object;)Lio/dataloom/api/transport/PullChangesResult$NoChanges;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getNextCheckpoint ()Lio/dataloom/api/synchronization/SynchronizationCheckpoint;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/transport/PushChangesRequest {
+	public fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/change/ChangeSet;)V
+	public final fun component1 ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun component2 ()Lio/dataloom/api/change/ChangeSet;
+	public final fun copy (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/change/ChangeSet;)Lio/dataloom/api/transport/PushChangesRequest;
+	public static synthetic fun copy$default (Lio/dataloom/api/transport/PushChangesRequest;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/change/ChangeSet;ILjava/lang/Object;)Lio/dataloom/api/transport/PushChangesRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChangeSet ()Lio/dataloom/api/change/ChangeSet;
+	public final fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/transport/TransportProvider : io/dataloom/api/provider/DataLoomProvider {
+	public abstract fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public abstract fun pullChanges (Lio/dataloom/api/transport/PullChangesRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun pushChanges (Lio/dataloom/api/transport/PushChangesRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+

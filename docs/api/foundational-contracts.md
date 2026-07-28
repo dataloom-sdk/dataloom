@@ -1,5 +1,10 @@
 # DataLoom Foundational Public Contracts (DL-004, DL-005, DL-007)
 
+[API reference index](./README.md)
+
+> **Status:** Available foundational contracts. Later runtime slices consume
+> them, but the complete V1 strategy and production subsystem set remains open.
+
 This document defines stable, platform-independent public contracts introduced
 in `dataloom-api`.
 
@@ -122,6 +127,11 @@ No transition engine or state machine behavior is implemented yet.
 
 - `FULL`: process the complete selected scope.
 - `DELTA`: process only changes since an accepted baseline.
+
+This mode is orthogonal to source priority, consistency, fallback, persistence,
+and queue policy. It does not select offline-first, remote-first, cache-first,
+network-only, hybrid, or adaptive behavior; ADR-0002/#102 owns the V1
+synchronization-strategy contract.
 
 ## Change operations
 

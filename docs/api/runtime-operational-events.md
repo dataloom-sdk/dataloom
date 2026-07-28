@@ -1,5 +1,10 @@
 # DataLoom Runtime Operational Events (DL-030)
 
+[API reference index](./README.md)
+
+> **Status:** Available selected operational-event integration. This is not the
+> complete V1 observability, telemetry, export, or dashboard subsystem.
+
 This document defines the operational event emitter extension and its
 integration with the DataLoom execution runtime, introduced in
 `dataloom-runtime` by DL-030.
@@ -16,6 +21,26 @@ synchronization execution.
 DL-030 extends the DL-029 lifecycle event infrastructure with operational event
 capabilities without duplicating event-ID generation, timestamp generation, or
 observer dispatch.
+
+```mermaid
+flowchart LR
+    Coordinator[Execution coordinator] --> Lifecycle[Started PhaseChanged Completed]
+    Pipelines[Push and pull pipelines] --> Progress[ProgressUpdated]
+    Retry[Scheduler-backed retry orchestrator] --> RetryEvent[RetryScheduled]
+    Conflict[Conflict orchestrator] --> ConflictEvent[ConflictDetected]
+    Lifecycle --> Emitter[Runtime event emitter]
+    Progress --> Emitter
+    RetryEvent --> Emitter
+    ConflictEvent --> Emitter
+    Emitter --> Dispatcher[Sequential event dispatcher]
+    Dispatcher --> Observers[Registered observers]
+```
+
+This is an in-process callback path. It does not provide the mandatory V1
+versioned envelope, durable outbox/delivery, replay, filtering, bounded
+back-pressure, schema evolution, consumer bulkheads, metrics, structured logs,
+distributed traces, exporters, health aggregation, or operational read
+model/reference dashboard.
 
 DL-030 provides:
 

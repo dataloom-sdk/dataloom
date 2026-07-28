@@ -1,11 +1,12 @@
 // DataLoom Apple umbrella module.
 //
 // This module is the Apple distribution boundary for the DataLoom SDK.
-// It assembles one XCFramework named "DataLoom" that exports the three
-// production modules (dataloom-api, dataloom-core, dataloom-runtime).
+// It assembles one XCFramework named "DataLoom" that exports the four
+// stable production modules required by Apple consumers.
 //
 // Rules:
-// - Export only dataloom-api, dataloom-core, and dataloom-runtime.
+// - Export model, provider API, SDK API, and runtime.
+// - Never export dataloom-core implementation details.
 // - Never export dataloom-testing.
 // - Contain no synchronization implementation.
 // - Contain no provider implementation.
@@ -27,12 +28,15 @@
 // This module is only included in the build on macOS hosts (enforced in
 // settings.gradle.kts).  See docs/apple/xcframework-integration.md.
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
+import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
 }
 
+@OptIn(ExperimentalAbiValidation::class)
 kotlin {
+    abiValidation()
     val dataLoomXCFramework = XCFramework("DataLoom")
 
     // Declare explicit Apple targets.  iosX64 covers the Intel iOS simulator
@@ -55,8 +59,9 @@ kotlin {
             // Export all public API surface required by Swift consumers.
             // dataloom-testing is intentionally absent so that test utilities
             // are never packaged into the production framework.
+            export(project(":dataloom-model"))
+            export(project(":dataloom-provider-api"))
             export(project(":dataloom-api"))
-            export(project(":dataloom-core"))
             export(project(":dataloom-runtime"))
         }
     }
@@ -65,8 +70,9 @@ kotlin {
         commonMain {
             dependencies {
                 // api() ensures exported declarations appear in generated headers.
+                api(project(":dataloom-model"))
+                api(project(":dataloom-provider-api"))
                 api(project(":dataloom-api"))
-                api(project(":dataloom-core"))
                 api(project(":dataloom-runtime"))
             }
         }

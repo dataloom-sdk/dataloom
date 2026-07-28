@@ -2,6 +2,29 @@ pluginManagement {
     // build-logic provides KMP convention plugins.
     includeBuild("build-logic")
 
+    // Resolve implementation modules directly. This removes a fragile marker
+    // lookup while preserving the catalog-controlled versions.
+    resolutionStrategy {
+        eachPlugin {
+            when (requested.id.id) {
+                "org.jetbrains.kotlin.multiplatform" ->
+                    useModule(
+                        "org.jetbrains.kotlin:kotlin-gradle-plugin:${requested.version}",
+                    )
+
+                "com.android.library" ->
+                    useModule(
+                        "com.android.tools.build:gradle:${requested.version}",
+                    )
+
+                "com.google.devtools.ksp" ->
+                    useModule(
+                        "com.google.devtools.ksp:symbol-processing-gradle-plugin:${requested.version}",
+                    )
+            }
+        }
+    }
+
     repositories {
         gradlePluginPortal()
         mavenCentral()
@@ -20,10 +43,13 @@ dependencyResolutionManagement {
 rootProject.name = "dataloom"
 
 include(
+    ":dataloom-model",
+    ":dataloom-provider-api",
     ":dataloom-api",
     ":dataloom-core",
     ":dataloom-runtime",
     ":dataloom-testing",
+    ":runtime-external-consumer",
 )
 
 // Android implementation modules.
@@ -63,6 +89,11 @@ val isAppleHost: Boolean = run {
     osName.lowercase().contains("mac")
 }
 
-if (isAppleHost) {
+val isAppleKlibCrossCompileEnabled: Boolean =
+    providers.gradleProperty("dataloom.appleKlibCrossCompile")
+        .orNull
+        ?.toBoolean() == true
+
+if (isAppleHost || isAppleKlibCrossCompileEnabled) {
     include(":dataloom-apple")
 }

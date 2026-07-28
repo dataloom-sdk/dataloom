@@ -1,42 +1,52 @@
-# DataLoom Swift Smoke Test Fixture
+# Swift XCFramework smoke fixture
 
-This directory contains a minimal Xcode project that validates Swift
-interoperability for the DataLoom XCFramework (DL-036).
+> **Audience:** Maintainers reproducing the Apple compile-smoke check
+> **Purpose:** Verify that selected current symbols are importable from the
+> locally assembled `DataLoom` XCFramework
+> **Status:** Compile-only fixture; not an executable application or production
+> Swift qualification
 
-## Purpose
+[Apple platform guide](../docs/apple/README.md) ·
+[XCFramework integration](../docs/apple/xcframework-integration.md) ·
+[Swift interoperability](../docs/apple/swift-interop.md)
 
-The smoke fixture verifies that:
+## What it checks
 
-- The `DataLoom` framework can be imported from Swift.
-- Public facade symbols (`DataLoom`, `DataLoomBuilder`) are visible.
-- Key request and result types are accessible from Swift.
-- Provider interface types are visible.
-- No JVM-only or internal types leak into the exported API.
+The Xcode project imports `DataLoom` and references selected symbols from the
+builder, synchronization contracts, worker/submission capabilities, provider
+protocols, observer contract, models, and current runtime dependency surface.
+
+The framework currently exports `dataloom-core`, and the fixture deliberately
+references some core types. A successful build therefore records the present
+surface; it does not prove that internal implementation types have been
+removed.
 
 ## Contents
 
-| Path | Description |
+| Path | Purpose |
 |---|---|
-| `DataLoomSwiftSmoke.xcodeproj/` | Minimal Xcode project |
-| `Sources/DataLoomSwiftSmoke/DataLoomSwiftSmoke.swift` | Swift type-visibility assertions |
-| `DataLoom.xcframework/` | Generated framework (not committed; assembled by CI) |
+| `DataLoomSwiftSmoke.xcodeproj/` | Minimal compile-only Xcode project |
+| `Sources/DataLoomSwiftSmoke/DataLoomSwiftSmoke.swift` | Selected type-visibility assertions |
+| `DataLoom.xcframework/` | Generated input artifact; ignored by Git |
+
+The project currently targets iOS 15 and Swift 5.9.
 
 ## Prerequisites
 
-- macOS with Xcode 15 or later
-- DataLoom XCFramework assembled via Gradle
+- macOS with Xcode command-line tools and an iOS Simulator SDK.
+- JDK 17 or newer for Gradle.
+- Repository checkout with the Gradle Wrapper executable.
 
-## Running the Smoke Test
+## Run locally
+
+From the repository root:
 
 ```bash
-# 1. Assemble the XCFramework from the repository root
 ./gradlew :dataloom-apple:assembleDataLoomReleaseXCFramework
 
-# 2. Copy the XCFramework into this directory
 cp -R dataloom-apple/build/XCFrameworks/release/DataLoom.xcframework \
-      apple-smoke/DataLoom.xcframework
+    apple-smoke/DataLoom.xcframework
 
-# 3. Build the smoke fixture (no signing required)
 cd apple-smoke
 xcodebuild build \
     -scheme DataLoomSwiftSmoke \
@@ -45,18 +55,24 @@ xcodebuild build \
     SKIP_INSTALL=YES
 ```
 
-A successful build confirms that the DataLoom public API is importable and
-correctly exported from the XCFramework.
+A successful command confirms only that the selected source compiles against
+the assembled simulator framework.
 
-## What the Smoke Test Does Not Do
+## What it does not check
 
-- Does not produce a runnable iOS application.
-- Does not access real networking, databases, or keychain.
-- Does not include production credentials or personal data.
-- Does not start a background `CoroutineScope` or global state.
-- Does not test runtime synchronization behavior (covered by Kotlin tests).
+- No runnable iOS application is produced.
+- No synchronization operation executes.
+- No real network, database, Keychain, filesystem, or background API is used.
+- No provider lifecycle, cancellation, process termination, or relaunch is
+  exercised.
+- No generated-header compatibility diff or complete internal-type audit runs.
+- No KMP iOS consumer path is exercised.
+- No production credentials or personal data are present.
 
-## Generated Artifacts
+The fixture cannot qualify offline-first, remote-first, cache-first,
+network-only, hybrid, or adaptive behavior. Native Swift distribution remains
+optional and separate from mandatory KMP iOS support.
 
-`DataLoom.xcframework/` is generated during the smoke test and must not be
-committed to the repository (see `.gitignore`).
+## Generated artifact policy
+
+`apple-smoke/DataLoom.xcframework/` is generated and ignored. Do not commit it.

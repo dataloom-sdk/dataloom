@@ -1,5 +1,11 @@
 # DataLoom Queue Models (DL-015)
 
+[API reference index](./README.md)
+
+> **Status:** Available queue contracts. Complete retry-history-safe deferral,
+> recovery, migrations, and cross-platform durable implementations remain V1
+> work.
+
 This document describes the immutable public contracts for durable queue entry
 lifecycle management introduced in DL-015.
 
@@ -107,7 +113,7 @@ Closed set of lifecycle states for a `QueueEntry`.
 - Use the enum name for persistence and serialization.
 - Transitions are not implemented inside the enum.
 - Terminal entries are not automatically removed.
-- Retention policy is deferred.
+- Retention policy is not implemented.
 
 ---
 
@@ -133,7 +139,7 @@ Immutable exclusive lease held by a consumer over a `QueueEntry`.
 - `expiresAt` must be strictly later than `acquiredAt`.
 - Equal and earlier expiration values are rejected.
 - Construction does not access the clock or generate identifiers.
-- Lease renewal is deferred to a future issue.
+- Lease renewal is not implemented.
 
 ---
 
@@ -198,7 +204,7 @@ Immutable request to persist a new queue entry.
 - Construction does not persist the entry.
 - Duplicate-entry handling belongs to the `QueueProvider` implementation.
 - A provider must return a canonical error rather than silently replacing an
-  existing entry unless future policy explicitly permits replacement.
+  existing entry unless an explicit approved policy permits replacement.
 
 ---
 
@@ -317,6 +323,12 @@ Immutable request to reschedule a failed entry for a future retry attempt.
 - A successful operation transitions the entry to `RETRY_WAITING` and clears
   the active lease.
 
+The contract above is retry-specific. The current offline-deferral path also
+uses it without policy evaluation and fabricates attempt 1 for a new entry;
+that is a confirmed pre-V1 defect, not a valid reinterpretation of
+`RetryAttempt`. See
+[Queue Provider](./queue-provider.md#current-retry-history-limitation).
+
 ---
 
 ## QueueFailureDisposition
@@ -386,7 +398,7 @@ Immutable request to cancel a queue entry.
 - Cancellation of an actively leased entry may fail or be deferred according
   to provider and runtime policy.
 - Cancellation does not automatically cancel a running coroutine.
-- Runtime execution cancellation is deferred to a future issue.
+- Cancelling an actively running coroutine remains a separate runtime concern.
 
 ---
 
@@ -439,4 +451,5 @@ Immutable result of an expired-lease recovery operation.
 - [Queue Boundaries](../architecture/queue-boundaries.md) — Architectural boundaries.
 - [Provider SPI](./provider-spi.md) — DataLoom provider framework.
 - [Error Model](./error-model.md) — Canonical `DataLoomError`.
-- [Retry Policy](./retry-policy.md) — Retry-policy contracts (DL-013, deferred).
+- [Retry Policy](./retry-policy.md) — Current custom retry-policy contracts and
+  mandatory V1 gaps.

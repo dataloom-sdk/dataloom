@@ -1,5 +1,11 @@
 # Queued Synchronization Execution (DL-027)
 
+[API reference index](./README.md)
+
+> **Status:** Available queue-to-runtime integration foundation. Standard
+> retry/circuit behavior and retry-history-safe constraint deferral are not
+> complete.
+
 ## Overview
 
 `QueuedSynchronizationExecutionHandler` is the bounded entry point that

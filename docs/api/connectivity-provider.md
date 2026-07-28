@@ -1,5 +1,10 @@
 # DataLoom Connectivity Provider (DL-012)
 
+[API reference index](./README.md)
+
+> **Status:** Available SPI with an Android adapter. Complete KMP iOS adapter
+> coverage and V1 platform qualification remain open.
+
 `dataloom-api` defines a platform-independent connectivity provider SPI that
 allows DataLoom to query the current device-level network state without
 depending directly on Android ConnectivityManager, Apple NWPathMonitor, or
@@ -25,7 +30,11 @@ synchronization request.
 These values are not bound to WorkManager network types or platform network
 constants.
 
-#### Evaluation rules (documented only — not implemented in DL-012)
+#### Evaluation rules
+
+DL-012 introduced these contract rules. DL-031 implemented them in
+`SynchronizationConnectivityPreflight`; see
+[Connectivity-Aware Execution](./connectivity-aware-execution.md).
 
 **NONE:** Always satisfied without requiring a connectivity query.
 
@@ -167,9 +176,10 @@ cancellation exceptions into normal failures.
 
 ---
 
-## Future Android Connectivity Boundary
+## Android Connectivity Boundary
 
-A future Android-specific module may implement the following flow:
+The current `dataloom-connectivity-android` module implements the following
+flow with `AndroidConnectivityProvider`:
 
 ```text
 ConnectivityManager
@@ -181,17 +191,21 @@ ConnectivitySnapshot
 DataLoom Runtime
 ```
 
-The Android provider may inspect platform capabilities internally using
+The Android provider inspects platform capabilities internally using
 `NetworkCapabilities` and `ConnectivityManager`. It must expose only the
 canonical DataLoom connectivity model and must not surface
 `ConnectivityManager`, `Network`, or `NetworkCapabilities` types through the
 public API.
 
+See [Android Connectivity Provider](../android/connectivity-provider.md).
+
 ---
 
-## Deferred Connectivity Features
+## Outside the DL-012 baseline
 
-The following are deferred to future issues:
+DL-012 did not implement the following features. Their V1 inclusion is governed
+by the approved full-V1 scope and ADR-0002; this list is not an automatic V2
+deferral:
 
 - `Flow<ConnectivitySnapshot>` streaming observation
 - Callback-based observation
@@ -213,9 +227,11 @@ The following are deferred to future issues:
 
 - Shared contracts remain in `dataloom-api`.
 - Android connectivity is implemented in an Android-specific module.
-- Apple connectivity requires a future Apple-specific adapter.
-- KMP does not guarantee identical connectivity evaluation semantics across
-  platforms.
-- Each platform provider documents its own limitations.
+- Apple connectivity requires a mandatory V1 Apple adapter; it is not yet
+  implemented.
+- OS mechanics and available signals may differ, but externally observable
+  outcomes, security, recovery, and diagnostics must be equivalent or return
+  an explicit unsupported/degraded result.
+- Each platform provider documents its limitations without silent fallback.
 - Provider interfaces are preferred over forcing connectivity behavior
   through `expect`/`actual`.

@@ -1,5 +1,10 @@
 # DataLoom Error Model (DL-004)
 
+[API reference index](./README.md)
+
+> **Status:** Available public contract. The complete diagnostic catalogue,
+> enforcement, redaction, and operational mapping remain V1 work.
+
 This document defines the canonical public error model introduced in
 `dataloom-api`.
 

@@ -4,9 +4,34 @@ This document describes the architectural boundaries for retry evaluation in
 DataLoom. It defines which components are responsible for which retry-related
 concerns and what is explicitly outside the scope of the current implementation.
 
-**The retry engine is not implemented.** The contracts introduced by DL-013
-define the evaluation boundary only. No retry execution, sleeping, or
-scheduling is performed by any DL-013 contract.
+> [!IMPORTANT]
+> DL-013 introduced only the policy boundary. Later work added custom retry
+> evaluation, direct scheduler-backed orchestration, and queue rescheduling.
+> V1 still lacks a standard exponential/jitter policy, attempt and elapsed-time
+> enforcement, server-hint policy, durable circuit breaking, and trustworthy
+> retry history across every deferral/recovery path.
+
+```mermaid
+flowchart LR
+    failure[Canonical failure]
+    policy[RetryPolicy]
+    decision{Retry decision}
+    stop[Stop]
+    direct[SchedulerProvider]
+    queued[QueueProvider reschedule]
+    durable[(Persisted attempt)]
+
+    failure --> policy
+    policy --> decision
+    decision -->|Stop| stop
+    decision -->|Direct retry| direct
+    decision -->|Queued retry| queued
+    queued --> durable
+
+    style policy fill:#C2E5FF,stroke:#3DADFF
+    style durable fill:#DCCCFF,stroke:#874FFF
+    style stop fill:#FFCDC2,stroke:#FF7556
+```
 
 ---
 
@@ -37,13 +62,13 @@ scheduling is performed by any DL-013 contract.
 
 ## Runtime Responsibility
 
-The DataLoom runtime (introduced in a later issue) is responsible for:
+The DataLoom runtime is responsible for:
 
 - Invoking `RetryPolicy.evaluate()` with the appropriate `RetryEvaluationRequest`
 - Acting on the returned `RetryDecision`
 - Creating and incrementing `RetryAttempt` values
 - Passing `previousDelay` to subsequent evaluations
-- Enforcing attempt limits
+- Enforcing attempt and elapsed-time limits in the V1 standard engine
 - Routing `RetryDecision.Retry` to the scheduler
 - Routing `RetryDecision.Stop` to workflow termination or failure handling
 
@@ -78,15 +103,16 @@ SchedulerProvider.schedule(...)
 
 The durable queue is responsible for:
 
-- Storing retry attempts in queue records (deferred to a later issue)
-- Managing queue entry state transitions (deferred)
+- Storing retry attempts in queue records
+- Managing lease-guarded queue entry state transitions
 - Recovering expired leases
 
 `RetryDecision` does not interact with the queue:
 
 - A `RetryDecision.Retry` does not insert work into the queue.
 - A `RetryDecision.Stop` does not remove work from the queue.
-- Attempt limits will be enforced by the runtime in a later issue.
+- Attempt limits are a V1 requirement and are not yet enforced by a standard
+  built-in policy.
 - Failed and rejected work must remain inspectable according to future queue
   policy.
 - Queue state transitions are not part of DL-013.
@@ -114,15 +140,15 @@ RetryPolicy.evaluate(RetryEvaluationRequest)
 
 Provider-level failures and event-level acknowledgement retries
 (`ChangeAcknowledgementStatus.RETRY`) are distinct. Provider-level retry
-evaluation uses `RetryPolicy`. Event-level acknowledgement retry orchestration
-is deferred to a later issue.
+evaluation uses `RetryPolicy`. Complete event-level acknowledgement retry
+orchestration remains a V1 gap.
 
 ---
 
 ## WorkManager Boundary
 
-The Android WorkManager integration belongs in a dedicated Android adapter
-introduced in a later issue.
+The Android WorkManager integration lives in the dedicated
+`dataloom-scheduler-workmanager` adapter.
 
 ```text
 RetryPolicy
@@ -146,19 +172,26 @@ The DL-013 contracts must not expose:
 - `WorkerParameters`
 - WorkManager backoff constants
 
-The Android integration may adapt canonical retry decisions to WorkManager
-internally in a later issue.
+The current `SynchronizationRetryOrchestrator` converts an accepted retry delay
+into a canonical `ScheduleRequest` and calls `SchedulerProvider`.
+`WorkManagerSchedulerProvider` implements that provider boundary by translating
+the request into WorkManager work. WorkManager does not own retry
+classification, attempt calculation, or delay-policy selection. See
+[WorkManager Scheduler](../android/workmanager-scheduler.md).
 
 ---
 
 ## Kotlin Multiplatform Boundary
 
 - Retry policy contracts reside in `commonMain` of `dataloom-api`.
-- Retry decisions are reusable across Android and future KMP platforms.
+- Retry decisions must be reusable across the mandatory native Android, KMP
+  Android, and KMP iOS V1 consumer paths.
 - Platform scheduling remains provider-specific.
 - Backoff calculation is platform-neutral.
 - Provider interfaces are preferred over platform scheduler APIs.
-- Platform limitations may affect whether requested timing can be honored.
+- Timing mechanics may differ by platform, but externally observable retry,
+  circuit, and recovery semantics must remain equivalent. Any platform
+  limitation must be reported as an explicit degraded or unsupported outcome.
 - A requested delay is an intent, not an exact execution guarantee.
 
 ---
@@ -189,7 +222,8 @@ explicitly deferred:
 - Arithmetic overflow handling
 - Maximum-delay clamping
 
-Built-in policy implementations will reside in `dataloom-core` in a later issue.
+V1 built-in policy implementations belong to the approved retry/policy engine
+boundaries in ADR-0002, not the generic public contract module.
 
 ---
 
@@ -200,7 +234,8 @@ Built-in policy implementations will reside in `dataloom-core` in a later issue.
   on configuration passed through its constructor.
 - The `RetryAttempt` value in `RetryEvaluationRequest` allows the policy to
   observe the current attempt number.
-- Persisting retry counts in durable queue records is deferred to a later issue.
+- Queue providers persist retry attempts during ordinary rescheduling. V1 must
+  preserve those attempts across non-retry deferral and expired-lease recovery.
 
 ---
 
@@ -225,19 +260,19 @@ Built-in policy implementations will reside in `dataloom-core` in a later issue.
 
 ---
 
-## What Is Not Implemented in DL-013
+## Current V1 gaps
 
-The following are explicitly out of scope:
+Later issues implemented custom policy evaluation, scheduler-backed direct
+rescheduling, queue rescheduling, retry-attempt persistence, and the Android
+WorkManager adapter. V1 still requires:
 
-- Retry execution
-- Sleeping or delaying
-- Queue rescheduling
-- WorkManager retries
-- Runtime orchestration
-- Fixed, linear, or exponential policy implementations
-- Jitter calculation
-- Random-number generation
-- Persistent retry records
-- Concrete Android or KMP integrations
-- Event-level acknowledgement retry orchestration
-- Attempt-limit enforcement in the runtime
+- standard fixed, linear, exponential, and bounded jitter strategies;
+- overflow-safe delay calculation and injectable randomness;
+- maximum-attempt and maximum-elapsed-time enforcement;
+- safe server retry-hint handling;
+- durable circuit-breaker closed/open/half-open state and controlled probes;
+- explicit non-retry constraint deferral;
+- exact retry-history preservation through process death and lease recovery;
+- manual retry authorization and audit;
+- event-level acknowledgement retry orchestration; and
+- parity/qualification across native Android, KMP Android, and KMP iOS.

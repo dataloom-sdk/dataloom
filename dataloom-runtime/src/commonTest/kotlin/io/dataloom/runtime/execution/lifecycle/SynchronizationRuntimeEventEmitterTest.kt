@@ -89,8 +89,8 @@ import io.dataloom.api.transport.PullChangesResult
 import io.dataloom.api.transport.PushChangesRequest
 import io.dataloom.api.transport.TransportProvider
 import io.dataloom.core.provider.ResolvedSynchronizationProviders
-import io.dataloom.core.runtime.RuntimeDependencies
-import io.dataloom.core.runtime.RuntimeIdentifierGenerators
+import io.dataloom.api.runtime.RuntimeDependencies
+import io.dataloom.api.runtime.RuntimeIdentifierGenerators
 import io.dataloom.runtime.conflict.ConflictDetectorRegistry
 import io.dataloom.runtime.conflict.ConflictOrchestrationBindings
 import io.dataloom.runtime.conflict.ConflictOrchestrationRequest

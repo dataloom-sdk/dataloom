@@ -1,101 +1,127 @@
-# Android Platform (DL-037)
+# Android integration
 
-DataLoom provides three independently consumable Android integration modules
-that implement the platform-independent provider contracts defined in the
-shared KMP modules.
+> **Audience:** Android application developers and DataLoom contributors
+> **Purpose:** Explain the current Android adapter modules, their boundaries,
+> and the work still required for V1
+> **Status:** Implemented source-build foundations; not yet published or
+> qualified as the complete V1 Android product
+
+[Project overview](../../README.md) ·
+[Platform strategy](../architecture/platform-strategy.md) ·
+[Local build guide](../development/building.md)
+
+DataLoom currently has three independently consumable Android libraries. They
+adapt shared contracts to `ConnectivityManager`, WorkManager, and Room without
+placing Android types in common code.
+
+The V1 product target is broader than these adapters. Native Android, KMP
+Android, and KMP iOS are all mandatory consumer paths. Optional native Swift
+distribution is a separate decision. The six V1 synchronization profiles are
+offline-first, remote-first, cache-first, network-only, hybrid, and adaptive;
+the current Android modules do not by themselves implement or qualify any
+complete profile. See
+[ADR-0002](../adr/ADR-0002-v1-artifact-and-foundation-architecture.md).
+
+## Guide map
+
+| Guide | Use it for |
+|---|---|
+| [Connectivity provider](connectivity-provider.md) | One-shot Android network-state snapshots |
+| [WorkManager scheduler](workmanager-scheduler.md) | Mapping schedule intents to unique WorkManager work |
+| [Worker integration](worker-integration.md) | Injecting and running one bounded queue-worker cycle |
+| [Room queue provider](room-queue-provider.md) | Durable, lease-aware Android queue persistence |
+| [Security and R8](security-and-r8.md) | Consumer rules, permissions, and data-at-rest limitations |
+
+## Current platform topology
+
+```mermaid
+flowchart LR
+    subgraph sharedModules["Shared KMP modules"]
+        model["dataloom-model"]
+        api["dataloom-api"]
+        runtime["dataloom-runtime"]
+        model --> api
+        api --> runtime
+    end
+
+    subgraph androidAdapters["Android adapters"]
+        connectivity["dataloom-connectivity-android"]
+        scheduler["dataloom-scheduler-workmanager"]
+        queue["dataloom-queue-room"]
+    end
+
+    model --> queue
+    api --> connectivity
+    api --> scheduler
+    api --> queue
+    runtime --> scheduler
+
+    connectivity --> nativeApp["Native Android"]
+    scheduler --> nativeApp
+    queue --> nativeApp
+
+    runtime -.->|"V1 target pending"| kmpApp["KMP Android"]
+```
+
+The dependency direction is one-way: shared production modules do not depend
+on Android adapters. No current Android adapter depends directly on
+`dataloom-core`.
 
 ## Modules
 
-| Module | Description |
-|---|---|
-| `dataloom-connectivity-android` | Android `ConnectivityProvider` using `ConnectivityManager` |
-| `dataloom-scheduler-workmanager` | `SchedulerProvider` backed by AndroidX WorkManager, plus `CoroutineWorker` bridge |
-| `dataloom-queue-room` | `QueueProvider` backed by AndroidX Room with transactional acquisition |
+| Module | Current responsibility | Does not own |
+|---|---|---|
+| `dataloom-connectivity-android` | Bounded `ConnectivityProvider` query using `ConnectivityManager` | Polling, endpoint reachability, or strategy selection |
+| `dataloom-scheduler-workmanager` | `SchedulerProvider`, `CoroutineWorker`, and explicit `WorkerFactory` bridge | Retry policy, queue persistence, or runtime initialization |
+| `dataloom-queue-room` | Transactional, Room-backed `QueueProvider` | Application domain storage, scheduling, or synchronization execution |
 
-## Design principles
+The modules are optional and do not depend on one another. An application can
+use only the adapter it needs.
 
-- **Optional and independently consumable.** An application using only the
-  Room queue provider does not need WorkManager or the Android connectivity
-  module. There are no forced transitive dependencies between these modules.
-- **No singleton or global state.** The worker bridge uses explicit constructor
-  injection via `DataLoomWorkerFactory`. No static DataLoom instance is
-  referenced from worker code.
-- **No automatic initialization.** None of the modules start, stop, or
-  configure the DataLoom runtime automatically.
-- **Dispatchers.IO for all database and blocking calls.** Room operations never
-  run on the main thread.
-- **CancellationException propagates normally.** No module suppresses or
-  converts coroutine cancellation to a failure result.
+## Use from this source checkout
 
-## Module boundaries
-
-```
-Android provider modules
-    → dataloom-runtime / dataloom-core / dataloom-api
-```
-
-Shared production modules must not depend on Android modules. The dependency
-direction is strictly one-way.
-
-### dataloom-connectivity-android
-
-- May depend on: DataLoom API contracts, Android framework connectivity APIs,
-  minimal AndroidX Core APIs.
-- Must not depend on: Room, WorkManager, `dataloom-scheduler-workmanager`,
-  `dataloom-queue-room`.
-
-### dataloom-scheduler-workmanager
-
-- May depend on: DataLoom scheduler contracts, DataLoom runtime queue-worker
-  contracts, AndroidX WorkManager.
-- Must not depend on: Room implementation details, `dataloom-queue-room`,
-  `dataloom-connectivity-android`.
-
-### dataloom-queue-room
-
-- May depend on: DataLoom queue contracts, Room, SQLite APIs required by Room.
-- Must not depend on: WorkManager, `dataloom-scheduler-workmanager`,
-  `dataloom-connectivity-android`.
-
-## Getting started
-
-Add only the modules you need to your application's `build.gradle.kts`:
+Published V1 coordinates do not exist yet. Inside this repository or a
+composite source build, depend only on the modules required by the host:
 
 ```kotlin
-// Optional: Android connectivity check
 implementation(project(":dataloom-connectivity-android"))
-
-// Optional: WorkManager scheduling
 implementation(project(":dataloom-scheduler-workmanager"))
-
-// Optional: Room queue persistence
 implementation(project(":dataloom-queue-room"))
 ```
 
-## Build configuration
+Do not present these project dependencies as consumer-ready Maven coordinates.
+Publication metadata and external native Android/KMP Android fixtures remain
+V1 release gates.
 
-Android modules are included in the Gradle build only when the
-`DATALOOM_ANDROID_BUILD` environment variable is set to `"true"`. This
-avoids attempting to resolve the Android Gradle Plugin (AGP) from
-`dl.google.com` in KMP-only or network-restricted builds.
+## Include Android projects in Gradle
 
-To build and test Android modules locally:
+`settings.gradle.kts` includes the Android projects only when
+`DATALOOM_ANDROID_BUILD` is exactly `true`. This keeps the default shared build
+from resolving the Android Gradle Plugin and Google Maven artifacts when
+Android is not being validated.
+
+From the repository root:
 
 ```bash
+DATALOOM_ANDROID_BUILD=true ./gradlew projects --no-configuration-cache
+
 DATALOOM_ANDROID_BUILD=true ./gradlew \
     :dataloom-connectivity-android:build \
     :dataloom-scheduler-workmanager:build \
     :dataloom-queue-room:build
 ```
 
-The CI Android validation job sets `DATALOOM_ANDROID_BUILD=true`
-automatically. The KMP/JVM and Apple validation jobs do not set this
-variable, so they build without AGP resolution.
+The current Android modules use JDK 17, compile SDK 35, and minimum SDK 21. See
+the
+[local build guide](../development/building.md#android-validation) for the
+workflow-aligned assemble, unit-test, lint, schema, and managed-device tasks.
 
-## Documentation
+## V1 release gates
 
-- [Connectivity Provider](./connectivity-provider.md)
-- [WorkManager Scheduler](./workmanager-scheduler.md)
-- [Room Queue Provider](./room-queue-provider.md)
-- [Worker Integration](./worker-integration.md)
-- [Security and R8](./security-and-r8.md)
+| Area | Current state | Required before V1 |
+|---|---|---|
+| Native Android | Three adapter foundations exist | Published-style consumer and end-to-end qualification |
+| KMP Android | Shared code has JVM and Apple targets, but no explicit Android KMP target | Published KMP Android variant and external consumer fixture |
+| KMP iOS | Producer compilation baseline exists | Apple adapters, executable consumer, and platform parity |
+| Native Swift | XCFramework compile smoke exists | Optional; qualify separately if distributed |
+| Six strategy profiles | Contracts and orchestration building blocks exist | Built-in policy behavior and parity suites for every profile |

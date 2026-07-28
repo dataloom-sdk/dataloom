@@ -1,11 +1,5 @@
-// Build logic for DataLoom convention plugins.
-//
-// The `kotlin-dsl` plugin enables writing Gradle convention plugins in Kotlin DSL.
-// The Kotlin Gradle Plugin dependency is added so that convention plugins can
-// apply `kotlin("multiplatform")` without importing additional plugins.
-
 plugins {
-    `kotlin-dsl`
+    `java-gradle-plugin`
 }
 
 repositories {
@@ -14,7 +8,19 @@ repositories {
 }
 
 dependencies {
-    // Provides the Kotlin Multiplatform Gradle plugin to convention plugin scripts.
     implementation(libs.kotlin.gradlePlugin)
+    testImplementation(gradleTestKit())
 }
 
+gradlePlugin {
+    plugins {
+        create("dataLoomKotlinMultiplatformLibrary") {
+            id = "io.dataloom.kotlin.multiplatform-library"
+            implementationClass = "io.dataloom.buildlogic.DataLoomKotlinMultiplatformLibraryPlugin"
+        }
+    }
+}
+
+tasks.test {
+    useJUnitPlatform()
+}

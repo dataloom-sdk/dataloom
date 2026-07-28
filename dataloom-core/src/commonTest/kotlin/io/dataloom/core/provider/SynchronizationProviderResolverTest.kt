@@ -10,6 +10,8 @@ import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
 import io.dataloom.api.provider.DataLoomProvider
+import io.dataloom.api.provider.ProviderBindingFailure
+import io.dataloom.api.provider.ProviderBindingFailureReason
 import io.dataloom.api.provider.ProviderDescriptor
 import io.dataloom.api.provider.ProviderHealth
 import io.dataloom.api.provider.ProviderHealthStatus
@@ -19,7 +21,8 @@ import io.dataloom.api.provider.ProviderName
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.provider.ProviderVersion
-import io.dataloom.api.provider.QueueProvider
+import io.dataloom.api.provider.SynchronizationProviderBindings
+import io.dataloom.api.queue.QueueProvider
 import io.dataloom.api.queue.ExpiredLeaseRecoveryRequest
 import io.dataloom.api.queue.ExpiredLeaseRecoveryResult
 import io.dataloom.api.queue.QueueAcquireRequest

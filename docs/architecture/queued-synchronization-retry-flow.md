@@ -11,39 +11,38 @@ This document defines the retry evaluation flow that bridges a
 
 ## Retry evaluation sequence
 
-```text
-QueuedSynchronizationExecutionHandler
-  -> SynchronizationExecutionCoordinator.execute(request, bindings)
-     -> SynchronizationResult
+```mermaid
+flowchart LR
+    entry[/Leased queue entry/]
+    execute[Execute synchronization]
+    result{Result}
+    completed[Complete]
+    cancelled[Cancel]
+    evaluate[Evaluate retry policy]
+    decision{Retry?}
+    reschedule[Reschedule]
+    failed[Fail]
 
-  result is Succeeded or Skipped
-    -> QueueEntryExecutionOutcome.Completed(
-         completedAt = result.completedAt,
-       ) (no retry evaluation)
+    entry --> execute
+    execute --> result
+    result -->|Succeeded or skipped| completed
+    result -->|Cancelled| cancelled
+    result -->|Failed or partial| evaluate
+    evaluate --> decision
+    decision -->|Yes| reschedule
+    decision -->|No| failed
 
-  result is Cancelled
-    -> QueueEntryExecutionOutcome.Cancelled (no retry evaluation)
-
-  result is Failed or PartiallySucceeded
-    -> SynchronizationRetryEvaluator.evaluate(result, retryAttempt, retryOperation)
-         -> extractRetryErrors(result)       [internal]
-         -> RetryPolicy.evaluate(request)    [once per error, in order]
-         -> selectMaxRetryDelay(decisions)   [internal]
-         -> SynchronizationRetryEvaluation
-
-       SynchronizationRetryEvaluation.ShouldRetry
-         -> QueueEntryExecutionOutcome.Reschedule(
-              retryAttempt = retryAttempt,
-              availableAt  = overflowSafe(clock.now() + selectedDelay),
-              error        = primaryError,
-            )
-
-       SynchronizationRetryEvaluation.StopRetry
-         -> QueueEntryExecutionOutcome.Failed(
-              disposition = FAILED,
-              error       = primaryError,
-            )
+    style completed fill:#CDF4D3,stroke:#66D575
+    style reschedule fill:#FFECBD,stroke:#FFC943
+    style failed fill:#FFCDC2,stroke:#FF7556
 ```
+
+> [!CAUTION]
+> Current offline deferral is incorrectly represented as retry rescheduling:
+> an initially deferred entry is assigned `RetryAttempt(1)` even though no
+> `RetryPolicy` evaluation occurred. Expired-lease recovery also clears genuine
+> retry history. V1 requires an explicit non-retry deferral transition and
+> exact attempt preservation across deferral, persistence, and recovery.
 
 ---
 

@@ -10,7 +10,7 @@ import io.dataloom.api.time.DataLoomInstant
  * Sealed result returned by a [QueueEntryExecutionHandler] after executing a
  * single acquired [io.dataloom.api.queue.QueueEntry].
  *
- * Each variant maps directly to exactly one [io.dataloom.api.provider.QueueProvider]
+ * Each variant maps directly to exactly one [io.dataloom.api.queue.QueueProvider]
  * transition request. The [DurableQueueExecutionProcessor] reads this outcome
  * and issues the corresponding transition without modification.
  *

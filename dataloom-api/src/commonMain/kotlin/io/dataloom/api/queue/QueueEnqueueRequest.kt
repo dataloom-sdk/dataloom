@@ -5,7 +5,7 @@ package io.dataloom.api.queue
  * synchronization queue.
  *
  * Construction does not persist the entry. Persistence is the responsibility
- * of the [io.dataloom.api.provider.QueueProvider] that receives this request.
+ * of the [io.dataloom.api.queue.QueueProvider] that receives this request.
  *
  * ## Duplicate handling
  *

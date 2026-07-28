@@ -1,12 +1,18 @@
 # DataLoom Synchronization Progress Contracts (DL-016)
 
+[API reference index](./README.md)
+
+> **Status:** Available progress contracts with selected pipeline emission.
+> Complete workflow-wide progress, persistence, metrics, and export remain open.
+
 This document defines the synchronization progress contracts introduced in
 `dataloom-api` by DL-016.
 
 These contracts represent execution phases, progress snapshots, and the
-summary statistics attached to every synchronization result. Runtime
-progress calculation, event dispatch, provider orchestration, and queue
-operations are **not implemented** in this issue.
+summary statistics attached to every synchronization result. Current push and
+pull pipelines produce selected phase/progress events and summaries. Complete
+workflow-wide progress, durable observation, metrics, and asset progress remain
+V1 gaps.
 
 ---
 
@@ -55,8 +61,8 @@ A workflow may be in state `RUNNING` while cycling through multiple
 
 - Do not rely on enum ordinals for persistence or comparison.
 - Do not persist enum ordinals.
-- Phase transition logic is defined by the future runtime engine and is not
-  enforced by this type.
+- Phase transition logic is owned by runtime pipelines and is not enforced by
+  this enum. Not every declared phase is integrated across every current path.
 
 ---
 
@@ -131,7 +137,7 @@ val percent = progress.completed.toDouble() / progress.total!!.toDouble() * 100
 
 ## SynchronizationSummary
 
-`SynchronizationSummary` is an immutable data class produced by the future
+`SynchronizationSummary` is an immutable data class produced by the
 DataLoom runtime at the end of a workflow. It is attached to every
 `SynchronizationResult`.
 

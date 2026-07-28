@@ -19,18 +19,26 @@ introduced in DL-028.
 
 ## Accepted execution flow
 
-```text
-SynchronizationExecutionCoordinator.execute(request, bindings)
-    → Check provider lifecycle state
-    → Resolve provider bindings
-    → Locate SynchronizationPipeline
-    → Construct SynchronizationExecutionContext (with optional emitter)
-    → emitStarted(context)
-    → SynchronizationPipeline.execute(context)
-        → pipeline emits PhaseChanged events before supported operations
-        → pipeline returns SynchronizationResult
-    → emitCompleted(context, result)
-    → return SynchronizationExecutionResult.Executed(result)
+```mermaid
+sequenceDiagram
+    title Accepted execution events
+    participant App
+    participant Coordinator
+    participant Emitter
+    participant Pipeline
+    participant Observer
+
+    App->>Coordinator: execute request
+    Coordinator->>Coordinator: validate and resolve
+    Coordinator->>Emitter: emit started
+    Emitter->>Observer: Started
+    Coordinator->>Pipeline: execute context
+    Pipeline->>Emitter: emit phase change
+    Emitter->>Observer: PhaseChanged
+    Pipeline-->>Coordinator: synchronization result
+    Coordinator->>Emitter: emit completed
+    Emitter->>Observer: Completed
+    Coordinator-->>App: execution result
 ```
 
 ---
@@ -235,16 +243,17 @@ emit lifecycle events directly.
 
 ---
 
-## DL-029 scope boundary
+## DL-029 scope boundary and current status
 
-DL-029 does not emit:
+DL-029 originally stopped at lifecycle events. Later runtime work added three
+operational events:
 
 | Event | Status |
 |---|---|
-| `ProgressUpdated` | Not implemented (deferred) |
-| `RetryScheduled` | Not implemented (deferred) |
-| `ConflictDetected` | Not implemented (deferred) |
-| Queue-specific events | Not implemented (deferred) |
+| `ProgressUpdated` | Implemented at accepted batch boundaries |
+| `RetryScheduled` | Implemented after scheduler acceptance |
+| `ConflictDetected` | Implemented before custom resolution |
+| Queue-specific events | Not implemented |
 
 DL-029 does not implement:
 

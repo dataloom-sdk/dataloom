@@ -1,5 +1,10 @@
 # Provider Registry (DL-018)
 
+[API reference index](./README.md)
+
+> **Status:** Available immutable registry and lookup foundation. Selection is
+> explicit through provider bindings; no plugin discovery is implied.
+
 **Package:** `io.dataloom.core.provider`
 
 ## Overview
@@ -201,9 +206,10 @@ val all = registry.providers
 
 ---
 
-## Synchronization orchestration not implemented
+## Synchronization-orchestration boundary
 
 `ProviderRegistry` does not implement or trigger synchronization orchestration,
 queue processing, retry execution, or any other DataLoom runtime behavior.
 Provider lifecycle management is delegated to `ProviderLifecycleCoordinator`.
-Synchronization runtime is a later DataLoom issue.
+The current synchronization runtime consumes this registry through explicit
+provider bindings and `SynchronizationProviderResolver`.

@@ -35,6 +35,39 @@ required (`ConnectivityRequirement.NONE`), no provider is invoked.
 coordinator rejections to `QueueEntryExecutionOutcome.Reschedule` using an
 injected `DataLoomClock` and the configured `offlineRescheduleDelay`.
 
+```mermaid
+flowchart LR
+    request[/Synchronization request/]
+    required{Connectivity required?}
+    check[Query ConnectivityProvider]
+    outcome{Requirement satisfied?}
+    execute[Execute pipeline]
+    directReject[Reject direct execution]
+    queued{Queue-backed?}
+    defer[Defer until later]
+    fail[Fail check]
+
+    request --> required
+    required -->|No| execute
+    required -->|Yes| check
+    check --> outcome
+    outcome -->|Yes| execute
+    outcome -->|No| queued
+    outcome -->|Provider failure| fail
+    queued -->|No| directReject
+    queued -->|Yes| defer
+
+    style execute fill:#CDF4D3,stroke:#66D575
+    style defer fill:#FFECBD,stroke:#FFC943
+    style fail fill:#FFCDC2,stroke:#FF7556
+```
+
+> [!CAUTION]
+> The current queued branch uses retry rescheduling and fabricates attempt 1
+> for an entry that has never undergone retry evaluation. The required
+> correction is a distinct non-retry deferral transition that preserves a
+> null or existing attempt exactly.
+
 ---
 
 ## Sequence 1: Connectivity Requirement Satisfied
@@ -193,12 +226,15 @@ it returns `QueueEntryExecutionOutcome.Failed`.
 
 ## SchedulerProvider Boundary
 
-`SchedulerProvider` is never invoked for offline queue deferral.
+`QueuedSynchronizationExecutionHandler` never invokes `SchedulerProvider`
+directly for offline queue deferral.
 
 Offline deferral produces `QueueEntryExecutionOutcome.Reschedule` only. The
 `DurableQueueExecutionProcessor` translates this outcome to
-`QueueProvider.reschedule()`. No `ScheduleRequest` is created. No WorkManager
-or background job scheduling occurs.
+`QueueProvider.reschedule()`. No `ScheduleRequest` is created inside either
+component. After persistence, `QueueWorkerCoordinator` may derive one worker
+wake-up from `QueueProcessingResult.Processed.earliestRescheduledAt` and invoke
+the configured scheduler.
 
 ---
 

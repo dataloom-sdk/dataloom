@@ -26,7 +26,7 @@ import io.dataloom.api.provider.ProviderId
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.provider.ProviderVersion
-import io.dataloom.api.provider.QueueProvider
+import io.dataloom.api.queue.QueueProvider
 import io.dataloom.api.queue.ExpiredLeaseRecoveryRequest
 import io.dataloom.api.queue.ExpiredLeaseRecoveryResult
 import io.dataloom.api.queue.QueueAcquireRequest

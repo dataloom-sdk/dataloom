@@ -1,82 +1,123 @@
-# In-Memory Providers (DL-035)
+# In-memory test providers
 
-## Overview
+> **Audience:** Developers testing provider orchestration without platform I/O
+> **Purpose:** Define inspectable storage, queue, and connectivity fake
+> behavior
+> **Status:** Current test-only implementations; memory-only and
+> caller-serialized
 
-The DL-035 in-memory providers support tests that need stable, inspectable
-provider state without real storage, transport, connectivity APIs, or queue
-infrastructure.
+[← Testing toolkit](testing-toolkit.md) ·
+[Clocks and identifiers](clock-and-identifiers.md) ·
+[Scripted utilities](scripted-and-recording-utilities.md)
 
 ## Providers
 
-### `InMemoryStorageProvider`
+| Provider | State and recordings |
+|---|---|
+| `InMemoryStorageProvider` | Scripts change-operation results, records requests, and stores checkpoints |
+| `InMemoryQueueProvider` | Stores entries in insertion order and implements lease-aware transitions |
+| `MutableConnectivityProvider` | Returns a mutable snapshot, records checks, or returns a fixed failure |
 
-- Records outbound read, inbound apply, acknowledgement, and checkpoint calls
-- Stores checkpoints in memory
-- Supports scripted storage operation results
-- Supports checkpoint read and write failure injection
-
-### `InMemoryQueueProvider`
-
-- Preserves enqueue order with `LinkedHashMap`
-- Implements enqueue, acquire, complete, reschedule, fail, cancel, and expired
-  lease recovery transitions
-- Allows cancellation of leased entries in tests for simpler orchestration
-  scenarios
-- Exposes snapshot helpers for entry IDs and states
-
-### `MutableConnectivityProvider`
-
-- Returns a mutable connectivity snapshot
-- Records connectivity checks
-- Can inject a constant failure result
+All three reuse `TestProviderLifecycleController` for deterministic lifecycle
+behavior.
 
 ## Limitations
 
-> **These providers are for testing only.**
+> Do not use these providers in production or release builds.
 
-- **Memory-only.** Checkpoints, queue entries, and recorded requests exist only
-  within the in-memory instance. No data survives process restart.
-- **Caller-serialized.** Providers are not thread-safe. Serialize all mutations
-  and inspections externally, or confine each instance to a single test.
-- **Non-production.** Do not use these providers in production or release builds.
-  They carry no durability, encryption, or transactional guarantee.
-- **Not process-safe.** Queue state cannot be shared across processes.
+- Nothing survives process termination.
+- Instances are mutable and not thread-safe; confine each to one test or
+  serialize access.
+- There is no encryption, real transaction isolation, multi-process sharing,
+  platform callback, or production scheduler.
+- Behavior is intentionally inspectable and may be more permissive than a
+  platform provider.
 
-## Example: scripting outbound synchronization
+One deliberate difference is cancellation: `InMemoryQueueProvider` permits a
+leased entry to be cancelled for test convenience, while the current Room
+provider accepts cancellation only from `PENDING` or `RETRY_WAITING`. Use
+platform-provider tests when that distinction matters.
+
+## Storage example
 
 ```kotlin
 val storage = InMemoryStorageProvider()
 
 storage.enqueueReadOutboundResult(
     ProviderOperationResult.Success(
-        OutboundChangeReadResult.Changes(changeSet, hasMore = false)
-    )
+        OutboundChangeReadResult.Changes(changeSet, hasMore = false),
+    ),
 )
-storage.enqueueAcknowledgeResult(ProviderOperationResult.Success(Unit))
 
-// Call the production code under test, then inspect:
-assertEquals(1, storage.readOutboundRequests.size)
-assertEquals(changeSet, (storage.readOutboundRequests[0].request).let { it })
+val result = storage.readOutboundChanges(outboundRequest)
+
+assertIs<ProviderOperationResult.Success<OutboundChangeReadResult>>(result)
+assertEquals(outboundRequest, storage.readOutboundRequests.single())
 ```
 
-## Example: queue state machine
+`changeSet` and `outboundRequest` are supplied by the surrounding test fixture.
+When no outbound result is scripted, the provider returns
+`OutboundChangeReadResult.NoChanges`.
+
+## Queue example
 
 ```kotlin
 val queue = InMemoryQueueProvider()
-val entryId  = QueueEntryId("job-001")
-val leaseId  = QueueLeaseId("lease-001")
 
 queue.enqueue(QueueEnqueueRequest(entry = pendingEntry))
+queue.acquire(acquireRequest)
 
-val result = queue.acquire(acquireRequest)
-val entries = (result as ProviderOperationResult.Success).value as QueueAcquireResult.Entries
-assertEquals(QueueEntryState.LEASED, entries.entries.single().state)
+assertEquals(
+    QueueEntryState.LEASED,
+    queue.snapshotStates()[pendingEntry.id],
+)
 
-queue.complete(QueueCompletionRequest(entryId, leaseId, completedAt))
-assertEquals(mapOf(entryId to QueueEntryState.COMPLETED), queue.snapshotStates())
+queue.complete(
+    QueueCompletionRequest(
+        entryId = pendingEntry.id,
+        leaseId = acquireRequest.leaseId,
+        completedAt = completedAt,
+    ),
+)
+
+assertEquals(
+    QueueEntryState.COMPLETED,
+    queue.snapshotStates()[pendingEntry.id],
+)
 ```
 
-## Resetting state
+`pendingEntry`, `acquireRequest`, and `completedAt` are test-fixture values.
+Acquisition orders eligible entries by availability and then insertion order.
 
-Use `clearRecordings()` to keep provider state while removing request history.
-Use `resetState()` to clear scripted results and in-memory state.
+## Connectivity example
+
+```kotlin
+val connectivity = MutableConnectivityProvider(
+    initialSnapshot = ConnectivitySnapshot(
+        status = ConnectivityStatus.AVAILABLE,
+        isMetered = false,
+    ),
+)
+
+connectivity.setSnapshot(
+    ConnectivitySnapshot(
+        status = ConnectivityStatus.UNAVAILABLE,
+        isMetered = null,
+    ),
+)
+```
+
+The provider performs no Android or Apple network query.
+
+## Reset state safely
+
+- `clearRecordings()` retains stored/provider state and removes request history.
+- `resetState()` removes recordings plus stored entries, checkpoints, scripts,
+  or overrides owned by that provider.
+
+Create a fresh instance per test when state sharing is not intentional.
+
+## Related documentation
+
+- [Testing toolkit](testing-toolkit.md)
+- [Room queue provider](../android/room-queue-provider.md)

@@ -2,6 +2,10 @@ package io.dataloom.core.provider
 
 import io.dataloom.api.provider.DataLoomProvider
 import io.dataloom.api.provider.ProviderInitializationContext
+import io.dataloom.api.provider.ProviderLifecycleCoordinatorState
+import io.dataloom.api.provider.ProviderLifecycleFailure
+import io.dataloom.api.provider.ProviderLifecycleOperation
+import io.dataloom.api.provider.ProviderLifecycleResult
 import io.dataloom.api.provider.ProviderOperationResult
 
 /**

@@ -56,6 +56,10 @@ Applications that require server-authoritative synchronization or that need
 the latest remote state before sending local changes may configure
 `INBOUND_THEN_OUTBOUND` explicitly.
 
+This is an ordering primitive, not proof of a complete remote-first strategy.
+It does not define remote authority, freshness, typed fallback, persistence,
+queueing, or cache coherence; ADR-0002/#102 owns those V1 semantics.
+
 ---
 
 ## Sequential execution
@@ -75,25 +79,23 @@ modified.
 
 ### `OUTBOUND_THEN_INBOUND` — happy path
 
-```text
-SynchronizationExecutionCoordinator
-    → SynchronizationExecutionContext(request, providers, runtimeDependencies)
-    → BidirectionalSynchronizationPipeline.execute(context)
-        → OutboundPushSynchronizationPipeline.execute(context)
-            → StorageProvider.readOutboundChanges(...)
-            → TransportProvider.pushChanges(...)
-            → StorageProvider.acknowledgeOutboundChanges(...)
-            → SynchronizationResult.Succeeded(outboundSummary)
-        → (outbound Succeeded → continue)
-        → InboundPullSynchronizationPipeline.execute(context)
-            → StorageProvider.readCheckpoint(...)
-            → TransportProvider.pullChanges(...)
-            → StorageProvider.applyInboundChanges(...)
-            → StorageProvider.writeCheckpoint(...)
-            → SynchronizationResult.Succeeded(inboundSummary)
-        → combine(outboundSucceeded, inboundSucceeded)
-        → completedAt = clock.now()
-    → SynchronizationResult.Succeeded(combinedSummary, completedAt)
+```mermaid
+sequenceDiagram
+    title Outbound then inbound
+    participant Coordinator
+    participant Bidirectional
+    participant Outbound
+    participant Inbound
+    participant Clock
+
+    Coordinator->>Bidirectional: execute context
+    Bidirectional->>Outbound: execute context
+    Outbound-->>Bidirectional: outbound result
+    Bidirectional->>Inbound: execute same context
+    Inbound-->>Bidirectional: inbound result
+    Bidirectional->>Clock: now
+    Clock-->>Bidirectional: completion time
+    Bidirectional-->>Coordinator: combined result
 ```
 
 ### `INBOUND_THEN_OUTBOUND` — happy path
@@ -310,9 +312,19 @@ performed by this pipeline. Those concerns are deferred to other issues.
 
 ## Event boundary
 
-Event dispatch is not performed by this pipeline. There are no started,
-phase, progress, retry, conflict, or completed events. Flow, StateFlow,
-SharedFlow, Channel, and event persistence are not used.
+`BidirectionalSynchronizationPipeline` does not synthesize a second wrapper
+event lifecycle. When it is executed through
+`SynchronizationExecutionCoordinator` with a lifecycle emitter configured, the
+coordinator emits one `Started` event before bidirectional execution and one
+`Completed` event after the combined result.
+
+The same execution context is passed to both child pipelines. The built-in
+outbound and inbound children therefore emit their phase changes and accepted
+batch-boundary progress events through the configured runtime emitter.
+
+The bidirectional pipeline itself does not emit retry, conflict, or
+queue-specific events. `Flow`, `StateFlow`, `SharedFlow`, `Channel`, durable
+event persistence, and replay are not implemented by this pipeline.
 
 ---
 

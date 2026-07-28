@@ -1,5 +1,10 @@
 # DataLoom Storage Provider (DL-009, DL-011)
 
+[API reference index](./README.md)
+
+> **Status:** Available application-storage adapter contract. It does not own
+> DataLoom queue state, asset sessions, or enterprise governance.
+
 ## Purpose of `StorageProvider`
 
 `StorageProvider` is the platform-independent adapter boundary between the
@@ -71,7 +76,10 @@ sealed interface OutboundChangeReadResult {
 | `Changes` | Contains a non-empty `ChangeSet` and a `hasMore` flag. |
 
 The result does not acknowledge, delete, or mark events as synchronized.
-Acknowledgement and checkpoint semantics are deferred to a later issue.
+The current outbound pipeline separately calls
+`acknowledgeOutboundChanges()` after validating the transport response.
+Checkpoint reads and writes belong to the inbound pipeline and are independent
+of this outbound-read result.
 
 ---
 
@@ -213,7 +221,9 @@ apply-before-advance rule.
   read may return additional changes.
 - The runtime may issue repeated reads to drain remaining changes.
 - Batching strategy, ordering, and continuation semantics are provider-defined.
-- Checkpoint and cursor semantics are deferred to a later issue.
+- The current inbound pipeline coordinates opaque checkpoint reads and writes.
+  Protocol-specific cursor formats remain behind the transport provider and
+  are not modeled by this storage SPI.
 
 ---
 
@@ -317,22 +327,19 @@ class PlaceholderStorageProvider : StorageProvider {
 
 ---
 
-## Deferred Behavior
+## Scope boundary and current gaps
 
-The following are explicitly deferred to later issues:
+`StorageProvider` currently owns application-facing change reads, inbound
+application, outbound acknowledgement, and checkpoint reads and writes. It
+does not define checkpoint deletion, partial-application semantics, a generic
+transaction contract, migrations, schema ownership, or database recovery.
 
-- Checkpoint deletion
-- Durable DataLoom queue persistence
-- Queue ordering
-- Retry records
-- Idempotency records
-- Transaction contracts
-- Partial inbound application
-- Conflict handling
-- Storage migrations
-- Storage schema ownership
-- DataLoom internal state storage
-- Database recovery
+Durable queue persistence, ordering, leases, and queue state transitions belong
+to [`QueueProvider`](./queue-provider.md), not this SPI. Retry evaluation and
+rescheduling use the retry and scheduler contracts, but the complete built-in
+retry and circuit-breaker behavior required for V1 is not implemented.
+Idempotency persistence, conflict persistence, and other DataLoom-owned
+operational state also remain mandatory V1 gaps.
 
 ---
 
@@ -345,7 +352,7 @@ The following are explicitly deferred to later issues:
 - [`ChangeEvent`](./change-model.md#changeevent) — single synchronization
   change intent.
 - [`DataLoomPayload`](./payload-contracts.md) — opaque change payload.
-- [`DataLoomProvider`](./provider-spi.md#dataLoomprovider) — common provider
+- [`DataLoomProvider`](./provider-spi.md#dataloomprovider) — common provider
   contract.
 - [`ProviderOperationResult`](./provider-spi.md#provider-results) — provider
   result sealed contract.

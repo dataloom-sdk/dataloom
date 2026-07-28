@@ -1,5 +1,11 @@
 # DataLoom Synchronization Event Dispatcher (DL-028)
 
+[API reference index](./README.md)
+
+> **Status:** Available synchronous in-process dispatch foundation. Durable
+> delivery, replay, filtering, bounded buffering, and consumer isolation remain
+> V1 gaps.
+
 This document defines the synchronization event dispatcher and observer
 registry introduced in `dataloom-runtime` by DL-028.
 
@@ -24,11 +30,11 @@ DL-028 provides:
   dispatch invocation.
 - `SynchronizationEventDispatcher` — performs sequential event delivery.
 
-DL-028 implements event-delivery infrastructure only. It does not:
+The dispatcher itself implements event delivery only. It does not:
 
-- Generate synchronization events automatically.
-- Modify synchronization pipelines.
-- Emit events from push, pull, retry, conflict, or queue processing.
+- Generate synchronization events.
+- Execute or modify synchronization pipelines.
+- Decide when push, pull, retry, conflict, or queue events should exist.
 - Persist or replay events.
 - Expose `Flow`, `StateFlow`, `SharedFlow`, or `Channel`.
 - Own a `CoroutineScope`.
@@ -36,8 +42,10 @@ DL-028 implements event-delivery infrastructure only. It does not:
 - Modify `SynchronizationResult`.
 - Invoke any provider.
 
-Runtime event generation and pipeline integration will be implemented in a
-later issue (DL-029).
+Runtime lifecycle and selected operational integrations now call this
+dispatcher through injected emitters. Those integrations do not add
+persistence, replay, buffering, filtering, or cross-call ordering to the
+dispatcher.
 
 ---
 
@@ -325,20 +333,18 @@ dispatcher.
 
 ---
 
-## Pipeline integration boundary
+## Runtime integration boundary
 
-DL-028 does not modify:
+The current execution coordinator, push/pull pipelines, retry orchestrator,
+and conflict orchestrator may call an injected event emitter. The emitter
+constructs events and delegates delivery here. This dispatcher still has no
+knowledge of provider operations, pipeline phases, retry decisions, conflict
+decisions, queue transitions, or durable event state.
 
-- `SynchronizationExecutionCoordinator`
-- `OutboundPushSynchronizationPipeline`
-- `InboundPullSynchronizationPipeline`
-- `BidirectionalSynchronizationPipeline`
-- `SynchronizationRetryOrchestrator`
-- `SynchronizationConflictOrchestrator`
-- `DurableQueueExecutionProcessor`
-- `QueuedSynchronizationExecutionHandler`
-
-DL-029 will integrate event generation with runtime execution.
+Queue-backed retry-event emission remains incomplete. The complete V1 event
+and observability subsystem must add durable delivery, replay, filtering,
+back-pressure, schema evolution, telemetry/export, and operational read models
+outside this narrow callback dispatcher.
 
 ---
 

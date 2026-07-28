@@ -1,5 +1,10 @@
 # DataLoom Scheduler Provider (DL-012)
 
+[API reference index](./README.md)
+
+> **Status:** Available SPI with an Android WorkManager adapter. Complete
+> platform scheduling parity and V1 qualification remain open.
+
 `dataloom-api` defines a platform-independent scheduler provider SPI that
 allows DataLoom to request deferred synchronization execution without
 depending directly on WorkManager, AlarmManager, or any other platform
@@ -239,9 +244,10 @@ cancellation exceptions into normal failures.
 
 ---
 
-## Future WorkManager Boundary
+## WorkManager Boundary
 
-A future `dataloom-workmanager` artifact may implement the following flow:
+The current `dataloom-scheduler-workmanager` artifact implements the following
+flow:
 
 ```text
 DataLoom Runtime
@@ -257,7 +263,7 @@ DataLoom Android worker entry point
 Shared DataLoom runtime
 ```
 
-That implementation may map:
+The implementation maps:
 
 | `ScheduleConstraints` property                | WorkManager equivalent     |
 |-----------------------------------------------|----------------------------|
@@ -267,11 +273,15 @@ That implementation may map:
 
 The shared API must not expose WorkManager classes.
 
+See [WorkManager Scheduler Provider](../android/workmanager-scheduler.md).
+
 ---
 
-## Deferred Scheduling Features
+## Outside the DL-012 baseline
 
-The following are deferred to future issues:
+DL-012 did not implement the following features. Their V1 inclusion is governed
+by the approved full-V1 scope and ADR-0002; this list is not an automatic V2
+deferral:
 
 - Periodic scheduling
 - Cron-style scheduling
@@ -297,10 +307,12 @@ The following are deferred to future issues:
 
 - Shared contracts remain in `dataloom-api`.
 - Android scheduling is implemented in an Android-specific module.
-- Apple scheduling requires a future Apple-specific adapter.
-- KMP does not guarantee identical background execution semantics across
-  platforms.
-- Each platform provider documents its own limitations.
+- Apple scheduling requires a mandatory V1 Apple adapter; it is not yet
+  implemented.
+- OS scheduling mechanics and timing may differ, but externally observable
+  outcomes, security, recovery, and diagnostics must be equivalent or return
+  an explicit unsupported/degraded result.
+- Each platform provider documents its limitations without silent fallback.
 - Unsupported constraints must produce a canonical `DataLoomError`.
 - Provider interfaces are preferred over forcing scheduler behavior
   through `expect`/`actual`.

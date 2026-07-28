@@ -17,7 +17,7 @@ import io.dataloom.api.time.DataLoomInstant
  * - [Processed] — the processor acquired entries and ran the execution cycle
  *   to completion without a provider failure. The [Processed.summary] reflects
  *   the full truthful counts.
- * - [QueueProviderFailure] — a [io.dataloom.api.provider.QueueProvider]
+ * - [QueueProviderFailure] — a [io.dataloom.api.queue.QueueProvider]
  *   operation failed. Execution stopped at that point. The [QueueProviderFailure.summary]
  *   reflects truthful partial counts up to the point of failure.
  * - [QueueContractViolation] — the provider returned a structurally invalid
@@ -97,7 +97,7 @@ public sealed interface QueueProcessingResult {
     ) : QueueProcessingResult
 
     /**
-     * A [io.dataloom.api.provider.QueueProvider] operation failed during the
+     * A [io.dataloom.api.queue.QueueProvider] operation failed during the
      * processing cycle.
      *
      * Execution stopped at the point of failure. The [summary] reflects

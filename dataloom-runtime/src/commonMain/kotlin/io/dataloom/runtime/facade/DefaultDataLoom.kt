@@ -2,9 +2,9 @@ package io.dataloom.runtime.facade
 
 import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.core.provider.ProviderLifecycleCoordinator
-import io.dataloom.core.provider.ProviderLifecycleCoordinatorState
-import io.dataloom.core.provider.ProviderLifecycleResult
-import io.dataloom.core.provider.SynchronizationProviderBindings
+import io.dataloom.api.provider.ProviderLifecycleCoordinatorState
+import io.dataloom.api.provider.ProviderLifecycleResult
+import io.dataloom.api.provider.SynchronizationProviderBindings
 import io.dataloom.runtime.execution.SynchronizationExecutionCoordinator
 import io.dataloom.runtime.execution.SynchronizationExecutionResult
 import io.dataloom.runtime.submission.DataLoomQueueSubmission

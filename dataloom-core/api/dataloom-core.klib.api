@@ -1,0 +1,80 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <dataloom:dataloom-core>
+sealed interface io.dataloom.core.provider/ProviderResolutionResult { // io.dataloom.core.provider/ProviderResolutionResult|null[0]
+    final class Failure : io.dataloom.core.provider/ProviderResolutionResult { // io.dataloom.core.provider/ProviderResolutionResult.Failure|null[0]
+        constructor <init>(kotlin.collections/List<io.dataloom.api.provider/ProviderBindingFailure>) // io.dataloom.core.provider/ProviderResolutionResult.Failure.<init>|<init>(kotlin.collections.List<io.dataloom.api.provider.ProviderBindingFailure>){}[0]
+
+        final val bindingFailures // io.dataloom.core.provider/ProviderResolutionResult.Failure.bindingFailures|{}bindingFailures[0]
+            final fun <get-bindingFailures>(): kotlin.collections/List<io.dataloom.api.provider/ProviderBindingFailure> // io.dataloom.core.provider/ProviderResolutionResult.Failure.bindingFailures.<get-bindingFailures>|<get-bindingFailures>(){}[0]
+
+        final fun copy(kotlin.collections/List<io.dataloom.api.provider/ProviderBindingFailure> = ...): io.dataloom.core.provider/ProviderResolutionResult.Failure // io.dataloom.core.provider/ProviderResolutionResult.Failure.copy|copy(kotlin.collections.List<io.dataloom.api.provider.ProviderBindingFailure>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.core.provider/ProviderResolutionResult.Failure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.core.provider/ProviderResolutionResult.Failure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.core.provider/ProviderResolutionResult.Failure.toString|toString(){}[0]
+    }
+
+    final class Success : io.dataloom.core.provider/ProviderResolutionResult { // io.dataloom.core.provider/ProviderResolutionResult.Success|null[0]
+        constructor <init>(io.dataloom.core.provider/ResolvedSynchronizationProviders) // io.dataloom.core.provider/ProviderResolutionResult.Success.<init>|<init>(io.dataloom.core.provider.ResolvedSynchronizationProviders){}[0]
+
+        final val providers // io.dataloom.core.provider/ProviderResolutionResult.Success.providers|{}providers[0]
+            final fun <get-providers>(): io.dataloom.core.provider/ResolvedSynchronizationProviders // io.dataloom.core.provider/ProviderResolutionResult.Success.providers.<get-providers>|<get-providers>(){}[0]
+
+        final fun component1(): io.dataloom.core.provider/ResolvedSynchronizationProviders // io.dataloom.core.provider/ProviderResolutionResult.Success.component1|component1(){}[0]
+        final fun copy(io.dataloom.core.provider/ResolvedSynchronizationProviders = ...): io.dataloom.core.provider/ProviderResolutionResult.Success // io.dataloom.core.provider/ProviderResolutionResult.Success.copy|copy(io.dataloom.core.provider.ResolvedSynchronizationProviders){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.core.provider/ProviderResolutionResult.Success.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.core.provider/ProviderResolutionResult.Success.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.core.provider/ProviderResolutionResult.Success.toString|toString(){}[0]
+    }
+}
+
+final class io.dataloom.core.provider/ProviderLifecycleCoordinator { // io.dataloom.core.provider/ProviderLifecycleCoordinator|null[0]
+    constructor <init>(io.dataloom.core.provider/ProviderRegistry, io.dataloom.api.provider/ProviderInitializationContext) // io.dataloom.core.provider/ProviderLifecycleCoordinator.<init>|<init>(io.dataloom.core.provider.ProviderRegistry;io.dataloom.api.provider.ProviderInitializationContext){}[0]
+
+    final val state // io.dataloom.core.provider/ProviderLifecycleCoordinator.state|{}state[0]
+        final fun <get-state>(): io.dataloom.api.provider/ProviderLifecycleCoordinatorState // io.dataloom.core.provider/ProviderLifecycleCoordinator.state.<get-state>|<get-state>(){}[0]
+
+    final suspend fun initialize(): io.dataloom.api.provider/ProviderLifecycleResult // io.dataloom.core.provider/ProviderLifecycleCoordinator.initialize|initialize(){}[0]
+    final suspend fun shutdown(): io.dataloom.api.provider/ProviderLifecycleResult // io.dataloom.core.provider/ProviderLifecycleCoordinator.shutdown|shutdown(){}[0]
+}
+
+final class io.dataloom.core.provider/ProviderRegistry { // io.dataloom.core.provider/ProviderRegistry|null[0]
+    constructor <init>(kotlin.collections/List<io.dataloom.api.provider/DataLoomProvider>) // io.dataloom.core.provider/ProviderRegistry.<init>|<init>(kotlin.collections.List<io.dataloom.api.provider.DataLoomProvider>){}[0]
+
+    final val providers // io.dataloom.core.provider/ProviderRegistry.providers|{}providers[0]
+        final fun <get-providers>(): kotlin.collections/List<io.dataloom.api.provider/DataLoomProvider> // io.dataloom.core.provider/ProviderRegistry.providers.<get-providers>|<get-providers>(){}[0]
+    final val size // io.dataloom.core.provider/ProviderRegistry.size|{}size[0]
+        final fun <get-size>(): kotlin/Int // io.dataloom.core.provider/ProviderRegistry.size.<get-size>|<get-size>(){}[0]
+
+    final fun findById(io.dataloom.api.provider/ProviderId): io.dataloom.api.provider/DataLoomProvider? // io.dataloom.core.provider/ProviderRegistry.findById|findById(io.dataloom.api.provider.ProviderId){}[0]
+    final fun findByType(io.dataloom.api.provider/ProviderType): kotlin.collections/List<io.dataloom.api.provider/DataLoomProvider> // io.dataloom.core.provider/ProviderRegistry.findByType|findByType(io.dataloom.api.provider.ProviderType){}[0]
+    final fun isEmpty(): kotlin/Boolean // io.dataloom.core.provider/ProviderRegistry.isEmpty|isEmpty(){}[0]
+}
+
+final class io.dataloom.core.provider/ResolvedSynchronizationProviders : io.dataloom.api.execution/SynchronizationProviderSet { // io.dataloom.core.provider/ResolvedSynchronizationProviders|null[0]
+    constructor <init>(io.dataloom.api.storage/StorageProvider, io.dataloom.api.transport/TransportProvider, io.dataloom.api.scheduling/SchedulerProvider?, io.dataloom.api.connectivity/ConnectivityProvider?, io.dataloom.api.queue/QueueProvider?) // io.dataloom.core.provider/ResolvedSynchronizationProviders.<init>|<init>(io.dataloom.api.storage.StorageProvider;io.dataloom.api.transport.TransportProvider;io.dataloom.api.scheduling.SchedulerProvider?;io.dataloom.api.connectivity.ConnectivityProvider?;io.dataloom.api.queue.QueueProvider?){}[0]
+
+    final val connectivityProvider // io.dataloom.core.provider/ResolvedSynchronizationProviders.connectivityProvider|{}connectivityProvider[0]
+        final fun <get-connectivityProvider>(): io.dataloom.api.connectivity/ConnectivityProvider? // io.dataloom.core.provider/ResolvedSynchronizationProviders.connectivityProvider.<get-connectivityProvider>|<get-connectivityProvider>(){}[0]
+    final val queueProvider // io.dataloom.core.provider/ResolvedSynchronizationProviders.queueProvider|{}queueProvider[0]
+        final fun <get-queueProvider>(): io.dataloom.api.queue/QueueProvider? // io.dataloom.core.provider/ResolvedSynchronizationProviders.queueProvider.<get-queueProvider>|<get-queueProvider>(){}[0]
+    final val schedulerProvider // io.dataloom.core.provider/ResolvedSynchronizationProviders.schedulerProvider|{}schedulerProvider[0]
+        final fun <get-schedulerProvider>(): io.dataloom.api.scheduling/SchedulerProvider? // io.dataloom.core.provider/ResolvedSynchronizationProviders.schedulerProvider.<get-schedulerProvider>|<get-schedulerProvider>(){}[0]
+    final val storageProvider // io.dataloom.core.provider/ResolvedSynchronizationProviders.storageProvider|{}storageProvider[0]
+        final fun <get-storageProvider>(): io.dataloom.api.storage/StorageProvider // io.dataloom.core.provider/ResolvedSynchronizationProviders.storageProvider.<get-storageProvider>|<get-storageProvider>(){}[0]
+    final val transportProvider // io.dataloom.core.provider/ResolvedSynchronizationProviders.transportProvider|{}transportProvider[0]
+        final fun <get-transportProvider>(): io.dataloom.api.transport/TransportProvider // io.dataloom.core.provider/ResolvedSynchronizationProviders.transportProvider.<get-transportProvider>|<get-transportProvider>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.core.provider/ResolvedSynchronizationProviders.toString|toString(){}[0]
+}
+
+final class io.dataloom.core.provider/SynchronizationProviderResolver { // io.dataloom.core.provider/SynchronizationProviderResolver|null[0]
+    constructor <init>(io.dataloom.core.provider/ProviderRegistry) // io.dataloom.core.provider/SynchronizationProviderResolver.<init>|<init>(io.dataloom.core.provider.ProviderRegistry){}[0]
+
+    final fun resolve(io.dataloom.api.provider/SynchronizationProviderBindings): io.dataloom.core.provider/ProviderResolutionResult // io.dataloom.core.provider/SynchronizationProviderResolver.resolve|resolve(io.dataloom.api.provider.SynchronizationProviderBindings){}[0]
+}

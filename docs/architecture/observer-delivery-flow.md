@@ -21,24 +21,37 @@ This infrastructure does **not**:
 - Perform asynchronous background fan-out.
 - Invoke any provider or synchronization pipeline.
 
-Runtime event generation and pipeline integration will be implemented in
-DL-029.
+Later runtime slices generate lifecycle and operational events and feed them
+through this dispatcher. This page remains focused on delivery behavior.
 
 ---
 
 ## Standard delivery sequence
 
-```text
-SynchronizationEventDispatcher.dispatch(event)
-    → SynchronizationObserverRegistry.observers (registration order)
-    → Observer A.onEvent(event)        — success
-    → Observer B.onEvent(event)        — success
-    → Observer C.onEvent(event)        — success
-    → SynchronizationEventDispatchResult.Delivered
+```mermaid
+sequenceDiagram
+    title Ordered observer delivery
+    participant Runtime
+    participant Dispatcher
+    participant ObserverA
+    participant ObserverB
+    participant ObserverC
+
+    Runtime->>Dispatcher: dispatch event
+    Dispatcher->>ObserverA: onEvent
+    ObserverA-->>Dispatcher: success
+    Dispatcher->>ObserverB: onEvent
+    ObserverB-->>Dispatcher: success
+    Dispatcher->>ObserverC: onEvent
+    ObserverC-->>Dispatcher: success
+    Dispatcher-->>Runtime: delivered
 ```
 
 **Delivered** is returned when every attempted observer received the event
 successfully.
+
+Ordinary callback failures are recorded and delivery continues. A thrown
+`CancellationException` propagates and stops later callbacks.
 
 ---
 
