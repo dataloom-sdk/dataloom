@@ -42,20 +42,12 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
-      - name: Verify Gradle version
-        run: ./gradlew --version
-
-      - name: Verify project structure
-        run: ./gradlew projects
-
-      - name: Build all modules
-        run: ./gradlew build --configuration-cache
-
-      - name: Run verification tasks
-        run: ./gradlew check --configuration-cache
-
-      - name: Run module tests
-        run: ./gradlew :dataloom-api:allTests :dataloom-core:allTests :dataloom-runtime:allTests :dataloom-testing:allTests
-
-      - name: Inspect runtime dependencies
-        run: ./gradlew :dataloom-runtime:dependencies --configuration jvmRuntimeClasspath
+      - name: Validate build, tests, ABI, and external consumer
+        run: >-
+          ./gradlew
+          :build-logic:test
+          build
+          :runtime-external-consumer:checkRuntimeExternalConsumer
+          --configuration-cache
+          --stacktrace
+          --console=plain
