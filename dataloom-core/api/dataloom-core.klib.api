@@ -5,7 +5,7 @@
 // - Show manifest properties: true
 // - Show declarations: true
 
-// Library unique name: <dataloom-strategy-abi:core>
+// Library unique name: <dataloom:dataloom-core>
 sealed interface io.dataloom.core.provider/ProviderResolutionResult { // io.dataloom.core.provider/ProviderResolutionResult|null[0]
     final class Failure : io.dataloom.core.provider/ProviderResolutionResult { // io.dataloom.core.provider/ProviderResolutionResult.Failure|null[0]
         constructor <init>(kotlin.collections/List<io.dataloom.api.provider/ProviderBindingFailure>) // io.dataloom.core.provider/ProviderResolutionResult.Failure.<init>|<init>(kotlin.collections.List<io.dataloom.api.provider.ProviderBindingFailure>){}[0]

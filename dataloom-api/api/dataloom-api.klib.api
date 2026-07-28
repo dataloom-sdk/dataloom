@@ -5,7 +5,7 @@
 // - Show manifest properties: true
 // - Show declarations: true
 
-// Library unique name: <dataloom-strategy-abi:api>
+// Library unique name: <dataloom:dataloom-api>
 final enum class io.dataloom.api.conflict/ConflictType : kotlin/Enum<io.dataloom.api.conflict/ConflictType> { // io.dataloom.api.conflict/ConflictType|null[0]
     enum entry CONCURRENT_CHANGE // io.dataloom.api.conflict/ConflictType.CONCURRENT_CHANGE|null[0]
     enum entry CREATE_COLLISION // io.dataloom.api.conflict/ConflictType.CREATE_COLLISION|null[0]

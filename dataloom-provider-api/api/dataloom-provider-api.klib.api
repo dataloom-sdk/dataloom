@@ -5,7 +5,7 @@
 // - Show manifest properties: true
 // - Show declarations: true
 
-// Library unique name: <dataloom-strategy-abi:provider-api>
+// Library unique name: <dataloom:dataloom-provider-api>
 final enum class io.dataloom.api.provider/ProviderBindingFailureReason : kotlin/Enum<io.dataloom.api.provider/ProviderBindingFailureReason> { // io.dataloom.api.provider/ProviderBindingFailureReason|null[0]
     enum entry PROVIDER_CONTRACT_MISMATCH // io.dataloom.api.provider/ProviderBindingFailureReason.PROVIDER_CONTRACT_MISMATCH|null[0]
     enum entry PROVIDER_NOT_FOUND // io.dataloom.api.provider/ProviderBindingFailureReason.PROVIDER_NOT_FOUND|null[0]

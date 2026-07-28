@@ -5,7 +5,7 @@
 // - Show manifest properties: true
 // - Show declarations: true
 
-// Library unique name: <dataloom-strategy-abi:runtime>
+// Library unique name: <dataloom:dataloom-runtime>
 final enum class io.dataloom.runtime.conflict/ConflictOrchestrationStatus : kotlin/Enum<io.dataloom.runtime.conflict/ConflictOrchestrationStatus> { // io.dataloom.runtime.conflict/ConflictOrchestrationStatus|null[0]
     enum entry DETECTOR_NOT_FOUND // io.dataloom.runtime.conflict/ConflictOrchestrationStatus.DETECTOR_NOT_FOUND|null[0]
     enum entry NO_CONFLICT // io.dataloom.runtime.conflict/ConflictOrchestrationStatus.NO_CONFLICT|null[0]
