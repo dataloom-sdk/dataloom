@@ -10,7 +10,7 @@ import io.dataloom.api.identifier.QueueLeaseId
  * dead-lettered.
  *
  * Construction does not mutate storage. Persistence is the responsibility of
- * the [io.dataloom.api.provider.QueueProvider] that receives this request.
+ * the [io.dataloom.api.queue.QueueProvider] that receives this request.
  *
  * ## Failure flow
  *

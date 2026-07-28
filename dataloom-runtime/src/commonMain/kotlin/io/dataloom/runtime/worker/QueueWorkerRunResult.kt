@@ -10,7 +10,7 @@ import io.dataloom.runtime.queue.QueueProcessingResult
  * ## Variants
  *
  * - [RecoveryFailed] — expired-lease recovery was enabled and the
- *   [io.dataloom.api.provider.QueueProvider] returned a canonical failure.
+ *   [io.dataloom.api.queue.QueueProvider] returned a canonical failure.
  *   No queue acquisition or scheduling was attempted.
  * - [ProcessingCompleted] — queue processing completed without a provider
  *   failure (either [QueueProcessingResult.NoWork] or
@@ -49,7 +49,7 @@ public sealed interface QueueWorkerRunResult {
 
     /**
      * Expired-lease recovery was enabled and
-     * [io.dataloom.api.provider.QueueProvider.recoverExpiredLeases] returned
+     * [io.dataloom.api.queue.QueueProvider.recoverExpiredLeases] returned
      * a canonical failure.
      *
      * No queue acquisition was attempted. No scheduling was attempted.

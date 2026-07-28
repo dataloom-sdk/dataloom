@@ -26,7 +26,7 @@ public enum class SynchronizationExecutionRejectionReason {
 
     /**
      * The [io.dataloom.core.provider.ProviderLifecycleCoordinator] is not in
-     * the [io.dataloom.core.provider.ProviderLifecycleCoordinatorState.INITIALIZED]
+     * the [io.dataloom.api.provider.ProviderLifecycleCoordinatorState.INITIALIZED]
      * state.
      *
      * Applications must call
@@ -38,7 +38,7 @@ public enum class SynchronizationExecutionRejectionReason {
 
     /**
      * The [io.dataloom.core.provider.SynchronizationProviderResolver] returned
-     * one or more [io.dataloom.core.provider.ProviderBindingFailure] records.
+     * one or more [io.dataloom.api.provider.ProviderBindingFailure] records.
      *
      * Provider resolution is attempted only after lifecycle initialization is
      * confirmed. When resolution fails, a

@@ -1,8 +1,6 @@
-// Root plugin declarations keep the Kotlin, Android, and KSP plugin artifacts
-// on one build classpath. This is required by AGP 9 built-in Kotlin when the
-// repository also uses Kotlin Multiplatform convention plugins.
+// The shared KMP plugin is resolved for production multiplatform modules.
+// Android and KSP plugins are resolved only by the Android modules that apply
+// them, avoiding their full dependency graph in non-Android validation.
 plugins {
     alias(libs.plugins.kotlin.multiplatform) apply false
-    alias(libs.plugins.android.library) apply false
-    alias(libs.plugins.ksp) apply false
 }

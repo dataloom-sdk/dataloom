@@ -1,8 +1,8 @@
 package io.dataloom.runtime.execution
 
+import io.dataloom.api.execution.SynchronizationProviderSet
 import io.dataloom.api.model.SynchronizationRequest
-import io.dataloom.core.provider.ResolvedSynchronizationProviders
-import io.dataloom.core.runtime.RuntimeDependencies
+import io.dataloom.api.runtime.RuntimeDependencies
 import io.dataloom.runtime.execution.lifecycle.SynchronizationLifecycleEventEmitter
 
 /**
@@ -70,7 +70,7 @@ public class SynchronizationExecutionContext(
     public val request: SynchronizationRequest,
 
     /** The fully resolved synchronization provider set. */
-    public val providers: ResolvedSynchronizationProviders,
+    public val providers: SynchronizationProviderSet,
 
     /** The runtime dependencies injected into the coordinator. */
     public val runtimeDependencies: RuntimeDependencies,

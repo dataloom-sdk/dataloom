@@ -1,7 +1,7 @@
 package io.dataloom.runtime.worker
 
 import io.dataloom.api.provider.ProviderOperationResult
-import io.dataloom.api.provider.QueueProvider
+import io.dataloom.api.queue.QueueProvider
 import io.dataloom.api.scheduling.ScheduleRequest
 import io.dataloom.api.scheduling.SchedulerProvider
 import io.dataloom.api.scheduling.SchedulingDelay
@@ -16,7 +16,7 @@ import io.dataloom.runtime.queue.QueueProcessingResult
  * One [run] call follows this deterministic sequence:
  *
  * 1. Validate the [QueueWorkerRunRequest] against [configuration].
- * 2. Optionally invoke [io.dataloom.api.provider.QueueProvider.recoverExpiredLeases]
+ * 2. Optionally invoke [io.dataloom.api.queue.QueueProvider.recoverExpiredLeases]
  *    exactly once when [QueueWorkerConfiguration.recoverExpiredLeasesBeforeProcessing]
  *    is `true`.
  * 3. On recovery provider failure: return [QueueWorkerRunResult.RecoveryFailed].

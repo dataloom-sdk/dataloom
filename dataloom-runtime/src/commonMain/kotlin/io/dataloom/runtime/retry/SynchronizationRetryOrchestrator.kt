@@ -86,7 +86,7 @@ import io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitte
  * - check provider health
  * - execute storage or transport operations
  * - check connectivity
- * - invoke [io.dataloom.api.provider.QueueProvider]
+ * - invoke [io.dataloom.api.queue.QueueProvider]
  * - acquire queue leases or update queue entries
  * - execute conflict handling
  * - dispatch lifecycle or progress events

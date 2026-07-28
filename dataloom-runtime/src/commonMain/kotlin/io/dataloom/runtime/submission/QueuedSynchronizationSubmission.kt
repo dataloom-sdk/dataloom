@@ -24,7 +24,7 @@ import io.dataloom.runtime.queue.QueuedSynchronizationWork
  *
  * ## No encoding at construction
  *
- * Construction does not encode [work], call any [QueueProvider][io.dataloom.api.provider.QueueProvider],
+ * Construction does not encode [work], call any [QueueProvider][io.dataloom.api.queue.QueueProvider],
  * read the clock, generate identifiers, or perform any I/O. Encoding is
  * deferred to the [QueuedSynchronizationWorkEncoder] invoked by the
  * [DataLoomQueueSubmission] implementation.
@@ -32,7 +32,7 @@ import io.dataloom.runtime.queue.QueuedSynchronizationWork
  * ## Idempotency guidance
  *
  * [queueEntryId] should remain stable when the application retries the same
- * logical submission. The [io.dataloom.api.provider.QueueProvider] determines
+ * logical submission. The [io.dataloom.api.queue.QueueProvider] determines
  * duplicate-ID handling. DataLoom invokes enqueue at most once per
  * [DataLoomQueueSubmission.submit] call and does not automatically retry
  * provider failures.
@@ -46,7 +46,7 @@ import io.dataloom.runtime.queue.QueuedSynchronizationWork
  *   explicitly by the caller. Required.
  * @param work the synchronization work to enqueue, carrying the exact
  *   [io.dataloom.api.model.SynchronizationRequest] and
- *   [io.dataloom.core.provider.SynchronizationProviderBindings] needed for
+ *   [io.dataloom.api.provider.SynchronizationProviderBindings] needed for
  *   execution. Required.
  * @param availableAt the instant at which this entry becomes eligible for
  *   acquisition. Supplied explicitly by the caller. Required.
@@ -59,7 +59,7 @@ public class QueuedSynchronizationSubmission(
      * The synchronization work to enqueue.
      *
      * Carries the exact [io.dataloom.api.model.SynchronizationRequest] and
-     * [io.dataloom.core.provider.SynchronizationProviderBindings] required for
+     * [io.dataloom.api.provider.SynchronizationProviderBindings] required for
      * execution. Preserved without modification.
      */
     public val work: QueuedSynchronizationWork,

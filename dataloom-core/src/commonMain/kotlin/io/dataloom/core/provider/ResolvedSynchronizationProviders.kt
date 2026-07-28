@@ -1,9 +1,11 @@
 package io.dataloom.core.provider
 
 import io.dataloom.api.connectivity.ConnectivityProvider
+import io.dataloom.api.execution.SynchronizationProviderSet
 import io.dataloom.api.provider.ProviderId
 import io.dataloom.api.provider.ProviderType
-import io.dataloom.api.provider.QueueProvider
+import io.dataloom.api.provider.SynchronizationProviderBindings
+import io.dataloom.api.queue.QueueProvider
 import io.dataloom.api.scheduling.SchedulerProvider
 import io.dataloom.api.storage.StorageProvider
 import io.dataloom.api.transport.TransportProvider
@@ -74,20 +76,20 @@ import io.dataloom.api.transport.TransportProvider
  */
 public class ResolvedSynchronizationProviders(
     /** The resolved [StorageProvider] for the storage runtime role. */
-    public val storageProvider: StorageProvider,
+    override val storageProvider: StorageProvider,
 
     /** The resolved [TransportProvider] for the transport runtime role. */
-    public val transportProvider: TransportProvider,
+    override val transportProvider: TransportProvider,
 
     /** The resolved [SchedulerProvider] for the scheduler runtime role, or `null`. */
-    public val schedulerProvider: SchedulerProvider?,
+    override val schedulerProvider: SchedulerProvider?,
 
     /** The resolved [ConnectivityProvider] for the connectivity runtime role, or `null`. */
-    public val connectivityProvider: ConnectivityProvider?,
+    override val connectivityProvider: ConnectivityProvider?,
 
     /** The resolved [QueueProvider] for the queue runtime role, or `null`. */
-    public val queueProvider: QueueProvider?,
-) {
+    override val queueProvider: QueueProvider?,
+) : SynchronizationProviderSet {
     /**
      * Returns a safe diagnostic representation containing provider IDs and
      * whether optional roles are present.

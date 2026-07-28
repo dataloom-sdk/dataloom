@@ -5,7 +5,7 @@ package io.dataloom.api.queue
  * retried or recovered normally.
  *
  * The DataLoom runtime or host policy supplies the disposition. Neither the
- * [io.dataloom.api.provider.QueueProvider] nor the queue models select the
+ * [io.dataloom.api.queue.QueueProvider] nor the queue models select the
  * disposition automatically.
  *
  * Enum ordinals are not a compatibility contract and must not be persisted.

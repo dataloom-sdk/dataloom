@@ -68,7 +68,7 @@ import io.dataloom.runtime.execution.SynchronizationPipeline
  *
  * The results of both child pipelines are combined according to the result
  * combination matrix defined in DL-023. The composed terminal result uses
- * [io.dataloom.core.runtime.RuntimeDependencies.clock] for its final
+ * [io.dataloom.api.runtime.RuntimeDependencies.clock] for its final
  * completion timestamp.
  *
  * ## Summary combination

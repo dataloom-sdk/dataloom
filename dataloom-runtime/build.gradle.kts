@@ -15,7 +15,9 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(project(":dataloom-api"))
+                api(project(":dataloom-model"))
+                api(project(":dataloom-provider-api"))
+                api(project(":dataloom-api"))
                 implementation(project(":dataloom-core"))
             }
         }

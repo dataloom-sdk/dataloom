@@ -8,7 +8,7 @@ import io.dataloom.api.identifier.QueueEntryId
  * Immutable request to cancel a queue entry.
  *
  * Construction does not cancel any queue entry. Cancellation is performed by
- * the [io.dataloom.api.provider.QueueProvider] that receives this request.
+ * the [io.dataloom.api.queue.QueueProvider] that receives this request.
  *
  * ## Cancellation semantics
  *

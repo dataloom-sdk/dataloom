@@ -2,9 +2,12 @@ package io.dataloom.core.provider
 
 import io.dataloom.api.connectivity.ConnectivityProvider
 import io.dataloom.api.provider.DataLoomProvider
+import io.dataloom.api.provider.ProviderBindingFailure
+import io.dataloom.api.provider.ProviderBindingFailureReason
 import io.dataloom.api.provider.ProviderId
 import io.dataloom.api.provider.ProviderType
-import io.dataloom.api.provider.QueueProvider
+import io.dataloom.api.provider.SynchronizationProviderBindings
+import io.dataloom.api.queue.QueueProvider
 import io.dataloom.api.scheduling.SchedulerProvider
 import io.dataloom.api.storage.StorageProvider
 import io.dataloom.api.transport.TransportProvider

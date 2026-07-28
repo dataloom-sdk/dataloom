@@ -2,11 +2,11 @@ package io.dataloom.runtime.execution
 
 import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.core.provider.ProviderLifecycleCoordinator
-import io.dataloom.core.provider.ProviderLifecycleCoordinatorState
+import io.dataloom.api.provider.ProviderLifecycleCoordinatorState
 import io.dataloom.core.provider.ProviderResolutionResult
-import io.dataloom.core.provider.SynchronizationProviderBindings
+import io.dataloom.api.provider.SynchronizationProviderBindings
 import io.dataloom.core.provider.SynchronizationProviderResolver
-import io.dataloom.core.runtime.RuntimeDependencies
+import io.dataloom.api.runtime.RuntimeDependencies
 import io.dataloom.runtime.connectivity.ConnectivityPreflightResult
 import io.dataloom.runtime.connectivity.SynchronizationConnectivityConfiguration
 import io.dataloom.runtime.connectivity.SynchronizationConnectivityPreflight
@@ -64,7 +64,7 @@ import io.dataloom.runtime.execution.lifecycle.SynchronizationLifecycleEventEmit
  *
  * Applications must call
  * [ProviderLifecycleCoordinator.initialize] and confirm a successful
- * [io.dataloom.core.provider.ProviderLifecycleResult.InitializeSuccess]
+ * [io.dataloom.api.provider.ProviderLifecycleResult.InitializeSuccess]
  * before calling [execute]. The coordinator does not initialize providers
  * automatically, retry initialization, or treat any non-INITIALIZED state as
  * initialized.
@@ -139,7 +139,7 @@ import io.dataloom.runtime.execution.lifecycle.SynchronizationLifecycleEventEmit
  *   used to evaluate the connectivity requirement. Defaults to a new
  *   stateless instance for backward compatibility.
  */
-public class SynchronizationExecutionCoordinator(
+internal class SynchronizationExecutionCoordinator(
     private val lifecycleCoordinator: ProviderLifecycleCoordinator,
     private val providerResolver: SynchronizationProviderResolver,
     private val pipelineRegistry: SynchronizationPipelineRegistry,

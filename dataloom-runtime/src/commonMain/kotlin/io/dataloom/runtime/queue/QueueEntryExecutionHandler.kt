@@ -21,7 +21,7 @@ import io.dataloom.api.queue.QueueEntry
  * ## What this handler must not do
  *
  * Implementations must not:
- * - Access [io.dataloom.api.provider.QueueProvider] directly.
+ * - Access [io.dataloom.api.queue.QueueProvider] directly.
  * - Own a [kotlinx.coroutines.CoroutineScope] or select a dispatcher.
  * - Retain completed payload batches after returning.
  * - Swallow [kotlin.coroutines.cancellation.CancellationException].

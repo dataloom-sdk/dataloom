@@ -1,8 +1,8 @@
 package io.dataloom.runtime.execution
 
 import io.dataloom.api.error.DataLoomError
+import io.dataloom.api.provider.ProviderBindingFailure
 import io.dataloom.api.synchronization.SynchronizationResult
-import io.dataloom.core.provider.ProviderBindingFailure
 
 /**
  * Sealed result of a synchronization execution attempt by the

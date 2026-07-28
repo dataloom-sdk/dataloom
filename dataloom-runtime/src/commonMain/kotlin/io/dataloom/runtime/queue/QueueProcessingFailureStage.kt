@@ -1,7 +1,7 @@
 package io.dataloom.runtime.queue
 
 /**
- * Identifies the stage at which a [io.dataloom.api.provider.QueueProvider]
+ * Identifies the stage at which a [io.dataloom.api.queue.QueueProvider]
  * operation failed during a [DurableQueueExecutionProcessor] processing cycle.
  *
  * [QueueProcessingFailureStage] is carried by
@@ -14,7 +14,7 @@ package io.dataloom.runtime.queue
 public enum class QueueProcessingFailureStage {
 
     /**
-     * The [io.dataloom.api.provider.QueueProvider.acquire] call failed with
+     * The [io.dataloom.api.queue.QueueProvider.acquire] call failed with
      * a [io.dataloom.api.provider.ProviderOperationResult.Failure].
      *
      * No handler was invoked.
@@ -22,7 +22,7 @@ public enum class QueueProcessingFailureStage {
     ACQUISITION,
 
     /**
-     * The [io.dataloom.api.provider.QueueProvider.acquire] call returned a
+     * The [io.dataloom.api.queue.QueueProvider.acquire] call returned a
      * structurally invalid result that violates the acquisition contract
      * (for example: duplicate entry identifiers or consumer-identity
      * mismatch).
@@ -34,25 +34,25 @@ public enum class QueueProcessingFailureStage {
     ACQUISITION_VALIDATION,
 
     /**
-     * The [io.dataloom.api.provider.QueueProvider.complete] call failed for
+     * The [io.dataloom.api.queue.QueueProvider.complete] call failed for
      * an entry whose handler returned [QueueEntryExecutionOutcome.Completed].
      */
     COMPLETION_TRANSITION,
 
     /**
-     * The [io.dataloom.api.provider.QueueProvider.reschedule] call failed
+     * The [io.dataloom.api.queue.QueueProvider.reschedule] call failed
      * for an entry whose handler returned [QueueEntryExecutionOutcome.Reschedule].
      */
     RESCHEDULE_TRANSITION,
 
     /**
-     * The [io.dataloom.api.provider.QueueProvider.fail] call failed for an
+     * The [io.dataloom.api.queue.QueueProvider.fail] call failed for an
      * entry whose handler returned [QueueEntryExecutionOutcome.Failed].
      */
     FAILURE_TRANSITION,
 
     /**
-     * The [io.dataloom.api.provider.QueueProvider.cancel] call failed for an
+     * The [io.dataloom.api.queue.QueueProvider.cancel] call failed for an
      * entry whose handler returned [QueueEntryExecutionOutcome.Cancelled].
      */
     CANCELLATION_TRANSITION,

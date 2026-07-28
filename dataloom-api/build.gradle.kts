@@ -14,4 +14,13 @@ plugins {
 
 kotlin {
     explicitApi()
+
+    sourceSets {
+        commonMain {
+            dependencies {
+                api(project(":dataloom-model"))
+                api(project(":dataloom-provider-api"))
+            }
+        }
+    }
 }

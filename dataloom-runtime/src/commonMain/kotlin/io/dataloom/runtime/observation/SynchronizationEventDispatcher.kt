@@ -92,7 +92,7 @@ import kotlin.coroutines.cancellation.CancellationException
  * - [io.dataloom.api.provider.TransportProvider]
  * - [io.dataloom.api.scheduling.SchedulerProvider]
  * - [io.dataloom.api.connectivity.ConnectivityProvider]
- * - [io.dataloom.api.provider.QueueProvider]
+ * - [io.dataloom.api.queue.QueueProvider]
  * - [io.dataloom.core.provider.ProviderLifecycleCoordinator]
  * - [io.dataloom.core.provider.SynchronizationProviderResolver]
  * - [io.dataloom.api.retry.RetryPolicy]

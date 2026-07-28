@@ -48,9 +48,9 @@ public enum class QueueSubmissionFailureStage {
     ENCODED_REQUEST_VALIDATION,
 
     /**
-     * Failure originated in [io.dataloom.api.provider.QueueProvider.enqueue].
+     * Failure originated in [io.dataloom.api.queue.QueueProvider.enqueue].
      *
-     * The [io.dataloom.api.provider.QueueProvider] returned a
+     * The [io.dataloom.api.queue.QueueProvider] returned a
      * [io.dataloom.api.provider.ProviderOperationResult.Failure].
      */
     QUEUE_PROVIDER_ENQUEUE,

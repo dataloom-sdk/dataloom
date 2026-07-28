@@ -1,9 +1,9 @@
 package io.dataloom.runtime.facade
 
 import io.dataloom.api.model.SynchronizationRequest
-import io.dataloom.core.provider.ProviderLifecycleCoordinatorState
-import io.dataloom.core.provider.ProviderLifecycleResult
-import io.dataloom.core.provider.SynchronizationProviderBindings
+import io.dataloom.api.provider.ProviderLifecycleCoordinatorState
+import io.dataloom.api.provider.ProviderLifecycleResult
+import io.dataloom.api.provider.SynchronizationProviderBindings
 import io.dataloom.runtime.execution.SynchronizationExecutionResult
 import io.dataloom.runtime.submission.DataLoomQueueSubmission
 
@@ -89,7 +89,7 @@ public interface DataLoom {
      * The optional queue-submission capability.
      *
      * `null` when [DataLoomBuilder.queueSubmissionEncoder] was not supplied
-     * during build or when a valid [io.dataloom.api.provider.QueueProvider]
+     * during build or when a valid [io.dataloom.api.queue.QueueProvider]
      * binding was absent. Non-null when a
      * [io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder] and a
      * valid queue provider binding were both configured.
@@ -100,7 +100,7 @@ public interface DataLoom {
      * No provider is initialized automatically. Callers must invoke
      * [initialize] before submitting queue work.
      *
-     * The [io.dataloom.api.provider.QueueProvider] is not exposed through this
+     * The [io.dataloom.api.queue.QueueProvider] is not exposed through this
      * property.
      */
     public val queueSubmission: DataLoomQueueSubmission?

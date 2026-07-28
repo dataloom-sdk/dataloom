@@ -1,5 +1,7 @@
 package io.dataloom.core.provider
 
+import io.dataloom.api.provider.ProviderBindingFailure
+
 /**
  * Sealed result of a provider resolution attempt by [SynchronizationProviderResolver].
  *

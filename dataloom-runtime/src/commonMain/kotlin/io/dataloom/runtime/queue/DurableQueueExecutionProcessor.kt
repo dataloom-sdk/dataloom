@@ -6,7 +6,7 @@ import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
 import io.dataloom.api.provider.ProviderOperationResult
-import io.dataloom.api.provider.QueueProvider
+import io.dataloom.api.queue.QueueProvider
 import io.dataloom.api.queue.QueueAcquireResult
 import io.dataloom.api.queue.QueueCancellationRequest
 import io.dataloom.api.queue.QueueCompletionRequest

@@ -11,7 +11,7 @@ import io.dataloom.api.queue.QueueEntry
  * [QueuedSynchronizationWorkResolver] gives the host application control over
  * how a [QueueEntry] is mapped to a [QueuedSynchronizationWork]. The resolver
  * extracts the exact [io.dataloom.api.model.SynchronizationRequest] and
- * [io.dataloom.core.provider.SynchronizationProviderBindings] needed for the
+ * [io.dataloom.api.provider.SynchronizationProviderBindings] needed for the
  * synchronization coordinator to execute the entry.
  *
  * ## Responsibilities
@@ -27,7 +27,7 @@ import io.dataloom.api.queue.QueueEntry
  * ## What this resolver must not do
  *
  * Implementations must not:
- * - Access [io.dataloom.api.provider.QueueProvider] directly.
+ * - Access [io.dataloom.api.queue.QueueProvider] directly.
  * - Invoke the [io.dataloom.runtime.execution.SynchronizationExecutionCoordinator].
  * - Own a [kotlinx.coroutines.CoroutineScope] or select a dispatcher.
  * - Expose credentials, tokens, encryption keys, personal data, or full

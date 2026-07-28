@@ -60,12 +60,12 @@ import io.dataloom.api.transport.PullChangesResult
 import io.dataloom.api.transport.PushChangesRequest
 import io.dataloom.api.transport.TransportProvider
 import io.dataloom.core.provider.ProviderLifecycleCoordinator
-import io.dataloom.core.provider.ProviderLifecycleCoordinatorState
+import io.dataloom.api.provider.ProviderLifecycleCoordinatorState
 import io.dataloom.core.provider.ProviderRegistry
-import io.dataloom.core.provider.SynchronizationProviderBindings
+import io.dataloom.api.provider.SynchronizationProviderBindings
 import io.dataloom.core.provider.SynchronizationProviderResolver
-import io.dataloom.core.runtime.RuntimeDependencies
-import io.dataloom.core.runtime.RuntimeIdentifierGenerators
+import io.dataloom.api.runtime.RuntimeDependencies
+import io.dataloom.api.runtime.RuntimeIdentifierGenerators
 import io.dataloom.runtime.execution.SynchronizationExecutionContext
 import io.dataloom.runtime.execution.SynchronizationExecutionCoordinator
 import io.dataloom.runtime.execution.SynchronizationPipeline

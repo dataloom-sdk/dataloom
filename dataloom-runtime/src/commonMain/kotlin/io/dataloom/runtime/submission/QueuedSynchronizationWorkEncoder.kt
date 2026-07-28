@@ -32,7 +32,7 @@ package io.dataloom.runtime.submission
  *   cannot be encoded due to a known structural or policy condition.
  *
  * Implementations must not:
- * - Call any [io.dataloom.api.provider.QueueProvider] operation.
+ * - Call any [io.dataloom.api.queue.QueueProvider] operation.
  * - Execute synchronization.
  * - Evaluate retry policy.
  * - Invoke scheduling.
