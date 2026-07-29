@@ -4,9 +4,11 @@ This document defines ownership for retry classification, policy evaluation,
 queue persistence, scheduling, and platform integration.
 
 > [!IMPORTANT]
-> DataLoom now enforces a shared fail-closed boundary before invoking custom
-> retry policy. Standard backoff and durable circuit breaking are still under
-> implementation, so this is not a complete V1 retry engine.
+> DataLoom enforces a shared fail-closed boundary before invoking custom retry
+> policy and ships deterministic immediate, fixed, linear, and exponential
+> backoff with an attempt budget. Durable circuit breaking and the remaining
+> time, jitter, hint, observability, and administration gates are incomplete, so
+> this is not yet the complete V1 retry engine.
 
 ```mermaid
 flowchart LR
@@ -75,6 +77,26 @@ mutate queue state, log sensitive context, or translate cancellation.
 Application policies cannot bypass central protection through an ordinary
 `RetryDecision.Retry`.
 
+## Standard policy ownership
+
+`StandardRetryPolicy` owns deterministic, configuration-only backoff for
+eligible errors:
+
+- immediate delay;
+- fixed delay;
+- linear backoff;
+- exponential backoff; and
+- maximum retry attempts.
+
+Linear and exponential calculations clamp before overflow. Attempt one uses the
+configured initial delay, and attempt `N` is accepted only when it is within the
+configured retry-attempt budget. Jitter is never silently introduced into these
+base calculations.
+
+The standard policy does not own queue transitions, clocks, elapsed windows,
+scheduler invocation, circuit persistence, provider retry hints, or manual
+administrative actions.
+
 ## Runtime responsibility
 
 The runtime owns:
@@ -85,8 +107,8 @@ The runtime owns:
 - attempt advancement at the queue boundary;
 - overflow-safe availability calculation;
 - routing accepted retry decisions to queue or scheduler transitions; and
-- future standard budgets, circuit state, hints, manual operations, and
-  observability.
+- future elapsed and aggregate budgets, jitter/random boundaries, circuit state,
+  hints, manual operations, and observability.
 
 ## Queue responsibility
 
@@ -133,9 +155,9 @@ classification, attempt calculation, or delay-policy selection.
 ## Kotlin Multiplatform boundary
 
 Retry contracts and runtime rules live in common code. Native Android, KMP
-Android, and KMP iOS must expose equivalent observable classification,
-attempt, delay, circuit, cancellation, and recovery behavior. Platform limits
-must be explicit degraded or unsupported results rather than silent omission.
+Android, and KMP iOS must expose equivalent observable classification, attempt,
+delay, circuit, cancellation, and recovery behavior. Platform limits must be
+explicit degraded or unsupported results rather than silent omission.
 
 ## Security and privacy
 
@@ -145,8 +167,8 @@ data, or unbounded-cardinality labels.
 
 ## Remaining V1 ownership
 
-The shared retry engine still must add standard immediate/fixed/linear/
-exponential policies, jitter/random boundaries, attempt and elapsed budgets,
-server hints, timeout separation, durable closed/open/half-open circuit state,
-controlled probes, manual retry/reclassification, complete observability, and
+The shared retry engine still must add deterministic configurable jitter and
+randomness boundaries, elapsed-time and aggregate-delay budgets, server hints,
+timeout separation, durable closed/open/half-open circuit state, controlled
+probes, manual retry/reclassification, complete observability, and
 restart/concurrency/platform qualification.
