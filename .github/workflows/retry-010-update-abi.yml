@@ -35,6 +35,9 @@ jobs:
         with:
           cache-provider: basic
 
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
       - name: Generate exact JVM and Kotlin Native ABI snapshots
         run: >-
           ./gradlew
