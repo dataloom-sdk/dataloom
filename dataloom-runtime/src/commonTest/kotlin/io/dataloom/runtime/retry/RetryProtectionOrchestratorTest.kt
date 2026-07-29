@@ -8,7 +8,6 @@ import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
 import io.dataloom.api.identifier.CorrelationId
 import io.dataloom.api.identifier.ExecutionId
-import io.dataloom.api.identifier.ProviderId
 import io.dataloom.api.identifier.RetryPolicyId
 import io.dataloom.api.identifier.ScheduleId
 import io.dataloom.api.identifier.SynchronizationSessionId
@@ -19,6 +18,7 @@ import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.api.provider.ProviderDescriptor
 import io.dataloom.api.provider.ProviderHealth
 import io.dataloom.api.provider.ProviderHealthStatus
+import io.dataloom.api.provider.ProviderId
 import io.dataloom.api.provider.ProviderInitializationContext
 import io.dataloom.api.provider.ProviderName
 import io.dataloom.api.provider.ProviderOperationResult
@@ -56,8 +56,13 @@ class RetryProtectionOrchestratorTest {
         block.startCoroutine(
             object : Continuation<T> {
                 override val context: CoroutineContext = EmptyCoroutineContext
+
                 override fun resumeWith(result: Result<T>) {
-                    if (result.isSuccess) rawResult = result.getOrNull() else thrown = result.exceptionOrNull()
+                    if (result.isSuccess) {
+                        rawResult = result.getOrNull()
+                    } else {
+                        thrown = result.exceptionOrNull()
+                    }
                 }
             },
         )
@@ -79,6 +84,7 @@ class RetryProtectionOrchestratorTest {
     private class CountingRetryPolicy : RetryPolicy {
         override val id: RetryPolicyId = RetryPolicyId("orchestrator-counting-policy")
         var calls: Int = 0
+
         override fun evaluate(request: RetryEvaluationRequest): RetryDecision {
             calls++
             return RetryDecision.Retry(SchedulingDelay(250L))
@@ -94,8 +100,9 @@ class RetryProtectionOrchestratorTest {
         )
         var scheduleCalls: Int = 0
 
-        override suspend fun initialize(context: ProviderInitializationContext): ProviderOperationResult<Unit> =
-            ProviderOperationResult.Success(Unit)
+        override suspend fun initialize(
+            context: ProviderInitializationContext,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
 
         override suspend fun health(): ProviderOperationResult<ProviderHealth> =
             ProviderOperationResult.Success(ProviderHealth(ProviderHealthStatus.HEALTHY))
@@ -103,13 +110,16 @@ class RetryProtectionOrchestratorTest {
         override suspend fun close(): ProviderOperationResult<Unit> =
             ProviderOperationResult.Success(Unit)
 
-        override suspend fun schedule(request: ScheduleRequest): ProviderOperationResult<ScheduleReceipt> {
+        override suspend fun schedule(
+            request: ScheduleRequest,
+        ): ProviderOperationResult<ScheduleReceipt> {
             scheduleCalls++
-            return ProviderOperationResult.Success(ScheduleReceipt(request.id))
+            return ProviderOperationResult.Success(ScheduleReceipt(id = request.id))
         }
 
-        override suspend fun cancel(request: ScheduleCancellationRequest): ProviderOperationResult<Unit> =
-            ProviderOperationResult.Success(Unit)
+        override suspend fun cancel(
+            request: ScheduleCancellationRequest,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
     }
 
     private val synchronizationRequest = SynchronizationRequest(
@@ -123,15 +133,17 @@ class RetryProtectionOrchestratorTest {
         ),
     )
 
-    private fun orchestrator(policy: RetryPolicy, scheduler: SchedulerProvider) =
-        SynchronizationRetryOrchestrator(
-            retryPolicy = policy,
-            schedulerProvider = scheduler,
-            configuration = RetrySchedulingConfiguration(
-                constraints = ScheduleConstraints(),
-                existingSchedulePolicy = ExistingSchedulePolicy.REPLACE,
-            ),
-        )
+    private fun orchestrator(
+        policy: RetryPolicy,
+        scheduler: SchedulerProvider,
+    ): SynchronizationRetryOrchestrator = SynchronizationRetryOrchestrator(
+        retryPolicy = policy,
+        schedulerProvider = scheduler,
+        configuration = RetrySchedulingConfiguration(
+            constraints = ScheduleConstraints(),
+            existingSchedulePolicy = ExistingSchedulePolicy.REPLACE,
+        ),
+    )
 
     @Test
     fun `protected partial batch does not invoke policy or scheduler`() {
