@@ -10,106 +10,62 @@ import io.dataloom.api.identifier.RetryPolicyId
  * already-available information about the failure and returns a [RetryDecision]
  * that the DataLoom runtime acts on.
  *
- * ```text
- * Provider operation fails
- *       ↓
- * DataLoomError
- *       ↓
- * RetryPolicy.evaluate(...)
- *       ↓
- * RetryDecision
- *       ├── Retry after delay
- *       └── Stop retrying
- * ```
- *
  * ## Why evaluation is synchronous
  *
  * Retry-policy evaluation is deliberately synchronous. A policy should
- * calculate a decision using already-available information. It must not:
+ * calculate a decision using already-available information. It must not make
+ * network requests, query storage, refresh credentials, call providers, sleep,
+ * wait for connectivity, or schedule background work.
  *
- * - Make network requests
- * - Query a database
- * - Refresh credentials
- * - Call providers
- * - Sleep or wait for connectivity
- * - Schedule background work
+ * ## Recoverability and protected failures
  *
- * The runtime performs those operations after receiving the decision. This
- * keeps retry evaluation deterministic, fast, testable, multiplatform, and
- * independent of runtime infrastructure.
+ * DataLoom runtime retry paths enforce a fail-closed boundary before invoking
+ * an application-provided policy:
  *
- * ## Recoverability semantics
- *
- * - [io.dataloom.api.error.Recoverability.NON_RECOVERABLE]: the normal
- *   decision is [RetryDecision.Stop] with
+ * - [io.dataloom.api.error.Recoverability.NON_RECOVERABLE] stops with
  *   [RetryStopReason.NON_RECOVERABLE].
- * - [io.dataloom.api.error.Recoverability.RECOVERABLE]: the policy may
- *   return either [RetryDecision.Retry] or [RetryDecision.Stop].
- * - [io.dataloom.api.error.Recoverability.UNKNOWN]: the configured policy
- *   determines whether retrying is safe.
+ * - [io.dataloom.api.error.Recoverability.UNKNOWN] stops until an explicit,
+ *   authorized reclassification path exists.
+ * - Authentication, authorization, serialization, validation, configuration,
+ *   policy, conflict, and security categories are protected from automatic
+ *   retry.
+ * - [io.dataloom.api.error.Recoverability.RECOVERABLE] errors outside those
+ *   protected categories may be evaluated by the configured policy.
  *
- * Severity alone must not determine retry behaviour. `CRITICAL` does not
- * automatically mean retry. `WARNING` does not automatically mean continue.
+ * A partially successful result containing any protected error blocks the
+ * complete retry batch. A retryable sibling error cannot hide a protected
+ * failure.
+ *
+ * Severity alone must not determine retry behaviour.
  *
  * ## Coroutine cancellation
  *
- * [evaluate] must not catch or translate `CancellationException`.
- * Coroutine cancellation must propagate normally and must not be converted
- * into a [RetryDecision].
+ * [evaluate] must not catch or translate `CancellationException`. Coroutine
+ * cancellation must propagate normally and must not become a [RetryDecision].
  *
  * ## Dependency injection
  *
  * Policy implementations may receive configuration through constructors or
- * constructor-injected dependencies. DataLoom does not depend on Hilt, Koin,
- * Dagger, or any other dependency-injection framework.
- *
- * ## Thread safety
- *
- * Implementations must document their thread-safety guarantees.
+ * constructor-injected dependencies. DataLoom does not depend on a particular
+ * dependency-injection framework.
  *
  * ## Evaluation restrictions
  *
- * [evaluate] must not:
- * - Block the current thread
- * - Sleep
- * - Access network services
- * - Access application storage
- * - Schedule work
- * - Mutate queues
- * - Execute provider operations
- * - Automatically log sensitive context
- * - Expose provider-specific exception types
- * - Catch or translate coroutine cancellation
+ * [evaluate] must not block, sleep, access network services or storage,
+ * schedule work, mutate queues, execute provider operations, automatically log
+ * sensitive context, expose provider-specific exception types, or catch
+ * coroutine cancellation.
  */
 public interface RetryPolicy {
 
-    /**
-     * Stable identifier for this retry policy.
-     *
-     * Used by the runtime to identify the policy in diagnostics and
-     * configuration. The identifier must not be blank.
-     */
+    /** Stable non-blank identifier used for configuration and diagnostics. */
     public val id: RetryPolicyId
 
     /**
-     * Evaluates the supplied [request] and returns a [RetryDecision].
+     * Evaluates [request] synchronously and deterministically.
      *
-     * Evaluation is synchronous and deterministic: for the same [request] and
-     * policy configuration, [evaluate] must always return the same decision.
-     *
-     * ## Restrictions
-     *
-     * This function must not block the current thread, sleep, access network
-     * services, access application storage, schedule work, mutate queues,
-     * execute provider operations, automatically log sensitive context, or
-     * catch coroutine cancellation.
-     *
-     * @param request the immutable evaluation request carrying the failed
-     *   synchronization request, the logical operation, the canonical error,
-     *   the current retry attempt, the previous delay, the optional provider
-     *   descriptor, and optional metadata.
-     * @return a [RetryDecision] indicating whether to retry after a delay or
-     *   stop retrying.
+     * For the same request and policy configuration, implementations must
+     * return the same decision.
      */
     public fun evaluate(
         request: RetryEvaluationRequest,
