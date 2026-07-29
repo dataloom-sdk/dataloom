@@ -2,6 +2,7 @@ package io.dataloom.consumer
 
 import io.dataloom.api.execution.StrategyProviderSet
 import io.dataloom.api.execution.SynchronizationProviderSet
+import io.dataloom.api.identifier.RetryPolicyId
 import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.api.provider.ProviderBindingFailure
 import io.dataloom.api.provider.ProviderLifecycleResult
@@ -10,7 +11,10 @@ import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.api.provider.SynchronizationProviderBindings
 import io.dataloom.api.queue.QueueDeferralRequest
 import io.dataloom.api.queue.QueueProvider
+import io.dataloom.api.retry.RetryDecision
+import io.dataloom.api.retry.RetryEvaluationRequest
 import io.dataloom.api.runtime.RuntimeDependencies
+import io.dataloom.api.scheduling.SchedulingDelay
 import io.dataloom.api.strategy.ClassifiedStrategyRemoteError
 import io.dataloom.api.strategy.StrategyFallbackPlan
 import io.dataloom.api.strategy.StrategyLocalFallbackProvider
@@ -18,6 +22,8 @@ import io.dataloom.api.strategy.StrategyRemoteOutcome
 import io.dataloom.api.strategy.StrategySynchronizationRequest
 import io.dataloom.runtime.execution.SynchronizationExecutionResult
 import io.dataloom.runtime.facade.DataLoom
+import io.dataloom.runtime.retry.RetryBackoffStrategy
+import io.dataloom.runtime.retry.StandardRetryPolicy
 import io.dataloom.runtime.strategy.StrategySynchronizationExecutionResult
 
 /**
@@ -82,4 +88,38 @@ internal suspend fun compileQueueDeferralConsumer(
 ): ProviderOperationResult<Unit> {
     request.reason
     return queueProvider.defer(request)
+}
+
+/** Compile-only use of all built-in standard retry strategy variants. */
+internal fun compileStandardRetryPolicyConsumer(
+    request: RetryEvaluationRequest,
+): RetryDecision {
+    val immediate: RetryBackoffStrategy = RetryBackoffStrategy.Immediate
+    val fixed: RetryBackoffStrategy = RetryBackoffStrategy.Fixed(
+        delay = SchedulingDelay(1_000L),
+    )
+    val linear: RetryBackoffStrategy = RetryBackoffStrategy.Linear(
+        initialDelay = SchedulingDelay(1_000L),
+        increment = SchedulingDelay(500L),
+        maximumDelay = SchedulingDelay(10_000L),
+    )
+    val exponential: RetryBackoffStrategy = RetryBackoffStrategy.Exponential(
+        initialDelay = SchedulingDelay(1_000L),
+        multiplier = 2,
+        maximumDelay = SchedulingDelay(60_000L),
+    )
+
+    immediate.toString()
+    fixed.toString()
+    linear.toString()
+
+    val policy = StandardRetryPolicy(
+        id = RetryPolicyId("external-standard-retry"),
+        strategy = exponential,
+        maximumAttempts = 5,
+    )
+    policy.id
+    policy.strategy
+    policy.maximumAttempts
+    return policy.evaluate(request)
 }
