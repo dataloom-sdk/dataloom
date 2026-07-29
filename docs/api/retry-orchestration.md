@@ -1,66 +1,46 @@
-# Retry Orchestration Contracts (DL-024)
+# Retry orchestration contracts
 
 [API reference index](./README.md)
 
-> **Status:** Partial V1 subsystem. Custom policy evaluation and scheduling
-> orchestration exist; standard strategies and the durable circuit engine do
-> not.
+> **Status:** Partial V1 subsystem. Scheduler-backed orchestration and central
+> protected-failure handling are implemented. Standard backoff, durable circuit
+> state, time budgets, hints, manual retry, and full observability remain.
 
 **Module:** `dataloom-runtime`  
 **Package:** `io.dataloom.runtime.retry`  
-**Platform:** Kotlin Multiplatform (commonMain)
-
----
+**Platform:** Kotlin Multiplatform common code
 
 ## Overview
 
-The retry orchestration layer evaluates a terminal
-[`SynchronizationResult`](synchronization-result.md) through
-[`RetryPolicy`](retry-policy.md) and schedules at most one future
-synchronization attempt through
-[`SchedulerProvider`](scheduler-provider.md).
-
-Retry orchestration is a deterministic, platform-independent operation. It
-does not execute synchronization, process queue entries, check connectivity,
-or initialize providers. When an optional runtime event emitter is configured,
-it emits `RetryScheduled` only after scheduler acceptance.
+`SynchronizationRetryOrchestrator` evaluates a terminal
+`SynchronizationResult` and submits at most one `ScheduleRequest` through a
+`SchedulerProvider`.
 
 ```mermaid
 flowchart LR
-    Result[SynchronizationResult] --> Eligible{Failure eligible}
-    Eligible -->|No| NotRequired[NOT_REQUIRED]
-    Eligible -->|Yes| Policy[Evaluate custom RetryPolicy per error]
-    Policy --> Decision{Any retry decision}
-    Decision -->|No| Stopped[STOPPED]
+    Result[SynchronizationResult] --> Errors[Extract canonical errors]
+    Errors --> Protected{Any protected error?}
+    Protected -->|Yes| Stopped[STOPPED]
+    Protected -->|No| Policy[Evaluate RetryPolicy per error]
+    Policy --> Decision{Any retry decision?}
+    Decision -->|No| Stopped
     Decision -->|Yes| Delay[Select maximum delay]
-    Delay --> Scheduler{Scheduler configured}
+    Delay --> Scheduler{Scheduler configured?}
     Scheduler -->|No| Missing[SCHEDULER_NOT_CONFIGURED]
     Scheduler -->|Yes| Schedule[Schedule once]
     Schedule -->|Failure| Failed[SCHEDULER_FAILED]
-    Schedule -->|Success| Event[Optional RetryScheduled event]
+    Schedule -->|Success| Event[Optional RetryScheduled]
     Event --> Scheduled[SCHEDULED]
 ```
 
-This is the current custom-policy scheduling path. The mandatory V1 target
-also requires built-in delay strategies, deterministic jitter, attempt and
-elapsed-time limits, bounded server hints, durable circuit-breaker state,
-half-open probes, restart recovery, manual retry, and central non-retryable
-protection. Those capabilities are not a complete production engine today.
+The orchestrator does not execute synchronization, process queue entries, check
+connectivity, initialize providers, own a coroutine scope, or select a
+dispatcher.
 
----
-
-## Contracts
-
-### `SynchronizationRetryRequest`
-
-**Package:** `io.dataloom.runtime.retry`
-
-Immutable request carrying all context needed by
-`SynchronizationRetryOrchestrator` to evaluate retry policy and schedule a
-future synchronization attempt.
+## `SynchronizationRetryRequest`
 
 ```kotlin
-val request = SynchronizationRetryRequest(
+val retryRequest = SynchronizationRetryRequest(
     synchronizationRequest = syncRequest,
     synchronizationResult = failedResult,
     retryOperation = RetryOperation("transport.push"),
@@ -69,383 +49,136 @@ val request = SynchronizationRetryRequest(
 )
 ```
 
-| Property                   | Type                     | Description                                                  |
-|----------------------------|--------------------------|--------------------------------------------------------------|
-| `synchronizationRequest`   | `SynchronizationRequest` | Original request that produced the terminal result.          |
-| `synchronizationResult`    | `SynchronizationResult`  | Terminal result that triggered retry evaluation.             |
-| `retryOperation`           | `RetryOperation`         | Logical operation passed to `RetryPolicy.evaluate`.          |
-| `retryAttempt`             | `RetryAttempt`           | Current attempt counter passed unchanged to policy.          |
-| `scheduleId`               | `ScheduleId`             | Stable identifier forwarded to `ScheduleRequest`.            |
+The request preserves all supplied values. Construction performs no evaluation,
+clock read, identifier generation, provider call, or scheduling.
 
-#### Construction restrictions
+The orchestrator passes `retryAttempt` unchanged. Attempt advancement belongs
+to the caller that creates the request.
 
-- Performs no retry evaluation.
-- Makes no provider call.
-- Performs no scheduling.
-- Reads no clock.
-- Generates no identifier.
-
-#### RetryAttempt semantics
-
-`retryAttempt` is passed to `RetryPolicy` **unchanged**. The orchestrator
-does not silently increment the attempt number. Attempt advancement is the
-responsibility of the runtime or queue integration that creates the next
-`SynchronizationRetryRequest`.
-
-#### Diagnostic safety
-
-`toString()` exposes only:
-
-- synchronization session ID
-- result variant name
-- retry operation
-- retry attempt number
-- schedule ID
-
-It never exposes payload bytes, checkpoint tokens, credentials, authorization
-headers, encryption keys, personal data, or stack traces.
-
----
-
-### `RetrySchedulingConfiguration`
-
-**Package:** `io.dataloom.runtime.retry`
-
-Immutable configuration governing how `SynchronizationRetryOrchestrator`
-builds a `ScheduleRequest`.
+## `RetrySchedulingConfiguration`
 
 ```kotlin
-val config = RetrySchedulingConfiguration(
+val configuration = RetrySchedulingConfiguration(
     constraints = ScheduleConstraints(),
     existingSchedulePolicy = ExistingSchedulePolicy.REPLACE,
 )
 ```
 
-| Property               | Type                    | Description                                                  |
-|------------------------|-------------------------|--------------------------------------------------------------|
-| `constraints`          | `ScheduleConstraints`   | Execution constraints forwarded to every `ScheduleRequest`.  |
-| `existingSchedulePolicy` | `ExistingSchedulePolicy` | Policy when a schedule with the same ID already exists.     |
+Both values are forwarded unchanged into the single `ScheduleRequest`.
 
-Value-based equality is provided. Construction does not schedule execution,
-read the clock, or generate an identifier.
+## Statuses
 
----
+| Status | Meaning |
+|---|---|
+| `NOT_REQUIRED` | Succeeded, skipped, or cancelled result |
+| `STOPPED` | Protected failure exists or no policy decision requests retry |
+| `SCHEDULED` | Scheduler accepted the request |
+| `SCHEDULER_NOT_CONFIGURED` | Retry requested but no scheduler was supplied |
+| `SCHEDULER_FAILED` | Scheduler returned a canonical provider failure |
 
-### `RetryOrchestrationStatus`
+`CancellationException` is never converted into a status.
 
-**Package:** `io.dataloom.runtime.retry`
+## Flow
 
-Canonical status values produced by `SynchronizationRetryOrchestrator`.
+1. Return `NOT_REQUIRED` for `Succeeded`, `Skipped`, or `Cancelled`.
+2. Extract the error from `Failed`, or the ordered error list from
+   `PartiallySucceeded`.
+3. Scan the complete error set for central protected failures.
+4. When protected, return `STOPPED` without invoking custom policy or scheduler.
+5. Otherwise evaluate the configured policy once per error in original order.
+6. Return `STOPPED` when no decision requests retry.
+7. Select the maximum `SchedulingDelay` across retry decisions.
+8. Return `SCHEDULER_NOT_CONFIGURED` when the scheduler is absent.
+9. Build one `ScheduleRequest` and call `schedule` exactly once.
+10. Return `SCHEDULED` with the exact receipt or `SCHEDULER_FAILED` with the
+    exact canonical error.
+11. Emit `RetryScheduled` only after scheduler acceptance when an event emitter
+    is configured.
 
-| Value                    | Description                                                                      |
-|--------------------------|----------------------------------------------------------------------------------|
-| `NOT_REQUIRED`           | Result contains no retry-evaluable failure.                                      |
-| `STOPPED`                | Evaluation completed but no decision requested another attempt.                  |
-| `SCHEDULED`              | Retry requested and `SchedulerProvider` accepted the schedule.                   |
-| `SCHEDULER_NOT_CONFIGURED` | Retry requested but no `SchedulerProvider` was supplied.                       |
-| `SCHEDULER_FAILED`       | Retry requested but `SchedulerProvider` returned a canonical failure.            |
+## Protected failure behavior
 
-Do not rely on enum ordinals for serialization or persistence.
+The batch stops before custom policy evaluation when any error is:
 
-`CancellationException` is never classified as a `RetryOrchestrationStatus`.
-Thrown cancellation propagates normally.
+- `NON_RECOVERABLE`;
+- `UNKNOWN`; or
+- in authentication, authorization, serialization, validation, configuration,
+  policy, conflict, or security categories.
 
----
-
-### `RetryOrchestrationResult`
+For a partially successful result, the first protected error in original order
+is the blocking error. Every returned decision is a stop decision. A transient
+sibling error cannot cause the protected batch to be scheduled.
 
-**Package:** `io.dataloom.runtime.retry`
-
-Immutable structured result produced by a single
-`SynchronizationRetryOrchestrator.evaluateAndSchedule` invocation.
+## Eligible policy evaluation
 
-```kotlin
-val result: RetryOrchestrationResult = orchestrator.evaluateAndSchedule(request)
-when (result.status) {
-    NOT_REQUIRED -> { /* no-op */ }
-    STOPPED -> { /* log decisions */ }
-    SCHEDULED -> { /* use result.scheduleReceipt */ }
-    SCHEDULER_NOT_CONFIGURED -> { /* handle absent scheduler */ }
-    SCHEDULER_FAILED -> { /* use result.schedulerError */ }
-}
-```
+When the complete error set is eligible, each `RetryEvaluationRequest` contains:
 
-| Property          | Type                       | Description                                                   |
-|-------------------|----------------------------|---------------------------------------------------------------|
-| `status`          | `RetryOrchestrationStatus` | Terminal status of this orchestration cycle.                  |
-| `decisions`       | `List<RetryDecision>`      | Ordered policy decisions. Empty for `NOT_REQUIRED`.           |
-| `selectedDelay`   | `SchedulingDelay?`         | Maximum delay from retry decisions. Non-null when scheduling was attempted. |
-| `scheduleReceipt` | `ScheduleReceipt?`         | Provider receipt. Non-null only for `SCHEDULED`.              |
-| `schedulerError`  | `DataLoomError?`           | Provider error. Non-null only for `SCHEDULER_FAILED`.         |
+- the exact synchronization request;
+- the exact retry operation;
+- the exact error;
+- the exact retry attempt;
+- `previousDelay = null`; and
+- `provider = null`.
 
-#### Invariants
+Unexpected policy exceptions propagate. The orchestrator does not silently
+change or suppress application programming errors.
 
-| Status                     | `decisions` | `selectedDelay` | `scheduleReceipt` | `schedulerError` |
-|----------------------------|-------------|-----------------|-------------------|-----------------|
-| `NOT_REQUIRED`             | empty       | null            | null              | null            |
-| `STOPPED`                  | non-empty, no Retry | null  | null              | null            |
-| `SCHEDULED`                | ≥1 Retry    | non-null        | non-null          | null            |
-| `SCHEDULER_NOT_CONFIGURED` | ≥1 Retry    | non-null        | null              | null            |
-| `SCHEDULER_FAILED`         | ≥1 Retry    | non-null        | null              | non-null        |
+## Maximum-delay selection
 
-Invalid combinations are rejected at construction with `IllegalArgumentException`.
+When one or more eligible decisions request retry, the maximum delay is used.
+Scheduling earlier would violate another decision's minimum wait.
 
-The `decisions` collection is defensively copied. Caller mutation of the
-original list does not affect the result. The exposed collection is read-only.
+Ordinary policy stop decisions alongside retry decisions do not block
+scheduling. Central protected stops are different: they are detected before
+policy evaluation and block the complete batch.
 
-No raw `Throwable` or stack trace is exposed. `schedulerError` is a canonical
-`DataLoomError` whose message must already be sanitized by the provider.
+## Schedule construction
 
----
+The submitted request uses:
 
-### `SynchronizationRetryOrchestrator`
+- `id = request.scheduleId`;
+- `synchronizationRequest = request.synchronizationRequest`;
+- `delay = selected maximum delay`;
+- `constraints = configuration.constraints`; and
+- `existingPolicy = configuration.existingSchedulePolicy`.
 
-**Package:** `io.dataloom.runtime.retry`
+No new identifier is generated and the synchronization request is not mutated.
 
-Platform-independent orchestrator that evaluates retry policy and schedules
-at most one future synchronization attempt.
+## Event boundary
 
-```kotlin
-val orchestrator = SynchronizationRetryOrchestrator(
-    retryPolicy = myRetryPolicy,
-    schedulerProvider = mySchedulerProvider, // may be null
-    configuration = RetrySchedulingConfiguration(
-        constraints = ScheduleConstraints(),
-        existingSchedulePolicy = ExistingSchedulePolicy.REPLACE,
-    ),
-    eventEmitter = runtimeEventEmitter, // optional
-)
+`RetryScheduled` is emitted only after scheduler acceptance. Ordinary observer
+failures do not change the `SCHEDULED` result. Cancellation during delivery
+propagates, but the already accepted schedule is not automatically cancelled.
 
-val result = orchestrator.evaluateAndSchedule(retryRequest)
-```
+No retry event is emitted for `NOT_REQUIRED`, `STOPPED`, missing scheduler, or
+scheduler failure.
 
-#### Constructor parameters
+## Queue and connectivity boundaries
 
-| Parameter | Type | Description |
-|---|---|---|
-| `retryPolicy` | `RetryPolicy` | Policy evaluated for each canonical error. |
-| `schedulerProvider` | `SchedulerProvider?` | Optional platform scheduler. |
-| `configuration` | `RetrySchedulingConfiguration` | Scheduling configuration. |
-| `eventEmitter` | `SynchronizationRuntimeEventEmitter?` | Optional post-acceptance retry-event emitter. |
+This direct orchestrator does not call `QueueProvider` and makes no durability
+claim beyond the supplied scheduler's guarantees.
 
-#### `evaluateAndSchedule`
+It does not call `ConnectivityProvider`. Connectivity requirements are carried
+through `ScheduleConstraints` and interpreted by the platform scheduler.
 
-```kotlin
-public suspend fun evaluateAndSchedule(
-    request: SynchronizationRetryRequest,
-): RetryOrchestrationResult
-```
-
-Evaluates `RetryPolicy` for the terminal result in `request` and schedules at
-most one future synchronization attempt.
-
-**Flow:**
-
-1. Inspect the `SynchronizationResult` variant.
-2. Return `NOT_REQUIRED` for `Succeeded`, `Skipped`, or `Cancelled`.
-3. Extract canonical errors from `Failed` or `PartiallySucceeded`.
-4. Evaluate `RetryPolicy` for each error in the original order.
-5. Preserve ordered decisions.
-6. If no decision requests retry, return `STOPPED`.
-7. Determine the maximum requested `SchedulingDelay` across retry decisions.
-8. If `schedulerProvider` is `null`, return `SCHEDULER_NOT_CONFIGURED`.
-9. Build one `ScheduleRequest` and call `SchedulerProvider.schedule` exactly once.
-10. On `Success`, return `SCHEDULED` with the exact receipt.
-11. On `Failure`, return `SCHEDULER_FAILED` with the exact error.
-
-**Cancellation:** `CancellationException` from `SchedulerProvider.schedule`
-propagates normally and is never converted into a `RetryOrchestrationResult`.
-
----
-
-## Eligible SynchronizationResult Variants
-
-| Variant               | Eligible? | Errors evaluated                    |
-|-----------------------|-----------|-------------------------------------|
-| `Succeeded`           | No        | Returns `NOT_REQUIRED`              |
-| `Skipped`             | No        | Returns `NOT_REQUIRED`              |
-| `Cancelled` (result)  | No        | Returns `NOT_REQUIRED`              |
-| `Failed`              | Yes       | Single `error` evaluated once       |
-| `PartiallySucceeded`  | Yes       | All `errors` in original order      |
-
-A `SynchronizationResult.Cancelled` is a terminal outcome and is not eligible
-for retry. A thrown `CancellationException` is different: it propagates
-normally.
-
----
-
-## Error Selection
-
-### `SynchronizationResult.Failed`
-
-The single `error` is evaluated exactly once through `RetryPolicy.evaluate`.
-
-### `SynchronizationResult.PartiallySucceeded`
-
-Every error in `errors` is evaluated in the original list order. Errors are
-not sorted, deduplicated, or filtered by the orchestrator. The policy itself
-decides whether to retry each error.
-
----
-
-## RetryPolicy Evaluation
-
-For each eligible canonical error, a `RetryEvaluationRequest` is constructed
-with:
-
-- the exact `SynchronizationRequest`
-- the exact `RetryOperation`
-- the exact `DataLoomError`
-- the exact `RetryAttempt`
-- `previousDelay = null`
-- `provider = null`
-
-`RetryPolicy.evaluate` is invoked synchronously once per error. Decision order
-matches evaluation order.
-
-`RetryAttempt` is **not incremented** by the orchestrator.
-
-Unexpected exceptions from `RetryPolicy` propagate normally.
-
----
-
-## Decision Aggregation and Maximum-Delay Selection
-
-When one or more decisions request retry, the **maximum** `SchedulingDelay`
-across all `RetryDecision.Retry` decisions is selected.
-
-Scheduling earlier than one of the policy decisions would violate that
-policy's minimum delay guarantee.
-
-Delay selection rules:
-
-- Retry decisions contribute their `delay` value.
-- Stop decisions do not contribute a delay value.
-- Decision order does not affect maximum selection.
-- No jitter, average, minimum, or random delay is introduced.
-- No system clock is accessed.
-
-When no decision requests retry, `STOPPED` is returned. Stop decisions
-alongside retry decisions do not prevent scheduling — stopped errors do not
-block retryable work.
-
----
-
-## Single Schedule Operation
-
-At most one `ScheduleRequest` is submitted per `evaluateAndSchedule`
-invocation. The orchestrator does not schedule once per error or once per
-retry decision.
-
----
-
-## ScheduleRequest Construction
-
-The `ScheduleRequest` is built with:
-
-- `id` = `request.scheduleId` (no new ID is generated)
-- `synchronizationRequest` = `request.synchronizationRequest` (unchanged)
-- `delay` = selected maximum `SchedulingDelay`
-- `constraints` = `configuration.constraints`
-- `existingPolicy` = `configuration.existingSchedulePolicy`
-
-The original `SynchronizationRequest` is not mutated.
-
----
-
-## Missing Scheduler Behavior
-
-When `schedulerProvider` is `null` and retry is requested:
-
-- `SchedulerProvider.schedule` is not called.
-- `SCHEDULER_NOT_CONFIGURED` is returned.
-- `selectedDelay` is preserved.
-- `decisions` are preserved.
-- `scheduleReceipt` is `null`.
-- `schedulerError` is `null`.
-
----
-
-## Scheduler Failure Behavior
-
-When `SchedulerProvider.schedule` returns `ProviderOperationResult.Failure`:
-
-- `SCHEDULER_FAILED` is returned.
-- The exact canonical `DataLoomError` from the provider is preserved in
-  `schedulerError`.
-- `RetryPolicy` is not re-evaluated.
-- `SchedulerProvider` is not called again.
-- No alternate scheduler is used.
-- No queue operation occurs.
-- The error is not converted into a `RetryStopReason`.
-
----
-
-## Boundaries
-
-### Durable Queue Boundary
-
-DL-024 schedules future synchronization only through `SchedulerProvider`.
-It does not call `QueueProvider`, enqueue records, acquire leases, or update
-queue state. Durability guarantees depend entirely on the supplied
-`SchedulerProvider` implementation.
-
-Do not claim that scheduled retries survive process death unless the supplied
-`SchedulerProvider` guarantees it.
-
-### Connectivity Boundary
-
-`SynchronizationRetryOrchestrator` does not call `ConnectivityProvider`. It
-does not query current connectivity, delay until online, observe network
-changes, or alter `ScheduleConstraints` based on runtime connectivity.
-
-### Event-Dispatch Boundary
-
-When `eventEmitter` is configured, `SynchronizationRetryOrchestrator` emits
-`RetryScheduled` after `SchedulerProvider.schedule()` succeeds. It does not
-emit for `NOT_REQUIRED`, `STOPPED`, an absent scheduler, or scheduler failure.
-It does not persist or replay the event, and observer-delivery failure does not
-undo an already accepted schedule.
-
----
-
-## Performance
-
-- Errors are evaluated sequentially.
-- At most one scheduling call is made per invocation.
-- No blocking operation is performed.
-- No dispatcher is selected.
-- No unbounded collection is allocated.
-- No payload data is copied.
-- No checkpoint token is read.
-
----
+The separate queue-backed evaluator uses the same central protection and delay
+aggregation semantics.
 
 ## Security
 
-`toString()` representations in this package expose only:
+Diagnostics must remain bounded and redaction-safe. They may identify schedule,
+operation, attempt, result variant, error code, and delay. They must not contain
+payloads, checkpoint values, credentials, authorization headers, encryption
+keys, personal data, stack traces, or provider internal state.
 
-- `ScheduleId`
-- `RetryOperation`
-- retry attempt number
-- result variant name
-- `ErrorCode` (from scheduler error, if applicable)
-- `SchedulingDelay`
+## KMP compatibility
 
-They never expose:
+The implementation uses Kotlin standard-library and DataLoom contracts only.
+No Android API, JVM-only API, reflection, service loading, global scope, or DI
+framework is used.
 
-- `DataLoomPayload` bytes
-- checkpoint token values
-- credentials or authorization headers
-- encryption keys
-- personal data
-- stack traces
-- provider internal state
+## Remaining V1 work
 
----
-
-## KMP Compatibility
-
-All types in `io.dataloom.runtime.retry` use only Kotlin standard-library and
-DataLoom API types. No Android API, JVM-only API, reflection, ServiceLoader,
-DI framework, `GlobalScope`, or `CoroutineScope` is used.
+Standard backoff policies, deterministic jitter, attempt and elapsed budgets,
+retry hints, timeout separation, durable circuit state, half-open probes,
+manual retry/reclassification, complete observability, restart/concurrency
+qualification, and Android/KMP iOS parity remain release blockers.
