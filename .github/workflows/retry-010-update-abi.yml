@@ -1,0 +1,58 @@
+name: Retry 010 ABI Snapshot
+
+on:
+  push:
+    branches:
+      - codex/dl-retry-010-standard-backoff
+
+permissions:
+  contents: write
+
+concurrency:
+  group: retry-010-update-abi-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  update-abi:
+    if: ${{ !contains(github.event.head_commit.message, '[skip abi update]') }}
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Generate exact JVM and Kotlin Native ABI snapshots
+        run: >-
+          ./gradlew
+          :dataloom-runtime:updateKotlinAbi
+          :dataloom-apple:updateKotlinAbi
+          --stacktrace
+          --console=plain
+
+      - name: Commit generated ABI snapshots
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add dataloom-runtime/api dataloom-apple/api
+          if git diff --cached --quiet; then
+            echo "No ABI snapshot changes were generated."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(abi): update standard retry policy baselines [skip abi update]"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
