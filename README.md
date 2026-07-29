@@ -57,10 +57,11 @@ flowchart LR
 
 The diagram is the approved V1 product model. The current repository implements
 the shared runtime foundation, provider contracts, push/pull/bidirectional
-pipelines, durable queue processing, Android adapters, Apple compilation
-paths, and the versioned six-strategy contract plus deterministic built-in
-planner. Plan-aware provider resolution, strategy operation execution, durable
-decision persistence, and platform qualification remain required before the
+pipelines, durable queue processing, Android adapters, Apple compilation paths,
+and the versioned six-strategy contract plus deterministic built-in planner.
+Plan-aware provider resolution and direct network-only/remote-first operation
+execution are implemented. Durable decision persistence, the remaining strategy
+runtimes, and complete platform qualification remain required before the
 strategy engine is complete.
 
 ## Current capability
@@ -69,9 +70,9 @@ strategy engine is complete.
 |---|---|---|
 | Shared contracts and runtime | Implemented foundation | Stable, published, qualified API |
 | Push, pull, bidirectional flows | Implemented foundation | Strategy-aware deterministic plans |
-| Six synchronization strategies | Versioned contracts and deterministic planner implemented; execution integration pending | All six built in and fully qualified |
+| Six synchronization strategies | Versioned planner plus direct network-only and remote-first slices implemented | All six built in and fully qualified |
 | Durable queue | Implemented foundation | Correct deferral, recovery, migration, and restart semantics |
-| Retry and circuit breaking | Custom contracts/orchestration are partial | Standard backoff, jitter, budgets, hints, and durable circuit state |
+| Retry and circuit breaking | Fail-closed classification, deterministic standard backoff, attempt budget, queue/scheduler orchestration, and restart-safe attempt history implemented; broader engine partial | Jitter, elapsed/delay budgets, hints, timeout separation, durable circuit state, operations, and full qualification |
 | Conflict handling | Custom contracts/orchestration are partial | Built-in generic policies, persistence, recovery, and audit |
 | Events and observability | In-process dispatch is partial | Durable events, metrics, traces, health, and operational views |
 | Asset transfer | Missing | Upload/download, chunking, streaming, integrity, and resume |
