@@ -712,6 +712,57 @@ public abstract interface class io/dataloom/runtime/queue/QueuedSynchronizationW
 	public abstract fun resolve (Lio/dataloom/api/queue/QueueEntry;)Lio/dataloom/runtime/queue/QueuedSynchronizationWorkResolution;
 }
 
+public abstract interface class io/dataloom/runtime/retry/RetryBackoffStrategy {
+}
+
+public final class io/dataloom/runtime/retry/RetryBackoffStrategy$Exponential : io/dataloom/runtime/retry/RetryBackoffStrategy {
+	public fun <init> (Lio/dataloom/api/scheduling/SchedulingDelay;ILio/dataloom/api/scheduling/SchedulingDelay;)V
+	public final fun component1 ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun component2 ()I
+	public final fun component3 ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun copy (Lio/dataloom/api/scheduling/SchedulingDelay;ILio/dataloom/api/scheduling/SchedulingDelay;)Lio/dataloom/runtime/retry/RetryBackoffStrategy$Exponential;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/RetryBackoffStrategy$Exponential;Lio/dataloom/api/scheduling/SchedulingDelay;ILio/dataloom/api/scheduling/SchedulingDelay;ILjava/lang/Object;)Lio/dataloom/runtime/retry/RetryBackoffStrategy$Exponential;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getInitialDelay ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun getMaximumDelay ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun getMultiplier ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/RetryBackoffStrategy$Fixed : io/dataloom/runtime/retry/RetryBackoffStrategy {
+	public fun <init> (Lio/dataloom/api/scheduling/SchedulingDelay;)V
+	public final fun component1 ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun copy (Lio/dataloom/api/scheduling/SchedulingDelay;)Lio/dataloom/runtime/retry/RetryBackoffStrategy$Fixed;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/RetryBackoffStrategy$Fixed;Lio/dataloom/api/scheduling/SchedulingDelay;ILjava/lang/Object;)Lio/dataloom/runtime/retry/RetryBackoffStrategy$Fixed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDelay ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/RetryBackoffStrategy$Immediate : io/dataloom/runtime/retry/RetryBackoffStrategy {
+	public static final field INSTANCE Lio/dataloom/runtime/retry/RetryBackoffStrategy$Immediate;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/RetryBackoffStrategy$Linear : io/dataloom/runtime/retry/RetryBackoffStrategy {
+	public fun <init> (Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;)V
+	public final fun component1 ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun component2 ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun component3 ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun copy (Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;)Lio/dataloom/runtime/retry/RetryBackoffStrategy$Linear;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/RetryBackoffStrategy$Linear;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;ILjava/lang/Object;)Lio/dataloom/runtime/retry/RetryBackoffStrategy$Linear;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getIncrement ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun getInitialDelay ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun getMaximumDelay ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/runtime/retry/RetryOrchestrationResult {
 	public fun <init> (Lio/dataloom/runtime/retry/RetryOrchestrationStatus;Ljava/util/List;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/ScheduleReceipt;Lio/dataloom/api/error/DataLoomError;)V
 	public final fun getDecisions ()Ljava/util/List;
@@ -744,6 +795,14 @@ public final class io/dataloom/runtime/retry/RetrySchedulingConfiguration {
 	public final fun getExistingSchedulePolicy ()Lio/dataloom/api/scheduling/ExistingSchedulePolicy;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/StandardRetryPolicy : io/dataloom/api/retry/RetryPolicy {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/runtime/retry/RetryBackoffStrategy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun evaluate (Lio/dataloom/api/retry/RetryEvaluationRequest;)Lio/dataloom/api/retry/RetryDecision;
+	public fun getId-Bqc1ZN8 ()Ljava/lang/String;
+	public final fun getMaximumAttempts ()I
+	public final fun getStrategy ()Lio/dataloom/runtime/retry/RetryBackoffStrategy;
 }
 
 public abstract interface class io/dataloom/runtime/retry/SynchronizationRetryEvaluation {
