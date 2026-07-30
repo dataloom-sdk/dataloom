@@ -56,13 +56,15 @@ jobs:
           docs_path = Path('.github/scripts/apply_retry_budget_docs.py')
           docs_source = docs_path.read_text(encoding='utf-8')
           docs_source = docs_source.replace(
-              '    "Standard backoff policies, deterministic jitter, attempt and elapsed budgets,\\n'
-              'retry hints, timeout separation, durable circuit state, half-open probes,",\\n'
-              '    "Retry hints, timeout separation, durable circuit state, half-open probes,",',
-              '    "Elapsed-time and aggregate-delay budgets, bounded retry hints, timeout\\n'
-              'separation, durable circuit state, half-open probes, manual",\\n'
-              '    "Bounded retry hints, timeout separation, durable circuit state, half-open\\n'
-              'probes, manual",',
+              '"Standard backoff policies, deterministic jitter, attempt and elapsed budgets,\\n'
+              'retry hints, timeout separation, durable circuit state, half-open probes,"',
+              '"Elapsed-time and aggregate-delay budgets, bounded retry hints, timeout\\n'
+              'separation, durable circuit state, half-open probes, manual"',
+          )
+          docs_source = docs_source.replace(
+              '"Retry hints, timeout separation, durable circuit state, half-open probes,"',
+              '"Bounded retry hints, timeout separation, durable circuit state, half-open\\n'
+              'probes, manual"',
           )
           exec(compile(docs_source, str(docs_path), 'exec'))
 
