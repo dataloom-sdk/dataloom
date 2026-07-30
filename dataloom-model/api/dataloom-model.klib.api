@@ -55,6 +55,17 @@ final enum class io.dataloom.api.error/Recoverability : kotlin/Enum<io.dataloom.
     final fun values(): kotlin/Array<io.dataloom.api.error/Recoverability> // io.dataloom.api.error/Recoverability.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.api.error/RetryDelayHintSource : kotlin/Enum<io.dataloom.api.error/RetryDelayHintSource> { // io.dataloom.api.error/RetryDelayHintSource|null[0]
+    enum entry PROVIDER // io.dataloom.api.error/RetryDelayHintSource.PROVIDER|null[0]
+    enum entry SERVER // io.dataloom.api.error/RetryDelayHintSource.SERVER|null[0]
+
+    final val entries // io.dataloom.api.error/RetryDelayHintSource.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.error/RetryDelayHintSource> // io.dataloom.api.error/RetryDelayHintSource.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.error/RetryDelayHintSource // io.dataloom.api.error/RetryDelayHintSource.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.error/RetryDelayHintSource> // io.dataloom.api.error/RetryDelayHintSource.values|values#static(){}[0]
+}
+
 abstract interface <#A: kotlin/Any?> io.dataloom.api.identifier/IdentifierGenerator { // io.dataloom.api.identifier/IdentifierGenerator|null[0]
     abstract fun generate(): #A // io.dataloom.api.identifier/IdentifierGenerator.generate|generate(){}[0]
 }
@@ -72,6 +83,11 @@ abstract interface io.dataloom.api.error/DataLoomError { // io.dataloom.api.erro
         abstract fun <get-recoverability>(): io.dataloom.api.error/Recoverability // io.dataloom.api.error/DataLoomError.recoverability.<get-recoverability>|<get-recoverability>(){}[0]
     abstract val severity // io.dataloom.api.error/DataLoomError.severity|{}severity[0]
         abstract fun <get-severity>(): io.dataloom.api.error/ErrorSeverity // io.dataloom.api.error/DataLoomError.severity.<get-severity>|<get-severity>(){}[0]
+}
+
+abstract interface io.dataloom.api.error/RetryDelayHintCarrier { // io.dataloom.api.error/RetryDelayHintCarrier|null[0]
+    abstract val retryDelayHint // io.dataloom.api.error/RetryDelayHintCarrier.retryDelayHint|{}retryDelayHint[0]
+        abstract fun <get-retryDelayHint>(): io.dataloom.api.error/RetryDelayHint // io.dataloom.api.error/RetryDelayHintCarrier.retryDelayHint.<get-retryDelayHint>|<get-retryDelayHint>(){}[0]
 }
 
 abstract interface io.dataloom.api.time/DataLoomClock { // io.dataloom.api.time/DataLoomClock|null[0]
@@ -94,6 +110,22 @@ final class io.dataloom.api.context/DataLoomMetadata { // io.dataloom.api.contex
 
         final fun of(kotlin.collections/Map<kotlin/String, kotlin/String>): io.dataloom.api.context/DataLoomMetadata // io.dataloom.api.context/DataLoomMetadata.Companion.of|of(kotlin.collections.Map<kotlin.String,kotlin.String>){}[0]
     }
+}
+
+final class io.dataloom.api.error/RetryDelayHint { // io.dataloom.api.error/RetryDelayHint|null[0]
+    constructor <init>(kotlin/Long, io.dataloom.api.error/RetryDelayHintSource) // io.dataloom.api.error/RetryDelayHint.<init>|<init>(kotlin.Long;io.dataloom.api.error.RetryDelayHintSource){}[0]
+
+    final val delayMilliseconds // io.dataloom.api.error/RetryDelayHint.delayMilliseconds|{}delayMilliseconds[0]
+        final fun <get-delayMilliseconds>(): kotlin/Long // io.dataloom.api.error/RetryDelayHint.delayMilliseconds.<get-delayMilliseconds>|<get-delayMilliseconds>(){}[0]
+    final val source // io.dataloom.api.error/RetryDelayHint.source|{}source[0]
+        final fun <get-source>(): io.dataloom.api.error/RetryDelayHintSource // io.dataloom.api.error/RetryDelayHint.source.<get-source>|<get-source>(){}[0]
+
+    final fun component1(): kotlin/Long // io.dataloom.api.error/RetryDelayHint.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.error/RetryDelayHintSource // io.dataloom.api.error/RetryDelayHint.component2|component2(){}[0]
+    final fun copy(kotlin/Long = ..., io.dataloom.api.error/RetryDelayHintSource = ...): io.dataloom.api.error/RetryDelayHint // io.dataloom.api.error/RetryDelayHint.copy|copy(kotlin.Long;io.dataloom.api.error.RetryDelayHintSource){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.error/RetryDelayHint.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.error/RetryDelayHint.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.error/RetryDelayHint.toString|toString(){}[0]
 }
 
 final class io.dataloom.api.time/DataLoomInstant { // io.dataloom.api.time/DataLoomInstant|null[0]

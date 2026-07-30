@@ -91,6 +91,17 @@ Severity and recoverability are independent signals:
 
 Neither field alone defines retry policy in this issue.
 
+## Optional retry timing guidance
+
+A recoverable error may additionally implement `RetryDelayHintCarrier`. The
+carrier exposes a typed `RetryDelayHint` containing only a non-negative delay in
+milliseconds and a stable `SERVER` or `PROVIDER` source.
+
+Protocol adapters own parsing raw values such as HTTP `Retry-After`. They must
+normalize absolute dates or protocol units before creating the hint. The shared
+runtime never parses raw headers, exception messages, or provider-specific text.
+A hint remains untrusted until bounded by `RetryHintConfiguration`.
+
 ## Sensitive-data restrictions
 
 - Error messages must not include credentials, tokens, keys, or personal data.
