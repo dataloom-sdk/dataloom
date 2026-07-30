@@ -1,6 +1,8 @@
 package io.dataloom.runtime.retry
 
 import io.dataloom.api.retry.RetryAttempt
+import io.dataloom.api.retry.RetryBudgetState
+import io.dataloom.api.retry.RetryDecision
 import io.dataloom.api.retry.RetryOperation
 import io.dataloom.api.retry.RetryPolicy
 import io.dataloom.api.synchronization.SynchronizationResult
@@ -8,33 +10,52 @@ import io.dataloom.api.time.DataLoomClock
 import io.dataloom.api.time.DataLoomInstant
 
 /**
- * Platform-independent evaluator that inspects a terminal
- * [SynchronizationResult], applies central retry protection, evaluates
- * [RetryPolicy] only for a fully retry-eligible error set, selects the maximum
- * delay, and computes an overflow-safe availability instant using [clock].
+ * Platform-independent retry evaluator with optional central durable budgets.
  *
- * A succeeded, skipped, or cancelled result returns
- * [SynchronizationRetryEvaluation.NotRequired]. A failed or partially
- * succeeded result containing any protected error returns
- * [SynchronizationRetryEvaluation.StopRetry] without invoking the configured
- * policy. Otherwise the policy is evaluated once per error in original order.
- *
- * This evaluator does not invoke a scheduler or durable queue and does not
- * increment [RetryAttempt]. Unexpected policy exceptions propagate.
+ * Central protected-failure handling and policy evaluation occur before budget
+ * enforcement. When budgets are enabled, [clock] is read once, the maximum
+ * selected delay is checked against the current [RetryBudgetState], and the
+ * accepted next state is returned for atomic persistence with rescheduling.
  */
-public class SynchronizationRetryEvaluator(
+public class SynchronizationRetryEvaluator private constructor(
     private val retryPolicy: RetryPolicy,
     private val clock: DataLoomClock,
+    private val budgetEvaluator: RetryBudgetEvaluator?,
 ) {
+    /** Creates an evaluator without elapsed or cumulative-delay budgets. */
+    public constructor(
+        retryPolicy: RetryPolicy,
+        clock: DataLoomClock,
+    ) : this(retryPolicy, clock, null)
+
+    /** Creates an evaluator with central [budgetConfiguration]. */
+    public constructor(
+        retryPolicy: RetryPolicy,
+        clock: DataLoomClock,
+        budgetConfiguration: RetryBudgetConfiguration,
+    ) : this(retryPolicy, clock, RetryBudgetEvaluator(budgetConfiguration))
+
+    /** Evaluates retry without previously persisted budget state. */
+    public fun evaluate(
+        result: SynchronizationResult,
+        retryAttempt: RetryAttempt,
+        retryOperation: RetryOperation,
+    ): SynchronizationRetryEvaluation = evaluate(
+        result = result,
+        retryAttempt = retryAttempt,
+        retryOperation = retryOperation,
+        retryBudgetState = null,
+    )
 
     /**
-     * Evaluates retry policy for [result] using the exact [retryAttempt] and
-     * [retryOperation] supplied by the caller.
+     * Evaluates retry using the exact durable [retryBudgetState] acquired with
+     * the work item. Rejected budget evaluations do not mutate that state.
      */
     public fun evaluate(
         result: SynchronizationResult,
         retryAttempt: RetryAttempt,
         retryOperation: RetryOperation,
+        retryBudgetState: RetryBudgetState?,
     ): SynchronizationRetryEvaluation {
         val errors = extractRetryErrors(result)
             ?: return SynchronizationRetryEvaluation.NotRequired
@@ -60,8 +81,28 @@ public class SynchronizationRetryEvaluator(
                 decisions = evaluated.decisions,
             )
 
-        val nowMillis = clock.now().epochMilliseconds
-        val availableAtMillis = addMillisOverflowSafe(nowMillis, maxDelay.milliseconds)
+        val evaluatedAt = clock.now()
+        val nextBudgetState = when (val budgets = budgetEvaluator?.evaluate(
+            state = retryBudgetState,
+            evaluatedAt = evaluatedAt,
+            proposedDelay = maxDelay,
+        )) {
+            null -> null
+            is RetryBudgetEvaluation.Accepted -> budgets.nextState
+            is RetryBudgetEvaluation.Stopped -> {
+                return SynchronizationRetryEvaluation.StopRetry(
+                    error = errors.first(),
+                    decisions = List(evaluated.decisions.size) {
+                        RetryDecision.Stop(reason = budgets.reason)
+                    },
+                )
+            }
+        }
+
+        val availableAtMillis = addMillisOverflowSafe(
+            evaluatedAt.epochMilliseconds,
+            maxDelay.milliseconds,
+        )
 
         return SynchronizationRetryEvaluation.ShouldRetry(
             retryAttempt = retryAttempt,
@@ -69,11 +110,12 @@ public class SynchronizationRetryEvaluator(
             error = errors.first(),
             decisions = evaluated.decisions,
             selectedDelay = maxDelay,
+            retryBudgetState = nextBudgetState,
         )
     }
 
     private fun addMillisOverflowSafe(epochMillis: Long, delayMillis: Long): Long {
-        val sum = epochMillis + delayMillis
-        return if (sum < 0L) Long.MAX_VALUE else sum
+        if (epochMillis > Long.MAX_VALUE - delayMillis) return Long.MAX_VALUE
+        return epochMillis + delayMillis
     }
 }
