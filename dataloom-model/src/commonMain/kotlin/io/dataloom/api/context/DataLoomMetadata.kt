@@ -9,7 +9,7 @@ package io.dataloom.api.context
  * Do not store credentials, tokens, encryption keys, personal data, or full
  * payloads in metadata.
  *
- * `toString()` is for diagnostics only and is not a serialization format.
+ * `toString()` is deliberately redacted and is not a serialization format.
  */
 public class DataLoomMetadata private constructor(
     private val values: Map<String, String>,
@@ -45,7 +45,8 @@ public class DataLoomMetadata private constructor(
 
     override fun hashCode(): Int = values.hashCode()
 
-    override fun toString(): String = "DataLoomMetadata(entries=$values)"
+    /** Returns only bounded cardinality and never renders metadata keys or values. */
+    override fun toString(): String = "DataLoomMetadata(entryCount=${values.size})"
 
     public companion object {
         /** Empty immutable metadata value. */
