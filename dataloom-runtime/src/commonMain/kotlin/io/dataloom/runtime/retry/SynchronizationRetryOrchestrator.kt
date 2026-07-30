@@ -36,7 +36,6 @@ public class SynchronizationRetryOrchestrator(
     private var budgetClock: DataLoomClock? = null
     private var budgetEvaluator: RetryBudgetEvaluator? = null
     private var hintEvaluator: RetryHintEvaluator? = null
-    private var effectiveSchedulerProvider: SchedulerProvider? = schedulerProvider
 
     /** Creates an orchestrator with bounded provider/server hints. */
     public constructor(
@@ -135,7 +134,7 @@ public class SynchronizationRetryOrchestrator(
         }
         val nextBudgetState = (acceptedBudgetState as BudgetResult.Accepted).nextState
 
-        val scheduler = effectiveSchedulerProvider
+        val scheduler = schedulerProvider
         if (scheduler == null) {
             return RetryOrchestrationResult(
                 status = RetryOrchestrationStatus.SCHEDULER_NOT_CONFIGURED,
@@ -258,44 +257,7 @@ public class SynchronizationRetryOrchestrator(
             hintConfiguration: RetryHintConfiguration? = null,
             eventEmitter: SynchronizationRuntimeEventEmitter? = null,
         ): SynchronizationRetryOrchestrator {
-            val orchestrator = when {
-                budgetConfiguration != null && hintConfiguration != null ->
-                    SynchronizationRetryOrchestrator(
-                        retryPolicy = retryPolicy,
-                        schedulerProvider = schedulerProvider,
-                        configuration = configuration,
-                        clock = clock,
-                        budgetConfiguration = budgetConfiguration,
-                        hintConfiguration = hintConfiguration,
-                        eventEmitter = eventEmitter,
-                    )
-
-                budgetConfiguration != null -> SynchronizationRetryOrchestrator(
-                    retryPolicy = retryPolicy,
-                    schedulerProvider = schedulerProvider,
-                    configuration = configuration,
-                    clock = clock,
-                    budgetConfiguration = budgetConfiguration,
-                    eventEmitter = eventEmitter,
-                )
-
-                hintConfiguration != null -> SynchronizationRetryOrchestrator(
-                    retryPolicy = retryPolicy,
-                    schedulerProvider = schedulerProvider,
-                    configuration = configuration,
-                    hintConfiguration = hintConfiguration,
-                    eventEmitter = eventEmitter,
-                )
-
-                else -> SynchronizationRetryOrchestrator(
-                    retryPolicy = retryPolicy,
-                    schedulerProvider = schedulerProvider,
-                    configuration = configuration,
-                    eventEmitter = eventEmitter,
-                )
-            }
-
-            orchestrator.effectiveSchedulerProvider = schedulerProvider?.let { provider ->
+            val timeoutScheduler = schedulerProvider?.let { provider ->
                 TimeoutEnforcingSchedulerProvider(
                     delegate = provider,
                     timeoutCoordinator = RetryTimeoutCoordinator(
@@ -307,7 +269,43 @@ public class SynchronizationRetryOrchestrator(
                     ),
                 )
             }
-            return orchestrator
+
+            return when {
+                budgetConfiguration != null && hintConfiguration != null ->
+                    SynchronizationRetryOrchestrator(
+                        retryPolicy = retryPolicy,
+                        schedulerProvider = timeoutScheduler,
+                        configuration = configuration,
+                        clock = clock,
+                        budgetConfiguration = budgetConfiguration,
+                        hintConfiguration = hintConfiguration,
+                        eventEmitter = eventEmitter,
+                    )
+
+                budgetConfiguration != null -> SynchronizationRetryOrchestrator(
+                    retryPolicy = retryPolicy,
+                    schedulerProvider = timeoutScheduler,
+                    configuration = configuration,
+                    clock = clock,
+                    budgetConfiguration = budgetConfiguration,
+                    eventEmitter = eventEmitter,
+                )
+
+                hintConfiguration != null -> SynchronizationRetryOrchestrator(
+                    retryPolicy = retryPolicy,
+                    schedulerProvider = timeoutScheduler,
+                    configuration = configuration,
+                    hintConfiguration = hintConfiguration,
+                    eventEmitter = eventEmitter,
+                )
+
+                else -> SynchronizationRetryOrchestrator(
+                    retryPolicy = retryPolicy,
+                    schedulerProvider = timeoutScheduler,
+                    configuration = configuration,
+                    eventEmitter = eventEmitter,
+                )
+            }
         }
     }
 }
