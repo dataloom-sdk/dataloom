@@ -1,0 +1,247 @@
+name: Temporary Circuit Execution Gate Evidence
+
+on:
+  push:
+    branches:
+      - codex/dl-retry-016-circuit-execution-gate
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-circuit-execution-gate-evidence-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-and-commit:
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      DATALOOM_ANDROID_BUILD: "true"
+
+    steps:
+      - name: Checkout review branch
+        uses: actions/checkout@v6
+        with:
+          ref: codex/dl-retry-016-circuit-execution-gate
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Apply final integration and documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              target = Path(path)
+              text = target.read_text(encoding="utf-8")
+              if text.count(old) != 1:
+                  raise RuntimeError(f"Expected one match in {path}: {old[:100]!r}")
+              target.write_text(text.replace(old, new, 1), encoding="utf-8")
+
+          scheduling_test = (
+              "dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/retry/"
+              "CircuitBreakerRetrySchedulingAdapterTest.kt"
+          )
+          replace_once(
+              scheduling_test,
+              '''            return failure?.let(ProviderOperationResult::Failure)
+                ?: ProviderOperationResult.Success(ScheduleReceipt(request.id))''',
+              '''            return if (failure != null) {
+                ProviderOperationResult.Failure(failure)
+            } else {
+                ProviderOperationResult.Success(ScheduleReceipt(request.id))
+            }''',
+          )
+
+          consumer = Path(
+              "runtime-external-consumer/src/commonMain/kotlin/io/dataloom/consumer/"
+              "RuntimeExternalConsumerProbe.kt"
+          )
+          text = consumer.read_text(encoding="utf-8")
+          if "import io.dataloom.api.error.DataLoomError\n" not in text:
+              text = text.replace(
+                  "import io.dataloom.api.error.RetryDelayHint\n",
+                  "import io.dataloom.api.error.DataLoomError\n"
+                  "import io.dataloom.api.error.RetryDelayHint\n",
+                  1,
+              )
+          if "import io.dataloom.api.scheduling.ScheduleReceipt\n" not in text:
+              text = text.replace(
+                  "import io.dataloom.api.scheduling.ScheduleConstraints\n",
+                  "import io.dataloom.api.scheduling.ScheduleConstraints\n"
+                  "import io.dataloom.api.scheduling.ScheduleReceipt\n"
+                  "import io.dataloom.api.scheduling.ScheduleRequest\n",
+                  1,
+              )
+          circuit_import_anchor = "import io.dataloom.runtime.retry.CircuitBreakerConfiguration\n"
+          circuit_imports = '''import io.dataloom.runtime.retry.CircuitBreakerExecutionGate
+          import io.dataloom.runtime.retry.CircuitBreakerExecutionResult
+          import io.dataloom.runtime.retry.CircuitBreakerFailureClassifier
+          import io.dataloom.runtime.retry.CircuitBreakerFailureDisposition
+          import io.dataloom.runtime.retry.CircuitBreakerProviderOperationAdapter
+          import io.dataloom.runtime.retry.CircuitBreakerRetrySchedulingAdapter
+          import io.dataloom.runtime.retry.CircuitProtectedOperationResult
+          import io.dataloom.runtime.retry.DefaultCircuitBreakerFailureClassifier
+          '''
+          if "import io.dataloom.runtime.retry.CircuitBreakerExecutionGate\n" not in text:
+              text = text.replace(
+                  circuit_import_anchor,
+                  circuit_import_anchor + circuit_imports,
+                  1,
+              )
+          if "internal suspend fun compileCircuitExecutionGateConsumer(" not in text:
+              text += '''
+
+          /** Compile-only use of circuit permission, provider, and retry scheduling adapters. */
+          internal suspend fun compileCircuitExecutionGateConsumer(
+              coordinator: CircuitBreakerCoordinator,
+              schedulerProvider: SchedulerProvider,
+              scope: CircuitBreakerScope,
+              scheduleRequest: ScheduleRequest,
+              error: DataLoomError,
+          ): CircuitBreakerExecutionResult<ScheduleReceipt> {
+              val gate = CircuitBreakerExecutionGate(coordinator)
+              val directSuccess: CircuitProtectedOperationResult<String> =
+                  CircuitProtectedOperationResult.Success("ok")
+              val directFailure: CircuitProtectedOperationResult<Nothing> =
+                  CircuitProtectedOperationResult.Failure(error)
+              val nonCircuitFailure: CircuitProtectedOperationResult<Nothing> =
+                  CircuitProtectedOperationResult.NonCircuitFailure(error)
+              val directResult: CircuitBreakerExecutionResult<String> =
+                  gate.execute(scope) { directSuccess }
+              val classifier = CircuitBreakerFailureClassifier {
+                  CircuitBreakerFailureDisposition.RECORD_FAILURE
+              }
+              val providerAdapter = CircuitBreakerProviderOperationAdapter(
+                  executionGate = gate,
+                  failureClassifier = classifier,
+              )
+              val schedulingAdapter = CircuitBreakerRetrySchedulingAdapter(
+                  schedulerProvider = schedulerProvider,
+                  providerOperationAdapter = providerAdapter,
+                  scope = scope,
+              )
+              directResult.toString()
+              directFailure.toString()
+              nonCircuitFailure.toString()
+              DefaultCircuitBreakerFailureClassifier.classify(error).toString()
+              return schedulingAdapter.schedule(scheduleRequest)
+          }
+          '''
+          consumer.write_text(text, encoding="utf-8")
+
+          replace_once(
+              "README.md",
+              "| Retry and circuit breaking | Fail-closed classification, deterministic backoff/jitter, durable budgets, bounded hints, independent timeout contracts, and a deterministic circuit state machine with atomic persistence SPI; broader engine partial | Production durable circuit stores, retry-path integration, operations, observability, and full qualification |",
+              "| Retry and circuit breaking | Fail-closed classification, deterministic backoff/jitter, durable budgets, bounded hints, independent timeout contracts, durable circuit state, and common provider/retry execution gates; broader engine partial | Production durable circuit stores, direct pipeline assembly, operations, observability, and full qualification |",
+          )
+
+          replace_once(
+              "docs/api/README.md",
+              "| Evaluate retries | [Retry policy](./retry-policy.md) and [retry orchestration](./retry-orchestration.md) |",
+              "| Evaluate retries | [Retry policy](./retry-policy.md), [retry orchestration](./retry-orchestration.md), [circuit breaker](./circuit-breaker.md), and [circuit execution gate](./circuit-execution-gate.md) |",
+          )
+          replace_once(
+              "docs/api/README.md",
+              "| [Circuit breaker](./circuit-breaker.md) | Partial V1 subsystem | Explicit scopes, durable state contracts, atomic compare-and-set persistence, deterministic transitions, and one controlled half-open probe. |",
+              "| [Circuit breaker](./circuit-breaker.md) | Partial V1 subsystem | Explicit scopes, durable state contracts, atomic compare-and-set persistence, deterministic transitions, and one controlled half-open probe. |\n| [Circuit execution gate](./circuit-execution-gate.md) | Partial V1 subsystem | Pre-execution permission, once-only invocation, classified provider failures, post-execution evidence, and retry scheduling adaptation. |",
+          )
+          replace_once(
+              "docs/api/README.md",
+              '''V1 retry work still requires production Android/iOS circuit stores,
+          retry-path circuit integration, manual retry/reclassification, complete
+          observability, and platform qualification.''',
+              '''V1 retry work still requires production Android/iOS circuit stores,
+          direct transport/storage/queue runtime assembly, manual retry/reclassification,
+          complete observability, and platform qualification.''',
+          )
+          replace_once(
+              "docs/api/README.md",
+              "| Standard retry and durable circuit breaker | Fail-closed protection, standard backoff, full/equal jitter, seeded randomness, attempt budget, orchestration, and restart-safe attempt history implemented; time/hint/circuit/manual/qualification work remains |",
+              "| Standard retry and durable circuit breaker | Fail-closed protection, standard backoff/jitter, durable time and delay budgets, bounded hints, timeout contracts, durable circuit state, and common provider/retry gates implemented; production stores, administration, observability, and qualification remain |",
+          )
+
+          replace_once(
+              "docs/architecture/retry-boundaries.md",
+              '''> limits, central durable elapsed/cumulative budgets, bounded typed hints,
+          > independent timeout contracts, and a deterministic circuit state machine.
+          > Production circuit stores, retry-path integration, observability, and administration
+          > remain incomplete, so this is not yet the''',
+              '''> limits, central durable elapsed/cumulative budgets, bounded typed hints,
+          > independent timeout contracts, a deterministic circuit state machine, and common
+          > provider/retry execution gates. Production circuit stores, direct pipeline assembly,
+          > observability, and administration remain incomplete, so this is not yet the''',
+          )
+          PY
+          git diff --check
+
+      - name: Generate exact ABI baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            :dataloom-runtime:updateKotlinAbi \
+            :dataloom-apple:updateKotlinAbi \
+            --configuration-cache \
+            --stacktrace \
+            --console=plain
+
+      - name: Validate execution gate across supported consumers
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            :build-logic:test \
+            :dataloom-runtime:jvmTest \
+            :runtime-external-consumer:compileKotlinJvm \
+            :runtime-external-consumer:compileKotlinIosArm64 \
+            :runtime-external-consumer:compileKotlinIosSimulatorArm64 \
+            :runtime-external-consumer:compileKotlinIosX64 \
+            :dataloom-apple:assembleDataLoomReleaseXCFramework \
+            --configuration-cache \
+            --stacktrace \
+            --warning-mode all \
+            --console=plain
+
+      - name: Verify generated public evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'CircuitBreakerExecutionGate' dataloom-runtime/api/dataloom-runtime.api
+          grep -q 'CircuitBreakerProviderOperationAdapter' dataloom-runtime/api/dataloom-runtime.api
+          grep -q 'CircuitBreakerRetrySchedulingAdapter' dataloom-runtime/api/dataloom-runtime.api
+          grep -q 'CircuitBreakerExecutionGate' dataloom-runtime/api/dataloom-runtime.klib.api
+          grep -q 'CircuitBreakerProviderOperationAdapter' dataloom-runtime/api/dataloom-runtime.klib.api
+          grep -q 'CircuitBreakerRetrySchedulingAdapter' dataloom-runtime/api/dataloom-runtime.klib.api
+
+      - name: Remove temporary workflow and commit evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/temporary-circuit-execution-gate-evidence.yml
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No evidence changes to commit."
+            exit 0
+          fi
+          git commit -m "DL-040: qualify circuit execution gate"
+          git push origin HEAD:codex/dl-retry-016-circuit-execution-gate
