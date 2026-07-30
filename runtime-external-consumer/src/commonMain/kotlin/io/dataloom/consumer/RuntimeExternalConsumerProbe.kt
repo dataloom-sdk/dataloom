@@ -23,6 +23,10 @@ import io.dataloom.api.strategy.StrategySynchronizationRequest
 import io.dataloom.runtime.execution.SynchronizationExecutionResult
 import io.dataloom.runtime.facade.DataLoom
 import io.dataloom.runtime.retry.RetryBackoffStrategy
+import io.dataloom.runtime.retry.RetryJitterStrategy
+import io.dataloom.runtime.retry.RetryRandomRequest
+import io.dataloom.runtime.retry.RetryRandomSource
+import io.dataloom.runtime.retry.SeededRetryRandomSource
 import io.dataloom.runtime.retry.StandardRetryPolicy
 import io.dataloom.runtime.strategy.StrategySynchronizationExecutionResult
 
@@ -90,7 +94,7 @@ internal suspend fun compileQueueDeferralConsumer(
     return queueProvider.defer(request)
 }
 
-/** Compile-only use of all built-in standard retry strategy variants. */
+/** Compile-only use of all built-in standard retry and jitter variants. */
 internal fun compileStandardRetryPolicyConsumer(
     request: RetryEvaluationRequest,
 ): RetryDecision {
@@ -108,18 +112,44 @@ internal fun compileStandardRetryPolicyConsumer(
         multiplier = 2,
         maximumDelay = SchedulingDelay(60_000L),
     )
+    val noJitter: RetryJitterStrategy = RetryJitterStrategy.None
+    val fullJitter: RetryJitterStrategy = RetryJitterStrategy.Full
+    val equalJitter: RetryJitterStrategy = RetryJitterStrategy.Equal
+    val randomSource: RetryRandomSource = SeededRetryRandomSource(seed = 42L)
 
     immediate.toString()
     fixed.toString()
     linear.toString()
+    noJitter.toString()
+    equalJitter.toString()
 
     val policy = StandardRetryPolicy(
         id = RetryPolicyId("external-standard-retry"),
         strategy = exponential,
         maximumAttempts = 5,
     )
+    val jitteredPolicy = StandardRetryPolicy(
+        id = RetryPolicyId("external-standard-retry-jittered"),
+        strategy = exponential,
+        maximumAttempts = 5,
+        jitterStrategy = fullJitter,
+        randomSource = randomSource,
+    )
+    val randomRequest = RetryRandomRequest(
+        policyId = jitteredPolicy.id,
+        workflowId = request.synchronizationRequest.workflowId,
+        sessionId = request.synchronizationRequest.sessionId,
+        operation = request.operation,
+        errorCode = request.error.code,
+        attempt = request.attempt,
+        maximumInclusive = 60_000L,
+    )
+
     policy.id
     policy.strategy
     policy.maximumAttempts
-    return policy.evaluate(request)
+    policy.evaluate(request).toString()
+    jitteredPolicy.jitterStrategy
+    randomSource.sample(randomRequest)
+    return jitteredPolicy.evaluate(request)
 }
