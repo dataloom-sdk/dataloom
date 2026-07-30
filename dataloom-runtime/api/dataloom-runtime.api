@@ -879,6 +879,119 @@ public final class io/dataloom/runtime/retry/RetrySchedulingConfiguration {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/runtime/retry/RetryTimeoutConfiguration {
+	public fun <init> ()V
+	public fun <init> (Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;)V
+	public synthetic fun <init> (Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun component2 ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun component3 ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun component4 ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun component5 ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun component6 ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun copy (Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;)Lio/dataloom/runtime/retry/RetryTimeoutConfiguration;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/RetryTimeoutConfiguration;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;ILjava/lang/Object;)Lio/dataloom/runtime/retry/RetryTimeoutConfiguration;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConnectionTimeout ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun getIdleTimeout ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun getPolicyTimeout ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun getProviderTimeout ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun getRequestTimeout ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun getWorkflowTimeout ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public fun hashCode ()I
+	public final fun timeoutFor (Lio/dataloom/runtime/retry/RetryTimeoutKind;)Lio/dataloom/api/scheduling/SchedulingDelay;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/RetryTimeoutCoordinator {
+	public fun <init> (Lio/dataloom/runtime/retry/RetryTimeoutConfiguration;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/retry/RetryTimeoutExecutor;)V
+	public final fun execute (Lio/dataloom/runtime/retry/RetryTimeoutKind;Lio/dataloom/api/time/DataLoomInstant;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun execute$default (Lio/dataloom/runtime/retry/RetryTimeoutCoordinator;Lio/dataloom/runtime/retry/RetryTimeoutKind;Lio/dataloom/api/time/DataLoomInstant;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/retry/RetryTimeoutExecutionRequest {
+	public fun <init> (Lio/dataloom/runtime/retry/RetryTimeoutKind;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/time/DataLoomInstant;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/retry/RetryTimeoutKind;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/time/DataLoomInstant;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/runtime/retry/RetryTimeoutKind;
+	public final fun component2 ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun component3 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy (Lio/dataloom/runtime/retry/RetryTimeoutKind;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/runtime/retry/RetryTimeoutExecutionRequest;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/RetryTimeoutExecutionRequest;Lio/dataloom/runtime/retry/RetryTimeoutKind;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/runtime/retry/RetryTimeoutExecutionRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKind ()Lio/dataloom/runtime/retry/RetryTimeoutKind;
+	public final fun getTimeout ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun getWorkflowDeadline ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/runtime/retry/RetryTimeoutExecutionResult {
+}
+
+public final class io/dataloom/runtime/retry/RetryTimeoutExecutionResult$ClockRegression : io/dataloom/runtime/retry/RetryTimeoutExecutionResult {
+	public fun <init> (Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;)V
+	public final fun component1 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy (Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/runtime/retry/RetryTimeoutExecutionResult$ClockRegression;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/RetryTimeoutExecutionResult$ClockRegression;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/runtime/retry/RetryTimeoutExecutionResult$ClockRegression;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDeadline ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getObservedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/RetryTimeoutExecutionResult$Completed : io/dataloom/runtime/retry/RetryTimeoutExecutionResult {
+	public fun <init> (Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/Object;)Lio/dataloom/runtime/retry/RetryTimeoutExecutionResult$Completed;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/RetryTimeoutExecutionResult$Completed;Ljava/lang/Object;ILjava/lang/Object;)Lio/dataloom/runtime/retry/RetryTimeoutExecutionResult$Completed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/RetryTimeoutExecutionResult$TimedOut : io/dataloom/runtime/retry/RetryTimeoutExecutionResult {
+	public fun <init> (Lio/dataloom/runtime/retry/RetryTimeoutKind;Lio/dataloom/api/scheduling/SchedulingDelay;)V
+	public final fun component1 ()Lio/dataloom/runtime/retry/RetryTimeoutKind;
+	public final fun component2 ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun copy (Lio/dataloom/runtime/retry/RetryTimeoutKind;Lio/dataloom/api/scheduling/SchedulingDelay;)Lio/dataloom/runtime/retry/RetryTimeoutExecutionResult$TimedOut;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/RetryTimeoutExecutionResult$TimedOut;Lio/dataloom/runtime/retry/RetryTimeoutKind;Lio/dataloom/api/scheduling/SchedulingDelay;ILjava/lang/Object;)Lio/dataloom/runtime/retry/RetryTimeoutExecutionResult$TimedOut;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKind ()Lio/dataloom/runtime/retry/RetryTimeoutKind;
+	public final fun getTimeout ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/RetryTimeoutExecutionResult$WorkflowDeadlineExceeded : io/dataloom/runtime/retry/RetryTimeoutExecutionResult {
+	public fun <init> (Lio/dataloom/api/time/DataLoomInstant;)V
+	public final fun component1 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy (Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/runtime/retry/RetryTimeoutExecutionResult$WorkflowDeadlineExceeded;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/RetryTimeoutExecutionResult$WorkflowDeadlineExceeded;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/runtime/retry/RetryTimeoutExecutionResult$WorkflowDeadlineExceeded;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDeadline ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/runtime/retry/RetryTimeoutExecutor {
+	public abstract fun execute (Lio/dataloom/runtime/retry/RetryTimeoutExecutionRequest;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/retry/RetryTimeoutKind : java/lang/Enum {
+	public static final field CONNECTION Lio/dataloom/runtime/retry/RetryTimeoutKind;
+	public static final field IDLE Lio/dataloom/runtime/retry/RetryTimeoutKind;
+	public static final field POLICY Lio/dataloom/runtime/retry/RetryTimeoutKind;
+	public static final field PROVIDER Lio/dataloom/runtime/retry/RetryTimeoutKind;
+	public static final field REQUEST Lio/dataloom/runtime/retry/RetryTimeoutKind;
+	public static final field WORKFLOW Lio/dataloom/runtime/retry/RetryTimeoutKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/retry/RetryTimeoutKind;
+	public static fun values ()[Lio/dataloom/runtime/retry/RetryTimeoutKind;
+}
+
 public final class io/dataloom/runtime/retry/SeededRetryRandomSource : io/dataloom/runtime/retry/RetryRandomSource {
 	public fun <init> (J)V
 	public final fun getSeed ()J

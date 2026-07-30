@@ -40,6 +40,11 @@ import io.dataloom.runtime.retry.RetryRandomSource
 import io.dataloom.runtime.retry.RetrySchedulingConfiguration
 import io.dataloom.runtime.retry.SeededRetryRandomSource
 import io.dataloom.runtime.retry.StandardRetryPolicy
+import io.dataloom.runtime.retry.RetryTimeoutConfiguration
+import io.dataloom.runtime.retry.RetryTimeoutExecutionRequest
+import io.dataloom.runtime.retry.RetryTimeoutExecutionResult
+import io.dataloom.runtime.retry.RetryTimeoutExecutor
+import io.dataloom.runtime.retry.RetryTimeoutKind
 import io.dataloom.runtime.retry.SynchronizationRetryEvaluator
 import io.dataloom.runtime.retry.SynchronizationRetryOrchestrator
 import io.dataloom.runtime.strategy.StrategySynchronizationExecutionResult
@@ -237,4 +242,22 @@ internal fun compileRetryHintConsumer(
         hintConfiguration = hintConfiguration,
     )
     return evaluator to orchestrator
+}
+
+
+internal suspend fun compileTimeoutConsumer(executor: RetryTimeoutExecutor) {
+    val configuration = RetryTimeoutConfiguration(
+        connectionTimeout = SchedulingDelay(1_000L),
+        requestTimeout = SchedulingDelay(2_000L),
+        idleTimeout = SchedulingDelay(3_000L),
+        providerTimeout = SchedulingDelay(4_000L),
+        policyTimeout = SchedulingDelay(500L),
+        workflowTimeout = SchedulingDelay(10_000L),
+    )
+    val request = RetryTimeoutExecutionRequest(
+        kind = RetryTimeoutKind.PROVIDER,
+        timeout = configuration.timeoutFor(RetryTimeoutKind.PROVIDER)!!,
+    )
+    val result: RetryTimeoutExecutionResult<String> = executor.execute(request) { "ok" }
+    result.toString()
 }
