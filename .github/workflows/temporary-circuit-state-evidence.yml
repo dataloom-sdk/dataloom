@@ -1,9 +1,9 @@
 name: Temporary Circuit State Evidence
 
 on:
-  push:
+  pull_request:
     branches:
-      - codex/dl-retry-015-circuit-state-machine
+      - main
 
 permissions:
   contents: write
@@ -78,8 +78,8 @@ jobs:
           consumer_text = consumer.read_text(encoding='utf-8')
           import_anchor = 'import io.dataloom.api.error.RetryDelayHint\n'
           circuit_imports = '''import io.dataloom.api.circuit.CircuitBreakerScope
-          import io.dataloom.api.circuit.CircuitBreakerStateStore
-          '''
+import io.dataloom.api.circuit.CircuitBreakerStateStore
+'''
           if 'import io.dataloom.api.circuit.CircuitBreakerScope' not in consumer_text:
               consumer_text = consumer_text.replace(
                   import_anchor,
@@ -91,37 +91,37 @@ jobs:
               consumer_text = consumer_text.replace(
                   'import io.dataloom.runtime.retry.RetryBackoffStrategy\n',
                   '''import io.dataloom.runtime.retry.CircuitBreakerConfiguration
-          import io.dataloom.runtime.retry.CircuitBreakerCoordinator
-          import io.dataloom.runtime.retry.CircuitBreakerPermission
-          import io.dataloom.runtime.retry.CircuitBreakerRecordResult
-          import io.dataloom.runtime.retry.RetryBackoffStrategy
-          ''',
+import io.dataloom.runtime.retry.CircuitBreakerCoordinator
+import io.dataloom.runtime.retry.CircuitBreakerPermission
+import io.dataloom.runtime.retry.CircuitBreakerRecordResult
+import io.dataloom.runtime.retry.RetryBackoffStrategy
+''',
                   1,
               )
           marker = 'internal fun compileCircuitBreakerConsumer('
           if marker not in consumer_text:
               consumer_text += '''
 
-          /** Compile-only use of the circuit-breaker persistence and runtime surface. */
-          internal fun compileCircuitBreakerConsumer(
-              store: CircuitBreakerStateStore,
-              clock: DataLoomClock,
-          ): CircuitBreakerCoordinator {
-              val scope = CircuitBreakerScope.global()
-              val configuration = CircuitBreakerConfiguration(
-                  failureThreshold = 3,
-                  failureWindow = SchedulingDelay(30_000L),
-                  openDuration = SchedulingDelay(60_000L),
-              )
-              val coordinator = CircuitBreakerCoordinator(configuration, clock, store)
-              val permission: CircuitBreakerPermission = CircuitBreakerPermission.Allowed
-              val recordResult: CircuitBreakerRecordResult = CircuitBreakerRecordResult.Ignored
-              scope.kind
-              permission.toString()
-              recordResult.toString()
-              return coordinator
-          }
-          '''
+/** Compile-only use of the circuit-breaker persistence and runtime surface. */
+internal fun compileCircuitBreakerConsumer(
+    store: CircuitBreakerStateStore,
+    clock: DataLoomClock,
+): CircuitBreakerCoordinator {
+    val scope = CircuitBreakerScope.global()
+    val configuration = CircuitBreakerConfiguration(
+        failureThreshold = 3,
+        failureWindow = SchedulingDelay(30_000L),
+        openDuration = SchedulingDelay(60_000L),
+    )
+    val coordinator = CircuitBreakerCoordinator(configuration, clock, store)
+    val permission: CircuitBreakerPermission = CircuitBreakerPermission.Allowed
+    val recordResult: CircuitBreakerRecordResult = CircuitBreakerRecordResult.Ignored
+    scope.kind
+    permission.toString()
+    recordResult.toString()
+    return coordinator
+}
+'''
           consumer.write_text(consumer_text, encoding='utf-8')
 
           replace_once(
@@ -134,27 +134,27 @@ jobs:
               'docs/api/README.md',
               '| [Retry orchestration](./retry-orchestration.md) | Partial V1 subsystem | Protected-failure handling, bounded hint minimums, final-delay aggregation, central budgets, scheduling, and queue integration boundaries. |',
               '''| [Retry orchestration](./retry-orchestration.md) | Partial V1 subsystem | Protected-failure handling, bounded hint minimums, final-delay aggregation, central budgets, scheduling, and queue integration boundaries. |
-          | [Circuit breaker](./circuit-breaker.md) | Partial V1 subsystem | Explicit scopes, durable state contracts, atomic compare-and-set persistence, deterministic transitions, and one controlled half-open probe. |''',
+| [Circuit breaker](./circuit-breaker.md) | Partial V1 subsystem | Explicit scopes, durable state contracts, atomic compare-and-set persistence, deterministic transitions, and one controlled half-open probe. |''',
           )
           replace_once(
               'docs/api/README.md',
               '''V1 retry work still requires timeout separation, durable circuit-breaker and
-          half-open recovery, manual retry/reclassification, complete
-          observability, and platform qualification.''',
+half-open recovery, manual retry/reclassification, complete
+observability, and platform qualification.''',
               '''V1 retry work still requires production Android/iOS circuit stores,
-          retry-path circuit integration, manual retry/reclassification, complete
-          observability, and platform qualification.''',
+retry-path circuit integration, manual retry/reclassification, complete
+observability, and platform qualification.''',
           )
 
           replace_once(
               'docs/architecture/retry-boundaries.md',
               '''> limits, central durable elapsed/cumulative budgets, and bounded typed hints.
-          > Circuit breaking, timeout separation, observability, and administration remain
-          > incomplete, so this is not yet the''',
+> Circuit breaking, timeout separation, observability, and administration remain
+> incomplete, so this is not yet the''',
               '''> limits, central durable elapsed/cumulative budgets, bounded typed hints,
-          > independent timeout contracts, and a deterministic circuit state machine.
-          > Production circuit stores, retry-path integration, observability, and administration
-          > remain incomplete, so this is not yet the''',
+> independent timeout contracts, and a deterministic circuit state machine.
+> Production circuit stores, retry-path integration, observability, and administration
+> remain incomplete, so this is not yet the''',
           )
           PY
           git diff --check
