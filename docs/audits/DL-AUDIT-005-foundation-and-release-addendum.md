@@ -21,8 +21,24 @@ decision.
 | Stable identifier generation | **Partial** | Stable value types and injected identifier generation/testing support exist. Complete event/audit/asset/plugin/admin identity families and release compatibility evidence remain absent. |
 | Security primitives | **Missing** | Documentation avoids secrets and several models enforce bounded/sanitized fields, but there is no shared least-privilege capability system, credential/key-reference service, signature verification, integrity framework, centralized input classification/redaction, supply-chain API, or security abuse test kit. |
 | Public API/ABI baselines and external consumer fixtures | **Implemented as a foundation** | Exact JVM/Kotlin-Native ABI checks, external JVM/iOS compilation, Apple header audit, and Swift smoke checks exist for current public modules. These are source-build compatibility gates, not staged-publication or complete KMP Android/iOS consumer evidence. |
-| Defaults exclude secrets and unbounded telemetry | **Partial** | Current retry/circuit contracts deliberately exclude payloads, credentials, raw headers, and arbitrary metadata. Other subsystems and the centralized enforcement/telemetry-cardinality gate do not yet exist. |
+| Defaults exclude secrets and unbounded telemetry | **Partial** | Current retry/circuit contracts deliberately exclude payloads, credentials, raw headers, and arbitrary metadata. The audit found and corrected one default leakage path in `DataLoomMetadata.toString`; other subsystems and the centralized enforcement/telemetry-cardinality gate do not yet exist. |
 | Mandatory foundations no longer documented as deferred | **Fail** | Current documentation truthfully marks several mandatory V1 foundations and product paths as partial or missing. That is correct documentation, but it means #93 acceptance is not met. |
+
+## Security regression found during this audit
+
+`DataLoomMetadata` warned callers not to store credentials, tokens, keys,
+personal data, or payloads, but its diagnostic `toString()` rendered the entire
+backing map. That meant an ordinary log statement or parent data-class
+`toString()` could expose both metadata keys and values.
+
+The corrective change in this audit branch now returns only
+`DataLoomMetadata(entryCount=N)`. A regression test verifies that representative
+authorization and personal values—and their keys—are absent from diagnostic
+output.
+
+This correction removes one default leakage path. It does not replace the
+missing centralized classification, redaction, logging, telemetry, and audit
+boundaries required by #93.
 
 ## Module and distribution finding
 
