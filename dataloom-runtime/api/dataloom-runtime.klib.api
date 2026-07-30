@@ -73,6 +73,17 @@ final enum class io.dataloom.runtime.queue/QueueProcessingFailureStage : kotlin/
     final fun values(): kotlin/Array<io.dataloom.runtime.queue/QueueProcessingFailureStage> // io.dataloom.runtime.queue/QueueProcessingFailureStage.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.runtime.retry/CircuitBreakerFailureDisposition : kotlin/Enum<io.dataloom.runtime.retry/CircuitBreakerFailureDisposition> { // io.dataloom.runtime.retry/CircuitBreakerFailureDisposition|null[0]
+    enum entry RECORD_FAILURE // io.dataloom.runtime.retry/CircuitBreakerFailureDisposition.RECORD_FAILURE|null[0]
+    enum entry RECORD_SUCCESS // io.dataloom.runtime.retry/CircuitBreakerFailureDisposition.RECORD_SUCCESS|null[0]
+
+    final val entries // io.dataloom.runtime.retry/CircuitBreakerFailureDisposition.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.retry/CircuitBreakerFailureDisposition> // io.dataloom.runtime.retry/CircuitBreakerFailureDisposition.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.retry/CircuitBreakerFailureDisposition // io.dataloom.runtime.retry/CircuitBreakerFailureDisposition.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.retry/CircuitBreakerFailureDisposition> // io.dataloom.runtime.retry/CircuitBreakerFailureDisposition.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.runtime.retry/CircuitBreakerRejectionReason : kotlin/Enum<io.dataloom.runtime.retry/CircuitBreakerRejectionReason> { // io.dataloom.runtime.retry/CircuitBreakerRejectionReason|null[0]
     enum entry CLOCK_REGRESSION // io.dataloom.runtime.retry/CircuitBreakerRejectionReason.CLOCK_REGRESSION|null[0]
     enum entry OPEN // io.dataloom.runtime.retry/CircuitBreakerRejectionReason.OPEN|null[0]
@@ -165,6 +176,10 @@ abstract fun interface io.dataloom.runtime.queue/QueuedSynchronizationWorkResolv
     abstract fun resolve(io.dataloom.api.queue/QueueEntry): io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution // io.dataloom.runtime.queue/QueuedSynchronizationWorkResolver.resolve|resolve(io.dataloom.api.queue.QueueEntry){}[0]
 }
 
+abstract fun interface io.dataloom.runtime.retry/CircuitBreakerFailureClassifier { // io.dataloom.runtime.retry/CircuitBreakerFailureClassifier|null[0]
+    abstract fun classify(io.dataloom.api.error/DataLoomError): io.dataloom.runtime.retry/CircuitBreakerFailureDisposition // io.dataloom.runtime.retry/CircuitBreakerFailureClassifier.classify|classify(io.dataloom.api.error.DataLoomError){}[0]
+}
+
 abstract fun interface io.dataloom.runtime.retry/RetryRandomSource { // io.dataloom.runtime.retry/RetryRandomSource|null[0]
     abstract fun sample(io.dataloom.runtime.retry/RetryRandomRequest): kotlin/Long // io.dataloom.runtime.retry/RetryRandomSource.sample|sample(io.dataloom.runtime.retry.RetryRandomRequest){}[0]
 }
@@ -218,6 +233,100 @@ abstract interface io.dataloom.runtime.retry/RetryTimeoutExecutor { // io.datalo
 
 abstract interface io.dataloom.runtime.submission/DataLoomQueueSubmission { // io.dataloom.runtime.submission/DataLoomQueueSubmission|null[0]
     abstract suspend fun submit(io.dataloom.runtime.submission/QueuedSynchronizationSubmission): io.dataloom.runtime.submission/QueueSubmissionResult // io.dataloom.runtime.submission/DataLoomQueueSubmission.submit|submit(io.dataloom.runtime.submission.QueuedSynchronizationSubmission){}[0]
+}
+
+sealed interface <#A: out kotlin/Any?> io.dataloom.runtime.retry/CircuitBreakerExecutionResult { // io.dataloom.runtime.retry/CircuitBreakerExecutionResult|null[0]
+    final class <#A1: kotlin/Any?> Executed : io.dataloom.runtime.retry/CircuitBreakerExecutionResult<#A1> { // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Executed|null[0]
+        constructor <init>(io.dataloom.runtime.retry/CircuitProtectedOperationResult<#A1>, io.dataloom.runtime.retry/CircuitBreakerRecordResult) // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Executed.<init>|<init>(io.dataloom.runtime.retry.CircuitProtectedOperationResult<1:0>;io.dataloom.runtime.retry.CircuitBreakerRecordResult){}[0]
+
+        final val operationResult // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Executed.operationResult|{}operationResult[0]
+            final fun <get-operationResult>(): io.dataloom.runtime.retry/CircuitProtectedOperationResult<#A1> // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Executed.operationResult.<get-operationResult>|<get-operationResult>(){}[0]
+        final val recordResult // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Executed.recordResult|{}recordResult[0]
+            final fun <get-recordResult>(): io.dataloom.runtime.retry/CircuitBreakerRecordResult // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Executed.recordResult.<get-recordResult>|<get-recordResult>(){}[0]
+
+        final fun component1(): io.dataloom.runtime.retry/CircuitProtectedOperationResult<#A1> // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Executed.component1|component1(){}[0]
+        final fun component2(): io.dataloom.runtime.retry/CircuitBreakerRecordResult // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Executed.component2|component2(){}[0]
+        final fun copy(io.dataloom.runtime.retry/CircuitProtectedOperationResult<#A1> = ..., io.dataloom.runtime.retry/CircuitBreakerRecordResult = ...): io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Executed<#A1> // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Executed.copy|copy(io.dataloom.runtime.retry.CircuitProtectedOperationResult<1:0>;io.dataloom.runtime.retry.CircuitBreakerRecordResult){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Executed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Executed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Executed.toString|toString(){}[0]
+    }
+
+    final class PermissionPersistenceFailure : io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Nothing> { // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.PermissionPersistenceFailure|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.PermissionPersistenceFailure.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.PermissionPersistenceFailure.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.PermissionPersistenceFailure.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.PermissionPersistenceFailure.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.runtime.retry/CircuitBreakerExecutionResult.PermissionPersistenceFailure // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.PermissionPersistenceFailure.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.PermissionPersistenceFailure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.PermissionPersistenceFailure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.PermissionPersistenceFailure.toString|toString(){}[0]
+    }
+
+    final class Rejected : io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Nothing> { // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Rejected|null[0]
+        constructor <init>(io.dataloom.runtime.retry/CircuitBreakerRejectionReason, io.dataloom.api.time/DataLoomInstant? = ...) // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Rejected.<init>|<init>(io.dataloom.runtime.retry.CircuitBreakerRejectionReason;io.dataloom.api.time.DataLoomInstant?){}[0]
+
+        final val reason // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Rejected.reason|{}reason[0]
+            final fun <get-reason>(): io.dataloom.runtime.retry/CircuitBreakerRejectionReason // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Rejected.reason.<get-reason>|<get-reason>(){}[0]
+        final val retryAt // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Rejected.retryAt|{}retryAt[0]
+            final fun <get-retryAt>(): io.dataloom.api.time/DataLoomInstant? // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Rejected.retryAt.<get-retryAt>|<get-retryAt>(){}[0]
+
+        final fun component1(): io.dataloom.runtime.retry/CircuitBreakerRejectionReason // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Rejected.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.time/DataLoomInstant? // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Rejected.component2|component2(){}[0]
+        final fun copy(io.dataloom.runtime.retry/CircuitBreakerRejectionReason = ..., io.dataloom.api.time/DataLoomInstant? = ...): io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Rejected // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Rejected.copy|copy(io.dataloom.runtime.retry.CircuitBreakerRejectionReason;io.dataloom.api.time.DataLoomInstant?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Rejected.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Rejected.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.Rejected.toString|toString(){}[0]
+    }
+
+    final object PermissionContentionLimitReached : io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Nothing> { // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.PermissionContentionLimitReached|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.PermissionContentionLimitReached.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.PermissionContentionLimitReached.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.retry/CircuitBreakerExecutionResult.PermissionContentionLimitReached.toString|toString(){}[0]
+    }
+}
+
+sealed interface <#A: out kotlin/Any?> io.dataloom.runtime.retry/CircuitProtectedOperationResult { // io.dataloom.runtime.retry/CircuitProtectedOperationResult|null[0]
+    final class <#A1: kotlin/Any?> Success : io.dataloom.runtime.retry/CircuitProtectedOperationResult<#A1> { // io.dataloom.runtime.retry/CircuitProtectedOperationResult.Success|null[0]
+        constructor <init>(#A1) // io.dataloom.runtime.retry/CircuitProtectedOperationResult.Success.<init>|<init>(1:0){}[0]
+
+        final val value // io.dataloom.runtime.retry/CircuitProtectedOperationResult.Success.value|{}value[0]
+            final fun <get-value>(): #A1 // io.dataloom.runtime.retry/CircuitProtectedOperationResult.Success.value.<get-value>|<get-value>(){}[0]
+
+        final fun component1(): #A1 // io.dataloom.runtime.retry/CircuitProtectedOperationResult.Success.component1|component1(){}[0]
+        final fun copy(#A1 = ...): io.dataloom.runtime.retry/CircuitProtectedOperationResult.Success<#A1> // io.dataloom.runtime.retry/CircuitProtectedOperationResult.Success.copy|copy(1:0){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/CircuitProtectedOperationResult.Success.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/CircuitProtectedOperationResult.Success.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.retry/CircuitProtectedOperationResult.Success.toString|toString(){}[0]
+    }
+
+    final class Failure : io.dataloom.runtime.retry/CircuitProtectedOperationResult<kotlin/Nothing> { // io.dataloom.runtime.retry/CircuitProtectedOperationResult.Failure|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.runtime.retry/CircuitProtectedOperationResult.Failure.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.runtime.retry/CircuitProtectedOperationResult.Failure.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.retry/CircuitProtectedOperationResult.Failure.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.retry/CircuitProtectedOperationResult.Failure.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.runtime.retry/CircuitProtectedOperationResult.Failure // io.dataloom.runtime.retry/CircuitProtectedOperationResult.Failure.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/CircuitProtectedOperationResult.Failure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/CircuitProtectedOperationResult.Failure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.retry/CircuitProtectedOperationResult.Failure.toString|toString(){}[0]
+    }
+
+    final class NonCircuitFailure : io.dataloom.runtime.retry/CircuitProtectedOperationResult<kotlin/Nothing> { // io.dataloom.runtime.retry/CircuitProtectedOperationResult.NonCircuitFailure|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.runtime.retry/CircuitProtectedOperationResult.NonCircuitFailure.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.runtime.retry/CircuitProtectedOperationResult.NonCircuitFailure.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.retry/CircuitProtectedOperationResult.NonCircuitFailure.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.retry/CircuitProtectedOperationResult.NonCircuitFailure.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.runtime.retry/CircuitProtectedOperationResult.NonCircuitFailure // io.dataloom.runtime.retry/CircuitProtectedOperationResult.NonCircuitFailure.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/CircuitProtectedOperationResult.NonCircuitFailure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/CircuitProtectedOperationResult.NonCircuitFailure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.retry/CircuitProtectedOperationResult.NonCircuitFailure.toString|toString(){}[0]
+    }
 }
 
 sealed interface <#A: out kotlin/Any?> io.dataloom.runtime.retry/RetryTimeoutExecutionResult { // io.dataloom.runtime.retry/RetryTimeoutExecutionResult|null[0]
@@ -1718,6 +1827,12 @@ final class io.dataloom.runtime.retry/CircuitBreakerCoordinator { // io.dataloom
     final suspend fun recordSuccess(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.runtime.retry/CircuitBreakerProbePermit? = ...): io.dataloom.runtime.retry/CircuitBreakerRecordResult // io.dataloom.runtime.retry/CircuitBreakerCoordinator.recordSuccess|recordSuccess(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.runtime.retry.CircuitBreakerProbePermit?){}[0]
 }
 
+final class io.dataloom.runtime.retry/CircuitBreakerExecutionGate { // io.dataloom.runtime.retry/CircuitBreakerExecutionGate|null[0]
+    constructor <init>(io.dataloom.runtime.retry/CircuitBreakerCoordinator) // io.dataloom.runtime.retry/CircuitBreakerExecutionGate.<init>|<init>(io.dataloom.runtime.retry.CircuitBreakerCoordinator){}[0]
+
+    final suspend fun <#A1: kotlin/Any?> execute(io.dataloom.api.circuit/CircuitBreakerScope, kotlin.coroutines/SuspendFunction0<io.dataloom.runtime.retry/CircuitProtectedOperationResult<#A1>>): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<#A1> // io.dataloom.runtime.retry/CircuitBreakerExecutionGate.execute|execute(io.dataloom.api.circuit.CircuitBreakerScope;kotlin.coroutines.SuspendFunction0<io.dataloom.runtime.retry.CircuitProtectedOperationResult<0:0>>){0§<kotlin.Any?>}[0]
+}
+
 final class io.dataloom.runtime.retry/CircuitBreakerProbePermit { // io.dataloom.runtime.retry/CircuitBreakerProbePermit|null[0]
     constructor <init>(io.dataloom.api.circuit/CircuitBreakerScope, kotlin/Long) // io.dataloom.runtime.retry/CircuitBreakerProbePermit.<init>|<init>(io.dataloom.api.circuit.CircuitBreakerScope;kotlin.Long){}[0]
 
@@ -1732,6 +1847,21 @@ final class io.dataloom.runtime.retry/CircuitBreakerProbePermit { // io.dataloom
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/CircuitBreakerProbePermit.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/CircuitBreakerProbePermit.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.runtime.retry/CircuitBreakerProbePermit.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.retry/CircuitBreakerProviderOperationAdapter { // io.dataloom.runtime.retry/CircuitBreakerProviderOperationAdapter|null[0]
+    constructor <init>(io.dataloom.runtime.retry/CircuitBreakerExecutionGate, io.dataloom.runtime.retry/CircuitBreakerFailureClassifier = ...) // io.dataloom.runtime.retry/CircuitBreakerProviderOperationAdapter.<init>|<init>(io.dataloom.runtime.retry.CircuitBreakerExecutionGate;io.dataloom.runtime.retry.CircuitBreakerFailureClassifier){}[0]
+
+    final suspend fun <#A1: kotlin/Any?> execute(io.dataloom.api.circuit/CircuitBreakerScope, kotlin.coroutines/SuspendFunction0<io.dataloom.api.provider/ProviderOperationResult<#A1>>): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<#A1> // io.dataloom.runtime.retry/CircuitBreakerProviderOperationAdapter.execute|execute(io.dataloom.api.circuit.CircuitBreakerScope;kotlin.coroutines.SuspendFunction0<io.dataloom.api.provider.ProviderOperationResult<0:0>>){0§<kotlin.Any?>}[0]
+}
+
+final class io.dataloom.runtime.retry/CircuitBreakerRetrySchedulingAdapter { // io.dataloom.runtime.retry/CircuitBreakerRetrySchedulingAdapter|null[0]
+    constructor <init>(io.dataloom.api.scheduling/SchedulerProvider, io.dataloom.runtime.retry/CircuitBreakerProviderOperationAdapter, io.dataloom.api.circuit/CircuitBreakerScope) // io.dataloom.runtime.retry/CircuitBreakerRetrySchedulingAdapter.<init>|<init>(io.dataloom.api.scheduling.SchedulerProvider;io.dataloom.runtime.retry.CircuitBreakerProviderOperationAdapter;io.dataloom.api.circuit.CircuitBreakerScope){}[0]
+
+    final val scope // io.dataloom.runtime.retry/CircuitBreakerRetrySchedulingAdapter.scope|{}scope[0]
+        final fun <get-scope>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/CircuitBreakerRetrySchedulingAdapter.scope.<get-scope>|<get-scope>(){}[0]
+
+    final suspend fun schedule(io.dataloom.api.scheduling/ScheduleRequest): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.api.scheduling/ScheduleReceipt> // io.dataloom.runtime.retry/CircuitBreakerRetrySchedulingAdapter.schedule|schedule(io.dataloom.api.scheduling.ScheduleRequest){}[0]
 }
 
 final class io.dataloom.runtime.retry/RetryBudgetConfiguration { // io.dataloom.runtime.retry/RetryBudgetConfiguration|null[0]
@@ -2014,4 +2144,8 @@ final class io.dataloom.runtime.worker/QueueWorkerRunRequest { // io.dataloom.ru
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/QueueWorkerRunRequest.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/QueueWorkerRunRequest.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.runtime.worker/QueueWorkerRunRequest.toString|toString(){}[0]
+}
+
+final object io.dataloom.runtime.retry/DefaultCircuitBreakerFailureClassifier : io.dataloom.runtime.retry/CircuitBreakerFailureClassifier { // io.dataloom.runtime.retry/DefaultCircuitBreakerFailureClassifier|null[0]
+    final fun classify(io.dataloom.api.error/DataLoomError): io.dataloom.runtime.retry/CircuitBreakerFailureDisposition // io.dataloom.runtime.retry/DefaultCircuitBreakerFailureClassifier.classify|classify(io.dataloom.api.error.DataLoomError){}[0]
 }
