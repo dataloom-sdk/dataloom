@@ -16,13 +16,22 @@ the circuit permanently unable to recover.
 - coordinator recreation uses only persisted state and requires no in-memory timer;
 - deadline arithmetic is overflow-safe and fails closed when no future instant exists.
 
-## Qualification evidence
+## Focused qualification evidence
+
+The one-time macOS evidence lane completed successfully before the clean final
+review head. It:
+
+- generated exact API, runtime, and Apple JVM/Kotlin-Native ABI baselines;
+- ran build-logic, API JVM, and runtime JVM tests;
+- compiled the external consumer on JVM, `iosArm64`, `iosSimulatorArm64`, and
+  `iosX64`;
+- assembled the Apple release XCFramework; and
+- removed its temporary workflow before committing the generated evidence.
 
 The focused common-code suite covers active-lease rejection, exact-deadline
 replacement, process/coordinator recreation, late-generation protection,
 matching-result expiry, configuration validation, and representable-time
-exhaustion. External consumer compilation covers JVM, `iosArm64`,
-`iosSimulatorArm64`, and `iosX64`.
+exhaustion.
 
 ## Remaining V1 work
 
