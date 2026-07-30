@@ -2105,6 +2105,25 @@ final class io.dataloom.runtime.retry/SynchronizationRetryRequest { // io.datalo
     final fun toString(): kotlin/String // io.dataloom.runtime.retry/SynchronizationRetryRequest.toString|toString(){}[0]
 }
 
+final class io.dataloom.runtime.retry/TimeoutEnforcingQueueProvider : io.dataloom.api.queue/QueueProvider { // io.dataloom.runtime.retry/TimeoutEnforcingQueueProvider|null[0]
+    constructor <init>(io.dataloom.api.queue/QueueProvider, io.dataloom.runtime.retry/RetryTimeoutCoordinator) // io.dataloom.runtime.retry/TimeoutEnforcingQueueProvider.<init>|<init>(io.dataloom.api.queue.QueueProvider;io.dataloom.runtime.retry.RetryTimeoutCoordinator){}[0]
+
+    final val descriptor // io.dataloom.runtime.retry/TimeoutEnforcingQueueProvider.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.runtime.retry/TimeoutEnforcingQueueProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    final suspend fun acquire(io.dataloom.api.queue/QueueAcquireRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.queue/QueueAcquireResult> // io.dataloom.runtime.retry/TimeoutEnforcingQueueProvider.acquire|acquire(io.dataloom.api.queue.QueueAcquireRequest){}[0]
+    final suspend fun cancel(io.dataloom.api.queue/QueueCancellationRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.retry/TimeoutEnforcingQueueProvider.cancel|cancel(io.dataloom.api.queue.QueueCancellationRequest){}[0]
+    final suspend fun close(): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.retry/TimeoutEnforcingQueueProvider.close|close(){}[0]
+    final suspend fun complete(io.dataloom.api.queue/QueueCompletionRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.retry/TimeoutEnforcingQueueProvider.complete|complete(io.dataloom.api.queue.QueueCompletionRequest){}[0]
+    final suspend fun defer(io.dataloom.api.queue/QueueDeferralRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.retry/TimeoutEnforcingQueueProvider.defer|defer(io.dataloom.api.queue.QueueDeferralRequest){}[0]
+    final suspend fun enqueue(io.dataloom.api.queue/QueueEnqueueRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.retry/TimeoutEnforcingQueueProvider.enqueue|enqueue(io.dataloom.api.queue.QueueEnqueueRequest){}[0]
+    final suspend fun fail(io.dataloom.api.queue/QueueFailureRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.retry/TimeoutEnforcingQueueProvider.fail|fail(io.dataloom.api.queue.QueueFailureRequest){}[0]
+    final suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.runtime.retry/TimeoutEnforcingQueueProvider.health|health(){}[0]
+    final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.retry/TimeoutEnforcingQueueProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
+    final suspend fun recoverExpiredLeases(io.dataloom.api.queue/ExpiredLeaseRecoveryRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.queue/ExpiredLeaseRecoveryResult> // io.dataloom.runtime.retry/TimeoutEnforcingQueueProvider.recoverExpiredLeases|recoverExpiredLeases(io.dataloom.api.queue.ExpiredLeaseRecoveryRequest){}[0]
+    final suspend fun reschedule(io.dataloom.api.queue/QueueRescheduleRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.retry/TimeoutEnforcingQueueProvider.reschedule|reschedule(io.dataloom.api.queue.QueueRescheduleRequest){}[0]
+}
+
 final class io.dataloom.runtime.retry/TimeoutEnforcingSchedulerProvider : io.dataloom.api.scheduling/SchedulerProvider { // io.dataloom.runtime.retry/TimeoutEnforcingSchedulerProvider|null[0]
     constructor <init>(io.dataloom.api.scheduling/SchedulerProvider, io.dataloom.runtime.retry/RetryTimeoutCoordinator) // io.dataloom.runtime.retry/TimeoutEnforcingSchedulerProvider.<init>|<init>(io.dataloom.api.scheduling.SchedulerProvider;io.dataloom.runtime.retry.RetryTimeoutCoordinator){}[0]
 
@@ -2192,4 +2211,8 @@ final class io.dataloom.runtime.worker/QueueWorkerRunRequest { // io.dataloom.ru
 
 final object io.dataloom.runtime.retry/DefaultCircuitBreakerFailureClassifier : io.dataloom.runtime.retry/CircuitBreakerFailureClassifier { // io.dataloom.runtime.retry/DefaultCircuitBreakerFailureClassifier|null[0]
     final fun classify(io.dataloom.api.error/DataLoomError): io.dataloom.runtime.retry/CircuitBreakerFailureDisposition // io.dataloom.runtime.retry/DefaultCircuitBreakerFailureClassifier.classify|classify(io.dataloom.api.error.DataLoomError){}[0]
+}
+
+final object io.dataloom.runtime.worker/QueueWorkerProviderTimeoutRuntime { // io.dataloom.runtime.worker/QueueWorkerProviderTimeoutRuntime|null[0]
+    final fun create(io.dataloom.api.queue/QueueProvider, io.dataloom.runtime.queue/QueueEntryExecutionHandler, io.dataloom.api.scheduling/SchedulerProvider?, io.dataloom.api.time/DataLoomClock, io.dataloom.runtime.worker/QueueWorkerConfiguration, io.dataloom.api.scheduling/SchedulingDelay): io.dataloom.runtime.worker/QueueWorkerCoordinator // io.dataloom.runtime.worker/QueueWorkerProviderTimeoutRuntime.create|create(io.dataloom.api.queue.QueueProvider;io.dataloom.runtime.queue.QueueEntryExecutionHandler;io.dataloom.api.scheduling.SchedulerProvider?;io.dataloom.api.time.DataLoomClock;io.dataloom.runtime.worker.QueueWorkerConfiguration;io.dataloom.api.scheduling.SchedulingDelay){}[0]
 }
