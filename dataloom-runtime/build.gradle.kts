@@ -19,6 +19,12 @@ kotlin {
                 api(project(":dataloom-provider-api"))
                 api(project(":dataloom-api"))
                 implementation(project(":dataloom-core"))
+                implementation(libs.kotlinx.coroutines.core)
+            }
+        }
+        commonTest {
+            dependencies {
+                implementation(libs.kotlinx.coroutines.test)
             }
         }
     }
