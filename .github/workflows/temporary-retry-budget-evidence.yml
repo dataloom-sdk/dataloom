@@ -68,16 +68,58 @@ jobs:
           )
           exec(compile(docs_source, str(docs_path), 'exec'))
 
-          test_path = Path(
+          scheduler_test_path = Path(
               'dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/retry/'
               'RetryBudgetSchedulerIntegrationTest.kt'
           )
-          text = test_path.read_text(encoding='utf-8')
-          text = text.replace(
+          scheduler_text = scheduler_test_path.read_text(encoding='utf-8')
+          scheduler_text = scheduler_text.replace(
               'import io.dataloom.api.identifier.ProviderId',
               'import io.dataloom.api.provider.ProviderId',
           )
-          test_path.write_text(text, encoding='utf-8')
+          scheduler_test_path.write_text(scheduler_text, encoding='utf-8')
+
+          contract_test_path = Path(
+              'dataloom-api/src/commonTest/kotlin/io/dataloom/api/retry/'
+              'RetryPolicyContractsTest.kt'
+          )
+          contract_text = contract_test_path.read_text(encoding='utf-8')
+          old_set = '''            RetryStopReason.NON_RECOVERABLE,
+              RetryStopReason.ATTEMPT_LIMIT_REACHED,
+              RetryStopReason.POLICY_REJECTED,
+              RetryStopReason.UNSUPPORTED_OPERATION,
+          )
+          assertEquals(4, reasons.size)'''
+          new_set = '''            RetryStopReason.NON_RECOVERABLE,
+              RetryStopReason.ATTEMPT_LIMIT_REACHED,
+              RetryStopReason.ELAPSED_TIME_LIMIT_REACHED,
+              RetryStopReason.CUMULATIVE_DELAY_LIMIT_REACHED,
+              RetryStopReason.CLOCK_REGRESSION_DETECTED,
+              RetryStopReason.POLICY_REJECTED,
+              RetryStopReason.UNSUPPORTED_OPERATION,
+          )
+          assertEquals(7, reasons.size)'''
+          if old_set not in contract_text:
+              raise RuntimeError('Retry stop-reason set fixture did not match expected source.')
+          contract_text = contract_text.replace(old_set, new_set, 1)
+
+          old_when = '''            RetryStopReason.NON_RECOVERABLE -> false
+              RetryStopReason.ATTEMPT_LIMIT_REACHED -> true
+              RetryStopReason.POLICY_REJECTED -> false
+              RetryStopReason.UNSUPPORTED_OPERATION -> false'''
+          new_when = '''            RetryStopReason.NON_RECOVERABLE -> false
+              RetryStopReason.ATTEMPT_LIMIT_REACHED -> true
+              RetryStopReason.ELAPSED_TIME_LIMIT_REACHED -> false
+              RetryStopReason.CUMULATIVE_DELAY_LIMIT_REACHED -> false
+              RetryStopReason.CLOCK_REGRESSION_DETECTED -> false
+              RetryStopReason.POLICY_REJECTED -> false
+              RetryStopReason.UNSUPPORTED_OPERATION -> false'''
+          if old_when not in contract_text:
+              raise RuntimeError('Retry stop-reason exhaustive match did not match expected source.')
+          contract_test_path.write_text(
+              contract_text.replace(old_when, new_when, 1),
+              encoding='utf-8',
+          )
           PY
           git diff --check
 
