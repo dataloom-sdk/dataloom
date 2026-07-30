@@ -4,16 +4,18 @@
 
 > **Status:** Partial V1 retry subsystem. Custom policy evaluation, queue and
 > scheduler integration, retry-history preservation, central fail-closed
-> failure protection, deterministic immediate/fixed/linear/exponential backoff,
-> and an attempt budget are implemented. Jitter, elapsed-time and aggregate
-> delay budgets, server hints, timeout separation, durable circuit breaking,
-> manual retry, and complete observability remain V1 blockers.
+> protection, deterministic immediate/fixed/linear/exponential backoff,
+> configurable full/equal jitter, an injected deterministic random source, and
+> an attempt budget are implemented. Elapsed-time and aggregate-delay budgets,
+> server hints, timeout separation, durable circuit breaking, manual retry, and
+> complete observability remain V1 blockers.
 
 ## Purpose
 
 A provider or synchronization pipeline reports a canonical `DataLoomError`.
-DataLoom decides whether repeating the operation is safe and, when it is, asks a
-configured `RetryPolicy` for a `RetryDecision`.
+DataLoom first decides whether repeating the operation is safe. Eligible errors
+then reach a configured `RetryPolicy`, which returns either a bounded delay or a
+stop decision.
 
 ```text
 Terminal synchronization result
@@ -24,7 +26,7 @@ Central fail-closed retry protection
         ├── protected error → stop the complete batch
         └── fully eligible → RetryPolicy.evaluate(...)
                                 ↓
-                         Retry or Stop
+                    backoff → optional jitter → Retry or Stop
 ```
 
 Policy evaluation is synchronous and side-effect free. It does not sleep,
@@ -34,7 +36,7 @@ An unmet execution constraint is not a failed attempt. Connectivity deferral
 therefore bypasses retry policy, persists no failure, and preserves the queued
 entry's existing attempt exactly.
 
-## Contracts
+## Core contracts
 
 ### `RetryPolicyId`
 
@@ -123,14 +125,16 @@ interface RetryPolicy {
 }
 ```
 
-For the same request and configuration, evaluation must return the same
-result. A policy must not block, sleep, perform I/O, call a provider, schedule
-work, mutate queue state, or log sensitive context.
+For the same request and configuration, evaluation must return the same result.
+A policy must not block, sleep, perform I/O, call a provider, schedule work,
+mutate queue state, or log sensitive context.
 
-## Built-in deterministic retry policy
+## Built-in standard retry policy
 
-`io.dataloom.runtime.retry.StandardRetryPolicy` is DataLoom's standard
-side-effect-free policy for the four mandatory deterministic backoff families.
+`io.dataloom.runtime.retry.StandardRetryPolicy` provides DataLoom's standard
+common-code retry behavior.
+
+The compatibility constructor preserves exact deterministic base delays:
 
 ```kotlin
 val policy = StandardRetryPolicy(
@@ -149,7 +153,9 @@ one is the first retry evaluation. A value of zero disables automatic retry.
 Attempt `N` is allowed only when `N <= maximumAttempts`; the next attempt stops
 with `ATTEMPT_LIMIT_REACHED`.
 
-### `RetryBackoffStrategy.Immediate`
+### Base backoff strategies
+
+#### Immediate
 
 Returns `SchedulingDelay.ZERO` for every allowed attempt.
 
@@ -157,7 +163,7 @@ Returns `SchedulingDelay.ZERO` for every allowed attempt.
 RetryBackoffStrategy.Immediate
 ```
 
-### `RetryBackoffStrategy.Fixed`
+#### Fixed
 
 Returns the same configured non-negative delay for every allowed attempt.
 
@@ -167,7 +173,7 @@ RetryBackoffStrategy.Fixed(
 )
 ```
 
-### `RetryBackoffStrategy.Linear`
+#### Linear
 
 Attempt one uses `initialDelay`. Each later attempt adds `increment`, clamped to
 `maximumDelay`.
@@ -184,10 +190,10 @@ RetryBackoffStrategy.Linear(
 )
 ```
 
-`maximumDelay` must be greater than or equal to `initialDelay`. A zero increment
-is valid and produces a constant initial delay.
+`maximumDelay` must be at least `initialDelay`. A zero increment is valid and
+produces a constant initial delay.
 
-### `RetryBackoffStrategy.Exponential`
+#### Exponential
 
 Attempt one uses `initialDelay`. Each later attempt multiplies by `multiplier`,
 clamped to `maximumDelay`.
@@ -204,27 +210,125 @@ RetryBackoffStrategy.Exponential(
 )
 ```
 
-The multiplier must be at least two and `maximumDelay` must be greater than or
-equal to `initialDelay`.
-
-### Arithmetic and determinism
+The multiplier must be at least two and `maximumDelay` must be at least
+`initialDelay`.
 
 Linear and exponential calculations test the clamp boundary before arithmetic
-that could overflow. They never wrap to a negative delay. Very large attempt
-numbers terminate after a bounded calculation: linear uses a division guard,
-while exponential returns as soon as the configured maximum is reached. A zero
-exponential initial delay remains zero without iterating through the attempt
-count.
+that could overflow. They never wrap to a negative delay.
 
-No jitter is silently applied. The same request and immutable configuration
-produce the same decision across JVM, Android, and Kotlin/Native targets.
+## Deterministic jitter
 
-### Defense in depth
+The five-argument `StandardRetryPolicy` constructor applies jitter after the
+bounded base delay has been calculated:
 
-`StandardRetryPolicy` applies the same protected-failure rules as the surrounding
-runtime. Direct policy use therefore cannot retry a non-recoverable, unknown,
-authentication, authorization, serialization, validation, configuration,
-policy, conflict, or security failure.
+```kotlin
+val jitteredPolicy = StandardRetryPolicy(
+    id = RetryPolicyId("orders-jittered-retry"),
+    strategy = RetryBackoffStrategy.Exponential(
+        initialDelay = SchedulingDelay(1_000L),
+        multiplier = 2,
+        maximumDelay = SchedulingDelay(60_000L),
+    ),
+    maximumAttempts = 5,
+    jitterStrategy = RetryJitterStrategy.Full,
+    randomSource = SeededRetryRandomSource(seed = 42L),
+)
+```
+
+Jitter never increases the base delay, so the strategy's configured maximum
+remains authoritative.
+
+### `RetryJitterStrategy.None`
+
+Preserves the exact base delay and consumes no random sample. The three-argument
+policy constructor uses this mode.
+
+### `RetryJitterStrategy.Full`
+
+Returns a delay in the inclusive range:
+
+```text
+0..baseDelay
+```
+
+### `RetryJitterStrategy.Equal`
+
+Preserves at least half of the base delay and jitters the remainder. For integer
+milliseconds the inclusive range is:
+
+```text
+ceil(baseDelay / 2)..baseDelay
+```
+
+A zero base delay remains zero. Equal jitter on a one-millisecond base delay
+also has no random window. Neither case calls the random source.
+
+## Randomness boundary
+
+### `RetryRandomRequest`
+
+A jitter source receives only stable, payload-free identity:
+
+- retry policy ID;
+- workflow ID;
+- synchronization session ID;
+- retry operation;
+- canonical sanitized error code;
+- retry attempt; and
+- an inclusive non-negative upper bound.
+
+The request contains no application payload, credentials, tokens, provider
+instance, exception message, arbitrary metadata, or personal data.
+
+### `RetryRandomSource`
+
+```kotlin
+fun interface RetryRandomSource {
+    fun sample(request: RetryRandomRequest): Long
+}
+```
+
+A source must:
+
+- return the same value for equal requests;
+- return a value in `0..request.maximumInclusive`;
+- remain non-blocking and side-effect free;
+- be safe for concurrent use; and
+- avoid I/O, logging identifiers, and cryptographic use.
+
+DataLoom validates the returned range. An out-of-range result fails evaluation
+with `IllegalStateException`; it is not silently clamped.
+
+### `SeededRetryRandomSource`
+
+`SeededRetryRandomSource` is the built-in stateless implementation. It uses a
+versioned stable hash, SplitMix64 finalization, and bounded rejection sampling.
+The same seed and equal request produce the same result across JVM, Android, and
+Kotlin/Native.
+
+```kotlin
+val randomSource = SeededRetryRandomSource(seed = 42L)
+```
+
+The seed is non-secret configuration. This source is not a cryptographic random
+number generator.
+
+Because the source has no mutable sequence, concurrent evaluation order does not
+change the result. Restoring the same seed and durable retry identity after
+process restart reproduces the same jitter decision.
+
+## Evaluation order
+
+`StandardRetryPolicy` evaluates in this order:
+
+1. Reject centrally protected failure classes.
+2. Reject attempts beyond `maximumAttempts`.
+3. Calculate and clamp the deterministic base delay.
+4. Apply the configured jitter mode.
+5. Validate the source result and return `Retry`.
+
+Protected errors, exhausted attempts, no-jitter policies, zero base delays, and
+zero-width equal-jitter windows do not call the random source.
 
 ## Central fail-closed protection
 
@@ -235,43 +339,16 @@ Automatic retry is blocked when:
 
 1. `error.recoverability == NON_RECOVERABLE`;
 2. `error.recoverability == UNKNOWN`; or
-3. the error belongs to a protected category:
-   - authentication;
-   - authorization;
-   - serialization;
-   - validation;
-   - configuration;
-   - policy;
-   - conflict; or
-   - security.
+3. the error belongs to authentication, authorization, serialization,
+   validation, configuration, policy, conflict, or security categories.
 
 `NON_RECOVERABLE` maps to `RetryStopReason.NON_RECOVERABLE`. Unknown and
 protected-category errors map to `RetryStopReason.POLICY_REJECTED` until an
 explicit, authorized, audited reclassification mechanism exists.
 
-### Partial-result rule
-
-Protection is evaluated across the complete ordered error set before custom
-policy invocation. When any error is protected:
-
-- the whole retry batch stops;
-- no custom policy is called for any sibling error;
-- no scheduler or queue reschedule is requested;
-- the first protected error becomes the primary blocking error; and
-- the decision list contains only stop decisions.
-
-This prevents a transient network error from hiding an authentication,
-validation, conflict, or security failure in the same partial result.
-
-### Eligible errors
-
-Errors outside the protected set reach the configured policy only when they are
-explicitly marked `RECOVERABLE`. Typical eligible categories include network,
-storage, queue, scheduler, provider, plugin, state, and internal failures,
-subject to the producer's canonical classification.
-
-Severity does not determine retry eligibility. Exception class names and error
-message parsing are not classification mechanisms.
+For a partial result, protection is evaluated across the complete ordered error
+set before policy invocation. One protected error stops the whole retry batch.
+No sibling policy evaluation, scheduler call, or queue reschedule occurs.
 
 ## Runtime integration
 
@@ -283,46 +360,22 @@ For a genuine pipeline failure:
 2. `SynchronizationRetryEvaluator` applies central protection;
 3. eligible errors are evaluated in original order;
 4. the configured policy enforces its attempt budget and calculates delay;
-5. the maximum requested retry delay is selected across errors;
-6. availability time is calculated with overflow-safe timestamp addition; and
-7. successful queue rescheduling persists the exact attempt and error.
+5. deterministic jitter is applied when configured;
+6. the maximum requested delay is selected across errors;
+7. availability time is calculated with overflow-safe timestamp addition; and
+8. successful queue rescheduling persists the exact attempt and error.
 
 Connectivity deferral bypasses this flow and preserves retry history.
 
 ### Scheduler-backed orchestration
 
 `SynchronizationRetryOrchestrator` applies the same protection. It calls
-`SchedulerProvider.schedule` at most once and only when:
+`SchedulerProvider.schedule` at most once and only when no protected error
+exists, at least one policy decision requests retry, and a scheduler is
+configured.
 
-- no protected error exists;
-- at least one policy decision requests retry; and
-- a scheduler is configured.
-
-After scheduler acceptance, the runtime may emit `RetryScheduled`. Observer
-failure does not reverse the accepted schedule; cancellation still propagates.
-
-## Custom policy example
-
-Applications may still provide a domain-specific policy through the stable
-`RetryPolicy` contract:
-
-```kotlin
-class ApplicationRetryPolicy : RetryPolicy {
-    override val id = RetryPolicyId("application-retry")
-
-    override fun evaluate(request: RetryEvaluationRequest): RetryDecision {
-        return if (request.attempt.number <= 2) {
-            RetryDecision.Retry(SchedulingDelay(2_000L))
-        } else {
-            RetryDecision.Stop(RetryStopReason.ATTEMPT_LIMIT_REACHED)
-        }
-    }
-}
-```
-
-The runtime protection boundary wraps custom policies. A custom policy cannot
-opt an automatically protected error back into retry through an ordinary
-`RetryDecision.Retry`.
+The orchestrator treats the policy's final delay—including jitter—as an opaque
+minimum delay. It does not apply a second jitter layer.
 
 ## Cancellation and exceptions
 
@@ -330,12 +383,20 @@ opt an automatically protected error back into retry through an ordinary
 - A thrown `CancellationException` propagates and is never translated into a
   decision or result.
 - Unexpected exceptions from an eligible custom policy propagate.
-- A protected batch does not invoke the custom policy, so policy exceptions
-  cannot override the protection decision.
+- A random-source contract violation fails evaluation rather than being hidden.
+- A protected batch does not invoke custom policy or random source.
+
+## Security and privacy
+
+Retry decisions and random requests must not contain payloads, credentials,
+tokens, keys, authorization headers, checkpoint values, personal data, complete
+exception messages, or unbounded-cardinality labels.
+
+The built-in seeded source hashes stable identifiers only and does not log them.
+The seed must not contain cryptographic key material.
 
 ## Still required for V1
 
-- deterministic configurable jitter and injectable randomness;
 - maximum elapsed-time and aggregate-delay budgets;
 - bounded provider/server retry hints;
 - separated timeout semantics;

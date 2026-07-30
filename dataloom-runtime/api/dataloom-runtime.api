@@ -763,6 +763,30 @@ public final class io/dataloom/runtime/retry/RetryBackoffStrategy$Linear : io/da
 	public fun toString ()Ljava/lang/String;
 }
 
+public abstract interface class io/dataloom/runtime/retry/RetryJitterStrategy {
+}
+
+public final class io/dataloom/runtime/retry/RetryJitterStrategy$Equal : io/dataloom/runtime/retry/RetryJitterStrategy {
+	public static final field INSTANCE Lio/dataloom/runtime/retry/RetryJitterStrategy$Equal;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/RetryJitterStrategy$Full : io/dataloom/runtime/retry/RetryJitterStrategy {
+	public static final field INSTANCE Lio/dataloom/runtime/retry/RetryJitterStrategy$Full;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/RetryJitterStrategy$None : io/dataloom/runtime/retry/RetryJitterStrategy {
+	public static final field INSTANCE Lio/dataloom/runtime/retry/RetryJitterStrategy$None;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/runtime/retry/RetryOrchestrationResult {
 	public fun <init> (Lio/dataloom/runtime/retry/RetryOrchestrationStatus;Ljava/util/List;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/ScheduleReceipt;Lio/dataloom/api/error/DataLoomError;)V
 	public final fun getDecisions ()Ljava/util/List;
@@ -784,6 +808,33 @@ public final class io/dataloom/runtime/retry/RetryOrchestrationStatus : java/lan
 	public static fun values ()[Lio/dataloom/runtime/retry/RetryOrchestrationStatus;
 }
 
+public final class io/dataloom/runtime/retry/RetryRandomRequest {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/retry/RetryAttempt;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-Bqc1ZN8 ()Ljava/lang/String;
+	public final fun component2-AO9uWSE ()Ljava/lang/String;
+	public final fun component3-i5HvtV4 ()Ljava/lang/String;
+	public final fun component4-TGFxZV8 ()Ljava/lang/String;
+	public final fun component5-7tkViRw ()Ljava/lang/String;
+	public final fun component6 ()Lio/dataloom/api/retry/RetryAttempt;
+	public final fun component7 ()J
+	public final fun copy-Cb5wEKc (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/retry/RetryAttempt;J)Lio/dataloom/runtime/retry/RetryRandomRequest;
+	public static synthetic fun copy-Cb5wEKc$default (Lio/dataloom/runtime/retry/RetryRandomRequest;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/retry/RetryAttempt;JILjava/lang/Object;)Lio/dataloom/runtime/retry/RetryRandomRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAttempt ()Lio/dataloom/api/retry/RetryAttempt;
+	public final fun getErrorCode-7tkViRw ()Ljava/lang/String;
+	public final fun getMaximumInclusive ()J
+	public final fun getOperation-TGFxZV8 ()Ljava/lang/String;
+	public final fun getPolicyId-Bqc1ZN8 ()Ljava/lang/String;
+	public final fun getSessionId-i5HvtV4 ()Ljava/lang/String;
+	public final fun getWorkflowId-AO9uWSE ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/runtime/retry/RetryRandomSource {
+	public abstract fun sample (Lio/dataloom/runtime/retry/RetryRandomRequest;)J
+}
+
 public final class io/dataloom/runtime/retry/RetrySchedulingConfiguration {
 	public fun <init> (Lio/dataloom/api/scheduling/ScheduleConstraints;Lio/dataloom/api/scheduling/ExistingSchedulePolicy;)V
 	public final fun component1 ()Lio/dataloom/api/scheduling/ScheduleConstraints;
@@ -797,10 +848,18 @@ public final class io/dataloom/runtime/retry/RetrySchedulingConfiguration {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/runtime/retry/SeededRetryRandomSource : io/dataloom/runtime/retry/RetryRandomSource {
+	public fun <init> (J)V
+	public final fun getSeed ()J
+	public fun sample (Lio/dataloom/runtime/retry/RetryRandomRequest;)J
+}
+
 public final class io/dataloom/runtime/retry/StandardRetryPolicy : io/dataloom/api/retry/RetryPolicy {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/runtime/retry/RetryBackoffStrategy;ILio/dataloom/runtime/retry/RetryJitterStrategy;Lio/dataloom/runtime/retry/RetryRandomSource;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/runtime/retry/RetryBackoffStrategy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun evaluate (Lio/dataloom/api/retry/RetryEvaluationRequest;)Lio/dataloom/api/retry/RetryDecision;
 	public fun getId-Bqc1ZN8 ()Ljava/lang/String;
+	public final fun getJitterStrategy ()Lio/dataloom/runtime/retry/RetryJitterStrategy;
 	public final fun getMaximumAttempts ()I
 	public final fun getStrategy ()Lio/dataloom/runtime/retry/RetryBackoffStrategy;
 }

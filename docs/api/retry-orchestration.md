@@ -2,9 +2,10 @@
 
 [API reference index](./README.md)
 
-> **Status:** Partial V1 subsystem. Scheduler-backed orchestration and central
-> protected-failure handling are implemented. Standard backoff, durable circuit
-> state, time budgets, hints, manual retry, and full observability remain.
+> **Status:** Partial V1 subsystem. Scheduler-backed orchestration, central
+> protected-failure handling, deterministic standard backoff, full/equal
+> jitter, and an attempt budget are implemented. Durable circuit state, elapsed
+> and aggregate budgets, hints, manual retry, and full observability remain.
 
 **Module:** `dataloom-runtime`  
 **Package:** `io.dataloom.runtime.retry`  
@@ -24,7 +25,7 @@ flowchart LR
     Protected -->|No| Policy[Evaluate RetryPolicy per error]
     Policy --> Decision{Any retry decision?}
     Decision -->|No| Stopped
-    Decision -->|Yes| Delay[Select maximum delay]
+    Decision -->|Yes| Delay[Select maximum final delay]
     Delay --> Scheduler{Scheduler configured?}
     Scheduler -->|No| Missing[SCHEDULER_NOT_CONFIGURED]
     Scheduler -->|Yes| Schedule[Schedule once]
@@ -34,8 +35,8 @@ flowchart LR
 ```
 
 The orchestrator does not execute synchronization, process queue entries, check
-connectivity, initialize providers, own a coroutine scope, or select a
-dispatcher.
+connectivity, initialize providers, calculate standard backoff, apply jitter,
+own a coroutine scope, or select a dispatcher.
 
 ## `SynchronizationRetryRequest`
 
@@ -84,10 +85,11 @@ Both values are forwarded unchanged into the single `ScheduleRequest`.
 2. Extract the error from `Failed`, or the ordered error list from
    `PartiallySucceeded`.
 3. Scan the complete error set for central protected failures.
-4. When protected, return `STOPPED` without invoking custom policy or scheduler.
+4. When protected, return `STOPPED` without invoking custom policy, random
+   source, or scheduler.
 5. Otherwise evaluate the configured policy once per error in original order.
 6. Return `STOPPED` when no decision requests retry.
-7. Select the maximum `SchedulingDelay` across retry decisions.
+7. Select the maximum final `SchedulingDelay` across retry decisions.
 8. Return `SCHEDULER_NOT_CONFIGURED` when the scheduler is absent.
 9. Build one `ScheduleRequest` and call `schedule` exactly once.
 10. Return `SCHEDULED` with the exact receipt or `SCHEDULER_FAILED` with the
@@ -122,14 +124,22 @@ When the complete error set is eligible, each `RetryEvaluationRequest` contains:
 Unexpected policy exceptions propagate. The orchestrator does not silently
 change or suppress application programming errors.
 
+A `StandardRetryPolicy` may calculate immediate, fixed, linear, or exponential
+base delay, enforce the attempt budget, and apply full or equal jitter using an
+injected deterministic `RetryRandomSource`. These calculations happen inside
+the policy before the orchestrator receives `RetryDecision.Retry`.
+
 ## Maximum-delay selection
 
-When one or more eligible decisions request retry, the maximum delay is used.
-Scheduling earlier would violate another decision's minimum wait.
+When one or more eligible decisions request retry, the maximum final delay is
+used. “Final” means the delay after any policy-owned backoff, clamp, budget, and
+jitter processing. Scheduling earlier would violate another decision's minimum
+wait.
 
-Ordinary policy stop decisions alongside retry decisions do not block
-scheduling. Central protected stops are different: they are detected before
-policy evaluation and block the complete batch.
+The orchestrator never applies a second implicit jitter layer. Ordinary policy
+stop decisions alongside retry decisions do not block scheduling. Central
+protected stops are different: they are detected before policy evaluation and
+block the complete batch.
 
 ## Schedule construction
 
@@ -137,7 +147,7 @@ The submitted request uses:
 
 - `id = request.scheduleId`;
 - `synchronizationRequest = request.synchronizationRequest`;
-- `delay = selected maximum delay`;
+- `delay = selected maximum final delay`;
 - `constraints = configuration.constraints`; and
 - `existingPolicy = configuration.existingSchedulePolicy`.
 
@@ -160,15 +170,17 @@ claim beyond the supplied scheduler's guarantees.
 It does not call `ConnectivityProvider`. Connectivity requirements are carried
 through `ScheduleConstraints` and interpreted by the platform scheduler.
 
-The separate queue-backed evaluator uses the same central protection and delay
-aggregation semantics.
+The separate queue-backed evaluator uses the same central protection and final
+delay aggregation semantics. Connectivity deferral bypasses retry policy,
+random source, attempt advancement, and scheduler-backed retry orchestration.
 
 ## Security
 
 Diagnostics must remain bounded and redaction-safe. They may identify schedule,
-operation, attempt, result variant, error code, and delay. They must not contain
-payloads, checkpoint values, credentials, authorization headers, encryption
-keys, personal data, stack traces, or provider internal state.
+operation, attempt, result variant, error code, and final delay. They must not
+contain payloads, checkpoint values, credentials, authorization headers,
+encryption keys, personal data, deterministic seeds, random-source inputs,
+stack traces, or provider internal state.
 
 ## KMP compatibility
 
@@ -176,9 +188,13 @@ The implementation uses Kotlin standard-library and DataLoom contracts only.
 No Android API, JVM-only API, reflection, service loading, global scope, or DI
 framework is used.
 
+Native Android, KMP Android, and KMP iOS must expose equivalent final retry
+decisions for the same policy, seed, request identity, and attempt. Full
+platform qualification remains pending.
+
 ## Remaining V1 work
 
-Standard backoff policies, deterministic jitter, attempt and elapsed budgets,
-retry hints, timeout separation, durable circuit state, half-open probes,
-manual retry/reclassification, complete observability, restart/concurrency
+Elapsed-time and aggregate-delay budgets, bounded retry hints, timeout
+separation, durable circuit state, half-open probes, manual
+retry/reclassification, complete observability, restart/concurrency
 qualification, and Android/KMP iOS parity remain release blockers.

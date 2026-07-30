@@ -137,6 +137,10 @@ abstract fun interface io.dataloom.runtime.queue/QueuedSynchronizationWorkResolv
     abstract fun resolve(io.dataloom.api.queue/QueueEntry): io.dataloom.runtime.queue/QueuedSynchronizationWorkResolution // io.dataloom.runtime.queue/QueuedSynchronizationWorkResolver.resolve|resolve(io.dataloom.api.queue.QueueEntry){}[0]
 }
 
+abstract fun interface io.dataloom.runtime.retry/RetryRandomSource { // io.dataloom.runtime.retry/RetryRandomSource|null[0]
+    abstract fun sample(io.dataloom.runtime.retry/RetryRandomRequest): kotlin/Long // io.dataloom.runtime.retry/RetryRandomSource.sample|sample(io.dataloom.runtime.retry.RetryRandomRequest){}[0]
+}
+
 abstract fun interface io.dataloom.runtime.submission/QueuedSynchronizationWorkEncoder { // io.dataloom.runtime.submission/QueuedSynchronizationWorkEncoder|null[0]
     abstract fun encode(io.dataloom.runtime.submission/QueuedSynchronizationSubmission): io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodingResult // io.dataloom.runtime.submission/QueuedSynchronizationWorkEncoder.encode|encode(io.dataloom.runtime.submission.QueuedSynchronizationSubmission){}[0]
 }
@@ -650,6 +654,26 @@ sealed interface io.dataloom.runtime.retry/RetryBackoffStrategy { // io.dataloom
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/RetryBackoffStrategy.Immediate.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/RetryBackoffStrategy.Immediate.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.runtime.retry/RetryBackoffStrategy.Immediate.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.runtime.retry/RetryJitterStrategy { // io.dataloom.runtime.retry/RetryJitterStrategy|null[0]
+    final object Equal : io.dataloom.runtime.retry/RetryJitterStrategy { // io.dataloom.runtime.retry/RetryJitterStrategy.Equal|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/RetryJitterStrategy.Equal.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/RetryJitterStrategy.Equal.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.retry/RetryJitterStrategy.Equal.toString|toString(){}[0]
+    }
+
+    final object Full : io.dataloom.runtime.retry/RetryJitterStrategy { // io.dataloom.runtime.retry/RetryJitterStrategy.Full|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/RetryJitterStrategy.Full.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/RetryJitterStrategy.Full.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.retry/RetryJitterStrategy.Full.toString|toString(){}[0]
+    }
+
+    final object None : io.dataloom.runtime.retry/RetryJitterStrategy { // io.dataloom.runtime.retry/RetryJitterStrategy.None|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/RetryJitterStrategy.None.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/RetryJitterStrategy.None.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.retry/RetryJitterStrategy.None.toString|toString(){}[0]
     }
 }
 
@@ -1463,6 +1487,37 @@ final class io.dataloom.runtime.retry/RetryOrchestrationResult { // io.dataloom.
     final fun toString(): kotlin/String // io.dataloom.runtime.retry/RetryOrchestrationResult.toString|toString(){}[0]
 }
 
+final class io.dataloom.runtime.retry/RetryRandomRequest { // io.dataloom.runtime.retry/RetryRandomRequest|null[0]
+    constructor <init>(io.dataloom.api.identifier/RetryPolicyId, io.dataloom.api.identifier/WorkflowId, io.dataloom.api.identifier/SynchronizationSessionId, io.dataloom.api.retry/RetryOperation, io.dataloom.api.error/ErrorCode, io.dataloom.api.retry/RetryAttempt, kotlin/Long) // io.dataloom.runtime.retry/RetryRandomRequest.<init>|<init>(io.dataloom.api.identifier.RetryPolicyId;io.dataloom.api.identifier.WorkflowId;io.dataloom.api.identifier.SynchronizationSessionId;io.dataloom.api.retry.RetryOperation;io.dataloom.api.error.ErrorCode;io.dataloom.api.retry.RetryAttempt;kotlin.Long){}[0]
+
+    final val attempt // io.dataloom.runtime.retry/RetryRandomRequest.attempt|{}attempt[0]
+        final fun <get-attempt>(): io.dataloom.api.retry/RetryAttempt // io.dataloom.runtime.retry/RetryRandomRequest.attempt.<get-attempt>|<get-attempt>(){}[0]
+    final val errorCode // io.dataloom.runtime.retry/RetryRandomRequest.errorCode|{}errorCode[0]
+        final fun <get-errorCode>(): io.dataloom.api.error/ErrorCode // io.dataloom.runtime.retry/RetryRandomRequest.errorCode.<get-errorCode>|<get-errorCode>(){}[0]
+    final val maximumInclusive // io.dataloom.runtime.retry/RetryRandomRequest.maximumInclusive|{}maximumInclusive[0]
+        final fun <get-maximumInclusive>(): kotlin/Long // io.dataloom.runtime.retry/RetryRandomRequest.maximumInclusive.<get-maximumInclusive>|<get-maximumInclusive>(){}[0]
+    final val operation // io.dataloom.runtime.retry/RetryRandomRequest.operation|{}operation[0]
+        final fun <get-operation>(): io.dataloom.api.retry/RetryOperation // io.dataloom.runtime.retry/RetryRandomRequest.operation.<get-operation>|<get-operation>(){}[0]
+    final val policyId // io.dataloom.runtime.retry/RetryRandomRequest.policyId|{}policyId[0]
+        final fun <get-policyId>(): io.dataloom.api.identifier/RetryPolicyId // io.dataloom.runtime.retry/RetryRandomRequest.policyId.<get-policyId>|<get-policyId>(){}[0]
+    final val sessionId // io.dataloom.runtime.retry/RetryRandomRequest.sessionId|{}sessionId[0]
+        final fun <get-sessionId>(): io.dataloom.api.identifier/SynchronizationSessionId // io.dataloom.runtime.retry/RetryRandomRequest.sessionId.<get-sessionId>|<get-sessionId>(){}[0]
+    final val workflowId // io.dataloom.runtime.retry/RetryRandomRequest.workflowId|{}workflowId[0]
+        final fun <get-workflowId>(): io.dataloom.api.identifier/WorkflowId // io.dataloom.runtime.retry/RetryRandomRequest.workflowId.<get-workflowId>|<get-workflowId>(){}[0]
+
+    final fun component1(): io.dataloom.api.identifier/RetryPolicyId // io.dataloom.runtime.retry/RetryRandomRequest.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.identifier/WorkflowId // io.dataloom.runtime.retry/RetryRandomRequest.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.identifier/SynchronizationSessionId // io.dataloom.runtime.retry/RetryRandomRequest.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.retry/RetryOperation // io.dataloom.runtime.retry/RetryRandomRequest.component4|component4(){}[0]
+    final fun component5(): io.dataloom.api.error/ErrorCode // io.dataloom.runtime.retry/RetryRandomRequest.component5|component5(){}[0]
+    final fun component6(): io.dataloom.api.retry/RetryAttempt // io.dataloom.runtime.retry/RetryRandomRequest.component6|component6(){}[0]
+    final fun component7(): kotlin/Long // io.dataloom.runtime.retry/RetryRandomRequest.component7|component7(){}[0]
+    final fun copy(io.dataloom.api.identifier/RetryPolicyId = ..., io.dataloom.api.identifier/WorkflowId = ..., io.dataloom.api.identifier/SynchronizationSessionId = ..., io.dataloom.api.retry/RetryOperation = ..., io.dataloom.api.error/ErrorCode = ..., io.dataloom.api.retry/RetryAttempt = ..., kotlin/Long = ...): io.dataloom.runtime.retry/RetryRandomRequest // io.dataloom.runtime.retry/RetryRandomRequest.copy|copy(io.dataloom.api.identifier.RetryPolicyId;io.dataloom.api.identifier.WorkflowId;io.dataloom.api.identifier.SynchronizationSessionId;io.dataloom.api.retry.RetryOperation;io.dataloom.api.error.ErrorCode;io.dataloom.api.retry.RetryAttempt;kotlin.Long){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/RetryRandomRequest.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/RetryRandomRequest.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.retry/RetryRandomRequest.toString|toString(){}[0]
+}
+
 final class io.dataloom.runtime.retry/RetrySchedulingConfiguration { // io.dataloom.runtime.retry/RetrySchedulingConfiguration|null[0]
     constructor <init>(io.dataloom.api.scheduling/ScheduleConstraints, io.dataloom.api.scheduling/ExistingSchedulePolicy) // io.dataloom.runtime.retry/RetrySchedulingConfiguration.<init>|<init>(io.dataloom.api.scheduling.ScheduleConstraints;io.dataloom.api.scheduling.ExistingSchedulePolicy){}[0]
 
@@ -1479,11 +1534,23 @@ final class io.dataloom.runtime.retry/RetrySchedulingConfiguration { // io.datal
     final fun toString(): kotlin/String // io.dataloom.runtime.retry/RetrySchedulingConfiguration.toString|toString(){}[0]
 }
 
+final class io.dataloom.runtime.retry/SeededRetryRandomSource : io.dataloom.runtime.retry/RetryRandomSource { // io.dataloom.runtime.retry/SeededRetryRandomSource|null[0]
+    constructor <init>(kotlin/Long) // io.dataloom.runtime.retry/SeededRetryRandomSource.<init>|<init>(kotlin.Long){}[0]
+
+    final val seed // io.dataloom.runtime.retry/SeededRetryRandomSource.seed|{}seed[0]
+        final fun <get-seed>(): kotlin/Long // io.dataloom.runtime.retry/SeededRetryRandomSource.seed.<get-seed>|<get-seed>(){}[0]
+
+    final fun sample(io.dataloom.runtime.retry/RetryRandomRequest): kotlin/Long // io.dataloom.runtime.retry/SeededRetryRandomSource.sample|sample(io.dataloom.runtime.retry.RetryRandomRequest){}[0]
+}
+
 final class io.dataloom.runtime.retry/StandardRetryPolicy : io.dataloom.api.retry/RetryPolicy { // io.dataloom.runtime.retry/StandardRetryPolicy|null[0]
     constructor <init>(io.dataloom.api.identifier/RetryPolicyId, io.dataloom.runtime.retry/RetryBackoffStrategy, kotlin/Int) // io.dataloom.runtime.retry/StandardRetryPolicy.<init>|<init>(io.dataloom.api.identifier.RetryPolicyId;io.dataloom.runtime.retry.RetryBackoffStrategy;kotlin.Int){}[0]
+    constructor <init>(io.dataloom.api.identifier/RetryPolicyId, io.dataloom.runtime.retry/RetryBackoffStrategy, kotlin/Int, io.dataloom.runtime.retry/RetryJitterStrategy, io.dataloom.runtime.retry/RetryRandomSource) // io.dataloom.runtime.retry/StandardRetryPolicy.<init>|<init>(io.dataloom.api.identifier.RetryPolicyId;io.dataloom.runtime.retry.RetryBackoffStrategy;kotlin.Int;io.dataloom.runtime.retry.RetryJitterStrategy;io.dataloom.runtime.retry.RetryRandomSource){}[0]
 
     final val id // io.dataloom.runtime.retry/StandardRetryPolicy.id|{}id[0]
         final fun <get-id>(): io.dataloom.api.identifier/RetryPolicyId // io.dataloom.runtime.retry/StandardRetryPolicy.id.<get-id>|<get-id>(){}[0]
+    final val jitterStrategy // io.dataloom.runtime.retry/StandardRetryPolicy.jitterStrategy|{}jitterStrategy[0]
+        final fun <get-jitterStrategy>(): io.dataloom.runtime.retry/RetryJitterStrategy // io.dataloom.runtime.retry/StandardRetryPolicy.jitterStrategy.<get-jitterStrategy>|<get-jitterStrategy>(){}[0]
     final val maximumAttempts // io.dataloom.runtime.retry/StandardRetryPolicy.maximumAttempts|{}maximumAttempts[0]
         final fun <get-maximumAttempts>(): kotlin/Int // io.dataloom.runtime.retry/StandardRetryPolicy.maximumAttempts.<get-maximumAttempts>|<get-maximumAttempts>(){}[0]
     final val strategy // io.dataloom.runtime.retry/StandardRetryPolicy.strategy|{}strategy[0]
