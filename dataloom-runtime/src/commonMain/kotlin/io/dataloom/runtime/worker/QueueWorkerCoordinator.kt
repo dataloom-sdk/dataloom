@@ -36,10 +36,13 @@ import io.dataloom.runtime.queue.QueueProcessingResult
  *    return [QueueWorkerSchedulingResult.SchedulerNotConfigured].
  * 10. Build one [ScheduleRequest] and call
  *     [io.dataloom.api.scheduling.SchedulerProvider.schedule] exactly once.
+ *     When [QueueWorkerConfiguration.schedulerProviderTimeout] is configured,
+ *     the call first passes through the production cooperative provider-timeout
+ *     boundary.
  * 11. On provider success: return [QueueWorkerSchedulingResult.Scheduled].
- * 12. On provider failure: return [QueueWorkerSchedulingResult.SchedulerFailed]
- *     inside [QueueWorkerRunResult.ProcessingCompleted]. Queue state is not
- *     rolled back.
+ * 12. On provider failure or timeout: return
+ *     [QueueWorkerSchedulingResult.SchedulerFailed] inside
+ *     [QueueWorkerRunResult.ProcessingCompleted]. Queue state is not rolled back.
  *
  * ## Single bounded cycle
  *
@@ -56,17 +59,17 @@ import io.dataloom.runtime.queue.QueueProcessingResult
  *
  * ## Scheduler failure isolation
  *
- * A scheduler failure after successful queue processing is reported in
- * [QueueWorkerSchedulingResult.SchedulerFailed] inside
- * [QueueWorkerRunResult.ProcessingCompleted]. It does not cause a
+ * A scheduler failure or configured provider-timeout expiry after successful
+ * queue processing is reported in [QueueWorkerSchedulingResult.SchedulerFailed]
+ * inside [QueueWorkerRunResult.ProcessingCompleted]. It does not cause a
  * [QueueWorkerRunResult.ProcessingFailed] result. Durable queue state is not
  * rolled back.
  *
  * ## Cancellation
  *
  * [kotlin.coroutines.cancellation.CancellationException] from any provider,
- * the queue processor, or the clock propagates normally and is never converted
- * into a structured result variant.
+ * the queue processor, the timeout boundary, or the clock propagates normally
+ * and is never converted into a structured result variant.
  *
  * ## Boundaries
  *
@@ -94,20 +97,26 @@ import io.dataloom.runtime.queue.QueueProcessingResult
  *   bounded queue-processing cycle. Required.
  * @param schedulerProvider the optional platform scheduler. When `null`,
  *   [QueueWorkerSchedulingResult.SchedulerNotConfigured] is returned when a
- *   wake-up is required.
+ *   wake-up is required. The coordinator decorates this provider only when
+ *   [QueueWorkerConfiguration.schedulerProviderTimeout] is configured.
  * @param clock the injected [DataLoomClock] used to calculate the delay to
- *   the earliest retry or deferral availability. Required. Not read when no
- *   future-availability timestamp is present.
- * @param configuration immutable configuration carrying scheduling parameters
- *   and the recovery flag. Required.
+ *   the earliest retry or deferral availability and construct the timeout
+ *   coordinator. Construction does not read it.
+ * @param configuration immutable configuration carrying scheduling parameters,
+ *   optional scheduler-provider timeout, and the recovery flag. Required.
  */
 public class QueueWorkerCoordinator(
     private val queueProvider: QueueProvider,
     private val queueProcessor: DurableQueueExecutionProcessor,
-    private val schedulerProvider: SchedulerProvider?,
+    schedulerProvider: SchedulerProvider?,
     private val clock: DataLoomClock,
     private val configuration: QueueWorkerConfiguration,
 ) {
+    private val schedulerProvider: SchedulerProvider? = assembleQueueWorkerSchedulerProvider(
+        provider = schedulerProvider,
+        timeout = configuration.schedulerProviderTimeout,
+        clock = clock,
+    )
 
     /**
      * Executes one complete queue-worker coordination cycle.
@@ -312,8 +321,9 @@ public class QueueWorkerCoordinator(
      * Returns [QueueWorkerSchedulingResult.NotRequired] when [plan] is
      * [QueueWorkerWakeUpPlan.NoWakeUp].
      *
-     * Calls [schedulerProvider] at most once. [CancellationException] from the
-     * provider propagates normally.
+     * Calls [schedulerProvider] at most once. A configured provider timeout may
+     * prevent delegate invocation when zero or cancel a cooperative in-flight
+     * call. Caller cancellation propagates normally.
      */
     private suspend fun executeScheduling(
         plan: QueueWorkerWakeUpPlan,
