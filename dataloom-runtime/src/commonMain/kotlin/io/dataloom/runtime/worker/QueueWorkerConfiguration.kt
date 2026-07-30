@@ -16,8 +16,8 @@ import io.dataloom.api.scheduling.SchedulingDelay
  * ## Construction behaviour
  *
  * Construction does not perform any queue operation, scheduling operation,
- * clock read, or identifier generation. All values supplied by the caller
- * are preserved exactly.
+ * clock read, timeout execution, or identifier generation. All values supplied
+ * by the caller are preserved exactly.
  *
  * ## continuationDelay
  *
@@ -30,24 +30,24 @@ import io.dataloom.api.scheduling.SchedulingDelay
  * - an entry availability timestamp
  * - a substitute for an explicitly rescheduled entry availability time
  *
+ * ## schedulerProviderTimeout
+ *
+ * [schedulerProviderTimeout] is an optional upper bound for the queue worker's
+ * follow-up [io.dataloom.api.scheduling.SchedulerProvider.schedule] call. When
+ * configured, [QueueWorkerCoordinator] applies the production cooperative
+ * coroutine provider-timeout boundary before invoking the scheduler.
+ *
+ * A null value preserves the historical unbounded scheduler invocation. A zero
+ * value rejects before the scheduler is called. This timeout is not reused as a
+ * connection, request, idle, policy, queue-processing, or workflow timeout.
+ *
+ * The five-argument constructor is retained explicitly for source and JVM
+ * constructor compatibility. It delegates to a null scheduler timeout.
+ *
  * ## KMP compatibility
  *
  * Uses Kotlin standard-library and DataLoom API types only. Safe for use in
  * Kotlin Multiplatform common code.
- *
- * @param scheduleId stable identifier forwarded verbatim to every
- *   [io.dataloom.api.scheduling.ScheduleRequest] built by this coordinator.
- * @param constraints execution constraints forwarded verbatim to every
- *   [io.dataloom.api.scheduling.ScheduleRequest].
- * @param existingSchedulePolicy policy applied when a schedule with the same
- *   [scheduleId] already exists in the platform scheduler.
- * @param continuationDelay minimum scheduling delay used when the acquisition
- *   limit was reached and another bounded processing cycle may be useful.
- *   Must satisfy [SchedulingDelay] invariants (zero or greater).
- * @param recoverExpiredLeasesBeforeProcessing when `true`, the coordinator
- *   calls [io.dataloom.api.queue.QueueProvider.recoverExpiredLeases]
- *   exactly once before invoking the queue processor. When `false`, no
- *   recovery operation is performed.
  */
 public data class QueueWorkerConfiguration(
     /** Stable identifier forwarded to every [io.dataloom.api.scheduling.ScheduleRequest]. */
@@ -56,26 +56,34 @@ public data class QueueWorkerConfiguration(
     /** Execution constraints forwarded to every [io.dataloom.api.scheduling.ScheduleRequest]. */
     public val constraints: ScheduleConstraints,
 
-    /**
-     * Policy applied when a schedule with the same [scheduleId] already
-     * exists in the platform scheduler.
-     */
+    /** Policy applied when a schedule with the same [scheduleId] already exists. */
     public val existingSchedulePolicy: ExistingSchedulePolicy,
 
-    /**
-     * Minimum scheduling delay used when the acquisition limit was reached
-     * and another bounded processing cycle may be useful.
-     *
-     * Must be zero or greater (enforced by [SchedulingDelay]).
-     */
+    /** Minimum scheduling delay used when the bounded acquisition is full. */
     public val continuationDelay: SchedulingDelay,
 
-    /**
-     * When `true`, the coordinator calls
-     * [io.dataloom.api.queue.QueueProvider.recoverExpiredLeases] exactly
-     * once before invoking the queue processor.
-     *
-     * When `false`, no recovery operation is performed.
-     */
+    /** Enables one expired-lease recovery operation before queue processing. */
     public val recoverExpiredLeasesBeforeProcessing: Boolean,
-)
+
+    /** Optional timeout applied only to the follow-up scheduler-provider call. */
+    public val schedulerProviderTimeout: SchedulingDelay?,
+) {
+    /**
+     * Preserves the original constructor and historical unbounded scheduler
+     * behavior.
+     */
+    public constructor(
+        scheduleId: ScheduleId,
+        constraints: ScheduleConstraints,
+        existingSchedulePolicy: ExistingSchedulePolicy,
+        continuationDelay: SchedulingDelay,
+        recoverExpiredLeasesBeforeProcessing: Boolean,
+    ) : this(
+        scheduleId = scheduleId,
+        constraints = constraints,
+        existingSchedulePolicy = existingSchedulePolicy,
+        continuationDelay = continuationDelay,
+        recoverExpiredLeasesBeforeProcessing = recoverExpiredLeasesBeforeProcessing,
+        schedulerProviderTimeout = null,
+    )
+}
