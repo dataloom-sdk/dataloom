@@ -178,6 +178,8 @@ share it across threads or call `build()` more than once.
 | `observers(...)` / `observer(o)` | Registers `SynchronizationObserver` instances. No event infrastructure is assembled when absent. |
 | `pipeline(p)` | Registers a custom `SynchronizationPipeline` for its direction. Replaces the default for that direction only. |
 | `queueWorkerConfiguration(spec)` | Configures the optional queue-worker capability. |
+| `queueSubmissionEncoder(e)` | Configures direct queue submission with no provider timeout. |
+| `queueSubmissionConfiguration(spec)` | Configures queue submission with an optional enqueue timeout. |
 
 ### Build-time validation
 
@@ -322,7 +324,8 @@ No queue operation is performed during `build()`.
 ## Queue-submission boundary
 
 `DataLoomQueueSubmission` is exposed through `DataLoom.queueSubmission` when
-`DataLoomBuilder.queueSubmissionEncoder` is supplied with a valid
+`DataLoomBuilder.queueSubmissionEncoder` or
+`DataLoomBuilder.queueSubmissionConfiguration` is supplied with a valid
 `QueueProvider` binding.
 
 Queue submission and queue worker are independently configurable. Either, both,
@@ -331,7 +334,13 @@ or neither capability may be present.
 Build fails deterministically when a `QueuedSynchronizationWorkEncoder` is
 supplied but no valid `QueueProvider` binding is found.
 
-No encoding or enqueue operation is performed during `build()`.
+A `DataLoomQueueSubmissionSpec` may configure a timeout for the single enqueue
+operation. A null timeout preserves direct enqueue; zero rejects before provider
+invocation. Timed-out enqueue remains durably ambiguous and is never replayed
+automatically.
+
+No encoding, enqueue, timeout execution, or clock read is performed during
+`build()`.
 
 See [Queue Submission (DL-034)](./queue-submission.md) for the complete
 submission API reference.

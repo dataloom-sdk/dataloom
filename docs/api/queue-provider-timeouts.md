@@ -1,8 +1,8 @@
 # Queue-provider timeout boundaries
 
 > **Status:** Partial V1 runtime slice. Cooperative provider-timeout enforcement
-> exists for the queue-provider contract, the protected queue-worker runtime,
-> and automatic `DataLoomBuilder` adoption. Circuit assembly, platform
+> exists for the queue-provider contract, protected queue-worker and
+> queue-submission runtimes, and automatic `DataLoomBuilder` adoption. Circuit assembly, platform
 > hard-interruption adapters, and complete end-to-end qualification remain open.
 
 ## Purpose
@@ -96,6 +96,30 @@ direct provider behavior.
 Builder assembly performs no provider operation, clock read, queue mutation,
 scheduler call, or coroutine launch.
 
+
+## Queue-submission timeout assembly
+
+`QueueSubmissionProviderTimeoutRuntime.create(...)` protects only the single
+enqueue call made after encoding and structural validation:
+
+```kotlin
+val submission = QueueSubmissionProviderTimeoutRuntime.create(
+    queueProvider = queueProvider,
+    encoder = encoder,
+    clock = clock,
+    queueProviderTimeout = SchedulingDelay(5_000L),
+)
+```
+
+`DataLoomBuilder.queueSubmissionConfiguration(...)` accepts a
+`DataLoomQueueSubmissionSpec` and selects the same protected runtime when its
+timeout is non-null. The historical `queueSubmissionEncoder(...)` method remains
+direct and source compatible.
+
+A timed-out enqueue returns `QueueProviderFailure` with the stable queue-entry ID,
+`QUEUE_PROVIDER_ENQUEUE`, and `Recoverability.UNKNOWN`. It is never replayed
+automatically.
+
 ## Result mapping
 
 The protected worker uses existing queue result variants.
@@ -179,7 +203,6 @@ storage, dispatcher, or coroutine-scope type.
 
 ## Remaining V1 work
 
-- separately governed queue-submission timeout behavior;
 - queue circuit permission and outcome recording;
 - platform-specific hard interruption where cooperative cancellation is
   insufficient;

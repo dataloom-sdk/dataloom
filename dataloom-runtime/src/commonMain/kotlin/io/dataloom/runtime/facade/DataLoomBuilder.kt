@@ -37,6 +37,7 @@ import io.dataloom.runtime.strategy.StrategySynchronizationExecutionCoordinator
 import io.dataloom.runtime.submission.DataLoomQueueSubmission
 import io.dataloom.runtime.submission.DefaultDataLoomQueueSubmission
 import io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder
+import io.dataloom.runtime.submission.QueueSubmissionProviderTimeoutRuntime
 import io.dataloom.runtime.worker.QueueWorkerCoordinator
 import io.dataloom.runtime.worker.QueueWorkerProviderTimeoutRuntime
 
@@ -118,7 +119,7 @@ public class DataLoomBuilder {
     private val observerList: MutableList<SynchronizationObserver> = mutableListOf()
     private val customPipelineList: MutableList<SynchronizationPipeline> = mutableListOf()
     private var queueWorkerSpec: DataLoomQueueWorkerSpec? = null
-    private var queueSubmissionEncoderValue: QueuedSynchronizationWorkEncoder? = null
+    private var queueSubmissionSpecValue: DataLoomQueueSubmissionSpec? = null
     private var built: Boolean = false
 
     // =========================================================================
@@ -349,7 +350,21 @@ public class DataLoomBuilder {
     public fun queueSubmissionEncoder(
         encoder: QueuedSynchronizationWorkEncoder,
     ): DataLoomBuilder = apply {
-        queueSubmissionEncoderValue = encoder
+        queueSubmissionSpecValue = DataLoomQueueSubmissionSpec(encoder)
+    }
+
+    /**
+     * Configures queue submission with an explicit immutable [spec].
+     *
+     * The optional queue-provider timeout applies only to the single enqueue
+     * operation. It is independent from queue-worker and scheduler timeouts.
+     * When both queue-submission setters are called, the most recent call is the
+     * effective configuration.
+     */
+    public fun queueSubmissionConfiguration(
+        spec: DataLoomQueueSubmissionSpec,
+    ): DataLoomBuilder = apply {
+        queueSubmissionSpecValue = spec
     }
 
     // =========================================================================
@@ -495,16 +510,17 @@ public class DataLoomBuilder {
         }
 
         // --- 10. Build optional queue submission ---
-        val queueSubmission = queueSubmissionEncoderValue?.let { encoder ->
+        val queueSubmission = queueSubmissionSpecValue?.let { spec ->
             val legacyBindings = bindings
                 ?: throw DataLoomBuildException(
-                    "DataLoomBuilder queueSubmissionEncoder currently requires " +
+                    "DataLoomBuilder queue submission currently requires " +
                         "defaultProviderBindings.",
                 )
             buildQueueSubmission(
-                encoder = encoder,
+                spec = spec,
                 registry = registry,
                 bindings = legacyBindings,
+                deps = deps,
             )
         }
 
@@ -726,13 +742,15 @@ public class DataLoomBuilder {
      * that refers to a registered [QueueProvider]. Throws
      * [DataLoomBuildException] when this requirement is not satisfied.
      *
-     * Build performs no encoding, no enqueue operation, no clock read, and no
-     * identifier generation.
+     * Build performs no encoding, enqueue operation, timeout execution, clock
+     * read, or identifier generation. A configured submission timeout is
+     * assembled structurally and applies only when `submit` invokes enqueue.
      */
     private fun buildQueueSubmission(
-        encoder: QueuedSynchronizationWorkEncoder,
+        spec: DataLoomQueueSubmissionSpec,
         registry: ProviderRegistry,
         bindings: SynchronizationProviderBindings,
+        deps: RuntimeDependencies,
     ): DataLoomQueueSubmission {
         val queueProviderId = bindings.queueProviderId
             ?: throw DataLoomBuildException(
@@ -759,9 +777,19 @@ public class DataLoomBuilder {
                     "does not implement the QueueProvider contract.",
             )
 
-        return DefaultDataLoomQueueSubmission(
-            queueProvider = queueProvider,
-            encoder = encoder,
-        )
+        val queueProviderTimeout = spec.queueProviderTimeout
+        return if (queueProviderTimeout != null) {
+            QueueSubmissionProviderTimeoutRuntime.create(
+                queueProvider = queueProvider,
+                encoder = spec.encoder,
+                clock = deps.clock,
+                queueProviderTimeout = queueProviderTimeout,
+            )
+        } else {
+            DefaultDataLoomQueueSubmission(
+                queueProvider = queueProvider,
+                encoder = spec.encoder,
+            )
+        }
     }
 }
