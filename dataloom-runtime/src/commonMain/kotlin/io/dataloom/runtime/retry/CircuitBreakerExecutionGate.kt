@@ -27,10 +27,10 @@ public class CircuitBreakerExecutionGate(
                 retryAt = permission.retryAt,
             )
             is CircuitBreakerPermission.PersistenceFailure -> {
-                CircuitBreakerExecutionResult.PersistenceFailure(permission.error)
+                CircuitBreakerExecutionResult.PermissionPersistenceFailure(permission.error)
             }
             CircuitBreakerPermission.ContentionLimitReached -> {
-                CircuitBreakerExecutionResult.ContentionLimitReached
+                CircuitBreakerExecutionResult.PermissionContentionLimitReached
             }
         }
     }
@@ -42,27 +42,15 @@ public class CircuitBreakerExecutionGate(
     ): CircuitBreakerExecutionResult<T> {
         val operationResult = operation()
         val recordResult = when (operationResult) {
-            is CircuitProtectedOperationResult.Success -> coordinator.recordSuccess(scope, permit)
+            is CircuitProtectedOperationResult.Success,
+            is CircuitProtectedOperationResult.NonCircuitFailure,
+            -> coordinator.recordSuccess(scope, permit)
+
             is CircuitProtectedOperationResult.Failure -> coordinator.recordFailure(scope, permit)
         }
-        return when (recordResult) {
-            is CircuitBreakerRecordResult.Recorded,
-            CircuitBreakerRecordResult.Ignored,
-            -> CircuitBreakerExecutionResult.Executed(operationResult)
-
-            CircuitBreakerRecordResult.StaleProbe -> CircuitBreakerExecutionResult.StaleProbe
-            is CircuitBreakerRecordResult.ClockRegression -> {
-                CircuitBreakerExecutionResult.ClockRegression(
-                    observedAt = recordResult.observedAt,
-                    persistedAt = recordResult.persistedAt,
-                )
-            }
-            is CircuitBreakerRecordResult.PersistenceFailure -> {
-                CircuitBreakerExecutionResult.PersistenceFailure(recordResult.error)
-            }
-            CircuitBreakerRecordResult.ContentionLimitReached -> {
-                CircuitBreakerExecutionResult.ContentionLimitReached
-            }
-        }
+        return CircuitBreakerExecutionResult.Executed(
+            operationResult = operationResult,
+            recordResult = recordResult,
+        )
     }
 }
