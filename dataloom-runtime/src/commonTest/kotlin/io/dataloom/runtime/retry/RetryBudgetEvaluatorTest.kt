@@ -153,15 +153,15 @@ class RetryBudgetEvaluatorTest {
             RetryBudgetConfiguration(maximumCumulativeDelay = SchedulingDelay(Long.MAX_VALUE - 1L)),
         )
         val current = RetryBudgetState(
-            windowStartedAt = DataLoomInstant.ZERO,
-            lastEvaluatedAt = DataLoomInstant.ZERO,
+            windowStartedAt = DataLoomInstant(0L),
+            lastEvaluatedAt = DataLoomInstant(0L),
             cumulativeDelay = SchedulingDelay(Long.MAX_VALUE - 5L),
         )
 
         val stopped = assertIs<RetryBudgetEvaluation.Stopped>(
             evaluator.evaluate(
                 state = current,
-                evaluatedAt = DataLoomInstant.ZERO,
+                evaluatedAt = DataLoomInstant(0L),
                 proposedDelay = SchedulingDelay(10L),
             ),
         )
