@@ -2137,6 +2137,7 @@ final class io.dataloom.runtime.submission/QueuedSynchronizationSubmission { // 
 
 final class io.dataloom.runtime.worker/QueueWorkerConfiguration { // io.dataloom.runtime.worker/QueueWorkerConfiguration|null[0]
     constructor <init>(io.dataloom.api.identifier/ScheduleId, io.dataloom.api.scheduling/ScheduleConstraints, io.dataloom.api.scheduling/ExistingSchedulePolicy, io.dataloom.api.scheduling/SchedulingDelay, kotlin/Boolean) // io.dataloom.runtime.worker/QueueWorkerConfiguration.<init>|<init>(io.dataloom.api.identifier.ScheduleId;io.dataloom.api.scheduling.ScheduleConstraints;io.dataloom.api.scheduling.ExistingSchedulePolicy;io.dataloom.api.scheduling.SchedulingDelay;kotlin.Boolean){}[0]
+    constructor <init>(io.dataloom.api.identifier/ScheduleId, io.dataloom.api.scheduling/ScheduleConstraints, io.dataloom.api.scheduling/ExistingSchedulePolicy, io.dataloom.api.scheduling/SchedulingDelay, kotlin/Boolean, io.dataloom.api.scheduling/SchedulingDelay?) // io.dataloom.runtime.worker/QueueWorkerConfiguration.<init>|<init>(io.dataloom.api.identifier.ScheduleId;io.dataloom.api.scheduling.ScheduleConstraints;io.dataloom.api.scheduling.ExistingSchedulePolicy;io.dataloom.api.scheduling.SchedulingDelay;kotlin.Boolean;io.dataloom.api.scheduling.SchedulingDelay?){}[0]
 
     final val constraints // io.dataloom.runtime.worker/QueueWorkerConfiguration.constraints|{}constraints[0]
         final fun <get-constraints>(): io.dataloom.api.scheduling/ScheduleConstraints // io.dataloom.runtime.worker/QueueWorkerConfiguration.constraints.<get-constraints>|<get-constraints>(){}[0]
@@ -2148,13 +2149,16 @@ final class io.dataloom.runtime.worker/QueueWorkerConfiguration { // io.dataloom
         final fun <get-recoverExpiredLeasesBeforeProcessing>(): kotlin/Boolean // io.dataloom.runtime.worker/QueueWorkerConfiguration.recoverExpiredLeasesBeforeProcessing.<get-recoverExpiredLeasesBeforeProcessing>|<get-recoverExpiredLeasesBeforeProcessing>(){}[0]
     final val scheduleId // io.dataloom.runtime.worker/QueueWorkerConfiguration.scheduleId|{}scheduleId[0]
         final fun <get-scheduleId>(): io.dataloom.api.identifier/ScheduleId // io.dataloom.runtime.worker/QueueWorkerConfiguration.scheduleId.<get-scheduleId>|<get-scheduleId>(){}[0]
+    final val schedulerProviderTimeout // io.dataloom.runtime.worker/QueueWorkerConfiguration.schedulerProviderTimeout|{}schedulerProviderTimeout[0]
+        final fun <get-schedulerProviderTimeout>(): io.dataloom.api.scheduling/SchedulingDelay? // io.dataloom.runtime.worker/QueueWorkerConfiguration.schedulerProviderTimeout.<get-schedulerProviderTimeout>|<get-schedulerProviderTimeout>(){}[0]
 
     final fun component1(): io.dataloom.api.identifier/ScheduleId // io.dataloom.runtime.worker/QueueWorkerConfiguration.component1|component1(){}[0]
     final fun component2(): io.dataloom.api.scheduling/ScheduleConstraints // io.dataloom.runtime.worker/QueueWorkerConfiguration.component2|component2(){}[0]
     final fun component3(): io.dataloom.api.scheduling/ExistingSchedulePolicy // io.dataloom.runtime.worker/QueueWorkerConfiguration.component3|component3(){}[0]
     final fun component4(): io.dataloom.api.scheduling/SchedulingDelay // io.dataloom.runtime.worker/QueueWorkerConfiguration.component4|component4(){}[0]
     final fun component5(): kotlin/Boolean // io.dataloom.runtime.worker/QueueWorkerConfiguration.component5|component5(){}[0]
-    final fun copy(io.dataloom.api.identifier/ScheduleId = ..., io.dataloom.api.scheduling/ScheduleConstraints = ..., io.dataloom.api.scheduling/ExistingSchedulePolicy = ..., io.dataloom.api.scheduling/SchedulingDelay = ..., kotlin/Boolean = ...): io.dataloom.runtime.worker/QueueWorkerConfiguration // io.dataloom.runtime.worker/QueueWorkerConfiguration.copy|copy(io.dataloom.api.identifier.ScheduleId;io.dataloom.api.scheduling.ScheduleConstraints;io.dataloom.api.scheduling.ExistingSchedulePolicy;io.dataloom.api.scheduling.SchedulingDelay;kotlin.Boolean){}[0]
+    final fun component6(): io.dataloom.api.scheduling/SchedulingDelay? // io.dataloom.runtime.worker/QueueWorkerConfiguration.component6|component6(){}[0]
+    final fun copy(io.dataloom.api.identifier/ScheduleId = ..., io.dataloom.api.scheduling/ScheduleConstraints = ..., io.dataloom.api.scheduling/ExistingSchedulePolicy = ..., io.dataloom.api.scheduling/SchedulingDelay = ..., kotlin/Boolean = ..., io.dataloom.api.scheduling/SchedulingDelay? = ...): io.dataloom.runtime.worker/QueueWorkerConfiguration // io.dataloom.runtime.worker/QueueWorkerConfiguration.copy|copy(io.dataloom.api.identifier.ScheduleId;io.dataloom.api.scheduling.ScheduleConstraints;io.dataloom.api.scheduling.ExistingSchedulePolicy;io.dataloom.api.scheduling.SchedulingDelay;kotlin.Boolean;io.dataloom.api.scheduling.SchedulingDelay?){}[0]
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/QueueWorkerConfiguration.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/QueueWorkerConfiguration.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.runtime.worker/QueueWorkerConfiguration.toString|toString(){}[0]
