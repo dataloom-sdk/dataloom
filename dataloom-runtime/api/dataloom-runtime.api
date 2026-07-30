@@ -1352,6 +1352,7 @@ public final class io/dataloom/runtime/retry/SynchronizationRetryEvaluator {
 }
 
 public final class io/dataloom/runtime/retry/SynchronizationRetryOrchestrator {
+	public static final field Companion Lio/dataloom/runtime/retry/SynchronizationRetryOrchestrator$Companion;
 	public fun <init> (Lio/dataloom/api/retry/RetryPolicy;Lio/dataloom/api/scheduling/SchedulerProvider;Lio/dataloom/runtime/retry/RetrySchedulingConfiguration;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/retry/RetryBudgetConfiguration;Lio/dataloom/runtime/execution/lifecycle/SynchronizationRuntimeEventEmitter;)V
 	public synthetic fun <init> (Lio/dataloom/api/retry/RetryPolicy;Lio/dataloom/api/scheduling/SchedulerProvider;Lio/dataloom/runtime/retry/RetrySchedulingConfiguration;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/retry/RetryBudgetConfiguration;Lio/dataloom/runtime/execution/lifecycle/SynchronizationRuntimeEventEmitter;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> (Lio/dataloom/api/retry/RetryPolicy;Lio/dataloom/api/scheduling/SchedulerProvider;Lio/dataloom/runtime/retry/RetrySchedulingConfiguration;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/retry/RetryBudgetConfiguration;Lio/dataloom/runtime/retry/RetryHintConfiguration;Lio/dataloom/runtime/execution/lifecycle/SynchronizationRuntimeEventEmitter;)V
@@ -1361,6 +1362,11 @@ public final class io/dataloom/runtime/retry/SynchronizationRetryOrchestrator {
 	public fun <init> (Lio/dataloom/api/retry/RetryPolicy;Lio/dataloom/api/scheduling/SchedulerProvider;Lio/dataloom/runtime/retry/RetrySchedulingConfiguration;Lio/dataloom/runtime/retry/RetryHintConfiguration;Lio/dataloom/runtime/execution/lifecycle/SynchronizationRuntimeEventEmitter;)V
 	public synthetic fun <init> (Lio/dataloom/api/retry/RetryPolicy;Lio/dataloom/api/scheduling/SchedulerProvider;Lio/dataloom/runtime/retry/RetrySchedulingConfiguration;Lio/dataloom/runtime/retry/RetryHintConfiguration;Lio/dataloom/runtime/execution/lifecycle/SynchronizationRuntimeEventEmitter;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun evaluateAndSchedule (Lio/dataloom/runtime/retry/SynchronizationRetryRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/retry/SynchronizationRetryOrchestrator$Companion {
+	public final fun withSchedulerProviderTimeout (Lio/dataloom/api/retry/RetryPolicy;Lio/dataloom/api/scheduling/SchedulerProvider;Lio/dataloom/runtime/retry/RetrySchedulingConfiguration;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/runtime/retry/RetryBudgetConfiguration;Lio/dataloom/runtime/retry/RetryHintConfiguration;Lio/dataloom/runtime/execution/lifecycle/SynchronizationRuntimeEventEmitter;)Lio/dataloom/runtime/retry/SynchronizationRetryOrchestrator;
+	public static synthetic fun withSchedulerProviderTimeout$default (Lio/dataloom/runtime/retry/SynchronizationRetryOrchestrator$Companion;Lio/dataloom/api/retry/RetryPolicy;Lio/dataloom/api/scheduling/SchedulerProvider;Lio/dataloom/runtime/retry/RetrySchedulingConfiguration;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/runtime/retry/RetryBudgetConfiguration;Lio/dataloom/runtime/retry/RetryHintConfiguration;Lio/dataloom/runtime/execution/lifecycle/SynchronizationRuntimeEventEmitter;ILjava/lang/Object;)Lio/dataloom/runtime/retry/SynchronizationRetryOrchestrator;
 }
 
 public final class io/dataloom/runtime/retry/SynchronizationRetryRequest {
