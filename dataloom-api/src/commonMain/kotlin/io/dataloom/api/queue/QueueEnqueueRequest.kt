@@ -5,26 +5,17 @@ package io.dataloom.api.queue
  * synchronization queue.
  *
  * Construction does not persist the entry. Persistence is the responsibility
- * of the [io.dataloom.api.queue.QueueProvider] that receives this request.
- *
- * ## Duplicate handling
+ * of the [QueueProvider] that receives this request.
  *
  * Duplicate-entry handling belongs to the provider implementation. A provider
  * must return a canonical error rather than silently replacing an existing
- * entry unless future policy explicitly permits replacement.
+ * entry unless explicit policy permits replacement.
  *
- * ## Constraints
- *
- * - [entry] is required.
- * - The supplied entry must have state [QueueEntryState.PENDING].
- * - The supplied entry must not contain a lease.
- * - The supplied entry must not contain a retry attempt.
- *
- * @param entry required queue entry to enqueue. Must be in
- *   [QueueEntryState.PENDING] state with no lease and no retry attempt.
+ * The supplied entry must be PENDING and must not contain a lease, retry
+ * attempt, or retry-budget state. Budget state starts only after a genuine
+ * failure is accepted for retry.
  */
 public data class QueueEnqueueRequest(
-    /** Required queue entry to persist. Must be in [QueueEntryState.PENDING] state. */
     public val entry: QueueEntry,
 ) {
     init {
@@ -36,6 +27,9 @@ public data class QueueEnqueueRequest(
         }
         require(entry.retryAttempt == null) {
             "QueueEnqueueRequest entry must not contain a retryAttempt."
+        }
+        require(entry.retryBudgetState == null) {
+            "QueueEnqueueRequest entry must not contain retryBudgetState."
         }
     }
 }
