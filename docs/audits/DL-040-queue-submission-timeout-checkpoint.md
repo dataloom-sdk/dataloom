@@ -80,6 +80,9 @@ The review branch must prove:
 - successful bounded enqueue preserves the exact provider success;
 - canonical provider failures remain unchanged;
 - caller cancellation propagates;
+- encoding rejection bypasses the timeout clock and queue provider;
+- encoded-request contract violation bypasses the timeout clock and queue
+  provider;
 - builder timeout configuration selects protected enqueue behavior;
 - the legacy builder method still invokes the direct provider exactly once;
 - exact JVM and Kotlin/Native ABI baselines contain the new public surfaces;
@@ -87,6 +90,30 @@ The review branch must prove:
   `iosX64`; and
 - permanent pull-request, Android, and Apple validation pass on one clean final
   head.
+
+## Focused evidence completed
+
+The temporary same-repository evidence lane completed successfully. It:
+
+- applied the queue-submission builder integration and documentation changes;
+- ran runtime JVM tests and `iosSimulatorArm64Test`;
+- compiled external consumers for JVM, `iosArm64`, `iosSimulatorArm64`, and
+  `iosX64`;
+- generated exact runtime and Apple JVM/Kotlin-Native ABI baselines;
+- passed public ABI boundary validation;
+- assembled the Apple release XCFramework;
+- verified the new submission specification, builder method, and protected
+  runtime symbols; and
+- removed its temporary workflow and patch helper before committing the clean
+  evidence head.
+
+A final audit-hardening test additionally proves that encoder rejection and
+encoded-request validation failure return before any timeout clock read or queue
+provider call. This prevents future refactoring from accidentally moving the
+provider timeout around the complete submission pipeline.
+
+The permanent pull-request, Android, and Apple lanes must pass on the same final
+head before merge.
 
 ## Remaining work
 
