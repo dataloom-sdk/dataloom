@@ -1,9 +1,9 @@
 name: Temporary Retry Jitter ABI
 
 on:
-  push:
+  pull_request:
     branches:
-      - codex/dl-retry-011-deterministic-jitter
+      - main
     paths:
       - .github/workflows/tmp-retry-jitter-abi.yml
       - dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/retry/**
@@ -14,7 +14,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: temporary-retry-jitter-abi-${{ github.ref }}
+  group: temporary-retry-jitter-abi-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
@@ -24,8 +24,10 @@ jobs:
     timeout-minutes: 40
 
     steps:
-      - name: Checkout repository
+      - name: Checkout review branch
         uses: actions/checkout@v6
+        with:
+          ref: codex/dl-retry-011-deterministic-jitter
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -63,7 +65,7 @@ jobs:
           set -e
 
           {
-            echo "commit=${GITHUB_SHA}"
+            echo "commit=$(git rev-parse HEAD)"
             echo "gradle_status=${gradle_status}"
             echo "generated_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
             echo "--- final Gradle output ---"
@@ -78,6 +80,6 @@ jobs:
           fi
           git rm .github/workflows/tmp-retry-jitter-abi.yml
           git commit -m "DL-040: record retry jitter ABI validation"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          git push origin "HEAD:codex/dl-retry-011-deterministic-jitter"
 
           exit "$gradle_status"
