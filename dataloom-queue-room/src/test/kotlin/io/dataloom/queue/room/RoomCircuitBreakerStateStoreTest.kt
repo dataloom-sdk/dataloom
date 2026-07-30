@@ -42,75 +42,85 @@ class RoomCircuitBreakerStateStoreTest {
     }
 
     @Test
-    fun `missing row is returned as an explicit missing result`() = runBlocking {
-        whenever(dao.load(any())).thenReturn(null)
+    fun `missing row is returned as an explicit missing result`() {
+        runBlocking {
+            whenever(dao.load(any())).thenReturn(null)
 
-        val result = assertIs<ProviderOperationResult.Success<CircuitBreakerLoadResult>>(
-            store.load(scope),
-        )
+            val result = assertIs<ProviderOperationResult.Success<CircuitBreakerLoadResult>>(
+                store.load(scope),
+            )
 
-        assertIs<CircuitBreakerLoadResult.Missing>(result.value)
+            assertIs<CircuitBreakerLoadResult.Missing>(result.value)
+        }
     }
 
     @Test
-    fun `compare and set conflict preserves the current durable record`() = runBlocking {
-        val current = validEntity(recordVersion = 2L)
-        whenever(dao.compareAndSet(eq(1L), any())).thenReturn(
-            CircuitBreakerCompareAndSetEntityResult.Conflict(current),
-        )
+    fun `compare and set conflict preserves the current durable record`() {
+        runBlocking {
+            val current = validEntity(recordVersion = 2L)
+            whenever(dao.compareAndSet(eq(1L), any())).thenReturn(
+                CircuitBreakerCompareAndSetEntityResult.Conflict(current),
+            )
 
-        val result = assertIs<ProviderOperationResult.Success<CircuitBreakerCompareAndSetResult>>(
-            store.compareAndSet(
-                CircuitBreakerCompareAndSetRequest(
-                    scope = scope,
-                    expectedVersion = 1L,
-                    nextState = closedState(),
+            val result = assertIs<ProviderOperationResult.Success<CircuitBreakerCompareAndSetResult>>(
+                store.compareAndSet(
+                    CircuitBreakerCompareAndSetRequest(
+                        scope = scope,
+                        expectedVersion = 1L,
+                        nextState = closedState(),
+                    ),
                 ),
-            ),
-        )
-        val conflict = assertIs<CircuitBreakerCompareAndSetResult.Conflict>(result.value)
+            )
+            val conflict = assertIs<CircuitBreakerCompareAndSetResult.Conflict>(result.value)
 
-        assertEquals(2L, conflict.current?.version)
-        assertEquals(scope, conflict.current?.state?.scope)
+            assertEquals(2L, conflict.current?.version)
+            assertEquals(scope, conflict.current?.state?.scope)
+        }
     }
 
     @Test
-    fun `malformed durable row fails closed as an integrity failure`() = runBlocking {
-        whenever(dao.load(any())).thenReturn(validEntity(phase = "BROKEN"))
+    fun `malformed durable row fails closed as an integrity failure`() {
+        runBlocking {
+            whenever(dao.load(any())).thenReturn(validEntity(phase = "BROKEN"))
 
-        val result = assertIs<ProviderOperationResult.Failure>(store.load(scope))
+            val result = assertIs<ProviderOperationResult.Failure>(store.load(scope))
 
-        assertEquals("CIRCUIT_ROOM_STATE_CORRUPT", result.error.code.value)
-        assertEquals(Recoverability.NON_RECOVERABLE, result.error.recoverability)
-        assertEquals("Persisted circuit state failed integrity validation.", result.error.message)
+            assertEquals("CIRCUIT_ROOM_STATE_CORRUPT", result.error.code.value)
+            assertEquals(Recoverability.NON_RECOVERABLE, result.error.recoverability)
+            assertEquals("Persisted circuit state failed integrity validation.", result.error.message)
+        }
     }
 
     @Test
-    fun `record version exhaustion is non recoverable and does not access Room`() = runBlocking {
-        val result = assertIs<ProviderOperationResult.Failure>(
-            store.compareAndSet(
-                CircuitBreakerCompareAndSetRequest(
-                    scope = scope,
-                    expectedVersion = Long.MAX_VALUE,
-                    nextState = closedState(),
+    fun `record version exhaustion is non recoverable and does not access Room`() {
+        runBlocking {
+            val result = assertIs<ProviderOperationResult.Failure>(
+                store.compareAndSet(
+                    CircuitBreakerCompareAndSetRequest(
+                        scope = scope,
+                        expectedVersion = Long.MAX_VALUE,
+                        nextState = closedState(),
+                    ),
                 ),
-            ),
-        )
+            )
 
-        assertEquals("CIRCUIT_STATE_VERSION_EXHAUSTED", result.error.code.value)
-        assertEquals(Recoverability.NON_RECOVERABLE, result.error.recoverability)
-        verifyNoInteractions(dao)
+            assertEquals("CIRCUIT_STATE_VERSION_EXHAUSTED", result.error.code.value)
+            assertEquals(Recoverability.NON_RECOVERABLE, result.error.recoverability)
+            verifyNoInteractions(dao)
+        }
     }
 
     @Test
-    fun `database failure is sanitized and recoverable`() = runBlocking {
-        whenever(dao.load(any())).thenThrow(mock<android.database.sqlite.SQLiteException>())
+    fun `database failure is sanitized and recoverable`() {
+        runBlocking {
+            whenever(dao.load(any())).thenThrow(mock<android.database.sqlite.SQLiteException>())
 
-        val result = assertIs<ProviderOperationResult.Failure>(store.load(scope))
+            val result = assertIs<ProviderOperationResult.Failure>(store.load(scope))
 
-        assertEquals("CIRCUIT_ROOM_DATABASE_FAILURE", result.error.code.value)
-        assertEquals(Recoverability.RECOVERABLE, result.error.recoverability)
-        assertEquals("A circuit-state database operation failed.", result.error.message)
+            assertEquals("CIRCUIT_ROOM_DATABASE_FAILURE", result.error.code.value)
+            assertEquals(Recoverability.RECOVERABLE, result.error.recoverability)
+            assertEquals("A circuit-state database operation failed.", result.error.message)
+        }
     }
 
     @Test
