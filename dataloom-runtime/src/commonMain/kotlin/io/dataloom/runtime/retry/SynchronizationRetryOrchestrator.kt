@@ -13,12 +13,12 @@ import io.dataloom.api.time.DataLoomClock
 import io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitter
 
 /**
- * Scheduler-backed retry orchestrator with central protection and optional
- * elapsed/cumulative budget enforcement.
+ * Scheduler-backed retry orchestrator with central protection, optional bounded
+ * provider/server hints, and optional elapsed/cumulative budget enforcement.
  *
- * Budget state advances only after [SchedulerProvider.schedule] succeeds. A
- * missing or failed scheduler returns no next budget state, so callers cannot
- * accidentally consume budget for work that was never accepted.
+ * Hints are clamped before policy visibility and enforced as a minimum after
+ * policy evaluation. Budgets evaluate the resulting final delay. Budget state
+ * advances only after [SchedulerProvider.schedule] succeeds.
  */
 public class SynchronizationRetryOrchestrator(
     private val retryPolicy: RetryPolicy,
@@ -28,6 +28,23 @@ public class SynchronizationRetryOrchestrator(
 ) {
     private var budgetClock: DataLoomClock? = null
     private var budgetEvaluator: RetryBudgetEvaluator? = null
+    private var hintEvaluator: RetryHintEvaluator? = null
+
+    /** Creates an orchestrator with bounded provider/server hints. */
+    public constructor(
+        retryPolicy: RetryPolicy,
+        schedulerProvider: SchedulerProvider?,
+        configuration: RetrySchedulingConfiguration,
+        hintConfiguration: RetryHintConfiguration,
+        eventEmitter: SynchronizationRuntimeEventEmitter? = null,
+    ) : this(
+        retryPolicy = retryPolicy,
+        schedulerProvider = schedulerProvider,
+        configuration = configuration,
+        eventEmitter = eventEmitter,
+    ) {
+        hintEvaluator = RetryHintEvaluator(hintConfiguration)
+    }
 
     /** Creates an orchestrator with central [budgetConfiguration]. */
     public constructor(
@@ -45,6 +62,26 @@ public class SynchronizationRetryOrchestrator(
     ) {
         budgetClock = clock
         budgetEvaluator = RetryBudgetEvaluator(budgetConfiguration)
+    }
+
+    /** Creates an orchestrator with central budgets and bounded retry hints. */
+    public constructor(
+        retryPolicy: RetryPolicy,
+        schedulerProvider: SchedulerProvider?,
+        configuration: RetrySchedulingConfiguration,
+        clock: DataLoomClock,
+        budgetConfiguration: RetryBudgetConfiguration,
+        hintConfiguration: RetryHintConfiguration,
+        eventEmitter: SynchronizationRuntimeEventEmitter? = null,
+    ) : this(
+        retryPolicy = retryPolicy,
+        schedulerProvider = schedulerProvider,
+        configuration = configuration,
+        eventEmitter = eventEmitter,
+    ) {
+        budgetClock = clock
+        budgetEvaluator = RetryBudgetEvaluator(budgetConfiguration)
+        hintEvaluator = RetryHintEvaluator(hintConfiguration)
     }
 
     /** Evaluates policy and schedules at most one future attempt. */
@@ -66,6 +103,7 @@ public class SynchronizationRetryOrchestrator(
             retryOperation = request.retryOperation,
             retryAttempt = request.retryAttempt,
             errors = errors,
+            hintEvaluator = hintEvaluator,
         )
 
         if (evaluated.blockingError != null) {
