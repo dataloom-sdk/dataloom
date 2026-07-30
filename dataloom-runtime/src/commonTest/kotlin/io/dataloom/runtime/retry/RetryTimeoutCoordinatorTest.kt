@@ -28,7 +28,7 @@ class RetryTimeoutCoordinatorTest {
     }
 
     @Test
-    fun `unconfigured boundary executes directly`() {
+    fun `unconfigured boundary without workflow evidence executes directly`() {
         val executor = RecordingExecutor()
         val coordinator = RetryTimeoutCoordinator(
             RetryTimeoutConfiguration(requestTimeout = SchedulingDelay(500L)),
@@ -43,7 +43,28 @@ class RetryTimeoutCoordinatorTest {
     }
 
     @Test
-    fun `workflow remaining time caps boundary timeout`() {
+    fun `workflow deadline enforces an otherwise unconfigured boundary`() {
+        val executor = RecordingExecutor()
+        val coordinator = RetryTimeoutCoordinator(
+            RetryTimeoutConfiguration(workflowTimeout = SchedulingDelay(2_000L)),
+            FixedClock(1_500L),
+            executor,
+        )
+
+        runSuspend {
+            coordinator.execute(
+                kind = RetryTimeoutKind.PROVIDER,
+                workflowStartedAt = DataLoomInstant(1_000L),
+            ) { "ok" }
+        }
+
+        assertEquals(RetryTimeoutKind.WORKFLOW, executor.request?.kind)
+        assertEquals(SchedulingDelay(1_500L), executor.request?.timeout)
+        assertEquals(DataLoomInstant(3_000L), executor.request?.workflowDeadline)
+    }
+
+    @Test
+    fun `workflow remaining time caps boundary timeout and owns classification`() {
         val executor = RecordingExecutor()
         val coordinator = RetryTimeoutCoordinator(
             RetryTimeoutConfiguration(
@@ -61,18 +82,40 @@ class RetryTimeoutCoordinatorTest {
             ) { "ok" }
         }
 
+        assertEquals(RetryTimeoutKind.WORKFLOW, executor.request?.kind)
         assertEquals(SchedulingDelay(500L), executor.request?.timeout)
         assertEquals(DataLoomInstant(3_000L), executor.request?.workflowDeadline)
     }
 
     @Test
-    fun `expired workflow stops before executor`() {
+    fun `shorter boundary retains its own classification`() {
         val executor = RecordingExecutor()
         val coordinator = RetryTimeoutCoordinator(
             RetryTimeoutConfiguration(
-                providerTimeout = SchedulingDelay(1_000L),
+                requestTimeout = SchedulingDelay(400L),
                 workflowTimeout = SchedulingDelay(2_000L),
             ),
+            FixedClock(2_500L),
+            executor,
+        )
+
+        runSuspend {
+            coordinator.execute(
+                kind = RetryTimeoutKind.REQUEST,
+                workflowStartedAt = DataLoomInstant(1_000L),
+            ) { "ok" }
+        }
+
+        assertEquals(RetryTimeoutKind.REQUEST, executor.request?.kind)
+        assertEquals(SchedulingDelay(400L), executor.request?.timeout)
+        assertEquals(DataLoomInstant(3_000L), executor.request?.workflowDeadline)
+    }
+
+    @Test
+    fun `expired workflow stops before executor even when boundary is unconfigured`() {
+        val executor = RecordingExecutor()
+        val coordinator = RetryTimeoutCoordinator(
+            RetryTimeoutConfiguration(workflowTimeout = SchedulingDelay(2_000L)),
             FixedClock(3_000L),
             executor,
         )
@@ -84,25 +127,25 @@ class RetryTimeoutCoordinatorTest {
             ) { "never" }
         }
 
-        assertEquals(DataLoomInstant(3_000L), assertIs<RetryTimeoutExecutionResult.WorkflowDeadlineExceeded>(result).deadline)
+        assertEquals(
+            DataLoomInstant(3_000L),
+            assertIs<RetryTimeoutExecutionResult.WorkflowDeadlineExceeded>(result).deadline,
+        )
         assertEquals(null, executor.request)
     }
 
     @Test
-    fun `clock regression stops fail closed`() {
+    fun `clock regression stops fail closed even when boundary is unconfigured`() {
         val executor = RecordingExecutor()
         val coordinator = RetryTimeoutCoordinator(
-            RetryTimeoutConfiguration(
-                policyTimeout = SchedulingDelay(100L),
-                workflowTimeout = SchedulingDelay(1_000L),
-            ),
+            RetryTimeoutConfiguration(workflowTimeout = SchedulingDelay(1_000L)),
             FixedClock(900L),
             executor,
         )
 
         val result = runSuspend {
             coordinator.execute(
-                kind = RetryTimeoutKind.POLICY,
+                kind = RetryTimeoutKind.PROVIDER,
                 workflowStartedAt = DataLoomInstant(1_000L),
             ) { "never" }
         }
@@ -112,11 +155,13 @@ class RetryTimeoutCoordinatorTest {
     }
 
     private fun <T> runSuspend(block: suspend () -> T): T {
-        var result: Result<T>? = null
+        var completed: Result<T>? = null
         block.startCoroutine(object : Continuation<T> {
             override val context: CoroutineContext = EmptyCoroutineContext
-            override fun resumeWith(value: Result<T>) { result = value }
+            override fun resumeWith(result: Result<T>) {
+                completed = result
+            }
         })
-        return checkNotNull(result).getOrThrow()
+        return checkNotNull(completed).getOrThrow()
     }
 }
