@@ -89,6 +89,25 @@ The review branch must prove:
   `iosX64`; and
 - the permanent JVM, Android, and Apple validation lanes pass on one final head.
 
+## Focused evidence completed
+
+The temporary same-repository evidence lane completed successfully on the
+review branch. It:
+
+- applied the bounded `DataLoomBuilder` integration and regression tests;
+- ran `dataloom-runtime` JVM tests and `iosSimulatorArm64Test`;
+- compiled the external consumer for JVM, `iosArm64`, `iosSimulatorArm64`, and
+  `iosX64`;
+- generated exact runtime and Apple JVM/Kotlin-Native ABI baselines;
+- passed public ABI boundary validation;
+- assembled the Apple release XCFramework;
+- verified the public timeout property and builder assembly symbols; and
+- removed its temporary workflow and patch helper before committing the clean
+  evidence head.
+
+The permanent pull-request, Android, and Apple lanes must still pass on the same
+final review head before merge.
+
 ## Remaining work
 
 - separately governed queue-submission timeout behavior;
