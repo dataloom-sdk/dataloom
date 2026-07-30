@@ -41,7 +41,7 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
-      - name: Apply bounded persistence integration
+      - name: Apply bounded persistence and documentation integration
         shell: bash
         run: |
           set -euo pipefail
@@ -52,6 +52,9 @@ jobs:
           script = script_path.read_text(encoding='utf-8')
           source_only = script.split('# Current-state documentation.', 1)[0]
           exec(compile(source_only, str(script_path), 'exec'))
+
+          docs_path = Path('.github/scripts/apply_retry_budget_docs.py')
+          exec(compile(docs_path.read_text(encoding='utf-8'), str(docs_path), 'exec'))
 
           test_path = Path(
               'dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/retry/'
@@ -123,11 +126,12 @@ jobs:
           print('Verified Room schema version 2 retry budget columns.')
           PY
 
-      - name: Remove temporary workflow and patch script
+      - name: Remove temporary workflow and patch scripts
         shell: bash
         run: |
           rm .github/workflows/temporary-retry-budget-evidence.yml
           rm .github/scripts/apply_retry_budget_persistence.py
+          rm .github/scripts/apply_retry_budget_docs.py
           git diff --check
 
       - name: Commit generated evidence and integrated source
