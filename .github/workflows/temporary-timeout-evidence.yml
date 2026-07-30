@@ -1,0 +1,65 @@
+name: Temporary Timeout Evidence
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  validate-and-commit:
+    if: github.head_ref == 'codex/dl-retry-014-timeout-contracts'
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: codex/dl-retry-014-timeout-contracts
+          fetch-depth: 0
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v6
+      - run: chmod +x gradlew
+      - name: Add external consumer timeout probe
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('runtime-external-consumer/src/commonMain/kotlin/io/dataloom/consumer/RuntimeExternalConsumerProbe.kt')
+          text = path.read_text()
+          imports = '''import io.dataloom.runtime.retry.RetryTimeoutConfiguration\nimport io.dataloom.runtime.retry.RetryTimeoutExecutionRequest\nimport io.dataloom.runtime.retry.RetryTimeoutExecutionResult\nimport io.dataloom.runtime.retry.RetryTimeoutExecutor\nimport io.dataloom.runtime.retry.RetryTimeoutKind\n'''
+          anchor = 'import io.dataloom.runtime.retry.StandardRetryPolicy\n'
+          if 'RetryTimeoutConfiguration' not in text:
+              text = text.replace(anchor, anchor + imports)
+              text += '''\n\ninternal suspend fun compileTimeoutConsumer(executor: RetryTimeoutExecutor) {\n    val configuration = RetryTimeoutConfiguration(\n        connectionTimeout = SchedulingDelay(1_000L),\n        requestTimeout = SchedulingDelay(2_000L),\n        idleTimeout = SchedulingDelay(3_000L),\n        providerTimeout = SchedulingDelay(4_000L),\n        policyTimeout = SchedulingDelay(500L),\n        workflowTimeout = SchedulingDelay(10_000L),\n    )\n    val request = RetryTimeoutExecutionRequest(\n        kind = RetryTimeoutKind.PROVIDER,\n        timeout = configuration.timeoutFor(RetryTimeoutKind.PROVIDER)!!,\n    )\n    val result: RetryTimeoutExecutionResult<String> = executor.execute(request) { "ok" }\n    result.toString()\n}\n'''
+          path.write_text(text)
+          PY
+      - name: Generate ABI
+        run: |
+          ./gradlew \
+            :dataloom-runtime:updateKotlinAbi \
+            :dataloom-apple:updateKotlinAbi \
+            --configuration-cache --stacktrace --console=plain
+      - name: Validate timeout slice
+        run: |
+          ./gradlew \
+            :dataloom-runtime:jvmTest \
+            :runtime-external-consumer:compileKotlinJvm \
+            :runtime-external-consumer:compileKotlinIosArm64 \
+            :runtime-external-consumer:compileKotlinIosSimulatorArm64 \
+            :runtime-external-consumer:compileKotlinIosX64 \
+            :dataloom-apple:assembleDataLoomReleaseXCFramework \
+            --configuration-cache --stacktrace --warning-mode all --console=plain
+      - name: Clean and commit evidence
+        shell: bash
+        run: |
+          rm .github/workflows/temporary-timeout-evidence.yml
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '418982749+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'DL-040: qualify timeout boundaries'
+          git push origin HEAD:codex/dl-retry-014-timeout-contracts
