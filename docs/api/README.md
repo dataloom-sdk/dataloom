@@ -17,7 +17,7 @@ product capability is complete, published, or production-qualified.
 | V1 target not implemented | The approved capability does not yet have a complete production implementation. |
 
 The authoritative readiness decision is
-[DL-AUDIT-004](../audits/DL-AUDIT-004-v1-production-readiness.md).
+[DL-AUDIT-005](../audits/DL-AUDIT-005-current-v1-conformance.md).
 
 ## Current reference map
 
@@ -50,8 +50,8 @@ complete V1 strategy, asset, plugin, governance, or observability engine.
 | Describe synchronization intent | [Synchronization request](./synchronization-request.md) |
 | Understand admission, resolution, and pipeline selection | [Synchronization execution](./synchronization-execution.md) |
 | Register and resolve providers | [Provider registry](./provider-registry.md), [provider lifecycle](./provider-lifecycle.md), and [provider bindings](./provider-bindings.md) |
-| Submit and process durable work | [Queue submission](./queue-submission.md), [queue provider](./queue-provider.md), and [queue worker](./queue-worker-coordinator.md) |
-| Evaluate retries | [Retry policy](./retry-policy.md), [retry orchestration](./retry-orchestration.md), [circuit breaker](./circuit-breaker.md), and [circuit execution gate](./circuit-execution-gate.md) |
+| Submit and process durable work | [Queue submission](./queue-submission.md), [queue provider](./queue-provider.md), [queue-provider timeouts](./queue-provider-timeouts.md), and [queue worker](./queue-worker-coordinator.md) |
+| Evaluate retries | [Retry policy](./retry-policy.md), [retry orchestration](./retry-orchestration.md), [retry timeouts](./retry-timeouts.md), [circuit breaker](./circuit-breaker.md), and [circuit execution gate](./circuit-execution-gate.md) |
 | Detect and resolve conflicts | [Conflict contracts](./conflict-contracts.md) and [conflict orchestration](./conflict-orchestration.md) |
 | Observe execution | [Synchronization events](./synchronization-events.md), [event dispatcher](./synchronization-event-dispatcher.md), and [runtime operational events](./runtime-operational-events.md) |
 
@@ -63,7 +63,7 @@ complete V1 strategy, asset, plugin, governance, or observability engine.
 | [Error model](./error-model.md) | Available contract | Canonical error shape, categories, severity, and recoverability. |
 | [Execution context](./execution-context.md) | Available contract | Correlation, identity, version, locale, and metadata context. |
 | [Synchronization request](./synchronization-request.md) | Available contract | Direction, mode, priority, and execution intent. Strategy evaluation is currently a separate contract. |
-| [Synchronization strategy](./synchronization-strategy.md) | Partial implementation | Versioned six-profile contract, bounded evidence, typed decisions, immutable plans, durable identity, and deterministic planner; facade/provider execution integration remains. |
+| [Synchronization strategy](./synchronization-strategy.md) | Partial implementation | Versioned six-profile contract, bounded evidence, typed decisions, immutable plans, durable identity, and deterministic planner; complete runtime integration remains. |
 | [Payload contracts](./payload-contracts.md) | Available contract | Opaque payload and media-type boundaries. |
 | [Change model](./change-model.md) | Available contract | Change events, sets, operations, versions, and entity references. |
 | [Acknowledgement contracts](./acknowledgement-contracts.md) | Available contract | Per-event remote acknowledgement results. |
@@ -111,32 +111,36 @@ not implement the approved six-strategy product architecture by themselves.
 |---|---|---|
 | [Queue models](./queue-model.md) | Available contract | Entries, leases, states, acquisition, transitions, and recovery requests. |
 | [Queue provider](./queue-provider.md) | Available foundation | Durable queue persistence SPI and Room implementation boundary. |
+| [Queue-provider timeouts](./queue-provider-timeouts.md) | Partial V1 subsystem | Cooperative lifecycle, acquisition, recovery, and transition timeout protection plus additive queue-worker assembly. |
 | [Queue submission](./queue-submission.md) | Available foundation | Application-owned work encoding and durable enqueue. |
 | [Durable queue processor](./durable-queue-processor.md) | Available foundation | Bounded acquire, execute, and single-transition processing. |
 | [Queued synchronization execution](./queued-synchronization-execution.md) | Available foundation | Queue-entry resolution, synchronization execution, and retry evaluation. |
-| [Queue worker coordinator](./queue-worker-coordinator.md) | Available foundation | Recovery, bounded processing, and scheduler-backed wake-up planning. |
+| [Queue worker coordinator](./queue-worker-coordinator.md) | Available foundation | Recovery, bounded processing, scheduler-backed wake-up planning, and optional scheduler timeout. |
 
 Queue processing is an at-least-once foundation. Connectivity deferral and
-expired-lease recovery now preserve retry attempt history. V1 still requires
-durable retry budget state and migration evidence now exist. Circuit policy
-state, cross-platform persistence, and end-to-end qualification remain.
+expired-lease recovery preserve retry attempt history; Android Room persists
+retry budgets and circuit state. Queue-provider timeouts preserve durable
+ambiguity and never replay a mutation automatically. KMP iOS persistence,
+circuit assembly, builder adoption, and end-to-end qualification remain open.
 
 ## Retry and conflict
 
 | Document | Current status | Scope |
 |---|---|---|
 | [Retry policy](./retry-policy.md) | Partial V1 subsystem | Fail-closed classification, deterministic backoff/jitter, seeded randomness, attempt/time/delay limits, and bounded provider/server hints. |
-| [Retry orchestration](./retry-orchestration.md) | Partial V1 subsystem | Protected-failure handling, bounded hint minimums, final-delay aggregation, central budgets, scheduling, and queue integration boundaries. |
+| [Retry orchestration](./retry-orchestration.md) | Partial V1 subsystem | Protected-failure handling, bounded hint minimums, final-delay aggregation, budgets, and optional scheduler-provider timeout. |
+| [Retry timeout boundaries](./retry-timeouts.md) | Partial V1 subsystem | Independent timeout contracts, workflow-deadline precedence, coroutine executor, and selected provider/runtime assembly. |
 | [Circuit breaker](./circuit-breaker.md) | Partial V1 subsystem | Explicit scopes, durable state contracts, atomic compare-and-set persistence, deterministic transitions, and one controlled half-open probe. |
 | [Circuit execution gate](./circuit-execution-gate.md) | Partial V1 subsystem | Pre-execution permission, once-only invocation, classified provider failures, post-execution evidence, and retry scheduling adaptation. |
 | [Conflict contracts](./conflict-contracts.md) | Partial V1 subsystem | Custom detector, resolver, request, conflict, and decision contracts. |
 | [Conflict orchestration](./conflict-orchestration.md) | Partial V1 subsystem | Exact detector/resolver lookup and one-cycle decision orchestration. |
 
-V1 retry work still requires production Android/iOS circuit stores,
-direct transport/storage/queue runtime assembly, manual retry/reclassification,
-complete observability, and platform qualification. Conflict work still requires
-built-in policies, precedence, atomic decision application, unresolved-conflict
-persistence, audit, convergence, loop protection, quarantine, and metrics.
+V1 retry work still requires complete transport/storage/queue circuit assembly,
+protocol-specific timeout enforcement, KMP iOS persistence, manual
+retry/reclassification, complete observability, and platform qualification.
+Conflict work still requires built-in policies, precedence, atomic decision
+application, unresolved-conflict persistence, audit, convergence, loop
+protection, quarantine, and metrics.
 
 ## Events and observation
 
@@ -165,7 +169,7 @@ The following are product commitments, not descriptions of completed APIs:
 | Network-only strategy | Direct transport-only runtime implemented; full event/result and platform qualification remain |
 | Hybrid strategy | Complete built-in strategy and qualification not implemented |
 | Adaptive strategy | Complete built-in strategy and qualification not implemented |
-| Standard retry and durable circuit breaker | Fail-closed protection, standard backoff/jitter, durable time and delay budgets, bounded hints, timeout contracts, durable circuit state, and common provider/retry gates implemented; production stores, administration, observability, and qualification remain |
+| Standard retry and durable circuit breaker | Fail-closed protection, standard backoff/jitter, durable budgets, bounded hints, timeout contracts and selected runtime assembly, circuit state, and common gates implemented; complete platform/runtime integration, administration, observability, and qualification remain |
 | Built-in conflict policies and persistence | Partial custom contracts/orchestration only |
 | Lifecycle and operational observability | Partial in-process event foundation only |
 | Asset upload/download, chunking, streaming, and resume | Not implemented |

@@ -1381,6 +1381,22 @@ public final class io/dataloom/runtime/retry/SynchronizationRetryRequest {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/runtime/retry/TimeoutEnforcingQueueProvider : io/dataloom/api/queue/QueueProvider {
+	public fun <init> (Lio/dataloom/api/queue/QueueProvider;Lio/dataloom/runtime/retry/RetryTimeoutCoordinator;)V
+	public fun acquire (Lio/dataloom/api/queue/QueueAcquireRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun cancel (Lio/dataloom/api/queue/QueueCancellationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun complete (Lio/dataloom/api/queue/QueueCompletionRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun defer (Lio/dataloom/api/queue/QueueDeferralRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun enqueue (Lio/dataloom/api/queue/QueueEnqueueRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun fail (Lio/dataloom/api/queue/QueueFailureRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun recoverExpiredLeases (Lio/dataloom/api/queue/ExpiredLeaseRecoveryRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun reschedule (Lio/dataloom/api/queue/QueueRescheduleRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
 public final class io/dataloom/runtime/retry/TimeoutEnforcingSchedulerProvider : io/dataloom/api/scheduling/SchedulerProvider {
 	public fun <init> (Lio/dataloom/api/scheduling/SchedulerProvider;Lio/dataloom/runtime/retry/RetryTimeoutCoordinator;)V
 	public fun cancel (Lio/dataloom/api/scheduling/ScheduleCancellationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -1659,6 +1675,11 @@ public final class io/dataloom/runtime/worker/QueueWorkerConfiguration {
 public final class io/dataloom/runtime/worker/QueueWorkerCoordinator {
 	public fun <init> (Lio/dataloom/api/queue/QueueProvider;Lio/dataloom/runtime/queue/DurableQueueExecutionProcessor;Lio/dataloom/api/scheduling/SchedulerProvider;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/worker/QueueWorkerConfiguration;)V
 	public final fun run (Lio/dataloom/runtime/worker/QueueWorkerRunRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/worker/QueueWorkerProviderTimeoutRuntime {
+	public static final field INSTANCE Lio/dataloom/runtime/worker/QueueWorkerProviderTimeoutRuntime;
+	public final fun create (Lio/dataloom/api/queue/QueueProvider;Lio/dataloom/runtime/queue/QueueEntryExecutionHandler;Lio/dataloom/api/scheduling/SchedulerProvider;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/worker/QueueWorkerConfiguration;Lio/dataloom/api/scheduling/SchedulingDelay;)Lio/dataloom/runtime/worker/QueueWorkerCoordinator;
 }
 
 public final class io/dataloom/runtime/worker/QueueWorkerRunRequest {
