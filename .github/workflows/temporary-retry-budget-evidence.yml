@@ -1,9 +1,9 @@
 name: Temporary Retry Budget Evidence
 
 on:
-  push:
+  pull_request:
     branches:
-      - codex/dl-retry-012-durable-budgets
+      - main
 
 permissions:
   contents: write
