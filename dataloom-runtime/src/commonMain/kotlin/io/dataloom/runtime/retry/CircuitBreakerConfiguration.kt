@@ -8,7 +8,7 @@ public data class CircuitBreakerConfiguration(
     public val failureWindow: SchedulingDelay,
     public val openDuration: SchedulingDelay,
     public val maximumStateUpdateAttempts: Int = 8,
-    /** Maximum exclusive lifetime of one half-open probe before another caller may recover it. */
+    /** Maximum persisted exclusive lifetime of one half-open probe before recovery. */
     public val halfOpenProbeLeaseDuration: SchedulingDelay = openDuration,
 ) {
     init {
