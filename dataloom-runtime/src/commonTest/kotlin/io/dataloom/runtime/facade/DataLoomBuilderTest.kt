@@ -637,22 +637,37 @@ class DataLoomBuilderTest {
                 ),
             )
         },
-    ) = DataLoomQueueWorkerSpec(
-        workResolver = workResolver,
-        retryPolicy = object : RetryPolicy {
+        queueProviderTimeout: SchedulingDelay? = null,
+    ): DataLoomQueueWorkerSpec {
+        val retryPolicy = object : RetryPolicy {
             override val id = RetryPolicyId("no-retry")
             override fun evaluate(request: RetryEvaluationRequest): RetryDecision =
                 RetryDecision.Stop(io.dataloom.api.retry.RetryStopReason.NON_RECOVERABLE)
-        },
-        retryOperation = RetryOperation("test.operation"),
-        configuration = QueueWorkerConfiguration(
+        }
+        val configuration = QueueWorkerConfiguration(
             scheduleId = ScheduleId("worker-001"),
             constraints = ScheduleConstraints(),
             existingSchedulePolicy = ExistingSchedulePolicy.REPLACE,
             continuationDelay = SchedulingDelay.ZERO,
             recoverExpiredLeasesBeforeProcessing = false,
-        ),
-    )
+        )
+        return if (queueProviderTimeout == null) {
+            DataLoomQueueWorkerSpec(
+                workResolver = workResolver,
+                retryPolicy = retryPolicy,
+                retryOperation = RetryOperation("test.operation"),
+                configuration = configuration,
+            )
+        } else {
+            DataLoomQueueWorkerSpec(
+                workResolver = workResolver,
+                retryPolicy = retryPolicy,
+                retryOperation = RetryOperation("test.operation"),
+                configuration = configuration,
+                queueProviderTimeout = queueProviderTimeout,
+            )
+        }
+    }
 
     private fun makeQueueSubmissionEncoder(): io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder =
         io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder { submission ->
@@ -1373,6 +1388,91 @@ class DataLoomBuilderTest {
         assertFailsWith<CancellationException> {
             runSuspend { dataLoom.queueWorker!!.run(workerRequest) }
         }
+    }
+
+
+    @Test
+    fun queueWorkerSpec_legacyConstructorPreservesNullQueueProviderTimeout() {
+        assertNull(makeQueueWorkerSpec().queueProviderTimeout)
+    }
+
+    @Test
+    fun queueWorkerSpec_preservesConfiguredQueueProviderTimeout() {
+        val timeout = SchedulingDelay(750L)
+        assertSame(timeout, makeQueueWorkerSpec(queueProviderTimeout = timeout).queueProviderTimeout)
+    }
+
+    @Test
+    fun queueWorker_builderAppliesZeroQueueProviderTimeoutBeforeAcquisition() {
+        val queue = FakeQueueProvider()
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(FakeStorageProvider(), FakeTransportProvider(), queue)
+            .defaultProviderBindings(makeBindings(queueId = "queue-primary"))
+            .queueWorkerConfiguration(
+                makeQueueWorkerSpec(queueProviderTimeout = SchedulingDelay.ZERO),
+            )
+            .build()
+
+        runSuspend { dataLoom.initialize() }
+
+        val result = runSuspend {
+            dataLoom.queueWorker!!.run(
+                QueueWorkerRunRequest(
+                    processingRequest = QueueProcessingRequest(
+                        acquireRequest = QueueAcquireRequest(
+                            consumerId = QueueConsumerId("consumer-timeout"),
+                            leaseId = QueueLeaseId("lease-timeout"),
+                            acquiredAt = DataLoomInstant(1_000_000L),
+                            leaseExpiresAt = DataLoomInstant(2_000_000L),
+                            maxEntries = 1,
+                        ),
+                    ),
+                    recoveryRequest = null,
+                ),
+            )
+        }
+
+        val failed = assertIs<QueueWorkerRunResult.ProcessingFailed>(result)
+        val processing = assertIs<io.dataloom.runtime.queue.QueueProcessingResult.QueueProviderFailure>(
+            failed.processingResult,
+        )
+        assertEquals(io.dataloom.runtime.queue.QueueProcessingFailureStage.ACQUISITION, processing.stage)
+        assertEquals("QUEUE_PROVIDER_TIMEOUT", processing.error.code.value)
+        assertEquals(0, queue.acquireCallCount)
+    }
+
+    @Test
+    fun queueWorker_builderLegacySpecPreservesDirectQueueProviderPath() {
+        val queue = FakeQueueProvider()
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(FakeStorageProvider(), FakeTransportProvider(), queue)
+            .defaultProviderBindings(makeBindings(queueId = "queue-primary"))
+            .queueWorkerConfiguration(makeQueueWorkerSpec())
+            .build()
+
+        runSuspend { dataLoom.initialize() }
+
+        val result = runSuspend {
+            dataLoom.queueWorker!!.run(
+                QueueWorkerRunRequest(
+                    processingRequest = QueueProcessingRequest(
+                        acquireRequest = QueueAcquireRequest(
+                            consumerId = QueueConsumerId("consumer-legacy"),
+                            leaseId = QueueLeaseId("lease-legacy"),
+                            acquiredAt = DataLoomInstant(1_000_000L),
+                            leaseExpiresAt = DataLoomInstant(2_000_000L),
+                            maxEntries = 1,
+                        ),
+                    ),
+                    recoveryRequest = null,
+                ),
+            )
+        }
+
+        assertIs<QueueWorkerRunResult.ProcessingCompleted>(result)
+        assertEquals(1, queue.acquireCallCount)
     }
 
     // =========================================================================

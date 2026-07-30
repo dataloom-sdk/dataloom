@@ -38,6 +38,7 @@ import io.dataloom.runtime.submission.DataLoomQueueSubmission
 import io.dataloom.runtime.submission.DefaultDataLoomQueueSubmission
 import io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder
 import io.dataloom.runtime.worker.QueueWorkerCoordinator
+import io.dataloom.runtime.worker.QueueWorkerProviderTimeoutRuntime
 
 /**
  * Builder that assembles a [DataLoom] runtime instance from explicit
@@ -628,7 +629,10 @@ public class DataLoomBuilder {
      * [DataLoomBuildException] when this requirement is not satisfied.
      *
      * The optional [SchedulerProvider] for the coordinator is resolved from
-     * the default bindings when a scheduler ID is configured.
+     * the default bindings when a scheduler ID is configured. When
+     * [DataLoomQueueWorkerSpec.queueProviderTimeout] is configured, the same
+     * timeout-protected queue-provider instance is used for recovery,
+     * acquisition, and every durable transition.
      */
     private fun buildQueueWorker(
         spec: DataLoomQueueWorkerSpec,
@@ -688,18 +692,29 @@ public class DataLoomBuilder {
             clock = if (connectivityConfiguration != null) deps.clock else null,
         )
 
-        val queueProcessor = DurableQueueExecutionProcessor(
-            queueProvider = queueProvider,
-            executionHandler = executionHandler,
-        )
-
-        val coordinator = QueueWorkerCoordinator(
-            queueProvider = queueProvider,
-            queueProcessor = queueProcessor,
-            schedulerProvider = schedulerProvider,
-            clock = deps.clock,
-            configuration = spec.configuration,
-        )
+        val queueProviderTimeout = spec.queueProviderTimeout
+        val coordinator = if (queueProviderTimeout != null) {
+            QueueWorkerProviderTimeoutRuntime.create(
+                queueProvider = queueProvider,
+                executionHandler = executionHandler,
+                schedulerProvider = schedulerProvider,
+                clock = deps.clock,
+                configuration = spec.configuration,
+                queueProviderTimeout = queueProviderTimeout,
+            )
+        } else {
+            val queueProcessor = DurableQueueExecutionProcessor(
+                queueProvider = queueProvider,
+                executionHandler = executionHandler,
+            )
+            QueueWorkerCoordinator(
+                queueProvider = queueProvider,
+                queueProcessor = queueProcessor,
+                schedulerProvider = schedulerProvider,
+                clock = deps.clock,
+                configuration = spec.configuration,
+            )
+        }
 
         return DefaultDataLoomQueueWorker(coordinator)
     }

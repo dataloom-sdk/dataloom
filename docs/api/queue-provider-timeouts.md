@@ -1,10 +1,9 @@
 # Queue-provider timeout boundaries
 
 > **Status:** Partial V1 runtime slice. Cooperative provider-timeout enforcement
-> exists for the queue-provider contract and an additive fully protected
-> queue-worker assembly. Automatic `DataLoomBuilder` adoption, circuit assembly,
-> platform hard-interruption adapters, and complete end-to-end qualification
-> remain open.
+> exists for the queue-provider contract, the protected queue-worker runtime,
+> and automatic `DataLoomBuilder` adoption. Circuit assembly, platform
+> hard-interruption adapters, and complete end-to-end qualification remain open.
 
 ## Purpose
 
@@ -72,6 +71,30 @@ transitions silently bypass the same configured boundary.
 
 Existing `QueueWorkerCoordinator` and `DurableQueueExecutionProcessor`
 constructors remain unchanged and preserve the historical direct provider path.
+
+
+## DataLoomBuilder automatic assembly
+
+`DataLoomQueueWorkerSpec` accepts an optional `queueProviderTimeout`:
+
+```kotlin
+val workerSpec = DataLoomQueueWorkerSpec(
+    workResolver = workResolver,
+    retryPolicy = retryPolicy,
+    retryOperation = retryOperation,
+    configuration = workerConfiguration,
+    queueProviderTimeout = SchedulingDelay(5_000L),
+)
+```
+
+When present, `DataLoomBuilder` automatically selects
+`QueueWorkerProviderTimeoutRuntime` and uses one protected provider for recovery,
+acquisition, and every transition. The original four-argument constructor
+remains available and sets `queueProviderTimeout = null`, preserving historical
+direct provider behavior.
+
+Builder assembly performs no provider operation, clock read, queue mutation,
+scheduler call, or coroutine launch.
 
 ## Result mapping
 
@@ -156,7 +179,6 @@ storage, dispatcher, or coroutine-scope type.
 
 ## Remaining V1 work
 
-- automatic queue-worker assembly through `DataLoomBuilder`;
 - separately governed queue-submission timeout behavior;
 - queue circuit permission and outcome recording;
 - platform-specific hard interruption where cooperative cancellation is
