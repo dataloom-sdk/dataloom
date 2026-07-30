@@ -117,6 +117,52 @@ jobs:
               1,
           )
           contract_test_path.write_text(contract_text, encoding='utf-8')
+
+          room_test_path = Path(
+              'dataloom-queue-room/src/test/kotlin/io/dataloom/queue/room/'
+              'RoomQueueProviderTest.kt'
+          )
+          room_test = room_test_path.read_text(encoding='utf-8')
+          import_anchor = '''import io.dataloom.api.retry.RetryAttempt
+          import io.dataloom.api.time.DataLoomInstant'''
+          import_replacement = '''import io.dataloom.api.retry.RetryAttempt
+          import io.dataloom.api.retry.RetryBudgetState
+          import io.dataloom.api.scheduling.SchedulingDelay
+          import io.dataloom.api.time.DataLoomInstant'''
+          if import_anchor not in room_test:
+              raise RuntimeError('Room provider test import anchor was not found.')
+          room_test = room_test.replace(import_anchor, import_replacement, 1)
+
+          dao_anchor = '''                    eq(3_000L),
+                              eq(2),
+                              eq("NETWORK_TEMPORARY"),'''
+          dao_replacement = '''                    eq(3_000L),
+                              eq(2),
+                              eq(1_000L),
+                              eq(1_500L),
+                              eq(500L),
+                              eq("NETWORK_TEMPORARY"),'''
+          if dao_anchor not in room_test:
+              raise RuntimeError('Room provider DAO expectation anchor was not found.')
+          room_test = room_test.replace(dao_anchor, dao_replacement, 1)
+
+          request_anchor = '''                    availableAt = DataLoomInstant(3_000L),
+                              error = testError(),
+                          ),'''
+          request_replacement = '''                    availableAt = DataLoomInstant(3_000L),
+                              error = testError(),
+                              retryBudgetState = RetryBudgetState(
+                                  windowStartedAt = DataLoomInstant(1_000L),
+                                  lastEvaluatedAt = DataLoomInstant(1_500L),
+                                  cumulativeDelay = SchedulingDelay(500L),
+                              ),
+                          ),'''
+          if request_anchor not in room_test:
+              raise RuntimeError('Room provider retry request anchor was not found.')
+          room_test_path.write_text(
+              room_test.replace(request_anchor, request_replacement, 1),
+              encoding='utf-8',
+          )
           PY
           git diff --check
 
