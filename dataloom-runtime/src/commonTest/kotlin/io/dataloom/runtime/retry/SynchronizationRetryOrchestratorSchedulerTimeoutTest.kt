@@ -8,7 +8,6 @@ import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
 import io.dataloom.api.identifier.CorrelationId
 import io.dataloom.api.identifier.ExecutionId
-import io.dataloom.api.identifier.ProviderId
 import io.dataloom.api.identifier.RetryPolicyId
 import io.dataloom.api.identifier.ScheduleId
 import io.dataloom.api.identifier.SynchronizationSessionId
@@ -19,6 +18,7 @@ import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.api.provider.ProviderDescriptor
 import io.dataloom.api.provider.ProviderHealth
 import io.dataloom.api.provider.ProviderHealthStatus
+import io.dataloom.api.provider.ProviderId
 import io.dataloom.api.provider.ProviderInitializationContext
 import io.dataloom.api.provider.ProviderName
 import io.dataloom.api.provider.ProviderOperationResult
