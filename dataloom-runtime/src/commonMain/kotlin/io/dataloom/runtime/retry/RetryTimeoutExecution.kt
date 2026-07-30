@@ -36,7 +36,7 @@ public sealed interface RetryTimeoutExecutionResult<out T> {
  * expires. A caller cancellation must propagate and must not be translated into
  * [RetryTimeoutExecutionResult.TimedOut].
  */
-public fun interface RetryTimeoutExecutor {
+public interface RetryTimeoutExecutor {
     public suspend fun <T> execute(
         request: RetryTimeoutExecutionRequest,
         operation: suspend () -> T,
