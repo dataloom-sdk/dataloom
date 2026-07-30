@@ -1407,7 +1407,7 @@ final class io.dataloom.api.circuit/CircuitBreakerScope { // io.dataloom.api.cir
 }
 
 final class io.dataloom.api.circuit/CircuitBreakerState { // io.dataloom.api.circuit/CircuitBreakerState|null[0]
-    constructor <init>(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.circuit/CircuitBreakerPhase, kotlin/Int, io.dataloom.api.time/DataLoomInstant?, io.dataloom.api.time/DataLoomInstant?, kotlin/Long, kotlin/Boolean, io.dataloom.api.time/DataLoomInstant) // io.dataloom.api.circuit/CircuitBreakerState.<init>|<init>(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerPhase;kotlin.Int;io.dataloom.api.time.DataLoomInstant?;io.dataloom.api.time.DataLoomInstant?;kotlin.Long;kotlin.Boolean;io.dataloom.api.time.DataLoomInstant){}[0]
+    constructor <init>(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.circuit/CircuitBreakerPhase, kotlin/Int, io.dataloom.api.time/DataLoomInstant?, io.dataloom.api.time/DataLoomInstant?, kotlin/Long, kotlin/Boolean, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.time/DataLoomInstant? = ...) // io.dataloom.api.circuit/CircuitBreakerState.<init>|<init>(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerPhase;kotlin.Int;io.dataloom.api.time.DataLoomInstant?;io.dataloom.api.time.DataLoomInstant?;kotlin.Long;kotlin.Boolean;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.time.DataLoomInstant?){}[0]
 
     final val consecutiveFailures // io.dataloom.api.circuit/CircuitBreakerState.consecutiveFailures|{}consecutiveFailures[0]
         final fun <get-consecutiveFailures>(): kotlin/Int // io.dataloom.api.circuit/CircuitBreakerState.consecutiveFailures.<get-consecutiveFailures>|<get-consecutiveFailures>(){}[0]
@@ -1421,6 +1421,8 @@ final class io.dataloom.api.circuit/CircuitBreakerState { // io.dataloom.api.cir
         final fun <get-probeGeneration>(): kotlin/Long // io.dataloom.api.circuit/CircuitBreakerState.probeGeneration.<get-probeGeneration>|<get-probeGeneration>(){}[0]
     final val probeInFlight // io.dataloom.api.circuit/CircuitBreakerState.probeInFlight|{}probeInFlight[0]
         final fun <get-probeInFlight>(): kotlin/Boolean // io.dataloom.api.circuit/CircuitBreakerState.probeInFlight.<get-probeInFlight>|<get-probeInFlight>(){}[0]
+    final val probeLeaseUntil // io.dataloom.api.circuit/CircuitBreakerState.probeLeaseUntil|{}probeLeaseUntil[0]
+        final fun <get-probeLeaseUntil>(): io.dataloom.api.time/DataLoomInstant? // io.dataloom.api.circuit/CircuitBreakerState.probeLeaseUntil.<get-probeLeaseUntil>|<get-probeLeaseUntil>(){}[0]
     final val scope // io.dataloom.api.circuit/CircuitBreakerState.scope|{}scope[0]
         final fun <get-scope>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.api.circuit/CircuitBreakerState.scope.<get-scope>|<get-scope>(){}[0]
     final val updatedAt // io.dataloom.api.circuit/CircuitBreakerState.updatedAt|{}updatedAt[0]
@@ -1434,7 +1436,8 @@ final class io.dataloom.api.circuit/CircuitBreakerState { // io.dataloom.api.cir
     final fun component6(): kotlin/Long // io.dataloom.api.circuit/CircuitBreakerState.component6|component6(){}[0]
     final fun component7(): kotlin/Boolean // io.dataloom.api.circuit/CircuitBreakerState.component7|component7(){}[0]
     final fun component8(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.circuit/CircuitBreakerState.component8|component8(){}[0]
-    final fun copy(io.dataloom.api.circuit/CircuitBreakerScope = ..., io.dataloom.api.circuit/CircuitBreakerPhase = ..., kotlin/Int = ..., io.dataloom.api.time/DataLoomInstant? = ..., io.dataloom.api.time/DataLoomInstant? = ..., kotlin/Long = ..., kotlin/Boolean = ..., io.dataloom.api.time/DataLoomInstant = ...): io.dataloom.api.circuit/CircuitBreakerState // io.dataloom.api.circuit/CircuitBreakerState.copy|copy(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerPhase;kotlin.Int;io.dataloom.api.time.DataLoomInstant?;io.dataloom.api.time.DataLoomInstant?;kotlin.Long;kotlin.Boolean;io.dataloom.api.time.DataLoomInstant){}[0]
+    final fun component9(): io.dataloom.api.time/DataLoomInstant? // io.dataloom.api.circuit/CircuitBreakerState.component9|component9(){}[0]
+    final fun copy(io.dataloom.api.circuit/CircuitBreakerScope = ..., io.dataloom.api.circuit/CircuitBreakerPhase = ..., kotlin/Int = ..., io.dataloom.api.time/DataLoomInstant? = ..., io.dataloom.api.time/DataLoomInstant? = ..., kotlin/Long = ..., kotlin/Boolean = ..., io.dataloom.api.time/DataLoomInstant = ..., io.dataloom.api.time/DataLoomInstant? = ...): io.dataloom.api.circuit/CircuitBreakerState // io.dataloom.api.circuit/CircuitBreakerState.copy|copy(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerPhase;kotlin.Int;io.dataloom.api.time.DataLoomInstant?;io.dataloom.api.time.DataLoomInstant?;kotlin.Long;kotlin.Boolean;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.time.DataLoomInstant?){}[0]
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitBreakerState.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitBreakerState.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitBreakerState.toString|toString(){}[0]
