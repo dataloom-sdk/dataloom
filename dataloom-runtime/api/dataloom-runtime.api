@@ -368,8 +368,10 @@ public abstract interface class io/dataloom/runtime/facade/DataLoomQueueWorker {
 }
 
 public final class io/dataloom/runtime/facade/DataLoomQueueWorkerSpec {
+	public synthetic fun <init> (Lio/dataloom/runtime/queue/QueuedSynchronizationWorkResolver;Lio/dataloom/api/retry/RetryPolicy;Ljava/lang/String;Lio/dataloom/runtime/worker/QueueWorkerConfiguration;Lio/dataloom/api/scheduling/SchedulingDelay;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Lio/dataloom/runtime/queue/QueuedSynchronizationWorkResolver;Lio/dataloom/api/retry/RetryPolicy;Ljava/lang/String;Lio/dataloom/runtime/worker/QueueWorkerConfiguration;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getConfiguration ()Lio/dataloom/runtime/worker/QueueWorkerConfiguration;
+	public final fun getQueueProviderTimeout ()Lio/dataloom/api/scheduling/SchedulingDelay;
 	public final fun getRetryOperation-TGFxZV8 ()Ljava/lang/String;
 	public final fun getRetryPolicy ()Lio/dataloom/api/retry/RetryPolicy;
 	public final fun getWorkResolver ()Lio/dataloom/runtime/queue/QueuedSynchronizationWorkResolver;

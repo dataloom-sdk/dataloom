@@ -301,10 +301,16 @@ When connectivity configuration is supplied:
 - `workResolver: QueuedSynchronizationWorkResolver`
 - `retryPolicy: RetryPolicy`
 - `configuration: QueueWorkerConfiguration`
+- `queueProviderTimeout: SchedulingDelay?` (optional; null preserves the direct provider path)
 
 A valid `QueueProvider` binding must exist in the default
 `SynchronizationProviderBindings`. `SchedulerProvider` is optional; when absent,
 the queue worker follows DL-032 scheduler-absent behavior.
+
+When `queueProviderTimeout` is configured, the builder automatically uses one
+timeout-protected queue-provider instance for expired-lease recovery, atomic
+acquisition, and every durable transition. A zero timeout rejects before the
+delegate operation. Timed-out mutations are never replayed automatically.
 
 Build fails deterministically when queue-worker configuration is requested but
 no valid `QueueProvider` binding is found.

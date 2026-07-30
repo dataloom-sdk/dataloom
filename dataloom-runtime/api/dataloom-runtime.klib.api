@@ -1668,9 +1668,12 @@ final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.
 
 final class io.dataloom.runtime.facade/DataLoomQueueWorkerSpec { // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec|null[0]
     constructor <init>(io.dataloom.runtime.queue/QueuedSynchronizationWorkResolver, io.dataloom.api.retry/RetryPolicy, io.dataloom.api.retry/RetryOperation, io.dataloom.runtime.worker/QueueWorkerConfiguration) // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec.<init>|<init>(io.dataloom.runtime.queue.QueuedSynchronizationWorkResolver;io.dataloom.api.retry.RetryPolicy;io.dataloom.api.retry.RetryOperation;io.dataloom.runtime.worker.QueueWorkerConfiguration){}[0]
+    constructor <init>(io.dataloom.runtime.queue/QueuedSynchronizationWorkResolver, io.dataloom.api.retry/RetryPolicy, io.dataloom.api.retry/RetryOperation, io.dataloom.runtime.worker/QueueWorkerConfiguration, io.dataloom.api.scheduling/SchedulingDelay?) // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec.<init>|<init>(io.dataloom.runtime.queue.QueuedSynchronizationWorkResolver;io.dataloom.api.retry.RetryPolicy;io.dataloom.api.retry.RetryOperation;io.dataloom.runtime.worker.QueueWorkerConfiguration;io.dataloom.api.scheduling.SchedulingDelay?){}[0]
 
     final val configuration // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec.configuration|{}configuration[0]
         final fun <get-configuration>(): io.dataloom.runtime.worker/QueueWorkerConfiguration // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec.configuration.<get-configuration>|<get-configuration>(){}[0]
+    final val queueProviderTimeout // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec.queueProviderTimeout|{}queueProviderTimeout[0]
+        final fun <get-queueProviderTimeout>(): io.dataloom.api.scheduling/SchedulingDelay? // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec.queueProviderTimeout.<get-queueProviderTimeout>|<get-queueProviderTimeout>(){}[0]
     final val retryOperation // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec.retryOperation|{}retryOperation[0]
         final fun <get-retryOperation>(): io.dataloom.api.retry/RetryOperation // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec.retryOperation.<get-retryOperation>|<get-retryOperation>(){}[0]
     final val retryPolicy // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec.retryPolicy|{}retryPolicy[0]
