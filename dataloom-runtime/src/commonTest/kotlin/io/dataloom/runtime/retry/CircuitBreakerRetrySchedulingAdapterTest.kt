@@ -191,8 +191,11 @@ class CircuitBreakerRetrySchedulingAdapterTest {
             request: ScheduleRequest,
         ): ProviderOperationResult<ScheduleReceipt> {
             scheduleCalls += 1
-            return failure?.let(ProviderOperationResult::Failure)
-                ?: ProviderOperationResult.Success(ScheduleReceipt(request.id))
+            return if (failure != null) {
+                ProviderOperationResult.Failure(failure)
+            } else {
+                ProviderOperationResult.Success(ScheduleReceipt(request.id))
+            }
         }
 
         override suspend fun cancel(
