@@ -1,9 +1,9 @@
 name: Temporary Retry Hint Evidence
 
 on:
-  push:
+  pull_request:
     branches:
-      - codex/dl-retry-013-bounded-hints
+      - main
 
 permissions:
   contents: write
