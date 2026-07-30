@@ -11,7 +11,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Verifies non-destructive queue schema migration and current database opening. */
+/** Verifies non-destructive queue and circuit schema migrations. */
 @RunWith(AndroidJUnit4::class)
 class DataLoomRoomMigrationTest {
 
@@ -23,7 +23,7 @@ class DataLoomRoomMigrationTest {
 
     @Test
     fun version1RetryEntryMigratesToVersion2WithoutLosingHistory() {
-        val version1 = migrationTestHelper.createDatabase(TEST_DATABASE, 1)
+        val version1 = migrationTestHelper.createDatabase(TEST_DATABASE_1_2, 1)
         version1.execSQL(
             """
             INSERT INTO queue_entries (
@@ -40,7 +40,7 @@ class DataLoomRoomMigrationTest {
         version1.close()
 
         val migrated = migrationTestHelper.runMigrationsAndValidate(
-            TEST_DATABASE,
+            TEST_DATABASE_1_2,
             2,
             true,
             DataLoomRoomMigrations.MIGRATION_1_2,
@@ -65,12 +65,74 @@ class DataLoomRoomMigrationTest {
             migrated.close()
         }
 
+        openCurrentDatabase(TEST_DATABASE_1_2)
+    }
+
+    @Test
+    fun version2QueueEntryMigratesToVersion3WithoutLosingRetryState() {
+        val version2 = migrationTestHelper.createDatabase(TEST_DATABASE_2_3, 2)
+        version2.execSQL(
+            """
+            INSERT INTO queue_entries (
+                entry_id, workflow_id, session_id, direction, mode, priority,
+                exec_execution_id, exec_correlation_id, state,
+                enqueued_at_ms, available_at_ms, retry_attempt_number,
+                retry_window_started_at_ms, retry_last_evaluated_at_ms,
+                retry_cumulative_delay_ms
+            ) VALUES (
+                'entry-002', 'workflow-002', 'session-002', 'PULL', 'DELTA', 'HIGH',
+                'execution-002', 'correlation-002', 'RETRY_WAITING',
+                2000, 7000, 3, 2500, 3000, 4500
+            )
+            """.trimIndent(),
+        )
+        version2.close()
+
+        val migrated = migrationTestHelper.runMigrationsAndValidate(
+            TEST_DATABASE_2_3,
+            3,
+            true,
+            DataLoomRoomMigrations.MIGRATION_2_3,
+        )
+        val queueCursor = migrated.query(
+            """
+            SELECT retry_attempt_number, available_at_ms,
+                   retry_window_started_at_ms, retry_last_evaluated_at_ms,
+                   retry_cumulative_delay_ms
+            FROM queue_entries WHERE entry_id = 'entry-002'
+            """.trimIndent(),
+        )
+        val tableCursor = migrated.query(
+            """
+            SELECT name FROM sqlite_master
+            WHERE type = 'table' AND name = 'circuit_breaker_states'
+            """.trimIndent(),
+        )
+        try {
+            assertTrue(queueCursor.moveToFirst())
+            assertEquals(3, queueCursor.getInt(0))
+            assertEquals(7_000L, queueCursor.getLong(1))
+            assertEquals(2_500L, queueCursor.getLong(2))
+            assertEquals(3_000L, queueCursor.getLong(3))
+            assertEquals(4_500L, queueCursor.getLong(4))
+            assertTrue(tableCursor.moveToFirst())
+            assertEquals("circuit_breaker_states", tableCursor.getString(0))
+        } finally {
+            queueCursor.close()
+            tableCursor.close()
+            migrated.close()
+        }
+
+        openCurrentDatabase(TEST_DATABASE_2_3)
+    }
+
+    private fun openCurrentDatabase(name: String) {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val database = Room.databaseBuilder(
             context,
             DataLoomRoomDatabase::class.java,
-            TEST_DATABASE,
-        ).addMigrations(DataLoomRoomMigrations.MIGRATION_1_2)
+            name,
+        ).addMigrations(*DataLoomRoomMigrations.ALL)
             .build()
         try {
             database.openHelper.writableDatabase
@@ -80,6 +142,7 @@ class DataLoomRoomMigrationTest {
     }
 
     private companion object {
-        const val TEST_DATABASE = "dataloom-room-migration-test"
+        const val TEST_DATABASE_1_2 = "dataloom-room-migration-1-2-test"
+        const val TEST_DATABASE_2_3 = "dataloom-room-migration-2-3-test"
     }
 }

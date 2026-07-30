@@ -29,7 +29,7 @@ complete profile. See
 | [Connectivity provider](connectivity-provider.md) | One-shot Android network-state snapshots |
 | [WorkManager scheduler](workmanager-scheduler.md) | Mapping schedule intents to unique WorkManager work |
 | [Worker integration](worker-integration.md) | Injecting and running one bounded queue-worker cycle |
-| [Room queue provider](room-queue-provider.md) | Durable, lease-aware Android queue persistence |
+| [Room queue and circuit persistence](room-queue-provider.md) | Durable queue entries and circuit-breaker state |
 | [Security and R8](security-and-r8.md) | Consumer rules, permissions, and data-at-rest limitations |
 
 ## Current platform topology
@@ -47,18 +47,18 @@ flowchart LR
     subgraph androidAdapters["Android adapters"]
         connectivity["dataloom-connectivity-android"]
         scheduler["dataloom-scheduler-workmanager"]
-        queue["dataloom-queue-room"]
+        persistence["dataloom-queue-room"]
     end
 
-    model --> queue
+    model --> persistence
     api --> connectivity
     api --> scheduler
-    api --> queue
+    api --> persistence
     runtime --> scheduler
 
     connectivity --> nativeApp["Native Android"]
     scheduler --> nativeApp
-    queue --> nativeApp
+    persistence --> nativeApp
 
     runtime -.->|"V1 target pending"| kmpApp["KMP Android"]
 ```
@@ -73,7 +73,7 @@ on Android adapters. No current Android adapter depends directly on
 |---|---|---|
 | `dataloom-connectivity-android` | Bounded `ConnectivityProvider` query using `ConnectivityManager` | Polling, endpoint reachability, or strategy selection |
 | `dataloom-scheduler-workmanager` | `SchedulerProvider`, `CoroutineWorker`, and explicit `WorkerFactory` bridge | Retry policy, queue persistence, or runtime initialization |
-| `dataloom-queue-room` | Transactional, Room-backed `QueueProvider` | Application domain storage, scheduling, or synchronization execution |
+| `dataloom-queue-room` | Transactional Room-backed `QueueProvider` and `CircuitBreakerStateStore` | Application domain storage, scheduling, retry policy, or synchronization execution |
 
 The modules are optional and do not depend on one another. An application can
 use only the adapter it needs.
@@ -120,7 +120,7 @@ workflow-aligned assemble, unit-test, lint, schema, and managed-device tasks.
 
 | Area | Current state | Required before V1 |
 |---|---|---|
-| Native Android | Three adapter foundations exist | Published-style consumer and end-to-end qualification |
+| Native Android | Connectivity, WorkManager, and Room queue/circuit foundations exist | Published-style consumer and end-to-end qualification |
 | KMP Android | Shared code has JVM and Apple targets, but no explicit Android KMP target | Published KMP Android variant and external consumer fixture |
 | KMP iOS | Producer compilation baseline exists | Apple adapters, executable consumer, and platform parity |
 | Native Swift | XCFramework compile smoke exists | Optional; qualify separately if distributed |
