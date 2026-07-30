@@ -72,7 +72,7 @@ strategy engine is complete.
 | Push, pull, bidirectional flows | Implemented foundation | Strategy-aware deterministic plans |
 | Six synchronization strategies | Versioned planner plus direct network-only and remote-first slices implemented | All six built in and fully qualified |
 | Durable queue | Implemented foundation | Correct deferral, recovery, migration, and restart semantics |
-| Retry and circuit breaking | Fail-closed classification, deterministic backoff/full/equal jitter, seeded randomness, attempt plus durable elapsed/cumulative budgets, bounded provider/server hints, queue/scheduler orchestration, and restart-safe history implemented; broader engine partial | Timeout separation, durable circuit state, operations, and full qualification |
+| Retry and circuit breaking | Fail-closed classification, deterministic backoff/jitter, durable budgets, bounded hints, independent timeout contracts, and a deterministic circuit state machine with atomic persistence SPI; broader engine partial | Production durable circuit stores, retry-path integration, operations, observability, and full qualification |
 | Conflict handling | Custom contracts/orchestration are partial | Built-in generic policies, persistence, recovery, and audit |
 | Events and observability | In-process dispatch is partial | Durable events, metrics, traces, health, and operational views |
 | Asset transfer | Missing | Upload/download, chunking, streaming, integrity, and resume |

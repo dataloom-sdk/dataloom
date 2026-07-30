@@ -6,6 +6,32 @@
 // - Show declarations: true
 
 // Library unique name: <dataloom:dataloom-api>
+final enum class io.dataloom.api.circuit/CircuitBreakerPhase : kotlin/Enum<io.dataloom.api.circuit/CircuitBreakerPhase> { // io.dataloom.api.circuit/CircuitBreakerPhase|null[0]
+    enum entry CLOSED // io.dataloom.api.circuit/CircuitBreakerPhase.CLOSED|null[0]
+    enum entry HALF_OPEN // io.dataloom.api.circuit/CircuitBreakerPhase.HALF_OPEN|null[0]
+    enum entry OPEN // io.dataloom.api.circuit/CircuitBreakerPhase.OPEN|null[0]
+
+    final val entries // io.dataloom.api.circuit/CircuitBreakerPhase.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.circuit/CircuitBreakerPhase> // io.dataloom.api.circuit/CircuitBreakerPhase.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.circuit/CircuitBreakerPhase // io.dataloom.api.circuit/CircuitBreakerPhase.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.circuit/CircuitBreakerPhase> // io.dataloom.api.circuit/CircuitBreakerPhase.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.api.circuit/CircuitBreakerScopeKind : kotlin/Enum<io.dataloom.api.circuit/CircuitBreakerScopeKind> { // io.dataloom.api.circuit/CircuitBreakerScopeKind|null[0]
+    enum entry GLOBAL // io.dataloom.api.circuit/CircuitBreakerScopeKind.GLOBAL|null[0]
+    enum entry PROVIDER // io.dataloom.api.circuit/CircuitBreakerScopeKind.PROVIDER|null[0]
+    enum entry PROVIDER_OPERATION // io.dataloom.api.circuit/CircuitBreakerScopeKind.PROVIDER_OPERATION|null[0]
+    enum entry TENANT_PROVIDER_OPERATION // io.dataloom.api.circuit/CircuitBreakerScopeKind.TENANT_PROVIDER_OPERATION|null[0]
+    enum entry WORKFLOW // io.dataloom.api.circuit/CircuitBreakerScopeKind.WORKFLOW|null[0]
+
+    final val entries // io.dataloom.api.circuit/CircuitBreakerScopeKind.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.circuit/CircuitBreakerScopeKind> // io.dataloom.api.circuit/CircuitBreakerScopeKind.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.circuit/CircuitBreakerScopeKind // io.dataloom.api.circuit/CircuitBreakerScopeKind.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.circuit/CircuitBreakerScopeKind> // io.dataloom.api.circuit/CircuitBreakerScopeKind.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.api.conflict/ConflictType : kotlin/Enum<io.dataloom.api.conflict/ConflictType> { // io.dataloom.api.conflict/ConflictType|null[0]
     enum entry CONCURRENT_CHANGE // io.dataloom.api.conflict/ConflictType.CONCURRENT_CHANGE|null[0]
     enum entry CREATE_COLLISION // io.dataloom.api.conflict/ConflictType.CREATE_COLLISION|null[0]
@@ -471,6 +497,11 @@ abstract fun interface io.dataloom.api.strategy/SynchronizationStrategyEvaluator
     abstract fun evaluate(io.dataloom.api.strategy/StrategyEvaluationRequest): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.api.strategy/SynchronizationStrategyEvaluator.evaluate|evaluate(io.dataloom.api.strategy.StrategyEvaluationRequest){}[0]
 }
 
+abstract interface io.dataloom.api.circuit/CircuitBreakerStateStore { // io.dataloom.api.circuit/CircuitBreakerStateStore|null[0]
+    abstract suspend fun compareAndSet(io.dataloom.api.circuit/CircuitBreakerCompareAndSetRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult> // io.dataloom.api.circuit/CircuitBreakerStateStore.compareAndSet|compareAndSet(io.dataloom.api.circuit.CircuitBreakerCompareAndSetRequest){}[0]
+    abstract suspend fun load(io.dataloom.api.circuit/CircuitBreakerScope): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.circuit/CircuitBreakerLoadResult> // io.dataloom.api.circuit/CircuitBreakerStateStore.load|load(io.dataloom.api.circuit.CircuitBreakerScope){}[0]
+}
+
 abstract interface io.dataloom.api.conflict/ConflictDetector { // io.dataloom.api.conflict/ConflictDetector|null[0]
     abstract val id // io.dataloom.api.conflict/ConflictDetector.id|{}id[0]
         abstract fun <get-id>(): io.dataloom.api.identifier/ConflictDetectorId // io.dataloom.api.conflict/ConflictDetector.id.<get-id>|<get-id>(){}[0]
@@ -580,6 +611,55 @@ abstract interface io.dataloom.api.transport/TransportProvider : io.dataloom.api
 
     abstract suspend fun pullChanges(io.dataloom.api.transport/PullChangesRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.transport/PullChangesResult> // io.dataloom.api.transport/TransportProvider.pullChanges|pullChanges(io.dataloom.api.transport.PullChangesRequest){}[0]
     abstract suspend fun pushChanges(io.dataloom.api.transport/PushChangesRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.synchronization/ChangeSetAcknowledgement> // io.dataloom.api.transport/TransportProvider.pushChanges|pushChanges(io.dataloom.api.transport.PushChangesRequest){}[0]
+}
+
+sealed interface io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult { // io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult|null[0]
+    final class Conflict : io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult { // io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult.Conflict|null[0]
+        constructor <init>(io.dataloom.api.circuit/CircuitBreakerStateRecord?) // io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult.Conflict.<init>|<init>(io.dataloom.api.circuit.CircuitBreakerStateRecord?){}[0]
+
+        final val current // io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult.Conflict.current|{}current[0]
+            final fun <get-current>(): io.dataloom.api.circuit/CircuitBreakerStateRecord? // io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult.Conflict.current.<get-current>|<get-current>(){}[0]
+
+        final fun component1(): io.dataloom.api.circuit/CircuitBreakerStateRecord? // io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult.Conflict.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.circuit/CircuitBreakerStateRecord? = ...): io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult.Conflict // io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult.Conflict.copy|copy(io.dataloom.api.circuit.CircuitBreakerStateRecord?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult.Conflict.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult.Conflict.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult.Conflict.toString|toString(){}[0]
+    }
+
+    final class Updated : io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult { // io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult.Updated|null[0]
+        constructor <init>(io.dataloom.api.circuit/CircuitBreakerStateRecord) // io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult.Updated.<init>|<init>(io.dataloom.api.circuit.CircuitBreakerStateRecord){}[0]
+
+        final val record // io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult.Updated.record|{}record[0]
+            final fun <get-record>(): io.dataloom.api.circuit/CircuitBreakerStateRecord // io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult.Updated.record.<get-record>|<get-record>(){}[0]
+
+        final fun component1(): io.dataloom.api.circuit/CircuitBreakerStateRecord // io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult.Updated.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.circuit/CircuitBreakerStateRecord = ...): io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult.Updated // io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult.Updated.copy|copy(io.dataloom.api.circuit.CircuitBreakerStateRecord){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult.Updated.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult.Updated.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult.Updated.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.circuit/CircuitBreakerLoadResult { // io.dataloom.api.circuit/CircuitBreakerLoadResult|null[0]
+    final class Found : io.dataloom.api.circuit/CircuitBreakerLoadResult { // io.dataloom.api.circuit/CircuitBreakerLoadResult.Found|null[0]
+        constructor <init>(io.dataloom.api.circuit/CircuitBreakerStateRecord) // io.dataloom.api.circuit/CircuitBreakerLoadResult.Found.<init>|<init>(io.dataloom.api.circuit.CircuitBreakerStateRecord){}[0]
+
+        final val record // io.dataloom.api.circuit/CircuitBreakerLoadResult.Found.record|{}record[0]
+            final fun <get-record>(): io.dataloom.api.circuit/CircuitBreakerStateRecord // io.dataloom.api.circuit/CircuitBreakerLoadResult.Found.record.<get-record>|<get-record>(){}[0]
+
+        final fun component1(): io.dataloom.api.circuit/CircuitBreakerStateRecord // io.dataloom.api.circuit/CircuitBreakerLoadResult.Found.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.circuit/CircuitBreakerStateRecord = ...): io.dataloom.api.circuit/CircuitBreakerLoadResult.Found // io.dataloom.api.circuit/CircuitBreakerLoadResult.Found.copy|copy(io.dataloom.api.circuit.CircuitBreakerStateRecord){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitBreakerLoadResult.Found.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitBreakerLoadResult.Found.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitBreakerLoadResult.Found.toString|toString(){}[0]
+    }
+
+    final object Missing : io.dataloom.api.circuit/CircuitBreakerLoadResult { // io.dataloom.api.circuit/CircuitBreakerLoadResult.Missing|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitBreakerLoadResult.Missing.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitBreakerLoadResult.Missing.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitBreakerLoadResult.Missing.toString|toString(){}[0]
+    }
 }
 
 sealed interface io.dataloom.api.conflict/ConflictDetectionResult { // io.dataloom.api.conflict/ConflictDetectionResult|null[0]
@@ -1272,6 +1352,108 @@ final class io.dataloom.api.change/EntityReference { // io.dataloom.api.change/E
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.change/EntityReference.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.change/EntityReference.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.change/EntityReference.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.circuit/CircuitBreakerCompareAndSetRequest { // io.dataloom.api.circuit/CircuitBreakerCompareAndSetRequest|null[0]
+    constructor <init>(io.dataloom.api.circuit/CircuitBreakerScope, kotlin/Long?, io.dataloom.api.circuit/CircuitBreakerState) // io.dataloom.api.circuit/CircuitBreakerCompareAndSetRequest.<init>|<init>(io.dataloom.api.circuit.CircuitBreakerScope;kotlin.Long?;io.dataloom.api.circuit.CircuitBreakerState){}[0]
+
+    final val expectedVersion // io.dataloom.api.circuit/CircuitBreakerCompareAndSetRequest.expectedVersion|{}expectedVersion[0]
+        final fun <get-expectedVersion>(): kotlin/Long? // io.dataloom.api.circuit/CircuitBreakerCompareAndSetRequest.expectedVersion.<get-expectedVersion>|<get-expectedVersion>(){}[0]
+    final val nextState // io.dataloom.api.circuit/CircuitBreakerCompareAndSetRequest.nextState|{}nextState[0]
+        final fun <get-nextState>(): io.dataloom.api.circuit/CircuitBreakerState // io.dataloom.api.circuit/CircuitBreakerCompareAndSetRequest.nextState.<get-nextState>|<get-nextState>(){}[0]
+    final val scope // io.dataloom.api.circuit/CircuitBreakerCompareAndSetRequest.scope|{}scope[0]
+        final fun <get-scope>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.api.circuit/CircuitBreakerCompareAndSetRequest.scope.<get-scope>|<get-scope>(){}[0]
+
+    final fun component1(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.api.circuit/CircuitBreakerCompareAndSetRequest.component1|component1(){}[0]
+    final fun component2(): kotlin/Long? // io.dataloom.api.circuit/CircuitBreakerCompareAndSetRequest.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.circuit/CircuitBreakerState // io.dataloom.api.circuit/CircuitBreakerCompareAndSetRequest.component3|component3(){}[0]
+    final fun copy(io.dataloom.api.circuit/CircuitBreakerScope = ..., kotlin/Long? = ..., io.dataloom.api.circuit/CircuitBreakerState = ...): io.dataloom.api.circuit/CircuitBreakerCompareAndSetRequest // io.dataloom.api.circuit/CircuitBreakerCompareAndSetRequest.copy|copy(io.dataloom.api.circuit.CircuitBreakerScope;kotlin.Long?;io.dataloom.api.circuit.CircuitBreakerState){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitBreakerCompareAndSetRequest.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitBreakerCompareAndSetRequest.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitBreakerCompareAndSetRequest.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.circuit/CircuitBreakerScope { // io.dataloom.api.circuit/CircuitBreakerScope|null[0]
+    constructor <init>(io.dataloom.api.circuit/CircuitBreakerScopeKind, io.dataloom.api.provider/ProviderId? = ..., io.dataloom.api.retry/RetryOperation? = ..., io.dataloom.api.identifier/TenantId? = ..., io.dataloom.api.identifier/WorkflowId? = ...) // io.dataloom.api.circuit/CircuitBreakerScope.<init>|<init>(io.dataloom.api.circuit.CircuitBreakerScopeKind;io.dataloom.api.provider.ProviderId?;io.dataloom.api.retry.RetryOperation?;io.dataloom.api.identifier.TenantId?;io.dataloom.api.identifier.WorkflowId?){}[0]
+
+    final val kind // io.dataloom.api.circuit/CircuitBreakerScope.kind|{}kind[0]
+        final fun <get-kind>(): io.dataloom.api.circuit/CircuitBreakerScopeKind // io.dataloom.api.circuit/CircuitBreakerScope.kind.<get-kind>|<get-kind>(){}[0]
+    final val operation // io.dataloom.api.circuit/CircuitBreakerScope.operation|{}operation[0]
+        final fun <get-operation>(): io.dataloom.api.retry/RetryOperation? // io.dataloom.api.circuit/CircuitBreakerScope.operation.<get-operation>|<get-operation>(){}[0]
+    final val providerId // io.dataloom.api.circuit/CircuitBreakerScope.providerId|{}providerId[0]
+        final fun <get-providerId>(): io.dataloom.api.provider/ProviderId? // io.dataloom.api.circuit/CircuitBreakerScope.providerId.<get-providerId>|<get-providerId>(){}[0]
+    final val tenantId // io.dataloom.api.circuit/CircuitBreakerScope.tenantId|{}tenantId[0]
+        final fun <get-tenantId>(): io.dataloom.api.identifier/TenantId? // io.dataloom.api.circuit/CircuitBreakerScope.tenantId.<get-tenantId>|<get-tenantId>(){}[0]
+    final val workflowId // io.dataloom.api.circuit/CircuitBreakerScope.workflowId|{}workflowId[0]
+        final fun <get-workflowId>(): io.dataloom.api.identifier/WorkflowId? // io.dataloom.api.circuit/CircuitBreakerScope.workflowId.<get-workflowId>|<get-workflowId>(){}[0]
+
+    final fun component1(): io.dataloom.api.circuit/CircuitBreakerScopeKind // io.dataloom.api.circuit/CircuitBreakerScope.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.provider/ProviderId? // io.dataloom.api.circuit/CircuitBreakerScope.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.retry/RetryOperation? // io.dataloom.api.circuit/CircuitBreakerScope.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.identifier/TenantId? // io.dataloom.api.circuit/CircuitBreakerScope.component4|component4(){}[0]
+    final fun component5(): io.dataloom.api.identifier/WorkflowId? // io.dataloom.api.circuit/CircuitBreakerScope.component5|component5(){}[0]
+    final fun copy(io.dataloom.api.circuit/CircuitBreakerScopeKind = ..., io.dataloom.api.provider/ProviderId? = ..., io.dataloom.api.retry/RetryOperation? = ..., io.dataloom.api.identifier/TenantId? = ..., io.dataloom.api.identifier/WorkflowId? = ...): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.api.circuit/CircuitBreakerScope.copy|copy(io.dataloom.api.circuit.CircuitBreakerScopeKind;io.dataloom.api.provider.ProviderId?;io.dataloom.api.retry.RetryOperation?;io.dataloom.api.identifier.TenantId?;io.dataloom.api.identifier.WorkflowId?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitBreakerScope.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitBreakerScope.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitBreakerScope.toString|toString(){}[0]
+
+    final object Companion { // io.dataloom.api.circuit/CircuitBreakerScope.Companion|null[0]
+        final fun global(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.api.circuit/CircuitBreakerScope.Companion.global|global(){}[0]
+        final fun provider(io.dataloom.api.provider/ProviderId): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.api.circuit/CircuitBreakerScope.Companion.provider|provider(io.dataloom.api.provider.ProviderId){}[0]
+        final fun providerOperation(io.dataloom.api.provider/ProviderId, io.dataloom.api.retry/RetryOperation): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.api.circuit/CircuitBreakerScope.Companion.providerOperation|providerOperation(io.dataloom.api.provider.ProviderId;io.dataloom.api.retry.RetryOperation){}[0]
+        final fun tenantProviderOperation(io.dataloom.api.identifier/TenantId, io.dataloom.api.provider/ProviderId, io.dataloom.api.retry/RetryOperation): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.api.circuit/CircuitBreakerScope.Companion.tenantProviderOperation|tenantProviderOperation(io.dataloom.api.identifier.TenantId;io.dataloom.api.provider.ProviderId;io.dataloom.api.retry.RetryOperation){}[0]
+        final fun workflow(io.dataloom.api.identifier/WorkflowId): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.api.circuit/CircuitBreakerScope.Companion.workflow|workflow(io.dataloom.api.identifier.WorkflowId){}[0]
+    }
+}
+
+final class io.dataloom.api.circuit/CircuitBreakerState { // io.dataloom.api.circuit/CircuitBreakerState|null[0]
+    constructor <init>(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.circuit/CircuitBreakerPhase, kotlin/Int, io.dataloom.api.time/DataLoomInstant?, io.dataloom.api.time/DataLoomInstant?, kotlin/Long, kotlin/Boolean, io.dataloom.api.time/DataLoomInstant) // io.dataloom.api.circuit/CircuitBreakerState.<init>|<init>(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerPhase;kotlin.Int;io.dataloom.api.time.DataLoomInstant?;io.dataloom.api.time.DataLoomInstant?;kotlin.Long;kotlin.Boolean;io.dataloom.api.time.DataLoomInstant){}[0]
+
+    final val consecutiveFailures // io.dataloom.api.circuit/CircuitBreakerState.consecutiveFailures|{}consecutiveFailures[0]
+        final fun <get-consecutiveFailures>(): kotlin/Int // io.dataloom.api.circuit/CircuitBreakerState.consecutiveFailures.<get-consecutiveFailures>|<get-consecutiveFailures>(){}[0]
+    final val failureWindowStartedAt // io.dataloom.api.circuit/CircuitBreakerState.failureWindowStartedAt|{}failureWindowStartedAt[0]
+        final fun <get-failureWindowStartedAt>(): io.dataloom.api.time/DataLoomInstant? // io.dataloom.api.circuit/CircuitBreakerState.failureWindowStartedAt.<get-failureWindowStartedAt>|<get-failureWindowStartedAt>(){}[0]
+    final val openUntil // io.dataloom.api.circuit/CircuitBreakerState.openUntil|{}openUntil[0]
+        final fun <get-openUntil>(): io.dataloom.api.time/DataLoomInstant? // io.dataloom.api.circuit/CircuitBreakerState.openUntil.<get-openUntil>|<get-openUntil>(){}[0]
+    final val phase // io.dataloom.api.circuit/CircuitBreakerState.phase|{}phase[0]
+        final fun <get-phase>(): io.dataloom.api.circuit/CircuitBreakerPhase // io.dataloom.api.circuit/CircuitBreakerState.phase.<get-phase>|<get-phase>(){}[0]
+    final val probeGeneration // io.dataloom.api.circuit/CircuitBreakerState.probeGeneration|{}probeGeneration[0]
+        final fun <get-probeGeneration>(): kotlin/Long // io.dataloom.api.circuit/CircuitBreakerState.probeGeneration.<get-probeGeneration>|<get-probeGeneration>(){}[0]
+    final val probeInFlight // io.dataloom.api.circuit/CircuitBreakerState.probeInFlight|{}probeInFlight[0]
+        final fun <get-probeInFlight>(): kotlin/Boolean // io.dataloom.api.circuit/CircuitBreakerState.probeInFlight.<get-probeInFlight>|<get-probeInFlight>(){}[0]
+    final val scope // io.dataloom.api.circuit/CircuitBreakerState.scope|{}scope[0]
+        final fun <get-scope>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.api.circuit/CircuitBreakerState.scope.<get-scope>|<get-scope>(){}[0]
+    final val updatedAt // io.dataloom.api.circuit/CircuitBreakerState.updatedAt|{}updatedAt[0]
+        final fun <get-updatedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.circuit/CircuitBreakerState.updatedAt.<get-updatedAt>|<get-updatedAt>(){}[0]
+
+    final fun component1(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.api.circuit/CircuitBreakerState.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.circuit/CircuitBreakerPhase // io.dataloom.api.circuit/CircuitBreakerState.component2|component2(){}[0]
+    final fun component3(): kotlin/Int // io.dataloom.api.circuit/CircuitBreakerState.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.time/DataLoomInstant? // io.dataloom.api.circuit/CircuitBreakerState.component4|component4(){}[0]
+    final fun component5(): io.dataloom.api.time/DataLoomInstant? // io.dataloom.api.circuit/CircuitBreakerState.component5|component5(){}[0]
+    final fun component6(): kotlin/Long // io.dataloom.api.circuit/CircuitBreakerState.component6|component6(){}[0]
+    final fun component7(): kotlin/Boolean // io.dataloom.api.circuit/CircuitBreakerState.component7|component7(){}[0]
+    final fun component8(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.circuit/CircuitBreakerState.component8|component8(){}[0]
+    final fun copy(io.dataloom.api.circuit/CircuitBreakerScope = ..., io.dataloom.api.circuit/CircuitBreakerPhase = ..., kotlin/Int = ..., io.dataloom.api.time/DataLoomInstant? = ..., io.dataloom.api.time/DataLoomInstant? = ..., kotlin/Long = ..., kotlin/Boolean = ..., io.dataloom.api.time/DataLoomInstant = ...): io.dataloom.api.circuit/CircuitBreakerState // io.dataloom.api.circuit/CircuitBreakerState.copy|copy(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerPhase;kotlin.Int;io.dataloom.api.time.DataLoomInstant?;io.dataloom.api.time.DataLoomInstant?;kotlin.Long;kotlin.Boolean;io.dataloom.api.time.DataLoomInstant){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitBreakerState.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitBreakerState.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitBreakerState.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.circuit/CircuitBreakerStateRecord { // io.dataloom.api.circuit/CircuitBreakerStateRecord|null[0]
+    constructor <init>(io.dataloom.api.circuit/CircuitBreakerState, kotlin/Long) // io.dataloom.api.circuit/CircuitBreakerStateRecord.<init>|<init>(io.dataloom.api.circuit.CircuitBreakerState;kotlin.Long){}[0]
+
+    final val state // io.dataloom.api.circuit/CircuitBreakerStateRecord.state|{}state[0]
+        final fun <get-state>(): io.dataloom.api.circuit/CircuitBreakerState // io.dataloom.api.circuit/CircuitBreakerStateRecord.state.<get-state>|<get-state>(){}[0]
+    final val version // io.dataloom.api.circuit/CircuitBreakerStateRecord.version|{}version[0]
+        final fun <get-version>(): kotlin/Long // io.dataloom.api.circuit/CircuitBreakerStateRecord.version.<get-version>|<get-version>(){}[0]
+
+    final fun component1(): io.dataloom.api.circuit/CircuitBreakerState // io.dataloom.api.circuit/CircuitBreakerStateRecord.component1|component1(){}[0]
+    final fun component2(): kotlin/Long // io.dataloom.api.circuit/CircuitBreakerStateRecord.component2|component2(){}[0]
+    final fun copy(io.dataloom.api.circuit/CircuitBreakerState = ..., kotlin/Long = ...): io.dataloom.api.circuit/CircuitBreakerStateRecord // io.dataloom.api.circuit/CircuitBreakerStateRecord.copy|copy(io.dataloom.api.circuit.CircuitBreakerState;kotlin.Long){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitBreakerStateRecord.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitBreakerStateRecord.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitBreakerStateRecord.toString|toString(){}[0]
 }
 
 final class io.dataloom.api.conflict/ConflictDetectionRequest { // io.dataloom.api.conflict/ConflictDetectionRequest|null[0]

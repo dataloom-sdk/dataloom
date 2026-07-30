@@ -1,5 +1,7 @@
 package io.dataloom.consumer
 
+import io.dataloom.api.circuit.CircuitBreakerScope
+import io.dataloom.api.circuit.CircuitBreakerStateStore
 import io.dataloom.api.error.RetryDelayHint
 import io.dataloom.api.error.RetryDelayHintCarrier
 import io.dataloom.api.error.RetryDelayHintSource
@@ -31,6 +33,10 @@ import io.dataloom.api.strategy.StrategySynchronizationRequest
 import io.dataloom.api.time.DataLoomClock
 import io.dataloom.runtime.execution.SynchronizationExecutionResult
 import io.dataloom.runtime.facade.DataLoom
+import io.dataloom.runtime.retry.CircuitBreakerConfiguration
+import io.dataloom.runtime.retry.CircuitBreakerCoordinator
+import io.dataloom.runtime.retry.CircuitBreakerPermission
+import io.dataloom.runtime.retry.CircuitBreakerRecordResult
 import io.dataloom.runtime.retry.RetryBackoffStrategy
 import io.dataloom.runtime.retry.RetryBudgetConfiguration
 import io.dataloom.runtime.retry.RetryHintConfiguration
@@ -260,4 +266,25 @@ internal suspend fun compileTimeoutConsumer(executor: RetryTimeoutExecutor) {
     )
     val result: RetryTimeoutExecutionResult<String> = executor.execute(request) { "ok" }
     result.toString()
+}
+
+
+/** Compile-only use of the circuit-breaker persistence and runtime surface. */
+internal fun compileCircuitBreakerConsumer(
+    store: CircuitBreakerStateStore,
+    clock: DataLoomClock,
+): CircuitBreakerCoordinator {
+    val scope = CircuitBreakerScope.global()
+    val configuration = CircuitBreakerConfiguration(
+        failureThreshold = 3,
+        failureWindow = SchedulingDelay(30_000L),
+        openDuration = SchedulingDelay(60_000L),
+    )
+    val coordinator = CircuitBreakerCoordinator(configuration, clock, store)
+    val permission: CircuitBreakerPermission = CircuitBreakerPermission.Allowed
+    val recordResult: CircuitBreakerRecordResult = CircuitBreakerRecordResult.Ignored
+    scope.kind
+    permission.toString()
+    recordResult.toString()
+    return coordinator
 }

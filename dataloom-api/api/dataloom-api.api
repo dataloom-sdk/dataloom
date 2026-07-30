@@ -45,6 +45,159 @@ public final class io/dataloom/api/change/EntityReference {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/api/circuit/CircuitBreakerCompareAndSetRequest {
+	public fun <init> (Lio/dataloom/api/circuit/CircuitBreakerScope;Ljava/lang/Long;Lio/dataloom/api/circuit/CircuitBreakerState;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component2 ()Ljava/lang/Long;
+	public final fun component3 ()Lio/dataloom/api/circuit/CircuitBreakerState;
+	public final fun copy (Lio/dataloom/api/circuit/CircuitBreakerScope;Ljava/lang/Long;Lio/dataloom/api/circuit/CircuitBreakerState;)Lio/dataloom/api/circuit/CircuitBreakerCompareAndSetRequest;
+	public static synthetic fun copy$default (Lio/dataloom/api/circuit/CircuitBreakerCompareAndSetRequest;Lio/dataloom/api/circuit/CircuitBreakerScope;Ljava/lang/Long;Lio/dataloom/api/circuit/CircuitBreakerState;ILjava/lang/Object;)Lio/dataloom/api/circuit/CircuitBreakerCompareAndSetRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExpectedVersion ()Ljava/lang/Long;
+	public final fun getNextState ()Lio/dataloom/api/circuit/CircuitBreakerState;
+	public final fun getScope ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/circuit/CircuitBreakerCompareAndSetResult {
+}
+
+public final class io/dataloom/api/circuit/CircuitBreakerCompareAndSetResult$Conflict : io/dataloom/api/circuit/CircuitBreakerCompareAndSetResult {
+	public fun <init> (Lio/dataloom/api/circuit/CircuitBreakerStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitBreakerStateRecord;
+	public final fun copy (Lio/dataloom/api/circuit/CircuitBreakerStateRecord;)Lio/dataloom/api/circuit/CircuitBreakerCompareAndSetResult$Conflict;
+	public static synthetic fun copy$default (Lio/dataloom/api/circuit/CircuitBreakerCompareAndSetResult$Conflict;Lio/dataloom/api/circuit/CircuitBreakerStateRecord;ILjava/lang/Object;)Lio/dataloom/api/circuit/CircuitBreakerCompareAndSetResult$Conflict;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCurrent ()Lio/dataloom/api/circuit/CircuitBreakerStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/circuit/CircuitBreakerCompareAndSetResult$Updated : io/dataloom/api/circuit/CircuitBreakerCompareAndSetResult {
+	public fun <init> (Lio/dataloom/api/circuit/CircuitBreakerStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitBreakerStateRecord;
+	public final fun copy (Lio/dataloom/api/circuit/CircuitBreakerStateRecord;)Lio/dataloom/api/circuit/CircuitBreakerCompareAndSetResult$Updated;
+	public static synthetic fun copy$default (Lio/dataloom/api/circuit/CircuitBreakerCompareAndSetResult$Updated;Lio/dataloom/api/circuit/CircuitBreakerStateRecord;ILjava/lang/Object;)Lio/dataloom/api/circuit/CircuitBreakerCompareAndSetResult$Updated;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/circuit/CircuitBreakerStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/circuit/CircuitBreakerLoadResult {
+}
+
+public final class io/dataloom/api/circuit/CircuitBreakerLoadResult$Found : io/dataloom/api/circuit/CircuitBreakerLoadResult {
+	public fun <init> (Lio/dataloom/api/circuit/CircuitBreakerStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitBreakerStateRecord;
+	public final fun copy (Lio/dataloom/api/circuit/CircuitBreakerStateRecord;)Lio/dataloom/api/circuit/CircuitBreakerLoadResult$Found;
+	public static synthetic fun copy$default (Lio/dataloom/api/circuit/CircuitBreakerLoadResult$Found;Lio/dataloom/api/circuit/CircuitBreakerStateRecord;ILjava/lang/Object;)Lio/dataloom/api/circuit/CircuitBreakerLoadResult$Found;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/circuit/CircuitBreakerStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/circuit/CircuitBreakerLoadResult$Missing : io/dataloom/api/circuit/CircuitBreakerLoadResult {
+	public static final field INSTANCE Lio/dataloom/api/circuit/CircuitBreakerLoadResult$Missing;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/circuit/CircuitBreakerPhase : java/lang/Enum {
+	public static final field CLOSED Lio/dataloom/api/circuit/CircuitBreakerPhase;
+	public static final field HALF_OPEN Lio/dataloom/api/circuit/CircuitBreakerPhase;
+	public static final field OPEN Lio/dataloom/api/circuit/CircuitBreakerPhase;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/circuit/CircuitBreakerPhase;
+	public static fun values ()[Lio/dataloom/api/circuit/CircuitBreakerPhase;
+}
+
+public final class io/dataloom/api/circuit/CircuitBreakerScope {
+	public static final field Companion Lio/dataloom/api/circuit/CircuitBreakerScope$Companion;
+	public synthetic fun <init> (Lio/dataloom/api/circuit/CircuitBreakerScopeKind;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/circuit/CircuitBreakerScopeKind;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitBreakerScopeKind;
+	public final fun component2-I61KZlw ()Ljava/lang/String;
+	public final fun component3-cEYNV9s ()Ljava/lang/String;
+	public final fun component4-FOnZjVk ()Ljava/lang/String;
+	public final fun component5-RNYfoJA ()Ljava/lang/String;
+	public final fun copy-hMik9mk (Lio/dataloom/api/circuit/CircuitBreakerScopeKind;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public static synthetic fun copy-hMik9mk$default (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScopeKind;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKind ()Lio/dataloom/api/circuit/CircuitBreakerScopeKind;
+	public final fun getOperation-cEYNV9s ()Ljava/lang/String;
+	public final fun getProviderId-I61KZlw ()Ljava/lang/String;
+	public final fun getTenantId-FOnZjVk ()Ljava/lang/String;
+	public final fun getWorkflowId-RNYfoJA ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/circuit/CircuitBreakerScope$Companion {
+	public final fun global ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun provider-sSMY0RE (Ljava/lang/String;)Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun providerOperation-5aqIxNE (Ljava/lang/String;Ljava/lang/String;)Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun tenantProviderOperation-zuAwPTQ (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun workflow-ea_k2Rw (Ljava/lang/String;)Lio/dataloom/api/circuit/CircuitBreakerScope;
+}
+
+public final class io/dataloom/api/circuit/CircuitBreakerScopeKind : java/lang/Enum {
+	public static final field GLOBAL Lio/dataloom/api/circuit/CircuitBreakerScopeKind;
+	public static final field PROVIDER Lio/dataloom/api/circuit/CircuitBreakerScopeKind;
+	public static final field PROVIDER_OPERATION Lio/dataloom/api/circuit/CircuitBreakerScopeKind;
+	public static final field TENANT_PROVIDER_OPERATION Lio/dataloom/api/circuit/CircuitBreakerScopeKind;
+	public static final field WORKFLOW Lio/dataloom/api/circuit/CircuitBreakerScopeKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/circuit/CircuitBreakerScopeKind;
+	public static fun values ()[Lio/dataloom/api/circuit/CircuitBreakerScopeKind;
+}
+
+public final class io/dataloom/api/circuit/CircuitBreakerState {
+	public fun <init> (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerPhase;ILio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;JZLio/dataloom/api/time/DataLoomInstant;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component2 ()Lio/dataloom/api/circuit/CircuitBreakerPhase;
+	public final fun component3 ()I
+	public final fun component4 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component5 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component6 ()J
+	public final fun component7 ()Z
+	public final fun component8 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerPhase;ILio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;JZLio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/api/circuit/CircuitBreakerState;
+	public static synthetic fun copy$default (Lio/dataloom/api/circuit/CircuitBreakerState;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerPhase;ILio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;JZLio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/api/circuit/CircuitBreakerState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConsecutiveFailures ()I
+	public final fun getFailureWindowStartedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getOpenUntil ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getPhase ()Lio/dataloom/api/circuit/CircuitBreakerPhase;
+	public final fun getProbeGeneration ()J
+	public final fun getProbeInFlight ()Z
+	public final fun getScope ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getUpdatedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/circuit/CircuitBreakerStateRecord {
+	public fun <init> (Lio/dataloom/api/circuit/CircuitBreakerState;J)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitBreakerState;
+	public final fun component2 ()J
+	public final fun copy (Lio/dataloom/api/circuit/CircuitBreakerState;J)Lio/dataloom/api/circuit/CircuitBreakerStateRecord;
+	public static synthetic fun copy$default (Lio/dataloom/api/circuit/CircuitBreakerStateRecord;Lio/dataloom/api/circuit/CircuitBreakerState;JILjava/lang/Object;)Lio/dataloom/api/circuit/CircuitBreakerStateRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getState ()Lio/dataloom/api/circuit/CircuitBreakerState;
+	public final fun getVersion ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/circuit/CircuitBreakerStateStore {
+	public abstract fun compareAndSet (Lio/dataloom/api/circuit/CircuitBreakerCompareAndSetRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun load (Lio/dataloom/api/circuit/CircuitBreakerScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
 public final class io/dataloom/api/conflict/ConflictDetectionRequest {
 	public fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/context/DataLoomMetadata;)V
 	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
