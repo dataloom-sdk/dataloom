@@ -43,17 +43,19 @@ public class RoomCircuitBreakerStateStore(
 
     override suspend fun compareAndSet(
         request: CircuitBreakerCompareAndSetRequest,
-    ): ProviderOperationResult<CircuitBreakerCompareAndSetResult> = protect {
-        val nextVersion = request.expectedVersion?.let {
-            require(it < Long.MAX_VALUE) { "Circuit state version is exhausted." }
-            it + 1L
-        } ?: 0L
-        val next = request.nextState.toEntity(nextVersion)
-        when (val result = dao.compareAndSet(request.expectedVersion, next)) {
-            is CircuitBreakerCompareAndSetEntityResult.Updated ->
-                CircuitBreakerCompareAndSetResult.Updated(result.entity.toRecord())
-            is CircuitBreakerCompareAndSetEntityResult.Conflict ->
-                CircuitBreakerCompareAndSetResult.Conflict(result.current?.toRecord())
+    ): ProviderOperationResult<CircuitBreakerCompareAndSetResult> {
+        if (request.expectedVersion == Long.MAX_VALUE) {
+            return ProviderOperationResult.Failure(RoomCircuitStoreError.versionExhausted())
+        }
+        return protect {
+            val nextVersion = request.expectedVersion?.plus(1L) ?: 0L
+            val next = request.nextState.toEntity(nextVersion)
+            when (val result = dao.compareAndSet(request.expectedVersion, next)) {
+                is CircuitBreakerCompareAndSetEntityResult.Updated ->
+                    CircuitBreakerCompareAndSetResult.Updated(result.entity.toRecord())
+                is CircuitBreakerCompareAndSetEntityResult.Conflict ->
+                    CircuitBreakerCompareAndSetResult.Conflict(result.current?.toRecord())
+            }
         }
     }
 
@@ -61,6 +63,8 @@ public class RoomCircuitBreakerStateStore(
         ProviderOperationResult.Success(block())
     } catch (cancelled: kotlin.coroutines.cancellation.CancellationException) {
         throw cancelled
+    } catch (_: MalformedCircuitStateException) {
+        ProviderOperationResult.Failure(RoomCircuitStoreError.integrityFailure())
     } catch (_: Exception) {
         ProviderOperationResult.Failure(RoomCircuitStoreError.databaseFailure())
     }
@@ -85,7 +89,7 @@ private fun CircuitBreakerState.toEntity(version: Long): CircuitBreakerStateEnti
         recordVersion = version,
     )
 
-private fun CircuitBreakerStateEntity.toRecord(): CircuitBreakerStateRecord {
+private fun CircuitBreakerStateEntity.toRecord(): CircuitBreakerStateRecord = try {
     val kind = CircuitBreakerScopeKind.valueOf(scopeKind)
     val scope = CircuitBreakerScope(
         kind = kind,
@@ -95,7 +99,7 @@ private fun CircuitBreakerStateEntity.toRecord(): CircuitBreakerStateRecord {
         workflowId = workflowId?.let(::WorkflowId),
     )
     check(scopeKey(scope) == scopeKey) { "Persisted circuit scope key does not match its fields." }
-    return CircuitBreakerStateRecord(
+    CircuitBreakerStateRecord(
         state = CircuitBreakerState(
             scope = scope,
             phase = CircuitBreakerPhase.valueOf(phase),
@@ -109,6 +113,10 @@ private fun CircuitBreakerStateEntity.toRecord(): CircuitBreakerStateRecord {
         ),
         version = recordVersion,
     )
+} catch (invalid: IllegalArgumentException) {
+    throw MalformedCircuitStateException(invalid)
+} catch (invalid: IllegalStateException) {
+    throw MalformedCircuitStateException(invalid)
 }
 
 private fun scopeKey(scope: CircuitBreakerScope): String = buildString {
@@ -130,13 +138,41 @@ private fun StringBuilder.appendPart(value: String?) {
     }
 }
 
+private class MalformedCircuitStateException(cause: Throwable) : Exception(cause)
+
 private object RoomCircuitStoreError {
-    fun databaseFailure(): DataLoomError = Error(
-        code = ErrorCode("CIRCUIT_ROOM_DATABASE_FAILURE"),
+    fun databaseFailure(): DataLoomError = error(
+        code = "CIRCUIT_ROOM_DATABASE_FAILURE",
         category = ErrorCategory.STORAGE,
-        severity = ErrorSeverity.ERROR,
         recoverability = Recoverability.RECOVERABLE,
         message = "A circuit-state database operation failed.",
+    )
+
+    fun integrityFailure(): DataLoomError = error(
+        code = "CIRCUIT_ROOM_STATE_CORRUPT",
+        category = ErrorCategory.STATE,
+        recoverability = Recoverability.NON_RECOVERABLE,
+        message = "Persisted circuit state failed integrity validation.",
+    )
+
+    fun versionExhausted(): DataLoomError = error(
+        code = "CIRCUIT_STATE_VERSION_EXHAUSTED",
+        category = ErrorCategory.STATE,
+        recoverability = Recoverability.NON_RECOVERABLE,
+        message = "The circuit-state record version is exhausted.",
+    )
+
+    private fun error(
+        code: String,
+        category: ErrorCategory,
+        recoverability: Recoverability,
+        message: String,
+    ): DataLoomError = Error(
+        code = ErrorCode(code),
+        category = category,
+        severity = ErrorSeverity.ERROR,
+        recoverability = recoverability,
+        message = message,
     )
 
     private data class Error(
