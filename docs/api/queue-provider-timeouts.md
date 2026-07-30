@@ -113,8 +113,8 @@ The decorator never automatically replays a timed-out mutation. In particular:
 - confirmed processing counters are not incremented for an unconfirmed
   transition;
 - later entries are not executed after a transition timeout; and
-- ordinary state lookup, lease expiry, and expired-lease recovery remain the
-  reconciliation mechanisms.
+- lease expiry, provider-defined idempotency, and expired-lease recovery remain
+  the available reconciliation boundaries in the current public SPI.
 
 This preserves the existing at-least-once queue model without converting an
 ambiguous provider timeout into an unsafe immediate retry.
