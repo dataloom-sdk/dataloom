@@ -478,7 +478,7 @@ sealed interface io.dataloom.runtime.queue/QueueEntryExecutionOutcome { // io.da
     }
 
     final class Reschedule : io.dataloom.runtime.queue/QueueEntryExecutionOutcome { // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule|null[0]
-        constructor <init>(io.dataloom.api.retry/RetryAttempt, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.error/DataLoomError) // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.<init>|<init>(io.dataloom.api.retry.RetryAttempt;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.error.DataLoomError){}[0]
+        constructor <init>(io.dataloom.api.retry/RetryAttempt, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.error/DataLoomError, io.dataloom.api.retry/RetryBudgetState? = ...) // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.<init>|<init>(io.dataloom.api.retry.RetryAttempt;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.error.DataLoomError;io.dataloom.api.retry.RetryBudgetState?){}[0]
 
         final val availableAt // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.availableAt|{}availableAt[0]
             final fun <get-availableAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.availableAt.<get-availableAt>|<get-availableAt>(){}[0]
@@ -486,11 +486,14 @@ sealed interface io.dataloom.runtime.queue/QueueEntryExecutionOutcome { // io.da
             final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.error.<get-error>|<get-error>(){}[0]
         final val retryAttempt // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.retryAttempt|{}retryAttempt[0]
             final fun <get-retryAttempt>(): io.dataloom.api.retry/RetryAttempt // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.retryAttempt.<get-retryAttempt>|<get-retryAttempt>(){}[0]
+        final val retryBudgetState // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.retryBudgetState|{}retryBudgetState[0]
+            final fun <get-retryBudgetState>(): io.dataloom.api.retry/RetryBudgetState? // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.retryBudgetState.<get-retryBudgetState>|<get-retryBudgetState>(){}[0]
 
         final fun component1(): io.dataloom.api.retry/RetryAttempt // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.component1|component1(){}[0]
         final fun component2(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.component2|component2(){}[0]
         final fun component3(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.component3|component3(){}[0]
-        final fun copy(io.dataloom.api.retry/RetryAttempt = ..., io.dataloom.api.time/DataLoomInstant = ..., io.dataloom.api.error/DataLoomError = ...): io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.copy|copy(io.dataloom.api.retry.RetryAttempt;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.error.DataLoomError){}[0]
+        final fun component4(): io.dataloom.api.retry/RetryBudgetState? // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.component4|component4(){}[0]
+        final fun copy(io.dataloom.api.retry/RetryAttempt = ..., io.dataloom.api.time/DataLoomInstant = ..., io.dataloom.api.error/DataLoomError = ..., io.dataloom.api.retry/RetryBudgetState? = ...): io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.copy|copy(io.dataloom.api.retry.RetryAttempt;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.error.DataLoomError;io.dataloom.api.retry.RetryBudgetState?){}[0]
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.runtime.queue/QueueEntryExecutionOutcome.Reschedule.toString|toString(){}[0]
@@ -679,7 +682,7 @@ sealed interface io.dataloom.runtime.retry/RetryJitterStrategy { // io.dataloom.
 
 sealed interface io.dataloom.runtime.retry/SynchronizationRetryEvaluation { // io.dataloom.runtime.retry/SynchronizationRetryEvaluation|null[0]
     final class ShouldRetry : io.dataloom.runtime.retry/SynchronizationRetryEvaluation { // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry|null[0]
-        constructor <init>(io.dataloom.api.retry/RetryAttempt, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.error/DataLoomError, kotlin.collections/List<io.dataloom.api.retry/RetryDecision>, io.dataloom.api.scheduling/SchedulingDelay) // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.<init>|<init>(io.dataloom.api.retry.RetryAttempt;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.error.DataLoomError;kotlin.collections.List<io.dataloom.api.retry.RetryDecision>;io.dataloom.api.scheduling.SchedulingDelay){}[0]
+        constructor <init>(io.dataloom.api.retry/RetryAttempt, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.error/DataLoomError, kotlin.collections/List<io.dataloom.api.retry/RetryDecision>, io.dataloom.api.scheduling/SchedulingDelay, io.dataloom.api.retry/RetryBudgetState? = ...) // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.<init>|<init>(io.dataloom.api.retry.RetryAttempt;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.error.DataLoomError;kotlin.collections.List<io.dataloom.api.retry.RetryDecision>;io.dataloom.api.scheduling.SchedulingDelay;io.dataloom.api.retry.RetryBudgetState?){}[0]
 
         final val availableAt // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.availableAt|{}availableAt[0]
             final fun <get-availableAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.availableAt.<get-availableAt>|<get-availableAt>(){}[0]
@@ -689,6 +692,8 @@ sealed interface io.dataloom.runtime.retry/SynchronizationRetryEvaluation { // i
             final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.error.<get-error>|<get-error>(){}[0]
         final val retryAttempt // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.retryAttempt|{}retryAttempt[0]
             final fun <get-retryAttempt>(): io.dataloom.api.retry/RetryAttempt // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.retryAttempt.<get-retryAttempt>|<get-retryAttempt>(){}[0]
+        final val retryBudgetState // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.retryBudgetState|{}retryBudgetState[0]
+            final fun <get-retryBudgetState>(): io.dataloom.api.retry/RetryBudgetState? // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.retryBudgetState.<get-retryBudgetState>|<get-retryBudgetState>(){}[0]
         final val selectedDelay // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.selectedDelay|{}selectedDelay[0]
             final fun <get-selectedDelay>(): io.dataloom.api.scheduling/SchedulingDelay // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.ShouldRetry.selectedDelay.<get-selectedDelay>|<get-selectedDelay>(){}[0]
 
@@ -1470,11 +1475,30 @@ final class io.dataloom.runtime.queue/QueuedSynchronizationWork { // io.dataloom
     final fun toString(): kotlin/String // io.dataloom.runtime.queue/QueuedSynchronizationWork.toString|toString(){}[0]
 }
 
+final class io.dataloom.runtime.retry/RetryBudgetConfiguration { // io.dataloom.runtime.retry/RetryBudgetConfiguration|null[0]
+    constructor <init>(io.dataloom.api.scheduling/SchedulingDelay? = ..., io.dataloom.api.scheduling/SchedulingDelay? = ...) // io.dataloom.runtime.retry/RetryBudgetConfiguration.<init>|<init>(io.dataloom.api.scheduling.SchedulingDelay?;io.dataloom.api.scheduling.SchedulingDelay?){}[0]
+
+    final val maximumCumulativeDelay // io.dataloom.runtime.retry/RetryBudgetConfiguration.maximumCumulativeDelay|{}maximumCumulativeDelay[0]
+        final fun <get-maximumCumulativeDelay>(): io.dataloom.api.scheduling/SchedulingDelay? // io.dataloom.runtime.retry/RetryBudgetConfiguration.maximumCumulativeDelay.<get-maximumCumulativeDelay>|<get-maximumCumulativeDelay>(){}[0]
+    final val maximumElapsedTime // io.dataloom.runtime.retry/RetryBudgetConfiguration.maximumElapsedTime|{}maximumElapsedTime[0]
+        final fun <get-maximumElapsedTime>(): io.dataloom.api.scheduling/SchedulingDelay? // io.dataloom.runtime.retry/RetryBudgetConfiguration.maximumElapsedTime.<get-maximumElapsedTime>|<get-maximumElapsedTime>(){}[0]
+
+    final fun component1(): io.dataloom.api.scheduling/SchedulingDelay? // io.dataloom.runtime.retry/RetryBudgetConfiguration.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.scheduling/SchedulingDelay? // io.dataloom.runtime.retry/RetryBudgetConfiguration.component2|component2(){}[0]
+    final fun copy(io.dataloom.api.scheduling/SchedulingDelay? = ..., io.dataloom.api.scheduling/SchedulingDelay? = ...): io.dataloom.runtime.retry/RetryBudgetConfiguration // io.dataloom.runtime.retry/RetryBudgetConfiguration.copy|copy(io.dataloom.api.scheduling.SchedulingDelay?;io.dataloom.api.scheduling.SchedulingDelay?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/RetryBudgetConfiguration.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/RetryBudgetConfiguration.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.retry/RetryBudgetConfiguration.toString|toString(){}[0]
+}
+
 final class io.dataloom.runtime.retry/RetryOrchestrationResult { // io.dataloom.runtime.retry/RetryOrchestrationResult|null[0]
     constructor <init>(io.dataloom.runtime.retry/RetryOrchestrationStatus, kotlin.collections/List<io.dataloom.api.retry/RetryDecision>, io.dataloom.api.scheduling/SchedulingDelay?, io.dataloom.api.scheduling/ScheduleReceipt?, io.dataloom.api.error/DataLoomError?) // io.dataloom.runtime.retry/RetryOrchestrationResult.<init>|<init>(io.dataloom.runtime.retry.RetryOrchestrationStatus;kotlin.collections.List<io.dataloom.api.retry.RetryDecision>;io.dataloom.api.scheduling.SchedulingDelay?;io.dataloom.api.scheduling.ScheduleReceipt?;io.dataloom.api.error.DataLoomError?){}[0]
+    constructor <init>(io.dataloom.runtime.retry/RetryOrchestrationStatus, kotlin.collections/List<io.dataloom.api.retry/RetryDecision>, io.dataloom.api.scheduling/SchedulingDelay?, io.dataloom.api.scheduling/ScheduleReceipt?, io.dataloom.api.error/DataLoomError?, io.dataloom.api.retry/RetryBudgetState?) // io.dataloom.runtime.retry/RetryOrchestrationResult.<init>|<init>(io.dataloom.runtime.retry.RetryOrchestrationStatus;kotlin.collections.List<io.dataloom.api.retry.RetryDecision>;io.dataloom.api.scheduling.SchedulingDelay?;io.dataloom.api.scheduling.ScheduleReceipt?;io.dataloom.api.error.DataLoomError?;io.dataloom.api.retry.RetryBudgetState?){}[0]
 
     final val decisions // io.dataloom.runtime.retry/RetryOrchestrationResult.decisions|{}decisions[0]
         final fun <get-decisions>(): kotlin.collections/List<io.dataloom.api.retry/RetryDecision> // io.dataloom.runtime.retry/RetryOrchestrationResult.decisions.<get-decisions>|<get-decisions>(){}[0]
+    final val retryBudgetState // io.dataloom.runtime.retry/RetryOrchestrationResult.retryBudgetState|{}retryBudgetState[0]
+        final fun <get-retryBudgetState>(): io.dataloom.api.retry/RetryBudgetState? // io.dataloom.runtime.retry/RetryOrchestrationResult.retryBudgetState.<get-retryBudgetState>|<get-retryBudgetState>(){}[0]
     final val scheduleReceipt // io.dataloom.runtime.retry/RetryOrchestrationResult.scheduleReceipt|{}scheduleReceipt[0]
         final fun <get-scheduleReceipt>(): io.dataloom.api.scheduling/ScheduleReceipt? // io.dataloom.runtime.retry/RetryOrchestrationResult.scheduleReceipt.<get-scheduleReceipt>|<get-scheduleReceipt>(){}[0]
     final val schedulerError // io.dataloom.runtime.retry/RetryOrchestrationResult.schedulerError|{}schedulerError[0]
@@ -1561,11 +1585,14 @@ final class io.dataloom.runtime.retry/StandardRetryPolicy : io.dataloom.api.retr
 
 final class io.dataloom.runtime.retry/SynchronizationRetryEvaluator { // io.dataloom.runtime.retry/SynchronizationRetryEvaluator|null[0]
     constructor <init>(io.dataloom.api.retry/RetryPolicy, io.dataloom.api.time/DataLoomClock) // io.dataloom.runtime.retry/SynchronizationRetryEvaluator.<init>|<init>(io.dataloom.api.retry.RetryPolicy;io.dataloom.api.time.DataLoomClock){}[0]
+    constructor <init>(io.dataloom.api.retry/RetryPolicy, io.dataloom.api.time/DataLoomClock, io.dataloom.runtime.retry/RetryBudgetConfiguration) // io.dataloom.runtime.retry/SynchronizationRetryEvaluator.<init>|<init>(io.dataloom.api.retry.RetryPolicy;io.dataloom.api.time.DataLoomClock;io.dataloom.runtime.retry.RetryBudgetConfiguration){}[0]
 
     final fun evaluate(io.dataloom.api.synchronization/SynchronizationResult, io.dataloom.api.retry/RetryAttempt, io.dataloom.api.retry/RetryOperation): io.dataloom.runtime.retry/SynchronizationRetryEvaluation // io.dataloom.runtime.retry/SynchronizationRetryEvaluator.evaluate|evaluate(io.dataloom.api.synchronization.SynchronizationResult;io.dataloom.api.retry.RetryAttempt;io.dataloom.api.retry.RetryOperation){}[0]
+    final fun evaluate(io.dataloom.api.synchronization/SynchronizationResult, io.dataloom.api.retry/RetryAttempt, io.dataloom.api.retry/RetryOperation, io.dataloom.api.retry/RetryBudgetState?): io.dataloom.runtime.retry/SynchronizationRetryEvaluation // io.dataloom.runtime.retry/SynchronizationRetryEvaluator.evaluate|evaluate(io.dataloom.api.synchronization.SynchronizationResult;io.dataloom.api.retry.RetryAttempt;io.dataloom.api.retry.RetryOperation;io.dataloom.api.retry.RetryBudgetState?){}[0]
 }
 
 final class io.dataloom.runtime.retry/SynchronizationRetryOrchestrator { // io.dataloom.runtime.retry/SynchronizationRetryOrchestrator|null[0]
+    constructor <init>(io.dataloom.api.retry/RetryPolicy, io.dataloom.api.scheduling/SchedulerProvider?, io.dataloom.runtime.retry/RetrySchedulingConfiguration, io.dataloom.api.time/DataLoomClock, io.dataloom.runtime.retry/RetryBudgetConfiguration, io.dataloom.runtime.execution.lifecycle/SynchronizationRuntimeEventEmitter? = ...) // io.dataloom.runtime.retry/SynchronizationRetryOrchestrator.<init>|<init>(io.dataloom.api.retry.RetryPolicy;io.dataloom.api.scheduling.SchedulerProvider?;io.dataloom.runtime.retry.RetrySchedulingConfiguration;io.dataloom.api.time.DataLoomClock;io.dataloom.runtime.retry.RetryBudgetConfiguration;io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitter?){}[0]
     constructor <init>(io.dataloom.api.retry/RetryPolicy, io.dataloom.api.scheduling/SchedulerProvider?, io.dataloom.runtime.retry/RetrySchedulingConfiguration, io.dataloom.runtime.execution.lifecycle/SynchronizationRuntimeEventEmitter? = ...) // io.dataloom.runtime.retry/SynchronizationRetryOrchestrator.<init>|<init>(io.dataloom.api.retry.RetryPolicy;io.dataloom.api.scheduling.SchedulerProvider?;io.dataloom.runtime.retry.RetrySchedulingConfiguration;io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitter?){}[0]
 
     final suspend fun evaluateAndSchedule(io.dataloom.runtime.retry/SynchronizationRetryRequest): io.dataloom.runtime.retry/RetryOrchestrationResult // io.dataloom.runtime.retry/SynchronizationRetryOrchestrator.evaluateAndSchedule|evaluateAndSchedule(io.dataloom.runtime.retry.SynchronizationRetryRequest){}[0]
@@ -1573,9 +1600,12 @@ final class io.dataloom.runtime.retry/SynchronizationRetryOrchestrator { // io.d
 
 final class io.dataloom.runtime.retry/SynchronizationRetryRequest { // io.dataloom.runtime.retry/SynchronizationRetryRequest|null[0]
     constructor <init>(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.synchronization/SynchronizationResult, io.dataloom.api.retry/RetryOperation, io.dataloom.api.retry/RetryAttempt, io.dataloom.api.identifier/ScheduleId) // io.dataloom.runtime.retry/SynchronizationRetryRequest.<init>|<init>(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.synchronization.SynchronizationResult;io.dataloom.api.retry.RetryOperation;io.dataloom.api.retry.RetryAttempt;io.dataloom.api.identifier.ScheduleId){}[0]
+    constructor <init>(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.synchronization/SynchronizationResult, io.dataloom.api.retry/RetryOperation, io.dataloom.api.retry/RetryAttempt, io.dataloom.api.identifier/ScheduleId, io.dataloom.api.retry/RetryBudgetState?) // io.dataloom.runtime.retry/SynchronizationRetryRequest.<init>|<init>(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.synchronization.SynchronizationResult;io.dataloom.api.retry.RetryOperation;io.dataloom.api.retry.RetryAttempt;io.dataloom.api.identifier.ScheduleId;io.dataloom.api.retry.RetryBudgetState?){}[0]
 
     final val retryAttempt // io.dataloom.runtime.retry/SynchronizationRetryRequest.retryAttempt|{}retryAttempt[0]
         final fun <get-retryAttempt>(): io.dataloom.api.retry/RetryAttempt // io.dataloom.runtime.retry/SynchronizationRetryRequest.retryAttempt.<get-retryAttempt>|<get-retryAttempt>(){}[0]
+    final val retryBudgetState // io.dataloom.runtime.retry/SynchronizationRetryRequest.retryBudgetState|{}retryBudgetState[0]
+        final fun <get-retryBudgetState>(): io.dataloom.api.retry/RetryBudgetState? // io.dataloom.runtime.retry/SynchronizationRetryRequest.retryBudgetState.<get-retryBudgetState>|<get-retryBudgetState>(){}[0]
     final val retryOperation // io.dataloom.runtime.retry/SynchronizationRetryRequest.retryOperation|{}retryOperation[0]
         final fun <get-retryOperation>(): io.dataloom.api.retry/RetryOperation // io.dataloom.runtime.retry/SynchronizationRetryRequest.retryOperation.<get-retryOperation>|<get-retryOperation>(){}[0]
     final val scheduleId // io.dataloom.runtime.retry/SynchronizationRetryRequest.scheduleId|{}scheduleId[0]

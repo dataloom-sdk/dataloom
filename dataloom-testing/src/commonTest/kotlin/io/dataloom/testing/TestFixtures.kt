@@ -59,6 +59,7 @@ import io.dataloom.api.queue.QueueFailureRequest
 import io.dataloom.api.queue.QueueLease
 import io.dataloom.api.queue.QueueRescheduleRequest
 import io.dataloom.api.retry.RetryAttempt
+import io.dataloom.api.retry.RetryBudgetState
 import io.dataloom.api.retry.RetryDecision
 import io.dataloom.api.retry.RetryEvaluationRequest
 import io.dataloom.api.retry.RetryOperation
@@ -217,6 +218,7 @@ internal fun sampleQueueEntry(
     enqueuedAt: Long = 1_000L,
     availableAt: Long = enqueuedAt,
     retryAttempt: RetryAttempt? = null,
+    retryBudgetState: RetryBudgetState? = null,
     lease: QueueLease? = null,
     lastError: DataLoomError? = null,
 ): QueueEntry = QueueEntry(
@@ -228,6 +230,7 @@ internal fun sampleQueueEntry(
     retryAttempt = retryAttempt,
     lease = lease,
     lastError = lastError,
+    retryBudgetState = retryBudgetState,
 )
 
 internal fun sampleLease(

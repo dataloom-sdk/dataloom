@@ -1,8 +1,8 @@
 # Room queue provider
 
-> **Audience:** Android developers and maintainers of durable queue behavior
+> **Audience:** Android developers and maintainers of durable queue behavior  
 > **Purpose:** Explain the current Room-backed `QueueProvider`, its state
-> transitions, and its durability limits
+> transitions, migrations, and durability limits  
 > **Status:** Implemented Android queue foundation; not a general
 > `StorageProvider` or complete V1 persistence layer
 
@@ -33,12 +33,13 @@ available yet.
 | Property | Current value |
 |---|---|
 | Default database name | `dataloom-queue.db` |
-| Schema version | `1` |
+| Schema version | `2` |
 | Schema export | Enabled |
-| Committed schema | `dataloom-queue-room/schemas/io.dataloom.queue.room.internal.DataLoomRoomDatabase/1.json` |
+| Committed schema | `dataloom-queue-room/schemas/io.dataloom.queue.room.internal.DataLoomRoomDatabase/2.json` |
 
-`QueueEntryState` and the persisted error enums use enum names, never ordinals.
-Changing a persisted name is therefore a schema compatibility change.
+`QueueEntryState`, persisted error enums, and retry stop reasons use stable
+names, never ordinals. Changing a persisted name is therefore a compatibility
+change.
 
 ## Queue transitions
 
@@ -71,15 +72,28 @@ predicate. A stale or mismatched lease affects zero rows and returns
 Recovery uses one SQL update and only recovers leases whose expiry is strictly
 earlier than the supplied `currentTime`. It preserves `retry_attempt_number`
 exactly: null history returns to `PENDING`, while retry N returns to
-`RETRY_WAITING`. It clears the expired lease and last error but does not
-execute the work or reset its retry budget.
+`RETRY_WAITING`. It clears the expired lease and last error, but does not execute
+the work or reset persisted retry-budget state.
 
 ### Non-retry deferral
 
 `defer` uses one guarded SQL update. It changes availability and clears the
-active lease and last error without writing `retry_attempt_number`. Repeated
-connectivity deferrals therefore remain `PENDING` with a null attempt, while a
-deferral after retry N remains `RETRY_WAITING` with attempt N.
+active lease and last error without writing `retry_attempt_number` or retry-
+budget columns. Repeated connectivity deferrals therefore remain `PENDING` with
+a null attempt, while a deferral after retry N remains `RETRY_WAITING` with
+attempt N and the same budget state.
+
+## Retry budget persistence
+
+A budgeted retry stores three bounded timing values:
+
+- the first genuine retry evaluation instant;
+- the most recent accepted retry evaluation instant; and
+- cumulative delay accepted for durable retry transitions.
+
+A successful `reschedule` writes attempt, availability, sanitized error, and all
+budget values in one lease-guarded update. Partial budget state is rejected when
+mapping persisted rows. Initial enqueue cannot fabricate budget history.
 
 ## Execution and cancellation
 
@@ -89,20 +103,27 @@ exceptions become `QUEUE_DATABASE_FAILURE`.
 
 ## Migration policy
 
-Destructive migration fallback is not enabled. SDK maintainers must add and
-test an explicit Room migration whenever the schema version changes and keep
-the committed JSON schema synchronized with generated output. The current
-`DataLoomDatabaseBuilder` exposes only database name selection; it does not
-offer a host hook for custom migrations or an encrypted
+Destructive migration fallback is not enabled. `DataLoomDatabaseBuilder`
+installs the supported migration set from `DataLoomRoomMigrations.ALL`.
+
+`MIGRATION_1_2` adds nullable retry-window, last-evaluation, and cumulative-delay
+columns. Existing retry attempt and availability values are preserved; historical
+budget fields remain null because version 1 did not record that evidence. The
+instrumented migration test opens a version-1 database, migrates it, verifies the
+preserved row, validates schema version 2, and reopens the current database.
+
+SDK maintainers must add and test an explicit migration whenever the schema
+changes and keep committed JSON schemas synchronized with generated output. The
+builder still does not expose a host hook for custom migrations or an encrypted
 `SupportSQLiteOpenHelper.Factory`.
 
 ## Security boundary
 
 The current database is not encrypted by DataLoom. Queue payloads, metadata,
-and sanitized error fields are persisted. Applications requiring SDK-managed
-encrypted queue storage need an alternative `QueueProvider` until an encrypted
-construction boundary is implemented and qualified. See
-[Security and R8](security-and-r8.md#data-at-rest).
+sanitized error fields, and bounded retry timing evidence are persisted.
+Applications requiring SDK-managed encrypted queue storage need an alternative
+`QueueProvider` until an encrypted construction boundary is implemented and
+qualified. See [Security and R8](security-and-r8.md#data-at-rest).
 
 ## Canonical error codes
 
@@ -120,5 +141,7 @@ policy, scheduling, or synchronization execution.
 ## Related documentation
 
 - [Queue provider contract](../api/queue-provider.md)
+- [Queue model](../api/queue-model.md)
+- [Retry policy](../api/retry-policy.md)
 - [Queue boundaries](../architecture/queue-boundaries.md)
 - [WorkManager worker integration](worker-integration.md)

@@ -22,6 +22,15 @@ public enum class RetryStopReason {
     /** The configured retry-attempt budget has been exhausted. */
     ATTEMPT_LIMIT_REACHED,
 
+    /** The proposed next retry would exceed the configured elapsed-time window. */
+    ELAPSED_TIME_LIMIT_REACHED,
+
+    /** The proposed next retry would exceed the cumulative-delay budget. */
+    CUMULATIVE_DELAY_LIMIT_REACHED,
+
+    /** Durable wall-clock evidence moved backwards and retry stopped fail-closed. */
+    CLOCK_REGRESSION_DETECTED,
+
     /**
      * Retry was rejected by policy or by a fail-closed runtime protection, such
      * as unknown recoverability or a protected failure category.

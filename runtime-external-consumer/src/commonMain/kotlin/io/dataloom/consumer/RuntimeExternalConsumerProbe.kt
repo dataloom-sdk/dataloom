@@ -11,6 +11,7 @@ import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.api.provider.SynchronizationProviderBindings
 import io.dataloom.api.queue.QueueDeferralRequest
 import io.dataloom.api.queue.QueueProvider
+import io.dataloom.api.retry.RetryBudgetState
 import io.dataloom.api.retry.RetryDecision
 import io.dataloom.api.retry.RetryEvaluationRequest
 import io.dataloom.api.runtime.RuntimeDependencies
@@ -23,6 +24,7 @@ import io.dataloom.api.strategy.StrategySynchronizationRequest
 import io.dataloom.runtime.execution.SynchronizationExecutionResult
 import io.dataloom.runtime.facade.DataLoom
 import io.dataloom.runtime.retry.RetryBackoffStrategy
+import io.dataloom.runtime.retry.RetryBudgetConfiguration
 import io.dataloom.runtime.retry.RetryJitterStrategy
 import io.dataloom.runtime.retry.RetryRandomRequest
 import io.dataloom.runtime.retry.RetryRandomSource
@@ -152,4 +154,25 @@ internal fun compileStandardRetryPolicyConsumer(
     jitteredPolicy.jitterStrategy
     randomSource.sample(randomRequest)
     return jitteredPolicy.evaluate(request)
+}
+
+/** Compile-only use of durable retry budget state and configuration. */
+internal fun compileRetryBudgetConsumer(
+    request: RetryEvaluationRequest,
+    state: RetryBudgetState,
+): RetryDecision {
+    val configuration = RetryBudgetConfiguration(
+        maximumElapsedTime = SchedulingDelay(120_000L),
+        maximumCumulativeDelay = SchedulingDelay(90_000L),
+    )
+    state.windowStartedAt
+    state.lastEvaluatedAt
+    state.cumulativeDelay
+    configuration.maximumElapsedTime
+    configuration.maximumCumulativeDelay
+    return StandardRetryPolicy(
+        id = RetryPolicyId("external-budget-policy"),
+        strategy = RetryBackoffStrategy.Fixed(SchedulingDelay(1_000L)),
+        maximumAttempts = 3,
+    ).evaluate(request)
 }

@@ -494,3 +494,11 @@ Immutable result of an expired-lease recovery operation.
 - [Error Model](./error-model.md) — Canonical `DataLoomError`.
 - [Retry Policy](./retry-policy.md) — Current custom retry-policy contracts and
   mandatory V1 gaps.
+
+
+## Retry budget state
+
+Accepted retries may carry `RetryBudgetState`, containing only bounded timing
+evidence. Queue rescheduling persists that state atomically with attempt,
+availability, and error. Constraint deferral and lease recovery preserve it
+without consuming budget. Initial enqueue never accepts retry budget state.

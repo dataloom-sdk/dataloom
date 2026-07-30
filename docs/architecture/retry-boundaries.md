@@ -6,9 +6,9 @@ backoff, jitter, queue persistence, scheduling, and platform integration.
 > [!IMPORTANT]
 > DataLoom enforces a shared fail-closed boundary before invoking custom retry
 > policy and ships deterministic immediate, fixed, linear, and exponential
-> backoff, full/equal jitter through an injected deterministic random source, and
-> an attempt budget. Durable circuit breaking and the remaining time, hint,
-> observability, and administration gates are incomplete, so this is not yet the
+> backoff, full/equal jitter through injected deterministic randomness, attempt
+> limits, and central durable elapsed/cumulative budgets. Circuit breaking, hints,
+> timeout separation, observability, and administration remain incomplete, so this is not yet the
 > complete V1 retry engine.
 
 ```mermaid
@@ -20,6 +20,7 @@ flowchart LR
     base[Bounded base delay]
     jitter[Optional deterministic jitter]
     decision{Retry decision}
+    budget{Elapsed and cumulative budgets}
     direct[SchedulerProvider]
     queued[QueueProvider reschedule]
     durable[(Persisted attempt)]
@@ -31,8 +32,10 @@ flowchart LR
     base --> jitter
     jitter --> decision
     decision -->|Stop| stop
-    decision -->|Direct| direct
-    decision -->|Queued| queued
+    decision -->|Retry| budget
+    budget -->|Reject| stop
+    budget -->|Direct| direct
+    budget -->|Queued| queued
     queued --> durable
 ```
 
@@ -104,7 +107,7 @@ delay. The jitter-enabled constructor requires an explicit `RetryRandomSource`.
 Jitter is applied after base-delay clamping and never raises the configured base
 delay or maximum.
 
-The standard policy does not own queue transitions, clocks, elapsed windows,
+The standard policy does not own queue transitions, clocks, central budget state,
 scheduler invocation, circuit persistence, provider retry hints, or manual
 administrative actions.
 
@@ -156,9 +159,9 @@ The runtime owns:
 - decision aggregation;
 - attempt advancement at the queue boundary;
 - overflow-safe availability calculation;
+- central elapsed/cumulative budget enforcement and state propagation;
 - routing accepted retry decisions to queue or scheduler transitions; and
-- future elapsed and aggregate budgets, circuit state, hints, manual operations,
-  and observability.
+- future circuit state, hints, manual operations, and observability.
 
 The runtime treats a policy's final delay, including jitter, as one canonical
 minimum delay. It must not apply a second implicit jitter layer.
@@ -170,17 +173,17 @@ The durable queue owns:
 - persisted retry attempts;
 - lease-guarded transitions;
 - retry availability timestamps;
-- deferral without attempt consumption; and
-- expired-lease recovery without resetting genuine retry history.
+- persisted elapsed/cumulative budget state;
+- deferral without attempt or budget consumption; and
+- expired-lease recovery without resetting retry or budget history.
 
 A `RetryDecision` does not mutate the queue directly. The queue processor
 translates a runtime outcome into exactly one provider transition.
 
-The current queue schema does not persist random-source configuration or a
-separate jitter record. Restart determinism therefore depends on restoring the
-same configured source and the same durable policy/request identity. General
-versioned retry-policy configuration persistence remains part of the wider V1
-foundation work.
+Queue schema version 2 persists first-evaluation, last-evaluation, and
+cumulative-delay evidence. It does not persist random-source configuration or a
+separate jitter sample. Restart determinism therefore also depends on restoring
+the same configured source and durable policy/request identity.
 
 ## Scheduler responsibility
 
@@ -199,7 +202,7 @@ non-retry deferral:
 - random source is bypassed;
 - no error is manufactured;
 - no attempt is consumed; and
-- existing retry history is preserved.
+- existing retry and budget history is preserved.
 
 ## Cancellation
 
@@ -217,7 +220,7 @@ classification, attempt calculation, delay-policy selection, or jitter.
 
 Retry contracts and runtime rules live in common code. Native Android, KMP
 Android, and KMP iOS must expose equivalent observable classification, attempt,
-base-delay, jitter, circuit, cancellation, and recovery behavior. Platform
+base-delay, jitter, budgets, circuit, cancellation, and recovery behavior. Platform
 limits must be explicit degraded or unsupported results rather than silent
 omission.
 
@@ -232,7 +235,7 @@ implementations must not log stable request identifiers.
 
 ## Remaining V1 ownership
 
-The shared retry engine still must add elapsed-time and aggregate-delay budgets,
-server hints, timeout separation, durable closed/open/half-open circuit state,
+The shared retry engine still must add server hints, timeout separation,
+durable closed/open/half-open circuit state,
 controlled probes, manual retry/reclassification, complete observability, and
 restart/concurrency/platform qualification.

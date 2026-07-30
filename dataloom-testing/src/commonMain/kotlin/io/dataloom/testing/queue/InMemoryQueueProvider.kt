@@ -119,6 +119,7 @@ public class InMemoryQueueProvider(
             state = QueueEntryState.PENDING,
             lease = null,
             retryAttempt = null,
+            retryBudgetState = null,
             lastError = null,
         )
         return ProviderOperationResult.Success(Unit)
@@ -181,6 +182,7 @@ public class InMemoryQueueProvider(
                 state = QueueEntryState.RETRY_WAITING,
                 availableAt = request.availableAt,
                 retryAttempt = request.retryAttempt,
+                retryBudgetState = request.retryBudgetState,
                 lease = null,
                 lastError = request.error,
             )

@@ -34,6 +34,8 @@ import io.dataloom.api.queue.QueueFailureDisposition
 import io.dataloom.api.queue.QueueFailureRequest
 import io.dataloom.api.queue.QueueRescheduleRequest
 import io.dataloom.api.retry.RetryAttempt
+import io.dataloom.api.retry.RetryBudgetState
+import io.dataloom.api.scheduling.SchedulingDelay
 import io.dataloom.api.time.DataLoomInstant
 import io.dataloom.queue.room.internal.DataLoomRoomDatabase
 import io.dataloom.queue.room.internal.QueueEntryDao
@@ -182,6 +184,9 @@ class RoomQueueProviderTest {
                     eq("lease-1"),
                     eq(3_000L),
                     eq(2),
+                    eq(1_000L),
+                    eq(1_500L),
+                    eq(500L),
                     eq("NETWORK_TEMPORARY"),
                     eq("NETWORK"),
                     eq("WARNING"),
@@ -197,6 +202,11 @@ class RoomQueueProviderTest {
                     retryAttempt = RetryAttempt(2),
                     availableAt = DataLoomInstant(3_000L),
                     error = testError(),
+                    retryBudgetState = RetryBudgetState(
+                        windowStartedAt = DataLoomInstant(1_000L),
+                        lastEvaluatedAt = DataLoomInstant(1_500L),
+                        cumulativeDelay = SchedulingDelay(500L),
+                    ),
                 ),
             )
 

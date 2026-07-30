@@ -260,10 +260,13 @@ class RetryPolicyContractsTest {
         val reasons: Set<RetryStopReason> = setOf(
             RetryStopReason.NON_RECOVERABLE,
             RetryStopReason.ATTEMPT_LIMIT_REACHED,
+            RetryStopReason.ELAPSED_TIME_LIMIT_REACHED,
+            RetryStopReason.CUMULATIVE_DELAY_LIMIT_REACHED,
+            RetryStopReason.CLOCK_REGRESSION_DETECTED,
             RetryStopReason.POLICY_REJECTED,
             RetryStopReason.UNSUPPORTED_OPERATION,
         )
-        assertEquals(4, reasons.size)
+        assertEquals(7, reasons.size)
     }
 
     @Test
@@ -272,6 +275,9 @@ class RetryPolicyContractsTest {
         val matched: Boolean = when (reason) {
             RetryStopReason.NON_RECOVERABLE -> false
             RetryStopReason.ATTEMPT_LIMIT_REACHED -> true
+            RetryStopReason.ELAPSED_TIME_LIMIT_REACHED -> false
+            RetryStopReason.CUMULATIVE_DELAY_LIMIT_REACHED -> false
+            RetryStopReason.CLOCK_REGRESSION_DETECTED -> false
             RetryStopReason.POLICY_REJECTED -> false
             RetryStopReason.UNSUPPORTED_OPERATION -> false
         }

@@ -3,9 +3,9 @@
 [API reference index](./README.md)
 
 > **Status:** Partial V1 subsystem. Scheduler-backed orchestration, central
-> protected-failure handling, deterministic standard backoff, full/equal
-> jitter, and an attempt budget are implemented. Durable circuit state, elapsed
-> and aggregate budgets, hints, manual retry, and full observability remain.
+> protected-failure handling, deterministic backoff/jitter, attempt limits,
+> and central elapsed/cumulative budgets are implemented. Durable circuit state,
+> hints, timeout separation, manual retry, and full observability remain.
 
 **Module:** `dataloom-runtime`  
 **Package:** `io.dataloom.runtime.retry`  
@@ -26,7 +26,9 @@ flowchart LR
     Policy --> Decision{Any retry decision?}
     Decision -->|No| Stopped
     Decision -->|Yes| Delay[Select maximum final delay]
-    Delay --> Scheduler{Scheduler configured?}
+    Delay --> Budget{Within retry budgets?}
+    Budget -->|No| Stopped
+    Budget -->|Yes| Scheduler{Scheduler configured?}
     Scheduler -->|No| Missing[SCHEDULER_NOT_CONFIGURED]
     Scheduler -->|Yes| Schedule[Schedule once]
     Schedule -->|Failure| Failed[SCHEDULER_FAILED]
@@ -36,7 +38,8 @@ flowchart LR
 
 The orchestrator does not execute synchronization, process queue entries, check
 connectivity, initialize providers, calculate standard backoff, apply jitter,
-own a coroutine scope, or select a dispatcher.
+own a coroutine scope, or select a dispatcher. It reads the injected clock only
+when central budgets are enabled.
 
 ## `SynchronizationRetryRequest`
 
@@ -129,6 +132,15 @@ base delay, enforce the attempt budget, and apply full or equal jitter using an
 injected deterministic `RetryRandomSource`. These calculations happen inside
 the policy before the orchestrator receives `RetryDecision.Retry`.
 
+## Budget state
+
+`SynchronizationRetryRequest` may carry `RetryBudgetState` from the previously
+accepted cycle. After final-delay selection, the orchestrator evaluates elapsed
+and cumulative limits. Budget rejection returns `STOPPED` before the scheduler.
+
+A `SCHEDULED` result may carry the exact next state for caller persistence.
+`SCHEDULER_NOT_CONFIGURED` and `SCHEDULER_FAILED` never return advanced state.
+
 ## Maximum-delay selection
 
 When one or more eligible decisions request retry, the maximum final delay is
@@ -194,7 +206,7 @@ platform qualification remains pending.
 
 ## Remaining V1 work
 
-Elapsed-time and aggregate-delay budgets, bounded retry hints, timeout
-separation, durable circuit state, half-open probes, manual
+Bounded retry hints, timeout separation, durable circuit state, half-open
+probes, manual
 retry/reclassification, complete observability, restart/concurrency
 qualification, and Android/KMP iOS parity remain release blockers.

@@ -24,6 +24,7 @@ public object DataLoomDatabaseBuilder {
             applicationContext,
             DataLoomRoomDatabase::class.java,
             name,
-        ).build()
+        ).addMigrations(*DataLoomRoomMigrations.ALL)
+            .build()
     }
 }

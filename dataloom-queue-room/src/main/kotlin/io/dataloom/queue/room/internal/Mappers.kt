@@ -29,6 +29,8 @@ import io.dataloom.api.queue.QueueEntryState
 import io.dataloom.api.queue.QueueLease
 import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.api.retry.RetryAttempt
+import io.dataloom.api.retry.RetryBudgetState
+import io.dataloom.api.scheduling.SchedulingDelay
 import io.dataloom.api.time.DataLoomInstant
 import org.json.JSONObject
 
@@ -64,6 +66,9 @@ internal fun QueueEntry.toEntity(): QueueEntryEntity {
         enqueuedAtMs = enqueuedAt.epochMilliseconds,
         availableAtMs = availableAt.epochMilliseconds,
         retryAttemptNumber = retryAttempt?.number,
+        retryWindowStartedAtMs = retryBudgetState?.windowStartedAt?.epochMilliseconds,
+        retryLastEvaluatedAtMs = retryBudgetState?.lastEvaluatedAt?.epochMilliseconds,
+        retryCumulativeDelayMs = retryBudgetState?.cumulativeDelay?.milliseconds,
         leaseId = lease?.id?.value,
         leaseConsumerId = lease?.consumerId?.value,
         leaseAcquiredAtMs = lease?.acquiredAt?.epochMilliseconds,
@@ -129,6 +134,23 @@ internal fun QueueEntryEntity.toDomain(): QueueEntry {
     }
 
     val retryAttempt: RetryAttempt? = retryAttemptNumber?.let { RetryAttempt(it) }
+    val budgetColumns = listOf(
+        retryWindowStartedAtMs,
+        retryLastEvaluatedAtMs,
+        retryCumulativeDelayMs,
+    )
+    check(budgetColumns.all { it == null } || budgetColumns.all { it != null }) {
+        "Persisted retry-budget columns must be either all null or all non-null."
+    }
+    val retryBudgetState = if (budgetColumns.all { it == null }) {
+        null
+    } else {
+        RetryBudgetState(
+            windowStartedAt = DataLoomInstant(checkNotNull(retryWindowStartedAtMs)),
+            lastEvaluatedAt = DataLoomInstant(checkNotNull(retryLastEvaluatedAtMs)),
+            cumulativeDelay = SchedulingDelay(checkNotNull(retryCumulativeDelayMs)),
+        )
+    }
 
     return QueueEntry(
         id = QueueEntryId(entryId),
@@ -140,6 +162,7 @@ internal fun QueueEntryEntity.toDomain(): QueueEntry {
         lease = lease,
         lastError = lastError,
         metadata = entryMeta,
+        retryBudgetState = retryBudgetState,
     )
 }
 

@@ -314,12 +314,18 @@ internal class QueuedSynchronizationExecutionHandler(
         val nextAttemptNumber = (entry.retryAttempt?.number ?: 0) + 1
         val nextAttempt = RetryAttempt(nextAttemptNumber)
 
-        return when (val evaluation = retryEvaluator.evaluate(result, nextAttempt, retryOperation)) {
+        return when (val evaluation = retryEvaluator.evaluate(
+            result = result,
+            retryAttempt = nextAttempt,
+            retryOperation = retryOperation,
+            retryBudgetState = entry.retryBudgetState,
+        )) {
             is SynchronizationRetryEvaluation.ShouldRetry ->
                 QueueEntryExecutionOutcome.Reschedule(
                     retryAttempt = evaluation.retryAttempt,
                     availableAt = evaluation.availableAt,
                     error = evaluation.error,
+                    retryBudgetState = evaluation.retryBudgetState,
                 )
 
             is SynchronizationRetryEvaluation.StopRetry ->
