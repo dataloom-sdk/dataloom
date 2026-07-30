@@ -74,10 +74,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -q 'probeLeaseUntil' dataloom-api/api/dataloom-api.api
-          grep -q 'halfOpenProbeLeaseDuration' dataloom-runtime/api/dataloom-runtime.api
+          grep -qi 'ProbeLeaseUntil' dataloom-api/api/dataloom-api.api
+          grep -qi 'HalfOpenProbeLeaseDuration' dataloom-runtime/api/dataloom-runtime.api
           grep -q 'ProbeLeaseExpired' dataloom-runtime/api/dataloom-runtime.api
-          grep -q 'halfOpenProbeLeaseDuration' dataloom-runtime/api/dataloom-runtime.klib.api
+          grep -qi 'HalfOpenProbeLeaseDuration' dataloom-runtime/api/dataloom-runtime.klib.api
 
       - name: Remove temporary workflow and commit evidence
         shell: bash
