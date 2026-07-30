@@ -21,31 +21,47 @@ class CircuitBreakerExecutionResultTest {
     ) : DataLoomError
 
     @Test
-    fun `operation outcomes preserve success and canonical failure`() {
+    fun `operation outcomes preserve success and both failure classes`() {
+        val error = TestError()
         val success = CircuitProtectedOperationResult.Success("value")
-        val failure = CircuitProtectedOperationResult.Failure(TestError())
+        val failure = CircuitProtectedOperationResult.Failure(error)
+        val nonCircuitFailure = CircuitProtectedOperationResult.NonCircuitFailure(error)
 
         assertEquals("value", success.value)
         assertEquals("CIRCUIT_EXECUTION_FAILURE", failure.error.code.value)
+        assertEquals(error, nonCircuitFailure.error)
     }
 
     @Test
-    fun `execution outcomes preserve bounded rejection and clock evidence`() {
+    fun `executed outcome preserves operation and post execution recording result`() {
+        val operation = CircuitProtectedOperationResult.Failure(TestError())
+        val record = CircuitBreakerRecordResult.ContentionLimitReached
+        val executed: CircuitBreakerExecutionResult<Nothing> =
+            CircuitBreakerExecutionResult.Executed(operation, record)
+
+        val typed = assertIs<CircuitBreakerExecutionResult.Executed<Nothing>>(executed)
+        assertEquals(operation, typed.operationResult)
+        assertEquals(record, typed.recordResult)
+    }
+
+    @Test
+    fun `pre execution outcomes preserve rejection and persistence evidence`() {
+        val error = TestError()
         val rejected: CircuitBreakerExecutionResult<Nothing> =
             CircuitBreakerExecutionResult.Rejected(
                 reason = CircuitBreakerRejectionReason.OPEN,
                 retryAt = DataLoomInstant(5_000L),
             )
-        val regression: CircuitBreakerExecutionResult<Nothing> =
-            CircuitBreakerExecutionResult.ClockRegression(
-                observedAt = DataLoomInstant(1_000L),
-                persistedAt = DataLoomInstant(2_000L),
-            )
+        val persistence: CircuitBreakerExecutionResult<Nothing> =
+            CircuitBreakerExecutionResult.PermissionPersistenceFailure(error)
 
-        assertEquals(DataLoomInstant(5_000L), assertIs<CircuitBreakerExecutionResult.Rejected>(rejected).retryAt)
         assertEquals(
-            DataLoomInstant(2_000L),
-            assertIs<CircuitBreakerExecutionResult.ClockRegression>(regression).persistedAt,
+            DataLoomInstant(5_000L),
+            assertIs<CircuitBreakerExecutionResult.Rejected>(rejected).retryAt,
+        )
+        assertEquals(
+            error,
+            assertIs<CircuitBreakerExecutionResult.PermissionPersistenceFailure>(persistence).error,
         )
     }
 }
