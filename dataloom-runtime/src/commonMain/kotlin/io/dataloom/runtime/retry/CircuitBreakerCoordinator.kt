@@ -16,8 +16,9 @@ import io.dataloom.api.time.DataLoomInstant
  * Deterministic closed/open/half-open circuit-breaker coordinator.
  *
  * The coordinator uses atomic compare-and-set persistence for every transition.
- * One half-open generation permits exactly one probe. Concurrent contenders see
- * either a compare-and-set conflict or a persisted probe-in-flight rejection.
+ * One half-open generation permits exactly one probe. Each probe has a durable,
+ * exclusive lease so cancellation or process loss cannot strand the circuit in
+ * HALF_OPEN forever.
  */
 public class CircuitBreakerCoordinator(
     private val configuration: CircuitBreakerConfiguration,
@@ -107,6 +108,11 @@ public class CircuitBreakerCoordinator(
             )) {
                 OutcomeTransition.NoChange -> return CircuitBreakerRecordResult.Ignored
                 OutcomeTransition.StaleProbe -> return CircuitBreakerRecordResult.StaleProbe
+                is OutcomeTransition.ProbeLeaseExpired -> {
+                    return CircuitBreakerRecordResult.ProbeLeaseExpired(
+                        leaseUntil = transition.leaseUntil,
+                    )
+                }
                 is OutcomeTransition.ClockRegression -> {
                     return CircuitBreakerRecordResult.ClockRegression(
                         observedAt = observedAt,
@@ -172,9 +178,17 @@ public class CircuitBreakerCoordinator(
 
         return when (current.phase) {
             CircuitBreakerPhase.CLOSED -> AccessTransition.Allowed
-            CircuitBreakerPhase.HALF_OPEN -> AccessTransition.Rejected(
-                CircuitBreakerRejectionReason.PROBE_IN_FLIGHT,
-            )
+            CircuitBreakerPhase.HALF_OPEN -> {
+                val leaseUntil = checkNotNull(current.probeLeaseUntil)
+                if (observedAt.epochMilliseconds < leaseUntil.epochMilliseconds) {
+                    AccessTransition.Rejected(
+                        reason = CircuitBreakerRejectionReason.PROBE_IN_FLIGHT,
+                        retryAt = leaseUntil,
+                    )
+                } else {
+                    startProbe(current, scope, observedAt)
+                }
+            }
             CircuitBreakerPhase.OPEN -> {
                 val retryAt = checkNotNull(current.openUntil)
                 if (observedAt.epochMilliseconds < retryAt.epochMilliseconds) {
@@ -182,28 +196,48 @@ public class CircuitBreakerCoordinator(
                         reason = CircuitBreakerRejectionReason.OPEN,
                         retryAt = retryAt,
                     )
-                } else if (current.probeGeneration == Long.MAX_VALUE) {
-                    AccessTransition.Rejected(
-                        CircuitBreakerRejectionReason.PROBE_GENERATION_EXHAUSTED,
-                    )
                 } else {
-                    val generation = current.probeGeneration + 1L
-                    AccessTransition.StartProbe(
-                        nextState = CircuitBreakerState(
-                            scope = scope,
-                            phase = CircuitBreakerPhase.HALF_OPEN,
-                            consecutiveFailures = 0,
-                            failureWindowStartedAt = null,
-                            openUntil = null,
-                            probeGeneration = generation,
-                            probeInFlight = true,
-                            updatedAt = observedAt,
-                        ),
-                        permit = CircuitBreakerProbePermit(scope, generation),
-                    )
+                    startProbe(current, scope, observedAt)
                 }
             }
         }
+    }
+
+    private fun startProbe(
+        current: CircuitBreakerState,
+        scope: CircuitBreakerScope,
+        observedAt: DataLoomInstant,
+    ): AccessTransition {
+        if (current.probeGeneration == Long.MAX_VALUE) {
+            return AccessTransition.Rejected(
+                CircuitBreakerRejectionReason.PROBE_GENERATION_EXHAUSTED,
+            )
+        }
+        val leaseMilliseconds = addSaturated(
+            observedAt.epochMilliseconds,
+            configuration.halfOpenProbeLeaseDuration.milliseconds,
+        )
+        if (leaseMilliseconds <= observedAt.epochMilliseconds) {
+            return AccessTransition.Rejected(
+                CircuitBreakerRejectionReason.PROBE_LEASE_DEADLINE_EXHAUSTED,
+            )
+        }
+        val generation = current.probeGeneration + 1L
+        val leaseUntil = DataLoomInstant(leaseMilliseconds)
+        return AccessTransition.StartProbe(
+            nextState = CircuitBreakerState(
+                scope = scope,
+                phase = CircuitBreakerPhase.HALF_OPEN,
+                consecutiveFailures = 0,
+                failureWindowStartedAt = null,
+                openUntil = null,
+                probeGeneration = generation,
+                probeInFlight = true,
+                updatedAt = observedAt,
+                probeLeaseUntil = leaseUntil,
+            ),
+            permit = CircuitBreakerProbePermit(scope, generation),
+        )
     }
 
     private fun evaluateOutcome(
@@ -218,6 +252,14 @@ public class CircuitBreakerCoordinator(
         }
         if (probePermit != null && current?.phase != CircuitBreakerPhase.HALF_OPEN) {
             return OutcomeTransition.StaleProbe
+        }
+        if (current?.phase == CircuitBreakerPhase.HALF_OPEN &&
+            matchesProbe(current, probePermit)
+        ) {
+            val leaseUntil = checkNotNull(current.probeLeaseUntil)
+            if (observedAt.epochMilliseconds >= leaseUntil.epochMilliseconds) {
+                return OutcomeTransition.ProbeLeaseExpired(leaseUntil)
+            }
         }
 
         return when (outcome) {
@@ -384,6 +426,7 @@ private sealed interface AccessTransition {
 private sealed interface OutcomeTransition {
     data object NoChange : OutcomeTransition
     data object StaleProbe : OutcomeTransition
+    data class ProbeLeaseExpired(val leaseUntil: DataLoomInstant) : OutcomeTransition
     data class ClockRegression(val persistedAt: DataLoomInstant) : OutcomeTransition
     data class Update(val nextState: CircuitBreakerState) : OutcomeTransition
 }
