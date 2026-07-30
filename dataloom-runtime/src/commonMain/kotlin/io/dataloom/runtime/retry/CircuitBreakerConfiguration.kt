@@ -8,6 +8,8 @@ public data class CircuitBreakerConfiguration(
     public val failureWindow: SchedulingDelay,
     public val openDuration: SchedulingDelay,
     public val maximumStateUpdateAttempts: Int = 8,
+    /** Maximum persisted exclusive lifetime of one half-open probe before recovery. */
+    public val halfOpenProbeLeaseDuration: SchedulingDelay = openDuration,
 ) {
     init {
         require(failureThreshold >= 1) {
@@ -21,6 +23,9 @@ public data class CircuitBreakerConfiguration(
         }
         require(maximumStateUpdateAttempts >= 1) {
             "CircuitBreakerConfiguration maximumStateUpdateAttempts must be at least one."
+        }
+        require(halfOpenProbeLeaseDuration.milliseconds > 0L) {
+            "CircuitBreakerConfiguration halfOpenProbeLeaseDuration must be greater than zero."
         }
     }
 }

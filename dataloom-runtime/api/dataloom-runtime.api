@@ -716,17 +716,19 @@ public abstract interface class io/dataloom/runtime/queue/QueuedSynchronizationW
 }
 
 public final class io/dataloom/runtime/retry/CircuitBreakerConfiguration {
-	public fun <init> (ILio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;I)V
-	public synthetic fun <init> (ILio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (ILio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;ILio/dataloom/api/scheduling/SchedulingDelay;)V
+	public synthetic fun <init> (ILio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;ILio/dataloom/api/scheduling/SchedulingDelay;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()I
 	public final fun component2 ()Lio/dataloom/api/scheduling/SchedulingDelay;
 	public final fun component3 ()Lio/dataloom/api/scheduling/SchedulingDelay;
 	public final fun component4 ()I
-	public final fun copy (ILio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;I)Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;
-	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;ILio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;IILjava/lang/Object;)Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;
+	public final fun component5 ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun copy (ILio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;ILio/dataloom/api/scheduling/SchedulingDelay;)Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;ILio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;ILio/dataloom/api/scheduling/SchedulingDelay;ILjava/lang/Object;)Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getFailureThreshold ()I
 	public final fun getFailureWindow ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun getHalfOpenProbeLeaseDuration ()Lio/dataloom/api/scheduling/SchedulingDelay;
 	public final fun getMaximumStateUpdateAttempts ()I
 	public final fun getOpenDuration ()Lio/dataloom/api/scheduling/SchedulingDelay;
 	public fun hashCode ()I
@@ -922,6 +924,17 @@ public final class io/dataloom/runtime/retry/CircuitBreakerRecordResult$Persiste
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/runtime/retry/CircuitBreakerRecordResult$ProbeLeaseExpired : io/dataloom/runtime/retry/CircuitBreakerRecordResult {
+	public fun <init> (Lio/dataloom/api/time/DataLoomInstant;)V
+	public final fun component1 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy (Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/runtime/retry/CircuitBreakerRecordResult$ProbeLeaseExpired;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/CircuitBreakerRecordResult$ProbeLeaseExpired;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/runtime/retry/CircuitBreakerRecordResult$ProbeLeaseExpired;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLeaseUntil ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/runtime/retry/CircuitBreakerRecordResult$Recorded : io/dataloom/runtime/retry/CircuitBreakerRecordResult {
 	public fun <init> (Lio/dataloom/api/circuit/CircuitBreakerStateRecord;)V
 	public final fun component1 ()Lio/dataloom/api/circuit/CircuitBreakerStateRecord;
@@ -945,6 +958,7 @@ public final class io/dataloom/runtime/retry/CircuitBreakerRejectionReason : jav
 	public static final field OPEN Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;
 	public static final field PROBE_GENERATION_EXHAUSTED Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;
 	public static final field PROBE_IN_FLIGHT Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;
+	public static final field PROBE_LEASE_DEADLINE_EXHAUSTED Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;
 	public static fun values ()[Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;

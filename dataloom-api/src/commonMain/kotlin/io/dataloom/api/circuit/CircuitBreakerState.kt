@@ -24,6 +24,8 @@ public data class CircuitBreakerState(
     public val probeGeneration: Long,
     public val probeInFlight: Boolean,
     public val updatedAt: DataLoomInstant,
+    /** Exclusive deadline for the active half-open probe. Null outside [CircuitBreakerPhase.HALF_OPEN]. */
+    public val probeLeaseUntil: DataLoomInstant? = null,
 ) {
     init {
         require(consecutiveFailures >= 0) {
@@ -42,6 +44,7 @@ public data class CircuitBreakerState(
     private fun validateClosed() {
         require(openUntil == null) { "A closed circuit cannot have openUntil." }
         require(!probeInFlight) { "A closed circuit cannot have an active probe." }
+        require(probeLeaseUntil == null) { "A closed circuit cannot have a probe lease." }
         if (consecutiveFailures == 0) {
             require(failureWindowStartedAt == null) {
                 "A closed circuit without failures cannot have a failure-window start."
@@ -60,6 +63,7 @@ public data class CircuitBreakerState(
         require(consecutiveFailures == 0) { "An open circuit cannot retain closed-window failures." }
         require(failureWindowStartedAt == null) { "An open circuit cannot retain a failure window." }
         require(!probeInFlight) { "An open circuit cannot have an active probe." }
+        require(probeLeaseUntil == null) { "An open circuit cannot have a probe lease." }
         val deadline = requireNotNull(openUntil) { "An open circuit requires openUntil." }
         require(deadline.epochMilliseconds >= updatedAt.epochMilliseconds) {
             "openUntil cannot be earlier than updatedAt."
@@ -77,6 +81,12 @@ public data class CircuitBreakerState(
         require(probeInFlight) { "A half-open circuit requires exactly one active probe." }
         require(probeGeneration > 0L) {
             "A half-open circuit requires a positive probe generation."
+        }
+        val leaseUntil = requireNotNull(probeLeaseUntil) {
+            "A half-open circuit requires probeLeaseUntil."
+        }
+        require(leaseUntil.epochMilliseconds > updatedAt.epochMilliseconds) {
+            "probeLeaseUntil must be later than updatedAt."
         }
     }
 }

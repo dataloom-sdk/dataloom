@@ -73,7 +73,23 @@ class CircuitBreakerContractsTest {
                 probeGeneration = 1L,
                 probeInFlight = false,
                 updatedAt = DataLoomInstant(2L),
+                probeLeaseUntil = DataLoomInstant(3L),
             )
+        }
+        val halfOpen = CircuitBreakerState(
+            scope = scope,
+            phase = CircuitBreakerPhase.HALF_OPEN,
+            consecutiveFailures = 0,
+            failureWindowStartedAt = null,
+            openUntil = null,
+            probeGeneration = 1L,
+            probeInFlight = true,
+            updatedAt = DataLoomInstant(2L),
+            probeLeaseUntil = DataLoomInstant(3L),
+        )
+        assertEquals(DataLoomInstant(3L), halfOpen.probeLeaseUntil)
+        assertFailsWith<IllegalArgumentException> {
+            halfOpen.copy(probeLeaseUntil = DataLoomInstant(2L))
         }
     }
 
