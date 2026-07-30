@@ -24,6 +24,23 @@ regression must never be represented as though the protected operation did not
 run. `CircuitBreakerExecutionResult.Executed` therefore carries both the
 operation result and the exact `CircuitBreakerRecordResult`.
 
+## Focused validation evidence
+
+The evidence commit `fdb36f60ac78239ac483e610adf1d9bc135b78ee`
+completed the following before removing the temporary workflow:
+
+- generated exact JVM and Kotlin/Native runtime ABI baselines;
+- ran build-logic and runtime JVM tests;
+- compiled the external consumer for JVM, `iosArm64`,
+  `iosSimulatorArm64`, and `iosX64`;
+- assembled the Apple release XCFramework;
+- verified the gate, provider adapter, and retry scheduling adapter in both JVM
+  and Kotlin/Native public ABI evidence;
+- updated repository capability and architecture documentation.
+
+The permanent Pull Request, Android, and Apple workflows remain authoritative
+for the final review head.
+
 ## Security boundary
 
 The execution layer carries no payload bytes, credentials, tokens, raw headers,
