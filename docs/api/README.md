@@ -127,11 +127,12 @@ state, cross-platform persistence, and end-to-end qualification remain.
 |---|---|---|
 | [Retry policy](./retry-policy.md) | Partial V1 subsystem | Fail-closed classification, deterministic backoff/jitter, seeded randomness, attempt/time/delay limits, and bounded provider/server hints. |
 | [Retry orchestration](./retry-orchestration.md) | Partial V1 subsystem | Protected-failure handling, bounded hint minimums, final-delay aggregation, central budgets, scheduling, and queue integration boundaries. |
+| [Circuit breaker](./circuit-breaker.md) | Partial V1 subsystem | Explicit scopes, durable state contracts, atomic compare-and-set persistence, deterministic transitions, and one controlled half-open probe. |
 | [Conflict contracts](./conflict-contracts.md) | Partial V1 subsystem | Custom detector, resolver, request, conflict, and decision contracts. |
 | [Conflict orchestration](./conflict-orchestration.md) | Partial V1 subsystem | Exact detector/resolver lookup and one-cycle decision orchestration. |
 
-V1 retry work still requires timeout separation, durable circuit-breaker and
-half-open recovery, manual retry/reclassification, complete
+V1 retry work still requires production Android/iOS circuit stores,
+retry-path circuit integration, manual retry/reclassification, complete
 observability, and platform qualification. Conflict work still requires
 built-in policies, precedence, atomic decision application, unresolved-conflict
 persistence, audit, convergence, loop protection, quarantine, and metrics.

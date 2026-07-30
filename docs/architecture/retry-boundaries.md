@@ -7,9 +7,10 @@ backoff, jitter, provider/server hints, queue persistence, scheduling, and platf
 > DataLoom enforces a shared fail-closed boundary before invoking custom retry
 > policy and ships deterministic immediate, fixed, linear, and exponential
 > backoff, full/equal jitter through injected deterministic randomness, attempt
-> limits, central durable elapsed/cumulative budgets, and bounded typed hints.
-> Circuit breaking, timeout separation, observability, and administration remain
-> incomplete, so this is not yet the
+> limits, central durable elapsed/cumulative budgets, bounded typed hints,
+> independent timeout contracts, and a deterministic circuit state machine.
+> Production circuit stores, retry-path integration, observability, and administration
+> remain incomplete, so this is not yet the
 > complete V1 retry engine.
 
 ```mermaid

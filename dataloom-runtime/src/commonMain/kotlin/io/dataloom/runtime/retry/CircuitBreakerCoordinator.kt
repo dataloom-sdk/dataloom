@@ -216,6 +216,9 @@ public class CircuitBreakerCoordinator(
         if (current != null && observedAt.epochMilliseconds < current.updatedAt.epochMilliseconds) {
             return OutcomeTransition.ClockRegression(current.updatedAt)
         }
+        if (probePermit != null && current?.phase != CircuitBreakerPhase.HALF_OPEN) {
+            return OutcomeTransition.StaleProbe
+        }
 
         return when (outcome) {
             CircuitOutcome.SUCCESS -> evaluateSuccess(current, scope, observedAt, probePermit)
