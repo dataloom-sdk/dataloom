@@ -8,25 +8,86 @@ import io.dataloom.api.retry.RetryStopReason
 import io.dataloom.api.scheduling.SchedulingDelay
 
 /**
- * DataLoom's deterministic built-in retry policy.
+ * DataLoom's standard retry policy for eligible failures.
  *
- * The policy provides immediate, fixed, linear, and exponential delay
- * strategies, an enforced retry-attempt budget, overflow-safe arithmetic, and
- * the same fail-closed protection used by runtime paths around custom policies.
+ * The policy provides immediate, fixed, linear, and exponential backoff,
+ * optional deterministic full/equal jitter, an enforced retry-attempt budget,
+ * overflow-safe arithmetic, and the same fail-closed protection used by the
+ * surrounding runtime.
  *
  * [maximumAttempts] counts retry attempts after the original failed operation.
  * A value of zero disables retry. Attempt `N` is allowed only when
  * `N <= maximumAttempts`.
  *
- * Jitter, elapsed-time and aggregate-delay budgets, provider retry hints,
- * timeout separation, and circuit-breaker state are deliberately separate
- * policy/state slices rather than implicit behavior in this class.
+ * The three-argument constructor preserves exact deterministic base delays and
+ * requires no random source. The five-argument constructor applies
+ * [jitterStrategy] using the explicitly injected [RetryRandomSource]. The source
+ * is called only for an eligible, budget-approved attempt with a non-zero jitter
+ * window.
+ *
+ * Elapsed-time and aggregate-delay budgets, provider retry hints, timeout
+ * separation, and circuit-breaker state are separate V1 policy/state slices.
  */
-public class StandardRetryPolicy(
+public class StandardRetryPolicy private constructor(
     override public val id: RetryPolicyId,
     public val strategy: RetryBackoffStrategy,
     public val maximumAttempts: Int,
+    private val jitterConfiguration: StandardRetryJitterConfiguration,
 ) : RetryPolicy {
+
+    /** Jitter mode applied after the deterministic base delay is calculated. */
+    public val jitterStrategy: RetryJitterStrategy
+        get() = jitterConfiguration.strategy
+
+    /**
+     * Creates a standard policy with deterministic base backoff and no jitter.
+     *
+     * @param id stable retry policy identifier.
+     * @param strategy deterministic base backoff strategy.
+     * @param maximumAttempts maximum retry attempts after the original failure.
+     */
+    public constructor(
+        id: RetryPolicyId,
+        strategy: RetryBackoffStrategy,
+        maximumAttempts: Int,
+    ) : this(
+        id = id,
+        strategy = strategy,
+        maximumAttempts = maximumAttempts,
+        jitterConfiguration = StandardRetryJitterConfiguration(
+            strategy = RetryJitterStrategy.None,
+            randomSource = null,
+        ),
+    )
+
+    /**
+     * Creates a standard policy with explicitly configured deterministic jitter.
+     *
+     * [randomSource] must satisfy the deterministic and bounded
+     * [RetryRandomSource] contract. It may be shared safely when its own
+     * implementation is thread-safe.
+     *
+     * @param id stable retry policy identifier.
+     * @param strategy deterministic base backoff strategy.
+     * @param maximumAttempts maximum retry attempts after the original failure.
+     * @param jitterStrategy jitter mode applied after base delay calculation.
+     * @param randomSource injected deterministic bounded sample source.
+     */
+    public constructor(
+        id: RetryPolicyId,
+        strategy: RetryBackoffStrategy,
+        maximumAttempts: Int,
+        jitterStrategy: RetryJitterStrategy,
+        randomSource: RetryRandomSource,
+    ) : this(
+        id = id,
+        strategy = strategy,
+        maximumAttempts = maximumAttempts,
+        jitterConfiguration = StandardRetryJitterConfiguration(
+            strategy = jitterStrategy,
+            randomSource = randomSource,
+        ),
+    )
 
     init {
         require(maximumAttempts >= 0) {
@@ -38,7 +99,8 @@ public class StandardRetryPolicy(
      * Returns a deterministic retry or stop decision for [request].
      *
      * Non-recoverable, unknown, and protected failure classes are rejected
-     * before attempt or delay evaluation. No external state is accessed.
+     * before attempt, backoff, or jitter evaluation. A faulty random source that
+     * returns an out-of-range sample causes an [IllegalStateException].
      */
     override public fun evaluate(request: RetryEvaluationRequest): RetryDecision {
         protectedRetryStopReason(request.error)?.let { reason ->
@@ -49,14 +111,72 @@ public class StandardRetryPolicy(
             return RetryDecision.Stop(reason = RetryStopReason.ATTEMPT_LIMIT_REACHED)
         }
 
+        val baseDelay = calculateDelay(
+            strategy = strategy,
+            attemptNumber = request.attempt.number,
+        )
+
         return RetryDecision.Retry(
-            delay = calculateDelay(
-                strategy = strategy,
-                attemptNumber = request.attempt.number,
+            delay = applyJitter(
+                baseDelay = baseDelay,
+                request = request,
             ),
         )
     }
+
+    private fun applyJitter(
+        baseDelay: SchedulingDelay,
+        request: RetryEvaluationRequest,
+    ): SchedulingDelay {
+        val baseMilliseconds = baseDelay.milliseconds
+        if (jitterStrategy == RetryJitterStrategy.None || baseMilliseconds == 0L) {
+            return baseDelay
+        }
+
+        val lowerBound: Long
+        val randomMaximum: Long
+        when (jitterStrategy) {
+            RetryJitterStrategy.None -> return baseDelay
+            RetryJitterStrategy.Full -> {
+                lowerBound = 0L
+                randomMaximum = baseMilliseconds
+            }
+            RetryJitterStrategy.Equal -> {
+                lowerBound = (baseMilliseconds / 2L) + (baseMilliseconds % 2L)
+                randomMaximum = baseMilliseconds - lowerBound
+            }
+        }
+
+        if (randomMaximum == 0L) {
+            return SchedulingDelay(lowerBound)
+        }
+
+        val source = checkNotNull(jitterConfiguration.randomSource) {
+            "A RetryRandomSource is required when jitter is enabled."
+        }
+        val randomValue = source.sample(
+            RetryRandomRequest(
+                policyId = id,
+                workflowId = request.synchronizationRequest.workflowId,
+                sessionId = request.synchronizationRequest.sessionId,
+                operation = request.operation,
+                errorCode = request.error.code,
+                attempt = request.attempt,
+                maximumInclusive = randomMaximum,
+            ),
+        )
+        check(randomValue in 0L..randomMaximum) {
+            "RetryRandomSource returned $randomValue outside 0..$randomMaximum."
+        }
+
+        return SchedulingDelay(lowerBound + randomValue)
+    }
 }
+
+private data class StandardRetryJitterConfiguration(
+    val strategy: RetryJitterStrategy,
+    val randomSource: RetryRandomSource?,
+)
 
 private fun calculateDelay(
     strategy: RetryBackoffStrategy,
