@@ -117,6 +117,27 @@ jobs:
               1,
           )
           contract_test_path.write_text(contract_text, encoding='utf-8')
+
+          android_path = Path('.github/workflows/android-validation.yml')
+          android_text = android_path.read_text(encoding='utf-8')
+          validation_anchor = '      - name: Validate Android modules and KMP regression\n'
+          serial_step = '''      - name: Generate current Room schema serially
+          shell: bash
+          run: |
+            ./gradlew \\
+              :dataloom-queue-room:kspDebugKotlin \\
+              --configuration-cache \\
+              --stacktrace \\
+              --console=plain \\
+              --max-workers=1
+
+'''
+          if android_text.count(validation_anchor) != 1:
+              raise RuntimeError('Android validation step anchor was not unique.')
+          android_path.write_text(
+              android_text.replace(validation_anchor, serial_step + validation_anchor, 1),
+              encoding='utf-8',
+          )
           PY
           git diff --check
 
@@ -125,6 +146,12 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p retry-budget-evidence
+          ./gradlew \
+            :dataloom-queue-room:kspDebugKotlin \
+            --configuration-cache \
+            --stacktrace \
+            --console=plain \
+            --max-workers=1
           ./gradlew \
             :build-logic:test \
             :dataloom-api:updateKotlinAbi \
