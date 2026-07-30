@@ -17,9 +17,9 @@ import io.dataloom.api.synchronization.SynchronizationResult
  * Package-internal retry evaluation utilities shared by
  * [SynchronizationRetryEvaluator] and [SynchronizationRetryOrchestrator].
  *
- * These functions centralize error extraction, fail-closed failure protection,
- * policy invocation, and maximum-delay selection so every retry path uses the
- * same semantics.
+ * These functions centralize error extraction, fail-closed protection, bounded
+ * hint normalization, policy invocation, hint-minimum enforcement, and
+ * maximum-delay selection so every retry path uses identical semantics.
  */
 
 /** Result of centrally protected policy evaluation for one terminal result. */
@@ -29,9 +29,8 @@ internal data class EvaluatedRetryDecisions(
 )
 
 /**
- * Extracts the canonical errors from a [SynchronizationResult] eligible for
- * retry evaluation, or returns `null` when the result variant is not
- * evaluable.
+ * Extracts canonical errors from a [SynchronizationResult] eligible for retry
+ * evaluation, or returns `null` when the result variant is not evaluable.
  */
 internal fun extractRetryErrors(result: SynchronizationResult): List<DataLoomError>? =
     when (result) {
@@ -47,13 +46,12 @@ internal fun extractRetryErrors(result: SynchronizationResult): List<DataLoomErr
  * Evaluates [retryPolicy] only when the complete failure set is safe for policy
  * evaluation.
  *
- * The batch is blocked when any error is non-recoverable, has unknown
- * recoverability, or belongs to a protected category. In that case the custom
- * policy is not invoked for any error, every decision is a stop decision, and
- * [EvaluatedRetryDecisions.blockingError] identifies the first protected error
- * in original order. This prevents a retryable sibling error from hiding an
- * authentication, authorization, validation, configuration, serialization,
- * policy, conflict, or security failure in a partially successful result.
+ * When [hintEvaluator] is configured, each opt-in error hint is clamped before
+ * it is placed in [RetryEvaluationRequest]. The policy may stop or request a
+ * longer delay. A retry decision is then adjusted centrally so it cannot be
+ * shorter than the bounded hint.
+ *
+ * A protected error blocks the whole batch before policy or hint evaluation.
  */
 internal fun evaluateRetryDecisions(
     retryPolicy: RetryPolicy,
@@ -61,6 +59,7 @@ internal fun evaluateRetryDecisions(
     retryOperation: RetryOperation,
     retryAttempt: RetryAttempt,
     errors: List<DataLoomError>,
+    hintEvaluator: RetryHintEvaluator? = null,
 ): EvaluatedRetryDecisions {
     val firstBlockingError = errors.firstOrNull { error ->
         protectedRetryStopReason(error) != null
@@ -79,7 +78,8 @@ internal fun evaluateRetryDecisions(
 
     return EvaluatedRetryDecisions(
         decisions = errors.map { error ->
-            retryPolicy.evaluate(
+            val boundedHint = hintEvaluator?.boundedHint(error)
+            val decision = retryPolicy.evaluate(
                 RetryEvaluationRequest(
                     synchronizationRequest = synchronizationRequest,
                     operation = retryOperation,
@@ -87,16 +87,21 @@ internal fun evaluateRetryDecisions(
                     attempt = retryAttempt,
                     previousDelay = null,
                     provider = null,
+                    retryDelayHint = boundedHint,
                 ),
             )
+            hintEvaluator?.apply(
+                decision = decision,
+                boundedHint = boundedHint,
+            ) ?: decision
         },
         blockingError = null,
     )
 }
 
 /**
- * Returns the mandatory stop reason for an error protected from automatic
- * retry, or `null` when a configured policy may evaluate the error.
+ * Returns the mandatory stop reason for an error protected from automatic retry,
+ * or `null` when a configured policy may evaluate the error.
  */
 internal fun protectedRetryStopReason(error: DataLoomError): RetryStopReason? = when {
     error.recoverability == Recoverability.NON_RECOVERABLE -> RetryStopReason.NON_RECOVERABLE
@@ -128,8 +133,8 @@ private fun ErrorCategory.isProtectedFromAutomaticRetry(): Boolean = when (this)
 }
 
 /**
- * Returns the maximum [SchedulingDelay] from any [RetryDecision.Retry]
- * decision in [decisions], or `null` when no decision requests retry.
+ * Returns the maximum [SchedulingDelay] from any [RetryDecision.Retry] decision,
+ * or `null` when no decision requests retry.
  */
 internal fun selectMaxRetryDelay(decisions: List<RetryDecision>): SchedulingDelay? =
     decisions
