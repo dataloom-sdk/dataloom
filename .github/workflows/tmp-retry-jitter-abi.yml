@@ -41,29 +41,43 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
-      - name: Generate ABI and validate focused retry surface
-        run: >-
-          ./gradlew
-          :dataloom-runtime:updateKotlinAbi
-          :dataloom-runtime:jvmTest
-          :runtime-external-consumer:compileKotlinJvm
-          :runtime-external-consumer:compileKotlinIosArm64
-          :runtime-external-consumer:compileKotlinIosSimulatorArm64
-          :runtime-external-consumer:compileKotlinIosX64
-          --configuration-cache
-          --stacktrace
-          --console=plain
-
-      - name: Commit exact generated ABI baselines
+      - name: Generate, validate, and publish exact ABI evidence
         shell: bash
         run: |
-          set -euo pipefail
-          git add dataloom-runtime/api
-          if git diff --cached --quiet; then
-            echo "ERROR: Expected retry jitter API/ABI changes were not generated."
-            exit 1
-          fi
+          set -uo pipefail
+          log_file="$(mktemp)"
+          status_file=".github/retry-jitter-abi-status.txt"
+
+          set +e
+          ./gradlew \
+            :dataloom-runtime:updateKotlinAbi \
+            :dataloom-runtime:jvmTest \
+            :runtime-external-consumer:compileKotlinJvm \
+            :runtime-external-consumer:compileKotlinIosArm64 \
+            :runtime-external-consumer:compileKotlinIosSimulatorArm64 \
+            :runtime-external-consumer:compileKotlinIosX64 \
+            --configuration-cache \
+            --stacktrace \
+            --console=plain 2>&1 | tee "$log_file"
+          gradle_status=${PIPESTATUS[0]}
+          set -e
+
+          {
+            echo "commit=${GITHUB_SHA}"
+            echo "gradle_status=${gradle_status}"
+            echo "generated_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "--- final Gradle output ---"
+            tail -n 160 "$log_file"
+          } > "$status_file"
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "DL-040: update retry jitter ABI baselines"
+          git add "$status_file"
+          if [[ "$gradle_status" -eq 0 ]]; then
+            git add dataloom-runtime/api
+          fi
+          git rm .github/workflows/tmp-retry-jitter-abi.yml
+          git commit -m "DL-040: record retry jitter ABI validation"
           git push origin "HEAD:${GITHUB_REF_NAME}"
+
+          exit "$gradle_status"
