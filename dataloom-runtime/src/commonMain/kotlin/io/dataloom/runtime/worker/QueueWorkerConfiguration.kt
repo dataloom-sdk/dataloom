@@ -16,8 +16,8 @@ import io.dataloom.api.scheduling.SchedulingDelay
  * ## Construction behaviour
  *
  * Construction does not perform any queue operation, scheduling operation,
- * clock read, or identifier generation. All values supplied by the caller
- * are preserved exactly.
+ * clock read, timeout execution, or identifier generation. All values supplied
+ * by the caller are preserved exactly.
  *
  * ## continuationDelay
  *
@@ -29,6 +29,17 @@ import io.dataloom.api.scheduling.SchedulingDelay
  * - an offline-deferral delay
  * - an entry availability timestamp
  * - a substitute for an explicitly rescheduled entry availability time
+ *
+ * ## schedulerProviderTimeout
+ *
+ * [schedulerProviderTimeout] is an optional upper bound for the queue worker's
+ * follow-up [io.dataloom.api.scheduling.SchedulerProvider.schedule] call. When
+ * configured, [QueueWorkerCoordinator] applies the production cooperative
+ * coroutine provider-timeout boundary before invoking the scheduler.
+ *
+ * A null value preserves the historical unbounded scheduler invocation. A zero
+ * value rejects before the scheduler is called. This timeout is not reused as a
+ * connection, request, idle, policy, queue-processing, or workflow timeout.
  *
  * ## KMP compatibility
  *
@@ -43,11 +54,11 @@ import io.dataloom.api.scheduling.SchedulingDelay
  *   [scheduleId] already exists in the platform scheduler.
  * @param continuationDelay minimum scheduling delay used when the acquisition
  *   limit was reached and another bounded processing cycle may be useful.
- *   Must satisfy [SchedulingDelay] invariants (zero or greater).
  * @param recoverExpiredLeasesBeforeProcessing when `true`, the coordinator
- *   calls [io.dataloom.api.queue.QueueProvider.recoverExpiredLeases]
- *   exactly once before invoking the queue processor. When `false`, no
- *   recovery operation is performed.
+ *   calls [io.dataloom.api.queue.QueueProvider.recoverExpiredLeases] exactly
+ *   once before invoking the queue processor.
+ * @param schedulerProviderTimeout optional timeout applied only to the queue
+ *   worker's scheduler-provider call.
  */
 public data class QueueWorkerConfiguration(
     /** Stable identifier forwarded to every [io.dataloom.api.scheduling.ScheduleRequest]. */
@@ -65,17 +76,16 @@ public data class QueueWorkerConfiguration(
     /**
      * Minimum scheduling delay used when the acquisition limit was reached
      * and another bounded processing cycle may be useful.
-     *
-     * Must be zero or greater (enforced by [SchedulingDelay]).
      */
     public val continuationDelay: SchedulingDelay,
 
     /**
      * When `true`, the coordinator calls
-     * [io.dataloom.api.queue.QueueProvider.recoverExpiredLeases] exactly
-     * once before invoking the queue processor.
-     *
-     * When `false`, no recovery operation is performed.
+     * [io.dataloom.api.queue.QueueProvider.recoverExpiredLeases] exactly once
+     * before invoking the queue processor.
      */
     public val recoverExpiredLeasesBeforeProcessing: Boolean,
+
+    /** Optional timeout applied only to the follow-up scheduler-provider call. */
+    public val schedulerProviderTimeout: SchedulingDelay? = null,
 )
