@@ -17,7 +17,9 @@ import io.dataloom.api.time.DataLoomInstant
  * active lease. A null [retryBudgetState] means central elapsed/cumulative
  * budgets are not enabled for this work item.
  *
- * The provider must verify [leaseId] and must not evaluate policy itself.
+ * [retryBudgetState] is appended after the original properties so existing
+ * source calls retain their argument order. The provider must verify [leaseId]
+ * and must not evaluate policy itself.
  */
 public data class QueueRescheduleRequest(
     public val entryId: QueueEntryId,
@@ -25,6 +27,6 @@ public data class QueueRescheduleRequest(
     public val retryAttempt: RetryAttempt,
     public val availableAt: DataLoomInstant,
     public val error: DataLoomError,
-    public val retryBudgetState: RetryBudgetState? = null,
     public val metadata: DataLoomMetadata = DataLoomMetadata.Empty,
+    public val retryBudgetState: RetryBudgetState? = null,
 )
