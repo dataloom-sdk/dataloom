@@ -54,6 +54,16 @@ jobs:
             exit 1
           fi
 
+      - name: Generate current Room schema serially
+        shell: bash
+        run: |
+          ./gradlew \
+            :dataloom-queue-room:kspDebugKotlin \
+            --configuration-cache \
+            --stacktrace \
+            --console=plain \
+            --max-workers=1
+
       - name: Validate Android modules and KMP regression
         shell: bash
         run: |
@@ -86,10 +96,10 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          schema_file="dataloom-queue-room/schemas/io.dataloom.queue.room.internal.DataLoomRoomDatabase/1.json"
+          schema_file="dataloom-queue-room/schemas/io.dataloom.queue.room.internal.DataLoomRoomDatabase/2.json"
           generated_database="dataloom-queue-room/build/generated/ksp/debug/kotlin/io/dataloom/queue/room/internal/DataLoomRoomDatabase_Impl.kt"
           if [[ ! -f "$schema_file" ]]; then
-            echo "Missing committed Room schema version 1."
+            echo "Missing committed Room schema version 2."
             exit 1
           elif [[ ! -f "$generated_database" ]]; then
             echo "Missing KSP-generated Room database implementation."
