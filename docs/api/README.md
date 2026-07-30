@@ -125,17 +125,17 @@ cross-platform persistence, and end-to-end qualification.
 
 | Document | Current status | Scope |
 |---|---|---|
-| [Retry policy](./retry-policy.md) | Partial V1 subsystem | Custom policy decision contracts. |
-| [Retry orchestration](./retry-orchestration.md) | Partial V1 subsystem | Policy evaluation, delay aggregation, scheduling, and queue integration boundaries. |
+| [Retry policy](./retry-policy.md) | Partial V1 subsystem | Fail-closed classification, custom policy contracts, deterministic standard backoff, full/equal jitter, seeded randomness, and an attempt budget. |
+| [Retry orchestration](./retry-orchestration.md) | Partial V1 subsystem | Protected-failure handling, policy evaluation, final-delay aggregation, scheduling, and queue integration boundaries. |
 | [Conflict contracts](./conflict-contracts.md) | Partial V1 subsystem | Custom detector, resolver, request, conflict, and decision contracts. |
 | [Conflict orchestration](./conflict-orchestration.md) | Partial V1 subsystem | Exact detector/resolver lookup and one-cycle decision orchestration. |
 
-V1 requires built-in retry strategies, jitter, limits, server hints, durable
-circuit-breaker and half-open recovery, restart-safe policy state, manual
-retry, and non-retryable enforcement. It also requires built-in conflict
-policies, precedence, atomic decision application, unresolved-conflict
+V1 retry work still requires elapsed and aggregate delay budgets, bounded server
+hints, timeout separation, durable circuit-breaker and half-open recovery,
+restart-safe policy state, manual retry/reclassification, complete
+observability, and platform qualification. Conflict work still requires
+built-in policies, precedence, atomic decision application, unresolved-conflict
 persistence, audit, convergence, loop protection, quarantine, and metrics.
-Those capabilities are not complete in the current repository.
 
 ## Events and observation
 
@@ -164,7 +164,7 @@ The following are product commitments, not descriptions of completed APIs:
 | Network-only strategy | Direct transport-only runtime implemented; full event/result and platform qualification remain |
 | Hybrid strategy | Complete built-in strategy and qualification not implemented |
 | Adaptive strategy | Complete built-in strategy and qualification not implemented |
-| Standard retry and durable circuit breaker | Partial contracts/orchestration only |
+| Standard retry and durable circuit breaker | Fail-closed protection, standard backoff, full/equal jitter, seeded randomness, attempt budget, orchestration, and restart-safe attempt history implemented; time/hint/circuit/manual/qualification work remains |
 | Built-in conflict policies and persistence | Partial custom contracts/orchestration only |
 | Lifecycle and operational observability | Partial in-process event foundation only |
 | Asset upload/download, chunking, streaming, and resume | Not implemented |
