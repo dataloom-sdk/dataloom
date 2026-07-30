@@ -1,17 +1,21 @@
-# Room queue provider
+# Room queue and circuit persistence
 
-> **Audience:** Android developers and maintainers of durable queue behavior  
-> **Purpose:** Explain the current Room-backed `QueueProvider`, its state
-> transitions, migrations, and durability limits  
-> **Status:** Implemented Android queue foundation; not a general
-> `StorageProvider` or complete V1 persistence layer
+> **Audience:** Android developers and maintainers of durable queue and circuit behavior  
+> **Purpose:** Explain the Room-backed `QueueProvider` and
+> `CircuitBreakerStateStore`, their migrations, atomicity, and durability limits  
+> **Status:** Implemented Android persistence foundation; not a general
+> `StorageProvider` or complete cross-platform V1 persistence layer
 
 [← Android overview](README.md) ·
 [Worker integration](worker-integration.md) ·
 [Security and R8](security-and-r8.md)
 
-`RoomQueueProvider` implements the shared `QueueProvider` contract with
-AndroidX Room and SQLite.
+The `dataloom-queue-room` module contains two independent adapters over one
+application-owned AndroidX Room database:
+
+- `RoomQueueProvider` implements the shared `QueueProvider` contract.
+- `RoomCircuitBreakerStateStore` implements the shared
+  `CircuitBreakerStateStore` contract.
 
 ## Module and setup
 
@@ -22,24 +26,24 @@ implementation(project(":dataloom-queue-room"))
 ```kotlin
 val database = DataLoomDatabaseBuilder.build(context)
 val queueProvider = RoomQueueProvider(database)
+val circuitStateStore = RoomCircuitBreakerStateStore(database)
 ```
 
-Hold the database as an application-process singleton. `RoomQueueProvider`
-does not own or close the database lifecycle. Published V1 coordinates are not
-available yet.
+Hold the database as an application-process singleton. Neither adapter owns or
+closes the database lifecycle. Published V1 coordinates are not available yet.
 
 ## Schema
 
 | Property | Current value |
 |---|---|
 | Default database name | `dataloom-queue.db` |
-| Schema version | `2` |
+| Schema version | `3` |
 | Schema export | Enabled |
-| Committed schema | `dataloom-queue-room/schemas/io.dataloom.queue.room.internal.DataLoomRoomDatabase/2.json` |
+| Committed schema | `dataloom-queue-room/schemas/io.dataloom.queue.room.internal.DataLoomRoomDatabase/3.json` |
+| Tables | `queue_entries`, `circuit_breaker_states` |
 
-`QueueEntryState`, persisted error enums, and retry stop reasons use stable
-names, never ordinals. Changing a persisted name is therefore a compatibility
-change.
+Persisted enum-like values use stable names, never ordinals. Changing a
+persisted name is therefore a compatibility change.
 
 ## Queue transitions
 
@@ -83,7 +87,7 @@ budget columns. Repeated connectivity deferrals therefore remain `PENDING` with
 a null attempt, while a deferral after retry N remains `RETRY_WAITING` with
 attempt N and the same budget state.
 
-## Retry budget persistence
+## Retry-budget persistence
 
 A budgeted retry stores three bounded timing values:
 
@@ -95,53 +99,109 @@ A successful `reschedule` writes attempt, availability, sanitized error, and all
 budget values in one lease-guarded update. Partial budget state is rejected when
 mapping persisted rows. Initial enqueue cannot fabricate budget history.
 
+## Circuit-state persistence
+
+Each circuit record stores only bounded operational evidence:
+
+- the explicit scope kind and its typed identifiers;
+- `CLOSED`, `OPEN`, or `HALF_OPEN` phase name;
+- failure count and failure-window start;
+- open deadline;
+- probe generation, in-flight marker, and exclusive probe-lease deadline;
+- last update time; and
+- a non-negative compare-and-set record version.
+
+The primary key is a deterministic, length-prefixed encoding of the explicit
+`CircuitBreakerScope`. Length prefixes prevent delimiter collisions. There is no
+implicit scope inheritance or fallback in the database layer.
+
+### Atomic compare-and-set
+
+`RoomCircuitBreakerStateStore.compareAndSet` executes in one Room transaction:
+
+- a null expected version inserts only when the scope is absent and starts at
+  record version zero;
+- expected version N updates only the matching row and advances to N + 1; and
+- a missing or mismatched version returns `Conflict` with the current durable
+  record when one exists.
+
+The store never overwrites a newer record. Version exhaustion fails closed as a
+non-recoverable state error.
+
+### Integrity validation
+
+Every loaded row is reconstructed through the public circuit scope and state
+invariants. Invalid scope shapes, unknown persisted names, mismatched scope keys,
+negative versions, and invalid phase fields fail closed as
+`CIRCUIT_ROOM_STATE_CORRUPT`. Raw row values, SQL, paths, and exception messages
+are not exposed.
+
 ## Execution and cancellation
 
-All database operations run on `Dispatchers.IO`. Coroutine cancellation
-propagates and is not converted into a provider failure. Unexpected database
-exceptions become `QUEUE_DATABASE_FAILURE`.
+Room owns its database dispatcher. Coroutine cancellation propagates and is not
+converted into a provider failure. Unexpected database exceptions become a
+sanitized recoverable database error. Persisted-state integrity and version
+exhaustion are non-recoverable.
 
 ## Migration policy
 
 Destructive migration fallback is not enabled. `DataLoomDatabaseBuilder`
-installs the supported migration set from `DataLoomRoomMigrations.ALL`.
+installs the complete ordered migration set from `DataLoomRoomMigrations.ALL`.
 
 `MIGRATION_1_2` adds nullable retry-window, last-evaluation, and cumulative-delay
 columns. Existing retry attempt and availability values are preserved; historical
-budget fields remain null because version 1 did not record that evidence. The
-instrumented migration test opens a version-1 database, migrates it, verifies the
-preserved row, validates schema version 2, and reopens the current database.
+budget fields remain null because version 1 did not record that evidence.
+
+`MIGRATION_2_3` adds the independent `circuit_breaker_states` table. It does not
+rewrite or delete `queue_entries`; existing attempts, availability, leases,
+errors, metadata, and retry-budget evidence remain unchanged.
+
+Instrumented migration tests validate version 1 to 2 and version 2 to 3,
+preserve representative queue rows, verify the new circuit table, and reopen the
+current database through the production migration set.
 
 SDK maintainers must add and test an explicit migration whenever the schema
 changes and keep committed JSON schemas synchronized with generated output. The
-builder still does not expose a host hook for custom migrations or an encrypted
-`SupportSQLiteOpenHelper.Factory`.
+Android validation workflow derives the current Room version from generated KSP
+code and verifies the matching committed schema, rather than assuming a fixed
+version.
+
+The builder still does not expose a host hook for custom migrations or an
+encrypted `SupportSQLiteOpenHelper.Factory`.
 
 ## Security boundary
 
-The current database is not encrypted by DataLoom. Queue payloads, metadata,
-sanitized error fields, and bounded retry timing evidence are persisted.
-Applications requiring SDK-managed encrypted queue storage need an alternative
-`QueueProvider` until an encrypted construction boundary is implemented and
-qualified. See [Security and R8](security-and-r8.md#data-at-rest).
+The current database is not encrypted by DataLoom. Queue requests, metadata,
+sanitized error fields, and bounded retry timing evidence are persisted. Circuit
+rows contain only bounded scope and state-machine evidence; they do not contain
+payload bytes, credentials, tokens, raw headers, exception text, or provider
+instances.
+
+Applications requiring SDK-managed encrypted persistence need alternative
+provider/store implementations until an encrypted construction boundary is
+implemented and qualified. See [Security and R8](security-and-r8.md#data-at-rest).
 
 ## Canonical error codes
 
 | Code | Meaning |
 |---|---|
 | `QUEUE_DUPLICATE_ENTRY` | The entry ID already exists |
-| `QUEUE_DATABASE_FAILURE` | An unexpected database operation failed |
+| `QUEUE_DATABASE_FAILURE` | An unexpected queue database operation failed |
 | `QUEUE_STALE_LEASE` | A guarded transition used a missing or stale lease |
 | `QUEUE_CANCELLATION_REJECTED` | The current state cannot be cancelled |
+| `CIRCUIT_ROOM_DATABASE_FAILURE` | An unexpected circuit database operation failed |
+| `CIRCUIT_ROOM_STATE_CORRUPT` | A durable circuit row failed invariant validation |
+| `CIRCUIT_STATE_VERSION_EXHAUSTED` | The compare-and-set record version cannot advance |
 
-This module supplies Android queue durability only. It does not implement
-application domain storage, KMP iOS persistence, strategy selection, retry
-policy, scheduling, or synchronization execution.
+This module supplies Android queue and circuit durability only. It does not
+implement application domain storage, KMP iOS persistence, strategy selection,
+retry policy, scheduling, or synchronization execution.
 
 ## Related documentation
 
 - [Queue provider contract](../api/queue-provider.md)
 - [Queue model](../api/queue-model.md)
+- [Circuit breaker](../api/circuit-breaker.md)
 - [Retry policy](../api/retry-policy.md)
 - [Queue boundaries](../architecture/queue-boundaries.md)
 - [WorkManager worker integration](worker-integration.md)
