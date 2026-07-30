@@ -14,11 +14,18 @@ import io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitte
 
 /**
  * Scheduler-backed retry orchestrator with central protection, optional bounded
- * provider/server hints, and optional elapsed/cumulative budget enforcement.
+ * provider/server hints, optional elapsed/cumulative budget enforcement, and an
+ * opt-in scheduler-provider timeout boundary.
  *
  * Hints are clamped before policy visibility and enforced as a minimum after
  * policy evaluation. Budgets evaluate the resulting final delay. Budget state
  * advances only after [SchedulerProvider.schedule] succeeds.
+ *
+ * Existing constructors preserve the historical direct scheduler invocation.
+ * [withSchedulerProviderTimeout] creates an orchestrator whose single scheduler
+ * call is protected by [CoroutineRetryTimeoutExecutor] through
+ * [TimeoutEnforcingSchedulerProvider]. Construction performs no clock read,
+ * provider call, coroutine launch, or scheduling operation.
  */
 public class SynchronizationRetryOrchestrator(
     private val retryPolicy: RetryPolicy,
@@ -29,6 +36,7 @@ public class SynchronizationRetryOrchestrator(
     private var budgetClock: DataLoomClock? = null
     private var budgetEvaluator: RetryBudgetEvaluator? = null
     private var hintEvaluator: RetryHintEvaluator? = null
+    private var effectiveSchedulerProvider: SchedulerProvider? = schedulerProvider
 
     /** Creates an orchestrator with bounded provider/server hints. */
     public constructor(
@@ -127,7 +135,8 @@ public class SynchronizationRetryOrchestrator(
         }
         val nextBudgetState = (acceptedBudgetState as BudgetResult.Accepted).nextState
 
-        if (schedulerProvider == null) {
+        val scheduler = effectiveSchedulerProvider
+        if (scheduler == null) {
             return RetryOrchestrationResult(
                 status = RetryOrchestrationStatus.SCHEDULER_NOT_CONFIGURED,
                 decisions = evaluated.decisions,
@@ -145,7 +154,7 @@ public class SynchronizationRetryOrchestrator(
             existingPolicy = configuration.existingSchedulePolicy,
         )
 
-        return when (val result = schedulerProvider.schedule(scheduleRequest)) {
+        return when (val result = scheduler.schedule(scheduleRequest)) {
             is ProviderOperationResult.Success -> {
                 if (eventEmitter != null) {
                     val primaryError = selectPrimaryRetryError(
@@ -215,6 +224,91 @@ public class SynchronizationRetryOrchestrator(
     private sealed interface BudgetResult {
         data class Accepted(val nextState: RetryBudgetState?) : BudgetResult
         data class Stopped(val reason: io.dataloom.api.retry.RetryStopReason) : BudgetResult
+    }
+
+    public companion object {
+        /**
+         * Creates an orchestrator whose scheduler invocation is bounded by
+         * [schedulerProviderTimeout].
+         *
+         * The timeout applies only to the single
+         * [io.dataloom.api.scheduling.SchedulerProvider.schedule] call made after
+         * retry protection, policy evaluation, hint enforcement, delay selection,
+         * and optional budget evaluation. A timeout returns
+         * [RetryOrchestrationStatus.SCHEDULER_FAILED] with the bounded canonical
+         * `SCHEDULER_PROVIDER_TIMEOUT` error. It never advances retry-budget state
+         * and never emits `RetryScheduled`.
+         *
+         * [budgetConfiguration] and [hintConfiguration] preserve the same
+         * semantics as the corresponding public constructors. The supplied
+         * [clock] is used for retry budgets when configured and to assemble the
+         * provider-timeout boundary. Construction does not read it.
+         *
+         * Coroutine cancellation is cooperative. Blocking scheduler
+         * implementations without cancellation checkpoints require a
+         * platform-specific hard-interruption adapter.
+         */
+        public fun withSchedulerProviderTimeout(
+            retryPolicy: RetryPolicy,
+            schedulerProvider: SchedulerProvider?,
+            configuration: RetrySchedulingConfiguration,
+            clock: DataLoomClock,
+            schedulerProviderTimeout: SchedulingDelay,
+            budgetConfiguration: RetryBudgetConfiguration? = null,
+            hintConfiguration: RetryHintConfiguration? = null,
+            eventEmitter: SynchronizationRuntimeEventEmitter? = null,
+        ): SynchronizationRetryOrchestrator {
+            val orchestrator = when {
+                budgetConfiguration != null && hintConfiguration != null ->
+                    SynchronizationRetryOrchestrator(
+                        retryPolicy = retryPolicy,
+                        schedulerProvider = schedulerProvider,
+                        configuration = configuration,
+                        clock = clock,
+                        budgetConfiguration = budgetConfiguration,
+                        hintConfiguration = hintConfiguration,
+                        eventEmitter = eventEmitter,
+                    )
+
+                budgetConfiguration != null -> SynchronizationRetryOrchestrator(
+                    retryPolicy = retryPolicy,
+                    schedulerProvider = schedulerProvider,
+                    configuration = configuration,
+                    clock = clock,
+                    budgetConfiguration = budgetConfiguration,
+                    eventEmitter = eventEmitter,
+                )
+
+                hintConfiguration != null -> SynchronizationRetryOrchestrator(
+                    retryPolicy = retryPolicy,
+                    schedulerProvider = schedulerProvider,
+                    configuration = configuration,
+                    hintConfiguration = hintConfiguration,
+                    eventEmitter = eventEmitter,
+                )
+
+                else -> SynchronizationRetryOrchestrator(
+                    retryPolicy = retryPolicy,
+                    schedulerProvider = schedulerProvider,
+                    configuration = configuration,
+                    eventEmitter = eventEmitter,
+                )
+            }
+
+            orchestrator.effectiveSchedulerProvider = schedulerProvider?.let { provider ->
+                TimeoutEnforcingSchedulerProvider(
+                    delegate = provider,
+                    timeoutCoordinator = RetryTimeoutCoordinator(
+                        configuration = RetryTimeoutConfiguration(
+                            providerTimeout = schedulerProviderTimeout,
+                        ),
+                        clock = clock,
+                        executor = CoroutineRetryTimeoutExecutor(),
+                    ),
+                )
+            }
+            return orchestrator
+        }
     }
 }
 
