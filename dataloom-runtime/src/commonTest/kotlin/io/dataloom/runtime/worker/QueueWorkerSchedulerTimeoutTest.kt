@@ -3,7 +3,6 @@ package io.dataloom.runtime.worker
 import io.dataloom.api.context.ExecutionContext
 import io.dataloom.api.identifier.CorrelationId
 import io.dataloom.api.identifier.ExecutionId
-import io.dataloom.api.identifier.ProviderId
 import io.dataloom.api.identifier.QueueConsumerId
 import io.dataloom.api.identifier.QueueEntryId
 import io.dataloom.api.identifier.QueueLeaseId
@@ -16,6 +15,7 @@ import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.api.provider.ProviderDescriptor
 import io.dataloom.api.provider.ProviderHealth
 import io.dataloom.api.provider.ProviderHealthStatus
+import io.dataloom.api.provider.ProviderId
 import io.dataloom.api.provider.ProviderInitializationContext
 import io.dataloom.api.provider.ProviderName
 import io.dataloom.api.provider.ProviderOperationResult
@@ -54,7 +54,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull
-import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
@@ -98,7 +97,7 @@ class QueueWorkerSchedulerTimeoutTest {
             completed.schedulingResult,
         )
 
-        assertEquals(1, processing.completed)
+        assertEquals(1, processing.summary.completed)
         assertEquals(1, queue.completeCallCount)
         assertEquals(0, scheduler.scheduleCallCount)
         assertEquals("SCHEDULER_PROVIDER_TIMEOUT", scheduling.error.code.value)
