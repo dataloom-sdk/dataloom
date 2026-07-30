@@ -5,9 +5,9 @@
 > **Status:** Partial V1 retry subsystem. Custom policy evaluation, queue and
 > scheduler integration, retry-history preservation, central fail-closed
 > protection, deterministic immediate/fixed/linear/exponential backoff,
-> configurable full/equal jitter, an injected deterministic random source, and
-> an attempt budget are implemented. Elapsed-time and aggregate-delay budgets,
-> server hints, timeout separation, durable circuit breaking, manual retry, and
+> configurable full/equal jitter, injected deterministic randomness, attempt
+> limits, and durable elapsed-time/cumulative-delay budgets are implemented.
+> Server hints, timeout separation, durable circuit breaking, manual retry, and
 > complete observability remain V1 blockers.
 
 ## Purpose
@@ -350,6 +350,26 @@ For a partial result, protection is evaluated across the complete ordered error
 set before policy invocation. One protected error stops the whole retry batch.
 No sibling policy evaluation, scheduler call, or queue reschedule occurs.
 
+## Durable elapsed-time and cumulative-delay budgets
+
+`RetryBudgetConfiguration` independently limits the wall-clock retry window and
+the sum of delays accepted for retry. Exact boundaries are allowed. A proposed
+retry is stopped—not shortened—when its final jittered delay would exceed either
+limit.
+
+`RetryBudgetState` records the first genuine retry evaluation, the most recent
+accepted evaluation, and cumulative accepted delay. Clock regression against
+persisted evidence stops fail-closed with a stable reason.
+
+Queue rescheduling persists attempt, availability, error, and budget state in one
+lease-guarded transition. Connectivity deferral and expired-lease recovery
+preserve the state unchanged. Schema migration 1→2 retains existing retry attempt
+and availability values and initializes historical budget columns to null.
+
+Scheduler-backed orchestration returns the next state only after scheduling is
+accepted. Missing or failed scheduling never consumes budget. Direct callers own
+persistence of the returned state before supplying it to the next request.
+
 ## Runtime integration
 
 ### Queue-backed execution
@@ -362,10 +382,11 @@ For a genuine pipeline failure:
 4. the configured policy enforces its attempt budget and calculates delay;
 5. deterministic jitter is applied when configured;
 6. the maximum requested delay is selected across errors;
-7. availability time is calculated with overflow-safe timestamp addition; and
-8. successful queue rescheduling persists the exact attempt and error.
+7. elapsed and cumulative budgets evaluate the final delay;
+8. availability time is calculated with overflow-safe timestamp addition; and
+9. successful queue rescheduling persists attempt, error, and budget state.
 
-Connectivity deferral bypasses this flow and preserves retry history.
+Connectivity deferral bypasses this flow and preserves retry and budget history.
 
 ### Scheduler-backed orchestration
 
@@ -375,7 +396,8 @@ exists, at least one policy decision requests retry, and a scheduler is
 configured.
 
 The orchestrator treats the policy's final delay—including jitter—as an opaque
-minimum delay. It does not apply a second jitter layer.
+minimum delay. It applies no second jitter layer. When budgets are configured,
+it returns next budget state only after scheduler acceptance.
 
 ## Cancellation and exceptions
 
@@ -402,7 +424,7 @@ The seed must not contain cryptographic key material.
 - separated timeout semantics;
 - durable closed/open/half-open circuit-breaker state;
 - controlled half-open probes and concurrency limits;
-- restart recovery for elapsed windows and circuit state;
+- restart recovery for durable circuit state;
 - authorized, audited manual retry and reclassification;
 - retry events, metrics, logs, traces, and stable reason codes;
 - property, persistence, restart, failure-injection, and concurrency matrices;

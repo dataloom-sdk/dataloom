@@ -391,3 +391,11 @@ background-execution guarantees must be documented and tested per platform.
 - [Provider SPI](./provider-spi.md) — DataLoom provider framework.
 - [Storage Provider](./storage-provider.md) — Application storage adapter.
 - [Error Model](./error-model.md) — Canonical error types.
+
+
+## Retry budget persistence
+
+Accepted retries may carry `RetryBudgetState`, containing only bounded timing
+evidence. Queue rescheduling persists that state atomically with attempt,
+availability, and error. Constraint deferral and lease recovery preserve it
+without consuming budget. Initial enqueue never accepts retry budget state.

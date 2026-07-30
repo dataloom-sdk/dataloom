@@ -122,3 +122,13 @@ policy, scheduling, or synchronization execution.
 - [Queue provider contract](../api/queue-provider.md)
 - [Queue boundaries](../architecture/queue-boundaries.md)
 - [WorkManager worker integration](worker-integration.md)
+
+
+## Retry budget persistence and migration
+
+Schema version 2 adds nullable first-evaluation, last-evaluation, and cumulative-
+delay columns. `MIGRATION_1_2` is non-destructive: existing retry attempt and
+availability values are preserved, while historical budget fields remain null.
+A successful retry reschedule writes attempt, availability, error, and budget
+state in one lease-guarded update. Connectivity deferral and expired-lease
+recovery preserve budget state unchanged.

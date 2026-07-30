@@ -10,7 +10,7 @@ import androidx.room.PrimaryKey
  *
  * ## Schema version
  *
- * This entity is part of [DataLoomRoomDatabase] schema version 1.
+ * This entity is part of [DataLoomRoomDatabase] schema version 2.
  *
  * ## State storage
  *
@@ -149,6 +149,18 @@ internal data class QueueEntryEntity(
     /** Retry attempt number; null when the entry has not been rescheduled. */
     @ColumnInfo(name = "retry_attempt_number")
     val retryAttemptNumber: Int?,
+
+    /** First genuine retry-budget evaluation instant; null when budgets are disabled. */
+    @ColumnInfo(name = "retry_window_started_at_ms")
+    val retryWindowStartedAtMs: Long?,
+
+    /** Most recent accepted retry-budget evaluation instant. */
+    @ColumnInfo(name = "retry_last_evaluated_at_ms")
+    val retryLastEvaluatedAtMs: Long?,
+
+    /** Sum of delays accepted for durable retry transitions. */
+    @ColumnInfo(name = "retry_cumulative_delay_ms")
+    val retryCumulativeDelayMs: Long?,
 
     /** Unique lease identifier; non-null only when state = LEASED. */
     @ColumnInfo(name = "lease_id")

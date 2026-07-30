@@ -319,6 +319,7 @@ public class DurableQueueExecutionProcessor(
                         retryAttempt = outcome.retryAttempt,
                         availableAt = outcome.availableAt,
                         error = outcome.error,
+                        retryBudgetState = outcome.retryBudgetState,
                     ),
                 )
                 result.toTransitionResult(QueueProcessingFailureStage.RESCHEDULE_TRANSITION)

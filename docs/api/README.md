@@ -118,21 +118,20 @@ not implement the approved six-strategy product architecture by themselves.
 
 Queue processing is an at-least-once foundation. Connectivity deferral and
 expired-lease recovery now preserve retry attempt history. V1 still requires
-complete durable retry/circuit policy state, migration evidence,
-cross-platform persistence, and end-to-end qualification.
+durable retry budget state and migration evidence now exist. Circuit policy
+state, cross-platform persistence, and end-to-end qualification remain.
 
 ## Retry and conflict
 
 | Document | Current status | Scope |
 |---|---|---|
-| [Retry policy](./retry-policy.md) | Partial V1 subsystem | Fail-closed classification, custom policy contracts, deterministic standard backoff, full/equal jitter, seeded randomness, and an attempt budget. |
-| [Retry orchestration](./retry-orchestration.md) | Partial V1 subsystem | Protected-failure handling, policy evaluation, final-delay aggregation, scheduling, and queue integration boundaries. |
+| [Retry policy](./retry-policy.md) | Partial V1 subsystem | Fail-closed classification, deterministic backoff/jitter, seeded randomness, attempt limits, and durable elapsed/cumulative budgets. |
+| [Retry orchestration](./retry-orchestration.md) | Partial V1 subsystem | Protected-failure handling, final-delay aggregation, central budgets, scheduling, and queue integration boundaries. |
 | [Conflict contracts](./conflict-contracts.md) | Partial V1 subsystem | Custom detector, resolver, request, conflict, and decision contracts. |
 | [Conflict orchestration](./conflict-orchestration.md) | Partial V1 subsystem | Exact detector/resolver lookup and one-cycle decision orchestration. |
 
-V1 retry work still requires elapsed and aggregate delay budgets, bounded server
-hints, timeout separation, durable circuit-breaker and half-open recovery,
-restart-safe policy state, manual retry/reclassification, complete
+V1 retry work still requires bounded server hints, timeout separation, durable
+circuit-breaker and half-open recovery, manual retry/reclassification, complete
 observability, and platform qualification. Conflict work still requires
 built-in policies, precedence, atomic decision application, unresolved-conflict
 persistence, audit, convergence, loop protection, quarantine, and metrics.
