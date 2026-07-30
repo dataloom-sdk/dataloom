@@ -1,8 +1,9 @@
 # Retry timeout boundaries
 
-> **Status:** Partial V1 runtime slice. Independent timeout configuration and
-> workflow-deadline coordination exist; production executors, provider/policy
-> wiring, and platform qualification remain incomplete.
+> **Status:** Partial V1 runtime slice. Independent timeout configuration,
+> workflow-deadline coordination, a production cooperative coroutine executor,
+> and explicit scheduler-provider timeout protection exist. Complete provider,
+> policy, workflow, platform, and restart assembly remains incomplete.
 
 DataLoom treats timeout concepts as separate policy boundaries. A connection
 timeout must not be reused as a request, idle, provider, policy, or workflow
@@ -43,21 +44,89 @@ A workflow timeout is not silently started at coordinator invocation. Callers
 that need complete-workflow enforcement must carry the original
 `workflowStartedAt` evidence through retry, queue, and restart boundaries.
 
+## Coroutine executor
+
+`CoroutineRetryTimeoutExecutor` is the production Kotlin Multiplatform executor
+for cooperative suspending operations. It:
+
+- runs in the caller's coroutine context;
+- creates no independent `CoroutineScope`;
+- selects no dispatcher;
+- cancels its child operation when the selected timeout expires;
+- returns `RetryTimeoutExecutionResult.TimedOut` only for its own timeout;
+- preserves nullable completed values;
+- propagates caller cancellation; and
+- does not swallow timeout exceptions created by nested operations.
+
+Coroutine cancellation is cooperative. An operation that blocks without a
+suspension or another cancellation checkpoint cannot be hard-interrupted by this
+executor. Such operations require an explicit platform-specific executor rather
+than a misleading common-code timeout claim.
+
+## Scheduler-provider integration
+
+`TimeoutEnforcingSchedulerProvider` decorates an existing `SchedulerProvider`
+and applies the configured `PROVIDER` timeout to:
+
+- initialization;
+- health evaluation;
+- scheduling;
+- cancellation; and
+- close.
+
+```kotlin
+val timeoutExecutor = CoroutineRetryTimeoutExecutor()
+val timeoutCoordinator = RetryTimeoutCoordinator(
+    configuration = RetryTimeoutConfiguration(
+        providerTimeout = SchedulingDelay(5_000L),
+    ),
+    clock = clock,
+    executor = timeoutExecutor,
+)
+val boundedScheduler = TimeoutEnforcingSchedulerProvider(
+    delegate = schedulerProvider,
+    timeoutCoordinator = timeoutCoordinator,
+)
+
+val orchestrator = SynchronizationRetryOrchestrator(
+    retryPolicy = retryPolicy,
+    schedulerProvider = boundedScheduler,
+    configuration = retrySchedulingConfiguration,
+)
+```
+
+Successful results and canonical delegate failures are preserved exactly.
+Provider-timeout expiry becomes the bounded recoverable error code
+`SCHEDULER_PROVIDER_TIMEOUT`. Caller cancellation and unexpected programming
+exceptions continue to propagate.
+
+The decorator does not infer workflow start time and does not silently apply
+connection, request, idle, or policy limits. Complete workflow enforcement must
+remain an explicit higher-level assembly concern.
+
 ## Safety rules
 
 - Timeouts are non-negative `SchedulingDelay` values.
 - Timeout-kind names are stable; ordinal persistence is prohibited.
 - Caller cancellation must propagate and must not be converted into a timeout
   result.
-- The timeout executor must interrupt or cancel the operation when its selected
-  duration expires.
 - Runtime enforcement must produce bounded, redaction-safe diagnostics.
-- Unsupported platform behavior must be explicit rather than silently omitted.
+- Unsupported or non-interruptible behavior must be explicit rather than
+  silently omitted.
 
 ## Remaining implementation
 
-DataLoom still requires production `RetryTimeoutExecutor` implementations and
-assembly for connection, request, idle, provider, policy, and workflow
-operations. Canonical provider/error mapping, queue and scheduler integration,
-restart propagation, and native Android/KMP Android/KMP iOS qualification remain
-mandatory before FR-RETRY-006 is complete.
+DataLoom still requires:
+
+- automatic timeout assembly in transport, storage, queue, retry-policy, and
+  synchronization workflow paths;
+- connection, request, and idle enforcement in protocol/platform adapters;
+- a safe policy-timeout strategy for the synchronous non-blocking `RetryPolicy`
+  contract;
+- durable workflow-start propagation across queueing, retry, restart, and
+  relaunch;
+- platform-specific hard-interruption adapters where cooperative cancellation is
+  insufficient; and
+- native Android, KMP Android, and KMP iOS end-to-end qualification.
+
+FR-RETRY-006 remains partial until those boundaries and acceptance tests pass.

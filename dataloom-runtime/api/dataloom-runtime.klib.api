@@ -1881,6 +1881,12 @@ final class io.dataloom.runtime.retry/CircuitBreakerRetrySchedulingAdapter { // 
     final suspend fun schedule(io.dataloom.api.scheduling/ScheduleRequest): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.api.scheduling/ScheduleReceipt> // io.dataloom.runtime.retry/CircuitBreakerRetrySchedulingAdapter.schedule|schedule(io.dataloom.api.scheduling.ScheduleRequest){}[0]
 }
 
+final class io.dataloom.runtime.retry/CoroutineRetryTimeoutExecutor : io.dataloom.runtime.retry/RetryTimeoutExecutor { // io.dataloom.runtime.retry/CoroutineRetryTimeoutExecutor|null[0]
+    constructor <init>() // io.dataloom.runtime.retry/CoroutineRetryTimeoutExecutor.<init>|<init>(){}[0]
+
+    final suspend fun <#A1: kotlin/Any?> execute(io.dataloom.runtime.retry/RetryTimeoutExecutionRequest, kotlin.coroutines/SuspendFunction0<#A1>): io.dataloom.runtime.retry/RetryTimeoutExecutionResult<#A1> // io.dataloom.runtime.retry/CoroutineRetryTimeoutExecutor.execute|execute(io.dataloom.runtime.retry.RetryTimeoutExecutionRequest;kotlin.coroutines.SuspendFunction0<0:0>){0§<kotlin.Any?>}[0]
+}
+
 final class io.dataloom.runtime.retry/RetryBudgetConfiguration { // io.dataloom.runtime.retry/RetryBudgetConfiguration|null[0]
     constructor <init>(io.dataloom.api.scheduling/SchedulingDelay? = ..., io.dataloom.api.scheduling/SchedulingDelay? = ...) // io.dataloom.runtime.retry/RetryBudgetConfiguration.<init>|<init>(io.dataloom.api.scheduling.SchedulingDelay?;io.dataloom.api.scheduling.SchedulingDelay?){}[0]
 
@@ -2093,6 +2099,19 @@ final class io.dataloom.runtime.retry/SynchronizationRetryRequest { // io.datalo
         final fun <get-synchronizationResult>(): io.dataloom.api.synchronization/SynchronizationResult // io.dataloom.runtime.retry/SynchronizationRetryRequest.synchronizationResult.<get-synchronizationResult>|<get-synchronizationResult>(){}[0]
 
     final fun toString(): kotlin/String // io.dataloom.runtime.retry/SynchronizationRetryRequest.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.retry/TimeoutEnforcingSchedulerProvider : io.dataloom.api.scheduling/SchedulerProvider { // io.dataloom.runtime.retry/TimeoutEnforcingSchedulerProvider|null[0]
+    constructor <init>(io.dataloom.api.scheduling/SchedulerProvider, io.dataloom.runtime.retry/RetryTimeoutCoordinator) // io.dataloom.runtime.retry/TimeoutEnforcingSchedulerProvider.<init>|<init>(io.dataloom.api.scheduling.SchedulerProvider;io.dataloom.runtime.retry.RetryTimeoutCoordinator){}[0]
+
+    final val descriptor // io.dataloom.runtime.retry/TimeoutEnforcingSchedulerProvider.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.runtime.retry/TimeoutEnforcingSchedulerProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    final suspend fun cancel(io.dataloom.api.scheduling/ScheduleCancellationRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.retry/TimeoutEnforcingSchedulerProvider.cancel|cancel(io.dataloom.api.scheduling.ScheduleCancellationRequest){}[0]
+    final suspend fun close(): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.retry/TimeoutEnforcingSchedulerProvider.close|close(){}[0]
+    final suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.runtime.retry/TimeoutEnforcingSchedulerProvider.health|health(){}[0]
+    final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.retry/TimeoutEnforcingSchedulerProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
+    final suspend fun schedule(io.dataloom.api.scheduling/ScheduleRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.scheduling/ScheduleReceipt> // io.dataloom.runtime.retry/TimeoutEnforcingSchedulerProvider.schedule|schedule(io.dataloom.api.scheduling.ScheduleRequest){}[0]
 }
 
 final class io.dataloom.runtime.strategy/BuiltInSynchronizationStrategyEvaluator : io.dataloom.api.strategy/SynchronizationStrategyEvaluator { // io.dataloom.runtime.strategy/BuiltInSynchronizationStrategyEvaluator|null[0]
