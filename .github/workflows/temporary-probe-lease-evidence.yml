@@ -1,0 +1,630 @@
+name: Temporary Probe Lease Evidence
+
+on:
+  push:
+    branches:
+      - codex/dl-retry-017-probe-lease-recovery
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-probe-lease-evidence-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-and-commit:
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      DATALOOM_ANDROID_BUILD: "true"
+
+    steps:
+      - name: Checkout review branch
+        uses: actions/checkout@v6
+        with:
+          ref: codex/dl-retry-017-probe-lease-recovery
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Apply probe lease recovery integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              target = Path(path)
+              text = target.read_text(encoding="utf-8")
+              if text.count(old) != 1:
+                  raise RuntimeError(f"Expected one match in {path}: {old[:120]!r}")
+              target.write_text(text.replace(old, new, 1), encoding="utf-8")
+
+          coordinator = (
+              "dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/retry/"
+              "CircuitBreakerCoordinator.kt"
+          )
+          replace_once(
+              coordinator,
+              '''                OutcomeTransition.NoChange -> return CircuitBreakerRecordResult.Ignored
+                OutcomeTransition.StaleProbe -> return CircuitBreakerRecordResult.StaleProbe
+                is OutcomeTransition.ClockRegression -> {''',
+              '''                OutcomeTransition.NoChange -> return CircuitBreakerRecordResult.Ignored
+                OutcomeTransition.StaleProbe -> return CircuitBreakerRecordResult.StaleProbe
+                is OutcomeTransition.ProbeLeaseExpired -> {
+                    return CircuitBreakerRecordResult.ProbeLeaseExpired(
+                        leaseUntil = transition.leaseUntil,
+                    )
+                }
+                is OutcomeTransition.ClockRegression -> {''',
+          )
+          replace_once(
+              coordinator,
+              '''        return when (current.phase) {
+            CircuitBreakerPhase.CLOSED -> AccessTransition.Allowed
+            CircuitBreakerPhase.HALF_OPEN -> AccessTransition.Rejected(
+                CircuitBreakerRejectionReason.PROBE_IN_FLIGHT,
+            )
+            CircuitBreakerPhase.OPEN -> {
+                val retryAt = checkNotNull(current.openUntil)
+                if (observedAt.epochMilliseconds < retryAt.epochMilliseconds) {
+                    AccessTransition.Rejected(
+                        reason = CircuitBreakerRejectionReason.OPEN,
+                        retryAt = retryAt,
+                    )
+                } else if (current.probeGeneration == Long.MAX_VALUE) {
+                    AccessTransition.Rejected(
+                        CircuitBreakerRejectionReason.PROBE_GENERATION_EXHAUSTED,
+                    )
+                } else {
+                    val generation = current.probeGeneration + 1L
+                    AccessTransition.StartProbe(
+                        nextState = CircuitBreakerState(
+                            scope = scope,
+                            phase = CircuitBreakerPhase.HALF_OPEN,
+                            consecutiveFailures = 0,
+                            failureWindowStartedAt = null,
+                            openUntil = null,
+                            probeGeneration = generation,
+                            probeInFlight = true,
+                            updatedAt = observedAt,
+                        ),
+                        permit = CircuitBreakerProbePermit(scope, generation),
+                    )
+                }
+            }
+        }
+    }
+
+    private fun evaluateOutcome(''',
+              '''        return when (current.phase) {
+            CircuitBreakerPhase.CLOSED -> AccessTransition.Allowed
+            CircuitBreakerPhase.HALF_OPEN -> {
+                val leaseUntil = checkNotNull(current.probeLeaseUntil)
+                if (observedAt.epochMilliseconds < leaseUntil.epochMilliseconds) {
+                    AccessTransition.Rejected(
+                        reason = CircuitBreakerRejectionReason.PROBE_IN_FLIGHT,
+                        retryAt = leaseUntil,
+                    )
+                } else {
+                    startProbe(current, scope, observedAt)
+                }
+            }
+            CircuitBreakerPhase.OPEN -> {
+                val retryAt = checkNotNull(current.openUntil)
+                if (observedAt.epochMilliseconds < retryAt.epochMilliseconds) {
+                    AccessTransition.Rejected(
+                        reason = CircuitBreakerRejectionReason.OPEN,
+                        retryAt = retryAt,
+                    )
+                } else {
+                    startProbe(current, scope, observedAt)
+                }
+            }
+        }
+    }
+
+    private fun startProbe(
+        current: CircuitBreakerState,
+        scope: CircuitBreakerScope,
+        observedAt: DataLoomInstant,
+    ): AccessTransition {
+        if (current.probeGeneration == Long.MAX_VALUE) {
+            return AccessTransition.Rejected(
+                CircuitBreakerRejectionReason.PROBE_GENERATION_EXHAUSTED,
+            )
+        }
+        val leaseMilliseconds = addSaturated(
+            observedAt.epochMilliseconds,
+            configuration.halfOpenProbeLeaseDuration.milliseconds,
+        )
+        if (leaseMilliseconds <= observedAt.epochMilliseconds) {
+            return AccessTransition.Rejected(
+                CircuitBreakerRejectionReason.PROBE_LEASE_DEADLINE_EXHAUSTED,
+            )
+        }
+        val generation = current.probeGeneration + 1L
+        val leaseUntil = DataLoomInstant(leaseMilliseconds)
+        return AccessTransition.StartProbe(
+            nextState = CircuitBreakerState(
+                scope = scope,
+                phase = CircuitBreakerPhase.HALF_OPEN,
+                consecutiveFailures = 0,
+                failureWindowStartedAt = null,
+                openUntil = null,
+                probeGeneration = generation,
+                probeInFlight = true,
+                updatedAt = observedAt,
+                probeLeaseUntil = leaseUntil,
+            ),
+            permit = CircuitBreakerProbePermit(scope, generation),
+        )
+    }
+
+    private fun evaluateOutcome(''',
+          )
+          replace_once(
+              coordinator,
+              '''        if (probePermit != null && current?.phase != CircuitBreakerPhase.HALF_OPEN) {
+            return OutcomeTransition.StaleProbe
+        }
+
+        return when (outcome) {''',
+              '''        if (probePermit != null && current?.phase != CircuitBreakerPhase.HALF_OPEN) {
+            return OutcomeTransition.StaleProbe
+        }
+        if (current?.phase == CircuitBreakerPhase.HALF_OPEN &&
+            matchesProbe(current, probePermit)
+        ) {
+            val leaseUntil = checkNotNull(current.probeLeaseUntil)
+            if (observedAt.epochMilliseconds >= leaseUntil.epochMilliseconds) {
+                return OutcomeTransition.ProbeLeaseExpired(leaseUntil)
+            }
+        }
+
+        return when (outcome) {''',
+          )
+          replace_once(
+              coordinator,
+              '''private sealed interface OutcomeTransition {
+    data object NoChange : OutcomeTransition
+    data object StaleProbe : OutcomeTransition
+    data class ClockRegression(val persistedAt: DataLoomInstant) : OutcomeTransition''',
+              '''private sealed interface OutcomeTransition {
+    data object NoChange : OutcomeTransition
+    data object StaleProbe : OutcomeTransition
+    data class ProbeLeaseExpired(val leaseUntil: DataLoomInstant) : OutcomeTransition
+    data class ClockRegression(val persistedAt: DataLoomInstant) : OutcomeTransition''',
+          )
+
+          contracts = (
+              "dataloom-api/src/commonTest/kotlin/io/dataloom/api/circuit/"
+              "CircuitBreakerContractsTest.kt"
+          )
+          replace_once(
+              contracts,
+              '''        assertFailsWith<IllegalArgumentException> {
+            CircuitBreakerState(
+                scope = scope,
+                phase = CircuitBreakerPhase.HALF_OPEN,
+                consecutiveFailures = 0,
+                failureWindowStartedAt = null,
+                openUntil = null,
+                probeGeneration = 1L,
+                probeInFlight = false,
+                updatedAt = DataLoomInstant(2L),
+            )
+        }
+    }''',
+              '''        assertFailsWith<IllegalArgumentException> {
+            CircuitBreakerState(
+                scope = scope,
+                phase = CircuitBreakerPhase.HALF_OPEN,
+                consecutiveFailures = 0,
+                failureWindowStartedAt = null,
+                openUntil = null,
+                probeGeneration = 1L,
+                probeInFlight = false,
+                updatedAt = DataLoomInstant(2L),
+                probeLeaseUntil = DataLoomInstant(3L),
+            )
+        }
+        val halfOpen = CircuitBreakerState(
+            scope = scope,
+            phase = CircuitBreakerPhase.HALF_OPEN,
+            consecutiveFailures = 0,
+            failureWindowStartedAt = null,
+            openUntil = null,
+            probeGeneration = 1L,
+            probeInFlight = true,
+            updatedAt = DataLoomInstant(2L),
+            probeLeaseUntil = DataLoomInstant(3L),
+        )
+        assertEquals(DataLoomInstant(3L), halfOpen.probeLeaseUntil)
+        assertFailsWith<IllegalArgumentException> {
+            halfOpen.copy(probeLeaseUntil = DataLoomInstant(2L))
+        }
+    }''',
+          )
+
+          Path(
+              "dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/retry/"
+              "CircuitBreakerProbeLeaseRecoveryTest.kt"
+          ).write_text(r'''package io.dataloom.runtime.retry
+
+import io.dataloom.api.circuit.CircuitBreakerCompareAndSetRequest
+import io.dataloom.api.circuit.CircuitBreakerCompareAndSetResult
+import io.dataloom.api.circuit.CircuitBreakerLoadResult
+import io.dataloom.api.circuit.CircuitBreakerPhase
+import io.dataloom.api.circuit.CircuitBreakerScope
+import io.dataloom.api.circuit.CircuitBreakerStateRecord
+import io.dataloom.api.circuit.CircuitBreakerStateStore
+import io.dataloom.api.provider.ProviderId
+import io.dataloom.api.provider.ProviderOperationResult
+import io.dataloom.api.scheduling.SchedulingDelay
+import io.dataloom.api.time.DataLoomClock
+import io.dataloom.api.time.DataLoomInstant
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.coroutines.startCoroutine
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
+
+class CircuitBreakerProbeLeaseRecoveryTest {
+    private val scope = CircuitBreakerScope.provider(ProviderId("lease-provider"))
+    private val clock = MutableClock(100L)
+    private val store = InMemoryCircuitStore()
+    private val configuration = CircuitBreakerConfiguration(
+        failureThreshold = 1,
+        failureWindow = SchedulingDelay(1_000L),
+        openDuration = SchedulingDelay(1_000L),
+        halfOpenProbeLeaseDuration = SchedulingDelay(500L),
+    )
+
+    @Test
+    fun `active probe rejects contenders until its exclusive lease expires`() {
+        val (_, probe) = openAndAcquireProbe()
+        assertEquals(1L, probe.permit.generation)
+        assertEquals(DataLoomInstant(1_600L), probe.record.state.probeLeaseUntil)
+
+        clock.nowMillis = 1_599L
+        val rejected = assertIs<CircuitBreakerPermission.Rejected>(
+            runSuspend { coordinator().acquire(scope) },
+        )
+        assertEquals(CircuitBreakerRejectionReason.PROBE_IN_FLIGHT, rejected.reason)
+        assertEquals(DataLoomInstant(1_600L), rejected.retryAt)
+    }
+
+    @Test
+    fun `expired probe lease is recovered atomically after coordinator recreation`() {
+        openAndAcquireProbe()
+        clock.nowMillis = 1_600L
+
+        val recovered = assertIs<CircuitBreakerPermission.ProbeAllowed>(
+            runSuspend { coordinator().acquire(scope) },
+        )
+        assertEquals(2L, recovered.permit.generation)
+        assertEquals(CircuitBreakerPhase.HALF_OPEN, recovered.record.state.phase)
+        assertEquals(DataLoomInstant(2_100L), recovered.record.state.probeLeaseUntil)
+    }
+
+    @Test
+    fun `late result from abandoned generation cannot mutate recovered probe`() {
+        val (_, abandoned) = openAndAcquireProbe()
+        clock.nowMillis = 1_600L
+        val recovered = assertIs<CircuitBreakerPermission.ProbeAllowed>(
+            runSuspend { coordinator().acquire(scope) },
+        )
+
+        clock.nowMillis = 1_601L
+        assertIs<CircuitBreakerRecordResult.StaleProbe>(
+            runSuspend { coordinator().recordSuccess(scope, abandoned.permit) },
+        )
+        val persisted = checkNotNull(store.record(scope)).state
+        assertEquals(recovered.permit.generation, persisted.probeGeneration)
+        assertEquals(CircuitBreakerPhase.HALF_OPEN, persisted.phase)
+    }
+
+    @Test
+    fun `matching result at lease deadline is reported expired before recovery`() {
+        val (_, probe) = openAndAcquireProbe()
+        clock.nowMillis = 1_600L
+
+        val expired = assertIs<CircuitBreakerRecordResult.ProbeLeaseExpired>(
+            runSuspend { coordinator().recordSuccess(scope, probe.permit) },
+        )
+        assertEquals(DataLoomInstant(1_600L), expired.leaseUntil)
+        assertEquals(1L, checkNotNull(store.record(scope)).state.probeGeneration)
+
+        val recovered = assertIs<CircuitBreakerPermission.ProbeAllowed>(
+            runSuspend { coordinator().acquire(scope) },
+        )
+        assertEquals(2L, recovered.permit.generation)
+    }
+
+    @Test
+    fun `time range exhaustion rejects a probe instead of creating an expired lease`() {
+        val nearMaximumClock = MutableClock(Long.MAX_VALUE - 1L)
+        val nearMaximumStore = InMemoryCircuitStore()
+        val coordinator = CircuitBreakerCoordinator(
+            configuration = CircuitBreakerConfiguration(
+                failureThreshold = 1,
+                failureWindow = SchedulingDelay(1L),
+                openDuration = SchedulingDelay(1L),
+                halfOpenProbeLeaseDuration = SchedulingDelay(1L),
+            ),
+            clock = nearMaximumClock,
+            stateStore = nearMaximumStore,
+        )
+        runSuspend { coordinator.recordFailure(scope) }
+        nearMaximumClock.nowMillis = Long.MAX_VALUE
+
+        val rejected = assertIs<CircuitBreakerPermission.Rejected>(
+            runSuspend { coordinator.acquire(scope) },
+        )
+        assertEquals(
+            CircuitBreakerRejectionReason.PROBE_LEASE_DEADLINE_EXHAUSTED,
+            rejected.reason,
+        )
+    }
+
+    @Test
+    fun `probe lease duration must be positive`() {
+        assertFailsWith<IllegalArgumentException> {
+            CircuitBreakerConfiguration(
+                failureThreshold = 1,
+                failureWindow = SchedulingDelay(1L),
+                openDuration = SchedulingDelay(1L),
+                halfOpenProbeLeaseDuration = SchedulingDelay.ZERO,
+            )
+        }
+    }
+
+    private fun openAndAcquireProbe(): Pair<CircuitBreakerCoordinator, CircuitBreakerPermission.ProbeAllowed> {
+        val coordinator = coordinator()
+        runSuspend { coordinator.recordFailure(scope) }
+        clock.nowMillis = 1_100L
+        val probe = assertIs<CircuitBreakerPermission.ProbeAllowed>(
+            runSuspend { coordinator.acquire(scope) },
+        )
+        return coordinator to probe
+    }
+
+    private fun coordinator(): CircuitBreakerCoordinator = CircuitBreakerCoordinator(
+        configuration = configuration,
+        clock = clock,
+        stateStore = store,
+    )
+
+    private class MutableClock(var nowMillis: Long) : DataLoomClock {
+        override fun now(): DataLoomInstant = DataLoomInstant(nowMillis)
+    }
+
+    private class InMemoryCircuitStore : CircuitBreakerStateStore {
+        private val records = mutableMapOf<CircuitBreakerScope, CircuitBreakerStateRecord>()
+
+        fun record(scope: CircuitBreakerScope): CircuitBreakerStateRecord? = records[scope]
+
+        override suspend fun load(
+            scope: CircuitBreakerScope,
+        ): ProviderOperationResult<CircuitBreakerLoadResult> = ProviderOperationResult.Success(
+            records[scope]?.let(CircuitBreakerLoadResult::Found)
+                ?: CircuitBreakerLoadResult.Missing,
+        )
+
+        override suspend fun compareAndSet(
+            request: CircuitBreakerCompareAndSetRequest,
+        ): ProviderOperationResult<CircuitBreakerCompareAndSetResult> {
+            val current = records[request.scope]
+            if (current?.version != request.expectedVersion) {
+                return ProviderOperationResult.Success(
+                    CircuitBreakerCompareAndSetResult.Conflict(current),
+                )
+            }
+            val updated = CircuitBreakerStateRecord(
+                state = request.nextState,
+                version = (current?.version ?: -1L) + 1L,
+            )
+            records[request.scope] = updated
+            return ProviderOperationResult.Success(
+                CircuitBreakerCompareAndSetResult.Updated(updated),
+            )
+        }
+    }
+
+    private fun <T> runSuspend(block: suspend () -> T): T {
+        var completed: Result<T>? = null
+        block.startCoroutine(
+            object : Continuation<T> {
+                override val context: CoroutineContext = EmptyCoroutineContext
+                override fun resumeWith(result: Result<T>) {
+                    completed = result
+                }
+            },
+        )
+        return checkNotNull(completed).getOrThrow()
+    }
+}
+''', encoding="utf-8")
+
+          Path(
+              "runtime-external-consumer/src/commonMain/kotlin/io/dataloom/consumer/"
+              "CircuitProbeLeaseExternalConsumerProbe.kt"
+          ).write_text(r'''package io.dataloom.consumer
+
+import io.dataloom.api.circuit.CircuitBreakerState
+import io.dataloom.api.scheduling.SchedulingDelay
+import io.dataloom.api.time.DataLoomInstant
+import io.dataloom.runtime.retry.CircuitBreakerConfiguration
+import io.dataloom.runtime.retry.CircuitBreakerRecordResult
+import io.dataloom.runtime.retry.CircuitBreakerRejectionReason
+
+/** Compile-only use of the public half-open probe lease surface. */
+internal fun compileCircuitProbeLeaseConsumer(
+    state: CircuitBreakerState,
+    recordResult: CircuitBreakerRecordResult,
+): DataLoomInstant? {
+    val configuration = CircuitBreakerConfiguration(
+        failureThreshold = 3,
+        failureWindow = SchedulingDelay(30_000L),
+        openDuration = SchedulingDelay(60_000L),
+        halfOpenProbeLeaseDuration = SchedulingDelay(15_000L),
+    )
+    configuration.halfOpenProbeLeaseDuration
+    CircuitBreakerRejectionReason.PROBE_LEASE_DEADLINE_EXHAUSTED
+    if (recordResult is CircuitBreakerRecordResult.ProbeLeaseExpired) {
+        return recordResult.leaseUntil
+    }
+    return state.probeLeaseUntil
+}
+''', encoding="utf-8")
+
+          replace_once(
+              "docs/api/circuit-breaker.md",
+              '''> transitions, and one controlled half-open probe are implemented. Production
+> Android/iOS stores, retry-path integration, operations, and observability remain.''',
+              '''> transitions, one controlled half-open probe, and persisted probe-lease
+> recovery are implemented. Production Android/iOS stores, direct pipeline
+> assembly, operations, and observability remain.''',
+          )
+          replace_once(
+              "docs/api/circuit-breaker.md",
+              '''- half-open probe generation and in-flight marker; and
+- last update time.''',
+              '''- half-open probe generation, in-flight marker, and exclusive lease deadline; and
+- last update time.''',
+          )
+          replace_once(
+              "docs/api/circuit-breaker.md",
+              '''6. Other contenders observe the persisted in-flight probe and are rejected.
+7. A successful matching probe closes the circuit.
+8. A failed matching probe reopens the circuit for a new duration.
+9. A stale probe permit cannot mutate a later generation or recovered state.
+10. Persisted clock regression is rejected fail-closed.''',
+              '''6. Other contenders observe the persisted in-flight probe and are rejected with
+   its lease deadline.
+7. At the exact lease deadline, one compare-and-set winner replaces an abandoned
+   probe with the next generation and a new lease.
+8. A matching probe result at or after its lease deadline is rejected as expired.
+9. A successful matching, unexpired probe closes the circuit.
+10. A failed matching, unexpired probe reopens the circuit for a new duration.
+11. A stale probe permit cannot mutate a later generation or recovered state.
+12. Persisted clock regression is rejected fail-closed.''',
+          )
+          replace_once(
+              "docs/api/circuit-breaker.md",
+              '''lost updates when failures or probe acquisition race. Persisted open and
+half-open state is loaded again after process recreation; no in-memory sequence
+is required for recovery.''',
+              '''lost updates when failures or probe acquisition race. Persisted open and
+half-open state is loaded again after process recreation. If a process dies or a
+caller is cancelled after acquiring the sole probe, its lease eventually expires
+and a later compare-and-set winner safely advances the generation.''',
+          )
+
+          Path("docs/audits/DL-040-probe-lease-recovery-checkpoint.md").write_text(r'''# DL-040 half-open probe lease recovery checkpoint
+
+## Scope
+
+This checkpoint closes the common-runtime deadlock where a process could persist
+`HALF_OPEN`, lose the only probe through cancellation or process death, and leave
+the circuit permanently unable to recover.
+
+## Implemented behavior
+
+- every half-open probe has a persisted exclusive lease deadline;
+- contenders are rejected with that deadline while the lease remains active;
+- the exact deadline permits one atomic replacement probe with a new generation;
+- late results from the abandoned generation are stale and cannot mutate recovery;
+- a matching result at or after its own deadline is reported as expired;
+- coordinator recreation uses only persisted state and requires no in-memory timer;
+- deadline arithmetic is overflow-safe and fails closed when no future instant exists.
+
+## Remaining V1 work
+
+Production Android and iOS persistence, direct pipeline assembly, circuit events
+and metrics, authorized administrative operations, multi-process qualification,
+and final AC-FUNC-004 evidence remain required.
+''', encoding="utf-8")
+
+          git_diff_targets = [
+              "dataloom-api/src/commonMain/kotlin/io/dataloom/api/circuit/CircuitBreakerState.kt",
+              coordinator,
+          ]
+          for path in git_diff_targets:
+              if not Path(path).exists():
+                  raise RuntimeError(f"Missing expected file: {path}")
+          PY
+          git diff --check
+
+      - name: Generate exact ABI baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            :dataloom-api:updateKotlinAbi \
+            :dataloom-runtime:updateKotlinAbi \
+            :dataloom-apple:updateKotlinAbi \
+            --configuration-cache \
+            --stacktrace \
+            --console=plain
+
+      - name: Validate probe lease recovery across supported consumers
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            :build-logic:test \
+            :dataloom-api:jvmTest \
+            :dataloom-runtime:jvmTest \
+            :runtime-external-consumer:compileKotlinJvm \
+            :runtime-external-consumer:compileKotlinIosArm64 \
+            :runtime-external-consumer:compileKotlinIosSimulatorArm64 \
+            :runtime-external-consumer:compileKotlinIosX64 \
+            :dataloom-apple:assembleDataLoomReleaseXCFramework \
+            --configuration-cache \
+            --stacktrace \
+            --warning-mode all \
+            --console=plain
+
+      - name: Verify generated public evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'probeLeaseUntil' dataloom-api/api/dataloom-api.api
+          grep -q 'halfOpenProbeLeaseDuration' dataloom-runtime/api/dataloom-runtime.api
+          grep -q 'ProbeLeaseExpired' dataloom-runtime/api/dataloom-runtime.api
+          grep -q 'halfOpenProbeLeaseDuration' dataloom-runtime/api/dataloom-runtime.klib.api
+
+      - name: Remove temporary workflow and commit evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/temporary-probe-lease-evidence.yml
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No evidence changes to commit."
+            exit 0
+          fi
+          git commit -m "DL-040: recover abandoned half-open probes"
+          git push origin HEAD:codex/dl-retry-017-probe-lease-recovery
