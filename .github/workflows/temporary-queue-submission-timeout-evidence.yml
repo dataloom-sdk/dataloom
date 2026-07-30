@@ -43,7 +43,33 @@ jobs:
         run: chmod +x gradlew
 
       - name: Patch builder integration, tests, and documentation
-        run: python3 .github/scripts/temporary_queue_submission_timeout_patch.py
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path(
+              "dataloom-runtime/src/commonMain/kotlin/"
+              "io/dataloom/runtime/submission/DataLoomQueueSubmission.kt"
+          )
+          text = path.read_text()
+          old = (
+              " * implementation. An unknown external failure may require application-level\n"
+              " * reconciliation. Use a stable [io.dataloom.api.identifier.QueueEntryId]\n"
+              " * for retry attempts on the same logical submission.\n"
+          )
+          new = (
+              " * implementation. An unknown external failure may require application-level\n"
+              " * reconciliation.\n"
+              " * use a stable [io.dataloom.api.identifier.QueueEntryId]\n"
+              " * for retry attempts on the same logical submission.\n"
+          )
+          if text.count(old) != 1:
+              raise SystemExit("Expected one queue-submission idempotency paragraph.")
+          path.write_text(text.replace(old, new, 1))
+          PY
+          python3 .github/scripts/temporary_queue_submission_timeout_patch.py
 
       - name: Compile and test queue-submission timeout assembly
         shell: bash
