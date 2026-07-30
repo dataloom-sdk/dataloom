@@ -22,14 +22,19 @@ public class RetryTimeoutCoordinator(
             ?: return RetryTimeoutExecutionResult.Completed(operation())
 
         val now = clock.now()
-        val workflowTimeout = configuration.workflow
+        val workflowTimeout = configuration.workflowTimeout
         val deadline = if (workflowStartedAt != null && workflowTimeout != null) {
-            DataLoomInstant(addSaturated(workflowStartedAt.epochMilliseconds, workflowTimeout.milliseconds))
+            DataLoomInstant(
+                addSaturated(
+                    workflowStartedAt.epochMilliseconds,
+                    workflowTimeout.milliseconds,
+                ),
+            )
         } else {
             null
         }
 
-        if (deadline != null && now.epochMilliseconds < workflowStartedAt!!.epochMilliseconds) {
+        if (deadline != null && now.epochMilliseconds < checkNotNull(workflowStartedAt).epochMilliseconds) {
             return RetryTimeoutExecutionResult.ClockRegression(
                 observedAt = now,
                 deadline = deadline,
@@ -59,15 +64,6 @@ public class RetryTimeoutCoordinator(
             operation,
         )
     }
-}
-
-private fun RetryTimeoutConfiguration.timeoutFor(kind: RetryTimeoutKind): SchedulingDelay? = when (kind) {
-    RetryTimeoutKind.CONNECTION -> connection
-    RetryTimeoutKind.REQUEST -> request
-    RetryTimeoutKind.IDLE -> idle
-    RetryTimeoutKind.PROVIDER -> provider
-    RetryTimeoutKind.POLICY -> policy
-    RetryTimeoutKind.WORKFLOW -> workflow
 }
 
 private fun addSaturated(left: Long, right: Long): Long {
