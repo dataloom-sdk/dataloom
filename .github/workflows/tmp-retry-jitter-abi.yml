@@ -4,9 +4,14 @@ on:
   push:
     branches:
       - codex/dl-retry-011-deterministic-jitter
+    paths:
+      - .github/workflows/tmp-retry-jitter-abi.yml
+      - dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/retry/**
+      - dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/retry/**
+      - runtime-external-consumer/src/commonMain/kotlin/io/dataloom/consumer/RuntimeExternalConsumerProbe.kt
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: temporary-retry-jitter-abi-${{ github.ref }}
@@ -14,15 +19,13 @@ concurrency:
 
 jobs:
   generate-runtime-abi:
-    name: Generate runtime JVM and KLib ABI
+    name: Generate and commit runtime JVM and KLib ABI
     runs-on: macos-15
     timeout-minutes: 40
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-        with:
-          persist-credentials: false
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -51,10 +54,16 @@ jobs:
           --stacktrace
           --console=plain
 
-      - name: Upload generated runtime ABI
-        uses: actions/upload-artifact@v6
-        with:
-          name: retry-jitter-runtime-abi
-          path: dataloom-runtime/api
-          if-no-files-found: error
-          retention-days: 1
+      - name: Commit exact generated ABI baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add dataloom-runtime/api
+          if git diff --cached --quiet; then
+            echo "ERROR: Expected retry jitter API/ABI changes were not generated."
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "DL-040: update retry jitter ABI baselines"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
