@@ -358,9 +358,17 @@ public final class io/dataloom/runtime/facade/DataLoomBuilder {
 	public final fun pipeline (Lio/dataloom/runtime/execution/SynchronizationPipeline;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun provider (Lio/dataloom/api/provider/DataLoomProvider;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun providers ([Lio/dataloom/api/provider/DataLoomProvider;)Lio/dataloom/runtime/facade/DataLoomBuilder;
+	public final fun queueSubmissionConfiguration (Lio/dataloom/runtime/facade/DataLoomQueueSubmissionSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun queueSubmissionEncoder (Lio/dataloom/runtime/submission/QueuedSynchronizationWorkEncoder;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun queueWorkerConfiguration (Lio/dataloom/runtime/facade/DataLoomQueueWorkerSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun runtimeDependencies (Lio/dataloom/api/runtime/RuntimeDependencies;)Lio/dataloom/runtime/facade/DataLoomBuilder;
+}
+
+public final class io/dataloom/runtime/facade/DataLoomQueueSubmissionSpec {
+	public fun <init> (Lio/dataloom/runtime/submission/QueuedSynchronizationWorkEncoder;)V
+	public fun <init> (Lio/dataloom/runtime/submission/QueuedSynchronizationWorkEncoder;Lio/dataloom/api/scheduling/SchedulingDelay;)V
+	public final fun getEncoder ()Lio/dataloom/runtime/submission/QueuedSynchronizationWorkEncoder;
+	public final fun getQueueProviderTimeout ()Lio/dataloom/api/scheduling/SchedulingDelay;
 }
 
 public abstract interface class io/dataloom/runtime/facade/DataLoomQueueWorker {
@@ -1556,6 +1564,11 @@ public final class io/dataloom/runtime/submission/QueueSubmissionFailureStage : 
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/submission/QueueSubmissionFailureStage;
 	public static fun values ()[Lio/dataloom/runtime/submission/QueueSubmissionFailureStage;
+}
+
+public final class io/dataloom/runtime/submission/QueueSubmissionProviderTimeoutRuntime {
+	public static final field INSTANCE Lio/dataloom/runtime/submission/QueueSubmissionProviderTimeoutRuntime;
+	public final fun create (Lio/dataloom/api/queue/QueueProvider;Lio/dataloom/runtime/submission/QueuedSynchronizationWorkEncoder;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/scheduling/SchedulingDelay;)Lio/dataloom/runtime/submission/DataLoomQueueSubmission;
 }
 
 public abstract interface class io/dataloom/runtime/submission/QueueSubmissionResult {

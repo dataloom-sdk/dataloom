@@ -2,8 +2,9 @@
 
 [API reference index](./README.md)
 
-> **Status:** Available queue-submission foundation. Applications still own
-> work encoding; publication and complete consumer qualification remain open.
+> **Status:** Available queue-submission foundation with separately governed
+> enqueue timeout assembly. Applications still own work encoding; publication
+> and complete consumer qualification remain open.
 
 ## Overview
 
@@ -28,6 +29,8 @@ format.
 - `QueueSubmissionFailureStage` — failure-stage identifier enum
 - `QueueSubmissionResult` — sealed submission result
 - `DataLoomQueueSubmission` — narrow public submission capability
+- `DataLoomQueueSubmissionSpec` — builder configuration with optional enqueue timeout
+- `QueueSubmissionProviderTimeoutRuntime` — standalone protected assembly
 
 ---
 
@@ -207,10 +210,10 @@ public interface DataLoom {
 }
 ```
 
-- `null` when `DataLoomBuilder.queueSubmissionEncoder` was not supplied or
-  when a valid `QueueProvider` binding was absent.
-- Non-null when a `QueuedSynchronizationWorkEncoder` and a valid queue
-  provider binding are both configured.
+- `null` when neither queue-submission builder method was supplied or when
+  a valid `QueueProvider` binding was absent.
+- Non-null when an encoder or `DataLoomQueueSubmissionSpec` and a valid queue
+  provider binding are configured.
 
 Queue submission and queue worker are independently configurable. Either,
 both, or neither capability may be present.
@@ -230,17 +233,26 @@ val dataLoom = DataLoomBuilder()
             queueProviderId = ProviderId("queue"),
         ),
     )
-    .queueSubmissionEncoder(myEncoder)
+    .queueSubmissionConfiguration(
+        DataLoomQueueSubmissionSpec(
+            encoder = myEncoder,
+            queueProviderTimeout = SchedulingDelay(5_000L),
+        ),
+    )
     .build()
 ```
 
+The historical `.queueSubmissionEncoder(myEncoder)` method remains available and
+selects a null timeout.
+
 Build rules:
-- `queueSubmissionEncoder` is optional.
-- When no encoder is supplied, `queueSubmission` is `null`.
-- When encoder is supplied, a valid `QueueProvider` binding must be present.
+- both queue-submission methods are optional;
+- when neither is supplied, `queueSubmission` is `null`;
+- when both are called, the most recent call is effective;
+- when configured, a valid `QueueProvider` binding must be present;
 - Queue provider ID must resolve to a registered `QueueProvider` with
   `ProviderType.QUEUE`.
-- Build performs no encoding, no enqueue, and no clock read.
+- Build performs no encoding, enqueue, timeout execution, or clock read.
 
 ---
 
@@ -310,6 +322,17 @@ DataLoom does not inspect, decode, or log encoded payload bytes.
 DataLoom does not silently correct encoder output.
 
 ---
+
+## Enqueue timeout boundary
+
+A configured timeout is applied after encoding and structural validation, and
+only to the single `QueueProvider.enqueue` invocation. Zero rejects before
+provider invocation. Positive timeouts use cooperative cancellation.
+
+Because enqueue may commit before cancellation is observed, timeout returns
+`QueueProviderFailure` with code `QUEUE_PROVIDER_TIMEOUT`, failure stage
+`QUEUE_PROVIDER_ENQUEUE`, and `Recoverability.UNKNOWN`. The exact stable
+`QueueEntryId` is preserved and no automatic replay occurs.
 
 ## Idempotency boundary
 

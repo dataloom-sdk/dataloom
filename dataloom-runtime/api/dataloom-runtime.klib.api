@@ -1661,9 +1661,20 @@ final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.
     final fun pipeline(io.dataloom.runtime.execution/SynchronizationPipeline): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.pipeline|pipeline(io.dataloom.runtime.execution.SynchronizationPipeline){}[0]
     final fun provider(io.dataloom.api.provider/DataLoomProvider): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.provider|provider(io.dataloom.api.provider.DataLoomProvider){}[0]
     final fun providers(kotlin/Array<out io.dataloom.api.provider/DataLoomProvider>...): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.providers|providers(kotlin.Array<out|io.dataloom.api.provider.DataLoomProvider>...){}[0]
+    final fun queueSubmissionConfiguration(io.dataloom.runtime.facade/DataLoomQueueSubmissionSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.queueSubmissionConfiguration|queueSubmissionConfiguration(io.dataloom.runtime.facade.DataLoomQueueSubmissionSpec){}[0]
     final fun queueSubmissionEncoder(io.dataloom.runtime.submission/QueuedSynchronizationWorkEncoder): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.queueSubmissionEncoder|queueSubmissionEncoder(io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder){}[0]
     final fun queueWorkerConfiguration(io.dataloom.runtime.facade/DataLoomQueueWorkerSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.queueWorkerConfiguration|queueWorkerConfiguration(io.dataloom.runtime.facade.DataLoomQueueWorkerSpec){}[0]
     final fun runtimeDependencies(io.dataloom.api.runtime/RuntimeDependencies): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.runtimeDependencies|runtimeDependencies(io.dataloom.api.runtime.RuntimeDependencies){}[0]
+}
+
+final class io.dataloom.runtime.facade/DataLoomQueueSubmissionSpec { // io.dataloom.runtime.facade/DataLoomQueueSubmissionSpec|null[0]
+    constructor <init>(io.dataloom.runtime.submission/QueuedSynchronizationWorkEncoder) // io.dataloom.runtime.facade/DataLoomQueueSubmissionSpec.<init>|<init>(io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder){}[0]
+    constructor <init>(io.dataloom.runtime.submission/QueuedSynchronizationWorkEncoder, io.dataloom.api.scheduling/SchedulingDelay?) // io.dataloom.runtime.facade/DataLoomQueueSubmissionSpec.<init>|<init>(io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder;io.dataloom.api.scheduling.SchedulingDelay?){}[0]
+
+    final val encoder // io.dataloom.runtime.facade/DataLoomQueueSubmissionSpec.encoder|{}encoder[0]
+        final fun <get-encoder>(): io.dataloom.runtime.submission/QueuedSynchronizationWorkEncoder // io.dataloom.runtime.facade/DataLoomQueueSubmissionSpec.encoder.<get-encoder>|<get-encoder>(){}[0]
+    final val queueProviderTimeout // io.dataloom.runtime.facade/DataLoomQueueSubmissionSpec.queueProviderTimeout|{}queueProviderTimeout[0]
+        final fun <get-queueProviderTimeout>(): io.dataloom.api.scheduling/SchedulingDelay? // io.dataloom.runtime.facade/DataLoomQueueSubmissionSpec.queueProviderTimeout.<get-queueProviderTimeout>|<get-queueProviderTimeout>(){}[0]
 }
 
 final class io.dataloom.runtime.facade/DataLoomQueueWorkerSpec { // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec|null[0]
@@ -2214,6 +2225,10 @@ final class io.dataloom.runtime.worker/QueueWorkerRunRequest { // io.dataloom.ru
 
 final object io.dataloom.runtime.retry/DefaultCircuitBreakerFailureClassifier : io.dataloom.runtime.retry/CircuitBreakerFailureClassifier { // io.dataloom.runtime.retry/DefaultCircuitBreakerFailureClassifier|null[0]
     final fun classify(io.dataloom.api.error/DataLoomError): io.dataloom.runtime.retry/CircuitBreakerFailureDisposition // io.dataloom.runtime.retry/DefaultCircuitBreakerFailureClassifier.classify|classify(io.dataloom.api.error.DataLoomError){}[0]
+}
+
+final object io.dataloom.runtime.submission/QueueSubmissionProviderTimeoutRuntime { // io.dataloom.runtime.submission/QueueSubmissionProviderTimeoutRuntime|null[0]
+    final fun create(io.dataloom.api.queue/QueueProvider, io.dataloom.runtime.submission/QueuedSynchronizationWorkEncoder, io.dataloom.api.time/DataLoomClock, io.dataloom.api.scheduling/SchedulingDelay): io.dataloom.runtime.submission/DataLoomQueueSubmission // io.dataloom.runtime.submission/QueueSubmissionProviderTimeoutRuntime.create|create(io.dataloom.api.queue.QueueProvider;io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder;io.dataloom.api.time.DataLoomClock;io.dataloom.api.scheduling.SchedulingDelay){}[0]
 }
 
 final object io.dataloom.runtime.worker/QueueWorkerProviderTimeoutRuntime { // io.dataloom.runtime.worker/QueueWorkerProviderTimeoutRuntime|null[0]

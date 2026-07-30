@@ -407,9 +407,13 @@ class DataLoomBuilderTest {
             ProviderOperationResult.Failure(FakeError())
     }
 
-    private class FakeQueueProvider(id: String = "queue-primary") : QueueProvider {
+    private class FakeQueueProvider(
+        id: String = "queue-primary",
+        var enqueueResult: ProviderOperationResult<Unit> = ProviderOperationResult.Failure(FakeError()),
+    ) : QueueProvider {
         var initializeCallCount: Int = 0
         var closeCallCount: Int = 0
+        var enqueueCallCount: Int = 0
         var acquireCallCount: Int = 0
 
         override val descriptor = ProviderDescriptor(
@@ -432,8 +436,10 @@ class DataLoomBuilderTest {
             return ProviderOperationResult.Success(Unit)
         }
 
-        override suspend fun enqueue(request: QueueEnqueueRequest): ProviderOperationResult<Unit> =
-            ProviderOperationResult.Failure(FakeError())
+        override suspend fun enqueue(request: QueueEnqueueRequest): ProviderOperationResult<Unit> {
+            enqueueCallCount++
+            return enqueueResult
+        }
 
         override suspend fun acquire(request: QueueAcquireRequest): ProviderOperationResult<QueueAcquireResult> {
             acquireCallCount++
@@ -682,6 +688,20 @@ class DataLoomBuilderTest {
                 io.dataloom.api.queue.QueueEnqueueRequest(entry = entry),
             )
         }
+
+
+
+    private fun makeQueueSubmission(
+        id: QueueEntryId = QueueEntryId("submission-001"),
+    ): io.dataloom.runtime.submission.QueuedSynchronizationSubmission =
+        io.dataloom.runtime.submission.QueuedSynchronizationSubmission(
+            queueEntryId = id,
+            work = QueuedSynchronizationWork(
+                request = makeRequest(),
+                bindings = makeBindings(),
+            ),
+            availableAt = DataLoomInstant(1_000_000L),
+        )
 
     // =========================================================================
     // Builder requirements — missing mandatory fields
@@ -1611,6 +1631,77 @@ class DataLoomBuilderTest {
 
         assertNotNull(dataLoom.queueWorker)
         assertNotNull(dataLoom.queueSubmission)
+    }
+
+
+
+    @Test
+    fun queueSubmissionSpec_directConstructorPreservesNullTimeout() {
+        val spec = DataLoomQueueSubmissionSpec(makeQueueSubmissionEncoder())
+        assertNull(spec.queueProviderTimeout)
+    }
+
+    @Test
+    fun queueSubmissionSpec_preservesConfiguredTimeout() {
+        val timeout = SchedulingDelay(600L)
+        val spec = DataLoomQueueSubmissionSpec(
+            encoder = makeQueueSubmissionEncoder(),
+            queueProviderTimeout = timeout,
+        )
+        assertSame(timeout, spec.queueProviderTimeout)
+    }
+
+    @Test
+    fun queueSubmission_builderZeroTimeoutRejectsBeforeEnqueue() {
+        val queue = FakeQueueProvider()
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(FakeStorageProvider(), FakeTransportProvider(), queue)
+            .defaultProviderBindings(makeBindings(queueId = "queue-primary"))
+            .queueSubmissionConfiguration(
+                DataLoomQueueSubmissionSpec(
+                    encoder = makeQueueSubmissionEncoder(),
+                    queueProviderTimeout = SchedulingDelay.ZERO,
+                ),
+            )
+            .build()
+
+        runSuspend { dataLoom.initialize() }
+        val submission = makeQueueSubmission()
+        val result = runSuspend { dataLoom.queueSubmission!!.submit(submission) }
+        val failure = assertIs<io.dataloom.runtime.submission.QueueSubmissionResult.QueueProviderFailure>(
+            result,
+        )
+
+        assertEquals(0, queue.enqueueCallCount)
+        assertEquals(submission.queueEntryId, failure.queueEntryId)
+        assertEquals(
+            io.dataloom.runtime.submission.QueueSubmissionFailureStage.QUEUE_PROVIDER_ENQUEUE,
+            failure.failureStage,
+        )
+        assertEquals("QUEUE_PROVIDER_TIMEOUT", failure.error.code.value)
+        assertEquals(Recoverability.UNKNOWN, failure.error.recoverability)
+    }
+
+    @Test
+    fun queueSubmission_legacyEncoderPreservesDirectEnqueuePath() {
+        val queue = FakeQueueProvider(
+            enqueueResult = ProviderOperationResult.Success(Unit),
+        )
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(FakeStorageProvider(), FakeTransportProvider(), queue)
+            .defaultProviderBindings(makeBindings(queueId = "queue-primary"))
+            .queueSubmissionEncoder(makeQueueSubmissionEncoder())
+            .build()
+
+        runSuspend { dataLoom.initialize() }
+        val submission = makeQueueSubmission()
+        val result = runSuspend { dataLoom.queueSubmission!!.submit(submission) }
+
+        val enqueued = assertIs<io.dataloom.runtime.submission.QueueSubmissionResult.Enqueued>(result)
+        assertEquals(1, queue.enqueueCallCount)
+        assertEquals(submission.queueEntryId, enqueued.queueEntryId)
     }
 
     // =========================================================================

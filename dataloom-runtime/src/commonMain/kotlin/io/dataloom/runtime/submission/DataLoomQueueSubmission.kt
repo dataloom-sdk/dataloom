@@ -15,9 +15,10 @@ package io.dataloom.runtime.submission
  * ## Availability
  *
  * [io.dataloom.runtime.facade.DataLoom.queueSubmission] is `null` when
- * [io.dataloom.runtime.facade.DataLoomBuilder.queueSubmissionEncoder] was not
- * supplied or a valid [io.dataloom.api.queue.QueueProvider] binding was
- * not present. Non-null when all required queue dependencies are present.
+ * neither [io.dataloom.runtime.facade.DataLoomBuilder.queueSubmissionEncoder]
+ * nor [io.dataloom.runtime.facade.DataLoomBuilder.queueSubmissionConfiguration]
+ * was supplied, or when a valid [io.dataloom.api.queue.QueueProvider] binding
+ * was not present. Non-null when all required queue dependencies are present.
  *
  * ## Submission flow
  *
@@ -53,8 +54,10 @@ package io.dataloom.runtime.submission
  * [submit] invokes [io.dataloom.api.queue.QueueProvider.enqueue] at most
  * once per call. Duplicate-entry handling belongs to the provider
  * implementation. An unknown external failure may require application-level
- * reconciliation. Use a stable [io.dataloom.api.identifier.QueueEntryId]
- * for retry attempts on the same logical submission.
+ * reconciliation.
+ * use a stable [io.dataloom.api.identifier.QueueEntryId]
+ * for retry attempts on the same logical submission. A configured provider
+ * timeout is also an unknown external outcome and does not prove rollback.
  *
  * ## Ownership
  *
