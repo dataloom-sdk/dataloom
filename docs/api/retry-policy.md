@@ -6,8 +6,9 @@
 > scheduler integration, retry-history preservation, central fail-closed
 > protection, deterministic immediate/fixed/linear/exponential backoff,
 > configurable full/equal jitter, injected deterministic randomness, attempt
-> limits, and durable elapsed-time/cumulative-delay budgets are implemented.
-> Server hints, timeout separation, durable circuit breaking, manual retry, and
+> limits, durable elapsed-time/cumulative-delay budgets, and bounded
+> provider/server hints are implemented. Timeout separation, durable circuit
+> breaking, manual retry, and
 > complete observability remain V1 blockers.
 
 ## Purpose
@@ -26,7 +27,7 @@ Central fail-closed retry protection
         ├── protected error → stop the complete batch
         └── fully eligible → RetryPolicy.evaluate(...)
                                 ↓
-                    backoff → optional jitter → Retry or Stop
+          backoff → optional jitter → bounded hint minimum → Retry or Stop
 ```
 
 Policy evaluation is synchronous and side-effect free. It does not sleep,
@@ -81,10 +82,12 @@ A policy receives:
 | `previousDelay` | Previous retry delay when available |
 | `provider` | Optional provider descriptor, never the provider instance |
 | `metadata` | Optional bounded, non-sensitive context |
+| `retryDelayHint` | Optional normalized hint after runtime clamping |
 
 The current queue-backed and scheduler-backed runtime paths pass
-`previousDelay = null` and `provider = null`. These fields remain available for
-future hint, budget, and application-policy integration.
+`previousDelay = null` and `provider = null`. When central hint handling is
+configured, `retryDelayHint` contains only the typed value clamped to the
+configured maximum; otherwise it is `null`.
 
 ### `RetryDecision`
 
@@ -110,7 +113,10 @@ later because of operating-system constraints.
 | Reason | Meaning |
 |---|---|
 | `NON_RECOVERABLE` | Repeating without correction is not expected to succeed |
-| `ATTEMPT_LIMIT_REACHED` | A configured retry budget is exhausted |
+| `ATTEMPT_LIMIT_REACHED` | The configured retry-attempt limit is exhausted |
+| `ELAPSED_TIME_LIMIT_REACHED` | The next retry would exceed the elapsed window |
+| `CUMULATIVE_DELAY_LIMIT_REACHED` | Accepted delays would exceed the cumulative limit |
+| `CLOCK_REGRESSION_DETECTED` | Persisted time evidence moved backwards |
 | `POLICY_REJECTED` | Policy or central protection rejected automatic retry |
 | `UNSUPPORTED_OPERATION` | The policy does not support the operation |
 
@@ -317,6 +323,39 @@ Because the source has no mutable sequence, concurrent evaluation order does not
 change the result. Restoring the same seed and durable retry identity after
 process restart reproduces the same jitter decision.
 
+## Bounded provider/server retry hints
+
+A provider that has protocol-specific retry timing may return a canonical error
+implementing `RetryDelayHintCarrier`. The attached `RetryDelayHint` has two stable
+sources: `SERVER` and `PROVIDER`. It contains a normalized non-negative delay in
+milliseconds, never a raw header or absolute date.
+
+Hint handling is opt-in through:
+
+```kotlin
+val hintConfiguration = RetryHintConfiguration(
+    maximumHintDelay = SchedulingDelay(60_000L),
+)
+```
+
+For every eligible error, the central runtime:
+
+1. extracts the typed hint only when hint handling is configured;
+2. clamps it to `maximumHintDelay`;
+3. exposes only the bounded value to `RetryPolicy`;
+4. preserves a policy `Stop` decision;
+5. enforces `max(policyDelay, boundedHint)` for a retry decision; and
+6. evaluates elapsed/cumulative budgets against that final delay.
+
+A policy may choose a longer delay or stop. It cannot make an enabled hinted
+retry earlier than the bounded hint. A hint of zero has no effect. A hint larger
+than the configured maximum is clamped rather than trusted or rejected.
+
+This behavior is deliberately central so custom policies cannot accidentally
+schedule earlier than a bounded server minimum. Omitting `RetryHintConfiguration`
+preserves pre-hint behavior and supplies `retryDelayHint = null` to runtime-created
+policy requests.
+
 ## Evaluation order
 
 `StandardRetryPolicy` evaluates in this order:
@@ -354,7 +393,7 @@ No sibling policy evaluation, scheduler call, or queue reschedule occurs.
 
 `RetryBudgetConfiguration` independently limits the wall-clock retry window and
 the sum of delays accepted for retry. Exact boundaries are allowed. A proposed
-retry is stopped—not shortened—when its final jittered delay would exceed either
+retry is stopped—not shortened—when its final policy/hint-adjusted delay would exceed either
 limit.
 
 `RetryBudgetState` records the first genuine retry evaluation, the most recent
@@ -381,10 +420,11 @@ For a genuine pipeline failure:
 3. eligible errors are evaluated in original order;
 4. the configured policy enforces its attempt budget and calculates delay;
 5. deterministic jitter is applied when configured;
-6. the maximum requested delay is selected across errors;
-7. elapsed and cumulative budgets evaluate the final delay;
-8. availability time is calculated with overflow-safe timestamp addition; and
-9. successful queue rescheduling persists attempt, error, and budget state.
+6. a normalized provider/server hint is clamped and enforced as a minimum;
+7. the maximum final delay is selected across errors;
+8. elapsed and cumulative budgets evaluate that final delay;
+9. availability time is calculated with overflow-safe timestamp addition; and
+10. successful queue rescheduling persists attempt, error, and budget state.
 
 Connectivity deferral bypasses this flow and preserves retry and budget history.
 
@@ -395,9 +435,10 @@ Connectivity deferral bypasses this flow and preserves retry and budget history.
 exists, at least one policy decision requests retry, and a scheduler is
 configured.
 
-The orchestrator treats the policy's final delay—including jitter—as an opaque
-minimum delay. It applies no second jitter layer. When budgets are configured,
-it returns next budget state only after scheduler acceptance.
+The orchestrator applies no second jitter layer. When hint handling is
+configured, it clamps the typed hint and enforces it as a minimum before final
+delay aggregation. When budgets are configured, it returns next budget state
+only after scheduler acceptance.
 
 ## Cancellation and exceptions
 
@@ -406,13 +447,14 @@ it returns next budget state only after scheduler acceptance.
   decision or result.
 - Unexpected exceptions from an eligible custom policy propagate.
 - A random-source contract violation fails evaluation rather than being hidden.
-- A protected batch does not invoke custom policy or random source.
+- A protected batch does not invoke custom policy, random source, or hint handling.
+- Raw `Retry-After` or exception-message parsing is never performed by the core.
 
 ## Security and privacy
 
-Retry decisions and random requests must not contain payloads, credentials,
-tokens, keys, authorization headers, checkpoint values, personal data, complete
-exception messages, or unbounded-cardinality labels.
+Retry decisions, random requests, and hint contracts must not contain payloads,
+credentials, tokens, keys, authorization headers, checkpoint values, personal
+data, raw headers, complete exception messages, or unbounded-cardinality labels.
 
 The built-in seeded source hashes stable identifiers only and does not log them.
 The seed must not contain cryptographic key material.

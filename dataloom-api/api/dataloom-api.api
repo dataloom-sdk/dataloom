@@ -748,8 +748,8 @@ public final class io/dataloom/api/retry/RetryDecision$Stop : io/dataloom/api/re
 }
 
 public final class io/dataloom/api/retry/RetryEvaluationRequest {
-	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/api/context/DataLoomMetadata;Lio/dataloom/api/error/RetryDelayHint;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/api/context/DataLoomMetadata;Lio/dataloom/api/error/RetryDelayHint;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lio/dataloom/api/model/SynchronizationRequest;
 	public final fun component2-TGFxZV8 ()Ljava/lang/String;
 	public final fun component3 ()Lio/dataloom/api/error/DataLoomError;
@@ -757,8 +757,9 @@ public final class io/dataloom/api/retry/RetryEvaluationRequest {
 	public final fun component5 ()Lio/dataloom/api/scheduling/SchedulingDelay;
 	public final fun component6 ()Lio/dataloom/api/provider/ProviderDescriptor;
 	public final fun component7 ()Lio/dataloom/api/context/DataLoomMetadata;
-	public final fun copy-BPbl8hU (Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/retry/RetryEvaluationRequest;
-	public static synthetic fun copy-BPbl8hU$default (Lio/dataloom/api/retry/RetryEvaluationRequest;Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/retry/RetryEvaluationRequest;
+	public final fun component8 ()Lio/dataloom/api/error/RetryDelayHint;
+	public final fun copy-MzVPQkM (Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/api/context/DataLoomMetadata;Lio/dataloom/api/error/RetryDelayHint;)Lio/dataloom/api/retry/RetryEvaluationRequest;
+	public static synthetic fun copy-MzVPQkM$default (Lio/dataloom/api/retry/RetryEvaluationRequest;Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/api/context/DataLoomMetadata;Lio/dataloom/api/error/RetryDelayHint;ILjava/lang/Object;)Lio/dataloom/api/retry/RetryEvaluationRequest;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAttempt ()Lio/dataloom/api/retry/RetryAttempt;
 	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
@@ -766,6 +767,7 @@ public final class io/dataloom/api/retry/RetryEvaluationRequest {
 	public final fun getOperation-TGFxZV8 ()Ljava/lang/String;
 	public final fun getPreviousDelay ()Lio/dataloom/api/scheduling/SchedulingDelay;
 	public final fun getProvider ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public final fun getRetryDelayHint ()Lio/dataloom/api/error/RetryDelayHint;
 	public final fun getSynchronizationRequest ()Lio/dataloom/api/model/SynchronizationRequest;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;

@@ -1,5 +1,8 @@
 package io.dataloom.consumer
 
+import io.dataloom.api.error.RetryDelayHint
+import io.dataloom.api.error.RetryDelayHintCarrier
+import io.dataloom.api.error.RetryDelayHintSource
 import io.dataloom.api.execution.StrategyProviderSet
 import io.dataloom.api.execution.SynchronizationProviderSet
 import io.dataloom.api.identifier.RetryPolicyId
@@ -14,22 +17,31 @@ import io.dataloom.api.queue.QueueProvider
 import io.dataloom.api.retry.RetryBudgetState
 import io.dataloom.api.retry.RetryDecision
 import io.dataloom.api.retry.RetryEvaluationRequest
+import io.dataloom.api.retry.RetryPolicy
 import io.dataloom.api.runtime.RuntimeDependencies
+import io.dataloom.api.scheduling.ExistingSchedulePolicy
+import io.dataloom.api.scheduling.ScheduleConstraints
+import io.dataloom.api.scheduling.SchedulerProvider
 import io.dataloom.api.scheduling.SchedulingDelay
 import io.dataloom.api.strategy.ClassifiedStrategyRemoteError
 import io.dataloom.api.strategy.StrategyFallbackPlan
 import io.dataloom.api.strategy.StrategyLocalFallbackProvider
 import io.dataloom.api.strategy.StrategyRemoteOutcome
 import io.dataloom.api.strategy.StrategySynchronizationRequest
+import io.dataloom.api.time.DataLoomClock
 import io.dataloom.runtime.execution.SynchronizationExecutionResult
 import io.dataloom.runtime.facade.DataLoom
 import io.dataloom.runtime.retry.RetryBackoffStrategy
 import io.dataloom.runtime.retry.RetryBudgetConfiguration
+import io.dataloom.runtime.retry.RetryHintConfiguration
 import io.dataloom.runtime.retry.RetryJitterStrategy
 import io.dataloom.runtime.retry.RetryRandomRequest
 import io.dataloom.runtime.retry.RetryRandomSource
+import io.dataloom.runtime.retry.RetrySchedulingConfiguration
 import io.dataloom.runtime.retry.SeededRetryRandomSource
 import io.dataloom.runtime.retry.StandardRetryPolicy
+import io.dataloom.runtime.retry.SynchronizationRetryEvaluator
+import io.dataloom.runtime.retry.SynchronizationRetryOrchestrator
 import io.dataloom.runtime.strategy.StrategySynchronizationExecutionResult
 
 /**
@@ -175,4 +187,54 @@ internal fun compileRetryBudgetConsumer(
         strategy = RetryBackoffStrategy.Fixed(SchedulingDelay(1_000L)),
         maximumAttempts = 3,
     ).evaluate(request)
+}
+
+/** Compile-only use of normalized hints and evaluator/orchestrator constructors. */
+internal fun compileRetryHintConsumer(
+    retryPolicy: RetryPolicy,
+    clock: DataLoomClock,
+    schedulerProvider: SchedulerProvider?,
+    carrier: RetryDelayHintCarrier,
+    request: RetryEvaluationRequest,
+): Pair<SynchronizationRetryEvaluator, SynchronizationRetryOrchestrator> {
+    val serverHint = RetryDelayHint(
+        delayMilliseconds = 5_000L,
+        source = RetryDelayHintSource.SERVER,
+    )
+    val providerHint = RetryDelayHint(
+        delayMilliseconds = 7_500L,
+        source = RetryDelayHintSource.PROVIDER,
+    )
+    val hintConfiguration = RetryHintConfiguration(
+        maximumHintDelay = SchedulingDelay(60_000L),
+    )
+    val budgetConfiguration = RetryBudgetConfiguration(
+        maximumElapsedTime = SchedulingDelay(120_000L),
+        maximumCumulativeDelay = SchedulingDelay(90_000L),
+    )
+
+    serverHint.source
+    providerHint.delayMilliseconds
+    carrier.retryDelayHint
+    request.retryDelayHint
+    hintConfiguration.maximumHintDelay
+
+    val evaluator = SynchronizationRetryEvaluator(
+        retryPolicy = retryPolicy,
+        clock = clock,
+        budgetConfiguration = budgetConfiguration,
+        hintConfiguration = hintConfiguration,
+    )
+    val orchestrator = SynchronizationRetryOrchestrator(
+        retryPolicy = retryPolicy,
+        schedulerProvider = schedulerProvider,
+        configuration = RetrySchedulingConfiguration(
+            constraints = ScheduleConstraints(),
+            existingSchedulePolicy = ExistingSchedulePolicy.REPLACE,
+        ),
+        clock = clock,
+        budgetConfiguration = budgetConfiguration,
+        hintConfiguration = hintConfiguration,
+    )
+    return evaluator to orchestrator
 }

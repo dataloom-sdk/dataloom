@@ -76,6 +76,31 @@ public final class io/dataloom/api/error/Recoverability : java/lang/Enum {
 	public static fun values ()[Lio/dataloom/api/error/Recoverability;
 }
 
+public final class io/dataloom/api/error/RetryDelayHint {
+	public fun <init> (JLio/dataloom/api/error/RetryDelayHintSource;)V
+	public final fun component1 ()J
+	public final fun component2 ()Lio/dataloom/api/error/RetryDelayHintSource;
+	public final fun copy (JLio/dataloom/api/error/RetryDelayHintSource;)Lio/dataloom/api/error/RetryDelayHint;
+	public static synthetic fun copy$default (Lio/dataloom/api/error/RetryDelayHint;JLio/dataloom/api/error/RetryDelayHintSource;ILjava/lang/Object;)Lio/dataloom/api/error/RetryDelayHint;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDelayMilliseconds ()J
+	public final fun getSource ()Lio/dataloom/api/error/RetryDelayHintSource;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/error/RetryDelayHintCarrier {
+	public abstract fun getRetryDelayHint ()Lio/dataloom/api/error/RetryDelayHint;
+}
+
+public final class io/dataloom/api/error/RetryDelayHintSource : java/lang/Enum {
+	public static final field PROVIDER Lio/dataloom/api/error/RetryDelayHintSource;
+	public static final field SERVER Lio/dataloom/api/error/RetryDelayHintSource;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/error/RetryDelayHintSource;
+	public static fun values ()[Lio/dataloom/api/error/RetryDelayHintSource;
+}
+
 public final class io/dataloom/api/identifier/ChangeEventId {
 	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/ChangeEventId;
 	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
