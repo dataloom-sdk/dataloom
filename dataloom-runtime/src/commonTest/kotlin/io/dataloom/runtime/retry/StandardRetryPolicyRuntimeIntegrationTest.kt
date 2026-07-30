@@ -44,6 +44,17 @@ class StandardRetryPolicyRuntimeIntegrationTest {
         override fun now(): DataLoomInstant = instant
     }
 
+    private class FixedRandomSource(
+        private val value: Long,
+    ) : RetryRandomSource {
+        var capturedRequest: RetryRandomRequest? = null
+
+        override fun sample(request: RetryRandomRequest): Long {
+            capturedRequest = request
+            return value
+        }
+    }
+
     private val request = SynchronizationRequest(
         workflowId = WorkflowId("standard-retry-runtime-workflow"),
         sessionId = SynchronizationSessionId("standard-retry-runtime-session"),
@@ -84,6 +95,33 @@ class StandardRetryPolicyRuntimeIntegrationTest {
         assertEquals(SchedulingDelay(250L), evaluation.selectedDelay)
         assertEquals(DataLoomInstant(1_250L), evaluation.availableAt)
         assertEquals(RetryAttempt(1), evaluation.retryAttempt)
+    }
+
+    @Test
+    fun `jittered delay is converted into exact queue availability`() {
+        val randomSource = FixedRandomSource(value = 75L)
+        val evaluator = SynchronizationRetryEvaluator(
+            retryPolicy = StandardRetryPolicy(
+                id = RetryPolicyId("standard-runtime-jitter"),
+                strategy = RetryBackoffStrategy.Fixed(SchedulingDelay(250L)),
+                maximumAttempts = 1,
+                jitterStrategy = RetryJitterStrategy.Full,
+                randomSource = randomSource,
+            ),
+            clock = FixedClock(DataLoomInstant(1_000L)),
+        )
+
+        val evaluation = assertIs<SynchronizationRetryEvaluation.ShouldRetry>(
+            evaluator.evaluate(
+                result = failure,
+                retryAttempt = RetryAttempt(1),
+                retryOperation = RetryOperation("transport.push"),
+            ),
+        )
+
+        assertEquals(SchedulingDelay(75L), evaluation.selectedDelay)
+        assertEquals(DataLoomInstant(1_075L), evaluation.availableAt)
+        assertEquals(250L, randomSource.capturedRequest?.maximumInclusive)
     }
 
     @Test
