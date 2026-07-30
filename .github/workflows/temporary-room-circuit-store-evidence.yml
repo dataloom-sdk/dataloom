@@ -1,0 +1,123 @@
+name: Temporary Room Circuit Store Evidence
+
+on:
+  push:
+    branches:
+      - codex/dl-retry-018-room-circuit-store
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-room-circuit-store-evidence-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-and-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      DATALOOM_ANDROID_BUILD: "true"
+
+    steps:
+      - name: Checkout review branch
+        uses: actions/checkout@v6
+        with:
+          ref: codex/dl-retry-018-room-circuit-store
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Generate Room schema version 3
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            :dataloom-queue-room:kspDebugKotlin \
+            --configuration-cache \
+            --stacktrace \
+            --console=plain \
+            --max-workers=1
+
+      - name: Validate Room circuit store without an emulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            :dataloom-queue-room:assembleDebug \
+            :dataloom-queue-room:assembleRelease \
+            :dataloom-queue-room:assembleDebugAndroidTest \
+            :dataloom-queue-room:testDebugUnitTest \
+            :dataloom-queue-room:lintDebug \
+            --configuration-cache \
+            --stacktrace \
+            --warning-mode all \
+            --console=plain
+
+      - name: Verify generated schema contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path(
+              "dataloom-queue-room/schemas/"
+              "io.dataloom.queue.room.internal.DataLoomRoomDatabase/3.json"
+          )
+          if not path.is_file():
+              raise SystemExit(f"Missing generated Room schema: {path}")
+          document = json.loads(path.read_text())
+          database = document["database"]
+          if database["version"] != 3:
+              raise SystemExit(f"Expected Room schema version 3, found {database['version']}")
+          tables = {entity["tableName"]: entity for entity in database["entities"]}
+          expected_tables = {"queue_entries", "circuit_breaker_states"}
+          if set(tables) != expected_tables:
+              raise SystemExit(f"Unexpected Room tables: {sorted(tables)}")
+          circuit_fields = {field["columnName"] for field in tables["circuit_breaker_states"]["fields"]}
+          required_fields = {
+              "scope_key",
+              "scope_kind",
+              "phase",
+              "probe_generation",
+              "probe_in_flight",
+              "probe_lease_until_ms",
+              "updated_at_ms",
+              "record_version",
+          }
+          missing = required_fields - circuit_fields
+          if missing:
+              raise SystemExit(f"Missing circuit schema fields: {sorted(missing)}")
+          print(f"Verified Room schema 3 identity hash: {database['identityHash']}")
+          PY
+
+      - name: Commit generated evidence and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/temporary-room-circuit-store-evidence.yml
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A dataloom-queue-room/schemas \
+            .github/workflows/temporary-room-circuit-store-evidence.yml
+          if git diff --cached --quiet; then
+            echo "No generated Room evidence to commit."
+            exit 1
+          fi
+          git commit -m "DL-040: qualify Android Room circuit persistence"
+          git push origin HEAD:codex/dl-retry-018-room-circuit-store
