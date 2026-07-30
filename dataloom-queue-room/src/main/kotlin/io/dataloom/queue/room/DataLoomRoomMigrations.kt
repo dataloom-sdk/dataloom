@@ -28,5 +28,6 @@ public object DataLoomRoomMigrations {
     }
 
     /** Complete ordered migration set used by [DataLoomDatabaseBuilder]. */
-    public val ALL: Array<Migration> = arrayOf(MIGRATION_1_2)
+    public val ALL: Array<Migration>
+        get() = arrayOf(MIGRATION_1_2)
 }
