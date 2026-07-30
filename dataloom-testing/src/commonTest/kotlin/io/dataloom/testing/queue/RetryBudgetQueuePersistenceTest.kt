@@ -33,7 +33,9 @@ class RetryBudgetQueuePersistenceTest {
                     leaseId = io.dataloom.api.identifier.QueueLeaseId("lease-001"),
                     retryAttempt = RetryAttempt(1),
                     availableAt = DataLoomInstant(25_000L),
-                    error = io.dataloom.testing.FakeDataLoomError("Retry later."),
+                    error = io.dataloom.testing.FakeDataLoomError(
+                        message = "Retry later.",
+                    ),
                     retryBudgetState = budget,
                 ),
             )
@@ -65,7 +67,9 @@ class RetryBudgetQueuePersistenceTest {
 
         val recovered = runSuspend {
             provider.recoverExpiredLeases(
-                io.dataloom.api.queue.ExpiredLeaseRecoveryRequest(DataLoomInstant(31_001L)),
+                io.dataloom.api.queue.ExpiredLeaseRecoveryRequest(
+                    currentTime = DataLoomInstant(31_001L),
+                ),
             )
         }
         assertEquals(
