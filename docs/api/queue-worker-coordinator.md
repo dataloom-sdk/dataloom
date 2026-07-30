@@ -2,338 +2,251 @@
 
 [API reference index](./README.md)
 
-> **Status:** Available recovery, bounded-processing, and wake-up foundation.
-> Complete retry/circuit policy and platform qualification remain V1 gates.
+> **Status:** Available recovery, bounded-processing, wake-up, and optional
+> scheduler-provider timeout foundation. Complete retry/circuit integration and
+> platform qualification remain V1 gates.
 
 ## Overview
 
-`QueueWorkerCoordinator` is the platform-independent coordinator that
-orchestrates one complete queue-worker execution cycle.
+`QueueWorkerCoordinator` is the platform-independent coordinator for one bounded
+queue-worker execution cycle.
 
 One `run()` call performs at most:
 
-- one optional expired-lease recovery call
-- one bounded queue-processing call
-- one scheduler wake-up call
+- one optional expired-lease recovery call;
+- one bounded queue-processing call; and
+- one scheduler wake-up call.
 
-The coordinator does not loop, poll, or re-acquire the queue within a single
-run.
-
----
+The coordinator does not loop, poll, or re-acquire the queue within one run.
 
 ## Package
 
 `io.dataloom.runtime.worker`
 
----
-
 ## Public contracts
 
-- `QueueWorkerConfiguration` — immutable scheduling and recovery configuration
-- `QueueWorkerRunRequest` — immutable run request carrying processing and
-  optional recovery requests
-- `QueueWorkerWakeUpReason` — enum describing why a wake-up is required
-- `QueueWorkerWakeUpPlan` — sealed plan describing the scheduler wake-up
-  decision
-- `QueueWorkerSchedulingResult` — sealed result of the scheduling step
-- `QueueWorkerRunResult` — sealed result of one coordinator run
-- `QueueWorkerCoordinator` — coordinator class
+- `QueueWorkerConfiguration` — immutable scheduling, recovery, and optional
+  scheduler-timeout configuration;
+- `QueueWorkerRunRequest` — immutable processing and recovery request;
+- `QueueWorkerWakeUpReason` — stable reason for a requested wake-up;
+- `QueueWorkerWakeUpPlan` — scheduler wake-up decision;
+- `QueueWorkerSchedulingResult` — scheduling outcome;
+- `QueueWorkerRunResult` — terminal result of one coordinator run; and
+- `QueueWorkerCoordinator` — bounded coordinator.
 
----
+## `QueueWorkerConfiguration`
 
-## QueueWorkerConfiguration
-
-Immutable configuration provided to the coordinator at construction. No
-scheduling, clock read, or queue operation is performed during construction.
+Construction performs no queue operation, scheduler call, timeout execution,
+clock read, identifier generation, or coroutine launch.
 
 | Property | Type | Description |
 |---|---|---|
-| `scheduleId` | `ScheduleId` | Stable identifier forwarded to every `ScheduleRequest`. |
-| `constraints` | `ScheduleConstraints` | Execution constraints forwarded to every `ScheduleRequest`. |
-| `existingSchedulePolicy` | `ExistingSchedulePolicy` | Policy when a same-ID schedule already exists. |
-| `continuationDelay` | `SchedulingDelay` | Delay used when the acquisition limit was reached. |
-| `recoverExpiredLeasesBeforeProcessing` | `Boolean` | When `true`, recovery is called exactly once before processing. |
+| `scheduleId` | `ScheduleId` | Stable ID forwarded to every `ScheduleRequest`. |
+| `constraints` | `ScheduleConstraints` | Forwarded unchanged to the scheduler. |
+| `existingSchedulePolicy` | `ExistingSchedulePolicy` | Same-ID schedule policy. |
+| `continuationDelay` | `SchedulingDelay` | Delay when the acquisition batch was full. |
+| `recoverExpiredLeasesBeforeProcessing` | `Boolean` | Enables one recovery call before processing. |
+| `schedulerProviderTimeout` | `SchedulingDelay?` | Optional upper bound for the follow-up scheduler-provider call. |
 
-`continuationDelay` is used **exclusively** when the bounded acquisition
-returned the maximum requested number of entries and more immediately available
-work may remain. It must not be used as a retry-policy delay, offline-deferral
-delay, or entry availability timestamp.
+The original five-argument construction remains source-compatible because
+`schedulerProviderTimeout` defaults to `null`.
 
----
+### Continuation delay
 
-## QueueWorkerRunRequest
+`continuationDelay` is used only when the bounded acquisition returns exactly
+`maxEntries`. It is not a retry-policy delay, offline-deferral delay, or entry
+availability timestamp.
 
-Immutable request supplied to `QueueWorkerCoordinator.run()`.
+### Scheduler-provider timeout
+
+When `schedulerProviderTimeout` is non-null, the coordinator structurally wraps
+the supplied `SchedulerProvider` with DataLoom's production cooperative
+coroutine timeout boundary.
+
+- `null` preserves the historical direct scheduler invocation.
+- `0` prevents delegate invocation and produces the canonical recoverable error
+  `SCHEDULER_PROVIDER_TIMEOUT`.
+- A positive duration cancels a cooperative in-flight scheduler call at expiry.
+- Caller cancellation still propagates.
+- The configured duration is not reused as a connection, request, idle, policy,
+  queue-processing, or complete-workflow timeout.
+- Construction only creates immutable wrappers; it does not read the clock or
+  invoke the scheduler.
+
+Coroutine cancellation is cooperative. A scheduler implementation that blocks
+without suspension or another cancellation checkpoint needs an explicit
+platform-specific hard-interruption adapter.
+
+## `QueueWorkerRunRequest`
 
 | Property | Type | Description |
 |---|---|---|
-| `processingRequest` | `QueueProcessingRequest` | Forwarded unchanged to `DurableQueueExecutionProcessor.process()`. |
-| `recoveryRequest` | `ExpiredLeaseRecoveryRequest?` | Required when recovery is enabled. Must be null when recovery is disabled. |
+| `processingRequest` | `QueueProcessingRequest` | Forwarded unchanged to the queue processor. |
+| `recoveryRequest` | `ExpiredLeaseRecoveryRequest?` | Required when recovery is enabled. |
 
-When `QueueWorkerConfiguration.recoverExpiredLeasesBeforeProcessing` is `true`,
-`recoveryRequest` must be non-null. The coordinator throws
-`IllegalArgumentException` when recovery is enabled but the request is absent.
-
----
+When recovery is enabled and `recoveryRequest` is absent, `run()` throws
+`IllegalArgumentException` before any provider operation.
 
 ## Deterministic flow
 
 ```text
-QueueWorkerCoordinator.run(QueueWorkerRunRequest)
+QueueWorkerCoordinator.run(request)
   │
-  ├─ [if recoverExpiredLeasesBeforeProcessing]
-  │     QueueProvider.recoverExpiredLeases() — exactly once
-  │     │
-  │     ├─ Failure → QueueWorkerRunResult.RecoveryFailed
-  │     │             (no acquisition, no scheduling)
-  │     │
-  │     └─ Success → preserve QueueRecoveryResult, continue
+  ├─ [optional] QueueProvider.recoverExpiredLeases() exactly once
+  │     ├─ Failure → RecoveryFailed; no acquisition or scheduling
+  │     └─ Success → preserve exact recovery result
   │
-  ├─ DurableQueueExecutionProcessor.process() — exactly once
+  ├─ DurableQueueExecutionProcessor.process() exactly once
+  │     ├─ Provider/contract failure → ProcessingFailed; no scheduling
+  │     └─ NoWork/Processed → build wake-up plan
   │
-  ├─ Inspect QueueProcessingResult
-  │     │
-  │     ├─ QueueProviderFailure / QueueContractViolation
-  │     │     → QueueWorkerRunResult.ProcessingFailed (no scheduling)
-  │     │
-  │     ├─ NoWork → build wake-up plan (typically NoWakeUp)
-  │     │
-  │     └─ Processed → build wake-up plan from continuation evidence
+  ├─ NoWakeUp → NotRequired
   │
-  ├─ Build QueueWorkerWakeUpPlan
+  ├─ Schedule with no scheduler → SchedulerNotConfigured
   │
-  ├─ [if NoWakeUp] → QueueWorkerSchedulingResult.NotRequired
-  │
-  ├─ [if Schedule and schedulerProvider is null]
-  │     → QueueWorkerSchedulingResult.SchedulerNotConfigured
-  │
-  └─ SchedulerProvider.schedule() — exactly once
-        │
-        ├─ Success → QueueWorkerSchedulingResult.Scheduled
-        └─ Failure → QueueWorkerSchedulingResult.SchedulerFailed
-                      (queue state NOT rolled back)
+  └─ Schedule with scheduler
+        ├─ [optional] provider timeout gate
+        ├─ Success → Scheduled
+        └─ Failure/timeout → SchedulerFailed
+                              durable queue state is not rolled back
 ```
-
----
 
 ## Optional expired-lease recovery
 
-When `QueueWorkerConfiguration.recoverExpiredLeasesBeforeProcessing` is `true`:
+When `recoverExpiredLeasesBeforeProcessing` is true:
 
-- `QueueProvider.recoverExpiredLeases()` is called exactly once.
-- Recovery is called **before** queue acquisition.
-- A recovery failure (`ProviderOperationResult.Failure`) returns
-  `QueueWorkerRunResult.RecoveryFailed` immediately. No acquisition or
-  scheduling follows.
-- Recovery success proceeds to queue processing even when zero entries were
-  recovered.
-- The exact `ExpiredLeaseRecoveryResult` is preserved in
-  `QueueWorkerRunResult.ProcessingCompleted.recoveryResult`.
+- recovery is called exactly once and before acquisition;
+- failure stops the cycle without acquisition or scheduling;
+- zero recovered entries still permits processing; and
+- the exact successful recovery result is preserved.
 
-When `recoverExpiredLeasesBeforeProcessing` is `false`:
+When disabled, recovery is never called.
 
-- `QueueProvider.recoverExpiredLeases()` is never called.
-- `QueueWorkerRunRequest.recoveryRequest` is not required and may be null.
-
----
-
-## One bounded queue-processing cycle
+## One bounded processing cycle
 
 The coordinator calls `DurableQueueExecutionProcessor.process()` exactly once.
-It does not re-acquire, loop, or poll. All acquisition, validation, execution,
-and transition logic is owned by the processor.
-
----
+Acquisition, entry validation, handler execution, and durable transitions remain
+owned by the processor and `QueueProvider`.
 
 ## Continuation evidence
 
-`QueueProcessingResult.Processed` carries three continuation evidence fields:
+`QueueProcessingResult.Processed` exposes:
 
-| Field | Type | Meaning |
-|---|---|---|
-| `acquisitionLimitReached` | `Boolean` | Acquired count equalled `QueueAcquireRequest.maxEntries`. |
-| `earliestRescheduledAt` | `DataLoomInstant?` | Earliest availability instant from **successfully** persisted reschedule transitions. |
-| `earliestDeferredAt` | `DataLoomInstant?` | Earliest availability instant from **successfully** persisted non-retry deferrals. |
+| Field | Meaning |
+|---|---|
+| `acquisitionLimitReached` | Acquired count equalled `maxEntries`. |
+| `earliestRescheduledAt` | Earliest successfully persisted retry availability. |
+| `earliestDeferredAt` | Earliest successfully persisted non-retry deferral availability. |
 
-Failed reschedule or deferral transitions do **not** contribute a timestamp.
-`acquisitionLimitReached` does not claim the queue is definitely non-empty.
-
----
+Failed transitions do not contribute wake-up timestamps. A full acquisition
+batch does not prove more work exists; it only justifies one bounded follow-up
+request.
 
 ## Wake-up planning
 
-The coordinator builds a `QueueWorkerWakeUpPlan` from continuation evidence:
+| Condition | Reason | Delay |
+|---|---|---|
+| No continuation evidence | No wake-up | — |
+| Acquisition limit only | `ACQUISITION_LIMIT_REACHED` | `continuationDelay` |
+| Retry availability only | `RESCHEDULED_ENTRY_AVAILABLE` | `max(0, retryAt - now)` |
+| Deferral availability only | `DEFERRED_ENTRY_AVAILABLE` | `max(0, deferredAt - now)` |
+| Retry and deferral | `RETRY_AND_DEFERRAL_AVAILABLE` | Earlier availability |
+| Limit plus availability | `BOTH` | Earlier candidate delay |
 
-| Condition | Plan | Reason | Delay |
-|---|---|---|---|
-| Neither | `NoWakeUp` | — | — |
-| Limit reached only | `Schedule` | `ACQUISITION_LIMIT_REACHED` | `continuationDelay` |
-| Rescheduled only | `Schedule` | `RESCHEDULED_ENTRY_AVAILABLE` | `max(0, earliestRescheduledAt − now)` |
-| Deferred only | `Schedule` | `DEFERRED_ENTRY_AVAILABLE` | `max(0, earliestDeferredAt − now)` |
-| Retry and deferral | `Schedule` | `RETRY_AND_DEFERRAL_AVAILABLE` | Earlier entry availability |
-| Limit plus retry and/or deferral | `Schedule` | `BOTH` | Earlier of continuation and entry availability |
+The clock is read at most once for availability-delay calculation. A configured
+scheduler timeout does not cause a clock read when no wake-up is required. When
+a scheduler call occurs, its provider-timeout coordinator reads the injected
+clock once to create bounded timeout evidence.
 
-When both conditions exist, the **earlier** of the two candidate delays is
-chosen. The maximum delay is never selected. A negative delay is never used;
-already-due timestamps produce `SchedulingDelay.ZERO`.
+## Scheduler call semantics
 
-The injected `DataLoomClock` is read **at most once**, only when
-retry or deferral availability evidence is present.
+`SchedulerProvider.schedule()` is called at most once per run.
 
----
+The request preserves:
 
-## Earliest-delay selection (BOTH case)
+- `scheduleId`;
+- selected delay;
+- constraints; and
+- `ExistingSchedulePolicy`.
 
-When `acquisitionLimitReached` and retry or deferral availability are present:
+No identifier is generated and no second scheduling attempt occurs.
 
-```
-continuationDelayMs = configuration.continuationDelay.milliseconds
-entryAvailableAt    = min(earliestRescheduledAt, earliestDeferredAt)
-entryDelayMs        = max(0, entryAvailableAt − clock.now())
-selectedDelay       = min(continuationDelayMs, entryDelayMs)
-```
+## Scheduler not configured
 
-The worker wakes at the earliest time when useful work may be available.
+When a wake-up is required but no scheduler is supplied,
+`SchedulerNotConfigured` preserves the exact `QueueWorkerWakeUpPlan.Schedule`.
+No timeout wrapper is created and no clock is read for provider-timeout
+execution.
 
----
+## Scheduler failure or timeout after durable queue success
 
-## One scheduler call per run
+When scheduling returns a canonical failure or exceeds the configured provider
+timeout:
 
-`SchedulerProvider.schedule()` is called **at most once** per `run()`.
+- `QueueWorkerRunResult` remains `ProcessingCompleted`;
+- scheduling is `SchedulerFailed`;
+- the exact canonical error is preserved;
+- a timeout uses `SCHEDULER_PROVIDER_TIMEOUT`;
+- successful queue completion, reschedule, deferral, failure, or cancellation is
+  not rolled back; and
+- the coordinator does not retry scheduling within the same run.
 
----
+This separation is intentional: the durable transition happened before the
+scheduler side effect.
 
-## Scheduler-not-configured behavior
+## Cancellation
 
-When `schedulerProvider` is null and a wake-up is required:
+Caller cancellation from recovery, processing, scheduler invocation, timeout
+execution, or clock access propagates normally. It is never converted into a
+structured worker result.
 
-- `SchedulerProvider.schedule()` is not called.
-- `QueueWorkerSchedulingResult.SchedulerNotConfigured` is returned with the
-  exact `QueueWorkerWakeUpPlan.Schedule` preserved.
-- Another host trigger may be required to wake the queue worker.
+If cancellation occurs during scheduling after durable queue processing:
 
----
+- persisted queue state remains committed;
+- the scheduler's cooperative operation is cancelled;
+- no automatic second schedule call occurs; and
+- another host trigger may be needed.
 
-## Scheduler failure after durable queue success
+## Existing schedule policy
 
-When `SchedulerProvider.schedule()` returns `ProviderOperationResult.Failure`
-after successful queue processing:
+`KEEP` and `REPLACE` semantics remain owned by the scheduler provider. The
+coordinator forwards the configured policy unchanged.
 
-- The exact `DataLoomError` is preserved in
-  `QueueWorkerSchedulingResult.SchedulerFailed`.
-- The result is still `QueueWorkerRunResult.ProcessingCompleted`, not
-  `ProcessingFailed`.
-- Durable queue transitions that already succeeded are **not** rolled back.
-- Scheduling is not retried within the same run.
-- Another host trigger may be required to wake the queue worker.
+## Concurrency boundary
 
----
+The coordinator does not implement global or distributed locks, lease renewal,
+parallel processing, or singleton enforcement. Atomic acquisition remains a
+`QueueProvider` responsibility. Platform schedule deduplication remains a
+`SchedulerProvider` responsibility.
 
-## No queue-state rollback
+## KMP and performance boundaries
 
-Durable queue transitions (completion, retry reschedule, non-retry deferral,
-failure, cancellation) persist inside `DurableQueueExecutionProcessor`. They
-are not reversed if a subsequent scheduler call fails, if the coordinator is
-cancelled, or for any other reason.
+The public configuration and coordinator remain Kotlin Multiplatform contracts.
+No Android, JVM-only, or platform scheduler type is exposed.
 
----
+A run performs at most one recovery call, one processing call, and one scheduler
+call. The coordinator owns no scope or dispatcher and performs no polling, busy
+waiting, blocking sleep, queue-wide scan, serialization, or payload copying.
 
-## ExistingSchedulePolicy responsibility
+## Security boundary
 
-`ExistingSchedulePolicy` semantics (KEEP, REPLACE) are applied by the
-`SchedulerProvider` implementation. The coordinator forwards the policy from
-`QueueWorkerConfiguration` verbatim.
+Timeout diagnostics are bounded and contain no queue payload, metadata value,
+credential, header, checkpoint token, encryption key, personal data, exception
+message, or scheduler internals.
 
----
+Safe evidence includes identifiers, wake-up reason, bounded delay, processing
+counts, stable error code, and result variant.
 
-## Queue-provider atomicity boundary
+## Remaining V1 work
 
-Atomic queue acquisition is performed inside `DurableQueueExecutionProcessor`
-via `QueueProvider.acquire()`. The coordinator does not repeat or duplicate
-this operation.
+This slice does not complete the retry/circuit subsystem. Remaining work
+includes:
 
----
-
-## Queued synchronization event behavior
-
-`QueueWorkerCoordinator` does not emit new synchronization event variants.
-Events emitted by the existing `QueuedSynchronizationExecutionHandler` flow
-(DL-029/DL-030) continue normally through the processor. No additional
-events are emitted at the coordinator level.
-
----
-
-## Cancellation after durable processing
-
-`CancellationException` from any provider or the clock propagates normally. It
-is never converted into a structured result variant. If cancellation occurs
-after durable transitions but before scheduler delivery:
-
-- Durable queue state is not rolled back.
-- Another attempt to schedule the wake-up is not made automatically.
-
----
-
-## No reacquisition loop / no polling
-
-The coordinator performs at most one acquisition cycle per `run()`. It does
-not contain a processing loop, does not poll the queue, and does not hold a
-coroutine scope between runs.
-
----
-
-## Concurrency limitations
-
-The coordinator does not implement:
-
-- global worker locks
-- distributed locks
-- singleton enforcement
-- lease heartbeats or renewal
-- parallel queue processing
-
-`QueueProvider` owns atomic queue acquisition.
-`SchedulerProvider` and `ExistingSchedulePolicy` own platform-level schedule
-deduplication.
-
-Callers are responsible for host-level worker concurrency unless providers
-guarantee it.
-
----
-
-## KMP compatibility
-
-All contracts use Kotlin standard-library and DataLoom API types only.
-No Android, JVM-only, or platform-specific types are exposed.
-
----
-
-## Performance restrictions
-
-One coordinator run performs at most:
-
-- one recovery call
-- one queue-processing call
-- one scheduler call
-
-The coordinator avoids unbounded loops, immediate reacquisition, polling,
-busy waiting, payload copying, queue-wide scans, serialization, CoroutineScope
-ownership, dispatcher selection, and blocking sleep.
-
----
-
-## Security restrictions
-
-The coordinator does not expose:
-
-- queue payloads
-- synchronization request metadata values
-- credentials or authorization headers
-- checkpoint tokens or encryption keys
-- personal data
-- scheduler or provider internal state
-- exception messages or stack traces
-
-Safe diagnostics include `ScheduleId`, `QueueConsumerId`, `QueueEntryId`,
-`QueueLeaseId`, wake-up reason, selected `SchedulingDelay`, processing summary
-counts, `ErrorCode`, and result variant names.
+- timeout and circuit assembly for queue acquisition and transitions;
+- transport, storage, connection, request, idle, policy, and workflow timeout
+  enforcement;
+- durable workflow-start propagation across queueing and restart;
+- platform-specific hard-interruption behavior where cooperative cancellation is
+  insufficient;
+- complete retry/circuit events and observability; and
+- native Android, KMP Android, and KMP iOS end-to-end qualification.
