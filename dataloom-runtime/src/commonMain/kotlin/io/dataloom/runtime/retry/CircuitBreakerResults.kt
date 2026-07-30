@@ -11,6 +11,7 @@ public enum class CircuitBreakerRejectionReason {
     PROBE_IN_FLIGHT,
     CLOCK_REGRESSION,
     PROBE_GENERATION_EXHAUSTED,
+    PROBE_LEASE_DEADLINE_EXHAUSTED,
 }
 
 /** Permit for the single controlled half-open probe of one generation. */
@@ -55,6 +56,11 @@ public sealed interface CircuitBreakerRecordResult {
     public data object Ignored : CircuitBreakerRecordResult
 
     public data object StaleProbe : CircuitBreakerRecordResult
+
+    /** The matching probe completed at or after its persisted exclusive lease deadline. */
+    public data class ProbeLeaseExpired(
+        public val leaseUntil: DataLoomInstant,
+    ) : CircuitBreakerRecordResult
 
     public data class ClockRegression(
         public val observedAt: DataLoomInstant,
