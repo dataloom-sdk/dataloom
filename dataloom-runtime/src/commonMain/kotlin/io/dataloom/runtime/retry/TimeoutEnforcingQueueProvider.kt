@@ -35,8 +35,9 @@ import io.dataloom.api.queue.QueueRescheduleRequest
  * Queue mutations may commit durably before cancellation is observed. A timeout
  * therefore reports [Recoverability.UNKNOWN] for every operation except the
  * read-only [health] check. The decorator never retries, replays, or assumes
- * rollback. Callers must reconcile durable state through normal lease, lookup,
- * and recovery semantics before attempting another mutation.
+ * rollback. Callers must rely on lease expiry, provider-defined idempotency, and
+ * [recoverExpiredLeases] before issuing another mutation whose completion is
+ * unknown.
  *
  * The common coroutine timeout is cooperative. Blocking implementations without
  * cancellation checkpoints require a platform-specific hard-interruption
