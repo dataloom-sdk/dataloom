@@ -3,6 +3,7 @@ package io.dataloom.api.context
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 
 class DataLoomMetadataTest {
@@ -75,5 +76,23 @@ class DataLoomMetadataTest {
         val metadata: DataLoomMetadata = DataLoomMetadata.of(mapOf("key" to "value"))
 
         assertNull(metadata["missing"])
+    }
+
+    @Test
+    fun `diagnostic string exposes only bounded entry count`() {
+        val metadata = DataLoomMetadata.of(
+            mapOf(
+                "authorization" to "Bearer secret-token",
+                "person" to "private-value",
+            ),
+        )
+
+        val diagnostic = metadata.toString()
+
+        assertEquals("DataLoomMetadata(entryCount=2)", diagnostic)
+        assertFalse(diagnostic.contains("authorization"))
+        assertFalse(diagnostic.contains("secret-token"))
+        assertFalse(diagnostic.contains("person"))
+        assertFalse(diagnostic.contains("private-value"))
     }
 }
