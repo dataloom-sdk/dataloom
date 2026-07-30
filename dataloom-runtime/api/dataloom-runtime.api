@@ -742,6 +742,71 @@ public final class io/dataloom/runtime/retry/CircuitBreakerCoordinator {
 	public static synthetic fun recordSuccess$default (Lio/dataloom/runtime/retry/CircuitBreakerCoordinator;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/runtime/retry/CircuitBreakerProbePermit;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
+public final class io/dataloom/runtime/retry/CircuitBreakerExecutionGate {
+	public fun <init> (Lio/dataloom/runtime/retry/CircuitBreakerCoordinator;)V
+	public final fun execute (Lio/dataloom/api/circuit/CircuitBreakerScope;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/dataloom/runtime/retry/CircuitBreakerExecutionResult {
+}
+
+public final class io/dataloom/runtime/retry/CircuitBreakerExecutionResult$Executed : io/dataloom/runtime/retry/CircuitBreakerExecutionResult {
+	public fun <init> (Lio/dataloom/runtime/retry/CircuitProtectedOperationResult;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;)V
+	public final fun component1 ()Lio/dataloom/runtime/retry/CircuitProtectedOperationResult;
+	public final fun component2 ()Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;
+	public final fun copy (Lio/dataloom/runtime/retry/CircuitProtectedOperationResult;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;)Lio/dataloom/runtime/retry/CircuitBreakerExecutionResult$Executed;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/CircuitBreakerExecutionResult$Executed;Lio/dataloom/runtime/retry/CircuitProtectedOperationResult;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;ILjava/lang/Object;)Lio/dataloom/runtime/retry/CircuitBreakerExecutionResult$Executed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getOperationResult ()Lio/dataloom/runtime/retry/CircuitProtectedOperationResult;
+	public final fun getRecordResult ()Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/CircuitBreakerExecutionResult$PermissionContentionLimitReached : io/dataloom/runtime/retry/CircuitBreakerExecutionResult {
+	public static final field INSTANCE Lio/dataloom/runtime/retry/CircuitBreakerExecutionResult$PermissionContentionLimitReached;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/CircuitBreakerExecutionResult$PermissionPersistenceFailure : io/dataloom/runtime/retry/CircuitBreakerExecutionResult {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/runtime/retry/CircuitBreakerExecutionResult$PermissionPersistenceFailure;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/CircuitBreakerExecutionResult$PermissionPersistenceFailure;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/runtime/retry/CircuitBreakerExecutionResult$PermissionPersistenceFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/CircuitBreakerExecutionResult$Rejected : io/dataloom/runtime/retry/CircuitBreakerExecutionResult {
+	public fun <init> (Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;Lio/dataloom/api/time/DataLoomInstant;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;Lio/dataloom/api/time/DataLoomInstant;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;
+	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy (Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/runtime/retry/CircuitBreakerExecutionResult$Rejected;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/CircuitBreakerExecutionResult$Rejected;Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/runtime/retry/CircuitBreakerExecutionResult$Rejected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReason ()Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;
+	public final fun getRetryAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/runtime/retry/CircuitBreakerFailureClassifier {
+	public abstract fun classify (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/runtime/retry/CircuitBreakerFailureDisposition;
+}
+
+public final class io/dataloom/runtime/retry/CircuitBreakerFailureDisposition : java/lang/Enum {
+	public static final field RECORD_FAILURE Lio/dataloom/runtime/retry/CircuitBreakerFailureDisposition;
+	public static final field RECORD_SUCCESS Lio/dataloom/runtime/retry/CircuitBreakerFailureDisposition;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/retry/CircuitBreakerFailureDisposition;
+	public static fun values ()[Lio/dataloom/runtime/retry/CircuitBreakerFailureDisposition;
+}
+
 public abstract interface class io/dataloom/runtime/retry/CircuitBreakerPermission {
 }
 
@@ -808,6 +873,12 @@ public final class io/dataloom/runtime/retry/CircuitBreakerProbePermit {
 	public final fun getScope ()Lio/dataloom/api/circuit/CircuitBreakerScope;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/CircuitBreakerProviderOperationAdapter {
+	public fun <init> (Lio/dataloom/runtime/retry/CircuitBreakerExecutionGate;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/retry/CircuitBreakerExecutionGate;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun execute (Lio/dataloom/api/circuit/CircuitBreakerScope;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public abstract interface class io/dataloom/runtime/retry/CircuitBreakerRecordResult {
@@ -877,6 +948,53 @@ public final class io/dataloom/runtime/retry/CircuitBreakerRejectionReason : jav
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;
 	public static fun values ()[Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;
+}
+
+public final class io/dataloom/runtime/retry/CircuitBreakerRetrySchedulingAdapter {
+	public fun <init> (Lio/dataloom/api/scheduling/SchedulerProvider;Lio/dataloom/runtime/retry/CircuitBreakerProviderOperationAdapter;Lio/dataloom/api/circuit/CircuitBreakerScope;)V
+	public final fun getScope ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun schedule (Lio/dataloom/api/scheduling/ScheduleRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/dataloom/runtime/retry/CircuitProtectedOperationResult {
+}
+
+public final class io/dataloom/runtime/retry/CircuitProtectedOperationResult$Failure : io/dataloom/runtime/retry/CircuitProtectedOperationResult {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/runtime/retry/CircuitProtectedOperationResult$Failure;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/CircuitProtectedOperationResult$Failure;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/runtime/retry/CircuitProtectedOperationResult$Failure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/CircuitProtectedOperationResult$NonCircuitFailure : io/dataloom/runtime/retry/CircuitProtectedOperationResult {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/runtime/retry/CircuitProtectedOperationResult$NonCircuitFailure;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/CircuitProtectedOperationResult$NonCircuitFailure;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/runtime/retry/CircuitProtectedOperationResult$NonCircuitFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/CircuitProtectedOperationResult$Success : io/dataloom/runtime/retry/CircuitProtectedOperationResult {
+	public fun <init> (Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/Object;)Lio/dataloom/runtime/retry/CircuitProtectedOperationResult$Success;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/CircuitProtectedOperationResult$Success;Ljava/lang/Object;ILjava/lang/Object;)Lio/dataloom/runtime/retry/CircuitProtectedOperationResult$Success;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/DefaultCircuitBreakerFailureClassifier : io/dataloom/runtime/retry/CircuitBreakerFailureClassifier {
+	public static final field INSTANCE Lio/dataloom/runtime/retry/DefaultCircuitBreakerFailureClassifier;
+	public fun classify (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/runtime/retry/CircuitBreakerFailureDisposition;
 }
 
 public abstract interface class io/dataloom/runtime/retry/RetryBackoffStrategy {

@@ -8,9 +8,9 @@ backoff, jitter, provider/server hints, queue persistence, scheduling, and platf
 > policy and ships deterministic immediate, fixed, linear, and exponential
 > backoff, full/equal jitter through injected deterministic randomness, attempt
 > limits, central durable elapsed/cumulative budgets, bounded typed hints,
-> independent timeout contracts, and a deterministic circuit state machine.
-> Production circuit stores, retry-path integration, observability, and administration
-> remain incomplete, so this is not yet the
+> independent timeout contracts, a deterministic circuit state machine, and common
+> provider/retry execution gates. Production circuit stores, direct pipeline assembly,
+> observability, and administration remain incomplete, so this is not yet the
 > complete V1 retry engine.
 
 ```mermaid

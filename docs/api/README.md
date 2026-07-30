@@ -51,7 +51,7 @@ complete V1 strategy, asset, plugin, governance, or observability engine.
 | Understand admission, resolution, and pipeline selection | [Synchronization execution](./synchronization-execution.md) |
 | Register and resolve providers | [Provider registry](./provider-registry.md), [provider lifecycle](./provider-lifecycle.md), and [provider bindings](./provider-bindings.md) |
 | Submit and process durable work | [Queue submission](./queue-submission.md), [queue provider](./queue-provider.md), and [queue worker](./queue-worker-coordinator.md) |
-| Evaluate retries | [Retry policy](./retry-policy.md) and [retry orchestration](./retry-orchestration.md) |
+| Evaluate retries | [Retry policy](./retry-policy.md), [retry orchestration](./retry-orchestration.md), [circuit breaker](./circuit-breaker.md), and [circuit execution gate](./circuit-execution-gate.md) |
 | Detect and resolve conflicts | [Conflict contracts](./conflict-contracts.md) and [conflict orchestration](./conflict-orchestration.md) |
 | Observe execution | [Synchronization events](./synchronization-events.md), [event dispatcher](./synchronization-event-dispatcher.md), and [runtime operational events](./runtime-operational-events.md) |
 
@@ -128,12 +128,13 @@ state, cross-platform persistence, and end-to-end qualification remain.
 | [Retry policy](./retry-policy.md) | Partial V1 subsystem | Fail-closed classification, deterministic backoff/jitter, seeded randomness, attempt/time/delay limits, and bounded provider/server hints. |
 | [Retry orchestration](./retry-orchestration.md) | Partial V1 subsystem | Protected-failure handling, bounded hint minimums, final-delay aggregation, central budgets, scheduling, and queue integration boundaries. |
 | [Circuit breaker](./circuit-breaker.md) | Partial V1 subsystem | Explicit scopes, durable state contracts, atomic compare-and-set persistence, deterministic transitions, and one controlled half-open probe. |
+| [Circuit execution gate](./circuit-execution-gate.md) | Partial V1 subsystem | Pre-execution permission, once-only invocation, classified provider failures, post-execution evidence, and retry scheduling adaptation. |
 | [Conflict contracts](./conflict-contracts.md) | Partial V1 subsystem | Custom detector, resolver, request, conflict, and decision contracts. |
 | [Conflict orchestration](./conflict-orchestration.md) | Partial V1 subsystem | Exact detector/resolver lookup and one-cycle decision orchestration. |
 
 V1 retry work still requires production Android/iOS circuit stores,
-retry-path circuit integration, manual retry/reclassification, complete
-observability, and platform qualification. Conflict work still requires
+direct transport/storage/queue runtime assembly, manual retry/reclassification,
+complete observability, and platform qualification. Conflict work still requires
 built-in policies, precedence, atomic decision application, unresolved-conflict
 persistence, audit, convergence, loop protection, quarantine, and metrics.
 
@@ -164,7 +165,7 @@ The following are product commitments, not descriptions of completed APIs:
 | Network-only strategy | Direct transport-only runtime implemented; full event/result and platform qualification remain |
 | Hybrid strategy | Complete built-in strategy and qualification not implemented |
 | Adaptive strategy | Complete built-in strategy and qualification not implemented |
-| Standard retry and durable circuit breaker | Fail-closed protection, standard backoff, full/equal jitter, seeded randomness, attempt budget, orchestration, and restart-safe attempt history implemented; time/hint/circuit/manual/qualification work remains |
+| Standard retry and durable circuit breaker | Fail-closed protection, standard backoff/jitter, durable time and delay budgets, bounded hints, timeout contracts, durable circuit state, and common provider/retry gates implemented; production stores, administration, observability, and qualification remain |
 | Built-in conflict policies and persistence | Partial custom contracts/orchestration only |
 | Lifecycle and operational observability | Partial in-process event foundation only |
 | Asset upload/download, chunking, streaming, and resume | Not implemented |
