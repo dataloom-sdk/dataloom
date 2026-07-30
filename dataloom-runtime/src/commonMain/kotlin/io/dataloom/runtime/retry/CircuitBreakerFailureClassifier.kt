@@ -27,7 +27,7 @@ public fun interface CircuitBreakerFailureClassifier {
  * dependency responded and are therefore recorded as circuit success.
  */
 public object DefaultCircuitBreakerFailureClassifier : CircuitBreakerFailureClassifier {
-    override fun classify(error: DataLoomError): CircuitBreakerFailureDisposition {
+    override public fun classify(error: DataLoomError): CircuitBreakerFailureDisposition {
         if (error.recoverability != Recoverability.RECOVERABLE) {
             return CircuitBreakerFailureDisposition.RECORD_SUCCESS
         }
