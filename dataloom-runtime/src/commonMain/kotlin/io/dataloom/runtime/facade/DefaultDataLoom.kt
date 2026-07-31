@@ -44,8 +44,10 @@ import io.dataloom.runtime.submission.DataLoomQueueSubmission
  * @param executionCoordinator the coordinator that executes synchronization.
  * @param defaultBindings the default provider bindings used by
  *   [synchronize] without explicit bindings.
- * @param queueWorker the optional queue-worker capability; `null` when not
- *   configured.
+ * @param queueWorker the optional direct queue-worker capability; `null`
+ *   when not configured.
+ * @param circuitQueueWorker the optional circuit-aware queue-worker capability;
+ *   `null` when not configured.
  * @param queueSubmission the optional queue-submission capability; `null` when
  *   not configured.
  */
@@ -56,6 +58,7 @@ internal class DefaultDataLoom(
     private val defaultBindings: SynchronizationProviderBindings?,
     private val defaultStrategyBindings: StrategyProviderBindings,
     override val queueWorker: DataLoomQueueWorker?,
+    override val circuitQueueWorker: DataLoomCircuitQueueWorker?,
     override val queueSubmission: DataLoomQueueSubmission?,
 ) : DataLoom {
 

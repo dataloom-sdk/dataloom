@@ -329,6 +329,7 @@ public final class io/dataloom/runtime/execution/outbound/OutboundPushSynchroniz
 }
 
 public abstract interface class io/dataloom/runtime/facade/DataLoom {
+	public fun getCircuitQueueWorker ()Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorker;
 	public abstract fun getProviderLifecycleState ()Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;
 	public abstract fun getQueueSubmission ()Lio/dataloom/runtime/submission/DataLoomQueueSubmission;
 	public abstract fun getQueueWorker ()Lio/dataloom/runtime/facade/DataLoomQueueWorker;
@@ -340,6 +341,10 @@ public abstract interface class io/dataloom/runtime/facade/DataLoom {
 	public abstract fun synchronize (Lio/dataloom/api/strategy/StrategySynchronizationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
+public final class io/dataloom/runtime/facade/DataLoom$DefaultImpls {
+	public static fun getCircuitQueueWorker (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorker;
+}
+
 public final class io/dataloom/runtime/facade/DataLoomBuildException : java/lang/IllegalStateException {
 	public fun <init> (Ljava/lang/String;)V
 }
@@ -348,6 +353,7 @@ public final class io/dataloom/runtime/facade/DataLoomBuilder {
 	public fun <init> ()V
 	public final fun bidirectionalConfiguration (Lio/dataloom/runtime/execution/bidirectional/BidirectionalPipelineConfiguration;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun build ()Lio/dataloom/runtime/facade/DataLoom;
+	public final fun circuitQueueWorkerConfiguration (Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorkerSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun connectivityConfiguration (Lio/dataloom/runtime/connectivity/SynchronizationConnectivityConfiguration;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun defaultProviderBindings (Lio/dataloom/api/provider/SynchronizationProviderBindings;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun defaultStrategyProviderBindings (Lio/dataloom/api/provider/StrategyProviderBindings;)Lio/dataloom/runtime/facade/DataLoomBuilder;
@@ -362,6 +368,21 @@ public final class io/dataloom/runtime/facade/DataLoomBuilder {
 	public final fun queueSubmissionEncoder (Lio/dataloom/runtime/submission/QueuedSynchronizationWorkEncoder;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun queueWorkerConfiguration (Lio/dataloom/runtime/facade/DataLoomQueueWorkerSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun runtimeDependencies (Lio/dataloom/api/runtime/RuntimeDependencies;)Lio/dataloom/runtime/facade/DataLoomBuilder;
+}
+
+public abstract interface class io/dataloom/runtime/facade/DataLoomCircuitQueueWorker {
+	public abstract fun run (Lio/dataloom/runtime/worker/QueueWorkerRunRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/facade/DataLoomCircuitQueueWorkerSpec {
+	public fun <init> (Lio/dataloom/runtime/facade/DataLoomQueueWorkerSpec;Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;Lio/dataloom/api/circuit/CircuitBreakerStateStore;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/runtime/queue/QueueProcessingCircuitScopes;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/facade/DataLoomQueueWorkerSpec;Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;Lio/dataloom/api/circuit/CircuitBreakerStateStore;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/runtime/queue/QueueProcessingCircuitScopes;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCircuitBreakerConfiguration ()Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;
+	public final fun getCircuitBreakerStateStore ()Lio/dataloom/api/circuit/CircuitBreakerStateStore;
+	public final fun getFailureClassifier ()Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;
+	public final fun getProcessingScopes ()Lio/dataloom/runtime/queue/QueueProcessingCircuitScopes;
+	public final fun getRecoveryScope ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getWorkerSpec ()Lio/dataloom/runtime/facade/DataLoomQueueWorkerSpec;
 }
 
 public final class io/dataloom/runtime/facade/DataLoomQueueSubmissionSpec {

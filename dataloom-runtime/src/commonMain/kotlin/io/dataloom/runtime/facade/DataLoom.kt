@@ -52,7 +52,8 @@ import io.dataloom.runtime.submission.DataLoomQueueSubmission
  * ## No automatic initialization
  *
  * [DataLoom] does not initialize providers automatically during
- * [synchronize] or [queueWorker] access. Synchronization before [initialize]
+ * [synchronize], [queueWorker], or [circuitQueueWorker] access.
+ * Synchronization before [initialize]
  * returns a structured rejection result.
  *
  * ## No global singleton
@@ -87,6 +88,20 @@ public interface DataLoom {
      * [DataLoomQueueWorker.run] explicitly.
      */
     public val queueWorker: DataLoomQueueWorker?
+
+    /**
+     * The optional circuit-aware queue-worker capability.
+     *
+     * `null` unless
+     * [DataLoomBuilder.circuitQueueWorkerConfiguration] was the effective
+     * queue-worker configuration at build time. Direct and circuit-aware worker
+     * capabilities are mutually exclusive; the most recent builder method wins.
+     *
+     * A default getter preserves source compatibility for custom pre-V1
+     * [DataLoom] implementations.
+     */
+    public val circuitQueueWorker: DataLoomCircuitQueueWorker?
+        get() = null
 
     /**
      * The optional queue-submission capability.
