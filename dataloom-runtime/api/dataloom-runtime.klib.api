@@ -2483,6 +2483,35 @@ final class io.dataloom.runtime.retry/CoroutineRetryTimeoutExecutor : io.dataloo
     final suspend fun <#A1: kotlin/Any?> execute(io.dataloom.runtime.retry/RetryTimeoutExecutionRequest, kotlin.coroutines/SuspendFunction0<#A1>): io.dataloom.runtime.retry/RetryTimeoutExecutionResult<#A1> // io.dataloom.runtime.retry/CoroutineRetryTimeoutExecutor.execute|execute(io.dataloom.runtime.retry.RetryTimeoutExecutionRequest;kotlin.coroutines.SuspendFunction0<0:0>){0§<kotlin.Any?>}[0]
 }
 
+final class io.dataloom.runtime.retry/ProtectedStorageOperations { // io.dataloom.runtime.retry/ProtectedStorageOperations|null[0]
+    final val descriptor // io.dataloom.runtime.retry/ProtectedStorageOperations.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.runtime.retry/ProtectedStorageOperations.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+    final val scopes // io.dataloom.runtime.retry/ProtectedStorageOperations.scopes|{}scopes[0]
+        final fun <get-scopes>(): io.dataloom.runtime.retry/StorageCircuitScopes // io.dataloom.runtime.retry/ProtectedStorageOperations.scopes.<get-scopes>|<get-scopes>(){}[0]
+
+    final suspend fun acknowledgeOutboundChanges(io.dataloom.api.synchronization/OutboundChangeAcknowledgementRequest): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> // io.dataloom.runtime.retry/ProtectedStorageOperations.acknowledgeOutboundChanges|acknowledgeOutboundChanges(io.dataloom.api.synchronization.OutboundChangeAcknowledgementRequest){}[0]
+    final suspend fun applyInboundChanges(io.dataloom.api.storage/InboundChangeApplyRequest): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> // io.dataloom.runtime.retry/ProtectedStorageOperations.applyInboundChanges|applyInboundChanges(io.dataloom.api.storage.InboundChangeApplyRequest){}[0]
+    final suspend fun close(): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> // io.dataloom.runtime.retry/ProtectedStorageOperations.close|close(){}[0]
+    final suspend fun health(): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.runtime.retry/ProtectedStorageOperations.health|health(){}[0]
+    final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> // io.dataloom.runtime.retry/ProtectedStorageOperations.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
+    final suspend fun readCheckpoint(io.dataloom.api.synchronization/CheckpointReadRequest): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.api.synchronization/SynchronizationCheckpoint?> // io.dataloom.runtime.retry/ProtectedStorageOperations.readCheckpoint|readCheckpoint(io.dataloom.api.synchronization.CheckpointReadRequest){}[0]
+    final suspend fun readOutboundChanges(io.dataloom.api.storage/OutboundChangeReadRequest): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.api.storage/OutboundChangeReadResult> // io.dataloom.runtime.retry/ProtectedStorageOperations.readOutboundChanges|readOutboundChanges(io.dataloom.api.storage.OutboundChangeReadRequest){}[0]
+    final suspend fun writeCheckpoint(io.dataloom.api.synchronization/CheckpointWriteRequest): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> // io.dataloom.runtime.retry/ProtectedStorageOperations.writeCheckpoint|writeCheckpoint(io.dataloom.api.synchronization.CheckpointWriteRequest){}[0]
+}
+
+final class io.dataloom.runtime.retry/ProtectedTransportOperations { // io.dataloom.runtime.retry/ProtectedTransportOperations|null[0]
+    final val descriptor // io.dataloom.runtime.retry/ProtectedTransportOperations.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.runtime.retry/ProtectedTransportOperations.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+    final val scopes // io.dataloom.runtime.retry/ProtectedTransportOperations.scopes|{}scopes[0]
+        final fun <get-scopes>(): io.dataloom.runtime.retry/TransportCircuitScopes // io.dataloom.runtime.retry/ProtectedTransportOperations.scopes.<get-scopes>|<get-scopes>(){}[0]
+
+    final suspend fun close(): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> // io.dataloom.runtime.retry/ProtectedTransportOperations.close|close(){}[0]
+    final suspend fun health(): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.runtime.retry/ProtectedTransportOperations.health|health(){}[0]
+    final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> // io.dataloom.runtime.retry/ProtectedTransportOperations.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
+    final suspend fun pullChanges(io.dataloom.api.transport/PullChangesRequest): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.api.transport/PullChangesResult> // io.dataloom.runtime.retry/ProtectedTransportOperations.pullChanges|pullChanges(io.dataloom.api.transport.PullChangesRequest){}[0]
+    final suspend fun pushChanges(io.dataloom.api.transport/PushChangesRequest): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.api.synchronization/ChangeSetAcknowledgement> // io.dataloom.runtime.retry/ProtectedTransportOperations.pushChanges|pushChanges(io.dataloom.api.transport.PushChangesRequest){}[0]
+}
+
 final class io.dataloom.runtime.retry/RetryBudgetConfiguration { // io.dataloom.runtime.retry/RetryBudgetConfiguration|null[0]
     constructor <init>(io.dataloom.api.scheduling/SchedulingDelay? = ..., io.dataloom.api.scheduling/SchedulingDelay? = ...) // io.dataloom.runtime.retry/RetryBudgetConfiguration.<init>|<init>(io.dataloom.api.scheduling.SchedulingDelay?;io.dataloom.api.scheduling.SchedulingDelay?){}[0]
 
@@ -2658,6 +2687,40 @@ final class io.dataloom.runtime.retry/StandardRetryPolicy : io.dataloom.api.retr
     final fun evaluate(io.dataloom.api.retry/RetryEvaluationRequest): io.dataloom.api.retry/RetryDecision // io.dataloom.runtime.retry/StandardRetryPolicy.evaluate|evaluate(io.dataloom.api.retry.RetryEvaluationRequest){}[0]
 }
 
+final class io.dataloom.runtime.retry/StorageCircuitScopes { // io.dataloom.runtime.retry/StorageCircuitScopes|null[0]
+    constructor <init>(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.circuit/CircuitBreakerScope) // io.dataloom.runtime.retry/StorageCircuitScopes.<init>|<init>(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope){}[0]
+
+    final val acknowledgeOutboundChanges // io.dataloom.runtime.retry/StorageCircuitScopes.acknowledgeOutboundChanges|{}acknowledgeOutboundChanges[0]
+        final fun <get-acknowledgeOutboundChanges>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/StorageCircuitScopes.acknowledgeOutboundChanges.<get-acknowledgeOutboundChanges>|<get-acknowledgeOutboundChanges>(){}[0]
+    final val applyInboundChanges // io.dataloom.runtime.retry/StorageCircuitScopes.applyInboundChanges|{}applyInboundChanges[0]
+        final fun <get-applyInboundChanges>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/StorageCircuitScopes.applyInboundChanges.<get-applyInboundChanges>|<get-applyInboundChanges>(){}[0]
+    final val close // io.dataloom.runtime.retry/StorageCircuitScopes.close|{}close[0]
+        final fun <get-close>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/StorageCircuitScopes.close.<get-close>|<get-close>(){}[0]
+    final val health // io.dataloom.runtime.retry/StorageCircuitScopes.health|{}health[0]
+        final fun <get-health>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/StorageCircuitScopes.health.<get-health>|<get-health>(){}[0]
+    final val initialization // io.dataloom.runtime.retry/StorageCircuitScopes.initialization|{}initialization[0]
+        final fun <get-initialization>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/StorageCircuitScopes.initialization.<get-initialization>|<get-initialization>(){}[0]
+    final val readCheckpoint // io.dataloom.runtime.retry/StorageCircuitScopes.readCheckpoint|{}readCheckpoint[0]
+        final fun <get-readCheckpoint>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/StorageCircuitScopes.readCheckpoint.<get-readCheckpoint>|<get-readCheckpoint>(){}[0]
+    final val readOutboundChanges // io.dataloom.runtime.retry/StorageCircuitScopes.readOutboundChanges|{}readOutboundChanges[0]
+        final fun <get-readOutboundChanges>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/StorageCircuitScopes.readOutboundChanges.<get-readOutboundChanges>|<get-readOutboundChanges>(){}[0]
+    final val writeCheckpoint // io.dataloom.runtime.retry/StorageCircuitScopes.writeCheckpoint|{}writeCheckpoint[0]
+        final fun <get-writeCheckpoint>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/StorageCircuitScopes.writeCheckpoint.<get-writeCheckpoint>|<get-writeCheckpoint>(){}[0]
+
+    final fun component1(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/StorageCircuitScopes.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/StorageCircuitScopes.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/StorageCircuitScopes.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/StorageCircuitScopes.component4|component4(){}[0]
+    final fun component5(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/StorageCircuitScopes.component5|component5(){}[0]
+    final fun component6(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/StorageCircuitScopes.component6|component6(){}[0]
+    final fun component7(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/StorageCircuitScopes.component7|component7(){}[0]
+    final fun component8(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/StorageCircuitScopes.component8|component8(){}[0]
+    final fun copy(io.dataloom.api.circuit/CircuitBreakerScope = ..., io.dataloom.api.circuit/CircuitBreakerScope = ..., io.dataloom.api.circuit/CircuitBreakerScope = ..., io.dataloom.api.circuit/CircuitBreakerScope = ..., io.dataloom.api.circuit/CircuitBreakerScope = ..., io.dataloom.api.circuit/CircuitBreakerScope = ..., io.dataloom.api.circuit/CircuitBreakerScope = ..., io.dataloom.api.circuit/CircuitBreakerScope = ...): io.dataloom.runtime.retry/StorageCircuitScopes // io.dataloom.runtime.retry/StorageCircuitScopes.copy|copy(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/StorageCircuitScopes.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/StorageCircuitScopes.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.retry/StorageCircuitScopes.toString|toString(){}[0]
+}
+
 final class io.dataloom.runtime.retry/SynchronizationRetryEvaluator { // io.dataloom.runtime.retry/SynchronizationRetryEvaluator|null[0]
     constructor <init>(io.dataloom.api.retry/RetryPolicy, io.dataloom.api.time/DataLoomClock) // io.dataloom.runtime.retry/SynchronizationRetryEvaluator.<init>|<init>(io.dataloom.api.retry.RetryPolicy;io.dataloom.api.time.DataLoomClock){}[0]
     constructor <init>(io.dataloom.api.retry/RetryPolicy, io.dataloom.api.time/DataLoomClock, io.dataloom.runtime.retry/RetryBudgetConfiguration) // io.dataloom.runtime.retry/SynchronizationRetryEvaluator.<init>|<init>(io.dataloom.api.retry.RetryPolicy;io.dataloom.api.time.DataLoomClock;io.dataloom.runtime.retry.RetryBudgetConfiguration){}[0]
@@ -2762,6 +2825,31 @@ final class io.dataloom.runtime.retry/TimeoutEnforcingTransportProvider : io.dat
     final suspend fun pushChanges(io.dataloom.api.transport/PushChangesRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.synchronization/ChangeSetAcknowledgement> // io.dataloom.runtime.retry/TimeoutEnforcingTransportProvider.pushChanges|pushChanges(io.dataloom.api.transport.PushChangesRequest){}[0]
 }
 
+final class io.dataloom.runtime.retry/TransportCircuitScopes { // io.dataloom.runtime.retry/TransportCircuitScopes|null[0]
+    constructor <init>(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.circuit/CircuitBreakerScope) // io.dataloom.runtime.retry/TransportCircuitScopes.<init>|<init>(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope){}[0]
+
+    final val close // io.dataloom.runtime.retry/TransportCircuitScopes.close|{}close[0]
+        final fun <get-close>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/TransportCircuitScopes.close.<get-close>|<get-close>(){}[0]
+    final val health // io.dataloom.runtime.retry/TransportCircuitScopes.health|{}health[0]
+        final fun <get-health>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/TransportCircuitScopes.health.<get-health>|<get-health>(){}[0]
+    final val initialization // io.dataloom.runtime.retry/TransportCircuitScopes.initialization|{}initialization[0]
+        final fun <get-initialization>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/TransportCircuitScopes.initialization.<get-initialization>|<get-initialization>(){}[0]
+    final val pullChanges // io.dataloom.runtime.retry/TransportCircuitScopes.pullChanges|{}pullChanges[0]
+        final fun <get-pullChanges>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/TransportCircuitScopes.pullChanges.<get-pullChanges>|<get-pullChanges>(){}[0]
+    final val pushChanges // io.dataloom.runtime.retry/TransportCircuitScopes.pushChanges|{}pushChanges[0]
+        final fun <get-pushChanges>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/TransportCircuitScopes.pushChanges.<get-pushChanges>|<get-pushChanges>(){}[0]
+
+    final fun component1(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/TransportCircuitScopes.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/TransportCircuitScopes.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/TransportCircuitScopes.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/TransportCircuitScopes.component4|component4(){}[0]
+    final fun component5(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/TransportCircuitScopes.component5|component5(){}[0]
+    final fun copy(io.dataloom.api.circuit/CircuitBreakerScope = ..., io.dataloom.api.circuit/CircuitBreakerScope = ..., io.dataloom.api.circuit/CircuitBreakerScope = ..., io.dataloom.api.circuit/CircuitBreakerScope = ..., io.dataloom.api.circuit/CircuitBreakerScope = ...): io.dataloom.runtime.retry/TransportCircuitScopes // io.dataloom.runtime.retry/TransportCircuitScopes.copy|copy(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/TransportCircuitScopes.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/TransportCircuitScopes.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.retry/TransportCircuitScopes.toString|toString(){}[0]
+}
+
 final class io.dataloom.runtime.strategy/BuiltInSynchronizationStrategyEvaluator : io.dataloom.api.strategy/SynchronizationStrategyEvaluator { // io.dataloom.runtime.strategy/BuiltInSynchronizationStrategyEvaluator|null[0]
     constructor <init>() // io.dataloom.runtime.strategy/BuiltInSynchronizationStrategyEvaluator.<init>|<init>(){}[0]
 
@@ -2861,12 +2949,20 @@ final object io.dataloom.runtime.retry/StorageCircuitBreakerFailureClassifier : 
     final fun classify(io.dataloom.api.error/DataLoomError): io.dataloom.runtime.retry/CircuitBreakerFailureDisposition // io.dataloom.runtime.retry/StorageCircuitBreakerFailureClassifier.classify|classify(io.dataloom.api.error.DataLoomError){}[0]
 }
 
+final object io.dataloom.runtime.retry/StorageCircuitProtectionRuntime { // io.dataloom.runtime.retry/StorageCircuitProtectionRuntime|null[0]
+    final fun create(io.dataloom.api.storage/StorageProvider, io.dataloom.api.time/DataLoomClock, io.dataloom.runtime.retry/CircuitBreakerConfiguration, io.dataloom.api.circuit/CircuitBreakerStateStore, io.dataloom.runtime.retry/StorageCircuitScopes, io.dataloom.api.scheduling/SchedulingDelay? = ..., io.dataloom.runtime.retry/CircuitBreakerFailureClassifier = ...): io.dataloom.runtime.retry/ProtectedStorageOperations // io.dataloom.runtime.retry/StorageCircuitProtectionRuntime.create|create(io.dataloom.api.storage.StorageProvider;io.dataloom.api.time.DataLoomClock;io.dataloom.runtime.retry.CircuitBreakerConfiguration;io.dataloom.api.circuit.CircuitBreakerStateStore;io.dataloom.runtime.retry.StorageCircuitScopes;io.dataloom.api.scheduling.SchedulingDelay?;io.dataloom.runtime.retry.CircuitBreakerFailureClassifier){}[0]
+}
+
 final object io.dataloom.runtime.retry/StorageProviderTimeoutRuntime { // io.dataloom.runtime.retry/StorageProviderTimeoutRuntime|null[0]
     final fun create(io.dataloom.api.storage/StorageProvider, io.dataloom.api.time/DataLoomClock, io.dataloom.api.scheduling/SchedulingDelay): io.dataloom.api.storage/StorageProvider // io.dataloom.runtime.retry/StorageProviderTimeoutRuntime.create|create(io.dataloom.api.storage.StorageProvider;io.dataloom.api.time.DataLoomClock;io.dataloom.api.scheduling.SchedulingDelay){}[0]
 }
 
 final object io.dataloom.runtime.retry/TransportCircuitBreakerFailureClassifier : io.dataloom.runtime.retry/CircuitBreakerFailureClassifier { // io.dataloom.runtime.retry/TransportCircuitBreakerFailureClassifier|null[0]
     final fun classify(io.dataloom.api.error/DataLoomError): io.dataloom.runtime.retry/CircuitBreakerFailureDisposition // io.dataloom.runtime.retry/TransportCircuitBreakerFailureClassifier.classify|classify(io.dataloom.api.error.DataLoomError){}[0]
+}
+
+final object io.dataloom.runtime.retry/TransportCircuitProtectionRuntime { // io.dataloom.runtime.retry/TransportCircuitProtectionRuntime|null[0]
+    final fun create(io.dataloom.api.transport/TransportProvider, io.dataloom.api.time/DataLoomClock, io.dataloom.runtime.retry/CircuitBreakerConfiguration, io.dataloom.api.circuit/CircuitBreakerStateStore, io.dataloom.runtime.retry/TransportCircuitScopes, io.dataloom.api.scheduling/SchedulingDelay? = ..., io.dataloom.runtime.retry/CircuitBreakerFailureClassifier = ...): io.dataloom.runtime.retry/ProtectedTransportOperations // io.dataloom.runtime.retry/TransportCircuitProtectionRuntime.create|create(io.dataloom.api.transport.TransportProvider;io.dataloom.api.time.DataLoomClock;io.dataloom.runtime.retry.CircuitBreakerConfiguration;io.dataloom.api.circuit.CircuitBreakerStateStore;io.dataloom.runtime.retry.TransportCircuitScopes;io.dataloom.api.scheduling.SchedulingDelay?;io.dataloom.runtime.retry.CircuitBreakerFailureClassifier){}[0]
 }
 
 final object io.dataloom.runtime.retry/TransportProviderTimeoutRuntime { // io.dataloom.runtime.retry/TransportProviderTimeoutRuntime|null[0]
