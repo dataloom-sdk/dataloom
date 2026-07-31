@@ -41,57 +41,57 @@ public class TimeoutEnforcingStorageProvider(
 
     override suspend fun initialize(
         context: ProviderInitializationContext,
-    ): ProviderOperationResult<Unit> = execute(StorageTimeoutOperation.INITIALIZE) {
+    ): ProviderOperationResult<Unit> = execute(StorageCircuitOperation.INITIALIZE) {
         delegate.initialize(context)
     }
 
     override suspend fun health(): ProviderOperationResult<ProviderHealth> =
-        execute(StorageTimeoutOperation.HEALTH) {
+        execute(StorageCircuitOperation.HEALTH) {
             delegate.health()
         }
 
     override suspend fun close(): ProviderOperationResult<Unit> =
-        execute(StorageTimeoutOperation.CLOSE) {
+        execute(StorageCircuitOperation.CLOSE) {
             delegate.close()
         }
 
     override suspend fun readOutboundChanges(
         request: OutboundChangeReadRequest,
     ): ProviderOperationResult<OutboundChangeReadResult> =
-        execute(StorageTimeoutOperation.READ_OUTBOUND_CHANGES) {
+        execute(StorageCircuitOperation.READ_OUTBOUND_CHANGES) {
             delegate.readOutboundChanges(request)
         }
 
     override suspend fun applyInboundChanges(
         request: InboundChangeApplyRequest,
     ): ProviderOperationResult<Unit> =
-        execute(StorageTimeoutOperation.APPLY_INBOUND_CHANGES) {
+        execute(StorageCircuitOperation.APPLY_INBOUND_CHANGES) {
             delegate.applyInboundChanges(request)
         }
 
     override suspend fun acknowledgeOutboundChanges(
         request: OutboundChangeAcknowledgementRequest,
     ): ProviderOperationResult<Unit> =
-        execute(StorageTimeoutOperation.ACKNOWLEDGE_OUTBOUND_CHANGES) {
+        execute(StorageCircuitOperation.ACKNOWLEDGE_OUTBOUND_CHANGES) {
             delegate.acknowledgeOutboundChanges(request)
         }
 
     override suspend fun readCheckpoint(
         request: CheckpointReadRequest,
     ): ProviderOperationResult<SynchronizationCheckpoint?> =
-        execute(StorageTimeoutOperation.READ_CHECKPOINT) {
+        execute(StorageCircuitOperation.READ_CHECKPOINT) {
             delegate.readCheckpoint(request)
         }
 
     override suspend fun writeCheckpoint(
         request: CheckpointWriteRequest,
     ): ProviderOperationResult<Unit> =
-        execute(StorageTimeoutOperation.WRITE_CHECKPOINT) {
+        execute(StorageCircuitOperation.WRITE_CHECKPOINT) {
             delegate.writeCheckpoint(request)
         }
 
     private suspend fun <T> execute(
-        operation: StorageTimeoutOperation,
+        operation: StorageCircuitOperation,
         block: suspend () -> ProviderOperationResult<T>,
     ): ProviderOperationResult<T> = when (
         val result = timeoutCoordinator.execute(
@@ -112,62 +112,59 @@ public class TimeoutEnforcingStorageProvider(
     }
 }
 
-private enum class StorageTimeoutOperation(
-    val label: String,
-    val readOnly: Boolean = false,
-    val durableMutation: Boolean = false,
-) {
-    INITIALIZE("initialize"),
-    HEALTH("health", readOnly = true),
-    CLOSE("close"),
-    READ_OUTBOUND_CHANGES("read-outbound-changes", readOnly = true),
-    APPLY_INBOUND_CHANGES("apply-inbound-changes", durableMutation = true),
-    ACKNOWLEDGE_OUTBOUND_CHANGES(
-        "acknowledge-outbound-changes",
-        durableMutation = true,
-    ),
-    READ_CHECKPOINT("read-checkpoint", readOnly = true),
-    WRITE_CHECKPOINT("write-checkpoint", durableMutation = true),
-}
+internal object StorageTimeoutErrors {
+    internal const val PROVIDER_TIMEOUT_CODE: String = "STORAGE_PROVIDER_TIMEOUT"
 
-private object StorageTimeoutErrors {
-    fun providerTimedOut(operation: StorageTimeoutOperation): DataLoomError = Error(
-        code = ErrorCode("STORAGE_PROVIDER_TIMEOUT"),
+    fun providerTimedOut(operation: StorageCircuitOperation): DataLoomError = Error(
+        code = ErrorCode(PROVIDER_TIMEOUT_CODE),
         category = ErrorCategory.STORAGE,
         severity = ErrorSeverity.ERROR,
-        recoverability = if (operation.readOnly) {
-            Recoverability.RECOVERABLE
-        } else {
-            Recoverability.UNKNOWN
+        recoverability = when (operation) {
+            StorageCircuitOperation.HEALTH,
+            StorageCircuitOperation.READ_OUTBOUND_CHANGES,
+            StorageCircuitOperation.READ_CHECKPOINT,
+            -> Recoverability.RECOVERABLE
+            StorageCircuitOperation.INITIALIZE,
+            StorageCircuitOperation.CLOSE,
+            StorageCircuitOperation.APPLY_INBOUND_CHANGES,
+            StorageCircuitOperation.ACKNOWLEDGE_OUTBOUND_CHANGES,
+            StorageCircuitOperation.WRITE_CHECKPOINT,
+            -> Recoverability.UNKNOWN
         },
-        message = when {
-            operation.readOnly ->
-                "The storage provider ${operation.label} operation exceeded its configured timeout."
-            operation.durableMutation ->
-                "The storage provider ${operation.label} operation exceeded its configured timeout; " +
-                    "durable completion is not confirmed."
-            else ->
-                "The storage provider ${operation.label} operation exceeded its configured timeout; " +
-                    "completion is not confirmed."
+        message = when (operation) {
+            StorageCircuitOperation.HEALTH,
+            StorageCircuitOperation.READ_OUTBOUND_CHANGES,
+            StorageCircuitOperation.READ_CHECKPOINT,
+            -> "The storage provider ${operation.retryOperation.value} operation exceeded its " +
+                "configured timeout."
+            StorageCircuitOperation.APPLY_INBOUND_CHANGES,
+            StorageCircuitOperation.ACKNOWLEDGE_OUTBOUND_CHANGES,
+            StorageCircuitOperation.WRITE_CHECKPOINT,
+            -> "The storage provider ${operation.retryOperation.value} operation exceeded its " +
+                "configured timeout; durable completion is not confirmed."
+            StorageCircuitOperation.INITIALIZE,
+            StorageCircuitOperation.CLOSE,
+            -> "The storage provider ${operation.retryOperation.value} operation exceeded its " +
+                "configured timeout; completion is not confirmed."
         },
     )
 
-    fun workflowDeadlineExceeded(operation: StorageTimeoutOperation): DataLoomError = Error(
+    fun workflowDeadlineExceeded(operation: StorageCircuitOperation): DataLoomError = Error(
         code = ErrorCode("STORAGE_WORKFLOW_DEADLINE_EXCEEDED"),
         category = ErrorCategory.STORAGE,
         severity = ErrorSeverity.ERROR,
         recoverability = Recoverability.NON_RECOVERABLE,
         message = "The workflow deadline expired before storage provider " +
-            "${operation.label} completed.",
+            "${operation.retryOperation.value} completed.",
     )
 
-    fun clockRegression(operation: StorageTimeoutOperation): DataLoomError = Error(
+    fun clockRegression(operation: StorageCircuitOperation): DataLoomError = Error(
         code = ErrorCode("STORAGE_TIMEOUT_CLOCK_REGRESSION"),
         category = ErrorCategory.STATE,
         severity = ErrorSeverity.ERROR,
         recoverability = Recoverability.NON_RECOVERABLE,
-        message = "Clock regression prevented storage provider ${operation.label} " +
-            "timeout enforcement.",
+        message = "Clock regression prevented storage provider " +
+            "${operation.retryOperation.value} timeout enforcement.",
     )
 
     private data class Error(
