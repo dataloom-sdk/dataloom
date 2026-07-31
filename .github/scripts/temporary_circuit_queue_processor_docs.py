@@ -54,28 +54,32 @@ assembly, complete transport/storage circuit assembly, protocol-specific timeout
 processor_doc = "docs/api/durable-queue-processor.md"
 replace_once(
     processor_doc,
-    """> **Status:** Available pre-V1 durable queue-processing foundation. This is not
-> complete queue scheduling, retry policy, platform persistence, or V1 release
-> qualification.
+    """> **Status:** Available at-least-once queue-processing foundation. Retry and
+> non-retry deferral transitions are distinct; complete retry/circuit policy,
+> migrations, platform persistence, and V1 qualification remain.
 """,
-    """> **Status:** Available pre-V1 direct queue-processing foundation. An additive
-> circuit-aware processor now preserves permission, provider, and record evidence;
-> recovery/worker assembly and V1 qualification remain open.
+    """> **Status:** Available direct at-least-once queue-processing foundation. An
+> additive circuit-aware processor now preserves permission, provider, and record
+> evidence; recovery/worker assembly and V1 qualification remain open.
 """,
 )
 replace_once(
     processor_doc,
-    """## Package
+    """## Public runtime contracts
 
-`io.dataloom.runtime.queue`
+Package: `io.dataloom.runtime.queue`
+
+- `QueueEntryExecutionHandler`
 """,
-    """## Package
+    """## Public runtime contracts
 
-`io.dataloom.runtime.queue`
+Package: `io.dataloom.runtime.queue`
 
 The direct `DurableQueueExecutionProcessor` remains unchanged. For explicit
 circuit permission and outcome recording, see
 [Circuit-aware bounded queue processing](./circuit-queue-processing.md).
+
+- `QueueEntryExecutionHandler`
 """,
 )
 
