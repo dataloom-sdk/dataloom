@@ -9,7 +9,7 @@ package io.dataloom.runtime.queue
  * coordination to depend on the exact enriched result contract without
  * exposing queue-provider or circuit internals.
  */
-public fun interface CircuitBreakerQueueProcessingEngine {
+internal fun interface CircuitBreakerQueueProcessingEngine {
 
     /** Executes one bounded acquisition and transition cycle. */
     public suspend fun process(

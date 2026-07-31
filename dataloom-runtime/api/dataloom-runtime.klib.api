@@ -1573,6 +1573,128 @@ sealed interface io.dataloom.runtime.submission/QueuedSynchronizationWorkEncodin
     }
 }
 
+sealed interface io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult { // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult|null[0]
+    final class CircuitRecordingUnconfirmed : io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult { // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.CircuitRecordingUnconfirmed|null[0]
+        constructor <init>(io.dataloom.api.queue/ExpiredLeaseRecoveryResult, io.dataloom.runtime.retry/CircuitBreakerRecordResult) // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.CircuitRecordingUnconfirmed.<init>|<init>(io.dataloom.api.queue.ExpiredLeaseRecoveryResult;io.dataloom.runtime.retry.CircuitBreakerRecordResult){}[0]
+
+        final val recordResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.CircuitRecordingUnconfirmed.recordResult|{}recordResult[0]
+            final fun <get-recordResult>(): io.dataloom.runtime.retry/CircuitBreakerRecordResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.CircuitRecordingUnconfirmed.recordResult.<get-recordResult>|<get-recordResult>(){}[0]
+        final val result // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.CircuitRecordingUnconfirmed.result|{}result[0]
+            final fun <get-result>(): io.dataloom.api.queue/ExpiredLeaseRecoveryResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.CircuitRecordingUnconfirmed.result.<get-result>|<get-result>(){}[0]
+
+        final fun component1(): io.dataloom.api.queue/ExpiredLeaseRecoveryResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.CircuitRecordingUnconfirmed.component1|component1(){}[0]
+        final fun component2(): io.dataloom.runtime.retry/CircuitBreakerRecordResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.CircuitRecordingUnconfirmed.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.queue/ExpiredLeaseRecoveryResult = ..., io.dataloom.runtime.retry/CircuitBreakerRecordResult = ...): io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.CircuitRecordingUnconfirmed // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.CircuitRecordingUnconfirmed.copy|copy(io.dataloom.api.queue.ExpiredLeaseRecoveryResult;io.dataloom.runtime.retry.CircuitBreakerRecordResult){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.CircuitRecordingUnconfirmed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.CircuitRecordingUnconfirmed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.CircuitRecordingUnconfirmed.toString|toString(){}[0]
+    }
+
+    final class Completed : io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult { // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.Completed|null[0]
+        constructor <init>(io.dataloom.api.queue/ExpiredLeaseRecoveryResult, io.dataloom.runtime.retry/CircuitBreakerRecordResult) // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.Completed.<init>|<init>(io.dataloom.api.queue.ExpiredLeaseRecoveryResult;io.dataloom.runtime.retry.CircuitBreakerRecordResult){}[0]
+
+        final val recordResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.Completed.recordResult|{}recordResult[0]
+            final fun <get-recordResult>(): io.dataloom.runtime.retry/CircuitBreakerRecordResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.Completed.recordResult.<get-recordResult>|<get-recordResult>(){}[0]
+        final val result // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.Completed.result|{}result[0]
+            final fun <get-result>(): io.dataloom.api.queue/ExpiredLeaseRecoveryResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.Completed.result.<get-result>|<get-result>(){}[0]
+
+        final fun component1(): io.dataloom.api.queue/ExpiredLeaseRecoveryResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.Completed.component1|component1(){}[0]
+        final fun component2(): io.dataloom.runtime.retry/CircuitBreakerRecordResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.Completed.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.queue/ExpiredLeaseRecoveryResult = ..., io.dataloom.runtime.retry/CircuitBreakerRecordResult = ...): io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.Completed // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.Completed.copy|copy(io.dataloom.api.queue.ExpiredLeaseRecoveryResult;io.dataloom.runtime.retry.CircuitBreakerRecordResult){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.Completed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.Completed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.Completed.toString|toString(){}[0]
+    }
+
+    final class PreExecutionStopped : io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult { // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.PreExecutionStopped|null[0]
+        constructor <init>(io.dataloom.runtime.queue/QueueCircuitPreExecutionDecision) // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.PreExecutionStopped.<init>|<init>(io.dataloom.runtime.queue.QueueCircuitPreExecutionDecision){}[0]
+
+        final val decision // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.PreExecutionStopped.decision|{}decision[0]
+            final fun <get-decision>(): io.dataloom.runtime.queue/QueueCircuitPreExecutionDecision // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.PreExecutionStopped.decision.<get-decision>|<get-decision>(){}[0]
+
+        final fun component1(): io.dataloom.runtime.queue/QueueCircuitPreExecutionDecision // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.PreExecutionStopped.component1|component1(){}[0]
+        final fun copy(io.dataloom.runtime.queue/QueueCircuitPreExecutionDecision = ...): io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.PreExecutionStopped // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.PreExecutionStopped.copy|copy(io.dataloom.runtime.queue.QueueCircuitPreExecutionDecision){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.PreExecutionStopped.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.PreExecutionStopped.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.PreExecutionStopped.toString|toString(){}[0]
+    }
+
+    final class ProviderFailure : io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult { // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.ProviderFailure|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError, io.dataloom.runtime.queue/QueueCircuitProviderFailureDisposition, io.dataloom.runtime.retry/CircuitBreakerRecordResult) // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.ProviderFailure.<init>|<init>(io.dataloom.api.error.DataLoomError;io.dataloom.runtime.queue.QueueCircuitProviderFailureDisposition;io.dataloom.runtime.retry.CircuitBreakerRecordResult){}[0]
+
+        final val disposition // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.ProviderFailure.disposition|{}disposition[0]
+            final fun <get-disposition>(): io.dataloom.runtime.queue/QueueCircuitProviderFailureDisposition // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.ProviderFailure.disposition.<get-disposition>|<get-disposition>(){}[0]
+        final val error // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.ProviderFailure.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.ProviderFailure.error.<get-error>|<get-error>(){}[0]
+        final val recordResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.ProviderFailure.recordResult|{}recordResult[0]
+            final fun <get-recordResult>(): io.dataloom.runtime.retry/CircuitBreakerRecordResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.ProviderFailure.recordResult.<get-recordResult>|<get-recordResult>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.ProviderFailure.component1|component1(){}[0]
+        final fun component2(): io.dataloom.runtime.queue/QueueCircuitProviderFailureDisposition // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.ProviderFailure.component2|component2(){}[0]
+        final fun component3(): io.dataloom.runtime.retry/CircuitBreakerRecordResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.ProviderFailure.component3|component3(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ..., io.dataloom.runtime.queue/QueueCircuitProviderFailureDisposition = ..., io.dataloom.runtime.retry/CircuitBreakerRecordResult = ...): io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.ProviderFailure // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.ProviderFailure.copy|copy(io.dataloom.api.error.DataLoomError;io.dataloom.runtime.queue.QueueCircuitProviderFailureDisposition;io.dataloom.runtime.retry.CircuitBreakerRecordResult){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.ProviderFailure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.ProviderFailure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.ProviderFailure.toString|toString(){}[0]
+    }
+
+    final object NotRequested : io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult { // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.NotRequested|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.NotRequested.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.NotRequested.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult.NotRequested.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult { // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult|null[0]
+    final class ProcessingCompleted : io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult { // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingCompleted|null[0]
+        constructor <init>(io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult, io.dataloom.runtime.queue/CircuitBreakerQueueProcessingResult, io.dataloom.runtime.worker/QueueWorkerSchedulingResult) // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingCompleted.<init>|<init>(io.dataloom.runtime.worker.CircuitBreakerQueueWorkerRecoveryResult;io.dataloom.runtime.queue.CircuitBreakerQueueProcessingResult;io.dataloom.runtime.worker.QueueWorkerSchedulingResult){}[0]
+
+        final val processingResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingCompleted.processingResult|{}processingResult[0]
+            final fun <get-processingResult>(): io.dataloom.runtime.queue/CircuitBreakerQueueProcessingResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingCompleted.processingResult.<get-processingResult>|<get-processingResult>(){}[0]
+        final val recoveryResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingCompleted.recoveryResult|{}recoveryResult[0]
+            final fun <get-recoveryResult>(): io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingCompleted.recoveryResult.<get-recoveryResult>|<get-recoveryResult>(){}[0]
+        final val schedulingResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingCompleted.schedulingResult|{}schedulingResult[0]
+            final fun <get-schedulingResult>(): io.dataloom.runtime.worker/QueueWorkerSchedulingResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingCompleted.schedulingResult.<get-schedulingResult>|<get-schedulingResult>(){}[0]
+
+        final fun component1(): io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingCompleted.component1|component1(){}[0]
+        final fun component2(): io.dataloom.runtime.queue/CircuitBreakerQueueProcessingResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingCompleted.component2|component2(){}[0]
+        final fun component3(): io.dataloom.runtime.worker/QueueWorkerSchedulingResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingCompleted.component3|component3(){}[0]
+        final fun copy(io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult = ..., io.dataloom.runtime.queue/CircuitBreakerQueueProcessingResult = ..., io.dataloom.runtime.worker/QueueWorkerSchedulingResult = ...): io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingCompleted // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingCompleted.copy|copy(io.dataloom.runtime.worker.CircuitBreakerQueueWorkerRecoveryResult;io.dataloom.runtime.queue.CircuitBreakerQueueProcessingResult;io.dataloom.runtime.worker.QueueWorkerSchedulingResult){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingCompleted.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingCompleted.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingCompleted.toString|toString(){}[0]
+    }
+
+    final class ProcessingStopped : io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult { // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingStopped|null[0]
+        constructor <init>(io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult, io.dataloom.runtime.queue/CircuitBreakerQueueProcessingResult) // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingStopped.<init>|<init>(io.dataloom.runtime.worker.CircuitBreakerQueueWorkerRecoveryResult;io.dataloom.runtime.queue.CircuitBreakerQueueProcessingResult){}[0]
+
+        final val processingResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingStopped.processingResult|{}processingResult[0]
+            final fun <get-processingResult>(): io.dataloom.runtime.queue/CircuitBreakerQueueProcessingResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingStopped.processingResult.<get-processingResult>|<get-processingResult>(){}[0]
+        final val recoveryResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingStopped.recoveryResult|{}recoveryResult[0]
+            final fun <get-recoveryResult>(): io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingStopped.recoveryResult.<get-recoveryResult>|<get-recoveryResult>(){}[0]
+
+        final fun component1(): io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingStopped.component1|component1(){}[0]
+        final fun component2(): io.dataloom.runtime.queue/CircuitBreakerQueueProcessingResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingStopped.component2|component2(){}[0]
+        final fun copy(io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult = ..., io.dataloom.runtime.queue/CircuitBreakerQueueProcessingResult = ...): io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingStopped // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingStopped.copy|copy(io.dataloom.runtime.worker.CircuitBreakerQueueWorkerRecoveryResult;io.dataloom.runtime.queue.CircuitBreakerQueueProcessingResult){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingStopped.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingStopped.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.ProcessingStopped.toString|toString(){}[0]
+    }
+
+    final class RecoveryStopped : io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult { // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.RecoveryStopped|null[0]
+        constructor <init>(io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult) // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.RecoveryStopped.<init>|<init>(io.dataloom.runtime.worker.CircuitBreakerQueueWorkerRecoveryResult){}[0]
+
+        final val recoveryResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.RecoveryStopped.recoveryResult|{}recoveryResult[0]
+            final fun <get-recoveryResult>(): io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.RecoveryStopped.recoveryResult.<get-recoveryResult>|<get-recoveryResult>(){}[0]
+
+        final fun component1(): io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.RecoveryStopped.component1|component1(){}[0]
+        final fun copy(io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRecoveryResult = ...): io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.RecoveryStopped // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.RecoveryStopped.copy|copy(io.dataloom.runtime.worker.CircuitBreakerQueueWorkerRecoveryResult){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.RecoveryStopped.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.RecoveryStopped.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult.RecoveryStopped.toString|toString(){}[0]
+    }
+}
+
 sealed interface io.dataloom.runtime.worker/QueueWorkerRunResult { // io.dataloom.runtime.worker/QueueWorkerRunResult|null[0]
     final class ProcessingCompleted : io.dataloom.runtime.worker/QueueWorkerRunResult { // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingCompleted|null[0]
         constructor <init>(io.dataloom.api.queue/ExpiredLeaseRecoveryResult?, io.dataloom.runtime.queue/QueueProcessingResult, io.dataloom.runtime.worker/QueueWorkerSchedulingResult) // io.dataloom.runtime.worker/QueueWorkerRunResult.ProcessingCompleted.<init>|<init>(io.dataloom.api.queue.ExpiredLeaseRecoveryResult?;io.dataloom.runtime.queue.QueueProcessingResult;io.dataloom.runtime.worker.QueueWorkerSchedulingResult){}[0]
@@ -2511,6 +2633,12 @@ final class io.dataloom.runtime.submission/QueuedSynchronizationSubmission { // 
     final fun toString(): kotlin/String // io.dataloom.runtime.submission/QueuedSynchronizationSubmission.toString|toString(){}[0]
 }
 
+final class io.dataloom.runtime.worker/CircuitBreakerQueueWorkerCoordinator { // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerCoordinator|null[0]
+    constructor <init>(io.dataloom.runtime.retry/CircuitBreakerQueueOperationAdapter, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.runtime.queue/CircuitBreakerDurableQueueExecutionProcessor, io.dataloom.api.scheduling/SchedulerProvider?, io.dataloom.api.time/DataLoomClock, io.dataloom.runtime.worker/QueueWorkerConfiguration) // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerCoordinator.<init>|<init>(io.dataloom.runtime.retry.CircuitBreakerQueueOperationAdapter;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.runtime.queue.CircuitBreakerDurableQueueExecutionProcessor;io.dataloom.api.scheduling.SchedulerProvider?;io.dataloom.api.time.DataLoomClock;io.dataloom.runtime.worker.QueueWorkerConfiguration){}[0]
+
+    final suspend fun run(io.dataloom.runtime.worker/QueueWorkerRunRequest): io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerCoordinator.run|run(io.dataloom.runtime.worker.QueueWorkerRunRequest){}[0]
+}
+
 final class io.dataloom.runtime.worker/QueueWorkerConfiguration { // io.dataloom.runtime.worker/QueueWorkerConfiguration|null[0]
     constructor <init>(io.dataloom.api.identifier/ScheduleId, io.dataloom.api.scheduling/ScheduleConstraints, io.dataloom.api.scheduling/ExistingSchedulePolicy, io.dataloom.api.scheduling/SchedulingDelay, kotlin/Boolean) // io.dataloom.runtime.worker/QueueWorkerConfiguration.<init>|<init>(io.dataloom.api.identifier.ScheduleId;io.dataloom.api.scheduling.ScheduleConstraints;io.dataloom.api.scheduling.ExistingSchedulePolicy;io.dataloom.api.scheduling.SchedulingDelay;kotlin.Boolean){}[0]
     constructor <init>(io.dataloom.api.identifier/ScheduleId, io.dataloom.api.scheduling/ScheduleConstraints, io.dataloom.api.scheduling/ExistingSchedulePolicy, io.dataloom.api.scheduling/SchedulingDelay, kotlin/Boolean, io.dataloom.api.scheduling/SchedulingDelay?) // io.dataloom.runtime.worker/QueueWorkerConfiguration.<init>|<init>(io.dataloom.api.identifier.ScheduleId;io.dataloom.api.scheduling.ScheduleConstraints;io.dataloom.api.scheduling.ExistingSchedulePolicy;io.dataloom.api.scheduling.SchedulingDelay;kotlin.Boolean;io.dataloom.api.scheduling.SchedulingDelay?){}[0]
@@ -2572,6 +2700,10 @@ final object io.dataloom.runtime.retry/QueueCircuitBreakerFailureClassifier : io
 
 final object io.dataloom.runtime.submission/QueueSubmissionProviderTimeoutRuntime { // io.dataloom.runtime.submission/QueueSubmissionProviderTimeoutRuntime|null[0]
     final fun create(io.dataloom.api.queue/QueueProvider, io.dataloom.runtime.submission/QueuedSynchronizationWorkEncoder, io.dataloom.api.time/DataLoomClock, io.dataloom.api.scheduling/SchedulingDelay): io.dataloom.runtime.submission/DataLoomQueueSubmission // io.dataloom.runtime.submission/QueueSubmissionProviderTimeoutRuntime.create|create(io.dataloom.api.queue.QueueProvider;io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder;io.dataloom.api.time.DataLoomClock;io.dataloom.api.scheduling.SchedulingDelay){}[0]
+}
+
+final object io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRuntime { // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRuntime|null[0]
+    final fun create(io.dataloom.api.queue/QueueProvider, io.dataloom.runtime.retry/CircuitBreakerExecutionGate, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.runtime.queue/QueueProcessingCircuitScopes, io.dataloom.runtime.queue/QueueEntryExecutionHandler, io.dataloom.api.scheduling/SchedulerProvider?, io.dataloom.api.time/DataLoomClock, io.dataloom.runtime.worker/QueueWorkerConfiguration, io.dataloom.runtime.retry/CircuitBreakerFailureClassifier = ...): io.dataloom.runtime.worker/CircuitBreakerQueueWorkerCoordinator // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRuntime.create|create(io.dataloom.api.queue.QueueProvider;io.dataloom.runtime.retry.CircuitBreakerExecutionGate;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.runtime.queue.QueueProcessingCircuitScopes;io.dataloom.runtime.queue.QueueEntryExecutionHandler;io.dataloom.api.scheduling.SchedulerProvider?;io.dataloom.api.time.DataLoomClock;io.dataloom.runtime.worker.QueueWorkerConfiguration;io.dataloom.runtime.retry.CircuitBreakerFailureClassifier){}[0]
 }
 
 final object io.dataloom.runtime.worker/QueueWorkerProviderTimeoutRuntime { // io.dataloom.runtime.worker/QueueWorkerProviderTimeoutRuntime|null[0]

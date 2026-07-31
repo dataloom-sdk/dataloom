@@ -1944,6 +1944,121 @@ public final class io/dataloom/runtime/submission/QueuedSynchronizationWorkEncod
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/runtime/worker/CircuitBreakerQueueWorkerCoordinator {
+	public fun <init> (Lio/dataloom/runtime/retry/CircuitBreakerQueueOperationAdapter;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/runtime/queue/CircuitBreakerDurableQueueExecutionProcessor;Lio/dataloom/api/scheduling/SchedulerProvider;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/worker/QueueWorkerConfiguration;)V
+	public final fun run (Lio/dataloom/runtime/worker/QueueWorkerRunRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult {
+}
+
+public final class io/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult$CircuitRecordingUnconfirmed : io/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult {
+	public fun <init> (Lio/dataloom/api/queue/ExpiredLeaseRecoveryResult;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;)V
+	public final fun component1 ()Lio/dataloom/api/queue/ExpiredLeaseRecoveryResult;
+	public final fun component2 ()Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;
+	public final fun copy (Lio/dataloom/api/queue/ExpiredLeaseRecoveryResult;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;)Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult$CircuitRecordingUnconfirmed;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult$CircuitRecordingUnconfirmed;Lio/dataloom/api/queue/ExpiredLeaseRecoveryResult;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;ILjava/lang/Object;)Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult$CircuitRecordingUnconfirmed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecordResult ()Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;
+	public final fun getResult ()Lio/dataloom/api/queue/ExpiredLeaseRecoveryResult;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult$Completed : io/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult {
+	public fun <init> (Lio/dataloom/api/queue/ExpiredLeaseRecoveryResult;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;)V
+	public final fun component1 ()Lio/dataloom/api/queue/ExpiredLeaseRecoveryResult;
+	public final fun component2 ()Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;
+	public final fun copy (Lio/dataloom/api/queue/ExpiredLeaseRecoveryResult;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;)Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult$Completed;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult$Completed;Lio/dataloom/api/queue/ExpiredLeaseRecoveryResult;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;ILjava/lang/Object;)Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult$Completed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecordResult ()Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;
+	public final fun getResult ()Lio/dataloom/api/queue/ExpiredLeaseRecoveryResult;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult$NotRequested : io/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult {
+	public static final field INSTANCE Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult$NotRequested;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult$PreExecutionStopped : io/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult {
+	public fun <init> (Lio/dataloom/runtime/queue/QueueCircuitPreExecutionDecision;)V
+	public final fun component1 ()Lio/dataloom/runtime/queue/QueueCircuitPreExecutionDecision;
+	public final fun copy (Lio/dataloom/runtime/queue/QueueCircuitPreExecutionDecision;)Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult$PreExecutionStopped;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult$PreExecutionStopped;Lio/dataloom/runtime/queue/QueueCircuitPreExecutionDecision;ILjava/lang/Object;)Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult$PreExecutionStopped;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDecision ()Lio/dataloom/runtime/queue/QueueCircuitPreExecutionDecision;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult$ProviderFailure : io/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;Lio/dataloom/runtime/queue/QueueCircuitProviderFailureDisposition;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun component2 ()Lio/dataloom/runtime/queue/QueueCircuitProviderFailureDisposition;
+	public final fun component3 ()Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;Lio/dataloom/runtime/queue/QueueCircuitProviderFailureDisposition;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;)Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult$ProviderFailure;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult$ProviderFailure;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/runtime/queue/QueueCircuitProviderFailureDisposition;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;ILjava/lang/Object;)Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult$ProviderFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDisposition ()Lio/dataloom/runtime/queue/QueueCircuitProviderFailureDisposition;
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public final fun getRecordResult ()Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/runtime/worker/CircuitBreakerQueueWorkerRunResult {
+}
+
+public final class io/dataloom/runtime/worker/CircuitBreakerQueueWorkerRunResult$ProcessingCompleted : io/dataloom/runtime/worker/CircuitBreakerQueueWorkerRunResult {
+	public fun <init> (Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult;Lio/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult;Lio/dataloom/runtime/worker/QueueWorkerSchedulingResult;)V
+	public final fun component1 ()Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult;
+	public final fun component2 ()Lio/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult;
+	public final fun component3 ()Lio/dataloom/runtime/worker/QueueWorkerSchedulingResult;
+	public final fun copy (Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult;Lio/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult;Lio/dataloom/runtime/worker/QueueWorkerSchedulingResult;)Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRunResult$ProcessingCompleted;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRunResult$ProcessingCompleted;Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult;Lio/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult;Lio/dataloom/runtime/worker/QueueWorkerSchedulingResult;ILjava/lang/Object;)Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRunResult$ProcessingCompleted;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getProcessingResult ()Lio/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult;
+	public final fun getRecoveryResult ()Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult;
+	public final fun getSchedulingResult ()Lio/dataloom/runtime/worker/QueueWorkerSchedulingResult;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/worker/CircuitBreakerQueueWorkerRunResult$ProcessingStopped : io/dataloom/runtime/worker/CircuitBreakerQueueWorkerRunResult {
+	public fun <init> (Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult;Lio/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult;)V
+	public final fun component1 ()Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult;
+	public final fun component2 ()Lio/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult;
+	public final fun copy (Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult;Lio/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult;)Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRunResult$ProcessingStopped;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRunResult$ProcessingStopped;Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult;Lio/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult;ILjava/lang/Object;)Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRunResult$ProcessingStopped;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getProcessingResult ()Lio/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult;
+	public final fun getRecoveryResult ()Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/worker/CircuitBreakerQueueWorkerRunResult$RecoveryStopped : io/dataloom/runtime/worker/CircuitBreakerQueueWorkerRunResult {
+	public fun <init> (Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult;)V
+	public final fun component1 ()Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult;
+	public final fun copy (Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult;)Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRunResult$RecoveryStopped;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRunResult$RecoveryStopped;Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult;ILjava/lang/Object;)Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRunResult$RecoveryStopped;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecoveryResult ()Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRecoveryResult;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/worker/CircuitBreakerQueueWorkerRuntime {
+	public static final field INSTANCE Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRuntime;
+	public final fun create (Lio/dataloom/api/queue/QueueProvider;Lio/dataloom/runtime/retry/CircuitBreakerExecutionGate;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/runtime/queue/QueueProcessingCircuitScopes;Lio/dataloom/runtime/queue/QueueEntryExecutionHandler;Lio/dataloom/api/scheduling/SchedulerProvider;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/worker/QueueWorkerConfiguration;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;)Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerCoordinator;
+	public static synthetic fun create$default (Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerRuntime;Lio/dataloom/api/queue/QueueProvider;Lio/dataloom/runtime/retry/CircuitBreakerExecutionGate;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/runtime/queue/QueueProcessingCircuitScopes;Lio/dataloom/runtime/queue/QueueEntryExecutionHandler;Lio/dataloom/api/scheduling/SchedulerProvider;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/worker/QueueWorkerConfiguration;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;ILjava/lang/Object;)Lio/dataloom/runtime/worker/CircuitBreakerQueueWorkerCoordinator;
+}
+
 public final class io/dataloom/runtime/worker/QueueWorkerConfiguration {
 	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/scheduling/ScheduleConstraints;Lio/dataloom/api/scheduling/ExistingSchedulePolicy;Lio/dataloom/api/scheduling/SchedulingDelay;ZLio/dataloom/api/scheduling/SchedulingDelay;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/scheduling/ScheduleConstraints;Lio/dataloom/api/scheduling/ExistingSchedulePolicy;Lio/dataloom/api/scheduling/SchedulingDelay;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V

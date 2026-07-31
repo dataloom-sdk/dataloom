@@ -2,9 +2,10 @@
 
 [API reference index](./README.md)
 
-> **Status:** Available recovery, bounded-processing, wake-up, and optional
-> scheduler-provider timeout foundation. Complete retry/circuit integration and
-> platform qualification remain V1 gates.
+> **Status:** Available direct recovery, bounded-processing, wake-up, and
+> optional scheduler-provider timeout foundation. An additive circuit-aware
+> coordinator now preserves recovery and processing evidence; builder adoption,
+> scheduler-circuit policy, and platform qualification remain V1 gates.
 
 ## Overview
 
@@ -31,8 +32,17 @@ The coordinator does not loop, poll, or re-acquire the queue within one run.
 - `QueueWorkerWakeUpReason` — stable reason for a requested wake-up;
 - `QueueWorkerWakeUpPlan` — scheduler wake-up decision;
 - `QueueWorkerSchedulingResult` — scheduling outcome;
-- `QueueWorkerRunResult` — terminal result of one coordinator run; and
-- `QueueWorkerCoordinator` — bounded coordinator.
+- `QueueWorkerRunResult` — terminal result of one direct coordinator run;
+- `QueueWorkerCoordinator` — bounded direct coordinator;
+- `CircuitBreakerQueueWorkerRecoveryResult` — enriched recovery evidence;
+- `CircuitBreakerQueueWorkerRunResult` — enriched worker terminal result;
+- `CircuitBreakerQueueWorkerCoordinator` — circuit-aware bounded coordinator;
+  and
+- `CircuitBreakerQueueWorkerRuntime` — shared adapter/processor assembly.
+
+The direct coordinator remains source compatible. See
+[Circuit-aware queue worker](./circuit-queue-worker.md) for the additive circuit
+path.
 
 ## `QueueWorkerConfiguration`
 

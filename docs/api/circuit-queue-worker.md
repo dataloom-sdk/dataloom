@@ -32,9 +32,10 @@ Package: `io.dataloom.runtime.worker`
 - `CircuitBreakerQueueWorkerCoordinator`
 - `CircuitBreakerQueueWorkerRuntime`
 
-The queue-processing boundary is represented by
-`CircuitBreakerQueueProcessingEngine`; the production runtime assembles it from
-`CircuitBreakerDurableQueueExecutionProcessor`.
+An internal queue-processing seam keeps coordinator tests deterministic without
+adding a host-replaceable public execution engine. The public production path
+uses `CircuitBreakerDurableQueueExecutionProcessor` through the coordinator's
+production constructor and `CircuitBreakerQueueWorkerRuntime`.
 
 ## Recovery evidence
 

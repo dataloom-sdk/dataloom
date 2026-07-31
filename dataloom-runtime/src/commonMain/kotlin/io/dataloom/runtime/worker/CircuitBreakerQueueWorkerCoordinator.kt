@@ -29,7 +29,7 @@ import io.dataloom.runtime.retry.QueueCircuitOperation
  * A provider success followed by an unconfirmed circuit write is never
  * collapsed into a provider failure or replayed.
  */
-public class CircuitBreakerQueueWorkerCoordinator(
+public class CircuitBreakerQueueWorkerCoordinator internal constructor(
     private val queueOperationAdapter: CircuitBreakerQueueOperationAdapter,
     private val recoveryScope: CircuitBreakerScope,
     private val queueProcessor: CircuitBreakerQueueProcessingEngine,

@@ -16,7 +16,7 @@ import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
 import io.dataloom.api.identifier.CorrelationId
 import io.dataloom.api.identifier.ExecutionId
-import io.dataloom.api.identifier.ProviderId
+import io.dataloom.api.provider.ProviderId
 import io.dataloom.api.identifier.QueueConsumerId
 import io.dataloom.api.identifier.QueueEntryId
 import io.dataloom.api.identifier.QueueLeaseId
@@ -227,7 +227,14 @@ class CircuitBreakerQueueWorkerCoordinatorTest {
             decision = QueueCircuitPreExecutionDecision.Rejected(
                 CircuitBreakerRejectionReason.OPEN,
             ),
-            summary = QueueProcessingSummary(),
+            summary = QueueProcessingSummary(
+                acquired = 0,
+                executed = 0,
+                completed = 0,
+                rescheduled = 0,
+                failed = 0,
+                cancelled = 0,
+            ),
         )
         val processing = RecordingProcessingEngine(terminal)
         val scheduler = RecordingSchedulerProvider()
@@ -666,7 +673,14 @@ class CircuitBreakerQueueWorkerCoordinatorTest {
             earliestDeferredAt: DataLoomInstant? = null,
         ): CircuitBreakerQueueProcessingResult.Processed =
             CircuitBreakerQueueProcessingResult.Processed(
-                summary = QueueProcessingSummary(acquired = 1, executed = 1, completed = 1),
+                summary = QueueProcessingSummary(
+                    acquired = 1,
+                    executed = 1,
+                    completed = 1,
+                    rescheduled = 0,
+                    failed = 0,
+                    cancelled = 0,
+                ),
                 acquisitionLimitReached = acquisitionLimitReached,
                 earliestRescheduledAt = earliestRescheduledAt,
                 earliestDeferredAt = earliestDeferredAt,

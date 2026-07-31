@@ -48,7 +48,17 @@ public sealed interface CircuitBreakerQueueWorkerRecoveryResult {
     public data class CircuitRecordingUnconfirmed(
         public val result: ExpiredLeaseRecoveryResult,
         public val recordResult: CircuitBreakerRecordResult,
-    ) : CircuitBreakerQueueWorkerRecoveryResult
+    ) : CircuitBreakerQueueWorkerRecoveryResult {
+        init {
+            require(
+                recordResult !is CircuitBreakerRecordResult.Recorded &&
+                    recordResult !is CircuitBreakerRecordResult.Ignored,
+            ) {
+                "CircuitRecordingUnconfirmed recovery requires an unaccepted " +
+                    "circuit recording result."
+            }
+        }
+    }
 }
 
 internal fun CircuitBreakerQueueWorkerRecoveryResult.allowsProcessing(): Boolean =
