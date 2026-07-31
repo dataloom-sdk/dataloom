@@ -1,0 +1,302 @@
+package io.dataloom.runtime.execution.protection
+
+import io.dataloom.api.error.DataLoomError
+import io.dataloom.api.error.ErrorCategory
+import io.dataloom.api.error.ErrorCode
+import io.dataloom.api.error.ErrorSeverity
+import io.dataloom.api.error.Recoverability
+import io.dataloom.api.provider.ProviderDescriptor
+import io.dataloom.api.provider.ProviderHealth
+import io.dataloom.api.provider.ProviderId
+import io.dataloom.api.provider.ProviderInitializationContext
+import io.dataloom.api.provider.ProviderOperationResult
+import io.dataloom.api.retry.RetryOperation
+import io.dataloom.api.storage.InboundChangeApplyRequest
+import io.dataloom.api.storage.OutboundChangeReadRequest
+import io.dataloom.api.storage.OutboundChangeReadResult
+import io.dataloom.api.storage.StorageProvider
+import io.dataloom.api.synchronization.ChangeSetAcknowledgement
+import io.dataloom.api.synchronization.CheckpointReadRequest
+import io.dataloom.api.synchronization.CheckpointWriteRequest
+import io.dataloom.api.synchronization.OutboundChangeAcknowledgementRequest
+import io.dataloom.api.synchronization.SynchronizationCheckpoint
+import io.dataloom.api.transport.PullChangesRequest
+import io.dataloom.api.transport.PullChangesResult
+import io.dataloom.api.transport.PushChangesRequest
+import io.dataloom.api.transport.TransportProvider
+import io.dataloom.runtime.retry.CircuitBreakerExecutionResult
+import io.dataloom.runtime.retry.CircuitBreakerRecordResult
+import io.dataloom.runtime.retry.CircuitBreakerRejectionReason
+import io.dataloom.runtime.retry.CircuitProtectedOperationResult
+import io.dataloom.runtime.retry.ProtectedStorageOperations
+import io.dataloom.runtime.retry.ProtectedTransportOperations
+import io.dataloom.runtime.retry.StorageCircuitOperation
+import io.dataloom.runtime.retry.TransportCircuitOperation
+
+internal class ProviderProtectionEvidenceCollector {
+    private val mutableEvidence = mutableListOf<ProviderProtectionOperationEvidence>()
+
+    fun add(evidence: ProviderProtectionOperationEvidence) {
+        mutableEvidence += evidence
+    }
+
+    fun snapshot(): List<ProviderProtectionOperationEvidence> = mutableEvidence.toList()
+}
+
+/**
+ * Pipeline-local bridge that preserves full protected-operation evidence in a
+ * separate collector before adapting the terminal operation outcome to the
+ * historical [StorageProvider] contract.
+ */
+internal class ProviderProtectionStorageBridge(
+    private val protectedOperations: ProtectedStorageOperations,
+    private val evidenceCollector: ProviderProtectionEvidenceCollector,
+) : StorageProvider {
+    override val descriptor: ProviderDescriptor
+        get() = protectedOperations.descriptor
+
+    override suspend fun initialize(
+        context: ProviderInitializationContext,
+    ): ProviderOperationResult<Unit> = execute(StorageCircuitOperation.INITIALIZE) {
+        protectedOperations.initialize(context)
+    }
+
+    override suspend fun health(): ProviderOperationResult<ProviderHealth> =
+        execute(StorageCircuitOperation.HEALTH) {
+            protectedOperations.health()
+        }
+
+    override suspend fun close(): ProviderOperationResult<Unit> =
+        execute(StorageCircuitOperation.CLOSE) {
+            protectedOperations.close()
+        }
+
+    override suspend fun readOutboundChanges(
+        request: OutboundChangeReadRequest,
+    ): ProviderOperationResult<OutboundChangeReadResult> =
+        execute(StorageCircuitOperation.READ_OUTBOUND_CHANGES) {
+            protectedOperations.readOutboundChanges(request)
+        }
+
+    override suspend fun applyInboundChanges(
+        request: InboundChangeApplyRequest,
+    ): ProviderOperationResult<Unit> =
+        execute(StorageCircuitOperation.APPLY_INBOUND_CHANGES) {
+            protectedOperations.applyInboundChanges(request)
+        }
+
+    override suspend fun acknowledgeOutboundChanges(
+        request: OutboundChangeAcknowledgementRequest,
+    ): ProviderOperationResult<Unit> =
+        execute(StorageCircuitOperation.ACKNOWLEDGE_OUTBOUND_CHANGES) {
+            protectedOperations.acknowledgeOutboundChanges(request)
+        }
+
+    override suspend fun readCheckpoint(
+        request: CheckpointReadRequest,
+    ): ProviderOperationResult<SynchronizationCheckpoint?> =
+        execute(StorageCircuitOperation.READ_CHECKPOINT) {
+            protectedOperations.readCheckpoint(request)
+        }
+
+    override suspend fun writeCheckpoint(
+        request: CheckpointWriteRequest,
+    ): ProviderOperationResult<Unit> =
+        execute(StorageCircuitOperation.WRITE_CHECKPOINT) {
+            protectedOperations.writeCheckpoint(request)
+        }
+
+    private suspend fun <T> execute(
+        operation: StorageCircuitOperation,
+        block: suspend () -> CircuitBreakerExecutionResult<T>,
+    ): ProviderOperationResult<T> = adaptProviderProtectionResult(
+        providerId = descriptor.id,
+        operation = operation.retryOperation,
+        result = block(),
+        evidenceCollector = evidenceCollector,
+    )
+}
+
+/** Pipeline-local transport bridge with the same evidence-preserving rules. */
+internal class ProviderProtectionTransportBridge(
+    private val protectedOperations: ProtectedTransportOperations,
+    private val evidenceCollector: ProviderProtectionEvidenceCollector,
+) : TransportProvider {
+    override val descriptor: ProviderDescriptor
+        get() = protectedOperations.descriptor
+
+    override suspend fun initialize(
+        context: ProviderInitializationContext,
+    ): ProviderOperationResult<Unit> = execute(TransportCircuitOperation.INITIALIZE) {
+        protectedOperations.initialize(context)
+    }
+
+    override suspend fun health(): ProviderOperationResult<ProviderHealth> =
+        execute(TransportCircuitOperation.HEALTH) {
+            protectedOperations.health()
+        }
+
+    override suspend fun close(): ProviderOperationResult<Unit> =
+        execute(TransportCircuitOperation.CLOSE) {
+            protectedOperations.close()
+        }
+
+    override suspend fun pushChanges(
+        request: PushChangesRequest,
+    ): ProviderOperationResult<ChangeSetAcknowledgement> =
+        execute(TransportCircuitOperation.PUSH_CHANGES) {
+            protectedOperations.pushChanges(request)
+        }
+
+    override suspend fun pullChanges(
+        request: PullChangesRequest,
+    ): ProviderOperationResult<PullChangesResult> =
+        execute(TransportCircuitOperation.PULL_CHANGES) {
+            protectedOperations.pullChanges(request)
+        }
+
+    private suspend fun <T> execute(
+        operation: TransportCircuitOperation,
+        block: suspend () -> CircuitBreakerExecutionResult<T>,
+    ): ProviderOperationResult<T> = adaptProviderProtectionResult(
+        providerId = descriptor.id,
+        operation = operation.retryOperation,
+        result = block(),
+        evidenceCollector = evidenceCollector,
+    )
+}
+
+private fun <T> adaptProviderProtectionResult(
+    providerId: ProviderId,
+    operation: RetryOperation,
+    result: CircuitBreakerExecutionResult<T>,
+    evidenceCollector: ProviderProtectionEvidenceCollector,
+): ProviderOperationResult<T> = when (result) {
+    is CircuitBreakerExecutionResult.Executed -> {
+        val invocation = when (result.operationResult) {
+            is CircuitProtectedOperationResult.Success ->
+                ProviderProtectionInvocation.SUCCEEDED
+            is CircuitProtectedOperationResult.Failure ->
+                ProviderProtectionInvocation.CIRCUIT_FAILURE
+            is CircuitProtectedOperationResult.NonCircuitFailure ->
+                ProviderProtectionInvocation.NON_CIRCUIT_FAILURE
+        }
+        val operationError = when (val operationResult = result.operationResult) {
+            is CircuitProtectedOperationResult.Success -> null
+            is CircuitProtectedOperationResult.Failure -> operationResult.error
+            is CircuitProtectedOperationResult.NonCircuitFailure -> operationResult.error
+        }
+        evidenceCollector.add(
+            ProviderProtectionOperationEvidence(
+                providerId = providerId,
+                operation = operation,
+                invocation = invocation,
+                error = operationError,
+                recordResult = result.recordResult,
+            ),
+        )
+
+        if (!recordingAccepted(result.recordResult)) {
+            ProviderOperationResult.Failure(
+                ProviderProtectionErrors.recordingUnconfirmed(operation),
+            )
+        } else {
+            when (val operationResult = result.operationResult) {
+                is CircuitProtectedOperationResult.Success ->
+                    ProviderOperationResult.Success(operationResult.value)
+                is CircuitProtectedOperationResult.Failure ->
+                    ProviderOperationResult.Failure(operationResult.error)
+                is CircuitProtectedOperationResult.NonCircuitFailure ->
+                    ProviderOperationResult.Failure(operationResult.error)
+            }
+        }
+    }
+    is CircuitBreakerExecutionResult.Rejected -> {
+        evidenceCollector.add(
+            ProviderProtectionOperationEvidence(
+                providerId = providerId,
+                operation = operation,
+                invocation = ProviderProtectionInvocation.NOT_EXECUTED,
+                preExecutionReason = ProviderProtectionPreExecutionReason.CIRCUIT_REJECTED,
+                rejectionReason = result.reason,
+                retryAt = result.retryAt,
+            ),
+        )
+        ProviderOperationResult.Failure(
+            ProviderProtectionErrors.circuitRejected(operation, result.reason),
+        )
+    }
+    is CircuitBreakerExecutionResult.PermissionPersistenceFailure -> {
+        evidenceCollector.add(
+            ProviderProtectionOperationEvidence(
+                providerId = providerId,
+                operation = operation,
+                invocation = ProviderProtectionInvocation.NOT_EXECUTED,
+                preExecutionReason =
+                    ProviderProtectionPreExecutionReason.PERMISSION_PERSISTENCE_FAILURE,
+                error = result.error,
+            ),
+        )
+        ProviderOperationResult.Failure(result.error)
+    }
+    CircuitBreakerExecutionResult.PermissionContentionLimitReached -> {
+        evidenceCollector.add(
+            ProviderProtectionOperationEvidence(
+                providerId = providerId,
+                operation = operation,
+                invocation = ProviderProtectionInvocation.NOT_EXECUTED,
+                preExecutionReason =
+                    ProviderProtectionPreExecutionReason.PERMISSION_CONTENTION_LIMIT_REACHED,
+            ),
+        )
+        ProviderOperationResult.Failure(
+            ProviderProtectionErrors.permissionContention(operation),
+        )
+    }
+}
+
+private fun recordingAccepted(result: CircuitBreakerRecordResult): Boolean =
+    result is CircuitBreakerRecordResult.Recorded || result is CircuitBreakerRecordResult.Ignored
+
+private object ProviderProtectionErrors {
+    fun circuitRejected(
+        operation: RetryOperation,
+        reason: CircuitBreakerRejectionReason,
+    ): DataLoomError = Error(
+        code = ErrorCode("PROVIDER_CIRCUIT_${reason.name}"),
+        category = ErrorCategory.PROVIDER,
+        recoverability = when (reason) {
+            CircuitBreakerRejectionReason.OPEN,
+            CircuitBreakerRejectionReason.PROBE_IN_FLIGHT,
+            -> Recoverability.RECOVERABLE
+            CircuitBreakerRejectionReason.CLOCK_REGRESSION,
+            CircuitBreakerRejectionReason.PROBE_GENERATION_EXHAUSTED,
+            CircuitBreakerRejectionReason.PROBE_LEASE_DEADLINE_EXHAUSTED,
+            -> Recoverability.NON_RECOVERABLE
+        },
+        message = "Circuit permission rejected ${operation.value} before provider execution.",
+    )
+
+    fun permissionContention(operation: RetryOperation): DataLoomError = Error(
+        code = ErrorCode("PROVIDER_CIRCUIT_PERMISSION_CONTENTION"),
+        category = ErrorCategory.STATE,
+        recoverability = Recoverability.RECOVERABLE,
+        message = "Circuit permission contention prevented ${operation.value} execution.",
+    )
+
+    fun recordingUnconfirmed(operation: RetryOperation): DataLoomError = Error(
+        code = ErrorCode("PROVIDER_CIRCUIT_RECORDING_UNCONFIRMED"),
+        category = ErrorCategory.STATE,
+        recoverability = Recoverability.UNKNOWN,
+        message = "Provider operation ${operation.value} executed, but circuit recording was not confirmed.",
+    )
+
+    private data class Error(
+        override val code: ErrorCode,
+        override val category: ErrorCategory,
+        override val recoverability: Recoverability,
+        override val severity: ErrorSeverity = ErrorSeverity.ERROR,
+        override val message: String,
+        override val cause: Throwable? = null,
+    ) : DataLoomError
+}

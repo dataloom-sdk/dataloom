@@ -144,11 +144,12 @@ persistence and end-to-end qualification remain open.
 | [Circuit execution gate](./circuit-execution-gate.md) | Partial V1 subsystem | Pre-execution permission, once-only invocation, classified provider failures, post-execution evidence, retry scheduling, and queue-operation adaptation. |
 | [Storage and transport circuit adapters](./storage-transport-circuit-adapters.md) | Partial V1 subsystem | Exact provider-operation scopes, timeout-aware circuit classification, and uncollapsed execution/recording evidence. |
 | [Provider circuit protection runtime](./provider-circuit-protection-runtime.md) | Partial V1 subsystem | Immutable scope-bound storage/transport assembly with timeout-before-circuit composition. |
+| [Provider-protected pipeline execution](./provider-protected-pipeline.md) | Partial V1 subsystem | Existing pipelines use execution-local timeout/circuit bridges with ordered bounded provider evidence. |
 | [Queue circuit operation adapter](./queue-circuit-operation-adapter.md) | Partial V1 subsystem | Exact queue operation scopes and provider/circuit result preservation without transparent mutation replay risk. |
 | [Conflict contracts](./conflict-contracts.md) | Partial V1 subsystem | Custom detector, resolver, request, conflict, and decision contracts. |
 | [Conflict orchestration](./conflict-orchestration.md) | Partial V1 subsystem | Exact detector/resolver lookup and one-cycle decision orchestration. |
 
-V1 retry work still requires direct transport/storage pipeline and builder assembly,
+V1 retry work still requires DataLoomBuilder, strategy, and queued-execution adoption,
 protocol-specific timeout enforcement, KMP iOS persistence, manual
 retry/reclassification, complete observability, and platform qualification.
 Conflict work still requires built-in policies, precedence, atomic decision

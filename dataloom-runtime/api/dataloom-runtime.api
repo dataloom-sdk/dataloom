@@ -328,6 +328,68 @@ public final class io/dataloom/runtime/execution/outbound/OutboundPushSynchroniz
 	public fun getDirection ()Lio/dataloom/api/model/SynchronizationDirection;
 }
 
+public final class io/dataloom/runtime/execution/protection/ProviderProtectedSynchronizationResult {
+	public fun <init> (Lio/dataloom/api/synchronization/SynchronizationResult;Ljava/util/List;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getOperationEvidence ()Ljava/util/List;
+	public final fun getSynchronizationResult ()Lio/dataloom/api/synchronization/SynchronizationResult;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/execution/protection/ProviderProtectedSynchronizationRuntime {
+	public static final field INSTANCE Lio/dataloom/runtime/execution/protection/ProviderProtectedSynchronizationRuntime;
+	public final fun execute (Lio/dataloom/runtime/execution/SynchronizationExecutionContext;Lio/dataloom/runtime/execution/SynchronizationPipeline;Lio/dataloom/runtime/retry/ProtectedStorageOperations;Lio/dataloom/runtime/retry/ProtectedTransportOperations;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/execution/protection/ProviderProtectionInvocation : java/lang/Enum {
+	public static final field CIRCUIT_FAILURE Lio/dataloom/runtime/execution/protection/ProviderProtectionInvocation;
+	public static final field NON_CIRCUIT_FAILURE Lio/dataloom/runtime/execution/protection/ProviderProtectionInvocation;
+	public static final field NOT_EXECUTED Lio/dataloom/runtime/execution/protection/ProviderProtectionInvocation;
+	public static final field SUCCEEDED Lio/dataloom/runtime/execution/protection/ProviderProtectionInvocation;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/execution/protection/ProviderProtectionInvocation;
+	public static fun values ()[Lio/dataloom/runtime/execution/protection/ProviderProtectionInvocation;
+}
+
+public final class io/dataloom/runtime/execution/protection/ProviderProtectionOperationEvidence {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/runtime/execution/protection/ProviderProtectionInvocation;Lio/dataloom/runtime/execution/protection/ProviderProtectionPreExecutionReason;Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/runtime/execution/protection/ProviderProtectionInvocation;Lio/dataloom/runtime/execution/protection/ProviderProtectionPreExecutionReason;Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-MVFgJrg ()Ljava/lang/String;
+	public final fun component2-TGFxZV8 ()Ljava/lang/String;
+	public final fun component3 ()Lio/dataloom/runtime/execution/protection/ProviderProtectionInvocation;
+	public final fun component4 ()Lio/dataloom/runtime/execution/protection/ProviderProtectionPreExecutionReason;
+	public final fun component5 ()Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;
+	public final fun component6 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component7 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun component8 ()Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;
+	public final fun copy-PEha53M (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/runtime/execution/protection/ProviderProtectionInvocation;Lio/dataloom/runtime/execution/protection/ProviderProtectionPreExecutionReason;Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;)Lio/dataloom/runtime/execution/protection/ProviderProtectionOperationEvidence;
+	public static synthetic fun copy-PEha53M$default (Lio/dataloom/runtime/execution/protection/ProviderProtectionOperationEvidence;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/runtime/execution/protection/ProviderProtectionInvocation;Lio/dataloom/runtime/execution/protection/ProviderProtectionPreExecutionReason;Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;ILjava/lang/Object;)Lio/dataloom/runtime/execution/protection/ProviderProtectionOperationEvidence;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCircuitRecordingAccepted ()Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public final fun getInvocation ()Lio/dataloom/runtime/execution/protection/ProviderProtectionInvocation;
+	public final fun getOperation-TGFxZV8 ()Ljava/lang/String;
+	public final fun getPreExecutionReason ()Lio/dataloom/runtime/execution/protection/ProviderProtectionPreExecutionReason;
+	public final fun getProviderExecuted ()Z
+	public final fun getProviderId-MVFgJrg ()Ljava/lang/String;
+	public final fun getProviderSucceeded ()Z
+	public final fun getRecordResult ()Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;
+	public final fun getRejectionReason ()Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;
+	public final fun getRetryAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/execution/protection/ProviderProtectionPreExecutionReason : java/lang/Enum {
+	public static final field CIRCUIT_REJECTED Lio/dataloom/runtime/execution/protection/ProviderProtectionPreExecutionReason;
+	public static final field PERMISSION_CONTENTION_LIMIT_REACHED Lio/dataloom/runtime/execution/protection/ProviderProtectionPreExecutionReason;
+	public static final field PERMISSION_PERSISTENCE_FAILURE Lio/dataloom/runtime/execution/protection/ProviderProtectionPreExecutionReason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/execution/protection/ProviderProtectionPreExecutionReason;
+	public static fun values ()[Lio/dataloom/runtime/execution/protection/ProviderProtectionPreExecutionReason;
+}
+
 public abstract interface class io/dataloom/runtime/facade/DataLoom {
 	public fun getCircuitQueueWorker ()Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorker;
 	public abstract fun getProviderLifecycleState ()Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;

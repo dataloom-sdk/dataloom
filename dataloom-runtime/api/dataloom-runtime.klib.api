@@ -31,6 +31,31 @@ final enum class io.dataloom.runtime.execution.bidirectional/BidirectionalExecut
     final fun values(): kotlin/Array<io.dataloom.runtime.execution.bidirectional/BidirectionalExecutionOrder> // io.dataloom.runtime.execution.bidirectional/BidirectionalExecutionOrder.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.runtime.execution.protection/ProviderProtectionInvocation : kotlin/Enum<io.dataloom.runtime.execution.protection/ProviderProtectionInvocation> { // io.dataloom.runtime.execution.protection/ProviderProtectionInvocation|null[0]
+    enum entry CIRCUIT_FAILURE // io.dataloom.runtime.execution.protection/ProviderProtectionInvocation.CIRCUIT_FAILURE|null[0]
+    enum entry NON_CIRCUIT_FAILURE // io.dataloom.runtime.execution.protection/ProviderProtectionInvocation.NON_CIRCUIT_FAILURE|null[0]
+    enum entry NOT_EXECUTED // io.dataloom.runtime.execution.protection/ProviderProtectionInvocation.NOT_EXECUTED|null[0]
+    enum entry SUCCEEDED // io.dataloom.runtime.execution.protection/ProviderProtectionInvocation.SUCCEEDED|null[0]
+
+    final val entries // io.dataloom.runtime.execution.protection/ProviderProtectionInvocation.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.execution.protection/ProviderProtectionInvocation> // io.dataloom.runtime.execution.protection/ProviderProtectionInvocation.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.execution.protection/ProviderProtectionInvocation // io.dataloom.runtime.execution.protection/ProviderProtectionInvocation.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.execution.protection/ProviderProtectionInvocation> // io.dataloom.runtime.execution.protection/ProviderProtectionInvocation.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.runtime.execution.protection/ProviderProtectionPreExecutionReason : kotlin/Enum<io.dataloom.runtime.execution.protection/ProviderProtectionPreExecutionReason> { // io.dataloom.runtime.execution.protection/ProviderProtectionPreExecutionReason|null[0]
+    enum entry CIRCUIT_REJECTED // io.dataloom.runtime.execution.protection/ProviderProtectionPreExecutionReason.CIRCUIT_REJECTED|null[0]
+    enum entry PERMISSION_CONTENTION_LIMIT_REACHED // io.dataloom.runtime.execution.protection/ProviderProtectionPreExecutionReason.PERMISSION_CONTENTION_LIMIT_REACHED|null[0]
+    enum entry PERMISSION_PERSISTENCE_FAILURE // io.dataloom.runtime.execution.protection/ProviderProtectionPreExecutionReason.PERMISSION_PERSISTENCE_FAILURE|null[0]
+
+    final val entries // io.dataloom.runtime.execution.protection/ProviderProtectionPreExecutionReason.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.execution.protection/ProviderProtectionPreExecutionReason> // io.dataloom.runtime.execution.protection/ProviderProtectionPreExecutionReason.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.execution.protection/ProviderProtectionPreExecutionReason // io.dataloom.runtime.execution.protection/ProviderProtectionPreExecutionReason.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.execution.protection/ProviderProtectionPreExecutionReason> // io.dataloom.runtime.execution.protection/ProviderProtectionPreExecutionReason.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason : kotlin/Enum<io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason> { // io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason|null[0]
     enum entry CONNECTIVITY_CHECK_FAILED // io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason.CONNECTIVITY_CHECK_FAILED|null[0]
     enum entry CONNECTIVITY_PROVIDER_NOT_CONFIGURED // io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason.CONNECTIVITY_PROVIDER_NOT_CONFIGURED|null[0]
@@ -2066,6 +2091,59 @@ final class io.dataloom.runtime.execution.outbound/OutboundPushSynchronizationPi
     final suspend fun execute(io.dataloom.runtime.execution/SynchronizationExecutionContext): io.dataloom.api.synchronization/SynchronizationResult // io.dataloom.runtime.execution.outbound/OutboundPushSynchronizationPipeline.execute|execute(io.dataloom.runtime.execution.SynchronizationExecutionContext){}[0]
 }
 
+final class io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationResult { // io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationResult|null[0]
+    constructor <init>(io.dataloom.api.synchronization/SynchronizationResult, kotlin.collections/List<io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence>) // io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationResult.<init>|<init>(io.dataloom.api.synchronization.SynchronizationResult;kotlin.collections.List<io.dataloom.runtime.execution.protection.ProviderProtectionOperationEvidence>){}[0]
+
+    final val operationEvidence // io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationResult.operationEvidence|{}operationEvidence[0]
+        final fun <get-operationEvidence>(): kotlin.collections/List<io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence> // io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationResult.operationEvidence.<get-operationEvidence>|<get-operationEvidence>(){}[0]
+    final val synchronizationResult // io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationResult.synchronizationResult|{}synchronizationResult[0]
+        final fun <get-synchronizationResult>(): io.dataloom.api.synchronization/SynchronizationResult // io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationResult.synchronizationResult.<get-synchronizationResult>|<get-synchronizationResult>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationResult.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationResult.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationResult.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence { // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence|null[0]
+    constructor <init>(io.dataloom.api.provider/ProviderId, io.dataloom.api.retry/RetryOperation, io.dataloom.runtime.execution.protection/ProviderProtectionInvocation, io.dataloom.runtime.execution.protection/ProviderProtectionPreExecutionReason? = ..., io.dataloom.runtime.retry/CircuitBreakerRejectionReason? = ..., io.dataloom.api.time/DataLoomInstant? = ..., io.dataloom.api.error/DataLoomError? = ..., io.dataloom.runtime.retry/CircuitBreakerRecordResult? = ...) // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.<init>|<init>(io.dataloom.api.provider.ProviderId;io.dataloom.api.retry.RetryOperation;io.dataloom.runtime.execution.protection.ProviderProtectionInvocation;io.dataloom.runtime.execution.protection.ProviderProtectionPreExecutionReason?;io.dataloom.runtime.retry.CircuitBreakerRejectionReason?;io.dataloom.api.time.DataLoomInstant?;io.dataloom.api.error.DataLoomError?;io.dataloom.runtime.retry.CircuitBreakerRecordResult?){}[0]
+
+    final val circuitRecordingAccepted // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.circuitRecordingAccepted|{}circuitRecordingAccepted[0]
+        final fun <get-circuitRecordingAccepted>(): kotlin/Boolean // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.circuitRecordingAccepted.<get-circuitRecordingAccepted>|<get-circuitRecordingAccepted>(){}[0]
+    final val error // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.error|{}error[0]
+        final fun <get-error>(): io.dataloom.api.error/DataLoomError? // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.error.<get-error>|<get-error>(){}[0]
+    final val invocation // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.invocation|{}invocation[0]
+        final fun <get-invocation>(): io.dataloom.runtime.execution.protection/ProviderProtectionInvocation // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.invocation.<get-invocation>|<get-invocation>(){}[0]
+    final val operation // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.operation|{}operation[0]
+        final fun <get-operation>(): io.dataloom.api.retry/RetryOperation // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.operation.<get-operation>|<get-operation>(){}[0]
+    final val preExecutionReason // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.preExecutionReason|{}preExecutionReason[0]
+        final fun <get-preExecutionReason>(): io.dataloom.runtime.execution.protection/ProviderProtectionPreExecutionReason? // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.preExecutionReason.<get-preExecutionReason>|<get-preExecutionReason>(){}[0]
+    final val providerExecuted // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.providerExecuted|{}providerExecuted[0]
+        final fun <get-providerExecuted>(): kotlin/Boolean // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.providerExecuted.<get-providerExecuted>|<get-providerExecuted>(){}[0]
+    final val providerId // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.providerId|{}providerId[0]
+        final fun <get-providerId>(): io.dataloom.api.provider/ProviderId // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.providerId.<get-providerId>|<get-providerId>(){}[0]
+    final val providerSucceeded // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.providerSucceeded|{}providerSucceeded[0]
+        final fun <get-providerSucceeded>(): kotlin/Boolean // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.providerSucceeded.<get-providerSucceeded>|<get-providerSucceeded>(){}[0]
+    final val recordResult // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.recordResult|{}recordResult[0]
+        final fun <get-recordResult>(): io.dataloom.runtime.retry/CircuitBreakerRecordResult? // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.recordResult.<get-recordResult>|<get-recordResult>(){}[0]
+    final val rejectionReason // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.rejectionReason|{}rejectionReason[0]
+        final fun <get-rejectionReason>(): io.dataloom.runtime.retry/CircuitBreakerRejectionReason? // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.rejectionReason.<get-rejectionReason>|<get-rejectionReason>(){}[0]
+    final val retryAt // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.retryAt|{}retryAt[0]
+        final fun <get-retryAt>(): io.dataloom.api.time/DataLoomInstant? // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.retryAt.<get-retryAt>|<get-retryAt>(){}[0]
+
+    final fun component1(): io.dataloom.api.provider/ProviderId // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.retry/RetryOperation // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.component2|component2(){}[0]
+    final fun component3(): io.dataloom.runtime.execution.protection/ProviderProtectionInvocation // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.component3|component3(){}[0]
+    final fun component4(): io.dataloom.runtime.execution.protection/ProviderProtectionPreExecutionReason? // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.component4|component4(){}[0]
+    final fun component5(): io.dataloom.runtime.retry/CircuitBreakerRejectionReason? // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.component5|component5(){}[0]
+    final fun component6(): io.dataloom.api.time/DataLoomInstant? // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.component6|component6(){}[0]
+    final fun component7(): io.dataloom.api.error/DataLoomError? // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.component7|component7(){}[0]
+    final fun component8(): io.dataloom.runtime.retry/CircuitBreakerRecordResult? // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.component8|component8(){}[0]
+    final fun copy(io.dataloom.api.provider/ProviderId = ..., io.dataloom.api.retry/RetryOperation = ..., io.dataloom.runtime.execution.protection/ProviderProtectionInvocation = ..., io.dataloom.runtime.execution.protection/ProviderProtectionPreExecutionReason? = ..., io.dataloom.runtime.retry/CircuitBreakerRejectionReason? = ..., io.dataloom.api.time/DataLoomInstant? = ..., io.dataloom.api.error/DataLoomError? = ..., io.dataloom.runtime.retry/CircuitBreakerRecordResult? = ...): io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.copy|copy(io.dataloom.api.provider.ProviderId;io.dataloom.api.retry.RetryOperation;io.dataloom.runtime.execution.protection.ProviderProtectionInvocation;io.dataloom.runtime.execution.protection.ProviderProtectionPreExecutionReason?;io.dataloom.runtime.retry.CircuitBreakerRejectionReason?;io.dataloom.api.time.DataLoomInstant?;io.dataloom.api.error.DataLoomError?;io.dataloom.runtime.retry.CircuitBreakerRecordResult?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.toString|toString(){}[0]
+}
+
 final class io.dataloom.runtime.execution/SynchronizationExecutionContext { // io.dataloom.runtime.execution/SynchronizationExecutionContext|null[0]
     constructor <init>(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.execution/SynchronizationProviderSet, io.dataloom.api.runtime/RuntimeDependencies, io.dataloom.runtime.execution.lifecycle/SynchronizationLifecycleEventEmitter? = ...) // io.dataloom.runtime.execution/SynchronizationExecutionContext.<init>|<init>(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.execution.SynchronizationProviderSet;io.dataloom.api.runtime.RuntimeDependencies;io.dataloom.runtime.execution.lifecycle.SynchronizationLifecycleEventEmitter?){}[0]
 
@@ -2935,6 +3013,10 @@ final class io.dataloom.runtime.worker/QueueWorkerRunRequest { // io.dataloom.ru
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/QueueWorkerRunRequest.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/QueueWorkerRunRequest.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.runtime.worker/QueueWorkerRunRequest.toString|toString(){}[0]
+}
+
+final object io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationRuntime { // io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationRuntime|null[0]
+    final suspend fun execute(io.dataloom.runtime.execution/SynchronizationExecutionContext, io.dataloom.runtime.execution/SynchronizationPipeline, io.dataloom.runtime.retry/ProtectedStorageOperations, io.dataloom.runtime.retry/ProtectedTransportOperations): io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationResult // io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationRuntime.execute|execute(io.dataloom.runtime.execution.SynchronizationExecutionContext;io.dataloom.runtime.execution.SynchronizationPipeline;io.dataloom.runtime.retry.ProtectedStorageOperations;io.dataloom.runtime.retry.ProtectedTransportOperations){}[0]
 }
 
 final object io.dataloom.runtime.retry/DefaultCircuitBreakerFailureClassifier : io.dataloom.runtime.retry/CircuitBreakerFailureClassifier { // io.dataloom.runtime.retry/DefaultCircuitBreakerFailureClassifier|null[0]
