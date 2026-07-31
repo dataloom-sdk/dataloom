@@ -39,9 +39,6 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
-      - name: Apply scheduler circuit integration
-        run: python3 .github/scripts/temporary_circuit_queue_worker_scheduler_patch.py
-
       - name: Compile and test queue worker scheduler circuit
         shell: bash
         run: |
@@ -93,6 +90,12 @@ jobs:
             dataloom-runtime/api/dataloom-runtime.klib.api
           grep -F "CircuitProtected" dataloom-runtime/api/dataloom-runtime.api
           grep -F "schedulerCircuit" dataloom-runtime/api/dataloom-runtime.klib.api
+          if grep -F "CircuitBreakerQueueWorkerSchedulerCircuit" \
+            dataloom-runtime/api/dataloom-runtime.api \
+            dataloom-runtime/api/dataloom-runtime.klib.api; then
+            echo "Unused scheduler circuit holder leaked into public ABI."
+            exit 1
+          fi
           grep -F "BuilderCircuitQueueWorkerSchedulerExternalConsumerProbe" \
             runtime-external-consumer/src/commonMain/kotlin/io/dataloom/consumer/BuilderCircuitQueueWorkerSchedulerExternalConsumerProbe.kt
           grep -F "Circuit-aware queue-worker scheduling" \
