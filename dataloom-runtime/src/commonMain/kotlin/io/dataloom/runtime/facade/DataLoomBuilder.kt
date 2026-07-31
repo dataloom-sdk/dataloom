@@ -25,6 +25,7 @@ import io.dataloom.runtime.execution.bidirectional.BidirectionalSynchronizationP
 import io.dataloom.runtime.execution.inbound.InboundPullPipelineConfiguration
 import io.dataloom.runtime.execution.inbound.InboundPullSynchronizationPipeline
 import io.dataloom.runtime.execution.lifecycle.DispatchingSynchronizationLifecycleEventEmitter
+import io.dataloom.runtime.execution.protection.ProviderProtectedSynchronizationCoordinator
 import io.dataloom.runtime.execution.outbound.OutboundPushPipelineConfiguration
 import io.dataloom.runtime.execution.outbound.OutboundPushSynchronizationPipeline
 import io.dataloom.runtime.observation.SynchronizationEventDispatcher
@@ -35,7 +36,9 @@ import io.dataloom.runtime.retry.CircuitBreakerCoordinator
 import io.dataloom.runtime.retry.CircuitBreakerExecutionGate
 import io.dataloom.runtime.retry.QueueCircuitOperation
 import io.dataloom.runtime.retry.SchedulerCircuitOperation
+import io.dataloom.runtime.retry.StorageCircuitProtectionRuntime
 import io.dataloom.runtime.retry.SynchronizationRetryEvaluator
+import io.dataloom.runtime.retry.TransportCircuitProtectionRuntime
 import io.dataloom.runtime.strategy.BuiltInSynchronizationStrategyEvaluator
 import io.dataloom.runtime.strategy.StrategySynchronizationExecutionCoordinator
 import io.dataloom.runtime.submission.DataLoomQueueSubmission
@@ -130,6 +133,7 @@ public class DataLoomBuilder {
     private var circuitQueueWorkerSpec: DataLoomCircuitQueueWorkerSpec? = null
     private var circuitQueueWorkerSchedulerSpec: DataLoomCircuitQueueWorkerSchedulerSpec? = null
     private var queueSubmissionSpecValue: DataLoomQueueSubmissionSpec? = null
+    private var providerProtectionSpec: DataLoomProviderProtectionSpec? = null
     private var built: Boolean = false
 
     // =========================================================================
@@ -313,6 +317,23 @@ public class DataLoomBuilder {
      */
     public fun pipeline(pipeline: SynchronizationPipeline): DataLoomBuilder = apply {
         customPipelineList.add(pipeline)
+    }
+
+    /**
+     * Configures the optional protected direct-synchronization capability.
+     *
+     * Storage and transport protection remain independently configured inside
+     * [spec]. Build requires valid default provider bindings and validates every
+     * provider- and operation-bearing scope before provider, store, clock,
+     * timeout, I/O, identifier, or coroutine activity.
+     *
+     * The historical [DataLoom.synchronize] path is not redirected. Callers use
+     * [DataLoom.protectedSynchronization] explicitly.
+     */
+    public fun providerProtectionConfiguration(
+        spec: DataLoomProviderProtectionSpec,
+    ): DataLoomBuilder = apply {
+        providerProtectionSpec = spec
     }
 
     /**
@@ -545,7 +566,27 @@ public class DataLoomBuilder {
             lifecycleEventEmitter = lifecycleEventEmitter,
         )
 
-        // --- 9. Build optional queue worker ---
+        // --- 9. Build optional provider-protected direct synchronization ---
+        val protectedSynchronization = providerProtectionSpec?.let { spec ->
+            val legacyBindings = bindings
+                ?: throw DataLoomBuildException(
+                    "DataLoomBuilder providerProtectionConfiguration requires " +
+                        "defaultProviderBindings.",
+                )
+            buildProtectedSynchronization(
+                spec = spec,
+                resolver = resolver,
+                bindings = legacyBindings,
+                lifecycleCoordinator = lifecycleCoordinator,
+                pipelineRegistry = finalPipelineRegistry,
+                deps = deps,
+                lifecycleEventEmitter = lifecycleEventEmitter,
+                connectivityConfiguration = effectiveConnectivityConfiguration,
+                connectivityPreflight = connectivityPreflight,
+            )
+        }
+
+        // --- 10. Build optional queue worker ---
         val queueWorker = queueWorkerSpec?.let { spec ->
             val legacyBindings = bindings
                 ?: throw DataLoomBuildException(
@@ -561,7 +602,7 @@ public class DataLoomBuilder {
             )
         }
 
-        // --- 10. Build optional circuit-aware queue worker ---
+        // --- 11. Build optional circuit-aware queue worker ---
         val circuitQueueWorker = circuitQueueWorkerSpec?.let { spec ->
             val legacyBindings = bindings
                 ?: throw DataLoomBuildException(
@@ -578,7 +619,7 @@ public class DataLoomBuilder {
             )
         }
 
-        // --- 11. Build optional queue submission ---
+        // --- 12. Build optional queue submission ---
         val queueSubmission = queueSubmissionSpecValue?.let { spec ->
             val legacyBindings = bindings
                 ?: throw DataLoomBuildException(
@@ -601,6 +642,7 @@ public class DataLoomBuilder {
             defaultStrategyBindings = strategyBindings,
             queueWorker = queueWorker,
             circuitQueueWorker = circuitQueueWorker,
+            protectedSynchronization = protectedSynchronization,
             queueSubmission = queueSubmission,
         )
     }
@@ -704,6 +746,80 @@ public class DataLoomBuilder {
         )
         return SynchronizationPipelineRegistry(
             listOf(outbound, inbound, bidirectional),
+        )
+    }
+
+    /**
+     * Assembles protected direct synchronization from the same lifecycle,
+     * resolver, pipeline registry, connectivity, runtime, and event components
+     * as direct synchronization.
+     */
+    private fun buildProtectedSynchronization(
+        spec: DataLoomProviderProtectionSpec,
+        resolver: SynchronizationProviderResolver,
+        bindings: SynchronizationProviderBindings,
+        lifecycleCoordinator: ProviderLifecycleCoordinator,
+        pipelineRegistry: SynchronizationPipelineRegistry,
+        deps: RuntimeDependencies,
+        lifecycleEventEmitter: io.dataloom.runtime.execution.lifecycle.SynchronizationLifecycleEventEmitter?,
+        connectivityConfiguration: SynchronizationConnectivityConfiguration,
+        connectivityPreflight: SynchronizationConnectivityPreflight,
+    ): DataLoomProtectedSynchronization {
+        val resolved = when (val resolution = resolver.resolve(bindings)) {
+            is ProviderResolutionResult.Success -> resolution.providers
+            is ProviderResolutionResult.Failure -> throw DataLoomBuildException(
+                "DataLoomBuilder providerProtectionConfiguration requires valid default provider bindings.",
+            )
+        }
+
+        val storageOperations = try {
+            StorageCircuitProtectionRuntime.create(
+                storageProvider = resolved.storageProvider,
+                clock = deps.clock,
+                circuitBreakerConfiguration = spec.storage.circuitBreakerConfiguration,
+                circuitBreakerStateStore = spec.storage.circuitBreakerStateStore,
+                scopes = spec.storage.scopes,
+                providerTimeout = spec.storage.providerTimeout,
+                failureClassifier = spec.storage.failureClassifier,
+            )
+        } catch (_: IllegalArgumentException) {
+            throw DataLoomBuildException(
+                "DataLoomBuilder providerProtectionConfiguration storage scopes must match " +
+                    "the default storage provider and exact storage operations.",
+            )
+        }
+
+        val transportOperations = try {
+            TransportCircuitProtectionRuntime.create(
+                transportProvider = resolved.transportProvider,
+                clock = deps.clock,
+                circuitBreakerConfiguration = spec.transport.circuitBreakerConfiguration,
+                circuitBreakerStateStore = spec.transport.circuitBreakerStateStore,
+                scopes = spec.transport.scopes,
+                providerTimeout = spec.transport.providerTimeout,
+                failureClassifier = spec.transport.failureClassifier,
+            )
+        } catch (_: IllegalArgumentException) {
+            throw DataLoomBuildException(
+                "DataLoomBuilder providerProtectionConfiguration transport scopes must match " +
+                    "the default transport provider and exact transport operations.",
+            )
+        }
+
+        val coordinator = ProviderProtectedSynchronizationCoordinator(
+            lifecycleCoordinator = lifecycleCoordinator,
+            providerResolver = resolver,
+            pipelineRegistry = pipelineRegistry,
+            runtimeDependencies = deps,
+            storageOperations = storageOperations,
+            transportOperations = transportOperations,
+            lifecycleEventEmitter = lifecycleEventEmitter,
+            connectivityConfiguration = connectivityConfiguration,
+            connectivityPreflight = connectivityPreflight,
+        )
+        return DefaultDataLoomProtectedSynchronization(
+            coordinator = coordinator,
+            defaultBindings = bindings,
         )
     }
 

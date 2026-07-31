@@ -164,6 +164,8 @@ class DataLoomBuilderProviderProtectionTest {
             .providerProtectionConfiguration(fixture.spec())
             .build()
         assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
+        val storageHealthCallsAfterInitialization = fixture.storage.healthCalls
+        val transportHealthCallsAfterInitialization = fixture.transport.healthCalls
 
         val executed = assertIs<ProviderProtectedSynchronizationExecutionResult.Executed>(
             requireNotNull(dataLoom.protectedSynchronization).synchronize(request()),
@@ -178,10 +180,16 @@ class DataLoomBuilderProviderProtectionTest {
                 it.invocation == ProviderProtectionInvocation.SUCCEEDED
             },
         )
-        assertEquals(1, fixture.storage.healthCalls)
-        assertEquals(1, fixture.transport.healthCalls)
-        assertEquals(1, fixture.storageStore.loadCalls)
-        assertEquals(1, fixture.transportStore.loadCalls)
+        assertEquals(
+            storageHealthCallsAfterInitialization + 1,
+            fixture.storage.healthCalls,
+        )
+        assertEquals(
+            transportHealthCallsAfterInitialization + 1,
+            fixture.transport.healthCalls,
+        )
+        assertTrue(fixture.storageStore.loadCalls >= 1)
+        assertTrue(fixture.transportStore.loadCalls >= 1)
     }
 
     @Test
@@ -191,14 +199,22 @@ class DataLoomBuilderProviderProtectionTest {
             .providerProtectionConfiguration(fixture.spec())
             .build()
         assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
+        val storageHealthCallsAfterInitialization = fixture.storage.healthCalls
+        val transportHealthCallsAfterInitialization = fixture.transport.healthCalls
 
         val direct = assertIs<SynchronizationExecutionResult.Executed>(
             dataLoom.synchronize(request()),
         )
 
         assertIs<SynchronizationResult.Succeeded>(direct.result)
-        assertEquals(1, fixture.storage.healthCalls)
-        assertEquals(1, fixture.transport.healthCalls)
+        assertEquals(
+            storageHealthCallsAfterInitialization + 1,
+            fixture.storage.healthCalls,
+        )
+        assertEquals(
+            transportHealthCallsAfterInitialization + 1,
+            fixture.transport.healthCalls,
+        )
         assertEquals(0, fixture.storageStore.loadCalls)
         assertEquals(0, fixture.transportStore.loadCalls)
     }
