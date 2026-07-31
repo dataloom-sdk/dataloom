@@ -10,6 +10,15 @@ def replace_once(path: str, old: str, new: str) -> None:
     file.write_text(text.replace(old, new, 1))
 
 
+test_path = "dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/queue/CircuitBreakerDurableQueueExecutionProcessorTest.kt"
+replace_once(
+    test_path,
+    "import io.dataloom.api.identifier.QueueLeaseId\n",
+    "import io.dataloom.api.identifier.QueueLeaseId\n"
+    "import io.dataloom.api.identifier.SynchronizationSessionId\n"
+    "import io.dataloom.api.identifier.WorkflowId\n",
+)
+
 readme = "docs/api/README.md"
 replace_once(
     readme,
