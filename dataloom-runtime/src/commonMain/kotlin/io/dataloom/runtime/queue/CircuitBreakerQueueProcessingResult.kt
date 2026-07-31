@@ -73,14 +73,17 @@ public sealed interface CircuitBreakerQueueProcessingResult {
     ) : CircuitBreakerQueueProcessingResult
 
     /** All acquired entries completed one confirmed provider transition. */
-    public data class Processed(
+    public class Processed(
         public val summary: QueueProcessingSummary,
         public val acquisitionLimitReached: Boolean = false,
         public val earliestRescheduledAt: DataLoomInstant? = null,
         public val earliestDeferredAt: DataLoomInstant? = null,
-        /** Accepted acquisition and transition recording evidence in execution order. */
-        public val operationRecords: List<QueueCircuitOperationRecord>,
+        operationRecords: List<QueueCircuitOperationRecord>,
     ) : CircuitBreakerQueueProcessingResult {
+
+        /** Defensive immutable snapshot in provider execution order. */
+        public val operationRecords: List<QueueCircuitOperationRecord> = operationRecords.toList()
+
         public val earliestNextAvailableAt: DataLoomInstant?
             get() {
                 val retryAt = earliestRescheduledAt
@@ -92,6 +95,30 @@ public sealed interface CircuitBreakerQueueProcessingResult {
                     else -> deferredAt
                 }
             }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Processed) return false
+            return summary == other.summary &&
+                acquisitionLimitReached == other.acquisitionLimitReached &&
+                earliestRescheduledAt == other.earliestRescheduledAt &&
+                earliestDeferredAt == other.earliestDeferredAt &&
+                operationRecords == other.operationRecords
+        }
+
+        override fun hashCode(): Int {
+            var result = summary.hashCode()
+            result = 31 * result + acquisitionLimitReached.hashCode()
+            result = 31 * result + (earliestRescheduledAt?.hashCode() ?: 0)
+            result = 31 * result + (earliestDeferredAt?.hashCode() ?: 0)
+            result = 31 * result + operationRecords.hashCode()
+            return result
+        }
+
+        override fun toString(): String =
+            "Processed(summary=$summary, acquisitionLimitReached=$acquisitionLimitReached, " +
+                "earliestRescheduledAt=$earliestRescheduledAt, " +
+                "earliestDeferredAt=$earliestDeferredAt, operationRecords=$operationRecords)"
     }
 
     /** Circuit permission stopped an operation before provider invocation. */
@@ -124,14 +151,44 @@ public sealed interface CircuitBreakerQueueProcessingResult {
      * stops and later entries are not executed. For acquisition, [affectedEntryIds]
      * identifies entries whose leases were confirmed by the provider.
      */
-    public data class CircuitRecordingUnconfirmed(
+    public class CircuitRecordingUnconfirmed(
         public val operation: QueueCircuitOperation,
         public val stage: QueueProcessingFailureStage,
         public val recordResult: CircuitBreakerRecordResult,
         public val summary: QueueProcessingSummary,
-        public val affectedEntryIds: List<QueueEntryId> = emptyList(),
+        affectedEntryIds: List<QueueEntryId> = emptyList(),
         public val leaseId: QueueLeaseId? = null,
-    ) : CircuitBreakerQueueProcessingResult
+    ) : CircuitBreakerQueueProcessingResult {
+
+        /** Defensive immutable snapshot of entries affected by the successful provider call. */
+        public val affectedEntryIds: List<QueueEntryId> = affectedEntryIds.toList()
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is CircuitRecordingUnconfirmed) return false
+            return operation == other.operation &&
+                stage == other.stage &&
+                recordResult == other.recordResult &&
+                summary == other.summary &&
+                affectedEntryIds == other.affectedEntryIds &&
+                leaseId == other.leaseId
+        }
+
+        override fun hashCode(): Int {
+            var result = operation.hashCode()
+            result = 31 * result + stage.hashCode()
+            result = 31 * result + recordResult.hashCode()
+            result = 31 * result + summary.hashCode()
+            result = 31 * result + affectedEntryIds.hashCode()
+            result = 31 * result + (leaseId?.hashCode() ?: 0)
+            return result
+        }
+
+        override fun toString(): String =
+            "CircuitRecordingUnconfirmed(operation=$operation, stage=$stage, " +
+                "recordResult=$recordResult, summary=$summary, " +
+                "affectedEntryIds=$affectedEntryIds, leaseId=$leaseId)"
+    }
 
     /** Acquisition succeeded but returned structurally invalid entries. */
     public data class QueueContractViolation(
