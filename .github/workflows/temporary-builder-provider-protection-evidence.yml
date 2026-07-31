@@ -38,8 +38,10 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
-      - name: Apply builder provider protection patch
-        run: python3 .github/scripts/temporary_builder_provider_protection_patch.py
+      - name: Apply builder provider protection patch and focused test correction
+        run: |
+          python3 .github/scripts/temporary_builder_provider_protection_patch.py
+          python3 .github/scripts/temporary_builder_provider_protection_test_fix.py
 
       - name: Index builder provider protection documentation
         shell: bash
@@ -124,7 +126,8 @@ jobs:
           set -euo pipefail
           rm -f \
             .github/workflows/temporary-builder-provider-protection-evidence.yml \
-            .github/scripts/temporary_builder_provider_protection_patch.py
+            .github/scripts/temporary_builder_provider_protection_patch.py \
+            .github/scripts/temporary_builder_provider_protection_test_fix.py
           git diff --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
