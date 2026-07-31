@@ -38,36 +38,36 @@ public class TimeoutEnforcingTransportProvider(
 
     override suspend fun initialize(
         context: ProviderInitializationContext,
-    ): ProviderOperationResult<Unit> = execute(TransportTimeoutOperation.INITIALIZE) {
+    ): ProviderOperationResult<Unit> = execute(TransportCircuitOperation.INITIALIZE) {
         delegate.initialize(context)
     }
 
     override suspend fun health(): ProviderOperationResult<ProviderHealth> =
-        execute(TransportTimeoutOperation.HEALTH) {
+        execute(TransportCircuitOperation.HEALTH) {
             delegate.health()
         }
 
     override suspend fun close(): ProviderOperationResult<Unit> =
-        execute(TransportTimeoutOperation.CLOSE) {
+        execute(TransportCircuitOperation.CLOSE) {
             delegate.close()
         }
 
     override suspend fun pushChanges(
         request: PushChangesRequest,
     ): ProviderOperationResult<ChangeSetAcknowledgement> =
-        execute(TransportTimeoutOperation.PUSH_CHANGES) {
+        execute(TransportCircuitOperation.PUSH_CHANGES) {
             delegate.pushChanges(request)
         }
 
     override suspend fun pullChanges(
         request: PullChangesRequest,
     ): ProviderOperationResult<PullChangesResult> =
-        execute(TransportTimeoutOperation.PULL_CHANGES) {
+        execute(TransportCircuitOperation.PULL_CHANGES) {
             delegate.pullChanges(request)
         }
 
     private suspend fun <T> execute(
-        operation: TransportTimeoutOperation,
+        operation: TransportCircuitOperation,
         block: suspend () -> ProviderOperationResult<T>,
     ): ProviderOperationResult<T> = when (
         val result = timeoutCoordinator.execute(
@@ -88,58 +88,59 @@ public class TimeoutEnforcingTransportProvider(
     }
 }
 
-private enum class TransportTimeoutOperation(
-    val label: String,
-    val category: ErrorCategory,
-    val readOnly: Boolean = false,
-    val remoteOperation: Boolean = false,
-) {
-    INITIALIZE("initialize", ErrorCategory.PROVIDER),
-    HEALTH("health", ErrorCategory.PROVIDER, readOnly = true),
-    CLOSE("close", ErrorCategory.PROVIDER),
-    PUSH_CHANGES("push-changes", ErrorCategory.NETWORK, remoteOperation = true),
-    PULL_CHANGES("pull-changes", ErrorCategory.NETWORK, remoteOperation = true),
-}
+internal object TransportTimeoutErrors {
+    internal const val PROVIDER_TIMEOUT_CODE: String = "TRANSPORT_PROVIDER_TIMEOUT"
 
-private object TransportTimeoutErrors {
-    fun providerTimedOut(operation: TransportTimeoutOperation): DataLoomError = Error(
-        code = ErrorCode("TRANSPORT_PROVIDER_TIMEOUT"),
-        category = operation.category,
+    fun providerTimedOut(operation: TransportCircuitOperation): DataLoomError = Error(
+        code = ErrorCode(PROVIDER_TIMEOUT_CODE),
+        category = categoryFor(operation),
         severity = ErrorSeverity.ERROR,
-        recoverability = if (operation.readOnly) {
+        recoverability = if (operation == TransportCircuitOperation.HEALTH) {
             Recoverability.RECOVERABLE
         } else {
             Recoverability.UNKNOWN
         },
-        message = when {
-            operation.readOnly ->
-                "The transport provider ${operation.label} operation exceeded its configured timeout."
-            operation.remoteOperation ->
-                "The transport provider ${operation.label} operation exceeded its configured timeout; " +
-                    "remote completion is not confirmed."
-            else ->
-                "The transport provider ${operation.label} operation exceeded its configured timeout; " +
-                    "completion is not confirmed."
+        message = when (operation) {
+            TransportCircuitOperation.HEALTH ->
+                "The transport provider health operation exceeded its configured timeout."
+            TransportCircuitOperation.PUSH_CHANGES,
+            TransportCircuitOperation.PULL_CHANGES,
+            -> "The transport provider ${operation.retryOperation.value} operation exceeded its " +
+                "configured timeout; remote completion is not confirmed."
+            TransportCircuitOperation.INITIALIZE,
+            TransportCircuitOperation.CLOSE,
+            -> "The transport provider ${operation.retryOperation.value} operation exceeded its " +
+                "configured timeout; completion is not confirmed."
         },
     )
 
-    fun workflowDeadlineExceeded(operation: TransportTimeoutOperation): DataLoomError = Error(
+    fun workflowDeadlineExceeded(operation: TransportCircuitOperation): DataLoomError = Error(
         code = ErrorCode("TRANSPORT_WORKFLOW_DEADLINE_EXCEEDED"),
-        category = operation.category,
+        category = categoryFor(operation),
         severity = ErrorSeverity.ERROR,
         recoverability = Recoverability.NON_RECOVERABLE,
         message = "The workflow deadline expired before transport provider " +
-            "${operation.label} completed.",
+            "${operation.retryOperation.value} completed.",
     )
 
-    fun clockRegression(operation: TransportTimeoutOperation): DataLoomError = Error(
+    fun clockRegression(operation: TransportCircuitOperation): DataLoomError = Error(
         code = ErrorCode("TRANSPORT_TIMEOUT_CLOCK_REGRESSION"),
         category = ErrorCategory.STATE,
         severity = ErrorSeverity.ERROR,
         recoverability = Recoverability.NON_RECOVERABLE,
-        message = "Clock regression prevented transport provider ${operation.label} " +
-            "timeout enforcement.",
+        message = "Clock regression prevented transport provider " +
+            "${operation.retryOperation.value} timeout enforcement.",
     )
+
+    private fun categoryFor(operation: TransportCircuitOperation): ErrorCategory = when (operation) {
+        TransportCircuitOperation.PUSH_CHANGES,
+        TransportCircuitOperation.PULL_CHANGES,
+        -> ErrorCategory.NETWORK
+        TransportCircuitOperation.INITIALIZE,
+        TransportCircuitOperation.HEALTH,
+        TransportCircuitOperation.CLOSE,
+        -> ErrorCategory.PROVIDER
+    }
 
     private data class Error(
         override val code: ErrorCode,
