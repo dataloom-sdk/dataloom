@@ -1,0 +1,125 @@
+name: Temporary Refresh Scheduler Circuit On Main
+
+on:
+  push:
+    branches:
+      - codex/dl-retry-030-circuit-queue-worker-scheduler
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-refresh-scheduler-circuit-main
+  cancel-in-progress: true
+
+jobs:
+  refresh-and-validate:
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout scheduler circuit branch
+        uses: actions/checkout@v6
+        with:
+          ref: codex/dl-retry-030-circuit-queue-worker-scheduler
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Merge current main without losing reviewed scheduler changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git merge origin/main --no-commit --no-ff -X ours
+
+      - name: Preserve combined API documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("docs/api/README.md")
+          text = path.read_text()
+
+          timeout_row = "| [Storage and transport provider timeouts](./storage-transport-provider-timeouts.md) | Partial V1 subsystem | Cooperative lifecycle and synchronization-operation timeout protection with fail-closed mutation ambiguity. |"
+          if timeout_row not in text:
+              anchor = "| [Retry timeout boundaries](./retry-timeouts.md) | Partial V1 subsystem | Independent timeout contracts, workflow-deadline precedence, coroutine executor, and selected provider/runtime assembly. |"
+              if anchor not in text:
+                  raise SystemExit("Retry timeout documentation anchor not found")
+              text = text.replace(anchor, anchor + "\n" + timeout_row, 1)
+
+          scheduler_link = "[circuit-protected worker scheduling](./circuit-queue-worker-scheduler.md)"
+          if scheduler_link not in text:
+              anchor = "[circuit-aware queue worker](./circuit-queue-worker.md)"
+              if anchor not in text:
+                  raise SystemExit("Circuit-aware queue worker link anchor not found")
+              text = text.replace(anchor, anchor + ", " + scheduler_link, 1)
+
+          scheduler_row = "| [Circuit-protected worker scheduling](./circuit-queue-worker-scheduler.md) | Partial V1 subsystem | Separate scheduler timeout/circuit policy with exact accepted-schedule and recording evidence. |"
+          if scheduler_row not in text:
+              anchor = "| [Builder circuit-aware queue worker](./builder-circuit-queue-worker.md) | Partial V1 subsystem | Explicit facade assembly, durable state-store injection, scope validation, and mutually exclusive worker selection. |"
+              if anchor not in text:
+                  raise SystemExit("Builder circuit worker documentation anchor not found")
+              text = text.replace(anchor, anchor + "\n" + scheduler_row, 1)
+
+          text = text.replace(
+              "V1 retry work still requires scheduler-circuit policy, complete\ntransport/storage circuit assembly,",
+              "V1 retry work still requires complete transport/storage circuit assembly,",
+          )
+          path.write_text(text)
+          PY
+
+      - name: Regenerate combined ABI and validate runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            :dataloom-runtime:updateKotlinAbi \
+            :dataloom-apple:updateKotlinAbi \
+            :dataloom-runtime:jvmTest \
+            :dataloom-runtime:checkKotlinAbi \
+            :dataloom-runtime:checkPublicAbiBoundaries \
+            :dataloom-apple:checkKotlinAbi \
+            :runtime-external-consumer:checkRuntimeExternalConsumer \
+            --no-configuration-cache \
+            --stacktrace \
+            --warning-mode all \
+            --console=plain
+
+      - name: Verify combined evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "SchedulerCircuitOperation" dataloom-runtime/api/dataloom-runtime.api
+          grep -F "TimeoutEnforcingStorageProvider" dataloom-runtime/api/dataloom-runtime.api
+          grep -F "TimeoutEnforcingTransportProvider" dataloom-runtime/api/dataloom-runtime.api
+          grep -F "circuitQueueWorkerSchedulerConfiguration" dataloom-runtime/api/dataloom-runtime.klib.api
+          grep -F "storage-transport-provider-timeouts.md" docs/api/README.md
+          grep -F "circuit-queue-worker-scheduler.md" docs/api/README.md
+          git diff --check
+
+      - name: Commit refreshed branch and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/temporary-refresh-scheduler-circuit-main.yml
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "DL-040: refresh scheduler circuit on current main"
+          git push origin HEAD:codex/dl-retry-030-circuit-queue-worker-scheduler
