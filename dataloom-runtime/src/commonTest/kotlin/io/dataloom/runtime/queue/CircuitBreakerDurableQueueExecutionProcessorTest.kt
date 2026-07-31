@@ -19,6 +19,8 @@ import io.dataloom.api.identifier.ExecutionId
 import io.dataloom.api.identifier.QueueConsumerId
 import io.dataloom.api.identifier.QueueEntryId
 import io.dataloom.api.identifier.QueueLeaseId
+import io.dataloom.api.identifier.SynchronizationSessionId
+import io.dataloom.api.identifier.WorkflowId
 import io.dataloom.api.model.SynchronizationDirection
 import io.dataloom.api.model.SynchronizationMode
 import io.dataloom.api.model.SynchronizationRequest

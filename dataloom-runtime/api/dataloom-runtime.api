@@ -499,9 +499,181 @@ public final class io/dataloom/runtime/observation/SynchronizationObserverRegist
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/runtime/queue/CircuitBreakerDurableQueueExecutionProcessor {
+	public fun <init> (Lio/dataloom/runtime/retry/CircuitBreakerQueueOperationAdapter;Lio/dataloom/runtime/queue/QueueEntryExecutionHandler;Lio/dataloom/runtime/queue/QueueProcessingCircuitScopes;)V
+	public final fun process (Lio/dataloom/runtime/queue/QueueProcessingRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult {
+}
+
+public final class io/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult$CircuitRecordingUnconfirmed : io/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult {
+	public synthetic fun <init> (Lio/dataloom/runtime/retry/QueueCircuitOperation;Lio/dataloom/runtime/queue/QueueProcessingFailureStage;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;Lio/dataloom/runtime/queue/QueueProcessingSummary;Ljava/util/List;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/retry/QueueCircuitOperation;Lio/dataloom/runtime/queue/QueueProcessingFailureStage;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;Lio/dataloom/runtime/queue/QueueProcessingSummary;Ljava/util/List;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAffectedEntryIds ()Ljava/util/List;
+	public final fun getLeaseId-4N8MUac ()Ljava/lang/String;
+	public final fun getOperation ()Lio/dataloom/runtime/retry/QueueCircuitOperation;
+	public final fun getRecordResult ()Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;
+	public final fun getStage ()Lio/dataloom/runtime/queue/QueueProcessingFailureStage;
+	public final fun getSummary ()Lio/dataloom/runtime/queue/QueueProcessingSummary;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult$NoWork : io/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult {
+	public fun <init> (Lio/dataloom/runtime/queue/QueueCircuitOperationRecord;)V
+	public final fun component1 ()Lio/dataloom/runtime/queue/QueueCircuitOperationRecord;
+	public final fun copy (Lio/dataloom/runtime/queue/QueueCircuitOperationRecord;)Lio/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult$NoWork;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult$NoWork;Lio/dataloom/runtime/queue/QueueCircuitOperationRecord;ILjava/lang/Object;)Lio/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult$NoWork;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAcquisitionRecord ()Lio/dataloom/runtime/queue/QueueCircuitOperationRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult$PreExecutionStopped : io/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult {
+	public synthetic fun <init> (Lio/dataloom/runtime/retry/QueueCircuitOperation;Lio/dataloom/runtime/queue/QueueProcessingFailureStage;Lio/dataloom/runtime/queue/QueueCircuitPreExecutionDecision;Lio/dataloom/runtime/queue/QueueProcessingSummary;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/retry/QueueCircuitOperation;Lio/dataloom/runtime/queue/QueueProcessingFailureStage;Lio/dataloom/runtime/queue/QueueCircuitPreExecutionDecision;Lio/dataloom/runtime/queue/QueueProcessingSummary;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/runtime/retry/QueueCircuitOperation;
+	public final fun component2 ()Lio/dataloom/runtime/queue/QueueProcessingFailureStage;
+	public final fun component3 ()Lio/dataloom/runtime/queue/QueueCircuitPreExecutionDecision;
+	public final fun component4 ()Lio/dataloom/runtime/queue/QueueProcessingSummary;
+	public final fun component5-T_ZE2vg ()Ljava/lang/String;
+	public final fun component6-4N8MUac ()Ljava/lang/String;
+	public final fun copy-w3HFCJI (Lio/dataloom/runtime/retry/QueueCircuitOperation;Lio/dataloom/runtime/queue/QueueProcessingFailureStage;Lio/dataloom/runtime/queue/QueueCircuitPreExecutionDecision;Lio/dataloom/runtime/queue/QueueProcessingSummary;Ljava/lang/String;Ljava/lang/String;)Lio/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult$PreExecutionStopped;
+	public static synthetic fun copy-w3HFCJI$default (Lio/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult$PreExecutionStopped;Lio/dataloom/runtime/retry/QueueCircuitOperation;Lio/dataloom/runtime/queue/QueueProcessingFailureStage;Lio/dataloom/runtime/queue/QueueCircuitPreExecutionDecision;Lio/dataloom/runtime/queue/QueueProcessingSummary;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult$PreExecutionStopped;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAffectedEntryId-T_ZE2vg ()Ljava/lang/String;
+	public final fun getDecision ()Lio/dataloom/runtime/queue/QueueCircuitPreExecutionDecision;
+	public final fun getLeaseId-4N8MUac ()Ljava/lang/String;
+	public final fun getOperation ()Lio/dataloom/runtime/retry/QueueCircuitOperation;
+	public final fun getStage ()Lio/dataloom/runtime/queue/QueueProcessingFailureStage;
+	public final fun getSummary ()Lio/dataloom/runtime/queue/QueueProcessingSummary;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult$Processed : io/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult {
+	public fun <init> (Lio/dataloom/runtime/queue/QueueProcessingSummary;ZLio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Ljava/util/List;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/queue/QueueProcessingSummary;ZLio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAcquisitionLimitReached ()Z
+	public final fun getEarliestDeferredAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getEarliestNextAvailableAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getEarliestRescheduledAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getOperationRecords ()Ljava/util/List;
+	public final fun getSummary ()Lio/dataloom/runtime/queue/QueueProcessingSummary;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult$ProviderFailure : io/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult {
+	public synthetic fun <init> (Lio/dataloom/runtime/retry/QueueCircuitOperation;Lio/dataloom/runtime/queue/QueueProcessingFailureStage;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/runtime/queue/QueueCircuitProviderFailureDisposition;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;Lio/dataloom/runtime/queue/QueueProcessingSummary;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/retry/QueueCircuitOperation;Lio/dataloom/runtime/queue/QueueProcessingFailureStage;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/runtime/queue/QueueCircuitProviderFailureDisposition;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;Lio/dataloom/runtime/queue/QueueProcessingSummary;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/runtime/retry/QueueCircuitOperation;
+	public final fun component2 ()Lio/dataloom/runtime/queue/QueueProcessingFailureStage;
+	public final fun component3 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun component4 ()Lio/dataloom/runtime/queue/QueueCircuitProviderFailureDisposition;
+	public final fun component5 ()Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;
+	public final fun component6 ()Lio/dataloom/runtime/queue/QueueProcessingSummary;
+	public final fun component7-T_ZE2vg ()Ljava/lang/String;
+	public final fun component8-4N8MUac ()Ljava/lang/String;
+	public final fun copy-EFiiZDY (Lio/dataloom/runtime/retry/QueueCircuitOperation;Lio/dataloom/runtime/queue/QueueProcessingFailureStage;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/runtime/queue/QueueCircuitProviderFailureDisposition;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;Lio/dataloom/runtime/queue/QueueProcessingSummary;Ljava/lang/String;Ljava/lang/String;)Lio/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult$ProviderFailure;
+	public static synthetic fun copy-EFiiZDY$default (Lio/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult$ProviderFailure;Lio/dataloom/runtime/retry/QueueCircuitOperation;Lio/dataloom/runtime/queue/QueueProcessingFailureStage;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/runtime/queue/QueueCircuitProviderFailureDisposition;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;Lio/dataloom/runtime/queue/QueueProcessingSummary;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult$ProviderFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAffectedEntryId-T_ZE2vg ()Ljava/lang/String;
+	public final fun getDisposition ()Lio/dataloom/runtime/queue/QueueCircuitProviderFailureDisposition;
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public final fun getLeaseId-4N8MUac ()Ljava/lang/String;
+	public final fun getOperation ()Lio/dataloom/runtime/retry/QueueCircuitOperation;
+	public final fun getRecordResult ()Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;
+	public final fun getStage ()Lio/dataloom/runtime/queue/QueueProcessingFailureStage;
+	public final fun getSummary ()Lio/dataloom/runtime/queue/QueueProcessingSummary;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult$QueueContractViolation : io/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult {
+	public synthetic fun <init> (Lio/dataloom/api/error/DataLoomError;Lio/dataloom/runtime/queue/QueueProcessingSummary;Lio/dataloom/runtime/queue/QueueCircuitOperationRecord;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/error/DataLoomError;Lio/dataloom/runtime/queue/QueueProcessingSummary;Lio/dataloom/runtime/queue/QueueCircuitOperationRecord;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun component2 ()Lio/dataloom/runtime/queue/QueueProcessingSummary;
+	public final fun component3 ()Lio/dataloom/runtime/queue/QueueCircuitOperationRecord;
+	public final fun component4-4N8MUac ()Ljava/lang/String;
+	public final fun copy-miMQjPo (Lio/dataloom/api/error/DataLoomError;Lio/dataloom/runtime/queue/QueueProcessingSummary;Lio/dataloom/runtime/queue/QueueCircuitOperationRecord;Ljava/lang/String;)Lio/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult$QueueContractViolation;
+	public static synthetic fun copy-miMQjPo$default (Lio/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult$QueueContractViolation;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/runtime/queue/QueueProcessingSummary;Lio/dataloom/runtime/queue/QueueCircuitOperationRecord;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult$QueueContractViolation;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAcquisitionRecord ()Lio/dataloom/runtime/queue/QueueCircuitOperationRecord;
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public final fun getLeaseId-4N8MUac ()Ljava/lang/String;
+	public final fun getSummary ()Lio/dataloom/runtime/queue/QueueProcessingSummary;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/runtime/queue/DurableQueueExecutionProcessor {
 	public fun <init> (Lio/dataloom/api/queue/QueueProvider;Lio/dataloom/runtime/queue/QueueEntryExecutionHandler;)V
 	public final fun process (Lio/dataloom/runtime/queue/QueueProcessingRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/queue/QueueCircuitOperationRecord {
+	public synthetic fun <init> (Lio/dataloom/runtime/retry/QueueCircuitOperation;Ljava/lang/String;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/retry/QueueCircuitOperation;Ljava/lang/String;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/runtime/retry/QueueCircuitOperation;
+	public final fun component2-T_ZE2vg ()Ljava/lang/String;
+	public final fun component3 ()Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;
+	public final fun copy-KPoA3bM (Lio/dataloom/runtime/retry/QueueCircuitOperation;Ljava/lang/String;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;)Lio/dataloom/runtime/queue/QueueCircuitOperationRecord;
+	public static synthetic fun copy-KPoA3bM$default (Lio/dataloom/runtime/queue/QueueCircuitOperationRecord;Lio/dataloom/runtime/retry/QueueCircuitOperation;Ljava/lang/String;Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;ILjava/lang/Object;)Lio/dataloom/runtime/queue/QueueCircuitOperationRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAffectedEntryId-T_ZE2vg ()Ljava/lang/String;
+	public final fun getOperation ()Lio/dataloom/runtime/retry/QueueCircuitOperation;
+	public final fun getRecordResult ()Lio/dataloom/runtime/retry/CircuitBreakerRecordResult;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/runtime/queue/QueueCircuitPreExecutionDecision {
+}
+
+public final class io/dataloom/runtime/queue/QueueCircuitPreExecutionDecision$PermissionContentionLimitReached : io/dataloom/runtime/queue/QueueCircuitPreExecutionDecision {
+	public static final field INSTANCE Lio/dataloom/runtime/queue/QueueCircuitPreExecutionDecision$PermissionContentionLimitReached;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/queue/QueueCircuitPreExecutionDecision$PermissionPersistenceFailure : io/dataloom/runtime/queue/QueueCircuitPreExecutionDecision {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/runtime/queue/QueueCircuitPreExecutionDecision$PermissionPersistenceFailure;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/queue/QueueCircuitPreExecutionDecision$PermissionPersistenceFailure;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/runtime/queue/QueueCircuitPreExecutionDecision$PermissionPersistenceFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/queue/QueueCircuitPreExecutionDecision$Rejected : io/dataloom/runtime/queue/QueueCircuitPreExecutionDecision {
+	public fun <init> (Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;Lio/dataloom/api/time/DataLoomInstant;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;Lio/dataloom/api/time/DataLoomInstant;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;
+	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy (Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/runtime/queue/QueueCircuitPreExecutionDecision$Rejected;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/queue/QueueCircuitPreExecutionDecision$Rejected;Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/runtime/queue/QueueCircuitPreExecutionDecision$Rejected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReason ()Lio/dataloom/runtime/retry/CircuitBreakerRejectionReason;
+	public final fun getRetryAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/queue/QueueCircuitProviderFailureDisposition : java/lang/Enum {
+	public static final field CIRCUIT_FAILURE Lio/dataloom/runtime/queue/QueueCircuitProviderFailureDisposition;
+	public static final field NON_CIRCUIT_FAILURE Lio/dataloom/runtime/queue/QueueCircuitProviderFailureDisposition;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/queue/QueueCircuitProviderFailureDisposition;
+	public static fun values ()[Lio/dataloom/runtime/queue/QueueCircuitProviderFailureDisposition;
 }
 
 public abstract interface class io/dataloom/runtime/queue/QueueEntryExecutionHandler {
@@ -573,6 +745,27 @@ public final class io/dataloom/runtime/queue/QueueEntryExecutionOutcome$Reschedu
 	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
 	public final fun getRetryAttempt ()Lio/dataloom/api/retry/RetryAttempt;
 	public final fun getRetryBudgetState ()Lio/dataloom/api/retry/RetryBudgetState;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/queue/QueueProcessingCircuitScopes {
+	public fun <init> (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component2 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component3 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component4 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component5 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component6 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun copy (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;)Lio/dataloom/runtime/queue/QueueProcessingCircuitScopes;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/queue/QueueProcessingCircuitScopes;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;ILjava/lang/Object;)Lio/dataloom/runtime/queue/QueueProcessingCircuitScopes;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAcquisition ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getCancellation ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getCompletion ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getDeferral ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getFailure ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getReschedule ()Lio/dataloom/api/circuit/CircuitBreakerScope;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }

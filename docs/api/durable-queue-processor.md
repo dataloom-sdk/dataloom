@@ -2,9 +2,9 @@
 
 [API reference index](./README.md)
 
-> **Status:** Available at-least-once queue-processing foundation. Retry and
-> non-retry deferral transitions are distinct; complete retry/circuit policy,
-> migrations, platform persistence, and V1 qualification remain.
+> **Status:** Available direct at-least-once queue-processing foundation. An
+> additive circuit-aware processor now preserves permission, provider, and record
+> evidence; recovery/worker assembly and V1 qualification remain open.
 
 ## Overview
 
@@ -24,6 +24,10 @@ It executes one cycle per `process(request)` call:
 ## Public runtime contracts
 
 Package: `io.dataloom.runtime.queue`
+
+The direct `DurableQueueExecutionProcessor` remains unchanged. For explicit
+circuit permission and outcome recording, see
+[Circuit-aware bounded queue processing](./circuit-queue-processing.md).
 
 - `QueueEntryExecutionHandler`
 - `QueueEntryExecutionOutcome`
