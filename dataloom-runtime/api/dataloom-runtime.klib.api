@@ -2627,6 +2627,35 @@ final class io.dataloom.runtime.retry/TimeoutEnforcingSchedulerProvider : io.dat
     final suspend fun schedule(io.dataloom.api.scheduling/ScheduleRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.scheduling/ScheduleReceipt> // io.dataloom.runtime.retry/TimeoutEnforcingSchedulerProvider.schedule|schedule(io.dataloom.api.scheduling.ScheduleRequest){}[0]
 }
 
+final class io.dataloom.runtime.retry/TimeoutEnforcingStorageProvider : io.dataloom.api.storage/StorageProvider { // io.dataloom.runtime.retry/TimeoutEnforcingStorageProvider|null[0]
+    constructor <init>(io.dataloom.api.storage/StorageProvider, io.dataloom.runtime.retry/RetryTimeoutCoordinator) // io.dataloom.runtime.retry/TimeoutEnforcingStorageProvider.<init>|<init>(io.dataloom.api.storage.StorageProvider;io.dataloom.runtime.retry.RetryTimeoutCoordinator){}[0]
+
+    final val descriptor // io.dataloom.runtime.retry/TimeoutEnforcingStorageProvider.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.runtime.retry/TimeoutEnforcingStorageProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    final suspend fun acknowledgeOutboundChanges(io.dataloom.api.synchronization/OutboundChangeAcknowledgementRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.retry/TimeoutEnforcingStorageProvider.acknowledgeOutboundChanges|acknowledgeOutboundChanges(io.dataloom.api.synchronization.OutboundChangeAcknowledgementRequest){}[0]
+    final suspend fun applyInboundChanges(io.dataloom.api.storage/InboundChangeApplyRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.retry/TimeoutEnforcingStorageProvider.applyInboundChanges|applyInboundChanges(io.dataloom.api.storage.InboundChangeApplyRequest){}[0]
+    final suspend fun close(): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.retry/TimeoutEnforcingStorageProvider.close|close(){}[0]
+    final suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.runtime.retry/TimeoutEnforcingStorageProvider.health|health(){}[0]
+    final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.retry/TimeoutEnforcingStorageProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
+    final suspend fun readCheckpoint(io.dataloom.api.synchronization/CheckpointReadRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.synchronization/SynchronizationCheckpoint?> // io.dataloom.runtime.retry/TimeoutEnforcingStorageProvider.readCheckpoint|readCheckpoint(io.dataloom.api.synchronization.CheckpointReadRequest){}[0]
+    final suspend fun readOutboundChanges(io.dataloom.api.storage/OutboundChangeReadRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.storage/OutboundChangeReadResult> // io.dataloom.runtime.retry/TimeoutEnforcingStorageProvider.readOutboundChanges|readOutboundChanges(io.dataloom.api.storage.OutboundChangeReadRequest){}[0]
+    final suspend fun writeCheckpoint(io.dataloom.api.synchronization/CheckpointWriteRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.retry/TimeoutEnforcingStorageProvider.writeCheckpoint|writeCheckpoint(io.dataloom.api.synchronization.CheckpointWriteRequest){}[0]
+}
+
+final class io.dataloom.runtime.retry/TimeoutEnforcingTransportProvider : io.dataloom.api.transport/TransportProvider { // io.dataloom.runtime.retry/TimeoutEnforcingTransportProvider|null[0]
+    constructor <init>(io.dataloom.api.transport/TransportProvider, io.dataloom.runtime.retry/RetryTimeoutCoordinator) // io.dataloom.runtime.retry/TimeoutEnforcingTransportProvider.<init>|<init>(io.dataloom.api.transport.TransportProvider;io.dataloom.runtime.retry.RetryTimeoutCoordinator){}[0]
+
+    final val descriptor // io.dataloom.runtime.retry/TimeoutEnforcingTransportProvider.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.runtime.retry/TimeoutEnforcingTransportProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    final suspend fun close(): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.retry/TimeoutEnforcingTransportProvider.close|close(){}[0]
+    final suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.runtime.retry/TimeoutEnforcingTransportProvider.health|health(){}[0]
+    final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.retry/TimeoutEnforcingTransportProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
+    final suspend fun pullChanges(io.dataloom.api.transport/PullChangesRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.transport/PullChangesResult> // io.dataloom.runtime.retry/TimeoutEnforcingTransportProvider.pullChanges|pullChanges(io.dataloom.api.transport.PullChangesRequest){}[0]
+    final suspend fun pushChanges(io.dataloom.api.transport/PushChangesRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.synchronization/ChangeSetAcknowledgement> // io.dataloom.runtime.retry/TimeoutEnforcingTransportProvider.pushChanges|pushChanges(io.dataloom.api.transport.PushChangesRequest){}[0]
+}
+
 final class io.dataloom.runtime.strategy/BuiltInSynchronizationStrategyEvaluator : io.dataloom.api.strategy/SynchronizationStrategyEvaluator { // io.dataloom.runtime.strategy/BuiltInSynchronizationStrategyEvaluator|null[0]
     constructor <init>() // io.dataloom.runtime.strategy/BuiltInSynchronizationStrategyEvaluator.<init>|<init>(){}[0]
 
@@ -2720,6 +2749,14 @@ final object io.dataloom.runtime.retry/DefaultCircuitBreakerFailureClassifier : 
 
 final object io.dataloom.runtime.retry/QueueCircuitBreakerFailureClassifier : io.dataloom.runtime.retry/CircuitBreakerFailureClassifier { // io.dataloom.runtime.retry/QueueCircuitBreakerFailureClassifier|null[0]
     final fun classify(io.dataloom.api.error/DataLoomError): io.dataloom.runtime.retry/CircuitBreakerFailureDisposition // io.dataloom.runtime.retry/QueueCircuitBreakerFailureClassifier.classify|classify(io.dataloom.api.error.DataLoomError){}[0]
+}
+
+final object io.dataloom.runtime.retry/StorageProviderTimeoutRuntime { // io.dataloom.runtime.retry/StorageProviderTimeoutRuntime|null[0]
+    final fun create(io.dataloom.api.storage/StorageProvider, io.dataloom.api.time/DataLoomClock, io.dataloom.api.scheduling/SchedulingDelay): io.dataloom.api.storage/StorageProvider // io.dataloom.runtime.retry/StorageProviderTimeoutRuntime.create|create(io.dataloom.api.storage.StorageProvider;io.dataloom.api.time.DataLoomClock;io.dataloom.api.scheduling.SchedulingDelay){}[0]
+}
+
+final object io.dataloom.runtime.retry/TransportProviderTimeoutRuntime { // io.dataloom.runtime.retry/TransportProviderTimeoutRuntime|null[0]
+    final fun create(io.dataloom.api.transport/TransportProvider, io.dataloom.api.time/DataLoomClock, io.dataloom.api.scheduling/SchedulingDelay): io.dataloom.api.transport/TransportProvider // io.dataloom.runtime.retry/TransportProviderTimeoutRuntime.create|create(io.dataloom.api.transport.TransportProvider;io.dataloom.api.time.DataLoomClock;io.dataloom.api.scheduling.SchedulingDelay){}[0]
 }
 
 final object io.dataloom.runtime.submission/QueueSubmissionProviderTimeoutRuntime { // io.dataloom.runtime.submission/QueueSubmissionProviderTimeoutRuntime|null[0]
