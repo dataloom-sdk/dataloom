@@ -104,6 +104,26 @@ The review branch must prove:
   and classifier; and
 - permanent pull-request, Android, and Apple lanes pass on one clean final head.
 
+## Focused qualification completed
+
+The focused macOS evidence lane completed the implementation-sensitive steps
+before the final-head retrigger:
+
+- runtime JVM tests;
+- `iosSimulatorArm64Test`;
+- external-consumer compilation for JVM, `iosArm64`, `iosSimulatorArm64`, and
+  `iosX64`;
+- exact JVM and Kotlin/Native ABI generation;
+- public ABI-boundary validation;
+- Apple release XCFramework assembly; and
+- verification that the adapter, operation identities, classifier, API index,
+  and integration documentation are present.
+
+The generated ABI and documentation evidence is committed in
+`d4646937e95fe8dee4d4f78cfabd08908bd2714b`, and the temporary workflow and patch
+helper are absent from the review diff. This audit-only update intentionally
+retriggers the permanent pull-request, Android, and Apple lanes on a clean head.
+
 ## Remaining work
 
 - circuit-aware queue submission preserving preflight and enriched execution
