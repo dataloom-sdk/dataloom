@@ -84,6 +84,11 @@ circuit-recording failure into one plain provider result would lose idempotency-
 critical evidence. Provider-bearing and operation-bearing scopes are validated
 before state-store access or provider invocation.
 
+`CircuitBreakerQueueSubmission` performs encoder and structural preflight before
+calling the queue adapter. Invalid local input therefore cannot touch circuit
+state or reserve a half-open probe, while valid enqueue attempts retain the full
+execution and recording evidence.
+
 ## Security boundary
 
 Circuit execution contracts contain only bounded scope, permission, canonical

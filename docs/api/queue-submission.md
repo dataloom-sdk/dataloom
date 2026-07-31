@@ -3,8 +3,8 @@
 [API reference index](./README.md)
 
 > **Status:** Available queue-submission foundation with separately governed
-> enqueue timeout assembly. Applications still own work encoding; publication
-> and complete consumer qualification remain open.
+> enqueue timeout and additive circuit-aware execution. Applications still own
+> work encoding; builder circuit policy and complete qualification remain open.
 
 ## Overview
 
@@ -30,7 +30,9 @@ format.
 - `QueueSubmissionResult` — sealed submission result
 - `DataLoomQueueSubmission` — narrow public submission capability
 - `DataLoomQueueSubmissionSpec` — builder configuration with optional enqueue timeout
-- `QueueSubmissionProviderTimeoutRuntime` — standalone protected assembly
+- `QueueSubmissionProviderTimeoutRuntime` — standalone timeout-protected assembly
+- `CircuitBreakerQueueSubmission` — preflight-before-permission circuit path
+- `CircuitBreakerQueueSubmissionResult` — enriched local and circuit result model
 
 ---
 
@@ -197,6 +199,43 @@ Each `submit` call performs:
 5. Calls `QueueProvider.enqueue` exactly once.
 6. On success → returns `Enqueued`.
 7. On provider failure → returns `QueueProviderFailure`.
+
+---
+
+## `CircuitBreakerQueueSubmission`
+
+The additive circuit-aware path shares the same local encoding and structural
+validation, but returns `CircuitBreakerQueueSubmissionResult` rather than
+collapsing circuit evidence into `QueueSubmissionResult`.
+
+```kotlin
+val circuitSubmission = CircuitBreakerQueueSubmission(
+    encoder = myEncoder,
+    queueOperationAdapter = queueCircuitAdapter,
+    scope = CircuitBreakerScope.providerOperation(
+        providerId = queueProvider.descriptor.id,
+        operation = QueueCircuitOperation.ENQUEUE.retryOperation,
+    ),
+)
+```
+
+Ordering is deliberate:
+
+1. encode and validate locally;
+2. return `EncodingRejected` or `ContractViolation` without circuit access;
+3. request circuit permission only after preflight succeeds; and
+4. preserve the full `CircuitBreakerExecutionResult<Unit>` in
+   `EnqueueEvaluated`.
+
+Preflight-before-permission prevents invalid input from reserving a half-open
+probe. An `Executed` result proves enqueue ran exactly once and keeps the later
+`CircuitBreakerRecordResult` visible. A recording failure must not be treated as
+proof that enqueue did not occur.
+
+This path is currently assembled explicitly and is not exposed through
+`DataLoom.queueSubmission`; builder circuit-policy assembly remains open.
+
+See [Circuit-aware queue submission](./circuit-queue-submission.md).
 
 ---
 

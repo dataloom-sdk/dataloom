@@ -1593,6 +1593,52 @@ public final class io/dataloom/runtime/strategy/StrategySynchronizationExecution
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/runtime/submission/CircuitBreakerQueueSubmission {
+	public fun <init> (Lio/dataloom/runtime/submission/QueuedSynchronizationWorkEncoder;Lio/dataloom/runtime/retry/CircuitBreakerQueueOperationAdapter;Lio/dataloom/api/circuit/CircuitBreakerScope;)V
+	public final fun getScope ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun submit (Lio/dataloom/runtime/submission/QueuedSynchronizationSubmission;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/dataloom/runtime/submission/CircuitBreakerQueueSubmissionResult {
+}
+
+public final class io/dataloom/runtime/submission/CircuitBreakerQueueSubmissionResult$ContractViolation : io/dataloom/runtime/submission/CircuitBreakerQueueSubmissionResult {
+	public synthetic fun <init> (Lio/dataloom/api/error/DataLoomError;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun component2-ARA1dI0 ()Ljava/lang/String;
+	public final fun copy-ZNxGPG4 (Lio/dataloom/api/error/DataLoomError;Ljava/lang/String;)Lio/dataloom/runtime/submission/CircuitBreakerQueueSubmissionResult$ContractViolation;
+	public static synthetic fun copy-ZNxGPG4$default (Lio/dataloom/runtime/submission/CircuitBreakerQueueSubmissionResult$ContractViolation;Lio/dataloom/api/error/DataLoomError;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/runtime/submission/CircuitBreakerQueueSubmissionResult$ContractViolation;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public final fun getQueueEntryId-ARA1dI0 ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/submission/CircuitBreakerQueueSubmissionResult$EncodingRejected : io/dataloom/runtime/submission/CircuitBreakerQueueSubmissionResult {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/runtime/submission/CircuitBreakerQueueSubmissionResult$EncodingRejected;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/submission/CircuitBreakerQueueSubmissionResult$EncodingRejected;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/runtime/submission/CircuitBreakerQueueSubmissionResult$EncodingRejected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/submission/CircuitBreakerQueueSubmissionResult$EnqueueEvaluated : io/dataloom/runtime/submission/CircuitBreakerQueueSubmissionResult {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/runtime/retry/CircuitBreakerExecutionResult;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-ARA1dI0 ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/runtime/retry/CircuitBreakerExecutionResult;
+	public final fun copy-y925jYc (Ljava/lang/String;Lio/dataloom/runtime/retry/CircuitBreakerExecutionResult;)Lio/dataloom/runtime/submission/CircuitBreakerQueueSubmissionResult$EnqueueEvaluated;
+	public static synthetic fun copy-y925jYc$default (Lio/dataloom/runtime/submission/CircuitBreakerQueueSubmissionResult$EnqueueEvaluated;Ljava/lang/String;Lio/dataloom/runtime/retry/CircuitBreakerExecutionResult;ILjava/lang/Object;)Lio/dataloom/runtime/submission/CircuitBreakerQueueSubmissionResult$EnqueueEvaluated;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExecutionResult ()Lio/dataloom/runtime/retry/CircuitBreakerExecutionResult;
+	public final fun getQueueEntryId-ARA1dI0 ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public abstract interface class io/dataloom/runtime/submission/DataLoomQueueSubmission {
 	public abstract fun submit (Lio/dataloom/runtime/submission/QueuedSynchronizationSubmission;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
