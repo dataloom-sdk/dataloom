@@ -89,6 +89,11 @@ calling the queue adapter. Invalid local input therefore cannot touch circuit
 state or reserve a half-open probe, while valid enqueue attempts retain the full
 execution and recording evidence.
 
+`CircuitBreakerDurableQueueExecutionProcessor` applies explicit scopes to atomic
+acquisition and every lease-guarded transition. Its terminal results distinguish
+pre-execution stop, provider failure, and provider success followed by circuit-
+recording failure, so confirmed transitions are counted without replaying them.
+
 ## Security boundary
 
 Circuit execution contracts contain only bounded scope, permission, canonical
