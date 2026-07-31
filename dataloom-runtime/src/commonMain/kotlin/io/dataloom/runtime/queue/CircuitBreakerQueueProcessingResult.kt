@@ -163,6 +163,15 @@ public sealed interface CircuitBreakerQueueProcessingResult {
         /** Defensive immutable snapshot of entries affected by the successful provider call. */
         public val affectedEntryIds: List<QueueEntryId> = affectedEntryIds.toList()
 
+        init {
+            require(
+                recordResult !is CircuitBreakerRecordResult.Recorded &&
+                    recordResult !is CircuitBreakerRecordResult.Ignored,
+            ) {
+                "CircuitRecordingUnconfirmed requires an unaccepted circuit recording result."
+            }
+        }
+
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is CircuitRecordingUnconfirmed) return false

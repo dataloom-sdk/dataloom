@@ -94,6 +94,12 @@ acquisition and every lease-guarded transition. Its terminal results distinguish
 pre-execution stop, provider failure, and provider success followed by circuit-
 recording failure, so confirmed transitions are counted without replaying them.
 
+`CircuitBreakerQueueWorkerCoordinator` extends the same evidence model to
+expired-lease recovery and one bounded worker cycle. Processing begins only
+after accepted recovery evidence, and scheduling occurs only after a normal
+processing result. Queue circuit scopes are not silently reused as scheduler
+circuit policy.
+
 ## Security boundary
 
 Circuit execution contracts contain only bounded scope, permission, canonical
