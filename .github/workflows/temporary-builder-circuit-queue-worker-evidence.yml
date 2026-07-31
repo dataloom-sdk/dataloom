@@ -1,0 +1,119 @@
+name: Temporary Builder Circuit Queue Worker Evidence
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-builder-circuit-queue-worker-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate-and-commit:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout review branch
+        uses: actions/checkout@v6
+        with:
+          ref: codex/dl-retry-029-builder-circuit-queue-worker
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Apply builder and facade integration
+        run: python3 .github/scripts/temporary_builder_circuit_queue_worker_patch.py
+
+      - name: Compile and test builder circuit queue worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            :dataloom-runtime:jvmTest \
+            :dataloom-runtime:iosSimulatorArm64Test \
+            :runtime-external-consumer:compileKotlinJvm \
+            :runtime-external-consumer:compileKotlinIosArm64 \
+            :runtime-external-consumer:compileKotlinIosSimulatorArm64 \
+            :runtime-external-consumer:compileKotlinIosX64 \
+            --configuration-cache \
+            --stacktrace \
+            --warning-mode all \
+            --console=plain
+
+      - name: Generate exact public ABI baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            :dataloom-runtime:updateKotlinAbi \
+            :dataloom-apple:updateKotlinAbi \
+            --no-configuration-cache \
+            --stacktrace \
+            --console=plain
+
+      - name: Validate ABI consumers and Apple framework
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            :dataloom-runtime:checkKotlinAbi \
+            :dataloom-runtime:checkPublicAbiBoundaries \
+            :dataloom-apple:checkKotlinAbi \
+            :runtime-external-consumer:checkRuntimeExternalConsumer \
+            :dataloom-apple:assembleDataLoomReleaseXCFramework \
+            --no-configuration-cache \
+            --stacktrace \
+            --warning-mode all \
+            --console=plain
+
+      - name: Verify generated builder circuit worker evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "DataLoomCircuitQueueWorker" dataloom-runtime/api/dataloom-runtime.api
+          grep -F "DataLoomCircuitQueueWorkerSpec" dataloom-runtime/api/dataloom-runtime.klib.api
+          grep -F "circuitQueueWorkerConfiguration" dataloom-runtime/api/dataloom-runtime.klib.api
+          grep -F "getCircuitQueueWorker" dataloom-runtime/api/dataloom-runtime.api
+          grep -F "BuilderCircuitQueueWorkerExternalConsumerProbe" \
+            runtime-external-consumer/src/commonMain/kotlin/io/dataloom/consumer/BuilderCircuitQueueWorkerExternalConsumerProbe.kt
+          grep -F "DataLoomBuilder circuit-aware queue worker" \
+            docs/api/builder-circuit-queue-worker.md
+          grep -F "Builder circuit-aware queue worker" docs/api/README.md
+          test -d dataloom-apple/build/XCFrameworks/release/DataLoom.xcframework
+          git diff --check
+
+      - name: Commit generated evidence and remove temporary helpers
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            .github/workflows/temporary-builder-circuit-queue-worker-evidence.yml \
+            .github/scripts/temporary_builder_circuit_queue_worker_patch.py
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No builder circuit queue worker evidence to commit."
+            exit 1
+          fi
+          git commit -m "DL-040: qualify builder circuit queue worker assembly"
+          git push origin HEAD:codex/dl-retry-029-builder-circuit-queue-worker
