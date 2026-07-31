@@ -99,7 +99,7 @@ jobs:
           fi
           grep -F "BuilderCircuitQueueWorkerSchedulerExternalConsumerProbe" \
             runtime-external-consumer/src/commonMain/kotlin/io/dataloom/consumer/BuilderCircuitQueueWorkerSchedulerExternalConsumerProbe.kt
-          grep -F "Circuit-aware queue-worker scheduling" \
+          grep -F "Circuit-protected queue-worker scheduling" \
             docs/api/circuit-queue-worker-scheduler.md
           test -d dataloom-apple/build/XCFrameworks/release/DataLoom.xcframework
           git diff --check
