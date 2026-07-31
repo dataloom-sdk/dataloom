@@ -13,8 +13,31 @@ integration portion of FR-RETRY-010. It does not complete DL-040 or DataLoom V1.
 
 - Review branch: `codex/dl-retry-028-circuit-queue-worker`
 - Baseline: merged PR #127 at `955cf79727d5b1e3508dc4a73bd3467e82d829d8`
-- Focused validation: generated on the review branch before PR review
-- Permanent validation: required on one clean final PR head
+- Focused evidence head: `3a6d0fd43aadfac1e2a8b6f85cba464e2775223a`
+- Permanent validation: required on the final review commit after this evidence record
+
+## Focused qualification completed
+
+The same-repository macOS evidence lane completed the substantive validation
+before committing the generated evidence:
+
+- runtime JVM tests passed;
+- `iosSimulatorArm64Test` passed;
+- external consumers compiled for JVM, `iosArm64`, `iosSimulatorArm64`, and
+  `iosX64`;
+- exact JVM and Kotlin/Native ABI baselines were generated;
+- runtime and Apple ABI checks passed;
+- the public ABI-boundary check passed;
+- the internal processing seam was absent from generated public ABI;
+- the Apple release XCFramework assembled successfully;
+- API index and worker/circuit integration documentation were updated; and
+- temporary workflow and patch helpers were removed from the review diff.
+
+The PR-triggered evidence attempt performed the same successful validation but
+its final push was rejected because a concurrent push-triggered evidence attempt
+had already advanced the branch. The accepted branch head is the successfully
+committed push-triggered evidence result above; no implementation or validation
+failure occurred.
 
 ## Implemented boundary
 
@@ -71,10 +94,14 @@ A separate explicitly configured scheduler-circuit assembly remains required.
 - No provider, operation, tenant, workflow, or global fallback is inferred.
 - Runtime construction performs no store access, provider operation, queue
   mutation, processing, clock read, scheduling, or coroutine launch.
+- The coordinator's generic processing seam and primary constructor are internal;
+  applications use the production constructor or runtime factory.
+- `CircuitRecordingUnconfirmed` result variants reject accepted `Recorded` and
+  `Ignored` evidence.
 
 ## Required qualification evidence
 
-The review branch must prove:
+The review branch proves:
 
 - recovery disabled causes no circuit/store/provider access;
 - missing mandatory recovery request fails before provider access;
@@ -91,7 +118,7 @@ The review branch must prove:
   `iosX64`;
 - exact JVM and Kotlin/Native ABI baselines contain the public worker surface;
 - Apple XCFramework assembly and public-boundary validation pass; and
-- permanent JVM, Android, and Apple checks pass on one clean final head.
+- permanent JVM, Android, and Apple checks must pass on this final review head.
 
 ## Known limitations and remaining work
 
