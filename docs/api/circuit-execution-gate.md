@@ -76,6 +76,14 @@ required.
 `SchedulerProvider.schedule`. A provider-scoped circuit must identify the same
 scheduler provider; global and workflow scopes remain valid explicit choices.
 
+`CircuitBreakerQueueOperationAdapter` applies the same gate to explicit
+`QueueProvider` lifecycle and queue operations while preserving the enriched
+`CircuitBreakerExecutionResult`. It deliberately does not implement
+`QueueProvider`, because collapsing an executed queue mutation and a later
+circuit-recording failure into one plain provider result would lose idempotency-
+critical evidence. Provider-bearing and operation-bearing scopes are validated
+before state-store access or provider invocation.
+
 ## Security boundary
 
 Circuit execution contracts contain only bounded scope, permission, canonical

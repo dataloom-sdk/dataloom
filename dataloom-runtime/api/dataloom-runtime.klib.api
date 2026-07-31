@@ -98,6 +98,28 @@ final enum class io.dataloom.runtime.retry/CircuitBreakerRejectionReason : kotli
     final fun values(): kotlin/Array<io.dataloom.runtime.retry/CircuitBreakerRejectionReason> // io.dataloom.runtime.retry/CircuitBreakerRejectionReason.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.runtime.retry/QueueCircuitOperation : kotlin/Enum<io.dataloom.runtime.retry/QueueCircuitOperation> { // io.dataloom.runtime.retry/QueueCircuitOperation|null[0]
+    enum entry ACQUIRE // io.dataloom.runtime.retry/QueueCircuitOperation.ACQUIRE|null[0]
+    enum entry CANCEL // io.dataloom.runtime.retry/QueueCircuitOperation.CANCEL|null[0]
+    enum entry CLOSE // io.dataloom.runtime.retry/QueueCircuitOperation.CLOSE|null[0]
+    enum entry COMPLETE // io.dataloom.runtime.retry/QueueCircuitOperation.COMPLETE|null[0]
+    enum entry DEFER // io.dataloom.runtime.retry/QueueCircuitOperation.DEFER|null[0]
+    enum entry ENQUEUE // io.dataloom.runtime.retry/QueueCircuitOperation.ENQUEUE|null[0]
+    enum entry FAIL // io.dataloom.runtime.retry/QueueCircuitOperation.FAIL|null[0]
+    enum entry HEALTH // io.dataloom.runtime.retry/QueueCircuitOperation.HEALTH|null[0]
+    enum entry INITIALIZE // io.dataloom.runtime.retry/QueueCircuitOperation.INITIALIZE|null[0]
+    enum entry RECOVER_EXPIRED_LEASES // io.dataloom.runtime.retry/QueueCircuitOperation.RECOVER_EXPIRED_LEASES|null[0]
+    enum entry RESCHEDULE // io.dataloom.runtime.retry/QueueCircuitOperation.RESCHEDULE|null[0]
+
+    final val entries // io.dataloom.runtime.retry/QueueCircuitOperation.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.retry/QueueCircuitOperation> // io.dataloom.runtime.retry/QueueCircuitOperation.entries.<get-entries>|<get-entries>#static(){}[0]
+    final val retryOperation // io.dataloom.runtime.retry/QueueCircuitOperation.retryOperation|{}retryOperation[0]
+        final fun <get-retryOperation>(): io.dataloom.api.retry/RetryOperation // io.dataloom.runtime.retry/QueueCircuitOperation.retryOperation.<get-retryOperation>|<get-retryOperation>(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.retry/QueueCircuitOperation // io.dataloom.runtime.retry/QueueCircuitOperation.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.retry/QueueCircuitOperation> // io.dataloom.runtime.retry/QueueCircuitOperation.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.runtime.retry/RetryOrchestrationStatus : kotlin/Enum<io.dataloom.runtime.retry/RetryOrchestrationStatus> { // io.dataloom.runtime.retry/RetryOrchestrationStatus|null[0]
     enum entry NOT_REQUIRED // io.dataloom.runtime.retry/RetryOrchestrationStatus.NOT_REQUIRED|null[0]
     enum entry SCHEDULED // io.dataloom.runtime.retry/RetryOrchestrationStatus.SCHEDULED|null[0]
@@ -1886,6 +1908,25 @@ final class io.dataloom.runtime.retry/CircuitBreakerProviderOperationAdapter { /
     final suspend fun <#A1: kotlin/Any?> execute(io.dataloom.api.circuit/CircuitBreakerScope, kotlin.coroutines/SuspendFunction0<io.dataloom.api.provider/ProviderOperationResult<#A1>>): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<#A1> // io.dataloom.runtime.retry/CircuitBreakerProviderOperationAdapter.execute|execute(io.dataloom.api.circuit.CircuitBreakerScope;kotlin.coroutines.SuspendFunction0<io.dataloom.api.provider.ProviderOperationResult<0:0>>){0§<kotlin.Any?>}[0]
 }
 
+final class io.dataloom.runtime.retry/CircuitBreakerQueueOperationAdapter { // io.dataloom.runtime.retry/CircuitBreakerQueueOperationAdapter|null[0]
+    constructor <init>(io.dataloom.api.queue/QueueProvider, io.dataloom.runtime.retry/CircuitBreakerExecutionGate, io.dataloom.runtime.retry/CircuitBreakerFailureClassifier = ...) // io.dataloom.runtime.retry/CircuitBreakerQueueOperationAdapter.<init>|<init>(io.dataloom.api.queue.QueueProvider;io.dataloom.runtime.retry.CircuitBreakerExecutionGate;io.dataloom.runtime.retry.CircuitBreakerFailureClassifier){}[0]
+
+    final val descriptor // io.dataloom.runtime.retry/CircuitBreakerQueueOperationAdapter.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.runtime.retry/CircuitBreakerQueueOperationAdapter.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    final suspend fun acquire(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.queue/QueueAcquireRequest): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.api.queue/QueueAcquireResult> // io.dataloom.runtime.retry/CircuitBreakerQueueOperationAdapter.acquire|acquire(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.queue.QueueAcquireRequest){}[0]
+    final suspend fun cancel(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.queue/QueueCancellationRequest): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> // io.dataloom.runtime.retry/CircuitBreakerQueueOperationAdapter.cancel|cancel(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.queue.QueueCancellationRequest){}[0]
+    final suspend fun close(io.dataloom.api.circuit/CircuitBreakerScope): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> // io.dataloom.runtime.retry/CircuitBreakerQueueOperationAdapter.close|close(io.dataloom.api.circuit.CircuitBreakerScope){}[0]
+    final suspend fun complete(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.queue/QueueCompletionRequest): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> // io.dataloom.runtime.retry/CircuitBreakerQueueOperationAdapter.complete|complete(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.queue.QueueCompletionRequest){}[0]
+    final suspend fun defer(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.queue/QueueDeferralRequest): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> // io.dataloom.runtime.retry/CircuitBreakerQueueOperationAdapter.defer|defer(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.queue.QueueDeferralRequest){}[0]
+    final suspend fun enqueue(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.queue/QueueEnqueueRequest): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> // io.dataloom.runtime.retry/CircuitBreakerQueueOperationAdapter.enqueue|enqueue(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.queue.QueueEnqueueRequest){}[0]
+    final suspend fun fail(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.queue/QueueFailureRequest): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> // io.dataloom.runtime.retry/CircuitBreakerQueueOperationAdapter.fail|fail(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.queue.QueueFailureRequest){}[0]
+    final suspend fun health(io.dataloom.api.circuit/CircuitBreakerScope): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.runtime.retry/CircuitBreakerQueueOperationAdapter.health|health(io.dataloom.api.circuit.CircuitBreakerScope){}[0]
+    final suspend fun initialize(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> // io.dataloom.runtime.retry/CircuitBreakerQueueOperationAdapter.initialize|initialize(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.provider.ProviderInitializationContext){}[0]
+    final suspend fun recoverExpiredLeases(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.queue/ExpiredLeaseRecoveryRequest): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.api.queue/ExpiredLeaseRecoveryResult> // io.dataloom.runtime.retry/CircuitBreakerQueueOperationAdapter.recoverExpiredLeases|recoverExpiredLeases(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.queue.ExpiredLeaseRecoveryRequest){}[0]
+    final suspend fun reschedule(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.queue/QueueRescheduleRequest): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> // io.dataloom.runtime.retry/CircuitBreakerQueueOperationAdapter.reschedule|reschedule(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.queue.QueueRescheduleRequest){}[0]
+}
+
 final class io.dataloom.runtime.retry/CircuitBreakerRetrySchedulingAdapter { // io.dataloom.runtime.retry/CircuitBreakerRetrySchedulingAdapter|null[0]
     constructor <init>(io.dataloom.api.scheduling/SchedulerProvider, io.dataloom.runtime.retry/CircuitBreakerProviderOperationAdapter, io.dataloom.api.circuit/CircuitBreakerScope) // io.dataloom.runtime.retry/CircuitBreakerRetrySchedulingAdapter.<init>|<init>(io.dataloom.api.scheduling.SchedulerProvider;io.dataloom.runtime.retry.CircuitBreakerProviderOperationAdapter;io.dataloom.api.circuit.CircuitBreakerScope){}[0]
 
@@ -2225,6 +2266,10 @@ final class io.dataloom.runtime.worker/QueueWorkerRunRequest { // io.dataloom.ru
 
 final object io.dataloom.runtime.retry/DefaultCircuitBreakerFailureClassifier : io.dataloom.runtime.retry/CircuitBreakerFailureClassifier { // io.dataloom.runtime.retry/DefaultCircuitBreakerFailureClassifier|null[0]
     final fun classify(io.dataloom.api.error/DataLoomError): io.dataloom.runtime.retry/CircuitBreakerFailureDisposition // io.dataloom.runtime.retry/DefaultCircuitBreakerFailureClassifier.classify|classify(io.dataloom.api.error.DataLoomError){}[0]
+}
+
+final object io.dataloom.runtime.retry/QueueCircuitBreakerFailureClassifier : io.dataloom.runtime.retry/CircuitBreakerFailureClassifier { // io.dataloom.runtime.retry/QueueCircuitBreakerFailureClassifier|null[0]
+    final fun classify(io.dataloom.api.error/DataLoomError): io.dataloom.runtime.retry/CircuitBreakerFailureDisposition // io.dataloom.runtime.retry/QueueCircuitBreakerFailureClassifier.classify|classify(io.dataloom.api.error.DataLoomError){}[0]
 }
 
 final object io.dataloom.runtime.submission/QueueSubmissionProviderTimeoutRuntime { // io.dataloom.runtime.submission/QueueSubmissionProviderTimeoutRuntime|null[0]

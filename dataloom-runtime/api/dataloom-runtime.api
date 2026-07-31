@@ -893,6 +893,23 @@ public final class io/dataloom/runtime/retry/CircuitBreakerProviderOperationAdap
 	public final fun execute (Lio/dataloom/api/circuit/CircuitBreakerScope;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
+public final class io/dataloom/runtime/retry/CircuitBreakerQueueOperationAdapter {
+	public fun <init> (Lio/dataloom/api/queue/QueueProvider;Lio/dataloom/runtime/retry/CircuitBreakerExecutionGate;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;)V
+	public synthetic fun <init> (Lio/dataloom/api/queue/QueueProvider;Lio/dataloom/runtime/retry/CircuitBreakerExecutionGate;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun acquire (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/queue/QueueAcquireRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun cancel (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/queue/QueueCancellationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun close (Lio/dataloom/api/circuit/CircuitBreakerScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun complete (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/queue/QueueCompletionRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun defer (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/queue/QueueDeferralRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun enqueue (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/queue/QueueEnqueueRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun fail (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/queue/QueueFailureRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public final fun health (Lio/dataloom/api/circuit/CircuitBreakerScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun initialize (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun recoverExpiredLeases (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/queue/ExpiredLeaseRecoveryRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun reschedule (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/queue/QueueRescheduleRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
 public abstract interface class io/dataloom/runtime/retry/CircuitBreakerRecordResult {
 }
 
@@ -1024,6 +1041,29 @@ public final class io/dataloom/runtime/retry/CoroutineRetryTimeoutExecutor : io/
 public final class io/dataloom/runtime/retry/DefaultCircuitBreakerFailureClassifier : io/dataloom/runtime/retry/CircuitBreakerFailureClassifier {
 	public static final field INSTANCE Lio/dataloom/runtime/retry/DefaultCircuitBreakerFailureClassifier;
 	public fun classify (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/runtime/retry/CircuitBreakerFailureDisposition;
+}
+
+public final class io/dataloom/runtime/retry/QueueCircuitBreakerFailureClassifier : io/dataloom/runtime/retry/CircuitBreakerFailureClassifier {
+	public static final field INSTANCE Lio/dataloom/runtime/retry/QueueCircuitBreakerFailureClassifier;
+	public fun classify (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/runtime/retry/CircuitBreakerFailureDisposition;
+}
+
+public final class io/dataloom/runtime/retry/QueueCircuitOperation : java/lang/Enum {
+	public static final field ACQUIRE Lio/dataloom/runtime/retry/QueueCircuitOperation;
+	public static final field CANCEL Lio/dataloom/runtime/retry/QueueCircuitOperation;
+	public static final field CLOSE Lio/dataloom/runtime/retry/QueueCircuitOperation;
+	public static final field COMPLETE Lio/dataloom/runtime/retry/QueueCircuitOperation;
+	public static final field DEFER Lio/dataloom/runtime/retry/QueueCircuitOperation;
+	public static final field ENQUEUE Lio/dataloom/runtime/retry/QueueCircuitOperation;
+	public static final field FAIL Lio/dataloom/runtime/retry/QueueCircuitOperation;
+	public static final field HEALTH Lio/dataloom/runtime/retry/QueueCircuitOperation;
+	public static final field INITIALIZE Lio/dataloom/runtime/retry/QueueCircuitOperation;
+	public static final field RECOVER_EXPIRED_LEASES Lio/dataloom/runtime/retry/QueueCircuitOperation;
+	public static final field RESCHEDULE Lio/dataloom/runtime/retry/QueueCircuitOperation;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getRetryOperation-TGFxZV8 ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/retry/QueueCircuitOperation;
+	public static fun values ()[Lio/dataloom/runtime/retry/QueueCircuitOperation;
 }
 
 public abstract interface class io/dataloom/runtime/retry/RetryBackoffStrategy {
