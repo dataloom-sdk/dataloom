@@ -50,7 +50,7 @@ complete V1 strategy, asset, plugin, governance, or observability engine.
 | Describe synchronization intent | [Synchronization request](./synchronization-request.md) |
 | Understand admission, resolution, and pipeline selection | [Synchronization execution](./synchronization-execution.md) |
 | Register and resolve providers | [Provider registry](./provider-registry.md), [provider lifecycle](./provider-lifecycle.md), and [provider bindings](./provider-bindings.md) |
-| Submit and process durable work | [Queue submission](./queue-submission.md), [queue provider](./queue-provider.md), [queue-provider timeouts](./queue-provider-timeouts.md), [queue circuit adapter](./queue-circuit-operation-adapter.md), and [queue worker](./queue-worker-coordinator.md) |
+| Submit and process durable work | [Queue submission](./queue-submission.md), [circuit-aware queue submission](./circuit-queue-submission.md), [queue provider](./queue-provider.md), [queue-provider timeouts](./queue-provider-timeouts.md), [queue circuit adapter](./queue-circuit-operation-adapter.md), and [queue worker](./queue-worker-coordinator.md) |
 | Evaluate retries | [Retry policy](./retry-policy.md), [retry orchestration](./retry-orchestration.md), [retry timeouts](./retry-timeouts.md), [circuit breaker](./circuit-breaker.md), and [circuit execution gate](./circuit-execution-gate.md) |
 | Detect and resolve conflicts | [Conflict contracts](./conflict-contracts.md) and [conflict orchestration](./conflict-orchestration.md) |
 | Observe execution | [Synchronization events](./synchronization-events.md), [event dispatcher](./synchronization-event-dispatcher.md), and [runtime operational events](./runtime-operational-events.md) |
@@ -113,7 +113,8 @@ not implement the approved six-strategy product architecture by themselves.
 | [Queue provider](./queue-provider.md) | Available foundation | Durable queue persistence SPI and Room implementation boundary. |
 | [Queue-provider timeouts](./queue-provider-timeouts.md) | Partial V1 subsystem | Cooperative lifecycle, submission, acquisition, recovery, and transition timeout protection plus builder/runtime assembly. |
 | [Queue circuit operation adapter](./queue-circuit-operation-adapter.md) | Partial V1 subsystem | Explicit queue-operation circuit permission, queue-aware timeout classification, and uncollapsed provider/record evidence. |
-| [Queue submission](./queue-submission.md) | Available foundation | Application-owned work encoding and durable enqueue with optional enqueue timeout. |
+| [Circuit-aware queue submission](./circuit-queue-submission.md) | Partial V1 subsystem | Preflight-before-permission ordering and enriched enqueue/circuit evidence. |
+| [Queue submission](./queue-submission.md) | Available foundation | Application-owned work encoding and durable enqueue with optional timeout and additive circuit-aware execution. |
 | [Durable queue processor](./durable-queue-processor.md) | Available foundation | Bounded acquire, execute, and single-transition processing. |
 | [Queued synchronization execution](./queued-synchronization-execution.md) | Available foundation | Queue-entry resolution, synchronization execution, and retry evaluation. |
 | [Queue worker coordinator](./queue-worker-coordinator.md) | Available foundation | Recovery, bounded processing, scheduler-backed wake-up planning, and optional scheduler timeout. |
@@ -122,8 +123,9 @@ Queue processing is an at-least-once foundation. Connectivity deferral and
 expired-lease recovery preserve retry attempt history; Android Room persists
 retry budgets and circuit state. Queue-provider timeouts preserve durable
 ambiguity and never replay a mutation automatically. Explicit queue circuit
-operation adaptation now exists, while circuit-aware worker/submission assembly,
-KMP iOS persistence, and end-to-end qualification remain open.
+operation adaptation and circuit-aware submission now exist, while circuit-aware
+worker and builder assembly, KMP iOS persistence, and end-to-end qualification
+remain open.
 
 ## Retry and conflict
 
@@ -138,7 +140,7 @@ KMP iOS persistence, and end-to-end qualification remain open.
 | [Conflict contracts](./conflict-contracts.md) | Partial V1 subsystem | Custom detector, resolver, request, conflict, and decision contracts. |
 | [Conflict orchestration](./conflict-orchestration.md) | Partial V1 subsystem | Exact detector/resolver lookup and one-cycle decision orchestration. |
 
-V1 retry work still requires circuit-aware queue worker/submission assembly,
+V1 retry work still requires circuit-aware queue-worker and builder assembly,
 complete transport/storage circuit assembly, protocol-specific timeout
 enforcement, KMP iOS persistence, manual
 retry/reclassification, complete observability, and platform qualification.

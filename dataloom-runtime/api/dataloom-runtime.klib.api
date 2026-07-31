@@ -1243,6 +1243,53 @@ sealed interface io.dataloom.runtime.strategy/StrategySynchronizationExecutionRe
     }
 }
 
+sealed interface io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult { // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult|null[0]
+    final class ContractViolation : io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult { // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.ContractViolation|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError, io.dataloom.api.identifier/QueueEntryId) // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.ContractViolation.<init>|<init>(io.dataloom.api.error.DataLoomError;io.dataloom.api.identifier.QueueEntryId){}[0]
+
+        final val error // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.ContractViolation.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.ContractViolation.error.<get-error>|<get-error>(){}[0]
+        final val queueEntryId // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.ContractViolation.queueEntryId|{}queueEntryId[0]
+            final fun <get-queueEntryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.ContractViolation.queueEntryId.<get-queueEntryId>|<get-queueEntryId>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.ContractViolation.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.ContractViolation.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ..., io.dataloom.api.identifier/QueueEntryId = ...): io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.ContractViolation // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.ContractViolation.copy|copy(io.dataloom.api.error.DataLoomError;io.dataloom.api.identifier.QueueEntryId){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.ContractViolation.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.ContractViolation.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.ContractViolation.toString|toString(){}[0]
+    }
+
+    final class EncodingRejected : io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult { // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.EncodingRejected|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.EncodingRejected.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.EncodingRejected.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.EncodingRejected.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.EncodingRejected.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.EncodingRejected // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.EncodingRejected.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.EncodingRejected.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.EncodingRejected.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.EncodingRejected.toString|toString(){}[0]
+    }
+
+    final class EnqueueEvaluated : io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult { // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.EnqueueEvaluated|null[0]
+        constructor <init>(io.dataloom.api.identifier/QueueEntryId, io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit>) // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.EnqueueEvaluated.<init>|<init>(io.dataloom.api.identifier.QueueEntryId;io.dataloom.runtime.retry.CircuitBreakerExecutionResult<kotlin.Unit>){}[0]
+
+        final val executionResult // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.EnqueueEvaluated.executionResult|{}executionResult[0]
+            final fun <get-executionResult>(): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.EnqueueEvaluated.executionResult.<get-executionResult>|<get-executionResult>(){}[0]
+        final val queueEntryId // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.EnqueueEvaluated.queueEntryId|{}queueEntryId[0]
+            final fun <get-queueEntryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.EnqueueEvaluated.queueEntryId.<get-queueEntryId>|<get-queueEntryId>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.EnqueueEvaluated.component1|component1(){}[0]
+        final fun component2(): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.EnqueueEvaluated.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.identifier/QueueEntryId = ..., io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> = ...): io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.EnqueueEvaluated // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.EnqueueEvaluated.copy|copy(io.dataloom.api.identifier.QueueEntryId;io.dataloom.runtime.retry.CircuitBreakerExecutionResult<kotlin.Unit>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.EnqueueEvaluated.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.EnqueueEvaluated.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult.EnqueueEvaluated.toString|toString(){}[0]
+    }
+}
+
 sealed interface io.dataloom.runtime.submission/QueueSubmissionResult { // io.dataloom.runtime.submission/QueueSubmissionResult|null[0]
     final class ContractViolation : io.dataloom.runtime.submission/QueueSubmissionResult { // io.dataloom.runtime.submission/QueueSubmissionResult.ContractViolation|null[0]
         constructor <init>(io.dataloom.api.error/DataLoomError, io.dataloom.api.identifier/QueueEntryId?) // io.dataloom.runtime.submission/QueueSubmissionResult.ContractViolation.<init>|<init>(io.dataloom.api.error.DataLoomError;io.dataloom.api.identifier.QueueEntryId?){}[0]
@@ -2196,6 +2243,15 @@ final class io.dataloom.runtime.strategy/BuiltInSynchronizationStrategyEvaluator
     constructor <init>() // io.dataloom.runtime.strategy/BuiltInSynchronizationStrategyEvaluator.<init>|<init>(){}[0]
 
     final fun evaluate(io.dataloom.api.strategy/StrategyEvaluationRequest): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/BuiltInSynchronizationStrategyEvaluator.evaluate|evaluate(io.dataloom.api.strategy.StrategyEvaluationRequest){}[0]
+}
+
+final class io.dataloom.runtime.submission/CircuitBreakerQueueSubmission { // io.dataloom.runtime.submission/CircuitBreakerQueueSubmission|null[0]
+    constructor <init>(io.dataloom.runtime.submission/QueuedSynchronizationWorkEncoder, io.dataloom.runtime.retry/CircuitBreakerQueueOperationAdapter, io.dataloom.api.circuit/CircuitBreakerScope) // io.dataloom.runtime.submission/CircuitBreakerQueueSubmission.<init>|<init>(io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder;io.dataloom.runtime.retry.CircuitBreakerQueueOperationAdapter;io.dataloom.api.circuit.CircuitBreakerScope){}[0]
+
+    final val scope // io.dataloom.runtime.submission/CircuitBreakerQueueSubmission.scope|{}scope[0]
+        final fun <get-scope>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.submission/CircuitBreakerQueueSubmission.scope.<get-scope>|<get-scope>(){}[0]
+
+    final suspend fun submit(io.dataloom.runtime.submission/QueuedSynchronizationSubmission): io.dataloom.runtime.submission/CircuitBreakerQueueSubmissionResult // io.dataloom.runtime.submission/CircuitBreakerQueueSubmission.submit|submit(io.dataloom.runtime.submission.QueuedSynchronizationSubmission){}[0]
 }
 
 final class io.dataloom.runtime.submission/QueuedSynchronizationSubmission { // io.dataloom.runtime.submission/QueuedSynchronizationSubmission|null[0]
