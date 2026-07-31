@@ -89,7 +89,8 @@ jobs:
           grep -F "DataLoomCircuitQueueWorkerSchedulerSpec" \
             dataloom-runtime/api/dataloom-runtime.klib.api
           grep -F "CircuitProtected" dataloom-runtime/api/dataloom-runtime.api
-          grep -F "schedulerCircuit" dataloom-runtime/api/dataloom-runtime.klib.api
+          grep -F "circuitQueueWorkerSchedulerConfiguration" \
+            dataloom-runtime/api/dataloom-runtime.klib.api
           if grep -F "CircuitBreakerQueueWorkerSchedulerCircuit" \
             dataloom-runtime/api/dataloom-runtime.api \
             dataloom-runtime/api/dataloom-runtime.klib.api; then
