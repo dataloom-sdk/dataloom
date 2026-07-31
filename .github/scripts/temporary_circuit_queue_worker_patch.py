@@ -64,6 +64,61 @@ replace_once(
     "public class CircuitBreakerQueueWorkerCoordinator internal constructor(\n",
 )
 
+processing_result_path = (
+    "dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/queue/"
+    "CircuitBreakerQueueProcessingResult.kt"
+)
+replace_once(
+    processing_result_path,
+    """        /** Defensive immutable snapshot of entries affected by the successful provider call. */
+        public val affectedEntryIds: List<QueueEntryId> = affectedEntryIds.toList()
+
+        override fun equals(other: Any?): Boolean {
+""",
+    """        /** Defensive immutable snapshot of entries affected by the successful provider call. */
+        public val affectedEntryIds: List<QueueEntryId> = affectedEntryIds.toList()
+
+        init {
+            require(
+                recordResult !is CircuitBreakerRecordResult.Recorded &&
+                    recordResult !is CircuitBreakerRecordResult.Ignored,
+            ) {
+                "CircuitRecordingUnconfirmed requires an unaccepted circuit recording result."
+            }
+        }
+
+        override fun equals(other: Any?): Boolean {
+""",
+)
+
+recovery_result_path = (
+    "dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/worker/"
+    "CircuitBreakerQueueWorkerRecoveryResult.kt"
+)
+replace_once(
+    recovery_result_path,
+    """    public data class CircuitRecordingUnconfirmed(
+        public val result: ExpiredLeaseRecoveryResult,
+        public val recordResult: CircuitBreakerRecordResult,
+    ) : CircuitBreakerQueueWorkerRecoveryResult
+""",
+    """    public data class CircuitRecordingUnconfirmed(
+        public val result: ExpiredLeaseRecoveryResult,
+        public val recordResult: CircuitBreakerRecordResult,
+    ) : CircuitBreakerQueueWorkerRecoveryResult {
+        init {
+            require(
+                recordResult !is CircuitBreakerRecordResult.Recorded &&
+                    recordResult !is CircuitBreakerRecordResult.Ignored,
+            ) {
+                "CircuitRecordingUnconfirmed recovery requires an unaccepted " +
+                    "circuit recording result."
+            }
+        }
+    }
+""",
+)
+
 readme = "docs/api/README.md"
 replace_once(
     readme,
