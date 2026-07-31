@@ -1292,6 +1292,29 @@ public final class io/dataloom/runtime/retry/DefaultCircuitBreakerFailureClassif
 	public fun classify (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/runtime/retry/CircuitBreakerFailureDisposition;
 }
 
+public final class io/dataloom/runtime/retry/ProtectedStorageOperations {
+	public final fun acknowledgeOutboundChanges (Lio/dataloom/api/synchronization/OutboundChangeAcknowledgementRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun applyInboundChanges (Lio/dataloom/api/storage/InboundChangeApplyRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public final fun getScopes ()Lio/dataloom/runtime/retry/StorageCircuitScopes;
+	public final fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun readCheckpoint (Lio/dataloom/api/synchronization/CheckpointReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun readOutboundChanges (Lio/dataloom/api/storage/OutboundChangeReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun writeCheckpoint (Lio/dataloom/api/synchronization/CheckpointWriteRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/retry/ProtectedTransportOperations {
+	public final fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public final fun getScopes ()Lio/dataloom/runtime/retry/TransportCircuitScopes;
+	public final fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun pullChanges (Lio/dataloom/api/transport/PullChangesRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun pushChanges (Lio/dataloom/api/transport/PushChangesRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
 public final class io/dataloom/runtime/retry/QueueCircuitBreakerFailureClassifier : io/dataloom/runtime/retry/CircuitBreakerFailureClassifier {
 	public static final field INSTANCE Lio/dataloom/runtime/retry/QueueCircuitBreakerFailureClassifier;
 	public fun classify (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/runtime/retry/CircuitBreakerFailureDisposition;
@@ -1636,6 +1659,37 @@ public final class io/dataloom/runtime/retry/StorageCircuitOperation : java/lang
 	public static fun values ()[Lio/dataloom/runtime/retry/StorageCircuitOperation;
 }
 
+public final class io/dataloom/runtime/retry/StorageCircuitProtectionRuntime {
+	public static final field INSTANCE Lio/dataloom/runtime/retry/StorageCircuitProtectionRuntime;
+	public final fun create (Lio/dataloom/api/storage/StorageProvider;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;Lio/dataloom/api/circuit/CircuitBreakerStateStore;Lio/dataloom/runtime/retry/StorageCircuitScopes;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;)Lio/dataloom/runtime/retry/ProtectedStorageOperations;
+	public static synthetic fun create$default (Lio/dataloom/runtime/retry/StorageCircuitProtectionRuntime;Lio/dataloom/api/storage/StorageProvider;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;Lio/dataloom/api/circuit/CircuitBreakerStateStore;Lio/dataloom/runtime/retry/StorageCircuitScopes;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;ILjava/lang/Object;)Lio/dataloom/runtime/retry/ProtectedStorageOperations;
+}
+
+public final class io/dataloom/runtime/retry/StorageCircuitScopes {
+	public fun <init> (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component2 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component3 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component4 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component5 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component6 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component7 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component8 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun copy (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;)Lio/dataloom/runtime/retry/StorageCircuitScopes;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/StorageCircuitScopes;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;ILjava/lang/Object;)Lio/dataloom/runtime/retry/StorageCircuitScopes;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAcknowledgeOutboundChanges ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getApplyInboundChanges ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getClose ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getHealth ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getInitialization ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getReadCheckpoint ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getReadOutboundChanges ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getWriteCheckpoint ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/runtime/retry/StorageProviderTimeoutRuntime {
 	public static final field INSTANCE Lio/dataloom/runtime/retry/StorageProviderTimeoutRuntime;
 	public final fun create (Lio/dataloom/api/storage/StorageProvider;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/scheduling/SchedulingDelay;)Lio/dataloom/api/storage/StorageProvider;
@@ -1777,6 +1831,31 @@ public final class io/dataloom/runtime/retry/TransportCircuitOperation : java/la
 	public final fun getRetryOperation-TGFxZV8 ()Ljava/lang/String;
 	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/retry/TransportCircuitOperation;
 	public static fun values ()[Lio/dataloom/runtime/retry/TransportCircuitOperation;
+}
+
+public final class io/dataloom/runtime/retry/TransportCircuitProtectionRuntime {
+	public static final field INSTANCE Lio/dataloom/runtime/retry/TransportCircuitProtectionRuntime;
+	public final fun create (Lio/dataloom/api/transport/TransportProvider;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;Lio/dataloom/api/circuit/CircuitBreakerStateStore;Lio/dataloom/runtime/retry/TransportCircuitScopes;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;)Lio/dataloom/runtime/retry/ProtectedTransportOperations;
+	public static synthetic fun create$default (Lio/dataloom/runtime/retry/TransportCircuitProtectionRuntime;Lio/dataloom/api/transport/TransportProvider;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;Lio/dataloom/api/circuit/CircuitBreakerStateStore;Lio/dataloom/runtime/retry/TransportCircuitScopes;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;ILjava/lang/Object;)Lio/dataloom/runtime/retry/ProtectedTransportOperations;
+}
+
+public final class io/dataloom/runtime/retry/TransportCircuitScopes {
+	public fun <init> (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component2 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component3 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component4 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component5 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun copy (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;)Lio/dataloom/runtime/retry/TransportCircuitScopes;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/TransportCircuitScopes;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;ILjava/lang/Object;)Lio/dataloom/runtime/retry/TransportCircuitScopes;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getClose ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getHealth ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getInitialization ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getPullChanges ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getPushChanges ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/dataloom/runtime/retry/TransportProviderTimeoutRuntime {
