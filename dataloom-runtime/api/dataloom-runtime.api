@@ -1573,6 +1573,11 @@ public final class io/dataloom/runtime/retry/StandardRetryPolicy : io/dataloom/a
 	public final fun getStrategy ()Lio/dataloom/runtime/retry/RetryBackoffStrategy;
 }
 
+public final class io/dataloom/runtime/retry/StorageProviderTimeoutRuntime {
+	public static final field INSTANCE Lio/dataloom/runtime/retry/StorageProviderTimeoutRuntime;
+	public final fun create (Lio/dataloom/api/storage/StorageProvider;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/scheduling/SchedulingDelay;)Lio/dataloom/api/storage/StorageProvider;
+}
+
 public abstract interface class io/dataloom/runtime/retry/SynchronizationRetryEvaluation {
 }
 
@@ -1669,6 +1674,34 @@ public final class io/dataloom/runtime/retry/TimeoutEnforcingSchedulerProvider :
 	public fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun schedule (Lio/dataloom/api/scheduling/ScheduleRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/retry/TimeoutEnforcingStorageProvider : io/dataloom/api/storage/StorageProvider {
+	public fun <init> (Lio/dataloom/api/storage/StorageProvider;Lio/dataloom/runtime/retry/RetryTimeoutCoordinator;)V
+	public fun acknowledgeOutboundChanges (Lio/dataloom/api/synchronization/OutboundChangeAcknowledgementRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun applyInboundChanges (Lio/dataloom/api/storage/InboundChangeApplyRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun readCheckpoint (Lio/dataloom/api/synchronization/CheckpointReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun readOutboundChanges (Lio/dataloom/api/storage/OutboundChangeReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun writeCheckpoint (Lio/dataloom/api/synchronization/CheckpointWriteRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/retry/TimeoutEnforcingTransportProvider : io/dataloom/api/transport/TransportProvider {
+	public fun <init> (Lio/dataloom/api/transport/TransportProvider;Lio/dataloom/runtime/retry/RetryTimeoutCoordinator;)V
+	public fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun pullChanges (Lio/dataloom/api/transport/PullChangesRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun pushChanges (Lio/dataloom/api/transport/PushChangesRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/retry/TransportProviderTimeoutRuntime {
+	public static final field INSTANCE Lio/dataloom/runtime/retry/TransportProviderTimeoutRuntime;
+	public final fun create (Lio/dataloom/api/transport/TransportProvider;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/scheduling/SchedulingDelay;)Lio/dataloom/api/transport/TransportProvider;
 }
 
 public final class io/dataloom/runtime/strategy/BuiltInSynchronizationStrategyEvaluator : io/dataloom/api/strategy/SynchronizationStrategyEvaluator {

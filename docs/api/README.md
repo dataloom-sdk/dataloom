@@ -138,6 +138,7 @@ qualification remain open.
 | [Retry policy](./retry-policy.md) | Partial V1 subsystem | Fail-closed classification, deterministic backoff/jitter, seeded randomness, attempt/time/delay limits, and bounded provider/server hints. |
 | [Retry orchestration](./retry-orchestration.md) | Partial V1 subsystem | Protected-failure handling, bounded hint minimums, final-delay aggregation, budgets, and optional scheduler-provider timeout. |
 | [Retry timeout boundaries](./retry-timeouts.md) | Partial V1 subsystem | Independent timeout contracts, workflow-deadline precedence, coroutine executor, and selected provider/runtime assembly. |
+| [Storage and transport provider timeouts](./storage-transport-provider-timeouts.md) | Partial V1 subsystem | Cooperative lifecycle and synchronization-operation timeout protection with fail-closed mutation ambiguity. |
 | [Circuit breaker](./circuit-breaker.md) | Partial V1 subsystem | Explicit scopes, durable state contracts, atomic compare-and-set persistence, deterministic transitions, and one controlled half-open probe. |
 | [Circuit execution gate](./circuit-execution-gate.md) | Partial V1 subsystem | Pre-execution permission, once-only invocation, classified provider failures, post-execution evidence, retry scheduling, and queue-operation adaptation. |
 | [Queue circuit operation adapter](./queue-circuit-operation-adapter.md) | Partial V1 subsystem | Exact queue operation scopes and provider/circuit result preservation without transparent mutation replay risk. |
