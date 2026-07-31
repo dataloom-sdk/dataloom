@@ -9,6 +9,13 @@ evidence boundaries.
 This checkpoint advances FR-RETRY-007, FR-RETRY-008, FR-RETRY-009, and the queue
 integration portion of FR-RETRY-010. It does not complete DL-040 or DataLoom V1.
 
+## Evidence identity
+
+- Review branch: `codex/dl-retry-028-circuit-queue-worker`
+- Baseline: merged PR #127 at `955cf79727d5b1e3508dc4a73bd3467e82d829d8`
+- Focused validation: generated on the review branch before PR review
+- Permanent validation: required on one clean final PR head
+
 ## Implemented boundary
 
 `CircuitBreakerQueueWorkerCoordinator` performs at most:
