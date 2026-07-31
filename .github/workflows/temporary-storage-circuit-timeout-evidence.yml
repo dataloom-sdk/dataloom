@@ -1,0 +1,133 @@
+name: Temporary Storage Circuit Timeout Evidence
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-storage-circuit-timeout-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate-and-commit:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout review branch
+        uses: actions/checkout@v6
+        with:
+          ref: codex/dl-retry-032-storage-circuit-timeouts
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Apply stacked transport and storage corrections
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f .github/scripts/temporary_circuit_queue_worker_scheduler_patch.py; then
+            python3 .github/scripts/temporary_circuit_queue_worker_scheduler_patch.py
+          fi
+          if test -f .github/scripts/temporary_transport_circuit_timeout_patch.py; then
+            python3 .github/scripts/temporary_transport_circuit_timeout_patch.py
+          fi
+          python3 .github/scripts/temporary_storage_circuit_timeout_patch.py
+
+      - name: Compile and test storage timeout circuit
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            :dataloom-runtime:jvmTest \
+            :dataloom-runtime:iosSimulatorArm64Test \
+            :runtime-external-consumer:compileKotlinJvm \
+            :runtime-external-consumer:compileKotlinIosArm64 \
+            :runtime-external-consumer:compileKotlinIosSimulatorArm64 \
+            :runtime-external-consumer:compileKotlinIosX64 \
+            --configuration-cache \
+            --stacktrace \
+            --warning-mode all \
+            --console=plain
+
+      - name: Generate exact public ABI baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            :dataloom-runtime:updateKotlinAbi \
+            :dataloom-apple:updateKotlinAbi \
+            --no-configuration-cache \
+            --stacktrace \
+            --console=plain
+
+      - name: Validate ABI consumers and Apple framework
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            :dataloom-runtime:checkKotlinAbi \
+            :dataloom-runtime:checkPublicAbiBoundaries \
+            :dataloom-apple:checkKotlinAbi \
+            :runtime-external-consumer:checkRuntimeExternalConsumer \
+            :dataloom-apple:assembleDataLoomReleaseXCFramework \
+            --no-configuration-cache \
+            --stacktrace \
+            --warning-mode all \
+            --console=plain
+
+      - name: Verify generated storage evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "CircuitBreakerStorageOperationAdapter" \
+            dataloom-runtime/api/dataloom-runtime.api
+          grep -F "StorageProviderTimeoutRuntime" \
+            dataloom-runtime/api/dataloom-runtime.klib.api
+          grep -F "StorageCircuitOperation" \
+            dataloom-runtime/api/dataloom-runtime.klib.api
+          grep -F "StorageCircuitTimeoutExternalConsumerProbe" \
+            runtime-external-consumer/src/commonMain/kotlin/io/dataloom/consumer/StorageCircuitTimeoutExternalConsumerProbe.kt
+          grep -F "Storage provider timeout and circuit boundary" \
+            docs/api/storage-circuit-timeouts.md
+          test -d dataloom-apple/build/XCFrameworks/release/DataLoom.xcframework
+          git diff --check
+
+      - name: Commit generated evidence and remove temporary helpers
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            .github/workflows/temporary-storage-circuit-timeout-evidence.yml \
+            .github/scripts/temporary_storage_circuit_timeout_patch.py \
+            .github/workflows/temporary-transport-circuit-timeout-evidence.yml \
+            .github/scripts/temporary_transport_circuit_timeout_patch.py \
+            .github/workflows/temporary-circuit-queue-worker-scheduler-evidence.yml \
+            .github/scripts/temporary_circuit_queue_worker_scheduler_patch.py
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No storage timeout circuit evidence to commit."
+            exit 1
+          fi
+          git commit -m "DL-040: qualify storage timeout circuit boundary"
+          git push origin HEAD:codex/dl-retry-032-storage-circuit-timeouts
