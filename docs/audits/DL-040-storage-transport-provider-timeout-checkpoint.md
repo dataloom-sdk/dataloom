@@ -9,6 +9,17 @@ ambiguous mutation as automatically retryable.
 This checkpoint advances FR-RETRY-006 and the provider-integration portion of
 FR-RETRY-010. It does not complete DL-040 or DataLoom V1.
 
+## Evidence identity
+
+- Review branch: `codex/dl-retry-031-storage-transport-timeouts`
+- Baseline: merged PR #129 at `0a3a77dc8801eb564129f1e258d1f2ca02774244`
+- Focused evidence head: `d2ce62f44d03bbc1d38ad4c582a328a1d562f9bc`
+- Focused evidence completed runtime JVM and iOS Simulator tests, external JVM
+  and all current iOS consumer compilations, exact JVM/Kotlin-Native ABI
+  generation, public-boundary checks, and Apple XCFramework assembly.
+- Permanent Pull Request, Android, and Apple checks remain required on one final
+  reviewed head.
+
 ## Implemented boundary
 
 The runtime adds:
