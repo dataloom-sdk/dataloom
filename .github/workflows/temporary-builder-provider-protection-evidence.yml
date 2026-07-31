@@ -1,0 +1,137 @@
+name: Temporary Builder Provider Protection Evidence
+
+on:
+  push:
+    branches:
+      - codex/dl-retry-035-builder-provider-protection
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-builder-provider-protection-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-and-commit:
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout review branch
+        uses: actions/checkout@v6
+        with:
+          ref: codex/dl-retry-035-builder-provider-protection
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Apply builder provider protection patch
+        run: python3 .github/scripts/temporary_builder_provider_protection_patch.py
+
+      - name: Index builder provider protection documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("docs/api/README.md")
+          text = path.read_text()
+          row = "| [DataLoomBuilder provider protection](./builder-provider-protection.md) | Partial V1 subsystem | Explicit facade assembly for protected direct synchronization with durable stores and exact operation scopes. |"
+          if row not in text:
+              anchor = "| [Provider-protected pipeline execution](./provider-protected-pipeline.md) | Partial V1 subsystem | Existing pipelines use execution-local timeout/circuit bridges with ordered bounded provider evidence. |"
+              if anchor not in text:
+                  raise SystemExit("Provider-protected pipeline documentation anchor not found")
+              text = text.replace(anchor, anchor + "\n" + row, 1)
+          text = text.replace(
+              "V1 retry work still requires DataLoomBuilder, strategy, and queued-execution adoption,",
+              "V1 retry work still requires strategy and queued-execution adoption,",
+          )
+          path.write_text(text)
+          PY
+
+      - name: Compile and test builder provider protection
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            :dataloom-runtime:jvmTest \
+            :dataloom-runtime:iosSimulatorArm64Test \
+            :runtime-external-consumer:compileKotlinJvm \
+            :runtime-external-consumer:compileKotlinIosArm64 \
+            :runtime-external-consumer:compileKotlinIosSimulatorArm64 \
+            :runtime-external-consumer:compileKotlinIosX64 \
+            --configuration-cache \
+            --stacktrace \
+            --warning-mode all \
+            --console=plain
+
+      - name: Generate exact public ABI baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            :dataloom-runtime:updateKotlinAbi \
+            :dataloom-apple:updateKotlinAbi \
+            --no-configuration-cache \
+            --stacktrace \
+            --console=plain
+
+      - name: Validate ABI consumers and Apple framework
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            :dataloom-runtime:checkKotlinAbi \
+            :dataloom-runtime:checkPublicAbiBoundaries \
+            :dataloom-apple:checkKotlinAbi \
+            :runtime-external-consumer:checkRuntimeExternalConsumer \
+            :dataloom-apple:assembleDataLoomReleaseXCFramework \
+            --no-configuration-cache \
+            --stacktrace \
+            --warning-mode all \
+            --console=plain
+
+      - name: Verify generated builder provider protection evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "DataLoomProviderProtectionSpec" dataloom-runtime/api/dataloom-runtime.api
+          grep -F "providerProtectionConfiguration" dataloom-runtime/api/dataloom-runtime.klib.api
+          grep -F "getProtectedSynchronization" dataloom-runtime/api/dataloom-runtime.api
+          grep -F "BuilderProviderProtectionExternalConsumerProbe" \
+            runtime-external-consumer/src/commonMain/kotlin/io/dataloom/consumer/BuilderProviderProtectionExternalConsumerProbe.kt
+          grep -F "builder-provider-protection.md" docs/api/README.md
+          test -d dataloom-apple/build/XCFrameworks/release/DataLoom.xcframework
+          git diff --check
+
+      - name: Commit generated evidence and remove temporary helpers
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            .github/workflows/temporary-builder-provider-protection-evidence.yml \
+            .github/scripts/temporary_builder_provider_protection_patch.py
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No builder provider protection evidence to commit."
+            exit 1
+          fi
+          git commit -m "DL-040: qualify builder provider protection"
+          git push origin HEAD:codex/dl-retry-035-builder-provider-protection
