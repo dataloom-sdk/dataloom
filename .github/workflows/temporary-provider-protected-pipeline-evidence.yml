@@ -1,0 +1,131 @@
+name: Temporary Provider Protected Pipeline Evidence
+
+on:
+  push:
+    branches:
+      - codex/dl-retry-034-provider-protected-pipeline
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-provider-protected-pipeline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-and-commit:
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout review branch
+        uses: actions/checkout@v6
+        with:
+          ref: codex/dl-retry-034-provider-protected-pipeline
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Index provider-protected pipeline documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("docs/api/README.md")
+          text = path.read_text()
+          row = "| [Provider-protected pipeline execution](./provider-protected-pipeline.md) | Partial V1 subsystem | Existing pipelines use execution-local timeout/circuit bridges with ordered bounded provider evidence. |"
+          if row not in text:
+              anchor = "| [Provider circuit protection runtime](./provider-circuit-protection-runtime.md) | Partial V1 subsystem | Immutable scope-bound storage/transport assembly with timeout-before-circuit composition. |"
+              if anchor not in text:
+                  raise SystemExit("Provider circuit runtime documentation anchor not found")
+              text = text.replace(anchor, anchor + "\n" + row, 1)
+          text = text.replace(
+              "V1 retry work still requires direct transport/storage pipeline and builder assembly,",
+              "V1 retry work still requires DataLoomBuilder, strategy, and queued-execution adoption,",
+          )
+          path.write_text(text)
+          PY
+
+      - name: Compile and test provider-protected pipeline execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            :dataloom-runtime:jvmTest \
+            :dataloom-runtime:iosSimulatorArm64Test \
+            :runtime-external-consumer:compileKotlinJvm \
+            :runtime-external-consumer:compileKotlinIosArm64 \
+            :runtime-external-consumer:compileKotlinIosSimulatorArm64 \
+            :runtime-external-consumer:compileKotlinIosX64 \
+            --configuration-cache \
+            --stacktrace \
+            --warning-mode all \
+            --console=plain
+
+      - name: Generate exact public ABI baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            :dataloom-runtime:updateKotlinAbi \
+            :dataloom-apple:updateKotlinAbi \
+            --no-configuration-cache \
+            --stacktrace \
+            --console=plain
+
+      - name: Validate ABI consumers and Apple framework
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            :dataloom-runtime:checkKotlinAbi \
+            :dataloom-runtime:checkPublicAbiBoundaries \
+            :dataloom-apple:checkKotlinAbi \
+            :runtime-external-consumer:checkRuntimeExternalConsumer \
+            :dataloom-apple:assembleDataLoomReleaseXCFramework \
+            --no-configuration-cache \
+            --stacktrace \
+            --warning-mode all \
+            --console=plain
+
+      - name: Verify generated protected pipeline evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "ProviderProtectedSynchronizationRuntime" dataloom-runtime/api/dataloom-runtime.api
+          grep -F "ProviderProtectionOperationEvidence" dataloom-runtime/api/dataloom-runtime.klib.api
+          grep -F "ProviderProtectedSynchronizationExternalConsumerProbe" \
+            runtime-external-consumer/src/commonMain/kotlin/io/dataloom/consumer/ProviderProtectedSynchronizationExternalConsumerProbe.kt
+          grep -F "provider-protected-pipeline.md" docs/api/README.md
+          test -d dataloom-apple/build/XCFrameworks/release/DataLoom.xcframework
+          git diff --check
+
+      - name: Commit generated evidence and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/temporary-provider-protected-pipeline-evidence.yml
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No provider-protected pipeline evidence to commit."
+            exit 1
+          fi
+          git commit -m "DL-040: qualify provider-protected pipeline execution"
+          git push origin HEAD:codex/dl-retry-034-provider-protected-pipeline
