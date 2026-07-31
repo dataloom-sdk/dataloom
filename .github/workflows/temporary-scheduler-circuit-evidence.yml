@@ -42,6 +42,7 @@ jobs:
         run: |
           python3 .github/scripts/temporary_scheduler_circuit_runtime_patch.py
           python3 .github/scripts/temporary_scheduler_circuit_evidence_patch.py
+          python3 .github/scripts/temporary_scheduler_circuit_compile_fix.py
 
       - name: Compile and test scheduler circuit integration
         shell: bash
@@ -111,7 +112,8 @@ jobs:
           rm -f \
             .github/workflows/temporary-scheduler-circuit-evidence.yml \
             .github/scripts/temporary_scheduler_circuit_runtime_patch.py \
-            .github/scripts/temporary_scheduler_circuit_evidence_patch.py
+            .github/scripts/temporary_scheduler_circuit_evidence_patch.py \
+            .github/scripts/temporary_scheduler_circuit_compile_fix.py
           git diff --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
