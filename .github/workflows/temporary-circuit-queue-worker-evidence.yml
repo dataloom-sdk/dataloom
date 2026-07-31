@@ -93,6 +93,12 @@ jobs:
             dataloom-runtime/api/dataloom-runtime.klib.api
           grep -F "CircuitBreakerQueueWorkerRecoveryResult" \
             dataloom-runtime/api/dataloom-runtime.klib.api
+          if grep -F "CircuitBreakerQueueProcessingEngine" \
+            dataloom-runtime/api/dataloom-runtime.api \
+            dataloom-runtime/api/dataloom-runtime.klib.api; then
+            echo "Internal queue-processing seam leaked into public ABI."
+            exit 1
+          fi
           grep -F "Circuit-aware queue worker" docs/api/circuit-queue-worker.md
           grep -F "circuit-aware queue worker" docs/api/README.md
           grep -F "CircuitQueueWorkerExternalConsumerProbe" \
