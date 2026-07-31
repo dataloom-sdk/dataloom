@@ -104,6 +104,20 @@ public interface DataLoom {
         get() = null
 
     /**
+     * The optional protected direct-synchronization capability.
+     *
+     * `null` unless
+     * [DataLoomBuilder.providerProtectionConfiguration] was supplied during
+     * build. The historical [synchronize] methods remain unchanged; callers
+     * select provider timeout/circuit evidence explicitly through this property.
+     *
+     * A default getter preserves source compatibility for custom pre-V1
+     * [DataLoom] implementations.
+     */
+    public val protectedSynchronization: DataLoomProtectedSynchronization?
+        get() = null
+
+    /**
      * The optional queue-submission capability.
      *
      * `null` when [DataLoomBuilder.queueSubmissionEncoder] was not supplied
