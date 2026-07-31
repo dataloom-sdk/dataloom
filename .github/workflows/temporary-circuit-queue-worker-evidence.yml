@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - codex/dl-retry-028-circuit-queue-worker
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -14,6 +17,7 @@ concurrency:
 
 jobs:
   validate-and-commit:
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: macos-15
     timeout-minutes: 45
 
