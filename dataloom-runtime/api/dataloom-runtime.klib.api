@@ -160,6 +160,18 @@ final enum class io.dataloom.runtime.retry/RetryTimeoutKind : kotlin/Enum<io.dat
     final fun values(): kotlin/Array<io.dataloom.runtime.retry/RetryTimeoutKind> // io.dataloom.runtime.retry/RetryTimeoutKind.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.runtime.retry/SchedulerCircuitOperation : kotlin/Enum<io.dataloom.runtime.retry/SchedulerCircuitOperation> { // io.dataloom.runtime.retry/SchedulerCircuitOperation|null[0]
+    enum entry SCHEDULE // io.dataloom.runtime.retry/SchedulerCircuitOperation.SCHEDULE|null[0]
+
+    final val entries // io.dataloom.runtime.retry/SchedulerCircuitOperation.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.retry/SchedulerCircuitOperation> // io.dataloom.runtime.retry/SchedulerCircuitOperation.entries.<get-entries>|<get-entries>#static(){}[0]
+    final val retryOperation // io.dataloom.runtime.retry/SchedulerCircuitOperation.retryOperation|{}retryOperation[0]
+        final fun <get-retryOperation>(): io.dataloom.api.retry/RetryOperation // io.dataloom.runtime.retry/SchedulerCircuitOperation.retryOperation.<get-retryOperation>|<get-retryOperation>(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.retry/SchedulerCircuitOperation // io.dataloom.runtime.retry/SchedulerCircuitOperation.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.retry/SchedulerCircuitOperation> // io.dataloom.runtime.retry/SchedulerCircuitOperation.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.runtime.strategy/StrategyExecutionRejectionReason : kotlin/Enum<io.dataloom.runtime.strategy/StrategyExecutionRejectionReason> { // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason|null[0]
     enum entry INCOMPATIBLE_INPUT // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT|null[0]
     enum entry INCOMPATIBLE_TRIGGER // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.INCOMPATIBLE_TRIGGER|null[0]
@@ -1752,6 +1764,22 @@ sealed interface io.dataloom.runtime.worker/QueueWorkerRunResult { // io.dataloo
 }
 
 sealed interface io.dataloom.runtime.worker/QueueWorkerSchedulingResult { // io.dataloom.runtime.worker/QueueWorkerSchedulingResult|null[0]
+    final class CircuitProtected : io.dataloom.runtime.worker/QueueWorkerSchedulingResult { // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.CircuitProtected|null[0]
+        constructor <init>(io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.api.scheduling/ScheduleReceipt>, io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule) // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.CircuitProtected.<init>|<init>(io.dataloom.runtime.retry.CircuitBreakerExecutionResult<io.dataloom.api.scheduling.ScheduleReceipt>;io.dataloom.runtime.worker.QueueWorkerWakeUpPlan.Schedule){}[0]
+
+        final val executionResult // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.CircuitProtected.executionResult|{}executionResult[0]
+            final fun <get-executionResult>(): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.api.scheduling/ScheduleReceipt> // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.CircuitProtected.executionResult.<get-executionResult>|<get-executionResult>(){}[0]
+        final val plan // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.CircuitProtected.plan|{}plan[0]
+            final fun <get-plan>(): io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.CircuitProtected.plan.<get-plan>|<get-plan>(){}[0]
+
+        final fun component1(): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.api.scheduling/ScheduleReceipt> // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.CircuitProtected.component1|component1(){}[0]
+        final fun component2(): io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.CircuitProtected.component2|component2(){}[0]
+        final fun copy(io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.api.scheduling/ScheduleReceipt> = ..., io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule = ...): io.dataloom.runtime.worker/QueueWorkerSchedulingResult.CircuitProtected // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.CircuitProtected.copy|copy(io.dataloom.runtime.retry.CircuitBreakerExecutionResult<io.dataloom.api.scheduling.ScheduleReceipt>;io.dataloom.runtime.worker.QueueWorkerWakeUpPlan.Schedule){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.CircuitProtected.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.CircuitProtected.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.CircuitProtected.toString|toString(){}[0]
+    }
+
     final class Scheduled : io.dataloom.runtime.worker/QueueWorkerSchedulingResult { // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.Scheduled|null[0]
         constructor <init>(io.dataloom.api.scheduling/ScheduleReceipt, io.dataloom.runtime.worker/QueueWorkerWakeUpPlan.Schedule) // io.dataloom.runtime.worker/QueueWorkerSchedulingResult.Scheduled.<init>|<init>(io.dataloom.api.scheduling.ScheduleReceipt;io.dataloom.runtime.worker.QueueWorkerWakeUpPlan.Schedule){}[0]
 
@@ -2038,6 +2066,7 @@ final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.
     final fun bidirectionalConfiguration(io.dataloom.runtime.execution.bidirectional/BidirectionalPipelineConfiguration): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.bidirectionalConfiguration|bidirectionalConfiguration(io.dataloom.runtime.execution.bidirectional.BidirectionalPipelineConfiguration){}[0]
     final fun build(): io.dataloom.runtime.facade/DataLoom // io.dataloom.runtime.facade/DataLoomBuilder.build|build(){}[0]
     final fun circuitQueueWorkerConfiguration(io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.circuitQueueWorkerConfiguration|circuitQueueWorkerConfiguration(io.dataloom.runtime.facade.DataLoomCircuitQueueWorkerSpec){}[0]
+    final fun circuitQueueWorkerSchedulerConfiguration(io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSchedulerSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.circuitQueueWorkerSchedulerConfiguration|circuitQueueWorkerSchedulerConfiguration(io.dataloom.runtime.facade.DataLoomCircuitQueueWorkerSchedulerSpec){}[0]
     final fun connectivityConfiguration(io.dataloom.runtime.connectivity/SynchronizationConnectivityConfiguration): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.connectivityConfiguration|connectivityConfiguration(io.dataloom.runtime.connectivity.SynchronizationConnectivityConfiguration){}[0]
     final fun defaultProviderBindings(io.dataloom.api.provider/SynchronizationProviderBindings): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.defaultProviderBindings|defaultProviderBindings(io.dataloom.api.provider.SynchronizationProviderBindings){}[0]
     final fun defaultStrategyProviderBindings(io.dataloom.api.provider/StrategyProviderBindings): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.defaultStrategyProviderBindings|defaultStrategyProviderBindings(io.dataloom.api.provider.StrategyProviderBindings){}[0]
@@ -2052,6 +2081,19 @@ final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.
     final fun queueSubmissionEncoder(io.dataloom.runtime.submission/QueuedSynchronizationWorkEncoder): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.queueSubmissionEncoder|queueSubmissionEncoder(io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder){}[0]
     final fun queueWorkerConfiguration(io.dataloom.runtime.facade/DataLoomQueueWorkerSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.queueWorkerConfiguration|queueWorkerConfiguration(io.dataloom.runtime.facade.DataLoomQueueWorkerSpec){}[0]
     final fun runtimeDependencies(io.dataloom.api.runtime/RuntimeDependencies): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.runtimeDependencies|runtimeDependencies(io.dataloom.api.runtime.RuntimeDependencies){}[0]
+}
+
+final class io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSchedulerSpec { // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSchedulerSpec|null[0]
+    constructor <init>(io.dataloom.runtime.retry/CircuitBreakerConfiguration, io.dataloom.api.circuit/CircuitBreakerStateStore, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.runtime.retry/CircuitBreakerFailureClassifier = ...) // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSchedulerSpec.<init>|<init>(io.dataloom.runtime.retry.CircuitBreakerConfiguration;io.dataloom.api.circuit.CircuitBreakerStateStore;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.runtime.retry.CircuitBreakerFailureClassifier){}[0]
+
+    final val circuitBreakerConfiguration // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSchedulerSpec.circuitBreakerConfiguration|{}circuitBreakerConfiguration[0]
+        final fun <get-circuitBreakerConfiguration>(): io.dataloom.runtime.retry/CircuitBreakerConfiguration // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSchedulerSpec.circuitBreakerConfiguration.<get-circuitBreakerConfiguration>|<get-circuitBreakerConfiguration>(){}[0]
+    final val circuitBreakerStateStore // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSchedulerSpec.circuitBreakerStateStore|{}circuitBreakerStateStore[0]
+        final fun <get-circuitBreakerStateStore>(): io.dataloom.api.circuit/CircuitBreakerStateStore // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSchedulerSpec.circuitBreakerStateStore.<get-circuitBreakerStateStore>|<get-circuitBreakerStateStore>(){}[0]
+    final val failureClassifier // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSchedulerSpec.failureClassifier|{}failureClassifier[0]
+        final fun <get-failureClassifier>(): io.dataloom.runtime.retry/CircuitBreakerFailureClassifier // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSchedulerSpec.failureClassifier.<get-failureClassifier>|<get-failureClassifier>(){}[0]
+    final val scope // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSchedulerSpec.scope|{}scope[0]
+        final fun <get-scope>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSchedulerSpec.scope.<get-scope>|<get-scope>(){}[0]
 }
 
 final class io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSpec { // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSpec|null[0]
@@ -2765,6 +2807,7 @@ final object io.dataloom.runtime.submission/QueueSubmissionProviderTimeoutRuntim
 
 final object io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRuntime { // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRuntime|null[0]
     final fun create(io.dataloom.api.queue/QueueProvider, io.dataloom.runtime.retry/CircuitBreakerExecutionGate, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.runtime.queue/QueueProcessingCircuitScopes, io.dataloom.runtime.queue/QueueEntryExecutionHandler, io.dataloom.api.scheduling/SchedulerProvider?, io.dataloom.api.time/DataLoomClock, io.dataloom.runtime.worker/QueueWorkerConfiguration, io.dataloom.runtime.retry/CircuitBreakerFailureClassifier = ...): io.dataloom.runtime.worker/CircuitBreakerQueueWorkerCoordinator // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRuntime.create|create(io.dataloom.api.queue.QueueProvider;io.dataloom.runtime.retry.CircuitBreakerExecutionGate;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.runtime.queue.QueueProcessingCircuitScopes;io.dataloom.runtime.queue.QueueEntryExecutionHandler;io.dataloom.api.scheduling.SchedulerProvider?;io.dataloom.api.time.DataLoomClock;io.dataloom.runtime.worker.QueueWorkerConfiguration;io.dataloom.runtime.retry.CircuitBreakerFailureClassifier){}[0]
+    final fun createWithSchedulerCircuit(io.dataloom.api.queue/QueueProvider, io.dataloom.runtime.retry/CircuitBreakerExecutionGate, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.runtime.queue/QueueProcessingCircuitScopes, io.dataloom.runtime.queue/QueueEntryExecutionHandler, io.dataloom.api.scheduling/SchedulerProvider, io.dataloom.runtime.retry/CircuitBreakerExecutionGate, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.time/DataLoomClock, io.dataloom.runtime.worker/QueueWorkerConfiguration, io.dataloom.runtime.retry/CircuitBreakerFailureClassifier = ..., io.dataloom.runtime.retry/CircuitBreakerFailureClassifier = ...): io.dataloom.runtime.worker/CircuitBreakerQueueWorkerCoordinator // io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRuntime.createWithSchedulerCircuit|createWithSchedulerCircuit(io.dataloom.api.queue.QueueProvider;io.dataloom.runtime.retry.CircuitBreakerExecutionGate;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.runtime.queue.QueueProcessingCircuitScopes;io.dataloom.runtime.queue.QueueEntryExecutionHandler;io.dataloom.api.scheduling.SchedulerProvider;io.dataloom.runtime.retry.CircuitBreakerExecutionGate;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.time.DataLoomClock;io.dataloom.runtime.worker.QueueWorkerConfiguration;io.dataloom.runtime.retry.CircuitBreakerFailureClassifier;io.dataloom.runtime.retry.CircuitBreakerFailureClassifier){}[0]
 }
 
 final object io.dataloom.runtime.worker/QueueWorkerProviderTimeoutRuntime { // io.dataloom.runtime.worker/QueueWorkerProviderTimeoutRuntime|null[0]

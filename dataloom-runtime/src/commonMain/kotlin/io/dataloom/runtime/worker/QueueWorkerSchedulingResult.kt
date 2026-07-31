@@ -2,6 +2,7 @@ package io.dataloom.runtime.worker
 
 import io.dataloom.api.error.DataLoomError
 import io.dataloom.api.scheduling.ScheduleReceipt
+import io.dataloom.runtime.retry.CircuitBreakerExecutionResult
 
 /**
  * Structured result of the scheduling step inside
@@ -11,7 +12,9 @@ import io.dataloom.api.scheduling.ScheduleReceipt
  *
  * - [NotRequired] — no wake-up plan was required. No scheduler call was made.
  * - [Scheduled] — [io.dataloom.api.scheduling.SchedulerProvider.schedule] was
- *   called once and the provider accepted the request.
+ *   called once and the provider accepted the request on the direct path.
+ * - [CircuitProtected] — scheduling used an explicit circuit and preserves the
+ *   complete pre-execution, provider, and post-execution recording evidence.
  * - [SchedulerNotConfigured] — a wake-up was required but no
  *   [io.dataloom.api.scheduling.SchedulerProvider] was supplied to the
  *   coordinator. The exact plan is preserved. Another host trigger may be
@@ -67,6 +70,23 @@ public sealed interface QueueWorkerSchedulingResult {
         public val receipt: ScheduleReceipt,
 
         /** Exact [QueueWorkerWakeUpPlan.Schedule] that was executed. */
+        public val plan: QueueWorkerWakeUpPlan.Schedule,
+    ) : QueueWorkerSchedulingResult
+
+    /**
+     * Scheduling was protected by an explicitly configured scheduler circuit.
+     *
+     * [executionResult] preserves whether the provider was rejected before
+     * invocation, returned a canonical failure, accepted the schedule, or
+     * accepted it before the later circuit-state recording became unconfirmed.
+     * An accepted schedule is never collapsed into a generic failure merely
+     * because post-execution circuit persistence failed.
+     */
+    public data class CircuitProtected(
+        /** Complete circuit permission, provider, and recording evidence. */
+        public val executionResult: CircuitBreakerExecutionResult<ScheduleReceipt>,
+
+        /** Exact wake-up plan submitted or rejected by the scheduler boundary. */
         public val plan: QueueWorkerWakeUpPlan.Schedule,
     ) : QueueWorkerSchedulingResult
 

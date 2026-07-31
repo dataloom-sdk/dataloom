@@ -56,7 +56,11 @@ import io.dataloom.api.retry.RetryPolicy
 import io.dataloom.api.runtime.RuntimeDependencies
 import io.dataloom.api.runtime.RuntimeIdentifierGenerators
 import io.dataloom.api.scheduling.ExistingSchedulePolicy
+import io.dataloom.api.scheduling.ScheduleCancellationRequest
 import io.dataloom.api.scheduling.ScheduleConstraints
+import io.dataloom.api.scheduling.ScheduleReceipt
+import io.dataloom.api.scheduling.ScheduleRequest
+import io.dataloom.api.scheduling.SchedulerProvider
 import io.dataloom.api.scheduling.SchedulingDelay
 import io.dataloom.api.storage.InboundChangeApplyRequest
 import io.dataloom.api.storage.OutboundChangeReadRequest
@@ -84,6 +88,7 @@ import io.dataloom.runtime.retry.CircuitBreakerConfiguration
 import io.dataloom.runtime.retry.CircuitBreakerFailureClassifier
 import io.dataloom.runtime.retry.CircuitBreakerFailureDisposition
 import io.dataloom.runtime.retry.QueueCircuitOperation
+import io.dataloom.runtime.retry.SchedulerCircuitOperation
 import io.dataloom.runtime.worker.CircuitBreakerQueueWorkerRunResult
 import io.dataloom.runtime.worker.QueueWorkerConfiguration
 import io.dataloom.runtime.worker.QueueWorkerRunRequest
@@ -301,20 +306,167 @@ class DataLoomBuilderCircuitQueueWorkerTest {
     private fun builder(
         queue: RecordingQueueProvider,
         clock: RecordingClock = RecordingClock(),
+        scheduler: RecordingSchedulerProvider? = null,
     ): DataLoomBuilder {
         val storage = TestStorageProvider()
         val transport = TestTransportProvider()
-        return DataLoomBuilder()
+        val builder = DataLoomBuilder()
             .runtimeDependencies(runtimeDependencies(clock))
             .providers(storage, transport, queue)
-            .defaultProviderBindings(
-                SynchronizationProviderBindings(
-                    storageProviderId = storage.descriptor.id,
-                    transportProviderId = transport.descriptor.id,
-                    queueProviderId = queue.descriptor.id,
-                ),
-            )
+        if (scheduler != null) {
+            builder.provider(scheduler)
+        }
+        return builder.defaultProviderBindings(
+            SynchronizationProviderBindings(
+                storageProviderId = storage.descriptor.id,
+                transportProviderId = transport.descriptor.id,
+                queueProviderId = queue.descriptor.id,
+                schedulerProviderId = scheduler?.descriptor?.id,
+            ),
+        )
     }
+
+    @Test
+    fun `scheduler circuit configuration requires circuit-aware worker`() {
+        val queue = RecordingQueueProvider()
+        val scheduler = RecordingSchedulerProvider()
+        val store = RecordingCircuitStore()
+
+        assertFailsWith<DataLoomBuildException> {
+            builder(queue, scheduler = scheduler)
+                .circuitQueueWorkerSchedulerConfiguration(
+                    schedulerCircuitSpec(scheduler.descriptor.id, store),
+                )
+                .build()
+        }
+
+        assertEquals(0, store.loadCalls)
+        assertEquals(0, scheduler.totalOperationCalls)
+    }
+
+    @Test
+    fun `scheduler circuit configuration requires scheduler binding`() {
+        val queue = RecordingQueueProvider()
+        val queueStore = RecordingCircuitStore()
+        val schedulerStore = RecordingCircuitStore()
+        val unboundSchedulerId = ProviderId("unbound-scheduler")
+
+        assertFailsWith<DataLoomBuildException> {
+            builder(queue)
+                .circuitQueueWorkerConfiguration(
+                    circuitSpec(queue.descriptor.id, queueStore),
+                )
+                .circuitQueueWorkerSchedulerConfiguration(
+                    schedulerCircuitSpec(unboundSchedulerId, schedulerStore),
+                )
+                .build()
+        }
+
+        assertEquals(0, queueStore.loadCalls)
+        assertEquals(0, schedulerStore.loadCalls)
+        assertEquals(0, queue.totalQueueOperationCalls)
+    }
+
+    @Test
+    fun `scheduler provider scope mismatch fails before state or provider access`() {
+        val queue = RecordingQueueProvider()
+        val scheduler = RecordingSchedulerProvider()
+        val queueStore = RecordingCircuitStore()
+        val schedulerStore = RecordingCircuitStore()
+
+        assertFailsWith<DataLoomBuildException> {
+            builder(queue, scheduler = scheduler)
+                .circuitQueueWorkerConfiguration(
+                    circuitSpec(queue.descriptor.id, queueStore),
+                )
+                .circuitQueueWorkerSchedulerConfiguration(
+                    schedulerCircuitSpec(
+                        schedulerProviderId = scheduler.descriptor.id,
+                        store = schedulerStore,
+                        scope = CircuitBreakerScope.providerOperation(
+                            providerId = ProviderId("wrong-scheduler"),
+                            operation = SchedulerCircuitOperation.SCHEDULE.retryOperation,
+                        ),
+                    ),
+                )
+                .build()
+        }
+
+        assertEquals(0, schedulerStore.loadCalls)
+        assertEquals(0, scheduler.totalOperationCalls)
+    }
+
+    @Test
+    fun `scheduler operation scope mismatch fails before state or provider access`() {
+        val queue = RecordingQueueProvider()
+        val scheduler = RecordingSchedulerProvider()
+        val queueStore = RecordingCircuitStore()
+        val schedulerStore = RecordingCircuitStore()
+
+        assertFailsWith<DataLoomBuildException> {
+            builder(queue, scheduler = scheduler)
+                .circuitQueueWorkerConfiguration(
+                    circuitSpec(queue.descriptor.id, queueStore),
+                )
+                .circuitQueueWorkerSchedulerConfiguration(
+                    schedulerCircuitSpec(
+                        schedulerProviderId = scheduler.descriptor.id,
+                        store = schedulerStore,
+                        scope = CircuitBreakerScope.providerOperation(
+                            providerId = scheduler.descriptor.id,
+                            operation = RetryOperation("scheduler.cancel"),
+                        ),
+                    ),
+                )
+                .build()
+        }
+
+        assertEquals(0, schedulerStore.loadCalls)
+        assertEquals(0, scheduler.totalOperationCalls)
+    }
+
+    @Test
+    fun `valid scheduler circuit build is side effect free`() {
+        val queue = RecordingQueueProvider()
+        val scheduler = RecordingSchedulerProvider()
+        val queueStore = RecordingCircuitStore()
+        val schedulerStore = RecordingCircuitStore()
+        val clock = RecordingClock()
+
+        val dataLoom = builder(queue, clock, scheduler)
+            .circuitQueueWorkerConfiguration(
+                circuitSpec(queue.descriptor.id, queueStore),
+            )
+            .circuitQueueWorkerSchedulerConfiguration(
+                schedulerCircuitSpec(scheduler.descriptor.id, schedulerStore),
+            )
+            .build()
+
+        assertNotNull(dataLoom.circuitQueueWorker)
+        assertEquals(0, queueStore.loadCalls)
+        assertEquals(0, schedulerStore.loadCalls)
+        assertEquals(0, queue.totalQueueOperationCalls)
+        assertEquals(0, scheduler.totalOperationCalls)
+        assertEquals(0, clock.nowCalls)
+    }
+
+    private fun schedulerCircuitSpec(
+        schedulerProviderId: ProviderId,
+        store: CircuitBreakerStateStore,
+        scope: CircuitBreakerScope = CircuitBreakerScope.providerOperation(
+            providerId = schedulerProviderId,
+            operation = SchedulerCircuitOperation.SCHEDULE.retryOperation,
+        ),
+    ): DataLoomCircuitQueueWorkerSchedulerSpec =
+        DataLoomCircuitQueueWorkerSchedulerSpec(
+            circuitBreakerConfiguration = CircuitBreakerConfiguration(
+                failureThreshold = 1,
+                failureWindow = SchedulingDelay(1_000L),
+                openDuration = SchedulingDelay(1_000L),
+            ),
+            circuitBreakerStateStore = store,
+            scope = scope,
+        )
 
     private fun circuitSpec(
         queueProviderId: ProviderId,
@@ -573,6 +725,47 @@ class DataLoomBuilderCircuitQueueWorkerTest {
 
         private fun transitionSuccess(): ProviderOperationResult<Unit> {
             transitionCalls++
+            return ProviderOperationResult.Success(Unit)
+        }
+    }
+
+    private class RecordingSchedulerProvider : SchedulerProvider {
+        var scheduleCalls: Int = 0
+            private set
+        var cancelCalls: Int = 0
+            private set
+
+        val totalOperationCalls: Int
+            get() = scheduleCalls + cancelCalls
+
+        override val descriptor: ProviderDescriptor = ProviderDescriptor(
+            id = ProviderId("scheduler-builder-circuit"),
+            name = ProviderName("Builder Circuit Scheduler"),
+            type = ProviderType.SCHEDULER,
+            version = ProviderVersion("1.0.0"),
+        )
+
+        override suspend fun initialize(
+            context: ProviderInitializationContext,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun health(): ProviderOperationResult<ProviderHealth> =
+            ProviderOperationResult.Success(ProviderHealth(ProviderHealthStatus.HEALTHY))
+
+        override suspend fun close(): ProviderOperationResult<Unit> =
+            ProviderOperationResult.Success(Unit)
+
+        override suspend fun schedule(
+            request: ScheduleRequest,
+        ): ProviderOperationResult<ScheduleReceipt> {
+            scheduleCalls += 1
+            return ProviderOperationResult.Success(ScheduleReceipt(request.id))
+        }
+
+        override suspend fun cancel(
+            request: ScheduleCancellationRequest,
+        ): ProviderOperationResult<Unit> {
+            cancelCalls += 1
             return ProviderOperationResult.Success(Unit)
         }
     }
