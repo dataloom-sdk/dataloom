@@ -23,7 +23,8 @@ flowchart TB
     Facade --> Lifecycle[ProviderLifecycleCoordinator]
     Facade --> Execution[SynchronizationExecutionCoordinator]
     Facade --> Submission[Optional queue submission]
-    Facade --> Worker[Optional queue worker]
+    Facade --> Worker[Optional direct queue worker]
+    Facade --> CircuitWorker[Optional circuit-aware queue worker]
     Execution --> Resolver[SynchronizationProviderResolver]
     Execution --> Registry[SynchronizationPipelineRegistry]
     Resolver --> Providers[Resolved providers]
@@ -51,7 +52,9 @@ complete merely by assembling their available components.
 
 - `DataLoom` — facade interface
 - `DataLoomBuilder` — fluent builder that assembles and validates the runtime
-- `DataLoomQueueWorker` — optional narrow queue-worker capability
+- `DataLoomQueueWorker` — optional narrow direct queue-worker capability
+- `DataLoomCircuitQueueWorker` — optional circuit-aware queue-worker capability
+- `DataLoomCircuitQueueWorkerSpec` — explicit circuit-worker builder specification
 - `DataLoomBuildException` — thrown when `DataLoomBuilder.build()` fails
   validation
 - `DataLoomQueueSubmission` _(DL-034)_ — optional narrow queue-submission
@@ -65,6 +68,7 @@ complete merely by assembling their available components.
 public interface DataLoom {
     public val providerLifecycleState: ProviderLifecycleCoordinatorState
     public val queueWorker: DataLoomQueueWorker?
+    public val circuitQueueWorker: DataLoomCircuitQueueWorker?
     public val queueSubmission: DataLoomQueueSubmission?
     public suspend fun initialize(): ProviderLifecycleResult
     public suspend fun synchronize(request: SynchronizationRequest): SynchronizationExecutionResult
@@ -87,6 +91,16 @@ time without side effects.
 `null` when no `DataLoomQueueWorkerSpec` was supplied to the builder. Non-null
 when queue-worker dependencies are fully configured. Queue workers do not start
 automatically.
+
+### circuitQueueWorker
+
+`null` unless `circuitQueueWorkerConfiguration(...)` was the effective worker
+configuration. Direct and circuit-aware workers are mutually exclusive; the
+most recent worker configuration method wins. The capability returns the full
+`CircuitBreakerQueueWorkerRunResult` without mapping it into the direct worker
+result model.
+
+See [DataLoomBuilder circuit-aware queue worker](./builder-circuit-queue-worker.md).
 
 ### queueSubmission
 
@@ -177,7 +191,8 @@ share it across threads or call `build()` more than once.
 | `connectivityConfiguration(c)` | Configures connectivity preflight. No preflight when absent. |
 | `observers(...)` / `observer(o)` | Registers `SynchronizationObserver` instances. No event infrastructure is assembled when absent. |
 | `pipeline(p)` | Registers a custom `SynchronizationPipeline` for its direction. Replaces the default for that direction only. |
-| `queueWorkerConfiguration(spec)` | Configures the optional queue-worker capability. |
+| `queueWorkerConfiguration(spec)` | Configures the direct queue-worker capability and clears circuit-worker configuration. |
+| `circuitQueueWorkerConfiguration(spec)` | Configures the circuit-aware queue worker and clears direct-worker configuration. |
 | `queueSubmissionEncoder(e)` | Configures direct queue submission with no provider timeout. |
 | `queueSubmissionConfiguration(spec)` | Configures queue submission with an optional enqueue timeout. |
 

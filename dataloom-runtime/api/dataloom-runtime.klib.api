@@ -248,6 +248,8 @@ abstract interface io.dataloom.runtime.facade/DataLoom { // io.dataloom.runtime.
         abstract fun <get-queueSubmission>(): io.dataloom.runtime.submission/DataLoomQueueSubmission? // io.dataloom.runtime.facade/DataLoom.queueSubmission.<get-queueSubmission>|<get-queueSubmission>(){}[0]
     abstract val queueWorker // io.dataloom.runtime.facade/DataLoom.queueWorker|{}queueWorker[0]
         abstract fun <get-queueWorker>(): io.dataloom.runtime.facade/DataLoomQueueWorker? // io.dataloom.runtime.facade/DataLoom.queueWorker.<get-queueWorker>|<get-queueWorker>(){}[0]
+    open val circuitQueueWorker // io.dataloom.runtime.facade/DataLoom.circuitQueueWorker|{}circuitQueueWorker[0]
+        open fun <get-circuitQueueWorker>(): io.dataloom.runtime.facade/DataLoomCircuitQueueWorker? // io.dataloom.runtime.facade/DataLoom.circuitQueueWorker.<get-circuitQueueWorker>|<get-circuitQueueWorker>(){}[0]
 
     abstract suspend fun initialize(): io.dataloom.api.provider/ProviderLifecycleResult // io.dataloom.runtime.facade/DataLoom.initialize|initialize(){}[0]
     abstract suspend fun shutdown(): io.dataloom.api.provider/ProviderLifecycleResult // io.dataloom.runtime.facade/DataLoom.shutdown|shutdown(){}[0]
@@ -255,6 +257,10 @@ abstract interface io.dataloom.runtime.facade/DataLoom { // io.dataloom.runtime.
     abstract suspend fun synchronize(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.provider/SynchronizationProviderBindings): io.dataloom.runtime.execution/SynchronizationExecutionResult // io.dataloom.runtime.facade/DataLoom.synchronize|synchronize(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.provider.SynchronizationProviderBindings){}[0]
     abstract suspend fun synchronize(io.dataloom.api.strategy/StrategySynchronizationRequest): io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult // io.dataloom.runtime.facade/DataLoom.synchronize|synchronize(io.dataloom.api.strategy.StrategySynchronizationRequest){}[0]
     abstract suspend fun synchronize(io.dataloom.api.strategy/StrategySynchronizationRequest, io.dataloom.api.provider/StrategyProviderBindings): io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult // io.dataloom.runtime.facade/DataLoom.synchronize|synchronize(io.dataloom.api.strategy.StrategySynchronizationRequest;io.dataloom.api.provider.StrategyProviderBindings){}[0]
+}
+
+abstract interface io.dataloom.runtime.facade/DataLoomCircuitQueueWorker { // io.dataloom.runtime.facade/DataLoomCircuitQueueWorker|null[0]
+    abstract suspend fun run(io.dataloom.runtime.worker/QueueWorkerRunRequest): io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRunResult // io.dataloom.runtime.facade/DataLoomCircuitQueueWorker.run|run(io.dataloom.runtime.worker.QueueWorkerRunRequest){}[0]
 }
 
 abstract interface io.dataloom.runtime.facade/DataLoomQueueWorker { // io.dataloom.runtime.facade/DataLoomQueueWorker|null[0]
@@ -2031,6 +2037,7 @@ final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.
 
     final fun bidirectionalConfiguration(io.dataloom.runtime.execution.bidirectional/BidirectionalPipelineConfiguration): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.bidirectionalConfiguration|bidirectionalConfiguration(io.dataloom.runtime.execution.bidirectional.BidirectionalPipelineConfiguration){}[0]
     final fun build(): io.dataloom.runtime.facade/DataLoom // io.dataloom.runtime.facade/DataLoomBuilder.build|build(){}[0]
+    final fun circuitQueueWorkerConfiguration(io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.circuitQueueWorkerConfiguration|circuitQueueWorkerConfiguration(io.dataloom.runtime.facade.DataLoomCircuitQueueWorkerSpec){}[0]
     final fun connectivityConfiguration(io.dataloom.runtime.connectivity/SynchronizationConnectivityConfiguration): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.connectivityConfiguration|connectivityConfiguration(io.dataloom.runtime.connectivity.SynchronizationConnectivityConfiguration){}[0]
     final fun defaultProviderBindings(io.dataloom.api.provider/SynchronizationProviderBindings): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.defaultProviderBindings|defaultProviderBindings(io.dataloom.api.provider.SynchronizationProviderBindings){}[0]
     final fun defaultStrategyProviderBindings(io.dataloom.api.provider/StrategyProviderBindings): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.defaultStrategyProviderBindings|defaultStrategyProviderBindings(io.dataloom.api.provider.StrategyProviderBindings){}[0]
@@ -2045,6 +2052,23 @@ final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.
     final fun queueSubmissionEncoder(io.dataloom.runtime.submission/QueuedSynchronizationWorkEncoder): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.queueSubmissionEncoder|queueSubmissionEncoder(io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder){}[0]
     final fun queueWorkerConfiguration(io.dataloom.runtime.facade/DataLoomQueueWorkerSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.queueWorkerConfiguration|queueWorkerConfiguration(io.dataloom.runtime.facade.DataLoomQueueWorkerSpec){}[0]
     final fun runtimeDependencies(io.dataloom.api.runtime/RuntimeDependencies): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.runtimeDependencies|runtimeDependencies(io.dataloom.api.runtime.RuntimeDependencies){}[0]
+}
+
+final class io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSpec { // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSpec|null[0]
+    constructor <init>(io.dataloom.runtime.facade/DataLoomQueueWorkerSpec, io.dataloom.runtime.retry/CircuitBreakerConfiguration, io.dataloom.api.circuit/CircuitBreakerStateStore, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.runtime.queue/QueueProcessingCircuitScopes, io.dataloom.runtime.retry/CircuitBreakerFailureClassifier = ...) // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSpec.<init>|<init>(io.dataloom.runtime.facade.DataLoomQueueWorkerSpec;io.dataloom.runtime.retry.CircuitBreakerConfiguration;io.dataloom.api.circuit.CircuitBreakerStateStore;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.runtime.queue.QueueProcessingCircuitScopes;io.dataloom.runtime.retry.CircuitBreakerFailureClassifier){}[0]
+
+    final val circuitBreakerConfiguration // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSpec.circuitBreakerConfiguration|{}circuitBreakerConfiguration[0]
+        final fun <get-circuitBreakerConfiguration>(): io.dataloom.runtime.retry/CircuitBreakerConfiguration // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSpec.circuitBreakerConfiguration.<get-circuitBreakerConfiguration>|<get-circuitBreakerConfiguration>(){}[0]
+    final val circuitBreakerStateStore // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSpec.circuitBreakerStateStore|{}circuitBreakerStateStore[0]
+        final fun <get-circuitBreakerStateStore>(): io.dataloom.api.circuit/CircuitBreakerStateStore // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSpec.circuitBreakerStateStore.<get-circuitBreakerStateStore>|<get-circuitBreakerStateStore>(){}[0]
+    final val failureClassifier // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSpec.failureClassifier|{}failureClassifier[0]
+        final fun <get-failureClassifier>(): io.dataloom.runtime.retry/CircuitBreakerFailureClassifier // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSpec.failureClassifier.<get-failureClassifier>|<get-failureClassifier>(){}[0]
+    final val processingScopes // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSpec.processingScopes|{}processingScopes[0]
+        final fun <get-processingScopes>(): io.dataloom.runtime.queue/QueueProcessingCircuitScopes // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSpec.processingScopes.<get-processingScopes>|<get-processingScopes>(){}[0]
+    final val recoveryScope // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSpec.recoveryScope|{}recoveryScope[0]
+        final fun <get-recoveryScope>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSpec.recoveryScope.<get-recoveryScope>|<get-recoveryScope>(){}[0]
+    final val workerSpec // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSpec.workerSpec|{}workerSpec[0]
+        final fun <get-workerSpec>(): io.dataloom.runtime.facade/DataLoomQueueWorkerSpec // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSpec.workerSpec.<get-workerSpec>|<get-workerSpec>(){}[0]
 }
 
 final class io.dataloom.runtime.facade/DataLoomQueueSubmissionSpec { // io.dataloom.runtime.facade/DataLoomQueueSubmissionSpec|null[0]

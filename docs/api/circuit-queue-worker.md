@@ -4,8 +4,9 @@
 
 > **Status:** Partial V1 subsystem. Expired-lease recovery, bounded queue
 > processing, and follow-up scheduling now have an additive circuit-aware
-> coordination path. Builder adoption, scheduler-circuit policy, production
-> KMP iOS persistence, observability, administration, and end-to-end
+> coordination path with explicit DataLoomBuilder/facade adoption.
+> Scheduler-circuit policy, production KMP iOS persistence, observability,
+> administration, and end-to-end
 > qualification remain open.
 
 ## Overview
@@ -145,11 +146,18 @@ silently translate arbitrary exceptions.
 - Results carry bounded operational evidence only; payloads, credentials,
   headers, provider instances, and arbitrary metadata are excluded.
 
+## DataLoomBuilder adoption
+
+Applications can expose this capability through
+`DataLoomBuilder.circuitQueueWorkerConfiguration(...)` and
+`DataLoom.circuitQueueWorker`. The builder requires an explicit durable circuit
+state store and exact recovery/acquisition/transition scopes. See
+[DataLoomBuilder circuit-aware queue worker](./builder-circuit-queue-worker.md).
+
 ## Current limitations
 
 This slice does not complete DL-040. V1 still requires:
 
-- DataLoomBuilder adoption for explicit queue circuit policy;
 - circuit protection for queue-worker scheduling where configured;
 - transport and storage circuit/timeout assembly;
 - protocol-specific connection, request, and idle timeout adapters;
