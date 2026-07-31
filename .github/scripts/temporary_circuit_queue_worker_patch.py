@@ -44,6 +44,26 @@ replace_once(
                 ),""",
 )
 
+engine_path = (
+    "dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/queue/"
+    "CircuitBreakerQueueProcessingEngine.kt"
+)
+replace_once(
+    engine_path,
+    "public fun interface CircuitBreakerQueueProcessingEngine",
+    "internal fun interface CircuitBreakerQueueProcessingEngine",
+)
+
+coordinator_path = (
+    "dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/worker/"
+    "CircuitBreakerQueueWorkerCoordinator.kt"
+)
+replace_once(
+    coordinator_path,
+    "public class CircuitBreakerQueueWorkerCoordinator(\n",
+    "public class CircuitBreakerQueueWorkerCoordinator internal constructor(\n",
+)
+
 readme = "docs/api/README.md"
 replace_once(
     readme,
@@ -114,6 +134,20 @@ replace_once(
 The direct coordinator remains source compatible. See
 [Circuit-aware queue worker](./circuit-queue-worker.md) for the additive circuit
 path.
+""",
+)
+
+worker_circuit_doc = "docs/api/circuit-queue-worker.md"
+replace_once(
+    worker_circuit_doc,
+    """The queue-processing boundary is represented by
+`CircuitBreakerQueueProcessingEngine`; the production runtime assembles it from
+`CircuitBreakerDurableQueueExecutionProcessor`.
+""",
+    """An internal queue-processing seam keeps coordinator tests deterministic without
+adding a host-replaceable public execution engine. The public production path
+uses `CircuitBreakerDurableQueueExecutionProcessor` through the coordinator's
+production constructor and `CircuitBreakerQueueWorkerRuntime`.
 """,
 )
 
