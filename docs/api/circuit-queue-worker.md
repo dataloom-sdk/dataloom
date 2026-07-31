@@ -4,9 +4,9 @@
 
 > **Status:** Partial V1 subsystem. Expired-lease recovery, bounded queue
 > processing, and follow-up scheduling now have an additive circuit-aware
-> coordination path with explicit DataLoomBuilder/facade adoption.
-> Scheduler-circuit policy, production KMP iOS persistence, observability,
-> administration, and end-to-end
+> coordination path with explicit DataLoomBuilder/facade adoption and optional
+> separately governed scheduler-circuit policy. Production KMP iOS persistence,
+> observability, administration, and end-to-end
 > qualification remain open.
 
 ## Overview
@@ -87,9 +87,14 @@ Scheduling remains a separate provider boundary.
 - Caller cancellation propagates unchanged.
 - Queue-provider circuit scopes are not silently reused as scheduler circuit
   policy.
+- Optional scheduler circuit policy preserves complete permission, provider, and
+  post-execution recording evidence.
+- Scheduler acceptance remains visible when later circuit-state recording is
+  unconfirmed.
 
 A scheduler failure after normal queue processing does not roll back confirmed
-queue transitions.
+queue transitions. An accepted schedule is never automatically resubmitted
+because later circuit recording failed.
 
 ## Explicit scope model
 
@@ -108,7 +113,11 @@ provider invocation, clock reads, processing, or scheduling.
 
 ## Production assembly
 
-`CircuitBreakerQueueWorkerRuntime.create(...)` constructs:
+`CircuitBreakerQueueWorkerRuntime.create(...)` constructs the direct
+scheduler path. `createWithSchedulerCircuit(...)` additionally assembles timeout
+before a separately governed scheduler circuit.
+
+The direct path constructs:
 
 1. one `CircuitBreakerQueueOperationAdapter` shared by recovery and processing;
 2. one `CircuitBreakerDurableQueueExecutionProcessor`; and
@@ -158,7 +167,6 @@ state store and exact recovery/acquisition/transition scopes. See
 
 This slice does not complete DL-040. V1 still requires:
 
-- circuit protection for queue-worker scheduling where configured;
 - transport and storage circuit/timeout assembly;
 - protocol-specific connection, request, and idle timeout adapters;
 - production KMP iOS retry/circuit persistence;

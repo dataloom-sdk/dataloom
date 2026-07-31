@@ -4,8 +4,9 @@
 
 > **Status:** Partial V1 subsystem. DataLoomBuilder can explicitly assemble one
 > circuit-aware queue-worker capability with durable application-supplied
-> circuit state. Scheduler-circuit policy, transport/storage assembly, KMP iOS
-> persistence, observability, administration, and end-to-end qualification
+> circuit state and optional separately governed scheduler circuit policy.
+> Transport/storage assembly, KMP iOS persistence, observability,
+> administration, and end-to-end qualification
 > remain open.
 
 ## Overview
@@ -33,6 +34,8 @@ Package: `io.dataloom.runtime.facade`
 - `DataLoomCircuitQueueWorker`
 - `DataLoomCircuitQueueWorkerSpec`
 - `DataLoomBuilder.circuitQueueWorkerConfiguration(...)`
+- `DataLoomCircuitQueueWorkerSchedulerSpec`
+- `DataLoomBuilder.circuitQueueWorkerSchedulerConfiguration(...)`
 - `DataLoom.circuitQueueWorker`
 
 The existing `DataLoomQueueWorker`, `DataLoomQueueWorkerSpec`,
@@ -106,8 +109,12 @@ replay safety while the queue circuit classifier records dependency
 unavailability.
 
 `QueueWorkerConfiguration.schedulerProviderTimeout` remains independent and
-applies only to follow-up scheduling. This builder slice does not silently apply
-a queue circuit scope to the scheduler.
+applies only to follow-up scheduling.
+
+`DataLoomBuilder.circuitQueueWorkerSchedulerConfiguration(...)` may additionally
+supply a separate scheduler circuit configuration, durable state store, exact
+scope, and classifier. Timeout is applied before circuit adaptation. Queue
+circuit state, scope, thresholds, and classification are never reused.
 
 ## Usage
 
@@ -136,6 +143,13 @@ val dataLoom = DataLoomBuilder()
     .providers(storageProvider, transportProvider, queueProvider)
     .defaultProviderBindings(bindings)
     .circuitQueueWorkerConfiguration(circuitSpec)
+    .circuitQueueWorkerSchedulerConfiguration(
+        DataLoomCircuitQueueWorkerSchedulerSpec(
+            circuitBreakerConfiguration = schedulerCircuitConfiguration,
+            circuitBreakerStateStore = schedulerCircuitStateStore,
+            scope = schedulerScheduleScope,
+        ),
+    )
     .build()
 
 val result = requireNotNull(dataLoom.circuitQueueWorker).run(runRequest)
@@ -145,8 +159,6 @@ val result = requireNotNull(dataLoom.circuitQueueWorker).run(runRequest)
 
 This slice does not complete DL-040. Remaining work includes:
 
-- separately configured scheduler circuit protection with enriched scheduling
-  evidence;
 - transport and storage timeout/circuit assembly;
 - protocol-specific connection, request, and idle timeout adapters;
 - production KMP iOS retry/circuit persistence;

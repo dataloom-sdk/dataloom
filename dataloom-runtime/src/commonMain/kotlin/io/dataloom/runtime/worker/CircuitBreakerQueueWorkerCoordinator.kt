@@ -15,6 +15,7 @@ import io.dataloom.runtime.queue.QueueCircuitProviderFailureDisposition
 import io.dataloom.runtime.retry.CircuitBreakerExecutionResult
 import io.dataloom.runtime.retry.CircuitBreakerQueueOperationAdapter
 import io.dataloom.runtime.retry.CircuitBreakerRecordResult
+import io.dataloom.runtime.retry.CircuitBreakerRetrySchedulingAdapter
 import io.dataloom.runtime.retry.CircuitProtectedOperationResult
 import io.dataloom.runtime.retry.QueueCircuitOperation
 
@@ -27,24 +28,37 @@ import io.dataloom.runtime.retry.QueueCircuitOperation
  *
  * Recovery, processing, and scheduling remain separate evidence boundaries.
  * A provider success followed by an unconfirmed circuit write is never
- * collapsed into a provider failure or replayed.
+ * collapsed into a provider failure or replayed. When scheduler circuit policy
+ * is configured, scheduler acceptance and its later circuit-recording result
+ * are preserved independently.
  */
 public class CircuitBreakerQueueWorkerCoordinator internal constructor(
     private val queueOperationAdapter: CircuitBreakerQueueOperationAdapter,
     private val recoveryScope: CircuitBreakerScope,
     private val queueProcessor: CircuitBreakerQueueProcessingEngine,
     schedulerProvider: SchedulerProvider?,
+    private val schedulerCircuitAdapter: CircuitBreakerRetrySchedulingAdapter? = null,
     private val clock: DataLoomClock,
     private val configuration: QueueWorkerConfiguration,
 ) {
 
-    private val schedulerProvider: SchedulerProvider? = assembleQueueWorkerSchedulerProvider(
-        provider = schedulerProvider,
-        timeout = configuration.schedulerProviderTimeout,
-        clock = clock,
-    )
+    private val directSchedulerProvider: SchedulerProvider? = schedulerProvider
+
+    private val schedulerProvider: SchedulerProvider? =
+        if (schedulerCircuitAdapter == null) {
+            assembleQueueWorkerSchedulerProvider(
+                provider = directSchedulerProvider,
+                timeout = configuration.schedulerProviderTimeout,
+                clock = clock,
+            )
+        } else {
+            null
+        }
 
     init {
+        require(directSchedulerProvider == null || schedulerCircuitAdapter == null) {
+            "Circuit-aware queue worker must use either direct or circuit-protected scheduling."
+        }
         require(
             recoveryScope.providerId == null ||
                 recoveryScope.providerId == queueOperationAdapter.descriptor.id,
@@ -74,6 +88,7 @@ public class CircuitBreakerQueueWorkerCoordinator internal constructor(
             queueProcessor.process(request)
         },
         schedulerProvider = schedulerProvider,
+        schedulerCircuitAdapter = null,
         clock = clock,
         configuration = configuration,
     )
@@ -270,8 +285,6 @@ public class CircuitBreakerQueueWorkerCoordinator internal constructor(
             return QueueWorkerSchedulingResult.NotRequired
         }
         val schedulePlan = plan as QueueWorkerWakeUpPlan.Schedule
-        val scheduler = schedulerProvider
-            ?: return QueueWorkerSchedulingResult.SchedulerNotConfigured(schedulePlan)
         val request = ScheduleRequest(
             id = schedulePlan.scheduleId,
             synchronizationRequest = null,
@@ -279,6 +292,15 @@ public class CircuitBreakerQueueWorkerCoordinator internal constructor(
             constraints = schedulePlan.constraints,
             existingPolicy = schedulePlan.existingSchedulePolicy,
         )
+        val circuitAdapter = schedulerCircuitAdapter
+        if (circuitAdapter != null) {
+            return QueueWorkerSchedulingResult.CircuitProtected(
+                executionResult = circuitAdapter.schedule(request),
+                plan = schedulePlan,
+            )
+        }
+        val scheduler = schedulerProvider
+            ?: return QueueWorkerSchedulingResult.SchedulerNotConfigured(schedulePlan)
         return when (val result = scheduler.schedule(request)) {
             is ProviderOperationResult.Success -> QueueWorkerSchedulingResult.Scheduled(
                 receipt = result.value,

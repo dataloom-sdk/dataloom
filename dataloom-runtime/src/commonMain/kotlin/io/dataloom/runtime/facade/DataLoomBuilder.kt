@@ -34,6 +34,7 @@ import io.dataloom.runtime.queue.QueuedSynchronizationExecutionHandler
 import io.dataloom.runtime.retry.CircuitBreakerCoordinator
 import io.dataloom.runtime.retry.CircuitBreakerExecutionGate
 import io.dataloom.runtime.retry.QueueCircuitOperation
+import io.dataloom.runtime.retry.SchedulerCircuitOperation
 import io.dataloom.runtime.retry.SynchronizationRetryEvaluator
 import io.dataloom.runtime.strategy.BuiltInSynchronizationStrategyEvaluator
 import io.dataloom.runtime.strategy.StrategySynchronizationExecutionCoordinator
@@ -86,6 +87,8 @@ import io.dataloom.runtime.worker.assembleQueueWorkerQueueProvider
  * - The transport binding references a missing or mistyped provider.
  * - [queueWorkerConfiguration] or [circuitQueueWorkerConfiguration] was
  *   called but the queue binding is missing or invalid.
+ * - [circuitQueueWorkerSchedulerConfiguration] was called without a
+ *   circuit-aware worker or valid scheduler binding.
  *
  * Duplicate provider IDs throw [IllegalArgumentException] from
  * [ProviderRegistry]. Duplicate observer IDs throw [IllegalArgumentException]
@@ -125,6 +128,7 @@ public class DataLoomBuilder {
     private val customPipelineList: MutableList<SynchronizationPipeline> = mutableListOf()
     private var queueWorkerSpec: DataLoomQueueWorkerSpec? = null
     private var circuitQueueWorkerSpec: DataLoomCircuitQueueWorkerSpec? = null
+    private var circuitQueueWorkerSchedulerSpec: DataLoomCircuitQueueWorkerSchedulerSpec? = null
     private var queueSubmissionSpecValue: DataLoomQueueSubmissionSpec? = null
     private var built: Boolean = false
 
@@ -329,6 +333,7 @@ public class DataLoomBuilder {
     public fun queueWorkerConfiguration(spec: DataLoomQueueWorkerSpec): DataLoomBuilder = apply {
         queueWorkerSpec = spec
         circuitQueueWorkerSpec = null
+        circuitQueueWorkerSchedulerSpec = null
     }
 
     /**
@@ -348,6 +353,21 @@ public class DataLoomBuilder {
     ): DataLoomBuilder = apply {
         circuitQueueWorkerSpec = spec
         queueWorkerSpec = null
+    }
+
+    /**
+     * Adds separately governed circuit protection to the circuit-aware queue
+     * worker's follow-up scheduler call.
+     *
+     * This method may be called before or after
+     * [circuitQueueWorkerConfiguration], but [build] requires both
+     * configurations and a valid scheduler provider binding. Queue circuit
+     * policy is never inferred or reused for scheduling.
+     */
+    public fun circuitQueueWorkerSchedulerConfiguration(
+        spec: DataLoomCircuitQueueWorkerSchedulerSpec,
+    ): DataLoomBuilder = apply {
+        circuitQueueWorkerSchedulerSpec = spec
     }
 
     /**
@@ -436,6 +456,12 @@ public class DataLoomBuilder {
         }
 
         val bindings = defaultProviderBindings
+        if (circuitQueueWorkerSchedulerSpec != null && circuitQueueWorkerSpec == null) {
+            throw DataLoomBuildException(
+                "DataLoomBuilder circuitQueueWorkerSchedulerConfiguration requires " +
+                    "circuitQueueWorkerConfiguration.",
+            )
+        }
         val strategyBindings = defaultStrategyProviderBindings
             ?: bindings?.toStrategyProviderBindings()
             ?: throw DataLoomBuildException(
@@ -548,6 +574,7 @@ public class DataLoomBuilder {
                 bindings = legacyBindings,
                 deps = deps,
                 executionCoordinator = executionCoordinator,
+                schedulerCircuitSpec = circuitQueueWorkerSchedulerSpec,
             )
         }
 
@@ -791,6 +818,7 @@ public class DataLoomBuilder {
         bindings: SynchronizationProviderBindings,
         deps: RuntimeDependencies,
         executionCoordinator: SynchronizationExecutionCoordinator,
+        schedulerCircuitSpec: DataLoomCircuitQueueWorkerSchedulerSpec?,
     ): DataLoomCircuitQueueWorker {
         val queueProviderId = bindings.queueProviderId
             ?: throw DataLoomBuildException(
@@ -873,6 +901,18 @@ public class DataLoomBuilder {
                 null
             }
         }
+        if (schedulerCircuitSpec != null && schedulerProvider == null) {
+            throw DataLoomBuildException(
+                "DataLoomBuilder circuitQueueWorkerSchedulerConfiguration requires a valid " +
+                    "scheduler provider binding.",
+            )
+        }
+        schedulerCircuitSpec?.let { schedulerSpec ->
+            validateCircuitQueueWorkerSchedulerScope(
+                scope = schedulerSpec.scope,
+                schedulerProviderId = checkNotNull(schedulerProvider).descriptor.id,
+            )
+        }
 
         val workerSpec = spec.workerSpec
         val retryEvaluator = SynchronizationRetryEvaluator(
@@ -892,22 +932,46 @@ public class DataLoomBuilder {
             clock = deps.clock,
             providerTimeout = workerSpec.queueProviderTimeout,
         )
-        val circuitCoordinator = CircuitBreakerCoordinator(
+        val queueCircuitCoordinator = CircuitBreakerCoordinator(
             configuration = spec.circuitBreakerConfiguration,
             clock = deps.clock,
             stateStore = spec.circuitBreakerStateStore,
         )
-        val workerCoordinator = CircuitBreakerQueueWorkerRuntime.create(
-            queueProvider = protectedQueueProvider,
-            executionGate = CircuitBreakerExecutionGate(circuitCoordinator),
-            recoveryScope = spec.recoveryScope,
-            processingScopes = spec.processingScopes,
-            executionHandler = executionHandler,
-            schedulerProvider = schedulerProvider,
-            clock = deps.clock,
-            configuration = workerSpec.configuration,
-            failureClassifier = spec.failureClassifier,
-        )
+        val workerCoordinator = if (schedulerCircuitSpec == null) {
+            CircuitBreakerQueueWorkerRuntime.create(
+                queueProvider = protectedQueueProvider,
+                executionGate = CircuitBreakerExecutionGate(queueCircuitCoordinator),
+                recoveryScope = spec.recoveryScope,
+                processingScopes = spec.processingScopes,
+                executionHandler = executionHandler,
+                schedulerProvider = schedulerProvider,
+                clock = deps.clock,
+                configuration = workerSpec.configuration,
+                failureClassifier = spec.failureClassifier,
+            )
+        } else {
+            val schedulerCircuitCoordinator = CircuitBreakerCoordinator(
+                configuration = schedulerCircuitSpec.circuitBreakerConfiguration,
+                clock = deps.clock,
+                stateStore = schedulerCircuitSpec.circuitBreakerStateStore,
+            )
+            CircuitBreakerQueueWorkerRuntime.createWithSchedulerCircuit(
+                queueProvider = protectedQueueProvider,
+                queueExecutionGate = CircuitBreakerExecutionGate(queueCircuitCoordinator),
+                recoveryScope = spec.recoveryScope,
+                processingScopes = spec.processingScopes,
+                executionHandler = executionHandler,
+                schedulerProvider = checkNotNull(schedulerProvider),
+                schedulerExecutionGate = CircuitBreakerExecutionGate(
+                    schedulerCircuitCoordinator,
+                ),
+                schedulerScope = schedulerCircuitSpec.scope,
+                clock = deps.clock,
+                configuration = workerSpec.configuration,
+                queueFailureClassifier = spec.failureClassifier,
+                schedulerFailureClassifier = schedulerCircuitSpec.failureClassifier,
+            )
+        }
         return DefaultDataLoomCircuitQueueWorker(workerCoordinator)
     }
 
@@ -927,6 +991,27 @@ public class DataLoomBuilder {
             throw DataLoomBuildException(
                 "DataLoomBuilder circuitQueueWorkerConfiguration $label scope operation " +
                     "must be '${operation.retryOperation.value}'.",
+            )
+        }
+    }
+
+    private fun validateCircuitQueueWorkerSchedulerScope(
+        scope: io.dataloom.api.circuit.CircuitBreakerScope,
+        schedulerProviderId: io.dataloom.api.provider.ProviderId,
+    ) {
+        if (scope.providerId != null && scope.providerId != schedulerProviderId) {
+            throw DataLoomBuildException(
+                "DataLoomBuilder circuitQueueWorkerSchedulerConfiguration scope provider " +
+                    "must match scheduler provider '${schedulerProviderId.value}'.",
+            )
+        }
+        if (
+            scope.operation != null &&
+            scope.operation != SchedulerCircuitOperation.SCHEDULE.retryOperation
+        ) {
+            throw DataLoomBuildException(
+                "DataLoomBuilder circuitQueueWorkerSchedulerConfiguration scope operation " +
+                    "must be '${SchedulerCircuitOperation.SCHEDULE.retryOperation.value}'.",
             )
         }
     }
