@@ -36,26 +36,30 @@ This slice adds:
 - entries with timeout evidence but no executor fail closed.
 - timeout errors exclude sensitive payload and provider details.
 
-## Qualification plan
+## Focused qualification
 
-The focused evidence lane must complete:
+The same-repository macOS evidence lane produced implementation head
+`338355dd058fc0bf3b597dfb7c910058441f52a2` and completed:
 
 - DataLoom API, runtime, testing, and Room JVM tests;
-- runtime and testing iOS Simulator tests where available;
-- external consumer compilation for JVM and all current iOS targets;
-- exact JVM and Kotlin/Native ABI generation and checks;
-- Room schema version 4 generation and verification;
-- Apple XCFramework assembly;
-- removal of temporary patch and workflow helpers.
+- runtime iOS Simulator tests;
+- external consumer compilation for JVM, `iosArm64`, `iosSimulatorArm64`, and
+  `iosX64`;
+- exact API, runtime, testing, and Apple JVM/Kotlin-Native ABI generation;
+- public ABI-boundary checks;
+- Room schema version 4 generation and identity verification;
+- Apple release XCFramework assembly;
+- API-index integration;
+- removal of the temporary patch script and evidence workflow.
 
-The final review head must then pass Pull Request, Android managed-device, and
-Apple/Swift validation on the same commit.
+The clean final review head must pass Pull Request, Android managed-device, and
+Apple/Swift validation on the same commit before merge.
 
 ## Remaining DL-040 work
 
 - protected strategy and queued-execution adoption;
 - protocol-specific connection, request, and idle timeout adapters;
-- production KMP iOS retry and circuit persistence;
+- production KMP iOS retry, circuit, and workflow-deadline persistence;
 - authorized manual retry, reclassification, and circuit administration;
 - complete retry/circuit events, metrics, logs, traces, diagnostics, and health;
 - multi-process, process-death, restart, high-contention, failure-injection, and
