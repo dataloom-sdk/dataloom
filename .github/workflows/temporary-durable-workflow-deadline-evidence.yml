@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - codex/dl-retry-036-durable-workflow-deadline
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
