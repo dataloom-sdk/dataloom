@@ -1,15 +1,17 @@
 package io.dataloom.runtime.facade
 
 import io.dataloom.api.model.SynchronizationRequest
+import io.dataloom.api.provider.SynchronizationProviderBindings
 import io.dataloom.runtime.execution.SynchronizationExecutionResult
 import io.dataloom.runtime.execution.protection.ProviderProtectedSynchronizationResult
 
 /**
- * Public additive capability for direct synchronization through the provider
- * timeout and circuit boundaries configured on [DataLoomBuilder].
+ * Public additive capability for synchronization through the provider timeout
+ * and circuit boundaries configured on [DataLoomBuilder].
  *
  * The historical [DataLoom.synchronize] methods remain unchanged. Applications
- * must select this capability explicitly through [DataLoom.protectedSynchronization].
+ * and queue runtimes must select this capability explicitly through
+ * [DataLoom.protectedSynchronization].
  */
 public interface DataLoomProtectedSynchronization {
 
@@ -21,6 +23,21 @@ public interface DataLoomProtectedSynchronization {
      */
     public suspend fun synchronize(
         request: SynchronizationRequest,
+    ): ProviderProtectedSynchronizationExecutionResult
+
+    /**
+     * Executes [request] using the exact caller-supplied [bindings].
+     *
+     * This overload is required by durable queued work, which carries its
+     * accepted provider bindings explicitly. Provider resolution, protected
+     * provider identity validation, connectivity admission, and pipeline
+     * selection remain unchanged. No fallback to default bindings occurs.
+     *
+     * Caller cancellation and unexpected exceptions propagate unchanged.
+     */
+    public suspend fun synchronize(
+        request: SynchronizationRequest,
+        bindings: SynchronizationProviderBindings,
     ): ProviderProtectedSynchronizationExecutionResult
 }
 
