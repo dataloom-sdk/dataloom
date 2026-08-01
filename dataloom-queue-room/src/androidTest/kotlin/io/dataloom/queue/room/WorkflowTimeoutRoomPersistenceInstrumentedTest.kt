@@ -65,17 +65,21 @@ class WorkflowTimeoutRoomPersistenceInstrumentedTest {
             deadline = DataLoomInstant(60_000L),
         )
 
-        openDatabase().use { database ->
-            val provider = RoomQueueProvider(database)
+        val initialDatabase = openDatabase()
+        try {
+            val provider = RoomQueueProvider(initialDatabase)
             assertIs<ProviderOperationResult.Success<Unit>>(
                 provider.enqueue(
                     QueueEnqueueRequest(entry(timeoutState)),
                 ),
             )
+        } finally {
+            initialDatabase.close()
         }
 
-        openDatabase().use { database ->
-            val provider = RoomQueueProvider(database)
+        val reopenedDatabase = openDatabase()
+        try {
+            val provider = RoomQueueProvider(reopenedDatabase)
             val firstLease = acquired(provider, now = 2_000L, leaseId = "lease-1")
             assertEquals(timeoutState, firstLease.workflowTimeoutState)
 
@@ -121,6 +125,8 @@ class WorkflowTimeoutRoomPersistenceInstrumentedTest {
 
             val recoveredLease = acquired(provider, now = 6_000L, leaseId = "lease-4")
             assertEquals(timeoutState, recoveredLease.workflowTimeoutState)
+        } finally {
+            reopenedDatabase.close()
         }
     }
 
