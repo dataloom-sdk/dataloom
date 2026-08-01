@@ -30,6 +30,7 @@ import io.dataloom.api.queue.QueueLease
 import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.api.retry.RetryAttempt
 import io.dataloom.api.retry.RetryBudgetState
+import io.dataloom.api.retry.WorkflowTimeoutState
 import io.dataloom.api.scheduling.SchedulingDelay
 import io.dataloom.api.time.DataLoomInstant
 import org.json.JSONObject
@@ -69,6 +70,8 @@ internal fun QueueEntry.toEntity(): QueueEntryEntity {
         retryWindowStartedAtMs = retryBudgetState?.windowStartedAt?.epochMilliseconds,
         retryLastEvaluatedAtMs = retryBudgetState?.lastEvaluatedAt?.epochMilliseconds,
         retryCumulativeDelayMs = retryBudgetState?.cumulativeDelay?.milliseconds,
+        workflowStartedAtMs = workflowTimeoutState?.startedAt?.epochMilliseconds,
+        workflowDeadlineAtMs = workflowTimeoutState?.deadline?.epochMilliseconds,
         leaseId = lease?.id?.value,
         leaseConsumerId = lease?.consumerId?.value,
         leaseAcquiredAtMs = lease?.acquiredAt?.epochMilliseconds,
@@ -152,6 +155,19 @@ internal fun QueueEntryEntity.toDomain(): QueueEntry {
         )
     }
 
+    val workflowColumns = listOf(workflowStartedAtMs, workflowDeadlineAtMs)
+    check(workflowColumns.all { it == null } || workflowColumns.all { it != null }) {
+        "Persisted workflow-timeout columns must be either all null or all non-null."
+    }
+    val workflowTimeoutState = if (workflowColumns.all { it == null }) {
+        null
+    } else {
+        WorkflowTimeoutState(
+            startedAt = DataLoomInstant(checkNotNull(workflowStartedAtMs)),
+            deadline = DataLoomInstant(checkNotNull(workflowDeadlineAtMs)),
+        )
+    }
+
     return QueueEntry(
         id = QueueEntryId(entryId),
         synchronizationRequest = syncRequest,
@@ -163,6 +179,7 @@ internal fun QueueEntryEntity.toDomain(): QueueEntry {
         lastError = lastError,
         metadata = entryMeta,
         retryBudgetState = retryBudgetState,
+        workflowTimeoutState = workflowTimeoutState,
     )
 }
 

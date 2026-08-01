@@ -3008,6 +3008,12 @@ final class io.dataloom.runtime.retry/TransportCircuitScopes { // io.dataloom.ru
     final fun toString(): kotlin/String // io.dataloom.runtime.retry/TransportCircuitScopes.toString|toString(){}[0]
 }
 
+final class io.dataloom.runtime.retry/WorkflowTimeoutStateExecutor { // io.dataloom.runtime.retry/WorkflowTimeoutStateExecutor|null[0]
+    constructor <init>(io.dataloom.api.time/DataLoomClock, io.dataloom.runtime.retry/RetryTimeoutExecutor = ...) // io.dataloom.runtime.retry/WorkflowTimeoutStateExecutor.<init>|<init>(io.dataloom.api.time.DataLoomClock;io.dataloom.runtime.retry.RetryTimeoutExecutor){}[0]
+
+    final suspend fun <#A1: kotlin/Any?> execute(io.dataloom.api.retry/WorkflowTimeoutState, kotlin.coroutines/SuspendFunction0<#A1>): io.dataloom.runtime.retry/RetryTimeoutExecutionResult<#A1> // io.dataloom.runtime.retry/WorkflowTimeoutStateExecutor.execute|execute(io.dataloom.api.retry.WorkflowTimeoutState;kotlin.coroutines.SuspendFunction0<0:0>){0§<kotlin.Any?>}[0]
+}
+
 final class io.dataloom.runtime.strategy/BuiltInSynchronizationStrategyEvaluator : io.dataloom.api.strategy/SynchronizationStrategyEvaluator { // io.dataloom.runtime.strategy/BuiltInSynchronizationStrategyEvaluator|null[0]
     constructor <init>() // io.dataloom.runtime.strategy/BuiltInSynchronizationStrategyEvaluator.<init>|<init>(){}[0]
 
@@ -3024,7 +3030,7 @@ final class io.dataloom.runtime.submission/CircuitBreakerQueueSubmission { // io
 }
 
 final class io.dataloom.runtime.submission/QueuedSynchronizationSubmission { // io.dataloom.runtime.submission/QueuedSynchronizationSubmission|null[0]
-    constructor <init>(io.dataloom.api.identifier/QueueEntryId, io.dataloom.runtime.queue/QueuedSynchronizationWork, io.dataloom.api.time/DataLoomInstant) // io.dataloom.runtime.submission/QueuedSynchronizationSubmission.<init>|<init>(io.dataloom.api.identifier.QueueEntryId;io.dataloom.runtime.queue.QueuedSynchronizationWork;io.dataloom.api.time.DataLoomInstant){}[0]
+    constructor <init>(io.dataloom.api.identifier/QueueEntryId, io.dataloom.runtime.queue/QueuedSynchronizationWork, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.retry/WorkflowTimeoutState? = ...) // io.dataloom.runtime.submission/QueuedSynchronizationSubmission.<init>|<init>(io.dataloom.api.identifier.QueueEntryId;io.dataloom.runtime.queue.QueuedSynchronizationWork;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.retry.WorkflowTimeoutState?){}[0]
 
     final val availableAt // io.dataloom.runtime.submission/QueuedSynchronizationSubmission.availableAt|{}availableAt[0]
         final fun <get-availableAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.submission/QueuedSynchronizationSubmission.availableAt.<get-availableAt>|<get-availableAt>(){}[0]
@@ -3032,6 +3038,8 @@ final class io.dataloom.runtime.submission/QueuedSynchronizationSubmission { // 
         final fun <get-queueEntryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.submission/QueuedSynchronizationSubmission.queueEntryId.<get-queueEntryId>|<get-queueEntryId>(){}[0]
     final val work // io.dataloom.runtime.submission/QueuedSynchronizationSubmission.work|{}work[0]
         final fun <get-work>(): io.dataloom.runtime.queue/QueuedSynchronizationWork // io.dataloom.runtime.submission/QueuedSynchronizationSubmission.work.<get-work>|<get-work>(){}[0]
+    final val workflowTimeoutState // io.dataloom.runtime.submission/QueuedSynchronizationSubmission.workflowTimeoutState|{}workflowTimeoutState[0]
+        final fun <get-workflowTimeoutState>(): io.dataloom.api.retry/WorkflowTimeoutState? // io.dataloom.runtime.submission/QueuedSynchronizationSubmission.workflowTimeoutState.<get-workflowTimeoutState>|<get-workflowTimeoutState>(){}[0]
 
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.submission/QueuedSynchronizationSubmission.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.runtime.submission/QueuedSynchronizationSubmission.hashCode|hashCode(){}[0]

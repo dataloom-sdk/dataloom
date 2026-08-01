@@ -38,6 +38,7 @@ import io.dataloom.runtime.retry.QueueCircuitOperation
 import io.dataloom.runtime.retry.SchedulerCircuitOperation
 import io.dataloom.runtime.retry.StorageCircuitProtectionRuntime
 import io.dataloom.runtime.retry.SynchronizationRetryEvaluator
+import io.dataloom.runtime.retry.WorkflowTimeoutStateExecutor
 import io.dataloom.runtime.retry.TransportCircuitProtectionRuntime
 import io.dataloom.runtime.strategy.BuiltInSynchronizationStrategyEvaluator
 import io.dataloom.runtime.strategy.StrategySynchronizationExecutionCoordinator
@@ -892,6 +893,7 @@ public class DataLoomBuilder {
             retryOperation = spec.retryOperation,
             connectivityConfiguration = connectivityConfiguration,
             clock = if (connectivityConfiguration != null) deps.clock else null,
+            workflowTimeoutExecutor = WorkflowTimeoutStateExecutor(deps.clock),
         )
 
         val queueProviderTimeout = spec.queueProviderTimeout
@@ -1042,6 +1044,7 @@ public class DataLoomBuilder {
             retryOperation = workerSpec.retryOperation,
             connectivityConfiguration = connectivityConfiguration,
             clock = if (connectivityConfiguration != null) deps.clock else null,
+            workflowTimeoutExecutor = WorkflowTimeoutStateExecutor(deps.clock),
         )
         val protectedQueueProvider = assembleQueueWorkerQueueProvider(
             queueProvider = queueProvider,
