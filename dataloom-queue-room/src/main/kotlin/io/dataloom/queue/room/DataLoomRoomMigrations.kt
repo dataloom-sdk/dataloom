@@ -8,14 +8,14 @@ public object DataLoomRoomMigrations {
 
     /** Adds nullable durable retry-budget columns while preserving queue history. */
     public val MIGRATION_1_2: Migration = object : Migration(1, 2) {
-        override fun migrate(database: SupportSQLiteDatabase) {
-            database.execSQL(
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
                 "ALTER TABLE queue_entries ADD COLUMN retry_window_started_at_ms INTEGER",
             )
-            database.execSQL(
+            db.execSQL(
                 "ALTER TABLE queue_entries ADD COLUMN retry_last_evaluated_at_ms INTEGER",
             )
-            database.execSQL(
+            db.execSQL(
                 "ALTER TABLE queue_entries ADD COLUMN retry_cumulative_delay_ms INTEGER",
             )
         }
@@ -23,8 +23,8 @@ public object DataLoomRoomMigrations {
 
     /** Adds the independent durable circuit-breaker state table. */
     public val MIGRATION_2_3: Migration = object : Migration(2, 3) {
-        override fun migrate(database: SupportSQLiteDatabase) {
-            database.execSQL(
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
                 """
                 CREATE TABLE IF NOT EXISTS circuit_breaker_states (
                     scope_key TEXT NOT NULL,
@@ -51,11 +51,11 @@ public object DataLoomRoomMigrations {
 
     /** Adds nullable immutable workflow timeout evidence to existing queue rows. */
     public val MIGRATION_3_4: Migration = object : Migration(3, 4) {
-        override fun migrate(database: SupportSQLiteDatabase) {
-            database.execSQL(
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
                 "ALTER TABLE queue_entries ADD COLUMN workflow_started_at_ms INTEGER",
             )
-            database.execSQL(
+            db.execSQL(
                 "ALTER TABLE queue_entries ADD COLUMN workflow_deadline_at_ms INTEGER",
             )
         }
