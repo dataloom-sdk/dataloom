@@ -1,0 +1,87 @@
+name: Temporary Protected Strategy Compile
+
+on:
+  push:
+    branches:
+      - codex/dl-retry-038-protected-strategy-execution
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-protected-strategy-compile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compile-and-commit:
+    runs-on: macos-15
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout protected strategy branch
+        uses: actions/checkout@v6
+        with:
+          ref: codex/dl-retry-038-protected-strategy-execution
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Reject duplicate protected strategy drafts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/ProviderProtectedStrategySynchronizationCoordinator.kt
+          test ! -e dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/ProviderProtectedStrategySynchronizationResult.kt
+
+      - name: Apply protected strategy patch
+        run: python3 .github/scripts/temporary_protected_strategy_patch.py
+
+      - name: Compile shared protected strategy sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            :dataloom-runtime:compileKotlinJvm \
+            :dataloom-runtime:compileKotlinIosSimulatorArm64 \
+            --no-configuration-cache \
+            --stacktrace \
+            --warning-mode all \
+            --console=plain
+
+      - name: Verify source boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "protectedStrategySynchronization" \
+            dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/facade/DataLoom.kt
+          grep -F "ProviderProtectionStrategyFallbackBridge" \
+            dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/execution/protection/ProviderProtectionProviderBridge.kt
+          grep -F "providerBoundary" \
+            dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/StrategySynchronizationExecutionCoordinator.kt
+          git diff --check
+
+      - name: Commit compiled implementation and remove temporary helpers
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            .github/workflows/temporary-protected-strategy-compile.yml \
+            .github/scripts/temporary_protected_strategy_patch.py
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "DL-040: integrate protected strategy execution"
+          git push origin HEAD:codex/dl-retry-038-protected-strategy-execution
