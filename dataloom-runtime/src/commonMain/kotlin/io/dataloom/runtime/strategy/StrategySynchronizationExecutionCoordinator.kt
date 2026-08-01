@@ -28,6 +28,16 @@ internal class StrategySynchronizationExecutionCoordinator(
     public suspend fun execute(
         request: StrategySynchronizationRequest,
         bindings: StrategyProviderBindings,
+    ): StrategySynchronizationExecutionResult = execute(
+        request = request,
+        bindings = bindings,
+        providerBoundary = StrategyProviderExecutionBoundary.Identity,
+    )
+
+    internal suspend fun execute(
+        request: StrategySynchronizationRequest,
+        bindings: StrategyProviderBindings,
+        providerBoundary: StrategyProviderExecutionBoundary,
     ): StrategySynchronizationExecutionResult {
         val evaluation = evaluator.evaluate(request.evaluationRequest())
 
@@ -99,6 +109,16 @@ internal class StrategySynchronizationExecutionCoordinator(
             }
         }
 
+        val executionProviders = when (
+            val preparation = providerBoundary.prepare(evaluation, providers)
+        ) {
+            is StrategyProviderExecutionPreparation.Prepared -> preparation.providers
+            is StrategyProviderExecutionPreparation.Rejected -> return rejected(
+                evaluation = evaluation,
+                reason = preparation.reason,
+            )
+        }
+
         if (
             evaluation.plan.effectiveStrategy ==
             BuiltInSynchronizationStrategy.NETWORK_ONLY
@@ -106,7 +126,7 @@ internal class StrategySynchronizationExecutionCoordinator(
             return NetworkOnlyStrategyExecutor(clock).execute(
                 request = request,
                 evaluation = evaluation,
-                providers = providers,
+                providers = executionProviders,
             )
         }
         if (
@@ -121,7 +141,7 @@ internal class StrategySynchronizationExecutionCoordinator(
             ).execute(
                 request = request,
                 evaluation = evaluation,
-                providers = providers,
+                providers = executionProviders,
             )
         }
         return rejected(

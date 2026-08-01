@@ -25,6 +25,7 @@ import io.dataloom.runtime.execution.bidirectional.BidirectionalSynchronizationP
 import io.dataloom.runtime.execution.inbound.InboundPullPipelineConfiguration
 import io.dataloom.runtime.execution.inbound.InboundPullSynchronizationPipeline
 import io.dataloom.runtime.execution.lifecycle.DispatchingSynchronizationLifecycleEventEmitter
+import io.dataloom.runtime.execution.protection.ProviderProtectedStrategySynchronizationCoordinator
 import io.dataloom.runtime.execution.protection.ProviderProtectedSynchronizationCoordinator
 import io.dataloom.runtime.execution.outbound.OutboundPushPipelineConfiguration
 import io.dataloom.runtime.execution.outbound.OutboundPushSynchronizationPipeline
@@ -135,6 +136,7 @@ public class DataLoomBuilder {
     private var circuitQueueWorkerSchedulerSpec: DataLoomCircuitQueueWorkerSchedulerSpec? = null
     private var queueSubmissionSpecValue: DataLoomQueueSubmissionSpec? = null
     private var providerProtectionSpec: DataLoomProviderProtectionSpec? = null
+    private var strategyProviderProtectionSpec: DataLoomStrategyProviderProtectionSpec? = null
     private var built: Boolean = false
 
     // =========================================================================
@@ -335,6 +337,16 @@ public class DataLoomBuilder {
         spec: DataLoomProviderProtectionSpec,
     ): DataLoomBuilder = apply {
         providerProtectionSpec = spec
+    }
+
+    /**
+     * Configures additive plan-aware protection for built-in strategy execution.
+     * Only providers resolved for the evaluated immutable plan are wrapped.
+     */
+    public fun strategyProviderProtectionConfiguration(
+        spec: DataLoomStrategyProviderProtectionSpec,
+    ): DataLoomBuilder = apply {
+        strategyProviderProtectionSpec = spec
     }
 
     /**
@@ -567,7 +579,19 @@ public class DataLoomBuilder {
             lifecycleEventEmitter = lifecycleEventEmitter,
         )
 
-        // --- 9. Build optional provider-protected direct synchronization ---
+        // --- 9. Build optional provider-protected strategy synchronization ---
+        val protectedStrategySynchronization = strategyProviderProtectionSpec?.let { spec ->
+            DefaultDataLoomProtectedStrategySynchronization(
+                coordinator = ProviderProtectedStrategySynchronizationCoordinator(
+                    strategyCoordinator = strategyExecutionCoordinator,
+                    protectionSpec = spec,
+                    clock = deps.clock,
+                ),
+                defaultBindings = strategyBindings,
+            )
+        }
+
+        // --- 10. Build optional provider-protected direct synchronization ---
         val protectedSynchronization = providerProtectionSpec?.let { spec ->
             val legacyBindings = bindings
                 ?: throw DataLoomBuildException(
@@ -644,6 +668,7 @@ public class DataLoomBuilder {
             queueWorker = queueWorker,
             circuitQueueWorker = circuitQueueWorker,
             protectedSynchronization = protectedSynchronization,
+            protectedStrategySynchronization = protectedStrategySynchronization,
             queueSubmission = queueSubmission,
         )
     }

@@ -1,5 +1,6 @@
 package io.dataloom.runtime.execution.protection
 
+import io.dataloom.api.circuit.CircuitBreakerScope
 import io.dataloom.api.error.DataLoomError
 import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorCode
@@ -20,16 +21,25 @@ import io.dataloom.api.synchronization.CheckpointReadRequest
 import io.dataloom.api.synchronization.CheckpointWriteRequest
 import io.dataloom.api.synchronization.OutboundChangeAcknowledgementRequest
 import io.dataloom.api.synchronization.SynchronizationCheckpoint
+import io.dataloom.api.strategy.StrategyLocalFallbackProvider
+import io.dataloom.api.strategy.StrategyLocalFallbackRequest
+import io.dataloom.api.strategy.StrategyLocalFallbackResult
 import io.dataloom.api.transport.PullChangesRequest
 import io.dataloom.api.transport.PullChangesResult
 import io.dataloom.api.transport.PushChangesRequest
 import io.dataloom.api.transport.TransportProvider
 import io.dataloom.runtime.retry.CircuitBreakerExecutionResult
+import io.dataloom.runtime.retry.CircuitBreakerProviderOperationAdapter
 import io.dataloom.runtime.retry.CircuitBreakerRecordResult
 import io.dataloom.runtime.retry.CircuitBreakerRejectionReason
 import io.dataloom.runtime.retry.CircuitProtectedOperationResult
 import io.dataloom.runtime.retry.ProtectedStorageOperations
 import io.dataloom.runtime.retry.ProtectedTransportOperations
+import io.dataloom.runtime.retry.RetryTimeoutCoordinator
+import io.dataloom.runtime.retry.RetryTimeoutExecutionResult
+import io.dataloom.runtime.retry.RetryTimeoutKind
+import io.dataloom.runtime.retry.StrategyLocalFallbackCircuitOperation
+import io.dataloom.runtime.retry.StrategyLocalFallbackTimeoutErrors
 import io.dataloom.runtime.retry.StorageCircuitOperation
 import io.dataloom.runtime.retry.TransportCircuitOperation
 
@@ -164,6 +174,111 @@ internal class ProviderProtectionTransportBridge(
         result = block(),
         evidenceCollector = evidenceCollector,
     )
+}
+
+
+/**
+ * Strategy-local-fallback bridge that preserves the protected storage surface
+ * and adds one independently governed fallback operation.
+ */
+internal class ProviderProtectionStrategyFallbackBridge(
+    private val storageBridge: ProviderProtectionStorageBridge,
+    private val delegate: StrategyLocalFallbackProvider,
+    private val providerOperationAdapter: CircuitBreakerProviderOperationAdapter,
+    private val scope: CircuitBreakerScope,
+    private val evidenceCollector: ProviderProtectionEvidenceCollector,
+    private val timeoutCoordinator: RetryTimeoutCoordinator?,
+) : StrategyLocalFallbackProvider {
+    init {
+        require(storageBridge.descriptor.id == delegate.descriptor.id) {
+            "Strategy fallback bridge storage provider must match the fallback provider."
+        }
+        require(scope.providerId == null || scope.providerId == delegate.descriptor.id) {
+            "Strategy fallback circuit scope provider must match the storage provider."
+        }
+        require(
+            scope.operation == null ||
+                scope.operation ==
+                StrategyLocalFallbackCircuitOperation.EVALUATE_LOCAL_FALLBACK.retryOperation,
+        ) {
+            "Strategy fallback circuit scope operation must match " +
+                "${StrategyLocalFallbackCircuitOperation.EVALUATE_LOCAL_FALLBACK.retryOperation.value}."
+        }
+    }
+
+    override val descriptor: ProviderDescriptor
+        get() = storageBridge.descriptor
+
+    override suspend fun initialize(
+        context: ProviderInitializationContext,
+    ): ProviderOperationResult<Unit> = storageBridge.initialize(context)
+
+    override suspend fun health(): ProviderOperationResult<ProviderHealth> =
+        storageBridge.health()
+
+    override suspend fun close(): ProviderOperationResult<Unit> =
+        storageBridge.close()
+
+    override suspend fun readOutboundChanges(
+        request: OutboundChangeReadRequest,
+    ): ProviderOperationResult<OutboundChangeReadResult> =
+        storageBridge.readOutboundChanges(request)
+
+    override suspend fun applyInboundChanges(
+        request: InboundChangeApplyRequest,
+    ): ProviderOperationResult<Unit> = storageBridge.applyInboundChanges(request)
+
+    override suspend fun acknowledgeOutboundChanges(
+        request: OutboundChangeAcknowledgementRequest,
+    ): ProviderOperationResult<Unit> = storageBridge.acknowledgeOutboundChanges(request)
+
+    override suspend fun readCheckpoint(
+        request: CheckpointReadRequest,
+    ): ProviderOperationResult<SynchronizationCheckpoint?> =
+        storageBridge.readCheckpoint(request)
+
+    override suspend fun writeCheckpoint(
+        request: CheckpointWriteRequest,
+    ): ProviderOperationResult<Unit> = storageBridge.writeCheckpoint(request)
+
+    override suspend fun evaluateLocalFallback(
+        request: StrategyLocalFallbackRequest,
+    ): ProviderOperationResult<StrategyLocalFallbackResult> =
+        adaptProviderProtectionResult(
+            providerId = descriptor.id,
+            operation =
+                StrategyLocalFallbackCircuitOperation.EVALUATE_LOCAL_FALLBACK.retryOperation,
+            result = providerOperationAdapter.execute(scope) {
+                executeWithOptionalTimeout(request)
+            },
+            evidenceCollector = evidenceCollector,
+        )
+
+    private suspend fun executeWithOptionalTimeout(
+        request: StrategyLocalFallbackRequest,
+    ): ProviderOperationResult<StrategyLocalFallbackResult> {
+        val coordinator = timeoutCoordinator
+            ?: return delegate.evaluateLocalFallback(request)
+        return when (
+            val result = coordinator.execute(
+                kind = RetryTimeoutKind.PROVIDER,
+                operation = { delegate.evaluateLocalFallback(request) },
+            )
+        ) {
+            is RetryTimeoutExecutionResult.Completed -> result.value
+            is RetryTimeoutExecutionResult.TimedOut -> ProviderOperationResult.Failure(
+                StrategyLocalFallbackTimeoutErrors.providerTimedOut(),
+            )
+            is RetryTimeoutExecutionResult.WorkflowDeadlineExceeded ->
+                ProviderOperationResult.Failure(
+                    StrategyLocalFallbackTimeoutErrors.workflowDeadlineExceeded(),
+                )
+            is RetryTimeoutExecutionResult.ClockRegression ->
+                ProviderOperationResult.Failure(
+                    StrategyLocalFallbackTimeoutErrors.clockRegression(),
+                )
+        }
+    }
 }
 
 private fun <T> adaptProviderProtectionResult(
