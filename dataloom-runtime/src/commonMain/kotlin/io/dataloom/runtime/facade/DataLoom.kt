@@ -118,6 +118,15 @@ public interface DataLoom {
         get() = null
 
     /**
+     * Optional plan-aware provider protection for built-in strategy execution.
+     *
+     * `null` unless [DataLoomBuilder.strategyProviderProtectionConfiguration]
+     * was supplied. Historical strategy synchronization remains unchanged.
+     */
+    public val protectedStrategySynchronization: DataLoomProtectedStrategySynchronization?
+        get() = null
+
+    /**
      * The optional queue-submission capability.
      *
      * `null` when [DataLoomBuilder.queueSubmissionEncoder] was not supplied

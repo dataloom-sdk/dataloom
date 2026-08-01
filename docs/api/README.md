@@ -148,11 +148,12 @@ persistence and end-to-end qualification remain open.
 | [Provider circuit protection runtime](./provider-circuit-protection-runtime.md) | Partial V1 subsystem | Immutable scope-bound storage/transport assembly with timeout-before-circuit composition. |
 | [Provider-protected pipeline execution](./provider-protected-pipeline.md) | Partial V1 subsystem | Existing pipelines use execution-local timeout/circuit bridges with ordered bounded provider evidence. |
 | [DataLoomBuilder provider protection](./builder-provider-protection.md) | Partial V1 subsystem | Explicit facade assembly for protected direct synchronization with durable stores and exact operation scopes. |
+| [Provider-protected strategy execution](./provider-protected-strategy-execution.md) | Partial V1 subsystem | Plan-aware network-only and remote-first timeout/circuit protection with independent local-fallback policy and bounded ordered evidence. |
 | [Queue circuit operation adapter](./queue-circuit-operation-adapter.md) | Partial V1 subsystem | Exact queue operation scopes and provider/circuit result preservation without transparent mutation replay risk. |
 | [Conflict contracts](./conflict-contracts.md) | Partial V1 subsystem | Custom detector, resolver, request, conflict, and decision contracts. |
 | [Conflict orchestration](./conflict-orchestration.md) | Partial V1 subsystem | Exact detector/resolver lookup and one-cycle decision orchestration. |
 
-V1 retry work still requires strategy and queued-execution adoption,
+V1 retry work still requires complete offline-first, cache-first, hybrid, and adaptive strategy execution,
 protocol-specific timeout enforcement, KMP iOS persistence, manual
 retry/reclassification, complete observability, and platform qualification.
 Conflict work still requires built-in policies, precedence, atomic decision

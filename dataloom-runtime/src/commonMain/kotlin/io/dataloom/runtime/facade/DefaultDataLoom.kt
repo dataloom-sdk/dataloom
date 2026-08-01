@@ -60,6 +60,7 @@ internal class DefaultDataLoom(
     override val queueWorker: DataLoomQueueWorker?,
     override val circuitQueueWorker: DataLoomCircuitQueueWorker?,
     override val protectedSynchronization: DataLoomProtectedSynchronization?,
+    override val protectedStrategySynchronization: DataLoomProtectedStrategySynchronization?,
     override val queueSubmission: DataLoomQueueSubmission?,
 ) : DataLoom {
 
