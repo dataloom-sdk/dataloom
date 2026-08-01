@@ -89,6 +89,14 @@ The integration matrix proves:
 - provider success followed by failed circuit recording remains fail-closed with
   `Recoverability.UNKNOWN` while preserving executed-provider evidence.
 
+## Review candidate lineage
+
+The generated evidence head caused GitHub to create check suites with
+`action_required` before any jobs were allocated. That state was not a source,
+test, ABI, Android, or Apple failure. This documentation-only review checkpoint
+follows the generated evidence without changing runtime, test, ABI, or consumer
+behavior and is used to obtain executable permanent validation jobs.
+
 ## Required final qualification
 
 The reviewed candidate must additionally pass on one unchanged final head:
