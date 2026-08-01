@@ -63,17 +63,36 @@ It must not contain:
 - provider/store/classifier instances;
 - arbitrary metadata.
 
-## Required qualification
+## Focused qualification evidence
 
-The candidate must pass on one unchanged final head:
+The focused same-repository macOS lane completed on generated evidence head
+`df2f90ff2b4ceafc803f7ba22eda82f211c02caa` and removed its temporary workflow.
+It passed:
 
-- runtime JVM tests;
+- runtime JVM tests, including the protected-strategy integration matrix;
 - runtime iOS Simulator tests;
 - external consumer compilation for JVM, `iosArm64`,
   `iosSimulatorArm64`, and `iosX64`;
-- exact JVM and Kotlin/Native ABI generation and checks;
+- exact runtime JVM and Kotlin/Native ABI generation and checks;
 - public ABI-boundary validation;
 - Apple release XCFramework assembly;
+- API-index integration.
+
+The integration matrix proves:
+
+- build is side-effect free;
+- network-only invokes only protected transport and does not touch storage;
+- missing transport protection rejects before invocation;
+- remote-first fallback retains both transport and local-fallback evidence;
+- missing fallback protection rejects before remote or local invocation;
+- the historical direct strategy path remains unprotected;
+- provider success followed by failed circuit recording remains fail-closed with
+  `Recoverability.UNKNOWN` while preserving executed-provider evidence.
+
+## Required final qualification
+
+The reviewed candidate must additionally pass on one unchanged final head:
+
 - Pull Request Validation;
 - Android Validation, including the Room managed-device test;
 - Apple Platform Validation, exported-header audit, and Swift smoke compilation;
