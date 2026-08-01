@@ -41,7 +41,6 @@ import io.dataloom.runtime.execution.protection.ProviderProtectionOperationEvide
 import io.dataloom.runtime.facade.DataLoomProtectedSynchronization
 import io.dataloom.runtime.facade.ProviderProtectedSynchronizationExecutionResult
 import io.dataloom.runtime.retry.CircuitBreakerRecordResult
-import io.dataloom.runtime.retry.ProviderProtectionErrorsForTest
 import io.dataloom.runtime.retry.RetryBackoffStrategy
 import io.dataloom.runtime.retry.StandardRetryPolicy
 import io.dataloom.runtime.retry.SynchronizationRetryEvaluator

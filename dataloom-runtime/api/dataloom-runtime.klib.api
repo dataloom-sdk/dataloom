@@ -339,6 +339,7 @@ abstract interface io.dataloom.runtime.facade/DataLoomCircuitQueueWorker { // io
 
 abstract interface io.dataloom.runtime.facade/DataLoomProtectedSynchronization { // io.dataloom.runtime.facade/DataLoomProtectedSynchronization|null[0]
     abstract suspend fun synchronize(io.dataloom.api.model/SynchronizationRequest): io.dataloom.runtime.facade/ProviderProtectedSynchronizationExecutionResult // io.dataloom.runtime.facade/DataLoomProtectedSynchronization.synchronize|synchronize(io.dataloom.api.model.SynchronizationRequest){}[0]
+    abstract suspend fun synchronize(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.provider/SynchronizationProviderBindings): io.dataloom.runtime.facade/ProviderProtectedSynchronizationExecutionResult // io.dataloom.runtime.facade/DataLoomProtectedSynchronization.synchronize|synchronize(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.provider.SynchronizationProviderBindings){}[0]
 }
 
 abstract interface io.dataloom.runtime.facade/DataLoomQueueWorker { // io.dataloom.runtime.facade/DataLoomQueueWorker|null[0]
@@ -2411,6 +2412,29 @@ final class io.dataloom.runtime.queue/DurableQueueExecutionProcessor { // io.dat
     constructor <init>(io.dataloom.api.queue/QueueProvider, io.dataloom.runtime.queue/QueueEntryExecutionHandler) // io.dataloom.runtime.queue/DurableQueueExecutionProcessor.<init>|<init>(io.dataloom.api.queue.QueueProvider;io.dataloom.runtime.queue.QueueEntryExecutionHandler){}[0]
 
     final suspend fun process(io.dataloom.runtime.queue/QueueProcessingRequest): io.dataloom.runtime.queue/QueueProcessingResult // io.dataloom.runtime.queue/DurableQueueExecutionProcessor.process|process(io.dataloom.runtime.queue.QueueProcessingRequest){}[0]
+}
+
+final class io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult { // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult|null[0]
+    constructor <init>(io.dataloom.api.identifier/QueueEntryId, io.dataloom.runtime.queue/QueueEntryExecutionOutcome, io.dataloom.runtime.facade/ProviderProtectedSynchronizationExecutionResult? = ...) // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult.<init>|<init>(io.dataloom.api.identifier.QueueEntryId;io.dataloom.runtime.queue.QueueEntryExecutionOutcome;io.dataloom.runtime.facade.ProviderProtectedSynchronizationExecutionResult?){}[0]
+
+    final val entryId // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult.entryId|{}entryId[0]
+        final fun <get-entryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult.entryId.<get-entryId>|<get-entryId>(){}[0]
+    final val executionResult // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult.executionResult|{}executionResult[0]
+        final fun <get-executionResult>(): io.dataloom.runtime.facade/ProviderProtectedSynchronizationExecutionResult? // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult.executionResult.<get-executionResult>|<get-executionResult>(){}[0]
+    final val operationEvidence // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult.operationEvidence|{}operationEvidence[0]
+        final fun <get-operationEvidence>(): kotlin.collections/List<io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence> // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult.operationEvidence.<get-operationEvidence>|<get-operationEvidence>(){}[0]
+    final val outcome // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult.outcome|{}outcome[0]
+        final fun <get-outcome>(): io.dataloom.runtime.queue/QueueEntryExecutionOutcome // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult.outcome.<get-outcome>|<get-outcome>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.queue/ProviderProtectedQueuedSynchronizationExecutionHandler { // io.dataloom.runtime.queue/ProviderProtectedQueuedSynchronizationExecutionHandler|null[0]
+    constructor <init>(io.dataloom.runtime.queue/QueuedSynchronizationWorkResolver, io.dataloom.runtime.facade/DataLoomProtectedSynchronization, io.dataloom.runtime.retry/SynchronizationRetryEvaluator, io.dataloom.api.retry/RetryOperation, io.dataloom.runtime.connectivity/SynchronizationConnectivityConfiguration? = ..., io.dataloom.api.time/DataLoomClock? = ..., io.dataloom.runtime.retry/WorkflowTimeoutStateExecutor? = ...) // io.dataloom.runtime.queue/ProviderProtectedQueuedSynchronizationExecutionHandler.<init>|<init>(io.dataloom.runtime.queue.QueuedSynchronizationWorkResolver;io.dataloom.runtime.facade.DataLoomProtectedSynchronization;io.dataloom.runtime.retry.SynchronizationRetryEvaluator;io.dataloom.api.retry.RetryOperation;io.dataloom.runtime.connectivity.SynchronizationConnectivityConfiguration?;io.dataloom.api.time.DataLoomClock?;io.dataloom.runtime.retry.WorkflowTimeoutStateExecutor?){}[0]
+
+    final suspend fun execute(io.dataloom.api.queue/QueueEntry): io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult // io.dataloom.runtime.queue/ProviderProtectedQueuedSynchronizationExecutionHandler.execute|execute(io.dataloom.api.queue.QueueEntry){}[0]
 }
 
 final class io.dataloom.runtime.queue/QueueCircuitOperationRecord { // io.dataloom.runtime.queue/QueueCircuitOperationRecord|null[0]

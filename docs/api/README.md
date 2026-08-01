@@ -121,6 +121,7 @@ not implement the approved six-strategy product architecture by themselves.
 | [Queue submission](./queue-submission.md) | Available foundation | Application-owned work encoding and durable enqueue with optional timeout and additive circuit-aware execution. |
 | [Durable queue processor](./durable-queue-processor.md) | Available foundation | Bounded acquire, execute, and single-transition processing. |
 | [Queued synchronization execution](./queued-synchronization-execution.md) | Available foundation | Queue-entry resolution, synchronization execution, and retry evaluation. |
+| [Provider-protected queued execution](./provider-protected-queued-execution.md) | Partial V1 subsystem | Exact explicit bindings, queue outcomes, and ordered provider/circuit evidence for one acquired entry. |
 | [Queue worker coordinator](./queue-worker-coordinator.md) | Available foundation | Recovery, bounded processing, scheduler-backed wake-up planning, and optional scheduler timeout. |
 
 Queue processing is an at-least-once foundation. Connectivity deferral and

@@ -461,6 +461,7 @@ public final class io/dataloom/runtime/facade/DataLoomCircuitQueueWorkerSpec {
 }
 
 public abstract interface class io/dataloom/runtime/facade/DataLoomProtectedSynchronization {
+	public abstract fun synchronize (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/provider/SynchronizationProviderBindings;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun synchronize (Lio/dataloom/api/model/SynchronizationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
@@ -769,6 +770,24 @@ public final class io/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult
 public final class io/dataloom/runtime/queue/DurableQueueExecutionProcessor {
 	public fun <init> (Lio/dataloom/api/queue/QueueProvider;Lio/dataloom/runtime/queue/QueueEntryExecutionHandler;)V
 	public final fun process (Lio/dataloom/runtime/queue/QueueProcessingRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/queue/ProviderProtectedQueueEntryExecutionResult {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/runtime/queue/QueueEntryExecutionOutcome;Lio/dataloom/runtime/facade/ProviderProtectedSynchronizationExecutionResult;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/runtime/queue/QueueEntryExecutionOutcome;Lio/dataloom/runtime/facade/ProviderProtectedSynchronizationExecutionResult;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntryId-ARA1dI0 ()Ljava/lang/String;
+	public final fun getExecutionResult ()Lio/dataloom/runtime/facade/ProviderProtectedSynchronizationExecutionResult;
+	public final fun getOperationEvidence ()Ljava/util/List;
+	public final fun getOutcome ()Lio/dataloom/runtime/queue/QueueEntryExecutionOutcome;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/queue/ProviderProtectedQueuedSynchronizationExecutionHandler {
+	public synthetic fun <init> (Lio/dataloom/runtime/queue/QueuedSynchronizationWorkResolver;Lio/dataloom/runtime/facade/DataLoomProtectedSynchronization;Lio/dataloom/runtime/retry/SynchronizationRetryEvaluator;Ljava/lang/String;Lio/dataloom/runtime/connectivity/SynchronizationConnectivityConfiguration;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/retry/WorkflowTimeoutStateExecutor;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/queue/QueuedSynchronizationWorkResolver;Lio/dataloom/runtime/facade/DataLoomProtectedSynchronization;Lio/dataloom/runtime/retry/SynchronizationRetryEvaluator;Ljava/lang/String;Lio/dataloom/runtime/connectivity/SynchronizationConnectivityConfiguration;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/retry/WorkflowTimeoutStateExecutor;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun execute (Lio/dataloom/api/queue/QueueEntry;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/dataloom/runtime/queue/QueueCircuitOperationRecord {
