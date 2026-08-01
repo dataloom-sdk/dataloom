@@ -19,6 +19,7 @@ import io.dataloom.runtime.execution.SynchronizationExecutionRejectionReason
 import io.dataloom.runtime.execution.SynchronizationExecutionResult
 import io.dataloom.runtime.retry.SynchronizationRetryEvaluation
 import io.dataloom.runtime.retry.SynchronizationRetryEvaluator
+import io.dataloom.runtime.retry.WorkflowTimeoutStateExecutor
 
 /**
  * [QueueEntryExecutionHandler] implementation that orchestrates queued
@@ -134,6 +135,7 @@ internal class QueuedSynchronizationExecutionHandler(
     private val retryOperation: RetryOperation,
     private val connectivityConfiguration: SynchronizationConnectivityConfiguration? = null,
     private val clock: DataLoomClock? = null,
+    private val workflowTimeoutExecutor: WorkflowTimeoutStateExecutor? = null,
 ) : QueueEntryExecutionHandler {
 
     /**
@@ -165,7 +167,20 @@ internal class QueuedSynchronizationExecutionHandler(
         val work = (resolution as QueuedSynchronizationWorkResolution.Resolved).work
 
         // Step 3–4: Execute synchronization; map coordinator rejections.
-        val executionResult = executionCoordinator.execute(work.request, work.bindings)
+        val executionResult = when (val timedExecution = executeQueuedWorkflowWithTimeout(
+            entry = entry,
+            timeoutExecutor = workflowTimeoutExecutor,
+        ) {
+            executionCoordinator.execute(work.request, work.bindings)
+        }) {
+            is QueuedWorkflowTimeoutExecution.Completed -> timedExecution.value
+            is QueuedWorkflowTimeoutExecution.Failed -> {
+                return QueueEntryExecutionOutcome.Failed(
+                    error = timedExecution.error,
+                    disposition = QueueFailureDisposition.FAILED,
+                )
+            }
+        }
         if (executionResult is SynchronizationExecutionResult.Rejected) {
             return mapCoordinatorRejection(executionResult)
         }

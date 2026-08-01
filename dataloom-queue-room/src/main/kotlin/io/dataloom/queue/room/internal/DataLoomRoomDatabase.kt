@@ -12,7 +12,7 @@ import androidx.room.RoomDatabase
  */
 @Database(
     entities = [QueueEntryEntity::class, CircuitBreakerStateEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 public abstract class DataLoomRoomDatabase : RoomDatabase() {

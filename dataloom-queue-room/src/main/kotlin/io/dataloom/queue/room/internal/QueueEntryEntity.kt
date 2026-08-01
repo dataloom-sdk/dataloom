@@ -10,7 +10,7 @@ import androidx.room.PrimaryKey
  *
  * ## Schema version
  *
- * This entity is part of [DataLoomRoomDatabase] schema version 2.
+ * This entity is part of [DataLoomRoomDatabase] schema version 4.
  *
  * ## State storage
  *
@@ -161,6 +161,14 @@ internal data class QueueEntryEntity(
     /** Sum of delays accepted for durable retry transitions. */
     @ColumnInfo(name = "retry_cumulative_delay_ms")
     val retryCumulativeDelayMs: Long?,
+
+    /** Accepted workflow timeout start instant; null when no workflow limit was accepted. */
+    @ColumnInfo(name = "workflow_started_at_ms")
+    val workflowStartedAtMs: Long?,
+
+    /** Immutable absolute workflow deadline; null when no workflow limit was accepted. */
+    @ColumnInfo(name = "workflow_deadline_at_ms")
+    val workflowDeadlineAtMs: Long?,
 
     /** Unique lease identifier; non-null only when state = LEASED. */
     @ColumnInfo(name = "lease_id")

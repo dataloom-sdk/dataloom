@@ -126,6 +126,48 @@ class DataLoomRoomMigrationTest {
         openCurrentDatabase(TEST_DATABASE_2_3)
     }
 
+    @Test
+    fun version3QueueEntryMigratesToVersion4WithoutInventingWorkflowDeadline() {
+        val version3 = migrationTestHelper.createDatabase(TEST_DATABASE_3_4, 3)
+        version3.execSQL(
+            """
+            INSERT INTO queue_entries (
+                entry_id, workflow_id, session_id, direction, mode, priority,
+                exec_execution_id, exec_correlation_id, state,
+                enqueued_at_ms, available_at_ms
+            ) VALUES (
+                'entry-003', 'workflow-003', 'session-003', 'PUSH', 'DELTA', 'NORMAL',
+                'execution-003', 'correlation-003', 'PENDING',
+                3000, 3000
+            )
+            """.trimIndent(),
+        )
+        version3.close()
+
+        val migrated = migrationTestHelper.runMigrationsAndValidate(
+            TEST_DATABASE_3_4,
+            4,
+            true,
+            DataLoomRoomMigrations.MIGRATION_3_4,
+        )
+        val cursor = migrated.query(
+            """
+            SELECT workflow_started_at_ms, workflow_deadline_at_ms
+            FROM queue_entries WHERE entry_id = 'entry-003'
+            """.trimIndent(),
+        )
+        try {
+            assertTrue(cursor.moveToFirst())
+            assertTrue(cursor.isNull(0))
+            assertTrue(cursor.isNull(1))
+        } finally {
+            cursor.close()
+            migrated.close()
+        }
+
+        openCurrentDatabase(TEST_DATABASE_3_4)
+    }
+
     private fun openCurrentDatabase(name: String) {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val database = Room.databaseBuilder(
@@ -144,5 +186,6 @@ class DataLoomRoomMigrationTest {
     private companion object {
         const val TEST_DATABASE_1_2 = "dataloom-room-migration-1-2-test"
         const val TEST_DATABASE_2_3 = "dataloom-room-migration-2-3-test"
+        const val TEST_DATABASE_3_4 = "dataloom-room-migration-3-4-test"
     }
 }

@@ -49,7 +49,19 @@ public object DataLoomRoomMigrations {
         }
     }
 
+    /** Adds nullable immutable workflow timeout evidence to existing queue rows. */
+    public val MIGRATION_3_4: Migration = object : Migration(3, 4) {
+        override fun migrate(database: SupportSQLiteDatabase) {
+            database.execSQL(
+                "ALTER TABLE queue_entries ADD COLUMN workflow_started_at_ms INTEGER",
+            )
+            database.execSQL(
+                "ALTER TABLE queue_entries ADD COLUMN workflow_deadline_at_ms INTEGER",
+            )
+        }
+    }
+
     /** Complete ordered migration set used by [DataLoomDatabaseBuilder]. */
     public val ALL: Array<Migration>
-        get() = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
+        get() = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
 }

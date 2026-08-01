@@ -1986,6 +1986,12 @@ public final class io/dataloom/runtime/retry/TransportProviderTimeoutRuntime {
 	public final fun create (Lio/dataloom/api/transport/TransportProvider;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/scheduling/SchedulingDelay;)Lio/dataloom/api/transport/TransportProvider;
 }
 
+public final class io/dataloom/runtime/retry/WorkflowTimeoutStateExecutor {
+	public fun <init> (Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/retry/RetryTimeoutExecutor;)V
+	public synthetic fun <init> (Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/retry/RetryTimeoutExecutor;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun execute (Lio/dataloom/api/retry/WorkflowTimeoutState;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
 public final class io/dataloom/runtime/strategy/BuiltInSynchronizationStrategyEvaluator : io/dataloom/api/strategy/SynchronizationStrategyEvaluator {
 	public fun <init> ()V
 	public fun evaluate (Lio/dataloom/api/strategy/StrategyEvaluationRequest;)Lio/dataloom/api/strategy/StrategyEvaluationResult;
@@ -2242,11 +2248,13 @@ public final class io/dataloom/runtime/submission/QueueSubmissionResult$QueuePro
 }
 
 public final class io/dataloom/runtime/submission/QueuedSynchronizationSubmission {
-	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/runtime/queue/QueuedSynchronizationWork;Lio/dataloom/api/time/DataLoomInstant;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/runtime/queue/QueuedSynchronizationWork;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/retry/WorkflowTimeoutState;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/runtime/queue/QueuedSynchronizationWork;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/retry/WorkflowTimeoutState;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAvailableAt ()Lio/dataloom/api/time/DataLoomInstant;
 	public final fun getQueueEntryId-ARA1dI0 ()Ljava/lang/String;
 	public final fun getWork ()Lio/dataloom/runtime/queue/QueuedSynchronizationWork;
+	public final fun getWorkflowTimeoutState ()Lio/dataloom/api/retry/WorkflowTimeoutState;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }

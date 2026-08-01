@@ -59,6 +59,12 @@ internal class QueueSubmissionPreflight(
             )
         }
 
+        if (entry.workflowTimeoutState != submission.workflowTimeoutState) {
+            return ContractViolationError(
+                message = "Encoded workflow timeout evidence does not match submission.",
+            )
+        }
+
         return null
     }
 

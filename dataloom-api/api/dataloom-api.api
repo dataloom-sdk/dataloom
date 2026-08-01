@@ -726,10 +726,11 @@ public final class io/dataloom/api/queue/QueueEnqueueRequest {
 }
 
 public final class io/dataloom/api/queue/QueueEntry {
-	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/queue/QueueLease;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;Lio/dataloom/api/retry/RetryBudgetState;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/queue/QueueLease;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;Lio/dataloom/api/retry/RetryBudgetState;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/queue/QueueLease;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;Lio/dataloom/api/retry/RetryBudgetState;Lio/dataloom/api/retry/WorkflowTimeoutState;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/queue/QueueLease;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;Lio/dataloom/api/retry/RetryBudgetState;Lio/dataloom/api/retry/WorkflowTimeoutState;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-ARA1dI0 ()Ljava/lang/String;
 	public final fun component10 ()Lio/dataloom/api/retry/RetryBudgetState;
+	public final fun component11 ()Lio/dataloom/api/retry/WorkflowTimeoutState;
 	public final fun component2 ()Lio/dataloom/api/model/SynchronizationRequest;
 	public final fun component3 ()Lio/dataloom/api/queue/QueueEntryState;
 	public final fun component4 ()Lio/dataloom/api/time/DataLoomInstant;
@@ -738,8 +739,8 @@ public final class io/dataloom/api/queue/QueueEntry {
 	public final fun component7 ()Lio/dataloom/api/queue/QueueLease;
 	public final fun component8 ()Lio/dataloom/api/error/DataLoomError;
 	public final fun component9 ()Lio/dataloom/api/context/DataLoomMetadata;
-	public final fun copy-Ieb0AMg (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/queue/QueueLease;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;Lio/dataloom/api/retry/RetryBudgetState;)Lio/dataloom/api/queue/QueueEntry;
-	public static synthetic fun copy-Ieb0AMg$default (Lio/dataloom/api/queue/QueueEntry;Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/queue/QueueLease;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;Lio/dataloom/api/retry/RetryBudgetState;ILjava/lang/Object;)Lio/dataloom/api/queue/QueueEntry;
+	public final fun copy-Vk5-g9k (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/queue/QueueLease;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;Lio/dataloom/api/retry/RetryBudgetState;Lio/dataloom/api/retry/WorkflowTimeoutState;)Lio/dataloom/api/queue/QueueEntry;
+	public static synthetic fun copy-Vk5-g9k$default (Lio/dataloom/api/queue/QueueEntry;Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/queue/QueueLease;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;Lio/dataloom/api/retry/RetryBudgetState;Lio/dataloom/api/retry/WorkflowTimeoutState;ILjava/lang/Object;)Lio/dataloom/api/queue/QueueEntry;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAvailableAt ()Lio/dataloom/api/time/DataLoomInstant;
 	public final fun getEnqueuedAt ()Lio/dataloom/api/time/DataLoomInstant;
@@ -751,6 +752,7 @@ public final class io/dataloom/api/queue/QueueEntry {
 	public final fun getRetryBudgetState ()Lio/dataloom/api/retry/RetryBudgetState;
 	public final fun getState ()Lio/dataloom/api/queue/QueueEntryState;
 	public final fun getSynchronizationRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun getWorkflowTimeoutState ()Lio/dataloom/api/retry/WorkflowTimeoutState;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
@@ -959,6 +961,24 @@ public final class io/dataloom/api/retry/RetryStopReason : java/lang/Enum {
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/retry/RetryStopReason;
 	public static fun values ()[Lio/dataloom/api/retry/RetryStopReason;
+}
+
+public final class io/dataloom/api/retry/WorkflowTimeoutState {
+	public static final field Companion Lio/dataloom/api/retry/WorkflowTimeoutState$Companion;
+	public fun <init> (Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;)V
+	public final fun component1 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy (Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/api/retry/WorkflowTimeoutState;
+	public static synthetic fun copy$default (Lio/dataloom/api/retry/WorkflowTimeoutState;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/api/retry/WorkflowTimeoutState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDeadline ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getStartedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/retry/WorkflowTimeoutState$Companion {
+	public final fun from (Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/scheduling/SchedulingDelay;)Lio/dataloom/api/retry/WorkflowTimeoutState;
 }
 
 public final class io/dataloom/api/runtime/RuntimeDependencies {

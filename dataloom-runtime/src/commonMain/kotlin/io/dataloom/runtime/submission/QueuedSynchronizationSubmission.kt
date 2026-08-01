@@ -1,6 +1,7 @@
 package io.dataloom.runtime.submission
 
 import io.dataloom.api.identifier.QueueEntryId
+import io.dataloom.api.retry.WorkflowTimeoutState
 import io.dataloom.api.time.DataLoomInstant
 import io.dataloom.runtime.queue.QueuedSynchronizationWork
 
@@ -71,19 +72,24 @@ public class QueuedSynchronizationSubmission(
      * clock or substitute a default value.
      */
     public val availableAt: DataLoomInstant,
+
+    /** Immutable workflow timeout evidence to persist with the queue entry. */
+    public val workflowTimeoutState: WorkflowTimeoutState? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is QueuedSynchronizationSubmission) return false
         return queueEntryId == other.queueEntryId &&
             work == other.work &&
-            availableAt == other.availableAt
+            availableAt == other.availableAt &&
+            workflowTimeoutState == other.workflowTimeoutState
     }
 
     override fun hashCode(): Int {
         var result = queueEntryId.hashCode()
         result = 31 * result + work.hashCode()
         result = 31 * result + availableAt.hashCode()
+        result = 31 * result + (workflowTimeoutState?.hashCode() ?: 0)
         return result
     }
 
@@ -97,6 +103,7 @@ public class QueuedSynchronizationSubmission(
     override fun toString(): String =
         "QueuedSynchronizationSubmission(" +
             "queueEntryId=${queueEntryId.value}, " +
-            "availableAt=$availableAt" +
+            "availableAt=$availableAt, " +
+            "hasWorkflowTimeoutState=${workflowTimeoutState != null}" +
             ")"
 }

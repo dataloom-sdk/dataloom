@@ -6,6 +6,7 @@ import io.dataloom.api.identifier.QueueEntryId
 import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.api.retry.RetryAttempt
 import io.dataloom.api.retry.RetryBudgetState
+import io.dataloom.api.retry.WorkflowTimeoutState
 import io.dataloom.api.time.DataLoomInstant
 
 /**
@@ -42,6 +43,9 @@ public data class QueueEntry(
     public val lastError: DataLoomError? = null,
     public val metadata: DataLoomMetadata = DataLoomMetadata.Empty,
     public val retryBudgetState: RetryBudgetState? = null,
+
+    /** Immutable accepted workflow start and absolute deadline evidence. */
+    public val workflowTimeoutState: WorkflowTimeoutState? = null,
 ) {
     init {
         require(availableAt.epochMilliseconds >= enqueuedAt.epochMilliseconds) {
