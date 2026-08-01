@@ -14,4 +14,10 @@ internal class DefaultDataLoomProtectedSynchronization(
         request: SynchronizationRequest,
     ): ProviderProtectedSynchronizationExecutionResult =
         coordinator.execute(request, defaultBindings)
+
+    override suspend fun synchronize(
+        request: SynchronizationRequest,
+        bindings: SynchronizationProviderBindings,
+    ): ProviderProtectedSynchronizationExecutionResult =
+        coordinator.execute(request, bindings)
 }
