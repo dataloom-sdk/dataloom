@@ -11,7 +11,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Verifies non-destructive queue and circuit schema migrations. */
+/** Verifies non-destructive queue, circuit, and retry-administration schema migrations. */
 @RunWith(AndroidJUnit4::class)
 class DataLoomRoomMigrationTest {
 
@@ -168,6 +168,57 @@ class DataLoomRoomMigrationTest {
         openCurrentDatabase(TEST_DATABASE_3_4)
     }
 
+    @Test
+    fun version4MigratesToVersion5WithEmptyRetryAdministrationTable() {
+        val version4 = migrationTestHelper.createDatabase(TEST_DATABASE_4_5, 4)
+        version4.execSQL(
+            """
+            INSERT INTO queue_entries (
+                entry_id, workflow_id, session_id, direction, mode, priority,
+                exec_execution_id, exec_correlation_id, state,
+                enqueued_at_ms, available_at_ms
+            ) VALUES (
+                'entry-004', 'workflow-004', 'session-004', 'PUSH', 'DELTA', 'NORMAL',
+                'execution-004', 'correlation-004', 'PENDING',
+                4000, 4000
+            )
+            """.trimIndent(),
+        )
+        version4.close()
+
+        val migrated = migrationTestHelper.runMigrationsAndValidate(
+            TEST_DATABASE_4_5,
+            5,
+            true,
+            DataLoomRoomMigrations.MIGRATION_4_5,
+        )
+        val queueCursor = migrated.query(
+            "SELECT entry_id FROM queue_entries WHERE entry_id = 'entry-004'",
+        )
+        val tableCursor = migrated.query(
+            """
+            SELECT name FROM sqlite_master
+            WHERE type = 'table' AND name = 'retry_administration_states'
+            """.trimIndent(),
+        )
+        val countCursor = migrated.query("SELECT COUNT(*) FROM retry_administration_states")
+        try {
+            assertTrue(queueCursor.moveToFirst())
+            assertEquals("entry-004", queueCursor.getString(0))
+            assertTrue(tableCursor.moveToFirst())
+            assertEquals("retry_administration_states", tableCursor.getString(0))
+            assertTrue(countCursor.moveToFirst())
+            assertEquals(0, countCursor.getInt(0))
+        } finally {
+            queueCursor.close()
+            tableCursor.close()
+            countCursor.close()
+            migrated.close()
+        }
+
+        openCurrentDatabase(TEST_DATABASE_4_5)
+    }
+
     private fun openCurrentDatabase(name: String) {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val database = Room.databaseBuilder(
@@ -187,5 +238,6 @@ class DataLoomRoomMigrationTest {
         const val TEST_DATABASE_1_2 = "dataloom-room-migration-1-2-test"
         const val TEST_DATABASE_2_3 = "dataloom-room-migration-2-3-test"
         const val TEST_DATABASE_3_4 = "dataloom-room-migration-3-4-test"
+        const val TEST_DATABASE_4_5 = "dataloom-room-migration-4-5-test"
     }
 }
