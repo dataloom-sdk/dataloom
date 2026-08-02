@@ -50,7 +50,7 @@ complete V1 strategy, asset, plugin, governance, or observability engine.
 | Describe synchronization intent | [Synchronization request](./synchronization-request.md) |
 | Understand admission, resolution, and pipeline selection | [Synchronization execution](./synchronization-execution.md) |
 | Register and resolve providers | [Provider registry](./provider-registry.md), [provider lifecycle](./provider-lifecycle.md), and [provider bindings](./provider-bindings.md) |
-| Submit and process durable work | [Queue submission](./queue-submission.md), [circuit-aware queue submission](./circuit-queue-submission.md), [circuit-aware queue processing](./circuit-queue-processing.md), [circuit-aware queue worker](./circuit-queue-worker.md), [circuit-protected worker scheduling](./circuit-queue-worker-scheduler.md), [queue provider](./queue-provider.md), [queue-provider timeouts](./queue-provider-timeouts.md), [queue circuit adapter](./queue-circuit-operation-adapter.md), and [queue worker](./queue-worker-coordinator.md) |
+| Submit and process durable work | [Queue submission](./queue-submission.md), [circuit-aware queue submission](./circuit-queue-submission.md), [circuit-aware queue processing](./circuit-queue-processing.md), [circuit-aware queue worker](./circuit-queue-worker.md), [circuit-protected worker scheduling](./circuit-queue-worker-scheduler.md), [queue provider](./queue-provider.md), [Apple durable queue](../apple/queue-state-store.md), [queue-provider timeouts](./queue-provider-timeouts.md), [queue circuit adapter](./queue-circuit-operation-adapter.md), and [queue worker](./queue-worker-coordinator.md) |
 | Evaluate retries | [Retry policy](./retry-policy.md), [retry orchestration](./retry-orchestration.md), [retry timeouts](./retry-timeouts.md), [circuit breaker](./circuit-breaker.md), and [circuit execution gate](./circuit-execution-gate.md) |
 | Detect and resolve conflicts | [Conflict contracts](./conflict-contracts.md) and [conflict orchestration](./conflict-orchestration.md) |
 | Observe execution | [Synchronization events](./synchronization-events.md), [event dispatcher](./synchronization-event-dispatcher.md), and [runtime operational events](./runtime-operational-events.md) |
@@ -111,6 +111,7 @@ not implement the approved six-strategy product architecture by themselves.
 |---|---|---|
 | [Queue models](./queue-model.md) | Available contract | Entries, leases, states, acquisition, transitions, and recovery requests. |
 | [Queue provider](./queue-provider.md) | Available foundation | Durable queue persistence SPI and Room implementation boundary. |
+| [Apple durable queue](../apple/queue-state-store.md) | Available foundation | Crash-durable file-backed Apple queue with atomic acquisition, guarded transitions, retry budgets, workflow deadlines, and lease recovery. |
 | [Queue-provider timeouts](./queue-provider-timeouts.md) | Partial V1 subsystem | Cooperative lifecycle, submission, acquisition, recovery, and transition timeout protection plus builder/runtime assembly. |
 | [Queue circuit operation adapter](./queue-circuit-operation-adapter.md) | Partial V1 subsystem | Explicit queue-operation circuit permission, queue-aware timeout classification, and uncollapsed provider/record evidence. |
 | [Circuit-aware queue submission](./circuit-queue-submission.md) | Partial V1 subsystem | Preflight-before-permission ordering and enriched enqueue/circuit evidence. |
@@ -125,13 +126,15 @@ not implement the approved six-strategy product architecture by themselves.
 | [Queue worker coordinator](./queue-worker-coordinator.md) | Available foundation | Recovery, bounded processing, scheduler-backed wake-up planning, and optional scheduler timeout. |
 
 Queue processing is an at-least-once foundation. Connectivity deferral and
-expired-lease recovery preserve retry attempt history; Android Room persists
-retry budgets and circuit state. Queue-provider timeouts preserve durable
+expired-lease recovery preserve retry attempt history; Android Room and the
+Apple file provider persist queue entries, retry budgets, and workflow deadlines,
+while Android Room and the Apple circuit store persist circuit state. Queue-provider timeouts preserve durable
 ambiguity and never replay a mutation automatically. Explicit queue circuit
 operation adaptation, submission, bounded acquisition/transitions, and
 circuit-aware recovery/worker coordination, explicit builder/facade adoption,
 and separately configured scheduler-circuit policy now exist. KMP iOS
-persistence and end-to-end qualification remain open.
+queue and circuit persistence now exist; executable relaunch, background
+adapters, administration persistence, and end-to-end qualification remain open.
 
 ## Retry and conflict
 
@@ -154,8 +157,8 @@ persistence and end-to-end qualification remain open.
 | [Conflict orchestration](./conflict-orchestration.md) | Partial V1 subsystem | Exact detector/resolver lookup and one-cycle decision orchestration. |
 
 V1 retry work still requires complete offline-first, cache-first, hybrid, and adaptive strategy execution,
-protocol-specific timeout enforcement, KMP iOS persistence, manual
-retry/reclassification, complete observability, and platform qualification.
+remaining protocol integrations, durable administration execution, complete
+observability, executable restart evidence, and platform qualification.
 Conflict work still requires built-in policies, precedence, atomic decision
 application, unresolved-conflict persistence, audit, convergence, loop
 protection, quarantine, and metrics.
