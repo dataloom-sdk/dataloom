@@ -42,8 +42,8 @@ jobs:
           apple = apple_path.read_text()
           apple_replacements = (
               (
-                  "smoke, and production file-backed circuit persistence exist; full production\nKMP iOS synchronization support does not",
-                  "smoke, and production file-backed circuit and queue persistence exist; full\nproduction KMP iOS synchronization support does not",
+                  "smoke, and production file-backed circuit persistence exist; full production\n> KMP iOS synchronization support does not",
+                  "smoke, and production file-backed circuit and queue persistence exist; full\n> production KMP iOS synchronization support does not",
               ),
               (
                   "added production Apple circuit-breaker persistence, but Apple connectivity,\nbackground scheduling, durable queue/retry ownership, lifecycle restoration,\nand complete executable reference flows remain incomplete.",
