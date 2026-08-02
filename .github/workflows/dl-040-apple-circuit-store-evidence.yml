@@ -1,0 +1,207 @@
+name: DL-040 Apple Circuit Store Evidence
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  qualify-apple-circuit-store:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'codex/dl-retry-043-apple-circuit-store'
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout pull request head
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Apply reviewed Kotlin Native and descriptor-lifecycle corrections
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path(
+              "dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/retry/"
+              "AppleFileCircuitBreakerStateStore.kt"
+          )
+          source = path.read_text()
+
+          old_sort = '''            records.toSortedMap().forEach { (key, record) ->
+                check(key == scopeStorageKey(record.state.scope)) {'''
+          new_sort = '''            records.entries.sortedBy { it.key }.forEach { entry ->
+                val key = entry.key
+                val record = entry.value
+                check(key == scopeStorageKey(record.state.scope)) {'''
+
+          old_mode = 'mkdir(current, S_IRWXU)'
+          new_mode = 'mkdir(current, S_IRWXU.convert())'
+
+          old_write = '''internal fun writeUtf8FileAtomically(
+    temporaryPath: String,
+    destinationPath: String,
+    content: String,
+) {
+    val bytes = content.encodeToByteArray()
+    if (bytes.size > MAX_STATE_FILE_BYTES) throw AppleCircuitStateLimitException()
+    if (unlink(temporaryPath) != 0 && errno != ENOENT) {
+        throw AppleCircuitFileException()
+    }
+    val descriptor = openOwnerOnly(
+        temporaryPath,
+        O_WRONLY or O_CREAT or O_EXCL or O_TRUNC,
+    )
+    var committed = false
+    try {
+        var offset = 0
+        while (offset < bytes.size) {
+            val count = bytes.usePinned { pinned ->
+                write(
+                    descriptor,
+                    pinned.addressOf(offset),
+                    (bytes.size - offset).convert(),
+                )
+            }
+            when {
+                count < 0L && errno == EINTR -> continue
+                count <= 0L -> throw AppleCircuitFileException()
+                else -> offset += count.toInt()
+            }
+        }
+        if (fsync(descriptor) != 0) throw AppleCircuitFileException()
+        if (close(descriptor) != 0) throw AppleCircuitFileException()
+        if (rename(temporaryPath, destinationPath) != 0) {
+            throw AppleCircuitFileException()
+        }
+        committed = true
+    } finally {
+        if (!committed) {
+            close(descriptor)
+            unlink(temporaryPath)
+        }
+    }
+}'''
+          new_write = '''internal fun writeUtf8FileAtomically(
+    temporaryPath: String,
+    destinationPath: String,
+    content: String,
+) {
+    val bytes = content.encodeToByteArray()
+    if (bytes.size > MAX_STATE_FILE_BYTES) throw AppleCircuitStateLimitException()
+    if (unlink(temporaryPath) != 0 && errno != ENOENT) {
+        throw AppleCircuitFileException()
+    }
+    val descriptor = openOwnerOnly(
+        temporaryPath,
+        O_WRONLY or O_CREAT or O_EXCL or O_TRUNC,
+    )
+    var descriptorOpen = true
+    var renamed = false
+    try {
+        var offset = 0
+        while (offset < bytes.size) {
+            val count = bytes.usePinned { pinned ->
+                write(
+                    descriptor,
+                    pinned.addressOf(offset),
+                    (bytes.size - offset).convert(),
+                )
+            }
+            when {
+                count < 0L && errno == EINTR -> continue
+                count <= 0L -> throw AppleCircuitFileException()
+                else -> offset += count.toInt()
+            }
+        }
+        if (fsync(descriptor) != 0) throw AppleCircuitFileException()
+        val closeResult = close(descriptor)
+        descriptorOpen = false
+        if (closeResult != 0) throw AppleCircuitFileException()
+        if (rename(temporaryPath, destinationPath) != 0) {
+            throw AppleCircuitFileException()
+        }
+        renamed = true
+    } finally {
+        if (descriptorOpen) {
+            close(descriptor)
+        }
+        if (!renamed) {
+            unlink(temporaryPath)
+        }
+    }
+}'''
+
+          for old, new, label in (
+              (old_sort, new_sort, "deterministic ordering"),
+              (old_mode, new_mode, "mkdir mode conversion"),
+              (old_write, new_write, "descriptor lifecycle"),
+          ):
+              if old not in source:
+                  raise SystemExit(f"expected {label} source was not found")
+              source = source.replace(old, new)
+
+          path.write_text(source)
+          PY
+
+      - name: Qualify runtime, external consumers, ABI, and XCFramework
+        run: |
+          chmod +x gradlew
+          ./gradlew \
+            :dataloom-runtime:jvmTest \
+            :dataloom-runtime:iosSimulatorArm64Test \
+            :runtime-external-consumer:compileKotlinJvm \
+            :runtime-external-consumer:compileKotlinIosArm64 \
+            :runtime-external-consumer:compileKotlinIosSimulatorArm64 \
+            :runtime-external-consumer:compileKotlinIosX64 \
+            --configuration-cache \
+            --stacktrace \
+            --console=plain
+          ./gradlew \
+            :dataloom-runtime:updateKotlinAbi \
+            :dataloom-apple:updateKotlinAbi \
+            --no-configuration-cache \
+            --stacktrace \
+            --console=plain
+          ./gradlew \
+            :dataloom-runtime:checkKotlinAbi \
+            :dataloom-runtime:checkPublicAbiBoundaries \
+            :dataloom-apple:checkKotlinAbi \
+            :runtime-external-consumer:checkRuntimeExternalConsumer \
+            :dataloom-apple:assembleDataLoomReleaseXCFramework \
+            --no-configuration-cache \
+            --warning-mode all \
+            --stacktrace \
+            --console=plain
+
+      - name: Commit source corrections and exact evidence
+        env:
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/dl-040-apple-circuit-store-evidence.yml
+          git add \
+            dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/retry/AppleFileCircuitBreakerStateStore.kt \
+            dataloom-runtime/api/dataloom-runtime.api \
+            dataloom-runtime/api/dataloom-runtime.klib.api \
+            dataloom-apple/api/dataloom-apple.klib.api
+          git diff --check
+          git commit -m "DL-040: qualify Apple circuit state persistence"
+          git push origin "HEAD:${HEAD_BRANCH}"
