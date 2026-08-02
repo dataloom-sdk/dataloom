@@ -95,9 +95,11 @@ class RoomRetryAdministrationExecutorTest {
     @Test
     fun `integrity failure is canonical and redacted`() {
         runBlocking {
-            whenever(dao.execute(any(), eq(3_000L))).thenThrow(
-                RetryAdministrationExecutionIntegrityException(IllegalStateException("secret")),
-            )
+            whenever(dao.execute(any(), eq(3_000L))).thenAnswer {
+                throw RetryAdministrationExecutionIntegrityException(
+                    IllegalStateException("secret"),
+                )
+            }
 
             val result = assertIs<RetryAdministrationExecutionResult.Failed>(
                 executor.execute(command()),
@@ -114,9 +116,9 @@ class RoomRetryAdministrationExecutorTest {
     @Test
     fun `version exhaustion is non recoverable`() {
         runBlocking {
-            whenever(dao.execute(any(), eq(3_000L))).thenThrow(
-                RetryAdministrationExecutionVersionExhaustedException(),
-            )
+            whenever(dao.execute(any(), eq(3_000L))).thenAnswer {
+                throw RetryAdministrationExecutionVersionExhaustedException()
+            }
 
             val result = assertIs<RetryAdministrationExecutionResult.Failed>(
                 executor.execute(command()),
