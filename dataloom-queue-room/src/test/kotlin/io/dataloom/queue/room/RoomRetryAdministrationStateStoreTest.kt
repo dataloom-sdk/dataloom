@@ -50,85 +50,95 @@ class RoomRetryAdministrationStateStoreTest {
     }
 
     @Test
-    fun `missing command is returned explicitly`() = runBlocking {
-        whenever(dao.load(any())).thenReturn(null)
+    fun `missing command is returned explicitly`() {
+        runBlocking {
+            whenever(dao.load(any())).thenReturn(null)
 
-        val result = assertIs<ProviderOperationResult.Success<RetryAdministrationLoadResult>>(
-            store.load(RetryAdministrationCommandId("command-1")),
-        )
+            val result = assertIs<ProviderOperationResult.Success<RetryAdministrationLoadResult>>(
+                store.load(RetryAdministrationCommandId("command-1")),
+            )
 
-        assertIs<RetryAdministrationLoadResult.Missing>(result.value)
+            assertIs<RetryAdministrationLoadResult.Missing>(result.value)
+        }
     }
 
     @Test
-    fun `compare and set conflict preserves current immutable command and version`() = runBlocking {
-        val current = validEntity(recordVersion = 3L)
-        whenever(dao.compareAndSet(eq(2L), any())).thenReturn(
-            RetryAdministrationCompareAndSetEntityResult.Conflict(current),
-        )
+    fun `compare and set conflict preserves current immutable command and version`() {
+        runBlocking {
+            val current = validEntity(recordVersion = 3L)
+            whenever(dao.compareAndSet(eq(2L), any())).thenReturn(
+                RetryAdministrationCompareAndSetEntityResult.Conflict(current),
+            )
 
-        val result = assertIs<ProviderOperationResult.Success<RetryAdministrationCompareAndSetResult>>(
-            store.compareAndSet(
-                RetryAdministrationCompareAndSetRequest(
-                    commandId = RetryAdministrationCommandId("command-1"),
-                    expectedVersion = 2L,
-                    nextState = authorizedState(),
+            val result = assertIs<ProviderOperationResult.Success<RetryAdministrationCompareAndSetResult>>(
+                store.compareAndSet(
+                    RetryAdministrationCompareAndSetRequest(
+                        commandId = RetryAdministrationCommandId("command-1"),
+                        expectedVersion = 2L,
+                        nextState = authorizedState(),
+                    ),
                 ),
-            ),
-        )
-        val conflict = assertIs<RetryAdministrationCompareAndSetResult.Conflict>(result.value)
+            )
+            val conflict = assertIs<RetryAdministrationCompareAndSetResult.Conflict>(result.value)
 
-        assertEquals(3L, conflict.current?.version)
-        assertEquals("entry-1", conflict.current?.state?.request?.queueEntryId?.value)
-        assertEquals("operator-1", conflict.current?.state?.request?.principalId?.value)
+            assertEquals(3L, conflict.current?.version)
+            assertEquals("entry-1", conflict.current?.state?.request?.queueEntryId?.value)
+            assertEquals("operator-1", conflict.current?.state?.request?.principalId?.value)
+        }
     }
 
     @Test
-    fun `partial execution failure evidence fails closed`() = runBlocking {
-        whenever(dao.load(any())).thenReturn(
-            validEntity(
-                status = RetryAdministrationCommandStatus.EXECUTION_FAILED.name,
-                executionErrorCode = "REMOTE_FAILURE",
-                executionErrorCategory = null,
-            ),
-        )
-
-        val result = assertIs<ProviderOperationResult.Failure>(
-            store.load(RetryAdministrationCommandId("command-1")),
-        )
-
-        assertEquals("RETRY_ADMIN_ROOM_STATE_CORRUPT", result.error.code.value)
-        assertEquals(Recoverability.NON_RECOVERABLE, result.error.recoverability)
-    }
-
-    @Test
-    fun `version exhaustion is non recoverable and does not access Room`() = runBlocking {
-        val result = assertIs<ProviderOperationResult.Failure>(
-            store.compareAndSet(
-                RetryAdministrationCompareAndSetRequest(
-                    commandId = RetryAdministrationCommandId("command-1"),
-                    expectedVersion = Long.MAX_VALUE,
-                    nextState = authorizedState(),
+    fun `partial execution failure evidence fails closed`() {
+        runBlocking {
+            whenever(dao.load(any())).thenReturn(
+                validEntity(
+                    status = RetryAdministrationCommandStatus.EXECUTION_FAILED.name,
+                    executionErrorCode = "REMOTE_FAILURE",
+                    executionErrorCategory = null,
                 ),
-            ),
-        )
+            )
 
-        assertEquals("RETRY_ADMIN_STATE_VERSION_EXHAUSTED", result.error.code.value)
-        assertEquals(Recoverability.NON_RECOVERABLE, result.error.recoverability)
-        verifyNoInteractions(dao)
+            val result = assertIs<ProviderOperationResult.Failure>(
+                store.load(RetryAdministrationCommandId("command-1")),
+            )
+
+            assertEquals("RETRY_ADMIN_ROOM_STATE_CORRUPT", result.error.code.value)
+            assertEquals(Recoverability.NON_RECOVERABLE, result.error.recoverability)
+        }
     }
 
     @Test
-    fun `database failure is sanitized and recoverable`() = runBlocking {
-        whenever(dao.load(any())).thenThrow(mock<android.database.sqlite.SQLiteException>())
+    fun `version exhaustion is non recoverable and does not access Room`() {
+        runBlocking {
+            val result = assertIs<ProviderOperationResult.Failure>(
+                store.compareAndSet(
+                    RetryAdministrationCompareAndSetRequest(
+                        commandId = RetryAdministrationCommandId("command-1"),
+                        expectedVersion = Long.MAX_VALUE,
+                        nextState = authorizedState(),
+                    ),
+                ),
+            )
 
-        val result = assertIs<ProviderOperationResult.Failure>(
-            store.load(RetryAdministrationCommandId("command-1")),
-        )
+            assertEquals("RETRY_ADMIN_STATE_VERSION_EXHAUSTED", result.error.code.value)
+            assertEquals(Recoverability.NON_RECOVERABLE, result.error.recoverability)
+            verifyNoInteractions(dao)
+        }
+    }
 
-        assertEquals("RETRY_ADMIN_ROOM_DATABASE_FAILURE", result.error.code.value)
-        assertEquals(Recoverability.RECOVERABLE, result.error.recoverability)
-        assertEquals("A retry-administration database operation failed.", result.error.message)
+    @Test
+    fun `database failure is sanitized and recoverable`() {
+        runBlocking {
+            whenever(dao.load(any())).thenThrow(mock<android.database.sqlite.SQLiteException>())
+
+            val result = assertIs<ProviderOperationResult.Failure>(
+                store.load(RetryAdministrationCommandId("command-1")),
+            )
+
+            assertEquals("RETRY_ADMIN_ROOM_DATABASE_FAILURE", result.error.code.value)
+            assertEquals(Recoverability.RECOVERABLE, result.error.recoverability)
+            assertEquals("A retry-administration database operation failed.", result.error.message)
+        }
     }
 
     @Test
