@@ -1,0 +1,96 @@
+name: DL-040 Apple Retry Administration Store Evidence
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/retry/AppleFileRetryAdministrationStateStore.kt"
+      - "dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/retry/AppleRetryAdministrationStateFileCodec.kt"
+      - "dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/retry/AppleRetryAdministrationFileIo.kt"
+      - "dataloom-runtime/src/iosTest/kotlin/io/dataloom/runtime/retry/AppleFileRetryAdministrationStateStoreTest.kt"
+      - "runtime-external-consumer/src/iosMain/kotlin/io/dataloom/consumer/AppleRetryAdministrationStateStoreExternalConsumerProbe.kt"
+      - "docs/api/retry-administration.md"
+      - "docs/apple/README.md"
+      - "docs/apple/retry-administration-state-store.md"
+      - "docs/audits/DL-040-apple-retry-administration-state-store-checkpoint.md"
+      - ".github/workflows/dl-040-apple-retry-admin-store-evidence.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dl-040-apple-retry-admin-store-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  qualify-apple-retry-admin-store:
+    name: Qualify Apple retry-administration state store
+    runs-on: macos-15
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout pull request head
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+
+      - name: Qualify runtime and Apple consumers
+        run: |
+          chmod +x gradlew
+          ./gradlew \
+            :dataloom-runtime:jvmTest \
+            :dataloom-runtime:iosSimulatorArm64Test \
+            :runtime-external-consumer:compileKotlinJvm \
+            :runtime-external-consumer:compileKotlinIosArm64 \
+            :runtime-external-consumer:compileKotlinIosSimulatorArm64 \
+            :runtime-external-consumer:compileKotlinIosX64 \
+            --configuration-cache \
+            --stacktrace \
+            --console=plain
+
+          ./gradlew \
+            :dataloom-runtime:updateKotlinAbi \
+            :dataloom-apple:updateKotlinAbi \
+            --no-configuration-cache \
+            --stacktrace \
+            --console=plain
+
+          ./gradlew \
+            :dataloom-runtime:checkKotlinAbi \
+            :dataloom-runtime:checkPublicAbiBoundaries \
+            :dataloom-apple:checkKotlinAbi \
+            :runtime-external-consumer:checkRuntimeExternalConsumer \
+            :dataloom-apple:assembleDataLoomReleaseXCFramework \
+            --no-configuration-cache \
+            --warning-mode all \
+            --stacktrace \
+            --console=plain
+
+      - name: Commit exact ABI evidence and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dataloom-runtime/api dataloom-apple/api
+          git rm .github/workflows/dl-040-apple-retry-admin-store-evidence.yml
+          if git diff --cached --quiet; then
+            echo "ERROR: Expected ABI evidence or workflow removal was not staged."
+            exit 1
+          fi
+          git commit -m "DL-040: record Apple retry administration ABI evidence"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
