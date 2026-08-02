@@ -45,6 +45,8 @@ an absolute directory `String` and optional file-name `String`.
 9. Scope reconstruction and all `CircuitBreakerState` invariants are revalidated
    on every read.
 10. Duplicate persisted scopes fail closed.
+11. The temporary snapshot descriptor is closed at most once, including every
+    fsync, close, and rename failure path.
 
 ## Concurrency and cancellation
 
