@@ -4,17 +4,18 @@
 > **Purpose:** Separate the current Apple producer/runtime baseline from
 > mandatory V1 KMP iOS completion and optional native Swift distribution
 > **Status:** Apple targets, shared tests, XCFramework assembly, Swift compile
-> smoke, and production file-backed circuit and queue persistence exist; full
-> production KMP iOS synchronization support does not
+> smoke, and production file-backed circuit, queue, and retry-administration
+> persistence exist; full production KMP iOS synchronization support does not
 
 [Project overview](../../README.md) ·
 [Platform strategy](../architecture/platform-strategy.md) ·
 [Local build guide](../development/building.md)
 
 DL-036 established Apple compilation and packaging mechanics. Later DL-040 work
-added production Apple circuit-breaker and durable queue persistence, but Apple
-connectivity, background scheduling, lifecycle restoration, administration
-persistence, and complete executable reference flows remain incomplete.
+added production Apple circuit-breaker, durable queue, and retry-administration
+state persistence, but Apple connectivity, background scheduling, lifecycle
+restoration, queue-specific administration execution, and complete executable
+reference flows remain incomplete.
 
 Native Android, KMP Android, and KMP iOS are mandatory V1 consumer paths.
 Native Swift is optional and must be qualified separately if distributed. The
@@ -31,6 +32,7 @@ about the current Apple baseline. See
 | [Apple testing](apple-testing.md) | Current simulator coverage and missing platform qualification |
 | [Apple circuit store](circuit-state-store.md) | File-backed circuit CAS, integrity, cancellation, and remaining durability gaps |
 | [Apple durable queue](queue-state-store.md) | Queue entries, leases, retry budgets, workflow deadlines, recovery, and integrity |
+| [Apple retry-administration store](retry-administration-state-store.md) | Authorized command CAS, immutable audit state, restart, and integrity |
 | [XCFramework integration](xcframework-integration.md) | Assembly and compile-only Xcode integration |
 | [Swift interoperability](swift-interop.md) | Current Objective-C/Swift bridge and known API defects |
 | [Swift smoke fixture](../../apple-smoke/README.md) | Reproduce the selected-symbol compile check |
@@ -43,13 +45,16 @@ flowchart LR
         sharedCode["Shared KMP modules"]
         circuitStore["Apple circuit-state store"]
         queueStore["Apple durable queue"]
+        retryAdminStore["Apple retry-administration store"]
         appleUmbrella["Apple umbrella"]
         currentFramework["XCFramework baseline"]
         sharedCode --> circuitStore
         sharedCode --> queueStore
+        sharedCode --> retryAdminStore
         sharedCode --> appleUmbrella --> currentFramework
         circuitStore --> appleUmbrella
         queueStore --> appleUmbrella
+        retryAdminStore --> appleUmbrella
     end
 
     subgraph requiredPath["Mandatory KMP iOS"]
@@ -84,6 +89,9 @@ they do not use the XCFramework as their KMP dependency mechanism.
 - Production `AppleFileQueueProvider` with atomic batch acquisition, guarded
   transitions, retry-budget and workflow-deadline persistence, expired-lease
   recovery, crash-durable replacement, and restart-through-new-instance evidence.
+- Production `AppleFileRetryAdministrationStateStore` with exact command CAS,
+  immutable request protection, durable authorization/terminal state, bounded
+  corruption handling, and restart-through-new-instance evidence.
 - A static `DataLoom` XCFramework assembled by `dataloom-apple`.
 - A Swift fixture that compiles selected currently exported symbols.
 - `dataloom-testing` excluded from the XCFramework.
@@ -92,8 +100,9 @@ they do not use the XCFramework as their KMP dependency mechanism.
 
 - Apple connectivity and background-scheduling providers.
 - Apple runtime/lifecycle ownership and executable process-relaunch restoration.
-- Conflict, outbox, asset-session, audit, and administration persistence
-  beyond the circuit and queue stores.
+- Queue-specific retry-administration execution and atomic idempotency receipts.
+- Conflict, outbox, asset-session, broader audit, and governance persistence
+  beyond the circuit, queue, and retry-administration stores.
 - Keychain/data-protection integration and secure key references.
 - Bounded general file and asset handling, cleanup, integrity, and resume.
 - Published KMP iOS variants, a complete Apple integration module, and an
@@ -117,9 +126,9 @@ Swift distribution:
 
 | Consumer or target | Current evidence | V1 meaning |
 |---|---|---|
-| `iosArm64` | Producer compilation, Apple circuit/queue consumer compilation, and XCFramework device slice | Device runtime/reference-flow qualification missing |
-| `iosSimulatorArm64` | Shared tests, Apple circuit and queue durability/transition tests, and simulator slice | Complete adapters and executable-consumer flows missing |
-| `iosX64` | Producer and Apple circuit/queue consumer compilation plus merged simulator slice | Runtime/reference-flow qualification missing |
+| `iosArm64` | Producer compilation, Apple circuit/queue/retry-admin consumer compilation, and XCFramework device slice | Device runtime/reference-flow qualification missing |
+| `iosSimulatorArm64` | Shared tests, Apple circuit, queue, and retry-admin durability/transition tests, and simulator slice | Complete adapters and executable-consumer flows missing |
+| `iosX64` | Producer and Apple circuit/queue/retry-admin consumer compilation plus merged simulator slice | Runtime/reference-flow qualification missing |
 | KMP iOS consumer | Library-level external consumer probes only | Executable mandatory V1 gate remains |
 | KMP Android consumer | No complete explicit Android KMP target/fixture | Mandatory V1 gate |
 | Native Swift consumer | Selected-symbol compile smoke | Optional distribution, not production support |
