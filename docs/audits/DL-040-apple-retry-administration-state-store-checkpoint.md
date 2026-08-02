@@ -59,6 +59,10 @@ The iOS Simulator test suite covers:
 
 The external consumer probe constructs the store through public runtime API for `iosArm64`, `iosSimulatorArm64`, and `iosX64`.
 
+The one-time same-repository Apple Retry Administration Store Evidence lane completed successfully on source head `5e5aa035538673db74324ab55c1d86671cc36d2d`. It ran runtime JVM and iOS Simulator tests, compiled the external JVM and all Apple consumers, generated and checked exact runtime and Apple Kotlin/Native ABI, validated runtime public boundaries, assembled the release XCFramework, committed the generated declaration, and removed itself.
+
+Evidence head `f80fee6fc64330670af3f086f5a3a0d03a1c11e4` contains the reviewed production, test, documentation, external-consumer, and exact ABI files only. Permanent Pull Request, Android, and Apple/Swift workflows are the final merge gate on one trusted head.
+
 ## Remaining DL-040 work
 
 - queue-provider-specific retry-administration execution;
