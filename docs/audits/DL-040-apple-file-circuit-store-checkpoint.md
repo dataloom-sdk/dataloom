@@ -138,6 +138,14 @@ POSIX mode conversions, corrected the temporary descriptor lifecycle so an
 error path cannot close the same descriptor twice, committed the exact runtime
 ABI declaration, and removed itself.
 
+A follow-up durability review identified that file `fsync` plus `rename` alone
+did not prove crash-durable persistence of the renamed directory entry. A second
+one-time macOS lane completed on source head
+`e90e1e0fe0c7a7634d5e9c6da5f798757ed5bc43`, added parent-directory `fsync`
+after a successful rename, reran the iOS Simulator store tests, compiled all
+three external Apple targets, checked the unchanged runtime ABI, and removed
+itself.
+
 The permanent Pull Request, Android, and Apple/Swift workflows remain the final
 merge gate on the trusted review head.
 
