@@ -1,5 +1,6 @@
 package io.dataloom.runtime.queue
 
+import io.dataloom.api.error.Recoverability
 import io.dataloom.api.queue.QueueEntry
 import io.dataloom.api.retry.AuthorizedRetryAdministrationCommand
 import io.dataloom.api.time.DataLoomInstant
@@ -20,8 +21,13 @@ internal data class AppleRetryAdministrationReceipt(
     val appliedAt: DataLoomInstant,
 ) {
     init {
-        require(command.request.commandId.value.isNotBlank()) {
-            "Apple retry-administration receipt command id must not be blank."
+        require(command.effectiveRecoverability == Recoverability.RECOVERABLE) {
+            "Apple retry-administration receipt must be effectively recoverable."
+        }
+        require(
+            appliedAt.epochMilliseconds >= command.request.requestedAt.epochMilliseconds,
+        ) {
+            "Apple retry-administration receipt must not predate its command request."
         }
     }
 
