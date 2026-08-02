@@ -97,21 +97,41 @@ internal abstract class RetryAdministrationExecutionDao {
     ): RetryAdministrationExecutionEntityResult {
         val durableEntity = loadCommand(command.request.commandId.value)
             ?: return RetryAdministrationExecutionEntityResult.Rejected(COMMAND_MISSING)
-        val durableRecord = try {
-            durableEntity.toRecord()
-        } catch (invalid: Exception) {
-            throw RetryAdministrationExecutionIntegrityException(invalid)
-        }
-
-        if (durableRecord.state.request != command.request) {
+        if (!durableEntity.hasSameImmutableCommand(command)) {
             return RetryAdministrationExecutionEntityResult.Rejected(COMMAND_CONFLICT)
         }
 
-        val durableAuthorizationId = durableRecord.state.authorizationId
-        val durableEffectiveRecoverability = durableRecord.state.effectiveRecoverability
-        if (durableRecord.state.status == RetryAdministrationCommandStatus.SUCCEEDED) {
+        val status = try {
+            RetryAdministrationCommandStatus.valueOf(durableEntity.status)
+        } catch (invalid: IllegalArgumentException) {
+            throw RetryAdministrationExecutionIntegrityException(invalid)
+        }
+        val durableAuthorizationId = durableEntity.authorizationId
+        val durableEffectiveRecoverability = try {
+            durableEntity.effectiveRecoverability?.let(Recoverability::valueOf)
+        } catch (invalid: IllegalArgumentException) {
+            throw RetryAdministrationExecutionIntegrityException(invalid)
+        }
+        val executionFailureColumns = listOf(
+            durableEntity.executionErrorCode,
+            durableEntity.executionErrorCategory,
+            durableEntity.executionErrorSeverity,
+            durableEntity.executionErrorRecoverability,
+        )
+        if (
+            (status == RetryAdministrationCommandStatus.AUTHORIZED ||
+                status == RetryAdministrationCommandStatus.SUCCEEDED) &&
+            (durableAuthorizationId == null ||
+                durableEffectiveRecoverability == null ||
+                durableEntity.rejectionReasonCode != null ||
+                executionFailureColumns.any { it != null })
+        ) {
+            throw RetryAdministrationExecutionIntegrityException()
+        }
+
+        if (status == RetryAdministrationCommandStatus.SUCCEEDED) {
             return if (
-                durableAuthorizationId == command.authorizationId &&
+                durableAuthorizationId == command.authorizationId.value &&
                 durableEffectiveRecoverability == command.effectiveRecoverability
             ) {
                 RetryAdministrationExecutionEntityResult.Applied
@@ -119,11 +139,11 @@ internal abstract class RetryAdministrationExecutionDao {
                 RetryAdministrationExecutionEntityResult.Rejected(AUTHORIZATION_MISMATCH)
             }
         }
-        if (durableRecord.state.status != RetryAdministrationCommandStatus.AUTHORIZED) {
+        if (status != RetryAdministrationCommandStatus.AUTHORIZED) {
             return RetryAdministrationExecutionEntityResult.Rejected(COMMAND_NOT_AUTHORIZED)
         }
         if (
-            durableAuthorizationId != command.authorizationId ||
+            durableAuthorizationId != command.authorizationId.value ||
             durableEffectiveRecoverability != command.effectiveRecoverability
         ) {
             return RetryAdministrationExecutionEntityResult.Rejected(AUTHORIZATION_MISMATCH)
@@ -135,12 +155,12 @@ internal abstract class RetryAdministrationExecutionDao {
             return RetryAdministrationExecutionEntityResult.Rejected(RECLASSIFICATION_REQUIRED)
         }
         if (
-            observedAtMs < durableRecord.state.updatedAt.epochMilliseconds ||
+            observedAtMs < durableEntity.updatedAtMs ||
             observedAtMs < command.request.requestedAt.epochMilliseconds
         ) {
             return RetryAdministrationExecutionEntityResult.ClockRegression
         }
-        if (durableRecord.version == Long.MAX_VALUE) {
+        if (durableEntity.recordVersion == Long.MAX_VALUE) {
             throw RetryAdministrationExecutionVersionExhaustedException()
         }
 
@@ -188,8 +208,8 @@ internal abstract class RetryAdministrationExecutionDao {
 
         val commandAffected = markCommandSucceeded(
             commandId = durableEntity.commandId,
-            expectedVersion = durableRecord.version,
-            nextVersion = durableRecord.version + 1L,
+            expectedVersion = durableEntity.recordVersion,
+            nextVersion = durableEntity.recordVersion + 1L,
             authorizationId = command.authorizationId.value,
             effectiveRecoverability = command.effectiveRecoverability.name,
             updatedAtMs = observedAtMs,
@@ -199,6 +219,23 @@ internal abstract class RetryAdministrationExecutionDao {
         }
         return RetryAdministrationExecutionEntityResult.Applied
     }
+}
+
+private fun RetryAdministrationStateEntity.hasSameImmutableCommand(
+    command: AuthorizedRetryAdministrationCommand,
+): Boolean {
+    val request = command.request
+    val failure = request.originalFailure
+    return commandId == request.commandId.value &&
+        queueEntryId == request.queueEntryId.value &&
+        principalId == request.principalId.value &&
+        requestedAtMs == request.requestedAt.epochMilliseconds &&
+        action == request.action.name &&
+        reason == request.reason.value &&
+        originalErrorCode == failure.code.value &&
+        originalErrorCategory == failure.category.name &&
+        originalErrorSeverity == failure.severity.name &&
+        originalErrorRecoverability == failure.recoverability.name
 }
 
 private fun AuthorizedRetryAdministrationCommand.isPolicySafe(): Boolean = when (request.action) {
