@@ -11,6 +11,7 @@ import io.dataloom.api.retry.RetryAdministrationAction
 import io.dataloom.api.retry.RetryAdministrationExecutionResult
 import io.dataloom.api.retry.RetryAdministrationExecutor
 import io.dataloom.api.time.DataLoomClock
+import io.dataloom.api.time.DataLoomInstant
 import io.dataloom.runtime.queue.APPLE_QUEUE_LOCK_RETRY_DELAY_MILLISECONDS
 import io.dataloom.runtime.queue.APPLE_QUEUE_MAX_RETRY_ADMINISTRATION_RECEIPT_COUNT
 import io.dataloom.runtime.queue.AppleFileQueueProvider
@@ -77,118 +78,112 @@ public class AppleFileRetryAdministrationExecutor(
     ): RetryAdministrationExecutionResult {
         val observedAt = clock.now()
         return appleRetryAdministrationProtect {
-            appleRetryAdministrationWithExclusiveLock<RetryAdministrationExecutionResult> {
-                val snapshot = appleRetryAdministrationReadSnapshot()
-                val commandId = command.request.commandId.value
-                val existingReceipt = snapshot.retryAdministrationReceipts[commandId]
-                if (existingReceipt != null) {
-                    return@appleRetryAdministrationWithExclusiveLock if (
-                        existingReceipt.matches(command)
-                    ) {
-                        RetryAdministrationExecutionResult.Applied
-                    } else {
-                        RetryAdministrationExecutionResult.Rejected(
-                            APPLE_RETRY_ADMIN_COMMAND_CONFLICT,
-                        )
-                    }
-                }
-
-                if (snapshot.retryAdministrationReceipts.size >=
-                    APPLE_QUEUE_MAX_RETRY_ADMINISTRATION_RECEIPT_COUNT
-                ) {
-                    throw AppleQueueReceiptLimitException()
-                }
-                if (command.effectiveRecoverability != Recoverability.RECOVERABLE) {
-                    return@appleRetryAdministrationWithExclusiveLock
-                        RetryAdministrationExecutionResult.Rejected(
-                            APPLE_RETRY_ADMIN_EFFECTIVE_RECOVERABILITY_INVALID,
-                        )
-                }
-                if (!command.isAppleRetryAdministrationPolicySafe()) {
-                    return@appleRetryAdministrationWithExclusiveLock
-                        RetryAdministrationExecutionResult.Rejected(
-                            APPLE_RETRY_ADMIN_RECLASSIFICATION_REQUIRED,
-                        )
-                }
-                if (observedAt.epochMilliseconds <
-                    command.request.requestedAt.epochMilliseconds
-                ) {
-                    return@appleRetryAdministrationWithExclusiveLock
-                        RetryAdministrationExecutionResult.Failed(
-                            AppleRetryAdministrationExecutorError.clockRegression(),
-                        )
-                }
-
-                val entry = snapshot.entries[command.request.queueEntryId.value]
-                    ?: return@appleRetryAdministrationWithExclusiveLock
-                        RetryAdministrationExecutionResult.Rejected(
-                            APPLE_RETRY_ADMIN_TARGET_MISSING,
-                        )
-                if (entry.state != QueueEntryState.FAILED &&
-                    entry.state != QueueEntryState.DEAD_LETTER
-                ) {
-                    return@appleRetryAdministrationWithExclusiveLock
-                        RetryAdministrationExecutionResult.Rejected(
-                            APPLE_RETRY_ADMIN_TARGET_NOT_TERMINAL_FAILURE,
-                        )
-                }
-                val durableFailure = entry.lastError
-                    ?: return@appleRetryAdministrationWithExclusiveLock
-                        RetryAdministrationExecutionResult.Rejected(
-                            APPLE_RETRY_ADMIN_TARGET_FAILURE_MISSING,
-                        )
-                val originalFailure = command.request.originalFailure
-                if (durableFailure.code != originalFailure.code ||
-                    durableFailure.category != originalFailure.category ||
-                    durableFailure.severity != originalFailure.severity ||
-                    durableFailure.recoverability != originalFailure.recoverability
-                ) {
-                    return@appleRetryAdministrationWithExclusiveLock
-                        RetryAdministrationExecutionResult.Rejected(
-                            APPLE_RETRY_ADMIN_TARGET_FAILURE_MISMATCH,
-                        )
-                }
-                if (observedAt.epochMilliseconds < entry.enqueuedAt.epochMilliseconds ||
-                    observedAt.epochMilliseconds < entry.availableAt.epochMilliseconds ||
-                    entry.workflowTimeoutState?.let { timeout ->
-                        observedAt.epochMilliseconds < timeout.startedAt.epochMilliseconds
-                    } == true
-                ) {
-                    return@appleRetryAdministrationWithExclusiveLock
-                        RetryAdministrationExecutionResult.Failed(
-                            AppleRetryAdministrationExecutorError.clockRegression(),
-                        )
-                }
-                if (entry.workflowTimeoutState?.let { timeout ->
-                        observedAt.epochMilliseconds >= timeout.deadline.epochMilliseconds
-                    } == true
-                ) {
-                    return@appleRetryAdministrationWithExclusiveLock
-                        RetryAdministrationExecutionResult.Rejected(
-                            APPLE_RETRY_ADMIN_TARGET_WORKFLOW_DEADLINE_EXPIRED,
-                        )
-                }
-
-                snapshot.entries[entry.id.value] = entry.copy(
-                    state = if (entry.retryAttempt == null) {
-                        QueueEntryState.PENDING
-                    } else {
-                        QueueEntryState.RETRY_WAITING
-                    },
-                    availableAt = observedAt,
-                    lease = null,
-                    lastError = null,
-                )
-                snapshot.retryAdministrationReceipts[commandId] =
-                    AppleRetryAdministrationReceipt(
-                        command = command,
-                        appliedAt = observedAt,
-                    )
-                currentCoroutineContext().ensureActive()
-                appleRetryAdministrationWriteSnapshot(snapshot)
-                RetryAdministrationExecutionResult.Applied
+            appleRetryAdministrationWithExclusiveLock {
+                appleRetryAdministrationExecuteLocked(command, observedAt)
             }
         }
+    }
+
+    private suspend fun appleRetryAdministrationExecuteLocked(
+        command: AuthorizedRetryAdministrationCommand,
+        observedAt: DataLoomInstant,
+    ): RetryAdministrationExecutionResult {
+        val snapshot = appleRetryAdministrationReadSnapshot()
+        val commandId = command.request.commandId.value
+        val existingReceipt = snapshot.retryAdministrationReceipts[commandId]
+        if (existingReceipt != null) {
+            return if (existingReceipt.matches(command)) {
+                RetryAdministrationExecutionResult.Applied
+            } else {
+                RetryAdministrationExecutionResult.Rejected(
+                    APPLE_RETRY_ADMIN_COMMAND_CONFLICT,
+                )
+            }
+        }
+
+        if (snapshot.retryAdministrationReceipts.size >=
+            APPLE_QUEUE_MAX_RETRY_ADMINISTRATION_RECEIPT_COUNT
+        ) {
+            throw AppleQueueReceiptLimitException()
+        }
+        if (command.effectiveRecoverability != Recoverability.RECOVERABLE) {
+            return RetryAdministrationExecutionResult.Rejected(
+                APPLE_RETRY_ADMIN_EFFECTIVE_RECOVERABILITY_INVALID,
+            )
+        }
+        if (!command.isAppleRetryAdministrationPolicySafe()) {
+            return RetryAdministrationExecutionResult.Rejected(
+                APPLE_RETRY_ADMIN_RECLASSIFICATION_REQUIRED,
+            )
+        }
+        if (observedAt.epochMilliseconds < command.request.requestedAt.epochMilliseconds) {
+            return RetryAdministrationExecutionResult.Failed(
+                AppleRetryAdministrationExecutorError.clockRegression(),
+            )
+        }
+
+        val entry = snapshot.entries[command.request.queueEntryId.value]
+            ?: return RetryAdministrationExecutionResult.Rejected(
+                APPLE_RETRY_ADMIN_TARGET_MISSING,
+            )
+        if (entry.state != QueueEntryState.FAILED &&
+            entry.state != QueueEntryState.DEAD_LETTER
+        ) {
+            return RetryAdministrationExecutionResult.Rejected(
+                APPLE_RETRY_ADMIN_TARGET_NOT_TERMINAL_FAILURE,
+            )
+        }
+        val durableFailure = entry.lastError
+            ?: return RetryAdministrationExecutionResult.Rejected(
+                APPLE_RETRY_ADMIN_TARGET_FAILURE_MISSING,
+            )
+        val originalFailure = command.request.originalFailure
+        if (durableFailure.code != originalFailure.code ||
+            durableFailure.category != originalFailure.category ||
+            durableFailure.severity != originalFailure.severity ||
+            durableFailure.recoverability != originalFailure.recoverability
+        ) {
+            return RetryAdministrationExecutionResult.Rejected(
+                APPLE_RETRY_ADMIN_TARGET_FAILURE_MISMATCH,
+            )
+        }
+        if (observedAt.epochMilliseconds < entry.enqueuedAt.epochMilliseconds ||
+            observedAt.epochMilliseconds < entry.availableAt.epochMilliseconds ||
+            entry.workflowTimeoutState?.let { timeout ->
+                observedAt.epochMilliseconds < timeout.startedAt.epochMilliseconds
+            } == true
+        ) {
+            return RetryAdministrationExecutionResult.Failed(
+                AppleRetryAdministrationExecutorError.clockRegression(),
+            )
+        }
+        if (entry.workflowTimeoutState?.let { timeout ->
+                observedAt.epochMilliseconds >= timeout.deadline.epochMilliseconds
+            } == true
+        ) {
+            return RetryAdministrationExecutionResult.Rejected(
+                APPLE_RETRY_ADMIN_TARGET_WORKFLOW_DEADLINE_EXPIRED,
+            )
+        }
+
+        snapshot.entries[entry.id.value] = entry.copy(
+            state = if (entry.retryAttempt == null) {
+                QueueEntryState.PENDING
+            } else {
+                QueueEntryState.RETRY_WAITING
+            },
+            availableAt = observedAt,
+            lease = null,
+            lastError = null,
+        )
+        snapshot.retryAdministrationReceipts[commandId] =
+            AppleRetryAdministrationReceipt(
+                command = command,
+                appliedAt = observedAt,
+            )
+        currentCoroutineContext().ensureActive()
+        appleRetryAdministrationWriteSnapshot(snapshot)
+        return RetryAdministrationExecutionResult.Applied
     }
 
     private suspend fun <T> appleRetryAdministrationWithExclusiveLock(
