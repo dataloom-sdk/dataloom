@@ -1528,6 +1528,127 @@ public final class io/dataloom/runtime/retry/RequestTimeoutEnforcingTransportPro
 	public fun pushChanges (Lio/dataloom/api/transport/PushChangesRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
+public final class io/dataloom/runtime/retry/RetryAdministrationCoordinator {
+	public fun <init> (Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/retry/RetryAdministrationAuthorizer;Lio/dataloom/api/retry/RetryAdministrationStateStore;Lio/dataloom/api/retry/RetryAdministrationExecutor;I)V
+	public synthetic fun <init> (Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/retry/RetryAdministrationAuthorizer;Lio/dataloom/api/retry/RetryAdministrationStateStore;Lio/dataloom/api/retry/RetryAdministrationExecutor;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun execute (Lio/dataloom/api/retry/RetryAdministrationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/dataloom/runtime/retry/RetryAdministrationResult {
+}
+
+public final class io/dataloom/runtime/retry/RetryAdministrationResult$AuthorizationDenied : io/dataloom/runtime/retry/RetryAdministrationResult {
+	public fun <init> (Lio/dataloom/api/retry/RetryAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/retry/RetryAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/retry/RetryAdministrationStateRecord;)Lio/dataloom/runtime/retry/RetryAdministrationResult$AuthorizationDenied;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/RetryAdministrationResult$AuthorizationDenied;Lio/dataloom/api/retry/RetryAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/runtime/retry/RetryAdministrationResult$AuthorizationDenied;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/retry/RetryAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/RetryAdministrationResult$ClockRegression : io/dataloom/runtime/retry/RetryAdministrationResult {
+	public fun <init> (Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;)V
+	public final fun component1 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy (Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/runtime/retry/RetryAdministrationResult$ClockRegression;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/RetryAdministrationResult$ClockRegression;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/runtime/retry/RetryAdministrationResult$ClockRegression;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getObservedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getPersistedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/RetryAdministrationResult$CommandConflict : io/dataloom/runtime/retry/RetryAdministrationResult {
+	public fun <init> (Lio/dataloom/api/retry/RetryAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/retry/RetryAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/retry/RetryAdministrationStateRecord;)Lio/dataloom/runtime/retry/RetryAdministrationResult$CommandConflict;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/RetryAdministrationResult$CommandConflict;Lio/dataloom/api/retry/RetryAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/runtime/retry/RetryAdministrationResult$CommandConflict;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExisting ()Lio/dataloom/api/retry/RetryAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/RetryAdministrationResult$ContentionLimitReached : io/dataloom/runtime/retry/RetryAdministrationResult {
+	public static final field INSTANCE Lio/dataloom/runtime/retry/RetryAdministrationResult$ContentionLimitReached;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/RetryAdministrationResult$ExecutionFailed : io/dataloom/runtime/retry/RetryAdministrationResult {
+	public fun <init> (Lio/dataloom/api/retry/RetryAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/retry/RetryAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/retry/RetryAdministrationStateRecord;)Lio/dataloom/runtime/retry/RetryAdministrationResult$ExecutionFailed;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/RetryAdministrationResult$ExecutionFailed;Lio/dataloom/api/retry/RetryAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/runtime/retry/RetryAdministrationResult$ExecutionFailed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/retry/RetryAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/RetryAdministrationResult$ExecutionRecordingUnconfirmed : io/dataloom/runtime/retry/RetryAdministrationResult {
+	public fun <init> (Lio/dataloom/api/retry/AuthorizedRetryAdministrationCommand;Lio/dataloom/api/retry/RetryAdministrationExecutionResult;Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/retry/AuthorizedRetryAdministrationCommand;
+	public final fun component2 ()Lio/dataloom/api/retry/RetryAdministrationExecutionResult;
+	public final fun component3 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/retry/AuthorizedRetryAdministrationCommand;Lio/dataloom/api/retry/RetryAdministrationExecutionResult;Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/runtime/retry/RetryAdministrationResult$ExecutionRecordingUnconfirmed;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/RetryAdministrationResult$ExecutionRecordingUnconfirmed;Lio/dataloom/api/retry/AuthorizedRetryAdministrationCommand;Lio/dataloom/api/retry/RetryAdministrationExecutionResult;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/runtime/retry/RetryAdministrationResult$ExecutionRecordingUnconfirmed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCommand ()Lio/dataloom/api/retry/AuthorizedRetryAdministrationCommand;
+	public final fun getExecutionResult ()Lio/dataloom/api/retry/RetryAdministrationExecutionResult;
+	public final fun getPersistenceError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/RetryAdministrationResult$ExecutionRejected : io/dataloom/runtime/retry/RetryAdministrationResult {
+	public fun <init> (Lio/dataloom/api/retry/RetryAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/retry/RetryAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/retry/RetryAdministrationStateRecord;)Lio/dataloom/runtime/retry/RetryAdministrationResult$ExecutionRejected;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/RetryAdministrationResult$ExecutionRejected;Lio/dataloom/api/retry/RetryAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/runtime/retry/RetryAdministrationResult$ExecutionRejected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/retry/RetryAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/RetryAdministrationResult$PersistenceFailure : io/dataloom/runtime/retry/RetryAdministrationResult {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/runtime/retry/RetryAdministrationResult$PersistenceFailure;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/RetryAdministrationResult$PersistenceFailure;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/runtime/retry/RetryAdministrationResult$PersistenceFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/RetryAdministrationResult$PolicyRejected : io/dataloom/runtime/retry/RetryAdministrationResult {
+	public fun <init> (Lio/dataloom/api/retry/RetryAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/retry/RetryAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/retry/RetryAdministrationStateRecord;)Lio/dataloom/runtime/retry/RetryAdministrationResult$PolicyRejected;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/RetryAdministrationResult$PolicyRejected;Lio/dataloom/api/retry/RetryAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/runtime/retry/RetryAdministrationResult$PolicyRejected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/retry/RetryAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/RetryAdministrationResult$Succeeded : io/dataloom/runtime/retry/RetryAdministrationResult {
+	public fun <init> (Lio/dataloom/api/retry/RetryAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/retry/RetryAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/retry/RetryAdministrationStateRecord;)Lio/dataloom/runtime/retry/RetryAdministrationResult$Succeeded;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/RetryAdministrationResult$Succeeded;Lio/dataloom/api/retry/RetryAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/runtime/retry/RetryAdministrationResult$Succeeded;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/retry/RetryAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public abstract interface class io/dataloom/runtime/retry/RetryBackoffStrategy {
 }
 

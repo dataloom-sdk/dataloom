@@ -48,19 +48,19 @@ public class RetryAdministrationCoordinator(
     ): RetryAdministrationResult {
         repeat(maximumStateUpdateAttempts) {
             val current = when (val loaded = load(request)) {
-                is LoadOutcome.Failure -> return RetryAdministrationResult.PersistenceFailure(
+                is RetryAdministrationLoadOutcome.Failure -> return RetryAdministrationResult.PersistenceFailure(
                     loaded.error,
                 )
-                LoadOutcome.Missing -> when (val admitted = admit(request)) {
-                    is AdmissionOutcome.Completed -> return admitted.result
-                    AdmissionOutcome.Conflict -> return@repeat
-                    is AdmissionOutcome.Failure -> return RetryAdministrationResult.PersistenceFailure(
+                RetryAdministrationLoadOutcome.Missing -> when (val admitted = admit(request)) {
+                    is RetryAdministrationAdmissionOutcome.Completed -> return admitted.result
+                    RetryAdministrationAdmissionOutcome.Conflict -> return@repeat
+                    is RetryAdministrationAdmissionOutcome.Failure -> return RetryAdministrationResult.PersistenceFailure(
                         admitted.error,
                     )
-                    is AdmissionOutcome.Authorized -> admitted.record
+                    is RetryAdministrationAdmissionOutcome.Authorized -> admitted.record
                 }
-                is LoadOutcome.Found -> loaded.record
-                is LoadOutcome.FoundConflict -> {
+                is RetryAdministrationLoadOutcome.Found -> loaded.record
+                is RetryAdministrationLoadOutcome.FoundConflict -> {
                     return RetryAdministrationResult.CommandConflict(loaded.record)
                 }
             }
@@ -89,11 +89,11 @@ public class RetryAdministrationCoordinator(
                         rejectionReasonCode = RECLASSIFICATION_REQUIRED,
                     ),
                 )) {
-                    UpdateOutcome.Conflict -> return@repeat
-                    is UpdateOutcome.Failure -> {
+                    RetryAdministrationUpdateOutcome.Conflict -> return@repeat
+                    is RetryAdministrationUpdateOutcome.Failure -> {
                         return RetryAdministrationResult.PersistenceFailure(update.error)
                     }
-                    is UpdateOutcome.Updated -> {
+                    is RetryAdministrationUpdateOutcome.Updated -> {
                         return RetryAdministrationResult.PolicyRejected(update.record)
                     }
                 }
@@ -112,15 +112,15 @@ public class RetryAdministrationCoordinator(
             )
 
             when (val update = update(current, finalState)) {
-                UpdateOutcome.Conflict -> return@repeat
-                is UpdateOutcome.Failure -> {
+                RetryAdministrationUpdateOutcome.Conflict -> return@repeat
+                is RetryAdministrationUpdateOutcome.Failure -> {
                     return RetryAdministrationResult.ExecutionRecordingUnconfirmed(
                         command = command,
                         executionResult = executionResult,
                         persistenceError = update.error,
                     )
                 }
-                is UpdateOutcome.Updated -> return terminalResult(update.record)
+                is RetryAdministrationUpdateOutcome.Updated -> return terminalResult(update.record)
                     ?: error("Retry administration execution must produce a terminal state.")
             }
         }
@@ -129,7 +129,7 @@ public class RetryAdministrationCoordinator(
 
     private suspend fun admit(
         request: RetryAdministrationRequest,
-    ): AdmissionOutcome {
+    ): RetryAdministrationAdmissionOutcome {
         val observedAt = clock.now()
         return when (val decision = authorizer.authorize(request)) {
             is RetryAdministrationAuthorizationDecision.Denied -> {
@@ -143,9 +143,9 @@ public class RetryAdministrationCoordinator(
                         rejectionReasonCode = decision.reasonCode,
                     ),
                 )) {
-                    UpdateOutcome.Conflict -> AdmissionOutcome.Conflict
-                    is UpdateOutcome.Failure -> AdmissionOutcome.Failure(update.error)
-                    is UpdateOutcome.Updated -> AdmissionOutcome.Completed(
+                    RetryAdministrationUpdateOutcome.Conflict -> RetryAdministrationAdmissionOutcome.Conflict
+                    is RetryAdministrationUpdateOutcome.Failure -> RetryAdministrationAdmissionOutcome.Failure(update.error)
+                    is RetryAdministrationUpdateOutcome.Updated -> RetryAdministrationAdmissionOutcome.Completed(
                         RetryAdministrationResult.AuthorizationDenied(update.record),
                     )
                 }
@@ -164,27 +164,27 @@ public class RetryAdministrationCoordinator(
                         updatedAt = observedAt,
                     ),
                 )) {
-                    UpdateOutcome.Conflict -> AdmissionOutcome.Conflict
-                    is UpdateOutcome.Failure -> AdmissionOutcome.Failure(update.error)
-                    is UpdateOutcome.Updated -> AdmissionOutcome.Authorized(update.record)
+                    RetryAdministrationUpdateOutcome.Conflict -> RetryAdministrationAdmissionOutcome.Conflict
+                    is RetryAdministrationUpdateOutcome.Failure -> RetryAdministrationAdmissionOutcome.Failure(update.error)
+                    is RetryAdministrationUpdateOutcome.Updated -> RetryAdministrationAdmissionOutcome.Authorized(update.record)
                 }
             }
         }
     }
 
-    private suspend fun load(request: RetryAdministrationRequest): LoadOutcome =
+    private suspend fun load(request: RetryAdministrationRequest): RetryAdministrationLoadOutcome =
         when (val result = stateStore.load(request.commandId)) {
-            is ProviderOperationResult.Failure -> LoadOutcome.Failure(result.error)
+            is ProviderOperationResult.Failure -> RetryAdministrationLoadOutcome.Failure(result.error)
             is ProviderOperationResult.Success -> when (val value = result.value) {
-                RetryAdministrationLoadResult.Missing -> LoadOutcome.Missing
+                RetryAdministrationLoadResult.Missing -> RetryAdministrationLoadOutcome.Missing
                 is RetryAdministrationLoadResult.Found -> {
                     check(value.record.state.request.commandId == request.commandId) {
                         "RetryAdministrationStateStore returned a record for another command id."
                     }
                     if (value.record.state.request != request) {
-                        LoadOutcome.FoundConflict(value.record)
+                        RetryAdministrationLoadOutcome.FoundConflict(value.record)
                     } else {
-                        LoadOutcome.Found(value.record)
+                        RetryAdministrationLoadOutcome.Found(value.record)
                     }
                 }
             }
@@ -192,7 +192,7 @@ public class RetryAdministrationCoordinator(
 
     private suspend fun create(
         state: RetryAdministrationCommandState,
-    ): UpdateOutcome = compareAndSet(
+    ): RetryAdministrationUpdateOutcome = compareAndSet(
         RetryAdministrationCompareAndSetRequest(
             commandId = state.request.commandId,
             expectedVersion = null,
@@ -203,7 +203,7 @@ public class RetryAdministrationCoordinator(
     private suspend fun update(
         current: RetryAdministrationStateRecord,
         nextState: RetryAdministrationCommandState,
-    ): UpdateOutcome = compareAndSet(
+    ): RetryAdministrationUpdateOutcome = compareAndSet(
         RetryAdministrationCompareAndSetRequest(
             commandId = current.state.request.commandId,
             expectedVersion = current.version,
@@ -213,11 +213,11 @@ public class RetryAdministrationCoordinator(
 
     private suspend fun compareAndSet(
         request: RetryAdministrationCompareAndSetRequest,
-    ): UpdateOutcome = when (val result = stateStore.compareAndSet(request)) {
-        is ProviderOperationResult.Failure -> UpdateOutcome.Failure(result.error)
+    ): RetryAdministrationUpdateOutcome = when (val result = stateStore.compareAndSet(request)) {
+        is ProviderOperationResult.Failure -> RetryAdministrationUpdateOutcome.Failure(result.error)
         is ProviderOperationResult.Success -> when (val value = result.value) {
-            is RetryAdministrationCompareAndSetResult.Conflict -> UpdateOutcome.Conflict
-            is RetryAdministrationCompareAndSetResult.Updated -> UpdateOutcome.Updated(value.record)
+            is RetryAdministrationCompareAndSetResult.Conflict -> RetryAdministrationUpdateOutcome.Conflict
+            is RetryAdministrationCompareAndSetResult.Updated -> RetryAdministrationUpdateOutcome.Updated(value.record)
         }
     }
 
@@ -317,24 +317,24 @@ public sealed interface RetryAdministrationResult {
     public data object ContentionLimitReached : RetryAdministrationResult
 }
 
-private sealed interface LoadOutcome {
-    data object Missing : LoadOutcome
-    data class Found(val record: RetryAdministrationStateRecord) : LoadOutcome
-    data class FoundConflict(val record: RetryAdministrationStateRecord) : LoadOutcome
-    data class Failure(val error: DataLoomError) : LoadOutcome
+private sealed interface RetryAdministrationLoadOutcome {
+    data object Missing : RetryAdministrationLoadOutcome
+    data class Found(val record: RetryAdministrationStateRecord) : RetryAdministrationLoadOutcome
+    data class FoundConflict(val record: RetryAdministrationStateRecord) : RetryAdministrationLoadOutcome
+    data class Failure(val error: DataLoomError) : RetryAdministrationLoadOutcome
 }
 
-private sealed interface AdmissionOutcome {
-    data object Conflict : AdmissionOutcome
-    data class Authorized(val record: RetryAdministrationStateRecord) : AdmissionOutcome
-    data class Completed(val result: RetryAdministrationResult) : AdmissionOutcome
-    data class Failure(val error: DataLoomError) : AdmissionOutcome
+private sealed interface RetryAdministrationAdmissionOutcome {
+    data object Conflict : RetryAdministrationAdmissionOutcome
+    data class Authorized(val record: RetryAdministrationStateRecord) : RetryAdministrationAdmissionOutcome
+    data class Completed(val result: RetryAdministrationResult) : RetryAdministrationAdmissionOutcome
+    data class Failure(val error: DataLoomError) : RetryAdministrationAdmissionOutcome
 }
 
-private sealed interface UpdateOutcome {
-    data object Conflict : UpdateOutcome
-    data class Updated(val record: RetryAdministrationStateRecord) : UpdateOutcome
-    data class Failure(val error: DataLoomError) : UpdateOutcome
+private sealed interface RetryAdministrationUpdateOutcome {
+    data object Conflict : RetryAdministrationUpdateOutcome
+    data class Updated(val record: RetryAdministrationStateRecord) : RetryAdministrationUpdateOutcome
+    data class Failure(val error: DataLoomError) : RetryAdministrationUpdateOutcome
 }
 
 private fun RetryFailureSnapshot.isAutomaticRetrySafe(): Boolean =

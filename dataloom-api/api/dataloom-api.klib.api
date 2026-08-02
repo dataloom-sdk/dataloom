@@ -176,6 +176,32 @@ final enum class io.dataloom.api.queue/QueueFailureDisposition : kotlin/Enum<io.
     final fun values(): kotlin/Array<io.dataloom.api.queue/QueueFailureDisposition> // io.dataloom.api.queue/QueueFailureDisposition.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.api.retry/RetryAdministrationAction : kotlin/Enum<io.dataloom.api.retry/RetryAdministrationAction> { // io.dataloom.api.retry/RetryAdministrationAction|null[0]
+    enum entry RECLASSIFY_AND_REQUEUE // io.dataloom.api.retry/RetryAdministrationAction.RECLASSIFY_AND_REQUEUE|null[0]
+    enum entry REQUEUE // io.dataloom.api.retry/RetryAdministrationAction.REQUEUE|null[0]
+
+    final val entries // io.dataloom.api.retry/RetryAdministrationAction.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.retry/RetryAdministrationAction> // io.dataloom.api.retry/RetryAdministrationAction.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.retry/RetryAdministrationAction // io.dataloom.api.retry/RetryAdministrationAction.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.retry/RetryAdministrationAction> // io.dataloom.api.retry/RetryAdministrationAction.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.api.retry/RetryAdministrationCommandStatus : kotlin/Enum<io.dataloom.api.retry/RetryAdministrationCommandStatus> { // io.dataloom.api.retry/RetryAdministrationCommandStatus|null[0]
+    enum entry AUTHORIZATION_DENIED // io.dataloom.api.retry/RetryAdministrationCommandStatus.AUTHORIZATION_DENIED|null[0]
+    enum entry AUTHORIZED // io.dataloom.api.retry/RetryAdministrationCommandStatus.AUTHORIZED|null[0]
+    enum entry EXECUTION_FAILED // io.dataloom.api.retry/RetryAdministrationCommandStatus.EXECUTION_FAILED|null[0]
+    enum entry EXECUTION_REJECTED // io.dataloom.api.retry/RetryAdministrationCommandStatus.EXECUTION_REJECTED|null[0]
+    enum entry POLICY_REJECTED // io.dataloom.api.retry/RetryAdministrationCommandStatus.POLICY_REJECTED|null[0]
+    enum entry SUCCEEDED // io.dataloom.api.retry/RetryAdministrationCommandStatus.SUCCEEDED|null[0]
+
+    final val entries // io.dataloom.api.retry/RetryAdministrationCommandStatus.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.retry/RetryAdministrationCommandStatus> // io.dataloom.api.retry/RetryAdministrationCommandStatus.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.retry/RetryAdministrationCommandStatus // io.dataloom.api.retry/RetryAdministrationCommandStatus.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.retry/RetryAdministrationCommandStatus> // io.dataloom.api.retry/RetryAdministrationCommandStatus.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.api.retry/RetryStopReason : kotlin/Enum<io.dataloom.api.retry/RetryStopReason> { // io.dataloom.api.retry/RetryStopReason|null[0]
     enum entry ATTEMPT_LIMIT_REACHED // io.dataloom.api.retry/RetryStopReason.ATTEMPT_LIMIT_REACHED|null[0]
     enum entry CLOCK_REGRESSION_DETECTED // io.dataloom.api.retry/RetryStopReason.CLOCK_REGRESSION_DETECTED|null[0]
@@ -570,6 +596,19 @@ abstract interface io.dataloom.api.queue/QueueProvider : io.dataloom.api.provide
     abstract suspend fun reschedule(io.dataloom.api.queue/QueueRescheduleRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.api.queue/QueueProvider.reschedule|reschedule(io.dataloom.api.queue.QueueRescheduleRequest){}[0]
 }
 
+abstract interface io.dataloom.api.retry/RetryAdministrationAuthorizer { // io.dataloom.api.retry/RetryAdministrationAuthorizer|null[0]
+    abstract suspend fun authorize(io.dataloom.api.retry/RetryAdministrationRequest): io.dataloom.api.retry/RetryAdministrationAuthorizationDecision // io.dataloom.api.retry/RetryAdministrationAuthorizer.authorize|authorize(io.dataloom.api.retry.RetryAdministrationRequest){}[0]
+}
+
+abstract interface io.dataloom.api.retry/RetryAdministrationExecutor { // io.dataloom.api.retry/RetryAdministrationExecutor|null[0]
+    abstract suspend fun execute(io.dataloom.api.retry/AuthorizedRetryAdministrationCommand): io.dataloom.api.retry/RetryAdministrationExecutionResult // io.dataloom.api.retry/RetryAdministrationExecutor.execute|execute(io.dataloom.api.retry.AuthorizedRetryAdministrationCommand){}[0]
+}
+
+abstract interface io.dataloom.api.retry/RetryAdministrationStateStore { // io.dataloom.api.retry/RetryAdministrationStateStore|null[0]
+    abstract suspend fun compareAndSet(io.dataloom.api.retry/RetryAdministrationCompareAndSetRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.retry/RetryAdministrationCompareAndSetResult> // io.dataloom.api.retry/RetryAdministrationStateStore.compareAndSet|compareAndSet(io.dataloom.api.retry.RetryAdministrationCompareAndSetRequest){}[0]
+    abstract suspend fun load(io.dataloom.api.retry/RetryAdministrationCommandId): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.retry/RetryAdministrationLoadResult> // io.dataloom.api.retry/RetryAdministrationStateStore.load|load(io.dataloom.api.retry.RetryAdministrationCommandId){}[0]
+}
+
 abstract interface io.dataloom.api.retry/RetryPolicy { // io.dataloom.api.retry/RetryPolicy|null[0]
     abstract val id // io.dataloom.api.retry/RetryPolicy.id|{}id[0]
         abstract fun <get-id>(): io.dataloom.api.identifier/RetryPolicyId // io.dataloom.api.retry/RetryPolicy.id.<get-id>|<get-id>(){}[0]
@@ -777,6 +816,117 @@ sealed interface io.dataloom.api.queue/QueueAcquireResult { // io.dataloom.api.q
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.queue/QueueAcquireResult.NoEntries.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.api.queue/QueueAcquireResult.NoEntries.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.api.queue/QueueAcquireResult.NoEntries.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.retry/RetryAdministrationAuthorizationDecision { // io.dataloom.api.retry/RetryAdministrationAuthorizationDecision|null[0]
+    final class Authorized : io.dataloom.api.retry/RetryAdministrationAuthorizationDecision { // io.dataloom.api.retry/RetryAdministrationAuthorizationDecision.Authorized|null[0]
+        constructor <init>(io.dataloom.api.retry/RetryAdministrationAuthorizationId) // io.dataloom.api.retry/RetryAdministrationAuthorizationDecision.Authorized.<init>|<init>(io.dataloom.api.retry.RetryAdministrationAuthorizationId){}[0]
+
+        final val authorizationId // io.dataloom.api.retry/RetryAdministrationAuthorizationDecision.Authorized.authorizationId|{}authorizationId[0]
+            final fun <get-authorizationId>(): io.dataloom.api.retry/RetryAdministrationAuthorizationId // io.dataloom.api.retry/RetryAdministrationAuthorizationDecision.Authorized.authorizationId.<get-authorizationId>|<get-authorizationId>(){}[0]
+
+        final fun component1(): io.dataloom.api.retry/RetryAdministrationAuthorizationId // io.dataloom.api.retry/RetryAdministrationAuthorizationDecision.Authorized.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.retry/RetryAdministrationAuthorizationId = ...): io.dataloom.api.retry/RetryAdministrationAuthorizationDecision.Authorized // io.dataloom.api.retry/RetryAdministrationAuthorizationDecision.Authorized.copy|copy(io.dataloom.api.retry.RetryAdministrationAuthorizationId){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.retry/RetryAdministrationAuthorizationDecision.Authorized.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.retry/RetryAdministrationAuthorizationDecision.Authorized.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.retry/RetryAdministrationAuthorizationDecision.Authorized.toString|toString(){}[0]
+    }
+
+    final class Denied : io.dataloom.api.retry/RetryAdministrationAuthorizationDecision { // io.dataloom.api.retry/RetryAdministrationAuthorizationDecision.Denied|null[0]
+        constructor <init>(kotlin/String) // io.dataloom.api.retry/RetryAdministrationAuthorizationDecision.Denied.<init>|<init>(kotlin.String){}[0]
+
+        final val reasonCode // io.dataloom.api.retry/RetryAdministrationAuthorizationDecision.Denied.reasonCode|{}reasonCode[0]
+            final fun <get-reasonCode>(): kotlin/String // io.dataloom.api.retry/RetryAdministrationAuthorizationDecision.Denied.reasonCode.<get-reasonCode>|<get-reasonCode>(){}[0]
+
+        final fun component1(): kotlin/String // io.dataloom.api.retry/RetryAdministrationAuthorizationDecision.Denied.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): io.dataloom.api.retry/RetryAdministrationAuthorizationDecision.Denied // io.dataloom.api.retry/RetryAdministrationAuthorizationDecision.Denied.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.retry/RetryAdministrationAuthorizationDecision.Denied.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.retry/RetryAdministrationAuthorizationDecision.Denied.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.retry/RetryAdministrationAuthorizationDecision.Denied.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.retry/RetryAdministrationCompareAndSetResult { // io.dataloom.api.retry/RetryAdministrationCompareAndSetResult|null[0]
+    final class Conflict : io.dataloom.api.retry/RetryAdministrationCompareAndSetResult { // io.dataloom.api.retry/RetryAdministrationCompareAndSetResult.Conflict|null[0]
+        constructor <init>(io.dataloom.api.retry/RetryAdministrationStateRecord?) // io.dataloom.api.retry/RetryAdministrationCompareAndSetResult.Conflict.<init>|<init>(io.dataloom.api.retry.RetryAdministrationStateRecord?){}[0]
+
+        final val current // io.dataloom.api.retry/RetryAdministrationCompareAndSetResult.Conflict.current|{}current[0]
+            final fun <get-current>(): io.dataloom.api.retry/RetryAdministrationStateRecord? // io.dataloom.api.retry/RetryAdministrationCompareAndSetResult.Conflict.current.<get-current>|<get-current>(){}[0]
+
+        final fun component1(): io.dataloom.api.retry/RetryAdministrationStateRecord? // io.dataloom.api.retry/RetryAdministrationCompareAndSetResult.Conflict.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.retry/RetryAdministrationStateRecord? = ...): io.dataloom.api.retry/RetryAdministrationCompareAndSetResult.Conflict // io.dataloom.api.retry/RetryAdministrationCompareAndSetResult.Conflict.copy|copy(io.dataloom.api.retry.RetryAdministrationStateRecord?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.retry/RetryAdministrationCompareAndSetResult.Conflict.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.retry/RetryAdministrationCompareAndSetResult.Conflict.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.retry/RetryAdministrationCompareAndSetResult.Conflict.toString|toString(){}[0]
+    }
+
+    final class Updated : io.dataloom.api.retry/RetryAdministrationCompareAndSetResult { // io.dataloom.api.retry/RetryAdministrationCompareAndSetResult.Updated|null[0]
+        constructor <init>(io.dataloom.api.retry/RetryAdministrationStateRecord) // io.dataloom.api.retry/RetryAdministrationCompareAndSetResult.Updated.<init>|<init>(io.dataloom.api.retry.RetryAdministrationStateRecord){}[0]
+
+        final val record // io.dataloom.api.retry/RetryAdministrationCompareAndSetResult.Updated.record|{}record[0]
+            final fun <get-record>(): io.dataloom.api.retry/RetryAdministrationStateRecord // io.dataloom.api.retry/RetryAdministrationCompareAndSetResult.Updated.record.<get-record>|<get-record>(){}[0]
+
+        final fun component1(): io.dataloom.api.retry/RetryAdministrationStateRecord // io.dataloom.api.retry/RetryAdministrationCompareAndSetResult.Updated.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.retry/RetryAdministrationStateRecord = ...): io.dataloom.api.retry/RetryAdministrationCompareAndSetResult.Updated // io.dataloom.api.retry/RetryAdministrationCompareAndSetResult.Updated.copy|copy(io.dataloom.api.retry.RetryAdministrationStateRecord){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.retry/RetryAdministrationCompareAndSetResult.Updated.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.retry/RetryAdministrationCompareAndSetResult.Updated.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.retry/RetryAdministrationCompareAndSetResult.Updated.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.retry/RetryAdministrationExecutionResult { // io.dataloom.api.retry/RetryAdministrationExecutionResult|null[0]
+    final class Failed : io.dataloom.api.retry/RetryAdministrationExecutionResult { // io.dataloom.api.retry/RetryAdministrationExecutionResult.Failed|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.api.retry/RetryAdministrationExecutionResult.Failed.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.api.retry/RetryAdministrationExecutionResult.Failed.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.api.retry/RetryAdministrationExecutionResult.Failed.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.api.retry/RetryAdministrationExecutionResult.Failed.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.api.retry/RetryAdministrationExecutionResult.Failed // io.dataloom.api.retry/RetryAdministrationExecutionResult.Failed.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.retry/RetryAdministrationExecutionResult.Failed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.retry/RetryAdministrationExecutionResult.Failed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.retry/RetryAdministrationExecutionResult.Failed.toString|toString(){}[0]
+    }
+
+    final class Rejected : io.dataloom.api.retry/RetryAdministrationExecutionResult { // io.dataloom.api.retry/RetryAdministrationExecutionResult.Rejected|null[0]
+        constructor <init>(kotlin/String) // io.dataloom.api.retry/RetryAdministrationExecutionResult.Rejected.<init>|<init>(kotlin.String){}[0]
+
+        final val reasonCode // io.dataloom.api.retry/RetryAdministrationExecutionResult.Rejected.reasonCode|{}reasonCode[0]
+            final fun <get-reasonCode>(): kotlin/String // io.dataloom.api.retry/RetryAdministrationExecutionResult.Rejected.reasonCode.<get-reasonCode>|<get-reasonCode>(){}[0]
+
+        final fun component1(): kotlin/String // io.dataloom.api.retry/RetryAdministrationExecutionResult.Rejected.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): io.dataloom.api.retry/RetryAdministrationExecutionResult.Rejected // io.dataloom.api.retry/RetryAdministrationExecutionResult.Rejected.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.retry/RetryAdministrationExecutionResult.Rejected.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.retry/RetryAdministrationExecutionResult.Rejected.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.retry/RetryAdministrationExecutionResult.Rejected.toString|toString(){}[0]
+    }
+
+    final object Applied : io.dataloom.api.retry/RetryAdministrationExecutionResult { // io.dataloom.api.retry/RetryAdministrationExecutionResult.Applied|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.retry/RetryAdministrationExecutionResult.Applied.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.retry/RetryAdministrationExecutionResult.Applied.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.retry/RetryAdministrationExecutionResult.Applied.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.retry/RetryAdministrationLoadResult { // io.dataloom.api.retry/RetryAdministrationLoadResult|null[0]
+    final class Found : io.dataloom.api.retry/RetryAdministrationLoadResult { // io.dataloom.api.retry/RetryAdministrationLoadResult.Found|null[0]
+        constructor <init>(io.dataloom.api.retry/RetryAdministrationStateRecord) // io.dataloom.api.retry/RetryAdministrationLoadResult.Found.<init>|<init>(io.dataloom.api.retry.RetryAdministrationStateRecord){}[0]
+
+        final val record // io.dataloom.api.retry/RetryAdministrationLoadResult.Found.record|{}record[0]
+            final fun <get-record>(): io.dataloom.api.retry/RetryAdministrationStateRecord // io.dataloom.api.retry/RetryAdministrationLoadResult.Found.record.<get-record>|<get-record>(){}[0]
+
+        final fun component1(): io.dataloom.api.retry/RetryAdministrationStateRecord // io.dataloom.api.retry/RetryAdministrationLoadResult.Found.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.retry/RetryAdministrationStateRecord = ...): io.dataloom.api.retry/RetryAdministrationLoadResult.Found // io.dataloom.api.retry/RetryAdministrationLoadResult.Found.copy|copy(io.dataloom.api.retry.RetryAdministrationStateRecord){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.retry/RetryAdministrationLoadResult.Found.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.retry/RetryAdministrationLoadResult.Found.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.retry/RetryAdministrationLoadResult.Found.toString|toString(){}[0]
+    }
+
+    final object Missing : io.dataloom.api.retry/RetryAdministrationLoadResult { // io.dataloom.api.retry/RetryAdministrationLoadResult.Missing|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.retry/RetryAdministrationLoadResult.Missing.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.retry/RetryAdministrationLoadResult.Missing.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.retry/RetryAdministrationLoadResult.Missing.toString|toString(){}[0]
     }
 }
 
@@ -1901,6 +2051,122 @@ final class io.dataloom.api.queue/QueueRescheduleRequest { // io.dataloom.api.qu
     final fun toString(): kotlin/String // io.dataloom.api.queue/QueueRescheduleRequest.toString|toString(){}[0]
 }
 
+final class io.dataloom.api.retry/AuthorizedRetryAdministrationCommand { // io.dataloom.api.retry/AuthorizedRetryAdministrationCommand|null[0]
+    constructor <init>(io.dataloom.api.retry/RetryAdministrationRequest, io.dataloom.api.retry/RetryAdministrationAuthorizationId, io.dataloom.api.error/Recoverability) // io.dataloom.api.retry/AuthorizedRetryAdministrationCommand.<init>|<init>(io.dataloom.api.retry.RetryAdministrationRequest;io.dataloom.api.retry.RetryAdministrationAuthorizationId;io.dataloom.api.error.Recoverability){}[0]
+
+    final val authorizationId // io.dataloom.api.retry/AuthorizedRetryAdministrationCommand.authorizationId|{}authorizationId[0]
+        final fun <get-authorizationId>(): io.dataloom.api.retry/RetryAdministrationAuthorizationId // io.dataloom.api.retry/AuthorizedRetryAdministrationCommand.authorizationId.<get-authorizationId>|<get-authorizationId>(){}[0]
+    final val effectiveRecoverability // io.dataloom.api.retry/AuthorizedRetryAdministrationCommand.effectiveRecoverability|{}effectiveRecoverability[0]
+        final fun <get-effectiveRecoverability>(): io.dataloom.api.error/Recoverability // io.dataloom.api.retry/AuthorizedRetryAdministrationCommand.effectiveRecoverability.<get-effectiveRecoverability>|<get-effectiveRecoverability>(){}[0]
+    final val request // io.dataloom.api.retry/AuthorizedRetryAdministrationCommand.request|{}request[0]
+        final fun <get-request>(): io.dataloom.api.retry/RetryAdministrationRequest // io.dataloom.api.retry/AuthorizedRetryAdministrationCommand.request.<get-request>|<get-request>(){}[0]
+
+    final fun component1(): io.dataloom.api.retry/RetryAdministrationRequest // io.dataloom.api.retry/AuthorizedRetryAdministrationCommand.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.retry/RetryAdministrationAuthorizationId // io.dataloom.api.retry/AuthorizedRetryAdministrationCommand.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.error/Recoverability // io.dataloom.api.retry/AuthorizedRetryAdministrationCommand.component3|component3(){}[0]
+    final fun copy(io.dataloom.api.retry/RetryAdministrationRequest = ..., io.dataloom.api.retry/RetryAdministrationAuthorizationId = ..., io.dataloom.api.error/Recoverability = ...): io.dataloom.api.retry/AuthorizedRetryAdministrationCommand // io.dataloom.api.retry/AuthorizedRetryAdministrationCommand.copy|copy(io.dataloom.api.retry.RetryAdministrationRequest;io.dataloom.api.retry.RetryAdministrationAuthorizationId;io.dataloom.api.error.Recoverability){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.retry/AuthorizedRetryAdministrationCommand.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.retry/AuthorizedRetryAdministrationCommand.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.retry/AuthorizedRetryAdministrationCommand.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.retry/RetryAdministrationCommandState { // io.dataloom.api.retry/RetryAdministrationCommandState|null[0]
+    constructor <init>(io.dataloom.api.retry/RetryAdministrationRequest, io.dataloom.api.retry/RetryAdministrationCommandStatus, io.dataloom.api.retry/RetryAdministrationAuthorizationId?, io.dataloom.api.error/Recoverability?, io.dataloom.api.time/DataLoomInstant, kotlin/String? = ..., io.dataloom.api.retry/RetryFailureSnapshot? = ...) // io.dataloom.api.retry/RetryAdministrationCommandState.<init>|<init>(io.dataloom.api.retry.RetryAdministrationRequest;io.dataloom.api.retry.RetryAdministrationCommandStatus;io.dataloom.api.retry.RetryAdministrationAuthorizationId?;io.dataloom.api.error.Recoverability?;io.dataloom.api.time.DataLoomInstant;kotlin.String?;io.dataloom.api.retry.RetryFailureSnapshot?){}[0]
+
+    final val authorizationId // io.dataloom.api.retry/RetryAdministrationCommandState.authorizationId|{}authorizationId[0]
+        final fun <get-authorizationId>(): io.dataloom.api.retry/RetryAdministrationAuthorizationId? // io.dataloom.api.retry/RetryAdministrationCommandState.authorizationId.<get-authorizationId>|<get-authorizationId>(){}[0]
+    final val effectiveRecoverability // io.dataloom.api.retry/RetryAdministrationCommandState.effectiveRecoverability|{}effectiveRecoverability[0]
+        final fun <get-effectiveRecoverability>(): io.dataloom.api.error/Recoverability? // io.dataloom.api.retry/RetryAdministrationCommandState.effectiveRecoverability.<get-effectiveRecoverability>|<get-effectiveRecoverability>(){}[0]
+    final val executionFailure // io.dataloom.api.retry/RetryAdministrationCommandState.executionFailure|{}executionFailure[0]
+        final fun <get-executionFailure>(): io.dataloom.api.retry/RetryFailureSnapshot? // io.dataloom.api.retry/RetryAdministrationCommandState.executionFailure.<get-executionFailure>|<get-executionFailure>(){}[0]
+    final val rejectionReasonCode // io.dataloom.api.retry/RetryAdministrationCommandState.rejectionReasonCode|{}rejectionReasonCode[0]
+        final fun <get-rejectionReasonCode>(): kotlin/String? // io.dataloom.api.retry/RetryAdministrationCommandState.rejectionReasonCode.<get-rejectionReasonCode>|<get-rejectionReasonCode>(){}[0]
+    final val request // io.dataloom.api.retry/RetryAdministrationCommandState.request|{}request[0]
+        final fun <get-request>(): io.dataloom.api.retry/RetryAdministrationRequest // io.dataloom.api.retry/RetryAdministrationCommandState.request.<get-request>|<get-request>(){}[0]
+    final val status // io.dataloom.api.retry/RetryAdministrationCommandState.status|{}status[0]
+        final fun <get-status>(): io.dataloom.api.retry/RetryAdministrationCommandStatus // io.dataloom.api.retry/RetryAdministrationCommandState.status.<get-status>|<get-status>(){}[0]
+    final val updatedAt // io.dataloom.api.retry/RetryAdministrationCommandState.updatedAt|{}updatedAt[0]
+        final fun <get-updatedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.retry/RetryAdministrationCommandState.updatedAt.<get-updatedAt>|<get-updatedAt>(){}[0]
+
+    final fun component1(): io.dataloom.api.retry/RetryAdministrationRequest // io.dataloom.api.retry/RetryAdministrationCommandState.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.retry/RetryAdministrationCommandStatus // io.dataloom.api.retry/RetryAdministrationCommandState.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.retry/RetryAdministrationAuthorizationId? // io.dataloom.api.retry/RetryAdministrationCommandState.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.error/Recoverability? // io.dataloom.api.retry/RetryAdministrationCommandState.component4|component4(){}[0]
+    final fun component5(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.retry/RetryAdministrationCommandState.component5|component5(){}[0]
+    final fun component6(): kotlin/String? // io.dataloom.api.retry/RetryAdministrationCommandState.component6|component6(){}[0]
+    final fun component7(): io.dataloom.api.retry/RetryFailureSnapshot? // io.dataloom.api.retry/RetryAdministrationCommandState.component7|component7(){}[0]
+    final fun copy(io.dataloom.api.retry/RetryAdministrationRequest = ..., io.dataloom.api.retry/RetryAdministrationCommandStatus = ..., io.dataloom.api.retry/RetryAdministrationAuthorizationId? = ..., io.dataloom.api.error/Recoverability? = ..., io.dataloom.api.time/DataLoomInstant = ..., kotlin/String? = ..., io.dataloom.api.retry/RetryFailureSnapshot? = ...): io.dataloom.api.retry/RetryAdministrationCommandState // io.dataloom.api.retry/RetryAdministrationCommandState.copy|copy(io.dataloom.api.retry.RetryAdministrationRequest;io.dataloom.api.retry.RetryAdministrationCommandStatus;io.dataloom.api.retry.RetryAdministrationAuthorizationId?;io.dataloom.api.error.Recoverability?;io.dataloom.api.time.DataLoomInstant;kotlin.String?;io.dataloom.api.retry.RetryFailureSnapshot?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.retry/RetryAdministrationCommandState.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.retry/RetryAdministrationCommandState.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.retry/RetryAdministrationCommandState.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.retry/RetryAdministrationCompareAndSetRequest { // io.dataloom.api.retry/RetryAdministrationCompareAndSetRequest|null[0]
+    constructor <init>(io.dataloom.api.retry/RetryAdministrationCommandId, kotlin/Long?, io.dataloom.api.retry/RetryAdministrationCommandState) // io.dataloom.api.retry/RetryAdministrationCompareAndSetRequest.<init>|<init>(io.dataloom.api.retry.RetryAdministrationCommandId;kotlin.Long?;io.dataloom.api.retry.RetryAdministrationCommandState){}[0]
+
+    final val commandId // io.dataloom.api.retry/RetryAdministrationCompareAndSetRequest.commandId|{}commandId[0]
+        final fun <get-commandId>(): io.dataloom.api.retry/RetryAdministrationCommandId // io.dataloom.api.retry/RetryAdministrationCompareAndSetRequest.commandId.<get-commandId>|<get-commandId>(){}[0]
+    final val expectedVersion // io.dataloom.api.retry/RetryAdministrationCompareAndSetRequest.expectedVersion|{}expectedVersion[0]
+        final fun <get-expectedVersion>(): kotlin/Long? // io.dataloom.api.retry/RetryAdministrationCompareAndSetRequest.expectedVersion.<get-expectedVersion>|<get-expectedVersion>(){}[0]
+    final val nextState // io.dataloom.api.retry/RetryAdministrationCompareAndSetRequest.nextState|{}nextState[0]
+        final fun <get-nextState>(): io.dataloom.api.retry/RetryAdministrationCommandState // io.dataloom.api.retry/RetryAdministrationCompareAndSetRequest.nextState.<get-nextState>|<get-nextState>(){}[0]
+
+    final fun component1(): io.dataloom.api.retry/RetryAdministrationCommandId // io.dataloom.api.retry/RetryAdministrationCompareAndSetRequest.component1|component1(){}[0]
+    final fun component2(): kotlin/Long? // io.dataloom.api.retry/RetryAdministrationCompareAndSetRequest.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.retry/RetryAdministrationCommandState // io.dataloom.api.retry/RetryAdministrationCompareAndSetRequest.component3|component3(){}[0]
+    final fun copy(io.dataloom.api.retry/RetryAdministrationCommandId = ..., kotlin/Long? = ..., io.dataloom.api.retry/RetryAdministrationCommandState = ...): io.dataloom.api.retry/RetryAdministrationCompareAndSetRequest // io.dataloom.api.retry/RetryAdministrationCompareAndSetRequest.copy|copy(io.dataloom.api.retry.RetryAdministrationCommandId;kotlin.Long?;io.dataloom.api.retry.RetryAdministrationCommandState){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.retry/RetryAdministrationCompareAndSetRequest.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.retry/RetryAdministrationCompareAndSetRequest.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.retry/RetryAdministrationCompareAndSetRequest.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.retry/RetryAdministrationRequest { // io.dataloom.api.retry/RetryAdministrationRequest|null[0]
+    constructor <init>(io.dataloom.api.retry/RetryAdministrationCommandId, io.dataloom.api.identifier/QueueEntryId, io.dataloom.api.retry/RetryAdministrationPrincipalId, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.retry/RetryAdministrationAction, io.dataloom.api.retry/RetryAdministrationReason, io.dataloom.api.retry/RetryFailureSnapshot) // io.dataloom.api.retry/RetryAdministrationRequest.<init>|<init>(io.dataloom.api.retry.RetryAdministrationCommandId;io.dataloom.api.identifier.QueueEntryId;io.dataloom.api.retry.RetryAdministrationPrincipalId;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.retry.RetryAdministrationAction;io.dataloom.api.retry.RetryAdministrationReason;io.dataloom.api.retry.RetryFailureSnapshot){}[0]
+
+    final val action // io.dataloom.api.retry/RetryAdministrationRequest.action|{}action[0]
+        final fun <get-action>(): io.dataloom.api.retry/RetryAdministrationAction // io.dataloom.api.retry/RetryAdministrationRequest.action.<get-action>|<get-action>(){}[0]
+    final val commandId // io.dataloom.api.retry/RetryAdministrationRequest.commandId|{}commandId[0]
+        final fun <get-commandId>(): io.dataloom.api.retry/RetryAdministrationCommandId // io.dataloom.api.retry/RetryAdministrationRequest.commandId.<get-commandId>|<get-commandId>(){}[0]
+    final val originalFailure // io.dataloom.api.retry/RetryAdministrationRequest.originalFailure|{}originalFailure[0]
+        final fun <get-originalFailure>(): io.dataloom.api.retry/RetryFailureSnapshot // io.dataloom.api.retry/RetryAdministrationRequest.originalFailure.<get-originalFailure>|<get-originalFailure>(){}[0]
+    final val principalId // io.dataloom.api.retry/RetryAdministrationRequest.principalId|{}principalId[0]
+        final fun <get-principalId>(): io.dataloom.api.retry/RetryAdministrationPrincipalId // io.dataloom.api.retry/RetryAdministrationRequest.principalId.<get-principalId>|<get-principalId>(){}[0]
+    final val queueEntryId // io.dataloom.api.retry/RetryAdministrationRequest.queueEntryId|{}queueEntryId[0]
+        final fun <get-queueEntryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.api.retry/RetryAdministrationRequest.queueEntryId.<get-queueEntryId>|<get-queueEntryId>(){}[0]
+    final val reason // io.dataloom.api.retry/RetryAdministrationRequest.reason|{}reason[0]
+        final fun <get-reason>(): io.dataloom.api.retry/RetryAdministrationReason // io.dataloom.api.retry/RetryAdministrationRequest.reason.<get-reason>|<get-reason>(){}[0]
+    final val requestedAt // io.dataloom.api.retry/RetryAdministrationRequest.requestedAt|{}requestedAt[0]
+        final fun <get-requestedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.retry/RetryAdministrationRequest.requestedAt.<get-requestedAt>|<get-requestedAt>(){}[0]
+
+    final fun component1(): io.dataloom.api.retry/RetryAdministrationCommandId // io.dataloom.api.retry/RetryAdministrationRequest.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.api.retry/RetryAdministrationRequest.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.retry/RetryAdministrationPrincipalId // io.dataloom.api.retry/RetryAdministrationRequest.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.retry/RetryAdministrationRequest.component4|component4(){}[0]
+    final fun component5(): io.dataloom.api.retry/RetryAdministrationAction // io.dataloom.api.retry/RetryAdministrationRequest.component5|component5(){}[0]
+    final fun component6(): io.dataloom.api.retry/RetryAdministrationReason // io.dataloom.api.retry/RetryAdministrationRequest.component6|component6(){}[0]
+    final fun component7(): io.dataloom.api.retry/RetryFailureSnapshot // io.dataloom.api.retry/RetryAdministrationRequest.component7|component7(){}[0]
+    final fun copy(io.dataloom.api.retry/RetryAdministrationCommandId = ..., io.dataloom.api.identifier/QueueEntryId = ..., io.dataloom.api.retry/RetryAdministrationPrincipalId = ..., io.dataloom.api.time/DataLoomInstant = ..., io.dataloom.api.retry/RetryAdministrationAction = ..., io.dataloom.api.retry/RetryAdministrationReason = ..., io.dataloom.api.retry/RetryFailureSnapshot = ...): io.dataloom.api.retry/RetryAdministrationRequest // io.dataloom.api.retry/RetryAdministrationRequest.copy|copy(io.dataloom.api.retry.RetryAdministrationCommandId;io.dataloom.api.identifier.QueueEntryId;io.dataloom.api.retry.RetryAdministrationPrincipalId;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.retry.RetryAdministrationAction;io.dataloom.api.retry.RetryAdministrationReason;io.dataloom.api.retry.RetryFailureSnapshot){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.retry/RetryAdministrationRequest.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.retry/RetryAdministrationRequest.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.retry/RetryAdministrationRequest.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.retry/RetryAdministrationStateRecord { // io.dataloom.api.retry/RetryAdministrationStateRecord|null[0]
+    constructor <init>(io.dataloom.api.retry/RetryAdministrationCommandState, kotlin/Long) // io.dataloom.api.retry/RetryAdministrationStateRecord.<init>|<init>(io.dataloom.api.retry.RetryAdministrationCommandState;kotlin.Long){}[0]
+
+    final val state // io.dataloom.api.retry/RetryAdministrationStateRecord.state|{}state[0]
+        final fun <get-state>(): io.dataloom.api.retry/RetryAdministrationCommandState // io.dataloom.api.retry/RetryAdministrationStateRecord.state.<get-state>|<get-state>(){}[0]
+    final val version // io.dataloom.api.retry/RetryAdministrationStateRecord.version|{}version[0]
+        final fun <get-version>(): kotlin/Long // io.dataloom.api.retry/RetryAdministrationStateRecord.version.<get-version>|<get-version>(){}[0]
+
+    final fun component1(): io.dataloom.api.retry/RetryAdministrationCommandState // io.dataloom.api.retry/RetryAdministrationStateRecord.component1|component1(){}[0]
+    final fun component2(): kotlin/Long // io.dataloom.api.retry/RetryAdministrationStateRecord.component2|component2(){}[0]
+    final fun copy(io.dataloom.api.retry/RetryAdministrationCommandState = ..., kotlin/Long = ...): io.dataloom.api.retry/RetryAdministrationStateRecord // io.dataloom.api.retry/RetryAdministrationStateRecord.copy|copy(io.dataloom.api.retry.RetryAdministrationCommandState;kotlin.Long){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.retry/RetryAdministrationStateRecord.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.retry/RetryAdministrationStateRecord.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.retry/RetryAdministrationStateRecord.toString|toString(){}[0]
+}
+
 final class io.dataloom.api.retry/RetryAttempt { // io.dataloom.api.retry/RetryAttempt|null[0]
     constructor <init>(kotlin/Int) // io.dataloom.api.retry/RetryAttempt.<init>|<init>(kotlin.Int){}[0]
 
@@ -1963,6 +2229,28 @@ final class io.dataloom.api.retry/RetryEvaluationRequest { // io.dataloom.api.re
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.retry/RetryEvaluationRequest.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.retry/RetryEvaluationRequest.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.retry/RetryEvaluationRequest.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.retry/RetryFailureSnapshot { // io.dataloom.api.retry/RetryFailureSnapshot|null[0]
+    constructor <init>(io.dataloom.api.error/ErrorCode, io.dataloom.api.error/ErrorCategory, io.dataloom.api.error/ErrorSeverity, io.dataloom.api.error/Recoverability) // io.dataloom.api.retry/RetryFailureSnapshot.<init>|<init>(io.dataloom.api.error.ErrorCode;io.dataloom.api.error.ErrorCategory;io.dataloom.api.error.ErrorSeverity;io.dataloom.api.error.Recoverability){}[0]
+
+    final val category // io.dataloom.api.retry/RetryFailureSnapshot.category|{}category[0]
+        final fun <get-category>(): io.dataloom.api.error/ErrorCategory // io.dataloom.api.retry/RetryFailureSnapshot.category.<get-category>|<get-category>(){}[0]
+    final val code // io.dataloom.api.retry/RetryFailureSnapshot.code|{}code[0]
+        final fun <get-code>(): io.dataloom.api.error/ErrorCode // io.dataloom.api.retry/RetryFailureSnapshot.code.<get-code>|<get-code>(){}[0]
+    final val recoverability // io.dataloom.api.retry/RetryFailureSnapshot.recoverability|{}recoverability[0]
+        final fun <get-recoverability>(): io.dataloom.api.error/Recoverability // io.dataloom.api.retry/RetryFailureSnapshot.recoverability.<get-recoverability>|<get-recoverability>(){}[0]
+    final val severity // io.dataloom.api.retry/RetryFailureSnapshot.severity|{}severity[0]
+        final fun <get-severity>(): io.dataloom.api.error/ErrorSeverity // io.dataloom.api.retry/RetryFailureSnapshot.severity.<get-severity>|<get-severity>(){}[0]
+
+    final fun component1(): io.dataloom.api.error/ErrorCode // io.dataloom.api.retry/RetryFailureSnapshot.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.error/ErrorCategory // io.dataloom.api.retry/RetryFailureSnapshot.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.error/ErrorSeverity // io.dataloom.api.retry/RetryFailureSnapshot.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.error/Recoverability // io.dataloom.api.retry/RetryFailureSnapshot.component4|component4(){}[0]
+    final fun copy(io.dataloom.api.error/ErrorCode = ..., io.dataloom.api.error/ErrorCategory = ..., io.dataloom.api.error/ErrorSeverity = ..., io.dataloom.api.error/Recoverability = ...): io.dataloom.api.retry/RetryFailureSnapshot // io.dataloom.api.retry/RetryFailureSnapshot.copy|copy(io.dataloom.api.error.ErrorCode;io.dataloom.api.error.ErrorCategory;io.dataloom.api.error.ErrorSeverity;io.dataloom.api.error.Recoverability){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.retry/RetryFailureSnapshot.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.retry/RetryFailureSnapshot.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.retry/RetryFailureSnapshot.toString|toString(){}[0]
 }
 
 final class io.dataloom.api.retry/WorkflowTimeoutState { // io.dataloom.api.retry/WorkflowTimeoutState|null[0]
@@ -2727,6 +3015,50 @@ final value class io.dataloom.api.payload/PayloadContentType { // io.dataloom.ap
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.payload/PayloadContentType.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.payload/PayloadContentType.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.payload/PayloadContentType.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.retry/RetryAdministrationAuthorizationId { // io.dataloom.api.retry/RetryAdministrationAuthorizationId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.retry/RetryAdministrationAuthorizationId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.retry/RetryAdministrationAuthorizationId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.retry/RetryAdministrationAuthorizationId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.retry/RetryAdministrationAuthorizationId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.retry/RetryAdministrationAuthorizationId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.retry/RetryAdministrationAuthorizationId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.retry/RetryAdministrationCommandId { // io.dataloom.api.retry/RetryAdministrationCommandId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.retry/RetryAdministrationCommandId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.retry/RetryAdministrationCommandId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.retry/RetryAdministrationCommandId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.retry/RetryAdministrationCommandId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.retry/RetryAdministrationCommandId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.retry/RetryAdministrationCommandId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.retry/RetryAdministrationPrincipalId { // io.dataloom.api.retry/RetryAdministrationPrincipalId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.retry/RetryAdministrationPrincipalId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.retry/RetryAdministrationPrincipalId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.retry/RetryAdministrationPrincipalId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.retry/RetryAdministrationPrincipalId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.retry/RetryAdministrationPrincipalId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.retry/RetryAdministrationPrincipalId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.retry/RetryAdministrationReason { // io.dataloom.api.retry/RetryAdministrationReason|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.retry/RetryAdministrationReason.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.retry/RetryAdministrationReason.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.retry/RetryAdministrationReason.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.retry/RetryAdministrationReason.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.retry/RetryAdministrationReason.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.retry/RetryAdministrationReason.toString|toString(){}[0]
 }
 
 final value class io.dataloom.api.retry/RetryOperation { // io.dataloom.api.retry/RetryOperation|null[0]
