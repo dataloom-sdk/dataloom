@@ -33,6 +33,26 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
 
+      - name: Isolate retry administration internal outcome types
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path(
+              "dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/retry/"
+              "RetryAdministrationCoordinator.kt"
+          )
+          source = path.read_text()
+          replacements = {
+              "LoadOutcome": "RetryAdministrationLoadOutcome",
+              "AdmissionOutcome": "RetryAdministrationAdmissionOutcome",
+              "UpdateOutcome": "RetryAdministrationUpdateOutcome",
+          }
+          for old, new in replacements.items():
+              source = source.replace(old, new)
+          path.write_text(source)
+          PY
+
       - name: Generate exact JVM and Kotlin Native ABI declarations
         run: |
           chmod +x gradlew
@@ -43,7 +63,7 @@ jobs:
             --stacktrace \
             --console=plain
 
-      - name: Commit ABI evidence and remove temporary workflow
+      - name: Commit source fix, ABI evidence, and remove temporary workflow
         env:
           HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
@@ -53,6 +73,7 @@ jobs:
           git add \
             dataloom-api/api/dataloom-api.api \
             dataloom-api/api/dataloom-api.klib.api \
+            dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/retry/RetryAdministrationCoordinator.kt \
             dataloom-runtime/api/dataloom-runtime.api \
             dataloom-runtime/api/dataloom-runtime.klib.api
           git commit -m "DL-040: generate retry administration ABI evidence"
