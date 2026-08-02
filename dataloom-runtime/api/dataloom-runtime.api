@@ -1518,6 +1518,16 @@ public final class io/dataloom/runtime/retry/QueueCircuitOperation : java/lang/E
 	public static fun values ()[Lio/dataloom/runtime/retry/QueueCircuitOperation;
 }
 
+public final class io/dataloom/runtime/retry/RequestTimeoutEnforcingTransportProvider : io/dataloom/api/transport/TransportProvider {
+	public fun <init> (Lio/dataloom/api/transport/TransportProvider;Lio/dataloom/runtime/retry/RetryTimeoutCoordinator;)V
+	public fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun pullChanges (Lio/dataloom/api/transport/PullChangesRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun pushChanges (Lio/dataloom/api/transport/PushChangesRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
 public abstract interface class io/dataloom/runtime/retry/RetryBackoffStrategy {
 }
 
@@ -2053,6 +2063,11 @@ public final class io/dataloom/runtime/retry/TransportCircuitScopes {
 
 public final class io/dataloom/runtime/retry/TransportProviderTimeoutRuntime {
 	public static final field INSTANCE Lio/dataloom/runtime/retry/TransportProviderTimeoutRuntime;
+	public final fun create (Lio/dataloom/api/transport/TransportProvider;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/scheduling/SchedulingDelay;)Lio/dataloom/api/transport/TransportProvider;
+}
+
+public final class io/dataloom/runtime/retry/TransportRequestTimeoutRuntime {
+	public static final field INSTANCE Lio/dataloom/runtime/retry/TransportRequestTimeoutRuntime;
 	public final fun create (Lio/dataloom/api/transport/TransportProvider;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/scheduling/SchedulingDelay;)Lio/dataloom/api/transport/TransportProvider;
 }
 
