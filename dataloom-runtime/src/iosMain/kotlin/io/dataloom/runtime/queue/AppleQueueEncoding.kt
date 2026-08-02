@@ -114,7 +114,7 @@ internal fun appleQueueDecodeMetadata(encoded: String): DataLoomMetadata {
         require(separator > 0)
         require(pair.indexOf(':', separator + 1) == -1)
         val key = appleQueueHexDecode(pair.substring(0, separator))
-        val = appleQueueHexDecode(pair.substring(separator + 1))
+        val value = appleQueueHexDecode(pair.substring(separator + 1))
         require(values.put(key, value) == null)
     }
     return DataLoomMetadata.of(values)
@@ -136,7 +136,7 @@ internal fun String.appleQueueToNullableLong(): Long? =
     if (this == APPLE_QUEUE_NULL_MARKER) null else appleQueueToLongStrict()
 
 internal fun String.appleQueueToNullableInt(): Int? =
-    if (this == APPLE_QUEUUE_NULL_MARKER) null else appleQueueToIntStrict()
+    if (this == APPLE_QUEUE_NULL_MARKER) null else appleQueueToIntStrict()
 
 internal fun String.appleQueueToLongStrict(): Long {
     require(isNotEmpty())
