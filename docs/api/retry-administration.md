@@ -81,10 +81,24 @@ execution result and persistence failure. Redelivery uses the same command id;
 the executor must not create a second queue entry or consume retry history
 again.
 
+## Apple durable state
+
+`AppleFileRetryAdministrationStateStore` is the production KMP Apple
+implementation of the state-store contract. It provides process-shared exact
+compare-and-set behavior, immutable-request protection, bounded strict decoding,
+and crash-durable replacement through file `fsync`, atomic rename, and
+parent-directory `fsync`.
+
+See the [Apple retry-administration state-store guide](../apple/retry-administration-state-store.md)
+for construction, persistence boundaries, error behavior, and platform
+responsibilities.
+
 ## Current boundary
 
-This slice provides common public contracts, deterministic coordination, and
-focused common tests. DataLoom does not yet ship a default durable retry
-administration store, a queue-provider-specific executor, facade/builder
-assembly, platform operations UI, or complete administration metrics and
-tracing. Applications must not claim those capabilities from this foundation.
+DataLoom now includes common public contracts, deterministic coordination,
+focused common tests, and production Apple command-state persistence. It does
+not yet ship a production Android retry-administration store, a
+queue-provider-specific idempotent executor, atomic queue command receipts,
+facade/builder assembly, platform operations UI, or complete administration
+metrics and tracing. Applications must not claim those capabilities from this
+foundation.
