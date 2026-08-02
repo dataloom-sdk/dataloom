@@ -1,0 +1,159 @@
+name: DL-040 Apple Queue Evidence
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  qualify-apple-queue:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'codex/dl-retry-044-apple-queue-store'
+    runs-on: macos-15
+    timeout-minutes: 50
+
+    steps:
+      - name: Checkout pull request head
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Integrate Apple queue documentation
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          apple_path = Path("docs/apple/README.md")
+          apple = apple_path.read_text()
+          apple_replacements = (
+              (
+                  "smoke, and production file-backed circuit persistence exist; full production\nKMP iOS synchronization support does not",
+                  "smoke, and production file-backed circuit and queue persistence exist; full\nproduction KMP iOS synchronization support does not",
+              ),
+              (
+                  "added production Apple circuit-breaker persistence, but Apple connectivity,\nbackground scheduling, durable queue/retry ownership, lifecycle restoration,\nand complete executable reference flows remain incomplete.",
+                  "added production Apple circuit-breaker and durable queue persistence, but Apple\nconnectivity, background scheduling, lifecycle restoration, administration\npersistence, and complete executable reference flows remain incomplete.",
+              ),
+              (
+                  "| [Apple circuit store](circuit-state-store.md) | File-backed circuit CAS, integrity, cancellation, and remaining durability gaps |\n| [XCFramework integration]",
+                  "| [Apple circuit store](circuit-state-store.md) | File-backed circuit CAS, integrity, cancellation, and remaining durability gaps |\n| [Apple durable queue](queue-state-store.md) | Queue entries, leases, retry budgets, workflow deadlines, recovery, and integrity |\n| [XCFramework integration]",
+              ),
+              (
+                  "        circuitStore[\"Apple circuit-state store\"]\n        appleUmbrella",
+                  "        circuitStore[\"Apple circuit-state store\"]\n        queueStore[\"Apple durable queue\"]\n        appleUmbrella",
+              ),
+              (
+                  "        sharedCode --> circuitStore\n        sharedCode --> appleUmbrella --> currentFramework\n        circuitStore --> appleUmbrella",
+                  "        sharedCode --> circuitStore\n        sharedCode --> queueStore\n        sharedCode --> appleUmbrella --> currentFramework\n        circuitStore --> appleUmbrella\n        queueStore --> appleUmbrella",
+              ),
+              (
+                  "- Production `AppleFileCircuitBreakerStateStore` with process-shared locking,\n  exact compare-and-set, atomic replacement, bounded corruption handling, and\n  restart-through-new-instance evidence.\n- A static `DataLoom` XCFramework",
+                  "- Production `AppleFileCircuitBreakerStateStore` with process-shared locking,\n  exact compare-and-set, atomic replacement, bounded corruption handling, and\n  restart-through-new-instance evidence.\n- Production `AppleFileQueueProvider` with atomic batch acquisition, guarded\n  transitions, retry-budget and workflow-deadline persistence, expired-lease\n  recovery, crash-durable replacement, and restart-through-new-instance evidence.\n- A static `DataLoom` XCFramework",
+              ),
+              (
+                  "- Durable queue/retry-budget, conflict, outbox, asset-session, audit, and\n  administration state beyond the circuit store.",
+                  "- Conflict, outbox, asset-session, audit, and administration persistence\n  beyond the circuit and queue stores.",
+              ),
+              (
+                  "| `iosArm64` | Producer compilation, Apple circuit-store consumer compilation, and XCFramework device slice | Device runtime/reference-flow qualification missing |\n| `iosSimulatorArm64` | Shared tests, Apple circuit-store durability/CAS tests, and simulator slice | Complete adapters and executable-consumer flows missing |\n| `iosX64` | Producer and Apple circuit-store consumer compilation plus merged simulator slice | Runtime/reference-flow qualification missing |",
+                  "| `iosArm64` | Producer compilation, Apple circuit/queue consumer compilation, and XCFramework device slice | Device runtime/reference-flow qualification missing |\n| `iosSimulatorArm64` | Shared tests, Apple circuit and queue durability/transition tests, and simulator slice | Complete adapters and executable-consumer flows missing |\n| `iosX64` | Producer and Apple circuit/queue consumer compilation plus merged simulator slice | Runtime/reference-flow qualification missing |",
+              ),
+          )
+          for old, new in apple_replacements:
+              if apple.count(old) != 1:
+                  raise SystemExit(f"expected Apple README text not found exactly once: {old[:80]!r}")
+              apple = apple.replace(old, new)
+          apple_path.write_text(apple)
+
+          api_path = Path("docs/api/README.md")
+          api = api_path.read_text()
+          api_replacements = (
+              (
+                  "[queue provider](./queue-provider.md), [queue-provider timeouts]",
+                  "[queue provider](./queue-provider.md), [Apple durable queue](../apple/queue-state-store.md), [queue-provider timeouts]",
+              ),
+              (
+                  "| [Queue provider](./queue-provider.md) | Available foundation | Durable queue persistence SPI and Room implementation boundary. |\n| [Queue-provider timeouts]",
+                  "| [Queue provider](./queue-provider.md) | Available foundation | Durable queue persistence SPI and Room implementation boundary. |\n| [Apple durable queue](../apple/queue-state-store.md) | Available foundation | Crash-durable file-backed Apple queue with atomic acquisition, guarded transitions, retry budgets, workflow deadlines, and lease recovery. |\n| [Queue-provider timeouts]",
+              ),
+              (
+                  "Queue processing is an at-least-once foundation. Connectivity deferral and\nexpired-lease recovery preserve retry attempt history; Android Room persists\nretry budgets and circuit state.",
+                  "Queue processing is an at-least-once foundation. Connectivity deferral and\nexpired-lease recovery preserve retry attempt history; Android Room and the\nApple file provider persist queue entries, retry budgets, and workflow deadlines,\nwhile Android Room and the Apple circuit store persist circuit state.",
+              ),
+              (
+                  "and separately configured scheduler-circuit policy now exist. KMP iOS\npersistence and end-to-end qualification remain open.",
+                  "and separately configured scheduler-circuit policy now exist. KMP iOS\nqueue and circuit persistence now exist; executable relaunch, background\nadapters, administration persistence, and end-to-end qualification remain open.",
+              ),
+              (
+                  "protocol-specific timeout enforcement, KMP iOS persistence, manual\nretry/reclassification, complete observability, and platform qualification.",
+                  "remaining protocol integrations, durable administration execution, complete\nobservability, executable restart evidence, and platform qualification.",
+              ),
+          )
+          for old, new in api_replacements:
+              if api.count(old) != 1:
+                  raise SystemExit(f"expected API README text not found exactly once: {old[:80]!r}")
+              api = api.replace(old, new)
+          api_path.write_text(api)
+          PY
+
+      - name: Qualify runtime, external consumers, ABI, and XCFramework
+        run: |
+          chmod +x gradlew
+          ./gradlew \
+            :dataloom-runtime:jvmTest \
+            :dataloom-runtime:iosSimulatorArm64Test \
+            :runtime-external-consumer:compileKotlinJvm \
+            :runtime-external-consumer:compileKotlinIosArm64 \
+            :runtime-external-consumer:compileKotlinIosSimulatorArm64 \
+            :runtime-external-consumer:compileKotlinIosX64 \
+            --configuration-cache \
+            --stacktrace \
+            --console=plain
+          ./gradlew \
+            :dataloom-runtime:updateKotlinAbi \
+            :dataloom-apple:updateKotlinAbi \
+            --no-configuration-cache \
+            --stacktrace \
+            --console=plain
+          ./gradlew \
+            :dataloom-runtime:checkKotlinAbi \
+            :dataloom-runtime:checkPublicAbiBoundaries \
+            :dataloom-apple:checkKotlinAbi \
+            :runtime-external-consumer:checkRuntimeExternalConsumer \
+            :dataloom-apple:assembleDataLoomReleaseXCFramework \
+            --no-configuration-cache \
+            --warning-mode all \
+            --stacktrace \
+            --console=plain
+
+      - name: Commit exact evidence and remove temporary workflow
+        env:
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/dl-040-apple-queue-evidence.yml
+          git add \
+            dataloom-runtime/api/dataloom-runtime.api \
+            dataloom-runtime/api/dataloom-runtime.klib.api \
+            dataloom-apple/api/dataloom-apple.klib.api \
+            docs/apple/README.md \
+            docs/api/README.md
+          git diff --check
+          git commit -m "DL-040: qualify Apple durable queue persistence"
+          git push origin "HEAD:${HEAD_BRANCH}"
