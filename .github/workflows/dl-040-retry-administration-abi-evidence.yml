@@ -1,25 +1,26 @@
 name: DL-040 Retry Administration ABI Evidence
 
 on:
-  push:
+  pull_request:
     branches:
-      - codex/dl-retry-042-abi-evidence
-    paths:
-      - .github/workflows/dl-040-retry-administration-abi-evidence.yml
+      - main
 
 permissions:
   contents: write
 
 jobs:
   generate-reviewed-abi:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'codex/dl-retry-042-manual-retry-administration'
     runs-on: macos-15
     timeout-minutes: 45
 
     steps:
-      - name: Checkout evidence branch
+      - name: Checkout pull request head
         uses: actions/checkout@v6
         with:
-          ref: codex/dl-retry-042-abi-evidence
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: true
 
@@ -42,18 +43,17 @@ jobs:
             --stacktrace \
             --console=plain
 
-      - name: Commit generated ABI declarations
+      - name: Commit ABI evidence and remove temporary workflow
+        env:
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/dl-040-retry-administration-abi-evidence.yml
           git add \
             dataloom-api/api/dataloom-api.api \
             dataloom-api/api/dataloom-api.klib.api \
             dataloom-runtime/api/dataloom-runtime.api \
             dataloom-runtime/api/dataloom-runtime.klib.api
-          if git diff --cached --quiet; then
-            echo "No ABI changes were generated."
-            exit 1
-          fi
           git commit -m "DL-040: generate retry administration ABI evidence"
-          git push origin HEAD:codex/dl-retry-042-abi-evidence
+          git push origin "HEAD:${HEAD_BRANCH}"

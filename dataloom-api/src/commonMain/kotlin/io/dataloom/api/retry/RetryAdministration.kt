@@ -267,6 +267,12 @@ public interface RetryAdministrationExecutor {
     /**
      * Applies [command] idempotently by [RetryAdministrationRequest.commandId].
      *
+     * Before mutating durable queue state, implementations must verify that the
+     * target [RetryAdministrationRequest.queueEntryId] still exists, is eligible
+     * for administrative retry, and retains canonical failure evidence matching
+     * [RetryAdministrationRequest.originalFailure]. Stale, forged, or mismatched
+     * commands must return [RetryAdministrationExecutionResult.Rejected].
+     *
      * The same command may be delivered again after contention, process loss,
      * or an unconfirmed audit write. A repeated command must not create another
      * queue entry or consume retry history twice. Cancellation must propagate.
