@@ -35,125 +35,20 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          path = Path(
-              "dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/retry/"
-              "AppleFileCircuitBreakerStateStore.kt"
-          )
+          path = Path("dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/retry/AppleFileCircuitBreakerStateStore.kt")
           source = path.read_text()
-
-          old_sort = '''            records.toSortedMap().forEach { (key, record) ->
-                check(key == scopeStorageKey(record.state.scope)) {'''
-          new_sort = '''            records.entries.sortedBy { it.key }.forEach { entry ->
-                val key = entry.key
-                val record = entry.value
-                check(key == scopeStorageKey(record.state.scope)) {'''
-
-          old_mode = 'mkdir(current, S_IRWXU)'
-          new_mode = 'mkdir(current, S_IRWXU.convert())'
-
-          old_write = '''internal fun writeUtf8FileAtomically(
-    temporaryPath: String,
-    destinationPath: String,
-    content: String,
-) {
-    val bytes = content.encodeToByteArray()
-    if (bytes.size > MAX_STATE_FILE_BYTES) throw AppleCircuitStateLimitException()
-    if (unlink(temporaryPath) != 0 && errno != ENOENT) {
-        throw AppleCircuitFileException()
-    }
-    val descriptor = openOwnerOnly(
-        temporaryPath,
-        O_WRONLY or O_CREAT or O_EXCL or O_TRUNC,
-    )
-    var committed = false
-    try {
-        var offset = 0
-        while (offset < bytes.size) {
-            val count = bytes.usePinned { pinned ->
-                write(
-                    descriptor,
-                    pinned.addressOf(offset),
-                    (bytes.size - offset).convert(),
-                )
-            }
-            when {
-                count < 0L && errno == EINTR -> continue
-                count <= 0L -> throw AppleCircuitFileException()
-                else -> offset += count.toInt()
-            }
-        }
-        if (fsync(descriptor) != 0) throw AppleCircuitFileException()
-        if (close(descriptor) != 0) throw AppleCircuitFileException()
-        if (rename(temporaryPath, destinationPath) != 0) {
-            throw AppleCircuitFileException()
-        }
-        committed = true
-    } finally {
-        if (!committed) {
-            close(descriptor)
-            unlink(temporaryPath)
-        }
-    }
-}'''
-          new_write = '''internal fun writeUtf8FileAtomically(
-    temporaryPath: String,
-    destinationPath: String,
-    content: String,
-) {
-    val bytes = content.encodeToByteArray()
-    if (bytes.size > MAX_STATE_FILE_BYTES) throw AppleCircuitStateLimitException()
-    if (unlink(temporaryPath) != 0 && errno != ENOENT) {
-        throw AppleCircuitFileException()
-    }
-    val descriptor = openOwnerOnly(
-        temporaryPath,
-        O_WRONLY or O_CREAT or O_EXCL or O_TRUNC,
-    )
-    var descriptorOpen = true
-    var renamed = false
-    try {
-        var offset = 0
-        while (offset < bytes.size) {
-            val count = bytes.usePinned { pinned ->
-                write(
-                    descriptor,
-                    pinned.addressOf(offset),
-                    (bytes.size - offset).convert(),
-                )
-            }
-            when {
-                count < 0L && errno == EINTR -> continue
-                count <= 0L -> throw AppleCircuitFileException()
-                else -> offset += count.toInt()
-            }
-        }
-        if (fsync(descriptor) != 0) throw AppleCircuitFileException()
-        val closeResult = close(descriptor)
-        descriptorOpen = false
-        if (closeResult != 0) throw AppleCircuitFileException()
-        if (rename(temporaryPath, destinationPath) != 0) {
-            throw AppleCircuitFileException()
-        }
-        renamed = true
-    } finally {
-        if (descriptorOpen) {
-            close(descriptor)
-        }
-        if (!renamed) {
-            unlink(temporaryPath)
-        }
-    }
-}'''
-
-          for old, new, label in (
-              (old_sort, new_sort, "deterministic ordering"),
-              (old_mode, new_mode, "mkdir mode conversion"),
-              (old_write, new_write, "descriptor lifecycle"),
-          ):
-              if old not in source:
-                  raise SystemExit(f"expected {label} source was not found")
+          replacements = (
+              ("            records.toSortedMap().forEach { (key, record) ->\n                check(key == scopeStorageKey(record.state.scope)) {", "            records.entries.sortedBy { it.key }.forEach { entry ->\n                val key = entry.key\n                val record = entry.value\n                check(key == scopeStorageKey(record.state.scope)) {", "deterministic ordering"),
+              ("mkdir(current, S_IRWXU)", "mkdir(current, S_IRWXU.convert())", "mkdir mode conversion"),
+              ("    var committed = false", "    var descriptorOpen = true\n    var renamed = false", "descriptor state"),
+              ("        if (close(descriptor) != 0) throw AppleCircuitFileException()", "        val closeResult = close(descriptor)\n        descriptorOpen = false\n        if (closeResult != 0) throw AppleCircuitFileException()", "single close result"),
+              ("        committed = true", "        renamed = true", "rename completion"),
+              ("        if (!committed) {\n            close(descriptor)\n            unlink(temporaryPath)\n        }", "        if (descriptorOpen) {\n            close(descriptor)\n        }\n        if (!renamed) {\n            unlink(temporaryPath)\n        }", "failure cleanup"),
+          )
+          for old, new, label in replacements:
+              if source.count(old) != 1:
+                  raise SystemExit(f"expected exactly one {label} source occurrence")
               source = source.replace(old, new)
-
           path.write_text(source)
           PY
 
