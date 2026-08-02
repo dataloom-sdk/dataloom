@@ -77,7 +77,7 @@ public class AppleFileRetryAdministrationExecutor(
     ): RetryAdministrationExecutionResult {
         val observedAt = clock.now()
         return appleRetryAdministrationProtect {
-            appleRetryAdministrationWithExclusiveLock {
+            appleRetryAdministrationWithExclusiveLock<RetryAdministrationExecutionResult> {
                 val snapshot = appleRetryAdministrationReadSnapshot()
                 val commandId = command.request.commandId.value
                 val existingReceipt = snapshot.retryAdministrationReceipts[commandId]
