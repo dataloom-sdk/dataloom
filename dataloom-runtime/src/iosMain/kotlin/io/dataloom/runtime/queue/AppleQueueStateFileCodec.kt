@@ -26,23 +26,98 @@ import io.dataloom.api.model.WorkflowPriority
 import io.dataloom.api.queue.QueueEntry
 import io.dataloom.api.queue.QueueEntryState
 import io.dataloom.api.queue.QueueLease
+import io.dataloom.api.retry.AuthorizedRetryAdministrationCommand
+import io.dataloom.api.retry.RetryAdministrationAction
+import io.dataloom.api.retry.RetryAdministrationAuthorizationId
+import io.dataloom.api.retry.RetryAdministrationCommandId
+import io.dataloom.api.retry.RetryAdministrationPrincipalId
+import io.dataloom.api.retry.RetryAdministrationReason
+import io.dataloom.api.retry.RetryAdministrationRequest
 import io.dataloom.api.retry.RetryAttempt
 import io.dataloom.api.retry.RetryBudgetState
+import io.dataloom.api.retry.RetryFailureSnapshot
 import io.dataloom.api.retry.WorkflowTimeoutState
 import io.dataloom.api.scheduling.SchedulingDelay
 import io.dataloom.api.time.DataLoomInstant
 
 /** Strict, deterministic queue snapshot codec used by the Apple provider. */
 internal object AppleQueueStateFileCodec {
-    private const val HEADER: String = "DATALOOM_QUEUE_STATE\t1"
-    private const val FIELD_COUNT: Int = 35
+    private const val LEGACY_HEADER: String = "DATALOOM_QUEUE_STATE\t1"
+    private const val CURRENT_HEADER: String = "DATALOOM_QUEUE_STATE\t2"
+    private const val ENTRY_PREFIX: String = "E"
+    private const val RECEIPT_PREFIX: String = "R"
+    private const val ENTRY_FIELD_COUNT: Int = 35
+    private const val RECEIPT_FIELD_COUNT: Int = 13
 
-    fun encode(entries: Map<String, QueueEntry>): String {
+    /** Encodes the historical version-1 entry-only format for migration evidence. */
+    fun encode(entries: Map<String, QueueEntry>): String = encodeLegacy(entries)
+
+    /** Decodes either supported format and returns only queue entries. */
+    fun decode(content: String): MutableMap<String, QueueEntry> =
+        decodeSnapshot(content).entries
+
+    /** Encodes the current version-2 entry-plus-receipt snapshot. */
+    fun encodeSnapshot(snapshot: AppleQueueSnapshot): String {
+        validateSnapshotBounds(snapshot)
+        val content = buildString {
+            append(CURRENT_HEADER)
+            append('\n')
+            snapshot.entries.entries.sortedBy { it.key }.forEach { mapEntry ->
+                val id = mapEntry.key
+                val entry = mapEntry.value
+                check(id == entry.id.value) {
+                    "Queue snapshot map key does not match the entry identifier."
+                }
+                append(ENTRY_PREFIX)
+                append('\t')
+                append(encodeEntry(entry))
+                append('\n')
+            }
+            snapshot.retryAdministrationReceipts.entries.sortedBy { it.key }
+                .forEach { mapEntry ->
+                    val commandId = mapEntry.key
+                    val receipt = mapEntry.value
+                    check(commandId == receipt.command.request.commandId.value) {
+                        "Queue receipt map key does not match the command identifier."
+                    }
+                    append(RECEIPT_PREFIX)
+                    append('\t')
+                    append(encodeReceipt(receipt))
+                    append('\n')
+                }
+        }
+        ensureFileBound(content)
+        return content
+    }
+
+    /** Decodes version 1 or version 2 and reconstructs the complete snapshot. */
+    fun decodeSnapshot(content: String): AppleQueueSnapshot {
+        ensureInputBound(content)
+        return try {
+            val lines = content.split('\n')
+            require(lines.isNotEmpty())
+            when (lines.first()) {
+                LEGACY_HEADER -> decodeLegacyLines(lines)
+                CURRENT_HEADER -> decodeCurrentLines(lines)
+                else -> error("Unsupported Apple queue snapshot version.")
+            }
+        } catch (limit: AppleQueueFileLimitException) {
+            throw limit
+        } catch (limit: AppleQueueEntryLimitException) {
+            throw limit
+        } catch (limit: AppleQueueReceiptLimitException) {
+            throw limit
+        } catch (invalid: Exception) {
+            throw AppleQueueMalformedStateException(invalid)
+        }
+    }
+
+    private fun encodeLegacy(entries: Map<String, QueueEntry>): String {
         if (entries.size > APPLE_QUEUE_MAX_ENTRY_COUNT) {
             throw AppleQueueEntryLimitException()
         }
         val content = buildString {
-            append(HEADER)
+            append(LEGACY_HEADER)
             append('\n')
             entries.entries.sortedBy { it.key }.forEach { mapEntry ->
                 val id = mapEntry.key
@@ -54,40 +129,138 @@ internal object AppleQueueStateFileCodec {
                 append('\n')
             }
         }
-        if (content.encodeToByteArray().size > APPLE_QUEUE_MAX_STATE_FILE_BYTES) {
-            throw AppleQueueFileLimitException()
-        }
+        ensureFileBound(content)
         return content
     }
 
-    fun decode(content: String): MutableMap<String, QueueEntry> {
+    private fun decodeLegacyLines(lines: List<String>): AppleQueueSnapshot {
+        val entries = linkedMapOf<String, QueueEntry>()
+        forEachDataLine(lines) { line ->
+            if (entries.size >= APPLE_QUEUE_MAX_ENTRY_COUNT) {
+                throw AppleQueueEntryLimitException()
+            }
+            val entry = decodeEntry(line)
+            require(entries.put(entry.id.value, entry) == null)
+        }
+        return AppleQueueSnapshot(entries = entries)
+    }
+
+    private fun decodeCurrentLines(lines: List<String>): AppleQueueSnapshot {
+        val snapshot = AppleQueueSnapshot()
+        forEachDataLine(lines) { line ->
+            val separator = line.indexOf('\t')
+            require(separator == 1)
+            val prefix = line.substring(0, separator)
+            val payload = line.substring(separator + 1)
+            require(payload.isNotEmpty())
+            when (prefix) {
+                ENTRY_PREFIX -> {
+                    if (snapshot.entries.size >= APPLE_QUEUE_MAX_ENTRY_COUNT) {
+                        throw AppleQueueEntryLimitException()
+                    }
+                    val entry = decodeEntry(payload)
+                    require(snapshot.entries.put(entry.id.value, entry) == null)
+                }
+                RECEIPT_PREFIX -> {
+                    if (snapshot.retryAdministrationReceipts.size >=
+                        APPLE_QUEUE_MAX_RETRY_ADMINISTRATION_RECEIPT_COUNT
+                    ) {
+                        throw AppleQueueReceiptLimitException()
+                    }
+                    val receipt = decodeReceipt(payload)
+                    val commandId = receipt.command.request.commandId.value
+                    require(
+                        snapshot.retryAdministrationReceipts.put(commandId, receipt) == null,
+                    )
+                }
+                else -> error("Unknown Apple queue snapshot record prefix.")
+            }
+        }
+        return snapshot
+    }
+
+    private inline fun forEachDataLine(
+        lines: List<String>,
+        block: (String) -> Unit,
+    ) {
+        for (index in 1 until lines.size) {
+            val line = lines[index]
+            if (line.isEmpty()) {
+                require(index == lines.lastIndex)
+                continue
+            }
+            block(line)
+        }
+    }
+
+    private fun validateSnapshotBounds(snapshot: AppleQueueSnapshot) {
+        if (snapshot.entries.size > APPLE_QUEUE_MAX_ENTRY_COUNT) {
+            throw AppleQueueEntryLimitException()
+        }
+        if (snapshot.retryAdministrationReceipts.size >
+            APPLE_QUEUE_MAX_RETRY_ADMINISTRATION_RECEIPT_COUNT
+        ) {
+            throw AppleQueueReceiptLimitException()
+        }
+    }
+
+    private fun ensureInputBound(content: String) {
         if (content.encodeToByteArray().size > APPLE_QUEUE_MAX_STATE_FILE_BYTES) {
             throw AppleQueueFileLimitException()
         }
-        return try {
-            val lines = content.split('\n')
-            require(lines.isNotEmpty() && lines.first() == HEADER)
-            val entries = linkedMapOf<String, QueueEntry>()
-            for (index in 1 until lines.size) {
-                val line = lines[index]
-                if (line.isEmpty()) {
-                    require(index == lines.lastIndex)
-                    continue
-                }
-                if (entries.size >= APPLE_QUEUE_MAX_ENTRY_COUNT) {
-                    throw AppleQueueEntryLimitException()
-                }
-                val entry = decodeEntry(line)
-                require(entries.put(entry.id.value, entry) == null)
-            }
-            entries
-        } catch (limit: AppleQueueFileLimitException) {
-            throw limit
-        } catch (limit: AppleQueueEntryLimitException) {
-            throw limit
-        } catch (invalid: Exception) {
-            throw AppleQueueMalformedStateException(invalid)
-        }
+    }
+
+    private fun ensureFileBound(content: String) = ensureInputBound(content)
+
+    private fun encodeReceipt(receipt: AppleRetryAdministrationReceipt): String {
+        val command = receipt.command
+        val request = command.request
+        val failure = request.originalFailure
+        return listOf(
+            appleQueueHexEncode(request.commandId.value),
+            appleQueueHexEncode(request.queueEntryId.value),
+            appleQueueHexEncode(request.principalId.value),
+            request.requestedAt.epochMilliseconds.toString(),
+            request.action.name,
+            appleQueueHexEncode(request.reason.value),
+            appleQueueHexEncode(failure.code.value),
+            failure.category.name,
+            failure.severity.name,
+            failure.recoverability.name,
+            appleQueueHexEncode(command.authorizationId.value),
+            command.effectiveRecoverability.name,
+            receipt.appliedAt.epochMilliseconds.toString(),
+        ).joinToString("\t")
+    }
+
+    private fun decodeReceipt(line: String): AppleRetryAdministrationReceipt {
+        val fields = line.split('\t')
+        require(fields.size == RECEIPT_FIELD_COUNT)
+        val request = RetryAdministrationRequest(
+            commandId = RetryAdministrationCommandId(appleQueueHexDecode(fields[0])),
+            queueEntryId = QueueEntryId(appleQueueHexDecode(fields[1])),
+            principalId = RetryAdministrationPrincipalId(appleQueueHexDecode(fields[2])),
+            requestedAt = DataLoomInstant(fields[3].appleQueueToLongStrict()),
+            action = RetryAdministrationAction.valueOf(fields[4]),
+            reason = RetryAdministrationReason(appleQueueHexDecode(fields[5])),
+            originalFailure = RetryFailureSnapshot(
+                code = ErrorCode(appleQueueHexDecode(fields[6])),
+                category = ErrorCategory.valueOf(fields[7]),
+                severity = ErrorSeverity.valueOf(fields[8]),
+                recoverability = Recoverability.valueOf(fields[9]),
+            ),
+        )
+        val command = AuthorizedRetryAdministrationCommand(
+            request = request,
+            authorizationId = RetryAdministrationAuthorizationId(
+                appleQueueHexDecode(fields[10]),
+            ),
+            effectiveRecoverability = Recoverability.valueOf(fields[11]),
+        )
+        return AppleRetryAdministrationReceipt(
+            command = command,
+            appliedAt = DataLoomInstant(fields[12].appleQueueToLongStrict()),
+        )
     }
 
     private fun encodeEntry(entry: QueueEntry): String {
@@ -136,7 +309,7 @@ internal object AppleQueueStateFileCodec {
 
     private fun decodeEntry(line: String): QueueEntry {
         val fields = line.split('\t')
-        require(fields.size == FIELD_COUNT)
+        require(fields.size == ENTRY_FIELD_COUNT)
         val executionContext = ExecutionContext(
             executionId = ExecutionId(appleQueueHexDecode(fields[6])),
             correlationId = CorrelationId(appleQueueHexDecode(fields[7])),
@@ -238,4 +411,3 @@ internal object AppleQueueStateFileCodec {
         )
     }
 }
-
