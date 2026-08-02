@@ -204,7 +204,9 @@ internal object AppleCircuitStateFileCodec {
         val content = buildString {
             append(HEADER)
             append('\n')
-            records.toSortedMap().forEach { (key, record) ->
+            records.entries.sortedBy { it.key }.forEach { entry ->
+                val key = entry.key
+                val record = entry.value
                 check(key == scopeStorageKey(record.state.scope)) {
                     "Circuit-state map key does not match the record scope."
                 }
@@ -383,7 +385,7 @@ private fun ensurePrivateDirectory(path: String) {
     var current = ""
     path.split('/').filter { it.isNotEmpty() }.forEach { component ->
         current += "/$component"
-        if (mkdir(current, S_IRWXU) != 0 && errno != EEXIST) {
+        if (mkdir(current, S_IRWXU.convert()) != 0 && errno != EEXIST) {
             throw AppleCircuitFileException()
         }
     }
@@ -452,7 +454,8 @@ internal fun writeUtf8FileAtomically(
         temporaryPath,
         O_WRONLY or O_CREAT or O_EXCL or O_TRUNC,
     )
-    var committed = false
+    var descriptorOpen = true
+    var renamed = false
     try {
         var offset = 0
         while (offset < bytes.size) {
@@ -470,14 +473,18 @@ internal fun writeUtf8FileAtomically(
             }
         }
         if (fsync(descriptor) != 0) throw AppleCircuitFileException()
-        if (close(descriptor) != 0) throw AppleCircuitFileException()
+        val closeResult = close(descriptor)
+        descriptorOpen = false
+        if (closeResult != 0) throw AppleCircuitFileException()
         if (rename(temporaryPath, destinationPath) != 0) {
             throw AppleCircuitFileException()
         }
-        committed = true
+        renamed = true
     } finally {
-        if (!committed) {
+        if (descriptorOpen) {
             close(descriptor)
+        }
+        if (!renamed) {
             unlink(temporaryPath)
         }
     }

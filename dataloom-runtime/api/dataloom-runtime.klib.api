@@ -2740,6 +2740,18 @@ final class io.dataloom.runtime.queue/QueuedSynchronizationWork { // io.dataloom
     final fun toString(): kotlin/String // io.dataloom.runtime.queue/QueuedSynchronizationWork.toString|toString(){}[0]
 }
 
+final class io.dataloom.runtime.retry/AppleFileCircuitBreakerStateStore : io.dataloom.api.circuit/CircuitBreakerStateStore { // io.dataloom.runtime.retry/AppleFileCircuitBreakerStateStore|null[0]
+    constructor <init>(kotlin/String, kotlin/String = ...) // io.dataloom.runtime.retry/AppleFileCircuitBreakerStateStore.<init>|<init>(kotlin.String;kotlin.String){}[0]
+
+    final suspend fun compareAndSet(io.dataloom.api.circuit/CircuitBreakerCompareAndSetRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult> // io.dataloom.runtime.retry/AppleFileCircuitBreakerStateStore.compareAndSet|compareAndSet(io.dataloom.api.circuit.CircuitBreakerCompareAndSetRequest){}[0]
+    final suspend fun load(io.dataloom.api.circuit/CircuitBreakerScope): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.circuit/CircuitBreakerLoadResult> // io.dataloom.runtime.retry/AppleFileCircuitBreakerStateStore.load|load(io.dataloom.api.circuit.CircuitBreakerScope){}[0]
+
+    final object Companion { // io.dataloom.runtime.retry/AppleFileCircuitBreakerStateStore.Companion|null[0]
+        final const val DEFAULT_FILE_NAME // io.dataloom.runtime.retry/AppleFileCircuitBreakerStateStore.Companion.DEFAULT_FILE_NAME|{}DEFAULT_FILE_NAME[0]
+            final fun <get-DEFAULT_FILE_NAME>(): kotlin/String // io.dataloom.runtime.retry/AppleFileCircuitBreakerStateStore.Companion.DEFAULT_FILE_NAME.<get-DEFAULT_FILE_NAME>|<get-DEFAULT_FILE_NAME>(){}[0]
+    }
+}
+
 final class io.dataloom.runtime.retry/CircuitBreakerConfiguration { // io.dataloom.runtime.retry/CircuitBreakerConfiguration|null[0]
     constructor <init>(kotlin/Int, io.dataloom.api.scheduling/SchedulingDelay, io.dataloom.api.scheduling/SchedulingDelay, kotlin/Int = ..., io.dataloom.api.scheduling/SchedulingDelay = ...) // io.dataloom.runtime.retry/CircuitBreakerConfiguration.<init>|<init>(kotlin.Int;io.dataloom.api.scheduling.SchedulingDelay;io.dataloom.api.scheduling.SchedulingDelay;kotlin.Int;io.dataloom.api.scheduling.SchedulingDelay){}[0]
 
