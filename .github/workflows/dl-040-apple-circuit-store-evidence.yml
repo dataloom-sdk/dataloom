@@ -1,27 +1,23 @@
-# Registered through the repository contents API for PR evidence.
 name: DL-040 Apple Circuit Store Evidence
 
 on:
-  pull_request:
+  push:
     branches:
-      - main
+      - codex/dl-retry-043-apple-circuit-store
 
 permissions:
   contents: write
 
 jobs:
   qualify-apple-circuit-store:
-    if: >-
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      github.event.pull_request.head.ref == 'codex/dl-retry-043-apple-circuit-store'
     runs-on: macos-15
     timeout-minutes: 45
 
     steps:
-      - name: Checkout pull request head
+      - name: Checkout evidence branch
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: codex/dl-retry-043-apple-circuit-store
           fetch-depth: 0
           persist-credentials: true
 
@@ -192,8 +188,6 @@ jobs:
             --console=plain
 
       - name: Commit source corrections and exact evidence
-        env:
-          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -205,4 +199,4 @@ jobs:
             dataloom-apple/api/dataloom-apple.klib.api
           git diff --check
           git commit -m "DL-040: qualify Apple circuit state persistence"
-          git push origin "HEAD:${HEAD_BRANCH}"
+          git push origin HEAD:codex/dl-retry-043-apple-circuit-store
