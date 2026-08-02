@@ -124,16 +124,22 @@ error.
 The Apple external-consumer probe compiles the production constructor from the
 Apple variants without exposing implementation-only helpers.
 
-## Final qualification plan
+The one-time same-repository macOS lane completed on generated evidence head
+`57045267a8aea3ded5cd04f62dc6c4b1b91aeaa6` and passed:
 
-Before merge, one clean head must pass:
+1. runtime JVM tests and `iosSimulatorArm64Test`;
+2. external JVM, `iosArm64`, `iosSimulatorArm64`, and `iosX64` compilation;
+3. exact runtime and Apple Kotlin/Native ABI generation and checks;
+4. runtime public ABI-boundary validation; and
+5. Apple release XCFramework assembly.
 
-1. runtime `iosSimulatorArm64Test` including the Apple store tests;
-2. external `iosArm64`, `iosSimulatorArm64`, and `iosX64` consumer compilation;
-3. exact runtime and Apple Kotlin/Native ABI checks;
-4. Apple XCFramework assembly, exported-header audit, and Swift smoke compile;
-5. common/JVM regression validation; and
-6. Android validation including the existing Room managed-device tests.
+That lane also applied the reviewed Kotlin/Native deterministic-ordering and
+POSIX mode conversions, corrected the temporary descriptor lifecycle so an
+error path cannot close the same descriptor twice, committed the exact runtime
+ABI declaration, and removed itself.
+
+The permanent Pull Request, Android, and Apple/Swift workflows remain the final
+merge gate on the trusted review head.
 
 ## Remaining DL-040 / KMP iOS work
 
