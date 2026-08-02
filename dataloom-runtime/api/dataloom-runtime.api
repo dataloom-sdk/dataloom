@@ -2073,6 +2073,18 @@ public final class io/dataloom/runtime/retry/TransportConnectionTimeoutRuntime {
 	public static synthetic fun create$default (Lio/dataloom/runtime/retry/TransportConnectionTimeoutRuntime;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;ILjava/lang/Object;)Lio/dataloom/runtime/retry/TransportConnectionTimeoutBoundary;
 }
 
+public final class io/dataloom/runtime/retry/TransportIdleTimeoutBoundary {
+	public fun <init> (Lio/dataloom/runtime/retry/RetryTimeoutCoordinator;)V
+	public final fun awaitProgress (Lio/dataloom/api/time/DataLoomInstant;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun awaitProgress$default (Lio/dataloom/runtime/retry/TransportIdleTimeoutBoundary;Lio/dataloom/api/time/DataLoomInstant;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/retry/TransportIdleTimeoutRuntime {
+	public static final field INSTANCE Lio/dataloom/runtime/retry/TransportIdleTimeoutRuntime;
+	public final fun create (Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;)Lio/dataloom/runtime/retry/TransportIdleTimeoutBoundary;
+	public static synthetic fun create$default (Lio/dataloom/runtime/retry/TransportIdleTimeoutRuntime;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;ILjava/lang/Object;)Lio/dataloom/runtime/retry/TransportIdleTimeoutBoundary;
+}
+
 public final class io/dataloom/runtime/retry/TransportProviderTimeoutRuntime {
 	public static final field INSTANCE Lio/dataloom/runtime/retry/TransportProviderTimeoutRuntime;
 	public final fun create (Lio/dataloom/api/transport/TransportProvider;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/scheduling/SchedulingDelay;)Lio/dataloom/api/transport/TransportProvider;
