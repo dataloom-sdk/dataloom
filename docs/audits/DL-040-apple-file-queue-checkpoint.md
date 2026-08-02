@@ -102,17 +102,32 @@ an internal persistence format, not a public interchange contract.
 The external Apple consumer probe constructs the provider through the public
 runtime API for `iosArm64`, `iosSimulatorArm64`, and `iosX64`.
 
-## Qualification plan
+## Focused qualification evidence
+
+The one-time same-repository Apple Queue Evidence workflow completed on source
+head `2e08bd71b27860946e9153829a2b3980695019ac` as run #3. It passed:
+
+1. runtime JVM regression tests and the dedicated `iosSimulatorArm64Test` suite;
+2. external JVM, `iosArm64`, `iosSimulatorArm64`, and `iosX64` consumer
+   compilation;
+3. exact runtime and Apple Kotlin/Native ABI generation and checks;
+4. runtime public ABI-boundary validation; and
+5. Apple release XCFramework assembly.
+
+The workflow committed the reviewed runtime ABI declaration and documentation
+integration, then removed itself. Pull Request Validation #416 and Android
+Validation #254 also passed on that source head. The earlier Apple Platform
+Validation #264 ran before the generated ABI declaration was committed and is
+not final-head evidence.
+
+## Final qualification plan
 
 Before merge, one clean reviewed head must pass:
 
-1. runtime JVM and iOS Simulator tests;
-2. all external JVM and Apple consumer compiles;
-3. exact runtime and Apple Kotlin/Native ABI generation/checks;
-4. runtime public-boundary validation;
-5. Apple XCFramework assembly, exported-header audit, and Swift smoke compile;
-6. Pull Request Validation; and
-7. Android validation including Room schema and managed-device tests.
+1. Pull Request Validation;
+2. Android validation including Room schema and managed-device tests; and
+3. Apple Platform Validation including Kotlin/Native tests, XCFramework slice
+   verification, exported-header audit, and Swift smoke compilation.
 
 ## Remaining DL-040 / KMP iOS work
 
