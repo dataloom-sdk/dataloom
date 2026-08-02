@@ -1,11 +1,13 @@
 # Retry administration
 
-**Status:** Available foundation; complete V1 operational integration remains partial.
+**Status:** Authorized command coordination and production Android/Apple state
+persistence are available. Android Room provides atomic queue execution;
+complete Apple execution and operational assembly remain partial.
 
 DataLoom exposes an explicit administrative boundary for manual retry and
 failure reclassification. It does not weaken the normal fail-closed retry
-classifier. Applications must provide authorization, durable command state,
-and an idempotent queue mutation adapter.
+classifier. Applications provide authorization and select the platform durable
+state and execution implementations.
 
 ## Public contracts
 
@@ -38,7 +40,7 @@ Protected categories are authentication, authorization, serialization,
 validation, configuration, policy, conflict, and security. Unknown and
 non-recoverable failures also require explicit reclassification.
 
-## Execution ordering
+## Generic execution ordering
 
 ```mermaid
 sequenceDiagram
@@ -70,16 +72,51 @@ sequenceDiagram
 
 ## Executor requirements
 
-Before queue mutation, the executor must verify that the target entry still
-exists, is eligible for administrative retry, and retains canonical failure
-evidence matching the command snapshot. A stale, forged, or mismatched command
-must return `Rejected` without mutation.
+Before queue mutation, an executor verifies that the target entry still exists,
+is eligible for administrative retry, and retains canonical failure evidence
+matching the command snapshot. A stale, forged, or mismatched command returns
+`Rejected` without mutation.
 
-Execution may finish before the final command-state write is confirmed. The
-coordinator therefore returns `ExecutionRecordingUnconfirmed` with the exact
-execution result and persistence failure. Redelivery uses the same command id;
-the executor must not create a second queue entry or consume retry history
-again.
+A generic executor may finish before the coordinator's final command-state write
+is confirmed. The coordinator therefore exposes
+`ExecutionRecordingUnconfirmed`. Redelivery uses the same command id and must
+not create another queue entry or consume retry history again.
+
+## Android Room atomic execution
+
+`RoomRetryAdministrationStateStore` persists the complete command and audit
+record in the same `DataLoomRoomDatabase` used by `RoomQueueProvider`.
+`RoomRetryAdministrationExecutor` uses that shared database as a stronger
+platform-specific atomicity boundary.
+
+One Room transaction:
+
+1. loads the durable command and validates every immutable request field;
+2. validates `AUTHORIZED`, the authorization id, effective recoverability, and
+   defensive retry/reclassification policy;
+3. loads the target queue entry and validates `FAILED` or `DEAD_LETTER` plus the
+   exact stored failure code, category, severity, and recoverability;
+4. changes the queue state to `PENDING` or `RETRY_WAITING` according to existing
+   retry history, clears the terminal error, and makes the work available at the
+   executor's observed instant; and
+5. advances the same command record to versioned `SUCCEEDED`.
+
+If either update fails, SQLite rolls the transaction back. If both commit but
+the caller loses the response, replay sees the durable `SUCCEEDED` receipt and
+returns `Applied` without a second queue mutation. The coordinator's attempted
+old-version terminal write conflicts, then its normal reload path returns the
+already durable success record.
+
+The executor preserves synchronization request/context identity, queue metadata,
+retry attempt, retry-budget state, and immutable workflow start/deadline
+evidence. It does not consume another attempt, reset budgets, or extend the
+workflow deadline.
+
+Stable semantic rejections cover missing/conflicting commands, unauthorized or
+mismatched authorization evidence, required reclassification, missing or
+non-terminal targets, missing failure evidence, and failure-snapshot mismatch.
+Database, integrity, version-exhaustion, and clock-regression outcomes use
+canonical sanitized errors.
 
 ## Apple durable state
 
@@ -93,12 +130,15 @@ See the [Apple retry-administration state-store guide](../apple/retry-administra
 for construction, persistence boundaries, error behavior, and platform
 responsibilities.
 
+Apple does not yet have a queue-specific executor with a command receipt in the
+same durable queue mutation. That work requires an explicit migration of the
+Apple queue file format and remains separate from the qualified state store.
+
 ## Current boundary
 
 DataLoom now includes common public contracts, deterministic coordination,
-focused common tests, and production Apple command-state persistence. It does
-not yet ship a production Android retry-administration store, a
-queue-provider-specific idempotent executor, atomic queue command receipts,
-facade/builder assembly, platform operations UI, or complete administration
-metrics and tracing. Applications must not claim those capabilities from this
-foundation.
+production Android and Apple command-state persistence, and atomic Android Room
+administrative requeue execution. Remaining work includes Apple atomic queue
+execution/format migration, builder or operations-facade assembly, role and UI
+integration beyond the authorizer SPI, complete administration events/metrics/
+tracing, and cross-platform process-loss and high-contention qualification.

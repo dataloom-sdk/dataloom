@@ -23,4 +23,5 @@ public abstract class DataLoomRoomDatabase : RoomDatabase() {
     internal abstract fun queueEntryDao(): QueueEntryDao
     internal abstract fun circuitBreakerStateDao(): CircuitBreakerStateDao
     internal abstract fun retryAdministrationStateDao(): RetryAdministrationStateDao
+    internal abstract fun retryAdministrationExecutionDao(): RetryAdministrationExecutionDao
 }
