@@ -3110,6 +3110,12 @@ final class io.dataloom.runtime.retry/TransportCircuitScopes { // io.dataloom.ru
     final fun toString(): kotlin/String // io.dataloom.runtime.retry/TransportCircuitScopes.toString|toString(){}[0]
 }
 
+final class io.dataloom.runtime.retry/TransportConnectionTimeoutBoundary { // io.dataloom.runtime.retry/TransportConnectionTimeoutBoundary|null[0]
+    constructor <init>(io.dataloom.runtime.retry/RetryTimeoutCoordinator) // io.dataloom.runtime.retry/TransportConnectionTimeoutBoundary.<init>|<init>(io.dataloom.runtime.retry.RetryTimeoutCoordinator){}[0]
+
+    final suspend fun <#A1: kotlin/Any?> execute(io.dataloom.api.time/DataLoomInstant? = ..., kotlin.coroutines/SuspendFunction0<io.dataloom.api.provider/ProviderOperationResult<#A1>>): io.dataloom.api.provider/ProviderOperationResult<#A1> // io.dataloom.runtime.retry/TransportConnectionTimeoutBoundary.execute|execute(io.dataloom.api.time.DataLoomInstant?;kotlin.coroutines.SuspendFunction0<io.dataloom.api.provider.ProviderOperationResult<0:0>>){0§<kotlin.Any?>}[0]
+}
+
 final class io.dataloom.runtime.retry/WorkflowTimeoutStateExecutor { // io.dataloom.runtime.retry/WorkflowTimeoutStateExecutor|null[0]
     constructor <init>(io.dataloom.api.time/DataLoomClock, io.dataloom.runtime.retry/RetryTimeoutExecutor = ...) // io.dataloom.runtime.retry/WorkflowTimeoutStateExecutor.<init>|<init>(io.dataloom.api.time.DataLoomClock;io.dataloom.runtime.retry.RetryTimeoutExecutor){}[0]
 
@@ -3239,6 +3245,10 @@ final object io.dataloom.runtime.retry/TransportCircuitBreakerFailureClassifier 
 
 final object io.dataloom.runtime.retry/TransportCircuitProtectionRuntime { // io.dataloom.runtime.retry/TransportCircuitProtectionRuntime|null[0]
     final fun create(io.dataloom.api.transport/TransportProvider, io.dataloom.api.time/DataLoomClock, io.dataloom.runtime.retry/CircuitBreakerConfiguration, io.dataloom.api.circuit/CircuitBreakerStateStore, io.dataloom.runtime.retry/TransportCircuitScopes, io.dataloom.api.scheduling/SchedulingDelay? = ..., io.dataloom.runtime.retry/CircuitBreakerFailureClassifier = ...): io.dataloom.runtime.retry/ProtectedTransportOperations // io.dataloom.runtime.retry/TransportCircuitProtectionRuntime.create|create(io.dataloom.api.transport.TransportProvider;io.dataloom.api.time.DataLoomClock;io.dataloom.runtime.retry.CircuitBreakerConfiguration;io.dataloom.api.circuit.CircuitBreakerStateStore;io.dataloom.runtime.retry.TransportCircuitScopes;io.dataloom.api.scheduling.SchedulingDelay?;io.dataloom.runtime.retry.CircuitBreakerFailureClassifier){}[0]
+}
+
+final object io.dataloom.runtime.retry/TransportConnectionTimeoutRuntime { // io.dataloom.runtime.retry/TransportConnectionTimeoutRuntime|null[0]
+    final fun create(io.dataloom.api.time/DataLoomClock, io.dataloom.api.scheduling/SchedulingDelay, io.dataloom.api.scheduling/SchedulingDelay? = ...): io.dataloom.runtime.retry/TransportConnectionTimeoutBoundary // io.dataloom.runtime.retry/TransportConnectionTimeoutRuntime.create|create(io.dataloom.api.time.DataLoomClock;io.dataloom.api.scheduling.SchedulingDelay;io.dataloom.api.scheduling.SchedulingDelay?){}[0]
 }
 
 final object io.dataloom.runtime.retry/TransportProviderTimeoutRuntime { // io.dataloom.runtime.retry/TransportProviderTimeoutRuntime|null[0]
