@@ -38,54 +38,14 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          source_path = Path(
-              "dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/retry/"
-              "AppleFileCircuitBreakerStateStore.kt"
-          )
+          source_path = Path("dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/retry/AppleFileCircuitBreakerStateStore.kt")
           source = source_path.read_text()
-
-          old_class_doc = (
-              "Successful writes are fsynced to a temporary file and atomically renamed over\n"
-              " * the prior snapshot. Compare-and-set therefore remains exact across multiple"
-          )
-          new_class_doc = (
-              "Successful writes are fsynced to a temporary file, atomically renamed over the\n"
-              " * prior snapshot, and followed by a parent-directory fsync. Compare-and-set\n"
-              " * therefore remains exact across multiple"
-          )
-          old_rename = (
-              "        if (rename(temporaryPath, destinationPath) != 0) {\n"
-              "            throw AppleCircuitFileException()\n"
-              "        }\n"
-              "        renamed = true"
-          )
-          new_rename = (
-              "        if (rename(temporaryPath, destinationPath) != 0) {\n"
-              "            throw AppleCircuitFileException()\n"
-              "        }\n"
-              "        renamed = true\n"
-              "        fsyncDirectory(destinationPath.substringBeforeLast('/'))"
-          )
+          old_class_doc = "Successful writes are fsynced to a temporary file and atomically renamed over\n * the prior snapshot. Compare-and-set therefore remains exact across multiple"
+          new_class_doc = "Successful writes are fsynced to a temporary file, atomically renamed over the\n * prior snapshot, and followed by a parent-directory fsync. Compare-and-set\n * therefore remains exact across multiple"
+          old_rename = "        if (rename(temporaryPath, destinationPath) != 0) {\n            throw AppleCircuitFileException()\n        }\n        renamed = true"
+          new_rename = "        if (rename(temporaryPath, destinationPath) != 0) {\n            throw AppleCircuitFileException()\n        }\n        renamed = true\n        fsyncDirectory(destinationPath.substringBeforeLast('/'))"
           marker = "\nprivate object AppleCircuitStoreError {"
-          helper = '''
-
-private fun fsyncDirectory(path: String) {
-    val descriptor = open(path, O_RDONLY)
-    if (descriptor < 0) throw AppleCircuitFileException()
-    var descriptorOpen = true
-    try {
-        if (fsync(descriptor) != 0) throw AppleCircuitFileException()
-        val closeResult = close(descriptor)
-        descriptorOpen = false
-        if (closeResult != 0) throw AppleCircuitFileException()
-    } finally {
-        if (descriptorOpen) {
-            close(descriptor)
-        }
-    }
-}
-'''
-
+          helper = "\nprivate fun fsyncDirectory(path: String) {\n    val descriptor = open(path, O_RDONLY)\n    if (descriptor < 0) throw AppleCircuitFileException()\n    var descriptorOpen = true\n    try {\n        if (fsync(descriptor) != 0) throw AppleCircuitFileException()\n        val closeResult = close(descriptor)\n        descriptorOpen = false\n        if (closeResult != 0) throw AppleCircuitFileException()\n    } finally {\n        if (descriptorOpen) {\n            close(descriptor)\n        }\n    }\n}\n"
           for old, new, label in (
               (old_class_doc, new_class_doc, "class durability documentation"),
               (old_rename, new_rename, "rename durability boundary"),
@@ -95,23 +55,13 @@ private fun fsyncDirectory(path: String) {
               source = source.replace(old, new)
           if source.count(marker) != 1:
               raise SystemExit("expected exactly one error-object insertion marker")
-          source = source.replace(marker, helper + marker)
-          source_path.write_text(source)
+          source_path.write_text(source.replace(marker, helper + marker))
 
           doc_path = Path("docs/apple/circuit-state-store.md")
           doc = doc_path.read_text()
           replacements = (
-              (
-                  "A successful update writes a complete temporary snapshot, calls `fsync`,\n"
-                  "and atomically renames the temporary file over the previous snapshot.",
-                  "A successful update writes a complete temporary snapshot, calls `fsync`,\n"
-                  "atomically renames the temporary file over the previous snapshot, and then\n"
-                  "fsyncs the parent directory so the renamed directory entry is durable."
-              ),
-              (
-                  "        Store->>Disk: write temp + fsync + atomic rename",
-                  "        Store->>Disk: write temp + fsync + atomic rename + directory fsync"
-              ),
+              ("A successful update writes a complete temporary snapshot, calls `fsync`,\nand atomically renames the temporary file over the previous snapshot.", "A successful update writes a complete temporary snapshot, calls `fsync`,\natomically renames the temporary file over the previous snapshot, and then\nfsyncs the parent directory so the renamed directory entry is durable."),
+              ("        Store->>Disk: write temp + fsync + atomic rename", "        Store->>Disk: write temp + fsync + atomic rename + directory fsync"),
           )
           for old, new in replacements:
               if doc.count(old) != 1:
@@ -121,14 +71,8 @@ private fun fsyncDirectory(path: String) {
 
           audit_path = Path("docs/audits/DL-040-apple-file-circuit-store-checkpoint.md")
           audit = audit_path.read_text()
-          old = (
-              "7. A successful result is returned only after the replacement snapshot is\n"
-              "   fsynced and atomically renamed."
-          )
-          new = (
-              "7. A successful result is returned only after the replacement snapshot is\n"
-              "   fsynced, atomically renamed, and the parent directory is fsynced."
-          )
+          old = "7. A successful result is returned only after the replacement snapshot is\n   fsynced and atomically renamed."
+          new = "7. A successful result is returned only after the replacement snapshot is\n   fsynced, atomically renamed, and the parent directory is fsynced."
           if audit.count(old) != 1:
               raise SystemExit("expected checkpoint durability invariant not found")
           audit_path.write_text(audit.replace(old, new))
