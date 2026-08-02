@@ -40,7 +40,7 @@ an absolute directory `String` and optional file-name `String`.
 5. Versions begin at zero and increment by one.
 6. `Long.MAX_VALUE` fails before directory or file access.
 7. A successful result is returned only after the replacement snapshot is
-   fsynced and atomically renamed.
+   fsynced, atomically renamed, and the parent directory is fsynced.
 8. A failed pre-rename write leaves the previous snapshot authoritative.
 9. Scope reconstruction and all `CircuitBreakerState` invariants are revalidated
    on every read.

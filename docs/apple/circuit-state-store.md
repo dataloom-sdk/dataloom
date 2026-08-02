@@ -37,7 +37,8 @@ independent DataLoom environments. The file name must be one path component.
 Every operation acquires one process-shared advisory lock for the configured
 snapshot. Lock acquisition uses non-blocking attempts with coroutine cancellation
 checks. A successful update writes a complete temporary snapshot, calls `fsync`,
-and atomically renames the temporary file over the previous snapshot.
+atomically renames the temporary file over the previous snapshot, and then
+fsyncs the parent directory so the renamed directory entry is durable.
 
 ```mermaid
 sequenceDiagram
@@ -54,7 +55,7 @@ sequenceDiagram
     alt version conflict
         Store-->>Caller: Conflict(current record)
     else version matches
-        Store->>Disk: write temp + fsync + atomic rename
+        Store->>Disk: write temp + fsync + atomic rename + directory fsync
         Store-->>Caller: Updated(exact persisted record)
     end
     Store->>Lock: release

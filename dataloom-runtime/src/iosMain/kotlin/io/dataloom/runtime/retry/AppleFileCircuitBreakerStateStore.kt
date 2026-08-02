@@ -66,8 +66,9 @@ import platform.posix.write
  * metadata.
  *
  * A process-shared advisory file lock protects every load and compare-and-set.
- * Successful writes are fsynced to a temporary file and atomically renamed over
- * the prior snapshot. Compare-and-set therefore remains exact across multiple
+ * Successful writes are fsynced to a temporary file, atomically renamed over the
+ * prior snapshot, and followed by a parent-directory fsync. Compare-and-set
+ * therefore remains exact across multiple
  * store instances and cooperating app processes that use the same directory and
  * file name.
  *
@@ -480,12 +481,29 @@ internal fun writeUtf8FileAtomically(
             throw AppleCircuitFileException()
         }
         renamed = true
+        fsyncDirectory(destinationPath.substringBeforeLast('/'))
     } finally {
         if (descriptorOpen) {
             close(descriptor)
         }
         if (!renamed) {
             unlink(temporaryPath)
+        }
+    }
+}
+
+private fun fsyncDirectory(path: String) {
+    val descriptor = open(path, O_RDONLY)
+    if (descriptor < 0) throw AppleCircuitFileException()
+    var descriptorOpen = true
+    try {
+        if (fsync(descriptor) != 0) throw AppleCircuitFileException()
+        val closeResult = close(descriptor)
+        descriptorOpen = false
+        if (closeResult != 0) throw AppleCircuitFileException()
+    } finally {
+        if (descriptorOpen) {
+            close(descriptor)
         }
     }
 }
