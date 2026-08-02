@@ -8,7 +8,6 @@ import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
 import io.dataloom.api.identifier.CorrelationId
 import io.dataloom.api.identifier.ExecutionId
-import io.dataloom.api.identifier.ProviderId
 import io.dataloom.api.identifier.QueueConsumerId
 import io.dataloom.api.identifier.QueueEntryId
 import io.dataloom.api.identifier.QueueLeaseId
@@ -17,6 +16,7 @@ import io.dataloom.api.identifier.WorkflowId
 import io.dataloom.api.model.SynchronizationDirection
 import io.dataloom.api.model.SynchronizationMode
 import io.dataloom.api.model.SynchronizationRequest
+import io.dataloom.api.provider.ProviderId
 import io.dataloom.api.provider.SynchronizationProviderBindings
 import io.dataloom.api.queue.QueueEntry
 import io.dataloom.api.queue.QueueEntryState
