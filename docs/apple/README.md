@@ -15,8 +15,8 @@
 DL-036 established Apple compilation and packaging mechanics. Later DL-040 work
 added production Apple circuit-breaker, durable queue, retry-administration,
 and circuit-administration persistence. Apple connectivity, background
-scheduling, lifecycle restoration, complete facade assembly, and executable
-reference flows remain incomplete.
+scheduling, lifecycle restoration, and executable reference flows remain
+incomplete.
 
 Native Android, KMP Android, and KMP iOS are mandatory V1 consumer paths.
 Native Swift is optional and must be qualified separately if distributed. The
@@ -104,7 +104,7 @@ they do not use the XCFramework as their KMP dependency mechanism.
 
 - Apple connectivity and background-scheduling providers.
 - Apple runtime/lifecycle ownership and executable process-relaunch restoration.
-- Complete retry/circuit administration facade assembly and lifecycle ownership.
+- Complete Apple runtime/lifecycle ownership for configured administration.
 - Conflict, outbox, asset-session, broader audit, and governance persistence
   beyond the circuit, queue, and retry-administration stores.
 - Keychain/data-protection integration and secure key references.

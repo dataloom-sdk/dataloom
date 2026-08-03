@@ -342,6 +342,8 @@ abstract interface io.dataloom.runtime.facade/DataLoom { // io.dataloom.runtime.
         open fun <get-protectedSynchronization>(): io.dataloom.runtime.facade/DataLoomProtectedSynchronization? // io.dataloom.runtime.facade/DataLoom.protectedSynchronization.<get-protectedSynchronization>|<get-protectedSynchronization>(){}[0]
     open val retryAdministration // io.dataloom.runtime.facade/DataLoom.retryAdministration|{}retryAdministration[0]
         open fun <get-retryAdministration>(): io.dataloom.runtime.facade/DataLoomRetryAdministration? // io.dataloom.runtime.facade/DataLoom.retryAdministration.<get-retryAdministration>|<get-retryAdministration>(){}[0]
+    open val circuitAdministration // io.dataloom.runtime.facade/DataLoom.circuitAdministration|{}circuitAdministration[0]
+        open fun <get-circuitAdministration>(): io.dataloom.runtime.facade/DataLoomCircuitAdministration? // io.dataloom.runtime.facade/DataLoom.circuitAdministration.<get-circuitAdministration>|<get-circuitAdministration>(){}[0]
 
     abstract suspend fun initialize(): io.dataloom.api.provider/ProviderLifecycleResult // io.dataloom.runtime.facade/DataLoom.initialize|initialize(){}[0]
     abstract suspend fun shutdown(): io.dataloom.api.provider/ProviderLifecycleResult // io.dataloom.runtime.facade/DataLoom.shutdown|shutdown(){}[0]
@@ -349,6 +351,10 @@ abstract interface io.dataloom.runtime.facade/DataLoom { // io.dataloom.runtime.
     abstract suspend fun synchronize(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.provider/SynchronizationProviderBindings): io.dataloom.runtime.execution/SynchronizationExecutionResult // io.dataloom.runtime.facade/DataLoom.synchronize|synchronize(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.provider.SynchronizationProviderBindings){}[0]
     abstract suspend fun synchronize(io.dataloom.api.strategy/StrategySynchronizationRequest): io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult // io.dataloom.runtime.facade/DataLoom.synchronize|synchronize(io.dataloom.api.strategy.StrategySynchronizationRequest){}[0]
     abstract suspend fun synchronize(io.dataloom.api.strategy/StrategySynchronizationRequest, io.dataloom.api.provider/StrategyProviderBindings): io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult // io.dataloom.runtime.facade/DataLoom.synchronize|synchronize(io.dataloom.api.strategy.StrategySynchronizationRequest;io.dataloom.api.provider.StrategyProviderBindings){}[0]
+}
+
+abstract interface io.dataloom.runtime.facade/DataLoomCircuitAdministration { // io.dataloom.runtime.facade/DataLoomCircuitAdministration|null[0]
+    abstract suspend fun execute(io.dataloom.api.circuit/CircuitAdministrationRequest): io.dataloom.runtime.retry/CircuitAdministrationResult // io.dataloom.runtime.facade/DataLoomCircuitAdministration.execute|execute(io.dataloom.api.circuit.CircuitAdministrationRequest){}[0]
 }
 
 abstract interface io.dataloom.runtime.facade/DataLoomCircuitQueueWorker { // io.dataloom.runtime.facade/DataLoomCircuitQueueWorker|null[0]
@@ -2521,6 +2527,7 @@ final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.
 
     final fun bidirectionalConfiguration(io.dataloom.runtime.execution.bidirectional/BidirectionalPipelineConfiguration): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.bidirectionalConfiguration|bidirectionalConfiguration(io.dataloom.runtime.execution.bidirectional.BidirectionalPipelineConfiguration){}[0]
     final fun build(): io.dataloom.runtime.facade/DataLoom // io.dataloom.runtime.facade/DataLoomBuilder.build|build(){}[0]
+    final fun circuitAdministrationConfiguration(io.dataloom.runtime.facade/DataLoomCircuitAdministrationSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.circuitAdministrationConfiguration|circuitAdministrationConfiguration(io.dataloom.runtime.facade.DataLoomCircuitAdministrationSpec){}[0]
     final fun circuitQueueWorkerConfiguration(io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.circuitQueueWorkerConfiguration|circuitQueueWorkerConfiguration(io.dataloom.runtime.facade.DataLoomCircuitQueueWorkerSpec){}[0]
     final fun circuitQueueWorkerSchedulerConfiguration(io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSchedulerSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.circuitQueueWorkerSchedulerConfiguration|circuitQueueWorkerSchedulerConfiguration(io.dataloom.runtime.facade.DataLoomCircuitQueueWorkerSchedulerSpec){}[0]
     final fun connectivityConfiguration(io.dataloom.runtime.connectivity/SynchronizationConnectivityConfiguration): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.connectivityConfiguration|connectivityConfiguration(io.dataloom.runtime.connectivity.SynchronizationConnectivityConfiguration){}[0]
@@ -2540,6 +2547,21 @@ final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.
     final fun retryAdministrationConfiguration(io.dataloom.runtime.facade/DataLoomRetryAdministrationSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.retryAdministrationConfiguration|retryAdministrationConfiguration(io.dataloom.runtime.facade.DataLoomRetryAdministrationSpec){}[0]
     final fun runtimeDependencies(io.dataloom.api.runtime/RuntimeDependencies): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.runtimeDependencies|runtimeDependencies(io.dataloom.api.runtime.RuntimeDependencies){}[0]
     final fun strategyProviderProtectionConfiguration(io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.strategyProviderProtectionConfiguration|strategyProviderProtectionConfiguration(io.dataloom.runtime.facade.DataLoomStrategyProviderProtectionSpec){}[0]
+}
+
+final class io.dataloom.runtime.facade/DataLoomCircuitAdministrationSpec { // io.dataloom.runtime.facade/DataLoomCircuitAdministrationSpec|null[0]
+    constructor <init>(io.dataloom.api.circuit/CircuitAdministrationAuthorizer, io.dataloom.api.circuit/CircuitAdministrationStateStore, io.dataloom.api.circuit/CircuitAdministrationExecutor, kotlin/Int = ...) // io.dataloom.runtime.facade/DataLoomCircuitAdministrationSpec.<init>|<init>(io.dataloom.api.circuit.CircuitAdministrationAuthorizer;io.dataloom.api.circuit.CircuitAdministrationStateStore;io.dataloom.api.circuit.CircuitAdministrationExecutor;kotlin.Int){}[0]
+
+    final val authorizer // io.dataloom.runtime.facade/DataLoomCircuitAdministrationSpec.authorizer|{}authorizer[0]
+        final fun <get-authorizer>(): io.dataloom.api.circuit/CircuitAdministrationAuthorizer // io.dataloom.runtime.facade/DataLoomCircuitAdministrationSpec.authorizer.<get-authorizer>|<get-authorizer>(){}[0]
+    final val executor // io.dataloom.runtime.facade/DataLoomCircuitAdministrationSpec.executor|{}executor[0]
+        final fun <get-executor>(): io.dataloom.api.circuit/CircuitAdministrationExecutor // io.dataloom.runtime.facade/DataLoomCircuitAdministrationSpec.executor.<get-executor>|<get-executor>(){}[0]
+    final val maximumStateUpdateAttempts // io.dataloom.runtime.facade/DataLoomCircuitAdministrationSpec.maximumStateUpdateAttempts|{}maximumStateUpdateAttempts[0]
+        final fun <get-maximumStateUpdateAttempts>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomCircuitAdministrationSpec.maximumStateUpdateAttempts.<get-maximumStateUpdateAttempts>|<get-maximumStateUpdateAttempts>(){}[0]
+    final val stateStore // io.dataloom.runtime.facade/DataLoomCircuitAdministrationSpec.stateStore|{}stateStore[0]
+        final fun <get-stateStore>(): io.dataloom.api.circuit/CircuitAdministrationStateStore // io.dataloom.runtime.facade/DataLoomCircuitAdministrationSpec.stateStore.<get-stateStore>|<get-stateStore>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.runtime.facade/DataLoomCircuitAdministrationSpec.toString|toString(){}[0]
 }
 
 final class io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSchedulerSpec { // io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSchedulerSpec|null[0]

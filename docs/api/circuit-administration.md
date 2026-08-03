@@ -4,8 +4,9 @@
 
 > **Status:** Available common contract and coordination foundation with
 > production Android Room and Apple file-backed command stores plus atomic
-> circuit-state executors. Operations assembly and complete qualification remain
-> required before this becomes a complete V1 capability.
+> circuit-state executors and optional `DataLoom` operations assembly. Complete
+> observability and qualification remain before this becomes a complete V1
+> capability.
 
 Circuit administration is an explicit privileged path for manually opening,
 closing, or resetting one exact `CircuitBreakerScope`. It does not bypass,
@@ -125,13 +126,37 @@ the circuit version, and stores the exact `SUCCEEDED` result in one crash-durabl
 temporary-write, fsync, rename, and directory-fsync sequence. Replay cannot
 advance the circuit a second time.
 
+## Operations facade
+
+Configure the optional capability with explicit host/platform collaborators:
+
+```kotlin
+val dataLoom = DataLoomBuilder()
+    .runtimeDependencies(runtimeDependencies)
+    .providers(storageProvider, transportProvider)
+    .circuitAdministrationConfiguration(
+        DataLoomCircuitAdministrationSpec(
+            authorizer = authorizer,
+            stateStore = circuitAdministrationStateStore,
+            executor = circuitAdministrationExecutor,
+        ),
+    )
+    .build()
+
+val result = dataLoom.circuitAdministration?.execute(request)
+```
+
+The property is `null` when not configured. Build and property access perform
+no authorization, persistence, execution, clock read, provider initialization,
+or coroutine launch. The facade exposes none of the configured collaborators
+and returns the coordinator's exact result.
+
 ## Current boundary
 
 This slice provides common contracts, validation, deterministic coordination,
 production Android/Apple persistence and execution, tests, and external
 consumer compilation. Remaining work includes:
 
-- facade/operations assembly;
 - circuit-administration events, metrics, logs, tracing, health, and dashboard
   integration; and
 - restart, multi-process, contention, fault-injection, and full AC-FUNC-004

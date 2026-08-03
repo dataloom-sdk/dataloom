@@ -9,6 +9,26 @@ import io.dataloom.api.change.ChangeEvent
 import io.dataloom.api.change.ChangeSet
 import io.dataloom.api.change.EntityReference
 import io.dataloom.api.context.ExecutionContext
+import io.dataloom.api.circuit.AuthorizedCircuitAdministrationCommand
+import io.dataloom.api.circuit.CircuitAdministrationAction
+import io.dataloom.api.circuit.CircuitAdministrationAuthorizationDecision
+import io.dataloom.api.circuit.CircuitAdministrationAuthorizationId
+import io.dataloom.api.circuit.CircuitAdministrationAuthorizer
+import io.dataloom.api.circuit.CircuitAdministrationCommandId
+import io.dataloom.api.circuit.CircuitAdministrationCompareAndSetRequest
+import io.dataloom.api.circuit.CircuitAdministrationCompareAndSetResult
+import io.dataloom.api.circuit.CircuitAdministrationExecutionResult
+import io.dataloom.api.circuit.CircuitAdministrationExecutor
+import io.dataloom.api.circuit.CircuitAdministrationLoadResult
+import io.dataloom.api.circuit.CircuitAdministrationPrincipalId
+import io.dataloom.api.circuit.CircuitAdministrationReason
+import io.dataloom.api.circuit.CircuitAdministrationRequest
+import io.dataloom.api.circuit.CircuitAdministrationStateRecord
+import io.dataloom.api.circuit.CircuitAdministrationStateStore
+import io.dataloom.api.circuit.CircuitBreakerPhase
+import io.dataloom.api.circuit.CircuitBreakerScope
+import io.dataloom.api.circuit.CircuitBreakerState
+import io.dataloom.api.circuit.CircuitBreakerStateRecord
 import io.dataloom.api.error.DataLoomError
 import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorCode
@@ -141,6 +161,7 @@ import io.dataloom.runtime.queue.QueuedSynchronizationWork
 import io.dataloom.runtime.queue.QueuedSynchronizationWorkResolution
 import io.dataloom.runtime.queue.QueuedSynchronizationWorkResolver
 import io.dataloom.runtime.queue.QueueProcessingRequest
+import io.dataloom.runtime.retry.CircuitAdministrationResult
 import io.dataloom.runtime.retry.RetryAdministrationResult
 import io.dataloom.runtime.worker.QueueWorkerConfiguration
 import io.dataloom.runtime.worker.QueueWorkerRunRequest
@@ -292,6 +313,93 @@ class DataLoomBuilderTest {
             callCount++
             lastCommand = command
             return RetryAdministrationExecutionResult.Applied
+        }
+    }
+
+    private class RecordingCircuitAdministrationAuthorizer : CircuitAdministrationAuthorizer {
+        var callCount: Int = 0
+        var lastRequest: CircuitAdministrationRequest? = null
+
+        override suspend fun authorize(
+            request: CircuitAdministrationRequest,
+        ): CircuitAdministrationAuthorizationDecision {
+            callCount++
+            lastRequest = request
+            return CircuitAdministrationAuthorizationDecision.Authorized(
+                CircuitAdministrationAuthorizationId("circuit-authorization-001"),
+            )
+        }
+    }
+
+    private class InMemoryCircuitAdministrationStateStore : CircuitAdministrationStateStore {
+        var loadCallCount: Int = 0
+        var compareAndSetCallCount: Int = 0
+        var record: CircuitAdministrationStateRecord? = null
+
+        override suspend fun load(
+            commandId: CircuitAdministrationCommandId,
+        ): ProviderOperationResult<CircuitAdministrationLoadResult> {
+            loadCallCount++
+            val current = record
+            return ProviderOperationResult.Success(
+                if (current == null) {
+                    CircuitAdministrationLoadResult.Missing
+                } else {
+                    CircuitAdministrationLoadResult.Found(current)
+                },
+            )
+        }
+
+        override suspend fun compareAndSet(
+            request: CircuitAdministrationCompareAndSetRequest,
+        ): ProviderOperationResult<CircuitAdministrationCompareAndSetResult> {
+            compareAndSetCallCount++
+            val current = record
+            val versionMatches = if (request.expectedVersion == null) {
+                current == null
+            } else {
+                current?.version == request.expectedVersion
+            }
+            if (!versionMatches) {
+                return ProviderOperationResult.Success(
+                    CircuitAdministrationCompareAndSetResult.Conflict(current),
+                )
+            }
+            val updated = CircuitAdministrationStateRecord(
+                state = request.nextState,
+                version = (current?.version ?: -1L) + 1L,
+            )
+            record = updated
+            return ProviderOperationResult.Success(
+                CircuitAdministrationCompareAndSetResult.Updated(updated),
+            )
+        }
+    }
+
+    private class RecordingCircuitAdministrationExecutor : CircuitAdministrationExecutor {
+        var callCount: Int = 0
+        var lastCommand: AuthorizedCircuitAdministrationCommand? = null
+
+        override suspend fun execute(
+            command: AuthorizedCircuitAdministrationCommand,
+        ): CircuitAdministrationExecutionResult {
+            callCount++
+            lastCommand = command
+            return CircuitAdministrationExecutionResult.Applied(
+                CircuitBreakerStateRecord(
+                    state = CircuitBreakerState(
+                        scope = command.request.scope,
+                        phase = CircuitBreakerPhase.CLOSED,
+                        consecutiveFailures = 0,
+                        failureWindowStartedAt = null,
+                        openUntil = null,
+                        probeGeneration = 0L,
+                        probeInFlight = false,
+                        updatedAt = DataLoomInstant(1_000_000L),
+                    ),
+                    version = 0L,
+                ),
+            )
         }
     }
 
@@ -651,6 +759,16 @@ class DataLoomBuilderTest {
                 severity = ErrorSeverity.ERROR,
                 recoverability = Recoverability.RECOVERABLE,
             ),
+        )
+
+    private fun makeCircuitAdministrationRequest(): CircuitAdministrationRequest =
+        CircuitAdministrationRequest(
+            commandId = CircuitAdministrationCommandId("circuit-command-001"),
+            scope = CircuitBreakerScope.provider(ProviderId("transport-prod")),
+            principalId = CircuitAdministrationPrincipalId("operator-001"),
+            requestedAt = DataLoomInstant(999_000L),
+            action = CircuitAdministrationAction.RESET,
+            reason = CircuitAdministrationReason("Operator requested a bounded reset."),
         )
 
     private fun makeChangeSet(): ChangeSet {
@@ -1718,6 +1836,102 @@ class DataLoomBuilderTest {
         assertEquals(
             "DataLoomRetryAdministrationSpec(maximumStateUpdateAttempts=3)",
             spec.toString(),
+        )
+    }
+
+    // =========================================================================
+    // Circuit-administration operations builder integration
+    // =========================================================================
+
+    @Test
+    fun circuitAdministration_isNullWhenNotConfigured() {
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(FakeStorageProvider(), FakeTransportProvider())
+            .defaultProviderBindings(makeBindings())
+            .build()
+
+        assertNull(dataLoom.circuitAdministration)
+    }
+
+    @Test
+    fun circuitAdministration_isNonNullWithoutInvokingCollaborators() {
+        val authorizer = RecordingCircuitAdministrationAuthorizer()
+        val stateStore = InMemoryCircuitAdministrationStateStore()
+        val executor = RecordingCircuitAdministrationExecutor()
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(FakeStorageProvider(), FakeTransportProvider())
+            .defaultProviderBindings(makeBindings())
+            .circuitAdministrationConfiguration(
+                DataLoomCircuitAdministrationSpec(authorizer, stateStore, executor),
+            )
+            .build()
+
+        assertNotNull(dataLoom.circuitAdministration)
+        assertEquals(0, authorizer.callCount)
+        assertEquals(0, stateStore.loadCallCount)
+        assertEquals(0, stateStore.compareAndSetCallCount)
+        assertEquals(0, executor.callCount)
+    }
+
+    @Test
+    fun circuitAdministration_executesAndReplaysExactCommand() {
+        val authorizer = RecordingCircuitAdministrationAuthorizer()
+        val stateStore = InMemoryCircuitAdministrationStateStore()
+        val executor = RecordingCircuitAdministrationExecutor()
+        val request = makeCircuitAdministrationRequest()
+        val operations = checkNotNull(
+            DataLoomBuilder()
+                .runtimeDependencies(makeRuntimeDependencies())
+                .providers(FakeStorageProvider(), FakeTransportProvider())
+                .defaultProviderBindings(makeBindings())
+                .circuitAdministrationConfiguration(
+                    DataLoomCircuitAdministrationSpec(authorizer, stateStore, executor),
+                )
+                .build()
+                .circuitAdministration,
+        )
+
+        val first = assertIs<CircuitAdministrationResult.Succeeded>(
+            runSuspend { operations.execute(request) },
+        )
+        val replay = assertIs<CircuitAdministrationResult.Succeeded>(
+            runSuspend { operations.execute(request) },
+        )
+
+        assertSame(request, authorizer.lastRequest)
+        assertSame(request, executor.lastCommand?.request)
+        assertEquals("circuit-authorization-001", executor.lastCommand?.authorizationId?.value)
+        assertEquals(first.record, replay.record)
+        assertEquals(1L, first.record.version)
+        assertEquals(1, authorizer.callCount)
+        assertEquals(1, executor.callCount)
+        assertEquals(2, stateStore.compareAndSetCallCount)
+        assertEquals(2, stateStore.loadCallCount)
+    }
+
+    @Test
+    fun circuitAdministrationSpec_rejectsUnboundedAttemptsAndRedactsCollaborators() {
+        val authorizer = RecordingCircuitAdministrationAuthorizer()
+        val stateStore = InMemoryCircuitAdministrationStateStore()
+        val executor = RecordingCircuitAdministrationExecutor()
+        assertFailsWith<IllegalArgumentException> {
+            DataLoomCircuitAdministrationSpec(
+                authorizer,
+                stateStore,
+                executor,
+                maximumStateUpdateAttempts = 0,
+            )
+        }
+        assertEquals(
+            "DataLoomCircuitAdministrationSpec(maximumStateUpdateAttempts=3)",
+            DataLoomCircuitAdministrationSpec(
+                authorizer,
+                stateStore,
+                executor,
+                maximumStateUpdateAttempts = 3,
+            ).toString(),
         )
     }
 
