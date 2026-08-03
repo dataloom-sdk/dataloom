@@ -1,8 +1,8 @@
 # Operational Envelope and Redaction
 
-Status: **available foundation**. The shared contracts and strict redactor are
-implemented. Durable delivery, wire codecs, schema upcasting, persistence, and
-complete subsystem adapters remain V1 work.
+Status: **available foundation**. The shared contracts, strict redactor,
+canonical V1 wire codec, and schema-upcast registry are implemented. Durable
+delivery, persistence, and complete subsystem adapters remain V1 work.
 
 ## Purpose
 
@@ -79,7 +79,6 @@ val envelope = OperationalEventEnvelope(
 
 This foundation does not yet provide:
 
-- a canonical byte-level codec or compatibility/upcast registry;
 - payload classification, minimization, encoding, encryption, or integrity;
 - durable outbox/acknowledgement/replay/retention/ordering;
 - subscription filtering or back-pressure delivery;
@@ -89,3 +88,7 @@ This foundation does not yet provide:
 
 Those remain owned by DL-039, DL-042, and the subsystem gates. Callers must not
 treat this additive contract as durable delivery or complete V1 observability.
+
+The frozen byte layout, untrusted-input rules, and transition constraints are
+documented in the
+[operational envelope wire format](./operational-envelope-wire-format.md).
