@@ -2840,3 +2840,4 @@ public final class io/dataloom/runtime/worker/QueueWorkerWakeUpReason : java/lan
 	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/worker/QueueWorkerWakeUpReason;
 	public static fun values ()[Lio/dataloom/runtime/worker/QueueWorkerWakeUpReason;
 }
+
