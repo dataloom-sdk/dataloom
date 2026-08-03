@@ -851,6 +851,51 @@ public abstract interface class io/dataloom/api/observation/SynchronizationObser
 	public abstract fun onEvent (Lio/dataloom/api/synchronization/SynchronizationEvent;)V
 }
 
+public final class io/dataloom/api/operational/OperationalEnvelopeDecodeFailure : java/lang/Enum {
+	public static final field EMPTY_INPUT Lio/dataloom/api/operational/OperationalEnvelopeDecodeFailure;
+	public static final field FRAME_TOO_LARGE Lio/dataloom/api/operational/OperationalEnvelopeDecodeFailure;
+	public static final field INVALID_FIELD Lio/dataloom/api/operational/OperationalEnvelopeDecodeFailure;
+	public static final field INVALID_MAGIC Lio/dataloom/api/operational/OperationalEnvelopeDecodeFailure;
+	public static final field TRAILING_DATA Lio/dataloom/api/operational/OperationalEnvelopeDecodeFailure;
+	public static final field UNSUPPORTED_WIRE_VERSION Lio/dataloom/api/operational/OperationalEnvelopeDecodeFailure;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/operational/OperationalEnvelopeDecodeFailure;
+	public static fun values ()[Lio/dataloom/api/operational/OperationalEnvelopeDecodeFailure;
+}
+
+public abstract interface class io/dataloom/api/operational/OperationalEnvelopeDecodeResult {
+}
+
+public final class io/dataloom/api/operational/OperationalEnvelopeDecodeResult$Decoded : io/dataloom/api/operational/OperationalEnvelopeDecodeResult {
+	public fun <init> (Lio/dataloom/api/operational/OperationalEventEnvelope;)V
+	public final fun component1 ()Lio/dataloom/api/operational/OperationalEventEnvelope;
+	public final fun copy (Lio/dataloom/api/operational/OperationalEventEnvelope;)Lio/dataloom/api/operational/OperationalEnvelopeDecodeResult$Decoded;
+	public static synthetic fun copy$default (Lio/dataloom/api/operational/OperationalEnvelopeDecodeResult$Decoded;Lio/dataloom/api/operational/OperationalEventEnvelope;ILjava/lang/Object;)Lio/dataloom/api/operational/OperationalEnvelopeDecodeResult$Decoded;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEnvelope ()Lio/dataloom/api/operational/OperationalEventEnvelope;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalEnvelopeDecodeResult$Rejected : io/dataloom/api/operational/OperationalEnvelopeDecodeResult {
+	public fun <init> (Lio/dataloom/api/operational/OperationalEnvelopeDecodeFailure;)V
+	public final fun component1 ()Lio/dataloom/api/operational/OperationalEnvelopeDecodeFailure;
+	public final fun copy (Lio/dataloom/api/operational/OperationalEnvelopeDecodeFailure;)Lio/dataloom/api/operational/OperationalEnvelopeDecodeResult$Rejected;
+	public static synthetic fun copy$default (Lio/dataloom/api/operational/OperationalEnvelopeDecodeResult$Rejected;Lio/dataloom/api/operational/OperationalEnvelopeDecodeFailure;ILjava/lang/Object;)Lio/dataloom/api/operational/OperationalEnvelopeDecodeResult$Rejected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFailure ()Lio/dataloom/api/operational/OperationalEnvelopeDecodeFailure;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalEnvelopeWireCodec {
+	public static final field INSTANCE Lio/dataloom/api/operational/OperationalEnvelopeWireCodec;
+	public static final field MAX_FRAME_SIZE_BYTES I
+	public static final field WIRE_VERSION I
+	public final fun decode ([B)Lio/dataloom/api/operational/OperationalEnvelopeDecodeResult;
+	public final fun encode (Lio/dataloom/api/operational/OperationalEventEnvelope;)[B
+}
+
 public final class io/dataloom/api/operational/OperationalEventCategory : java/lang/Enum {
 	public static final field AUDIT Lio/dataloom/api/operational/OperationalEventCategory;
 	public static final field DIAGNOSTIC Lio/dataloom/api/operational/OperationalEventCategory;

@@ -1010,6 +1010,73 @@ public abstract interface class io/dataloom/runtime/observation/retry/RetryCircu
 	public abstract fun record (Lio/dataloom/runtime/observation/retry/RetryCircuitTraceSignal;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
+public final class io/dataloom/runtime/operational/OperationalEnvelopeUpcastFailure : java/lang/Enum {
+	public static final field NO_UPCAST_PATH Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastFailure;
+	public static final field STEP_LIMIT_EXCEEDED Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastFailure;
+	public static final field TARGET_OLDER_THAN_RECORD Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastFailure;
+	public static final field UPCASTER_CONTRACT_VIOLATION Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastFailure;
+	public static final field UPCASTER_FAILED Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastFailure;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastFailure;
+	public static fun values ()[Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastFailure;
+}
+
+public abstract interface class io/dataloom/runtime/operational/OperationalEnvelopeUpcastResult {
+}
+
+public final class io/dataloom/runtime/operational/OperationalEnvelopeUpcastResult$NotRequired : io/dataloom/runtime/operational/OperationalEnvelopeUpcastResult {
+	public fun <init> (Lio/dataloom/api/operational/OperationalEventEnvelope;)V
+	public final fun component1 ()Lio/dataloom/api/operational/OperationalEventEnvelope;
+	public final fun copy (Lio/dataloom/api/operational/OperationalEventEnvelope;)Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastResult$NotRequired;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastResult$NotRequired;Lio/dataloom/api/operational/OperationalEventEnvelope;ILjava/lang/Object;)Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastResult$NotRequired;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEnvelope ()Lio/dataloom/api/operational/OperationalEventEnvelope;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/operational/OperationalEnvelopeUpcastResult$Rejected : io/dataloom/runtime/operational/OperationalEnvelopeUpcastResult {
+	public synthetic fun <init> (Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastFailure;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastFailure;
+	public final fun component2-16kySkA ()I
+	public final fun component3 ()I
+	public final fun copy-ZsyYDPM (Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastFailure;II)Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastResult$Rejected;
+	public static synthetic fun copy-ZsyYDPM$default (Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastResult$Rejected;Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastFailure;IIILjava/lang/Object;)Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastResult$Rejected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAppliedStepCount ()I
+	public final fun getFailure ()Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastFailure;
+	public final fun getLastSchemaVersion-16kySkA ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/operational/OperationalEnvelopeUpcastResult$Upcasted : io/dataloom/runtime/operational/OperationalEnvelopeUpcastResult {
+	public fun <init> (Lio/dataloom/api/operational/OperationalEventEnvelope;I)V
+	public final fun component1 ()Lio/dataloom/api/operational/OperationalEventEnvelope;
+	public final fun component2 ()I
+	public final fun copy (Lio/dataloom/api/operational/OperationalEventEnvelope;I)Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastResult$Upcasted;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastResult$Upcasted;Lio/dataloom/api/operational/OperationalEventEnvelope;IILjava/lang/Object;)Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastResult$Upcasted;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAppliedStepCount ()I
+	public final fun getEnvelope ()Lio/dataloom/api/operational/OperationalEventEnvelope;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/runtime/operational/OperationalEnvelopeUpcaster {
+	public abstract fun getEventType-5IuMa4Y ()Ljava/lang/String;
+	public abstract fun getFromSchemaVersion-16kySkA ()I
+	public abstract fun getToSchemaVersion-16kySkA ()I
+	public abstract fun upcast (Lio/dataloom/api/operational/OperationalEventEnvelope;)Lio/dataloom/api/operational/OperationalEventEnvelope;
+}
+
+public final class io/dataloom/runtime/operational/OperationalEnvelopeUpcasterRegistry {
+	public fun <init> (Ljava/util/Collection;)V
+	public final fun getSize ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun upcast-FNXoiUE (Lio/dataloom/api/operational/OperationalEventEnvelope;I)Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastResult;
+}
+
 public final class io/dataloom/runtime/queue/CircuitBreakerDurableQueueExecutionProcessor {
 	public fun <init> (Lio/dataloom/runtime/retry/CircuitBreakerQueueOperationAdapter;Lio/dataloom/runtime/queue/QueueEntryExecutionHandler;Lio/dataloom/runtime/queue/QueueProcessingCircuitScopes;)V
 	public final fun process (Lio/dataloom/runtime/queue/QueueProcessingRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
