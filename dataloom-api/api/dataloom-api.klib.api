@@ -166,6 +166,21 @@ final enum class io.dataloom.api.model/WorkflowPriority : kotlin/Enum<io.dataloo
     final fun values(): kotlin/Array<io.dataloom.api.model/WorkflowPriority> // io.dataloom.api.model/WorkflowPriority.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.api.operational/OperationalEventCategory : kotlin/Enum<io.dataloom.api.operational/OperationalEventCategory> { // io.dataloom.api.operational/OperationalEventCategory|null[0]
+    enum entry AUDIT // io.dataloom.api.operational/OperationalEventCategory.AUDIT|null[0]
+    enum entry DIAGNOSTIC // io.dataloom.api.operational/OperationalEventCategory.DIAGNOSTIC|null[0]
+    enum entry DOMAIN // io.dataloom.api.operational/OperationalEventCategory.DOMAIN|null[0]
+    enum entry LIFECYCLE // io.dataloom.api.operational/OperationalEventCategory.LIFECYCLE|null[0]
+    enum entry SYSTEM // io.dataloom.api.operational/OperationalEventCategory.SYSTEM|null[0]
+    enum entry TELEMETRY // io.dataloom.api.operational/OperationalEventCategory.TELEMETRY|null[0]
+
+    final val entries // io.dataloom.api.operational/OperationalEventCategory.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.operational/OperationalEventCategory> // io.dataloom.api.operational/OperationalEventCategory.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.operational/OperationalEventCategory // io.dataloom.api.operational/OperationalEventCategory.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.operational/OperationalEventCategory> // io.dataloom.api.operational/OperationalEventCategory.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.api.queue/QueueDeferralReason : kotlin/Enum<io.dataloom.api.queue/QueueDeferralReason> { // io.dataloom.api.queue/QueueDeferralReason|null[0]
     enum entry CONNECTIVITY_REQUIREMENT_NOT_MET // io.dataloom.api.queue/QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET|null[0]
 
@@ -254,6 +269,31 @@ final enum class io.dataloom.api.scheduling/ExistingSchedulePolicy : kotlin/Enum
 
     final fun valueOf(kotlin/String): io.dataloom.api.scheduling/ExistingSchedulePolicy // io.dataloom.api.scheduling/ExistingSchedulePolicy.valueOf|valueOf#static(kotlin.String){}[0]
     final fun values(): kotlin/Array<io.dataloom.api.scheduling/ExistingSchedulePolicy> // io.dataloom.api.scheduling/ExistingSchedulePolicy.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.api.security/DataClassification : kotlin/Enum<io.dataloom.api.security/DataClassification> { // io.dataloom.api.security/DataClassification|null[0]
+    enum entry CONFIDENTIAL // io.dataloom.api.security/DataClassification.CONFIDENTIAL|null[0]
+    enum entry INTERNAL // io.dataloom.api.security/DataClassification.INTERNAL|null[0]
+    enum entry PUBLIC // io.dataloom.api.security/DataClassification.PUBLIC|null[0]
+    enum entry RESTRICTED // io.dataloom.api.security/DataClassification.RESTRICTED|null[0]
+
+    final val entries // io.dataloom.api.security/DataClassification.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.security/DataClassification> // io.dataloom.api.security/DataClassification.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.security/DataClassification // io.dataloom.api.security/DataClassification.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.security/DataClassification> // io.dataloom.api.security/DataClassification.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.api.security/RedactionAction : kotlin/Enum<io.dataloom.api.security/RedactionAction> { // io.dataloom.api.security/RedactionAction|null[0]
+    enum entry KEEP // io.dataloom.api.security/RedactionAction.KEEP|null[0]
+    enum entry MASK // io.dataloom.api.security/RedactionAction.MASK|null[0]
+    enum entry REMOVE // io.dataloom.api.security/RedactionAction.REMOVE|null[0]
+
+    final val entries // io.dataloom.api.security/RedactionAction.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.security/RedactionAction> // io.dataloom.api.security/RedactionAction.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.security/RedactionAction // io.dataloom.api.security/RedactionAction.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.security/RedactionAction> // io.dataloom.api.security/RedactionAction.values|values#static(){}[0]
 }
 
 final enum class io.dataloom.api.strategy/BuiltInSynchronizationStrategy : kotlin/Enum<io.dataloom.api.strategy/BuiltInSynchronizationStrategy> { // io.dataloom.api.strategy/BuiltInSynchronizationStrategy|null[0]
@@ -544,6 +584,10 @@ final enum class io.dataloom.api.synchronization/SynchronizationSkipReason : kot
 
     final fun valueOf(kotlin/String): io.dataloom.api.synchronization/SynchronizationSkipReason // io.dataloom.api.synchronization/SynchronizationSkipReason.valueOf|valueOf#static(kotlin.String){}[0]
     final fun values(): kotlin/Array<io.dataloom.api.synchronization/SynchronizationSkipReason> // io.dataloom.api.synchronization/SynchronizationSkipReason.values|values#static(){}[0]
+}
+
+abstract fun interface io.dataloom.api.security/DataLoomRedactor { // io.dataloom.api.security/DataLoomRedactor|null[0]
+    abstract fun redact(io.dataloom.api.security/ClassifiedData): io.dataloom.api.security/RedactionResult // io.dataloom.api.security/DataLoomRedactor.redact|redact(io.dataloom.api.security.ClassifiedData){}[0]
 }
 
 abstract fun interface io.dataloom.api.strategy/SynchronizationStrategyEvaluator { // io.dataloom.api.strategy/SynchronizationStrategyEvaluator|null[0]
@@ -2071,6 +2115,80 @@ final class io.dataloom.api.model/SynchronizationRequest { // io.dataloom.api.mo
     final fun toString(): kotlin/String // io.dataloom.api.model/SynchronizationRequest.toString|toString(){}[0]
 }
 
+final class io.dataloom.api.operational/OperationalEventEnvelope { // io.dataloom.api.operational/OperationalEventEnvelope|null[0]
+    constructor <init>(io.dataloom.api.operational/OperationalEventId, io.dataloom.api.operational/OperationalEventType, io.dataloom.api.operational/OperationalEventSource, io.dataloom.api.operational/OperationalEventCategory, io.dataloom.api.operational/OperationalSchemaVersion, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.identifier/CorrelationId, io.dataloom.api.operational/OperationalEventId? = ..., io.dataloom.api.identifier/TraceId? = ..., io.dataloom.api.identifier/TenantId? = ..., io.dataloom.api.identifier/WorkflowId? = ..., io.dataloom.api.operational/OperationalPayloadDescriptor, io.dataloom.api.security/RedactedAttributes = ...) // io.dataloom.api.operational/OperationalEventEnvelope.<init>|<init>(io.dataloom.api.operational.OperationalEventId;io.dataloom.api.operational.OperationalEventType;io.dataloom.api.operational.OperationalEventSource;io.dataloom.api.operational.OperationalEventCategory;io.dataloom.api.operational.OperationalSchemaVersion;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.identifier.CorrelationId;io.dataloom.api.operational.OperationalEventId?;io.dataloom.api.identifier.TraceId?;io.dataloom.api.identifier.TenantId?;io.dataloom.api.identifier.WorkflowId?;io.dataloom.api.operational.OperationalPayloadDescriptor;io.dataloom.api.security.RedactedAttributes){}[0]
+
+    final val attributes // io.dataloom.api.operational/OperationalEventEnvelope.attributes|{}attributes[0]
+        final fun <get-attributes>(): io.dataloom.api.security/RedactedAttributes // io.dataloom.api.operational/OperationalEventEnvelope.attributes.<get-attributes>|<get-attributes>(){}[0]
+    final val category // io.dataloom.api.operational/OperationalEventEnvelope.category|{}category[0]
+        final fun <get-category>(): io.dataloom.api.operational/OperationalEventCategory // io.dataloom.api.operational/OperationalEventEnvelope.category.<get-category>|<get-category>(){}[0]
+    final val causationId // io.dataloom.api.operational/OperationalEventEnvelope.causationId|{}causationId[0]
+        final fun <get-causationId>(): io.dataloom.api.operational/OperationalEventId? // io.dataloom.api.operational/OperationalEventEnvelope.causationId.<get-causationId>|<get-causationId>(){}[0]
+    final val correlationId // io.dataloom.api.operational/OperationalEventEnvelope.correlationId|{}correlationId[0]
+        final fun <get-correlationId>(): io.dataloom.api.identifier/CorrelationId // io.dataloom.api.operational/OperationalEventEnvelope.correlationId.<get-correlationId>|<get-correlationId>(){}[0]
+    final val id // io.dataloom.api.operational/OperationalEventEnvelope.id|{}id[0]
+        final fun <get-id>(): io.dataloom.api.operational/OperationalEventId // io.dataloom.api.operational/OperationalEventEnvelope.id.<get-id>|<get-id>(){}[0]
+    final val occurredAt // io.dataloom.api.operational/OperationalEventEnvelope.occurredAt|{}occurredAt[0]
+        final fun <get-occurredAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.operational/OperationalEventEnvelope.occurredAt.<get-occurredAt>|<get-occurredAt>(){}[0]
+    final val payload // io.dataloom.api.operational/OperationalEventEnvelope.payload|{}payload[0]
+        final fun <get-payload>(): io.dataloom.api.operational/OperationalPayloadDescriptor // io.dataloom.api.operational/OperationalEventEnvelope.payload.<get-payload>|<get-payload>(){}[0]
+    final val schemaVersion // io.dataloom.api.operational/OperationalEventEnvelope.schemaVersion|{}schemaVersion[0]
+        final fun <get-schemaVersion>(): io.dataloom.api.operational/OperationalSchemaVersion // io.dataloom.api.operational/OperationalEventEnvelope.schemaVersion.<get-schemaVersion>|<get-schemaVersion>(){}[0]
+    final val source // io.dataloom.api.operational/OperationalEventEnvelope.source|{}source[0]
+        final fun <get-source>(): io.dataloom.api.operational/OperationalEventSource // io.dataloom.api.operational/OperationalEventEnvelope.source.<get-source>|<get-source>(){}[0]
+    final val tenantId // io.dataloom.api.operational/OperationalEventEnvelope.tenantId|{}tenantId[0]
+        final fun <get-tenantId>(): io.dataloom.api.identifier/TenantId? // io.dataloom.api.operational/OperationalEventEnvelope.tenantId.<get-tenantId>|<get-tenantId>(){}[0]
+    final val traceId // io.dataloom.api.operational/OperationalEventEnvelope.traceId|{}traceId[0]
+        final fun <get-traceId>(): io.dataloom.api.identifier/TraceId? // io.dataloom.api.operational/OperationalEventEnvelope.traceId.<get-traceId>|<get-traceId>(){}[0]
+    final val type // io.dataloom.api.operational/OperationalEventEnvelope.type|{}type[0]
+        final fun <get-type>(): io.dataloom.api.operational/OperationalEventType // io.dataloom.api.operational/OperationalEventEnvelope.type.<get-type>|<get-type>(){}[0]
+    final val workflowId // io.dataloom.api.operational/OperationalEventEnvelope.workflowId|{}workflowId[0]
+        final fun <get-workflowId>(): io.dataloom.api.identifier/WorkflowId? // io.dataloom.api.operational/OperationalEventEnvelope.workflowId.<get-workflowId>|<get-workflowId>(){}[0]
+
+    final fun component1(): io.dataloom.api.operational/OperationalEventId // io.dataloom.api.operational/OperationalEventEnvelope.component1|component1(){}[0]
+    final fun component10(): io.dataloom.api.identifier/TenantId? // io.dataloom.api.operational/OperationalEventEnvelope.component10|component10(){}[0]
+    final fun component11(): io.dataloom.api.identifier/WorkflowId? // io.dataloom.api.operational/OperationalEventEnvelope.component11|component11(){}[0]
+    final fun component12(): io.dataloom.api.operational/OperationalPayloadDescriptor // io.dataloom.api.operational/OperationalEventEnvelope.component12|component12(){}[0]
+    final fun component13(): io.dataloom.api.security/RedactedAttributes // io.dataloom.api.operational/OperationalEventEnvelope.component13|component13(){}[0]
+    final fun component2(): io.dataloom.api.operational/OperationalEventType // io.dataloom.api.operational/OperationalEventEnvelope.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.operational/OperationalEventSource // io.dataloom.api.operational/OperationalEventEnvelope.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.operational/OperationalEventCategory // io.dataloom.api.operational/OperationalEventEnvelope.component4|component4(){}[0]
+    final fun component5(): io.dataloom.api.operational/OperationalSchemaVersion // io.dataloom.api.operational/OperationalEventEnvelope.component5|component5(){}[0]
+    final fun component6(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.operational/OperationalEventEnvelope.component6|component6(){}[0]
+    final fun component7(): io.dataloom.api.identifier/CorrelationId // io.dataloom.api.operational/OperationalEventEnvelope.component7|component7(){}[0]
+    final fun component8(): io.dataloom.api.operational/OperationalEventId? // io.dataloom.api.operational/OperationalEventEnvelope.component8|component8(){}[0]
+    final fun component9(): io.dataloom.api.identifier/TraceId? // io.dataloom.api.operational/OperationalEventEnvelope.component9|component9(){}[0]
+    final fun copy(io.dataloom.api.operational/OperationalEventId = ..., io.dataloom.api.operational/OperationalEventType = ..., io.dataloom.api.operational/OperationalEventSource = ..., io.dataloom.api.operational/OperationalEventCategory = ..., io.dataloom.api.operational/OperationalSchemaVersion = ..., io.dataloom.api.time/DataLoomInstant = ..., io.dataloom.api.identifier/CorrelationId = ..., io.dataloom.api.operational/OperationalEventId? = ..., io.dataloom.api.identifier/TraceId? = ..., io.dataloom.api.identifier/TenantId? = ..., io.dataloom.api.identifier/WorkflowId? = ..., io.dataloom.api.operational/OperationalPayloadDescriptor = ..., io.dataloom.api.security/RedactedAttributes = ...): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.api.operational/OperationalEventEnvelope.copy|copy(io.dataloom.api.operational.OperationalEventId;io.dataloom.api.operational.OperationalEventType;io.dataloom.api.operational.OperationalEventSource;io.dataloom.api.operational.OperationalEventCategory;io.dataloom.api.operational.OperationalSchemaVersion;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.identifier.CorrelationId;io.dataloom.api.operational.OperationalEventId?;io.dataloom.api.identifier.TraceId?;io.dataloom.api.identifier.TenantId?;io.dataloom.api.identifier.WorkflowId?;io.dataloom.api.operational.OperationalPayloadDescriptor;io.dataloom.api.security.RedactedAttributes){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/OperationalEventEnvelope.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.operational/OperationalEventEnvelope.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.operational/OperationalEventEnvelope.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.operational/OperationalPayloadDescriptor { // io.dataloom.api.operational/OperationalPayloadDescriptor|null[0]
+    constructor <init>(io.dataloom.api.operational/OperationalPayloadType, io.dataloom.api.operational/OperationalSchemaVersion, io.dataloom.api.operational/OperationalPayloadEncoding, io.dataloom.api.security/DataClassification, kotlin/Long? = ...) // io.dataloom.api.operational/OperationalPayloadDescriptor.<init>|<init>(io.dataloom.api.operational.OperationalPayloadType;io.dataloom.api.operational.OperationalSchemaVersion;io.dataloom.api.operational.OperationalPayloadEncoding;io.dataloom.api.security.DataClassification;kotlin.Long?){}[0]
+
+    final val classification // io.dataloom.api.operational/OperationalPayloadDescriptor.classification|{}classification[0]
+        final fun <get-classification>(): io.dataloom.api.security/DataClassification // io.dataloom.api.operational/OperationalPayloadDescriptor.classification.<get-classification>|<get-classification>(){}[0]
+    final val encodedSizeBytes // io.dataloom.api.operational/OperationalPayloadDescriptor.encodedSizeBytes|{}encodedSizeBytes[0]
+        final fun <get-encodedSizeBytes>(): kotlin/Long? // io.dataloom.api.operational/OperationalPayloadDescriptor.encodedSizeBytes.<get-encodedSizeBytes>|<get-encodedSizeBytes>(){}[0]
+    final val encoding // io.dataloom.api.operational/OperationalPayloadDescriptor.encoding|{}encoding[0]
+        final fun <get-encoding>(): io.dataloom.api.operational/OperationalPayloadEncoding // io.dataloom.api.operational/OperationalPayloadDescriptor.encoding.<get-encoding>|<get-encoding>(){}[0]
+    final val schemaVersion // io.dataloom.api.operational/OperationalPayloadDescriptor.schemaVersion|{}schemaVersion[0]
+        final fun <get-schemaVersion>(): io.dataloom.api.operational/OperationalSchemaVersion // io.dataloom.api.operational/OperationalPayloadDescriptor.schemaVersion.<get-schemaVersion>|<get-schemaVersion>(){}[0]
+    final val type // io.dataloom.api.operational/OperationalPayloadDescriptor.type|{}type[0]
+        final fun <get-type>(): io.dataloom.api.operational/OperationalPayloadType // io.dataloom.api.operational/OperationalPayloadDescriptor.type.<get-type>|<get-type>(){}[0]
+
+    final fun component1(): io.dataloom.api.operational/OperationalPayloadType // io.dataloom.api.operational/OperationalPayloadDescriptor.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.operational/OperationalSchemaVersion // io.dataloom.api.operational/OperationalPayloadDescriptor.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.operational/OperationalPayloadEncoding // io.dataloom.api.operational/OperationalPayloadDescriptor.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.security/DataClassification // io.dataloom.api.operational/OperationalPayloadDescriptor.component4|component4(){}[0]
+    final fun component5(): kotlin/Long? // io.dataloom.api.operational/OperationalPayloadDescriptor.component5|component5(){}[0]
+    final fun copy(io.dataloom.api.operational/OperationalPayloadType = ..., io.dataloom.api.operational/OperationalSchemaVersion = ..., io.dataloom.api.operational/OperationalPayloadEncoding = ..., io.dataloom.api.security/DataClassification = ..., kotlin/Long? = ...): io.dataloom.api.operational/OperationalPayloadDescriptor // io.dataloom.api.operational/OperationalPayloadDescriptor.copy|copy(io.dataloom.api.operational.OperationalPayloadType;io.dataloom.api.operational.OperationalSchemaVersion;io.dataloom.api.operational.OperationalPayloadEncoding;io.dataloom.api.security.DataClassification;kotlin.Long?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/OperationalPayloadDescriptor.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.operational/OperationalPayloadDescriptor.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.operational/OperationalPayloadDescriptor.toString|toString(){}[0]
+}
+
 final class io.dataloom.api.payload/DataLoomPayload { // io.dataloom.api.payload/DataLoomPayload|null[0]
     constructor <init>(io.dataloom.api.payload/PayloadContentType, kotlin/ByteArray) // io.dataloom.api.payload/DataLoomPayload.<init>|<init>(io.dataloom.api.payload.PayloadContentType;kotlin.ByteArray){}[0]
 
@@ -2686,6 +2804,138 @@ final class io.dataloom.api.scheduling/SchedulingDelay { // io.dataloom.api.sche
         final val ZERO // io.dataloom.api.scheduling/SchedulingDelay.Companion.ZERO|{}ZERO[0]
             final fun <get-ZERO>(): io.dataloom.api.scheduling/SchedulingDelay // io.dataloom.api.scheduling/SchedulingDelay.Companion.ZERO.<get-ZERO>|<get-ZERO>(){}[0]
     }
+}
+
+final class io.dataloom.api.security/ClassifiedData { // io.dataloom.api.security/ClassifiedData|null[0]
+    final val entries // io.dataloom.api.security/ClassifiedData.entries|{}entries[0]
+        final fun <get-entries>(): kotlin.collections/Map<kotlin/String, io.dataloom.api.security/ClassifiedDataValue> // io.dataloom.api.security/ClassifiedData.entries.<get-entries>|<get-entries>(){}[0]
+    final val size // io.dataloom.api.security/ClassifiedData.size|{}size[0]
+        final fun <get-size>(): kotlin/Int // io.dataloom.api.security/ClassifiedData.size.<get-size>|<get-size>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.security/ClassifiedData.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.security/ClassifiedData.hashCode|hashCode(){}[0]
+    final fun isEmpty(): kotlin/Boolean // io.dataloom.api.security/ClassifiedData.isEmpty|isEmpty(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.security/ClassifiedData.toString|toString(){}[0]
+
+    final object Companion { // io.dataloom.api.security/ClassifiedData.Companion|null[0]
+        final val Empty // io.dataloom.api.security/ClassifiedData.Companion.Empty|{}Empty[0]
+            final fun <get-Empty>(): io.dataloom.api.security/ClassifiedData // io.dataloom.api.security/ClassifiedData.Companion.Empty.<get-Empty>|<get-Empty>(){}[0]
+
+        final fun of(kotlin.collections/Map<kotlin/String, io.dataloom.api.security/ClassifiedDataValue>): io.dataloom.api.security/ClassifiedData // io.dataloom.api.security/ClassifiedData.Companion.of|of(kotlin.collections.Map<kotlin.String,io.dataloom.api.security.ClassifiedDataValue>){}[0]
+    }
+}
+
+final class io.dataloom.api.security/ClassifiedDataValue { // io.dataloom.api.security/ClassifiedDataValue|null[0]
+    constructor <init>(kotlin/String, io.dataloom.api.security/DataClassification) // io.dataloom.api.security/ClassifiedDataValue.<init>|<init>(kotlin.String;io.dataloom.api.security.DataClassification){}[0]
+
+    final val classification // io.dataloom.api.security/ClassifiedDataValue.classification|{}classification[0]
+        final fun <get-classification>(): io.dataloom.api.security/DataClassification // io.dataloom.api.security/ClassifiedDataValue.classification.<get-classification>|<get-classification>(){}[0]
+    final val value // io.dataloom.api.security/ClassifiedDataValue.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.security/ClassifiedDataValue.value.<get-value>|<get-value>(){}[0]
+
+    final fun component1(): kotlin/String // io.dataloom.api.security/ClassifiedDataValue.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.security/DataClassification // io.dataloom.api.security/ClassifiedDataValue.component2|component2(){}[0]
+    final fun copy(kotlin/String = ..., io.dataloom.api.security/DataClassification = ...): io.dataloom.api.security/ClassifiedDataValue // io.dataloom.api.security/ClassifiedDataValue.copy|copy(kotlin.String;io.dataloom.api.security.DataClassification){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.security/ClassifiedDataValue.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.security/ClassifiedDataValue.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.security/ClassifiedDataValue.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.security/DataRedactionPolicy { // io.dataloom.api.security/DataRedactionPolicy|null[0]
+    constructor <init>(io.dataloom.api.security/RedactionAction = ..., io.dataloom.api.security/RedactionAction = ..., io.dataloom.api.security/RedactionAction = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/String = ...) // io.dataloom.api.security/DataRedactionPolicy.<init>|<init>(io.dataloom.api.security.RedactionAction;io.dataloom.api.security.RedactionAction;io.dataloom.api.security.RedactionAction;kotlin.Int;kotlin.Int;kotlin.String){}[0]
+
+    final val confidentialAction // io.dataloom.api.security/DataRedactionPolicy.confidentialAction|{}confidentialAction[0]
+        final fun <get-confidentialAction>(): io.dataloom.api.security/RedactionAction // io.dataloom.api.security/DataRedactionPolicy.confidentialAction.<get-confidentialAction>|<get-confidentialAction>(){}[0]
+    final val internalAction // io.dataloom.api.security/DataRedactionPolicy.internalAction|{}internalAction[0]
+        final fun <get-internalAction>(): io.dataloom.api.security/RedactionAction // io.dataloom.api.security/DataRedactionPolicy.internalAction.<get-internalAction>|<get-internalAction>(){}[0]
+    final val mask // io.dataloom.api.security/DataRedactionPolicy.mask|{}mask[0]
+        final fun <get-mask>(): kotlin/String // io.dataloom.api.security/DataRedactionPolicy.mask.<get-mask>|<get-mask>(){}[0]
+    final val maximumOutputFields // io.dataloom.api.security/DataRedactionPolicy.maximumOutputFields|{}maximumOutputFields[0]
+        final fun <get-maximumOutputFields>(): kotlin/Int // io.dataloom.api.security/DataRedactionPolicy.maximumOutputFields.<get-maximumOutputFields>|<get-maximumOutputFields>(){}[0]
+    final val maximumOutputValueLength // io.dataloom.api.security/DataRedactionPolicy.maximumOutputValueLength|{}maximumOutputValueLength[0]
+        final fun <get-maximumOutputValueLength>(): kotlin/Int // io.dataloom.api.security/DataRedactionPolicy.maximumOutputValueLength.<get-maximumOutputValueLength>|<get-maximumOutputValueLength>(){}[0]
+    final val publicAction // io.dataloom.api.security/DataRedactionPolicy.publicAction|{}publicAction[0]
+        final fun <get-publicAction>(): io.dataloom.api.security/RedactionAction // io.dataloom.api.security/DataRedactionPolicy.publicAction.<get-publicAction>|<get-publicAction>(){}[0]
+
+    final fun actionFor(io.dataloom.api.security/DataClassification): io.dataloom.api.security/RedactionAction // io.dataloom.api.security/DataRedactionPolicy.actionFor|actionFor(io.dataloom.api.security.DataClassification){}[0]
+    final fun component1(): io.dataloom.api.security/RedactionAction // io.dataloom.api.security/DataRedactionPolicy.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.security/RedactionAction // io.dataloom.api.security/DataRedactionPolicy.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.security/RedactionAction // io.dataloom.api.security/DataRedactionPolicy.component3|component3(){}[0]
+    final fun component4(): kotlin/Int // io.dataloom.api.security/DataRedactionPolicy.component4|component4(){}[0]
+    final fun component5(): kotlin/Int // io.dataloom.api.security/DataRedactionPolicy.component5|component5(){}[0]
+    final fun component6(): kotlin/String // io.dataloom.api.security/DataRedactionPolicy.component6|component6(){}[0]
+    final fun copy(io.dataloom.api.security/RedactionAction = ..., io.dataloom.api.security/RedactionAction = ..., io.dataloom.api.security/RedactionAction = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/String = ...): io.dataloom.api.security/DataRedactionPolicy // io.dataloom.api.security/DataRedactionPolicy.copy|copy(io.dataloom.api.security.RedactionAction;io.dataloom.api.security.RedactionAction;io.dataloom.api.security.RedactionAction;kotlin.Int;kotlin.Int;kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.security/DataRedactionPolicy.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.security/DataRedactionPolicy.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.security/DataRedactionPolicy.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.security/RedactedAttributes { // io.dataloom.api.security/RedactedAttributes|null[0]
+    final val entries // io.dataloom.api.security/RedactedAttributes.entries|{}entries[0]
+        final fun <get-entries>(): kotlin.collections/Map<kotlin/String, kotlin/String> // io.dataloom.api.security/RedactedAttributes.entries.<get-entries>|<get-entries>(){}[0]
+    final val size // io.dataloom.api.security/RedactedAttributes.size|{}size[0]
+        final fun <get-size>(): kotlin/Int // io.dataloom.api.security/RedactedAttributes.size.<get-size>|<get-size>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.security/RedactedAttributes.equals|equals(kotlin.Any?){}[0]
+    final fun get(kotlin/String): kotlin/String? // io.dataloom.api.security/RedactedAttributes.get|get(kotlin.String){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.security/RedactedAttributes.hashCode|hashCode(){}[0]
+    final fun isEmpty(): kotlin/Boolean // io.dataloom.api.security/RedactedAttributes.isEmpty|isEmpty(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.security/RedactedAttributes.toString|toString(){}[0]
+
+    final object Companion { // io.dataloom.api.security/RedactedAttributes.Companion|null[0]
+        final val Empty // io.dataloom.api.security/RedactedAttributes.Companion.Empty|{}Empty[0]
+            final fun <get-Empty>(): io.dataloom.api.security/RedactedAttributes // io.dataloom.api.security/RedactedAttributes.Companion.Empty.<get-Empty>|<get-Empty>(){}[0]
+    }
+}
+
+final class io.dataloom.api.security/RedactionResult { // io.dataloom.api.security/RedactionResult|null[0]
+    constructor <init>(io.dataloom.api.security/RedactedAttributes, io.dataloom.api.security/RedactionSummary) // io.dataloom.api.security/RedactionResult.<init>|<init>(io.dataloom.api.security.RedactedAttributes;io.dataloom.api.security.RedactionSummary){}[0]
+
+    final val attributes // io.dataloom.api.security/RedactionResult.attributes|{}attributes[0]
+        final fun <get-attributes>(): io.dataloom.api.security/RedactedAttributes // io.dataloom.api.security/RedactionResult.attributes.<get-attributes>|<get-attributes>(){}[0]
+    final val summary // io.dataloom.api.security/RedactionResult.summary|{}summary[0]
+        final fun <get-summary>(): io.dataloom.api.security/RedactionSummary // io.dataloom.api.security/RedactionResult.summary.<get-summary>|<get-summary>(){}[0]
+
+    final fun component1(): io.dataloom.api.security/RedactedAttributes // io.dataloom.api.security/RedactionResult.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.security/RedactionSummary // io.dataloom.api.security/RedactionResult.component2|component2(){}[0]
+    final fun copy(io.dataloom.api.security/RedactedAttributes = ..., io.dataloom.api.security/RedactionSummary = ...): io.dataloom.api.security/RedactionResult // io.dataloom.api.security/RedactionResult.copy|copy(io.dataloom.api.security.RedactedAttributes;io.dataloom.api.security.RedactionSummary){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.security/RedactionResult.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.security/RedactionResult.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.security/RedactionResult.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.security/RedactionSummary { // io.dataloom.api.security/RedactionSummary|null[0]
+    constructor <init>(kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int) // io.dataloom.api.security/RedactionSummary.<init>|<init>(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+
+    final val emittedFieldCount // io.dataloom.api.security/RedactionSummary.emittedFieldCount|{}emittedFieldCount[0]
+        final fun <get-emittedFieldCount>(): kotlin/Int // io.dataloom.api.security/RedactionSummary.emittedFieldCount.<get-emittedFieldCount>|<get-emittedFieldCount>(){}[0]
+    final val inputFieldCount // io.dataloom.api.security/RedactionSummary.inputFieldCount|{}inputFieldCount[0]
+        final fun <get-inputFieldCount>(): kotlin/Int // io.dataloom.api.security/RedactionSummary.inputFieldCount.<get-inputFieldCount>|<get-inputFieldCount>(){}[0]
+    final val maskedFieldCount // io.dataloom.api.security/RedactionSummary.maskedFieldCount|{}maskedFieldCount[0]
+        final fun <get-maskedFieldCount>(): kotlin/Int // io.dataloom.api.security/RedactionSummary.maskedFieldCount.<get-maskedFieldCount>|<get-maskedFieldCount>(){}[0]
+    final val overflowFieldCount // io.dataloom.api.security/RedactionSummary.overflowFieldCount|{}overflowFieldCount[0]
+        final fun <get-overflowFieldCount>(): kotlin/Int // io.dataloom.api.security/RedactionSummary.overflowFieldCount.<get-overflowFieldCount>|<get-overflowFieldCount>(){}[0]
+    final val removedFieldCount // io.dataloom.api.security/RedactionSummary.removedFieldCount|{}removedFieldCount[0]
+        final fun <get-removedFieldCount>(): kotlin/Int // io.dataloom.api.security/RedactionSummary.removedFieldCount.<get-removedFieldCount>|<get-removedFieldCount>(){}[0]
+    final val truncatedFieldCount // io.dataloom.api.security/RedactionSummary.truncatedFieldCount|{}truncatedFieldCount[0]
+        final fun <get-truncatedFieldCount>(): kotlin/Int // io.dataloom.api.security/RedactionSummary.truncatedFieldCount.<get-truncatedFieldCount>|<get-truncatedFieldCount>(){}[0]
+
+    final fun component1(): kotlin/Int // io.dataloom.api.security/RedactionSummary.component1|component1(){}[0]
+    final fun component2(): kotlin/Int // io.dataloom.api.security/RedactionSummary.component2|component2(){}[0]
+    final fun component3(): kotlin/Int // io.dataloom.api.security/RedactionSummary.component3|component3(){}[0]
+    final fun component4(): kotlin/Int // io.dataloom.api.security/RedactionSummary.component4|component4(){}[0]
+    final fun component5(): kotlin/Int // io.dataloom.api.security/RedactionSummary.component5|component5(){}[0]
+    final fun component6(): kotlin/Int // io.dataloom.api.security/RedactionSummary.component6|component6(){}[0]
+    final fun copy(kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...): io.dataloom.api.security/RedactionSummary // io.dataloom.api.security/RedactionSummary.copy|copy(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.security/RedactionSummary.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.security/RedactionSummary.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.security/RedactionSummary.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.security/StrictDataLoomRedactor : io.dataloom.api.security/DataLoomRedactor { // io.dataloom.api.security/StrictDataLoomRedactor|null[0]
+    constructor <init>(io.dataloom.api.security/DataRedactionPolicy = ...) // io.dataloom.api.security/StrictDataLoomRedactor.<init>|<init>(io.dataloom.api.security.DataRedactionPolicy){}[0]
+
+    final fun redact(io.dataloom.api.security/ClassifiedData): io.dataloom.api.security/RedactionResult // io.dataloom.api.security/StrictDataLoomRedactor.redact|redact(io.dataloom.api.security.ClassifiedData){}[0]
 }
 
 final class io.dataloom.api.storage/InboundChangeApplyRequest { // io.dataloom.api.storage/InboundChangeApplyRequest|null[0]
@@ -3330,6 +3580,72 @@ final value class io.dataloom.api.circuit/CircuitAdministrationReason { // io.da
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitAdministrationReason.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitAdministrationReason.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationReason.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.operational/OperationalEventId { // io.dataloom.api.operational/OperationalEventId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.operational/OperationalEventId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.operational/OperationalEventId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.operational/OperationalEventId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/OperationalEventId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.operational/OperationalEventId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.operational/OperationalEventId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.operational/OperationalEventSource { // io.dataloom.api.operational/OperationalEventSource|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.operational/OperationalEventSource.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.operational/OperationalEventSource.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.operational/OperationalEventSource.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/OperationalEventSource.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.operational/OperationalEventSource.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.operational/OperationalEventSource.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.operational/OperationalEventType { // io.dataloom.api.operational/OperationalEventType|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.operational/OperationalEventType.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.operational/OperationalEventType.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.operational/OperationalEventType.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/OperationalEventType.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.operational/OperationalEventType.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.operational/OperationalEventType.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.operational/OperationalPayloadEncoding { // io.dataloom.api.operational/OperationalPayloadEncoding|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.operational/OperationalPayloadEncoding.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.operational/OperationalPayloadEncoding.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.operational/OperationalPayloadEncoding.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/OperationalPayloadEncoding.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.operational/OperationalPayloadEncoding.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.operational/OperationalPayloadEncoding.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.operational/OperationalPayloadType { // io.dataloom.api.operational/OperationalPayloadType|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.operational/OperationalPayloadType.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.operational/OperationalPayloadType.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.operational/OperationalPayloadType.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/OperationalPayloadType.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.operational/OperationalPayloadType.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.operational/OperationalPayloadType.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.operational/OperationalSchemaVersion { // io.dataloom.api.operational/OperationalSchemaVersion|null[0]
+    constructor <init>(kotlin/Int) // io.dataloom.api.operational/OperationalSchemaVersion.<init>|<init>(kotlin.Int){}[0]
+
+    final val value // io.dataloom.api.operational/OperationalSchemaVersion.value|{}value[0]
+        final fun <get-value>(): kotlin/Int // io.dataloom.api.operational/OperationalSchemaVersion.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/OperationalSchemaVersion.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.operational/OperationalSchemaVersion.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.operational/OperationalSchemaVersion.toString|toString(){}[0]
 }
 
 final value class io.dataloom.api.payload/EntityVersion { // io.dataloom.api.payload/EntityVersion|null[0]

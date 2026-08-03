@@ -851,6 +851,158 @@ public abstract interface class io/dataloom/api/observation/SynchronizationObser
 	public abstract fun onEvent (Lio/dataloom/api/synchronization/SynchronizationEvent;)V
 }
 
+public final class io/dataloom/api/operational/OperationalEventCategory : java/lang/Enum {
+	public static final field AUDIT Lio/dataloom/api/operational/OperationalEventCategory;
+	public static final field DIAGNOSTIC Lio/dataloom/api/operational/OperationalEventCategory;
+	public static final field DOMAIN Lio/dataloom/api/operational/OperationalEventCategory;
+	public static final field LIFECYCLE Lio/dataloom/api/operational/OperationalEventCategory;
+	public static final field SYSTEM Lio/dataloom/api/operational/OperationalEventCategory;
+	public static final field TELEMETRY Lio/dataloom/api/operational/OperationalEventCategory;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/operational/OperationalEventCategory;
+	public static fun values ()[Lio/dataloom/api/operational/OperationalEventCategory;
+}
+
+public final class io/dataloom/api/operational/OperationalEventEnvelope {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/operational/OperationalEventCategory;ILio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/operational/OperationalPayloadDescriptor;Lio/dataloom/api/security/RedactedAttributes;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/operational/OperationalEventCategory;ILio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/operational/OperationalPayloadDescriptor;Lio/dataloom/api/security/RedactedAttributes;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-OHEWrhI ()Ljava/lang/String;
+	public final fun component10-FOnZjVk ()Ljava/lang/String;
+	public final fun component11-RNYfoJA ()Ljava/lang/String;
+	public final fun component12 ()Lio/dataloom/api/operational/OperationalPayloadDescriptor;
+	public final fun component13 ()Lio/dataloom/api/security/RedactedAttributes;
+	public final fun component2-5IuMa4Y ()Ljava/lang/String;
+	public final fun component3-oklEKtw ()Ljava/lang/String;
+	public final fun component4 ()Lio/dataloom/api/operational/OperationalEventCategory;
+	public final fun component5-16kySkA ()I
+	public final fun component6 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component7-RwjzmdE ()Ljava/lang/String;
+	public final fun component8-AkDfCiw ()Ljava/lang/String;
+	public final fun component9-rhgDUuU ()Ljava/lang/String;
+	public final fun copy-l92cObE (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/operational/OperationalEventCategory;ILio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/operational/OperationalPayloadDescriptor;Lio/dataloom/api/security/RedactedAttributes;)Lio/dataloom/api/operational/OperationalEventEnvelope;
+	public static synthetic fun copy-l92cObE$default (Lio/dataloom/api/operational/OperationalEventEnvelope;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/operational/OperationalEventCategory;ILio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/operational/OperationalPayloadDescriptor;Lio/dataloom/api/security/RedactedAttributes;ILjava/lang/Object;)Lio/dataloom/api/operational/OperationalEventEnvelope;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAttributes ()Lio/dataloom/api/security/RedactedAttributes;
+	public final fun getCategory ()Lio/dataloom/api/operational/OperationalEventCategory;
+	public final fun getCausationId-AkDfCiw ()Ljava/lang/String;
+	public final fun getCorrelationId-RwjzmdE ()Ljava/lang/String;
+	public final fun getId-OHEWrhI ()Ljava/lang/String;
+	public final fun getOccurredAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getPayload ()Lio/dataloom/api/operational/OperationalPayloadDescriptor;
+	public final fun getSchemaVersion-16kySkA ()I
+	public final fun getSource-oklEKtw ()Ljava/lang/String;
+	public final fun getTenantId-FOnZjVk ()Ljava/lang/String;
+	public final fun getTraceId-rhgDUuU ()Ljava/lang/String;
+	public final fun getType-5IuMa4Y ()Ljava/lang/String;
+	public final fun getWorkflowId-RNYfoJA ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalEventId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/operational/OperationalEventId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalEventSource {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/operational/OperationalEventSource;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalEventType {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/operational/OperationalEventType;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalPayloadDescriptor {
+	public synthetic fun <init> (Ljava/lang/String;ILjava/lang/String;Lio/dataloom/api/security/DataClassification;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;ILjava/lang/String;Lio/dataloom/api/security/DataClassification;Ljava/lang/Long;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-JW3qmKM ()Ljava/lang/String;
+	public final fun component2-16kySkA ()I
+	public final fun component3-wq17U0M ()Ljava/lang/String;
+	public final fun component4 ()Lio/dataloom/api/security/DataClassification;
+	public final fun component5 ()Ljava/lang/Long;
+	public final fun copy-zWI_cfU (Ljava/lang/String;ILjava/lang/String;Lio/dataloom/api/security/DataClassification;Ljava/lang/Long;)Lio/dataloom/api/operational/OperationalPayloadDescriptor;
+	public static synthetic fun copy-zWI_cfU$default (Lio/dataloom/api/operational/OperationalPayloadDescriptor;Ljava/lang/String;ILjava/lang/String;Lio/dataloom/api/security/DataClassification;Ljava/lang/Long;ILjava/lang/Object;)Lio/dataloom/api/operational/OperationalPayloadDescriptor;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getClassification ()Lio/dataloom/api/security/DataClassification;
+	public final fun getEncodedSizeBytes ()Ljava/lang/Long;
+	public final fun getEncoding-wq17U0M ()Ljava/lang/String;
+	public final fun getSchemaVersion-16kySkA ()I
+	public final fun getType-JW3qmKM ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalPayloadEncoding {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/operational/OperationalPayloadEncoding;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalPayloadType {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/operational/OperationalPayloadType;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalSchemaVersion {
+	public static final synthetic fun box-impl (I)Lio/dataloom/api/operational/OperationalSchemaVersion;
+	public static fun constructor-impl (I)I
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
+	public final fun getValue ()I
+	public fun hashCode ()I
+	public static fun hashCode-impl (I)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
+}
+
 public final class io/dataloom/api/payload/DataLoomPayload {
 	public synthetic fun <init> (Ljava/lang/String;[BLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun copyBytes ()[B
@@ -1692,6 +1844,137 @@ public final class io/dataloom/api/scheduling/SchedulingDelay {
 
 public final class io/dataloom/api/scheduling/SchedulingDelay$Companion {
 	public final fun getZERO ()Lio/dataloom/api/scheduling/SchedulingDelay;
+}
+
+public final class io/dataloom/api/security/ClassifiedData {
+	public static final field Companion Lio/dataloom/api/security/ClassifiedData$Companion;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntries ()Ljava/util/Map;
+	public final fun getSize ()I
+	public fun hashCode ()I
+	public final fun isEmpty ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/security/ClassifiedData$Companion {
+	public final fun getEmpty ()Lio/dataloom/api/security/ClassifiedData;
+	public final fun of (Ljava/util/Map;)Lio/dataloom/api/security/ClassifiedData;
+}
+
+public final class io/dataloom/api/security/ClassifiedDataValue {
+	public fun <init> (Ljava/lang/String;Lio/dataloom/api/security/DataClassification;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/security/DataClassification;
+	public final fun copy (Ljava/lang/String;Lio/dataloom/api/security/DataClassification;)Lio/dataloom/api/security/ClassifiedDataValue;
+	public static synthetic fun copy$default (Lio/dataloom/api/security/ClassifiedDataValue;Ljava/lang/String;Lio/dataloom/api/security/DataClassification;ILjava/lang/Object;)Lio/dataloom/api/security/ClassifiedDataValue;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getClassification ()Lio/dataloom/api/security/DataClassification;
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/security/DataClassification : java/lang/Enum {
+	public static final field CONFIDENTIAL Lio/dataloom/api/security/DataClassification;
+	public static final field INTERNAL Lio/dataloom/api/security/DataClassification;
+	public static final field PUBLIC Lio/dataloom/api/security/DataClassification;
+	public static final field RESTRICTED Lio/dataloom/api/security/DataClassification;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/security/DataClassification;
+	public static fun values ()[Lio/dataloom/api/security/DataClassification;
+}
+
+public abstract interface class io/dataloom/api/security/DataLoomRedactor {
+	public abstract fun redact (Lio/dataloom/api/security/ClassifiedData;)Lio/dataloom/api/security/RedactionResult;
+}
+
+public final class io/dataloom/api/security/DataRedactionPolicy {
+	public fun <init> ()V
+	public fun <init> (Lio/dataloom/api/security/RedactionAction;Lio/dataloom/api/security/RedactionAction;Lio/dataloom/api/security/RedactionAction;IILjava/lang/String;)V
+	public synthetic fun <init> (Lio/dataloom/api/security/RedactionAction;Lio/dataloom/api/security/RedactionAction;Lio/dataloom/api/security/RedactionAction;IILjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun actionFor (Lio/dataloom/api/security/DataClassification;)Lio/dataloom/api/security/RedactionAction;
+	public final fun component1 ()Lio/dataloom/api/security/RedactionAction;
+	public final fun component2 ()Lio/dataloom/api/security/RedactionAction;
+	public final fun component3 ()Lio/dataloom/api/security/RedactionAction;
+	public final fun component4 ()I
+	public final fun component5 ()I
+	public final fun component6 ()Ljava/lang/String;
+	public final fun copy (Lio/dataloom/api/security/RedactionAction;Lio/dataloom/api/security/RedactionAction;Lio/dataloom/api/security/RedactionAction;IILjava/lang/String;)Lio/dataloom/api/security/DataRedactionPolicy;
+	public static synthetic fun copy$default (Lio/dataloom/api/security/DataRedactionPolicy;Lio/dataloom/api/security/RedactionAction;Lio/dataloom/api/security/RedactionAction;Lio/dataloom/api/security/RedactionAction;IILjava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/security/DataRedactionPolicy;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConfidentialAction ()Lio/dataloom/api/security/RedactionAction;
+	public final fun getInternalAction ()Lio/dataloom/api/security/RedactionAction;
+	public final fun getMask ()Ljava/lang/String;
+	public final fun getMaximumOutputFields ()I
+	public final fun getMaximumOutputValueLength ()I
+	public final fun getPublicAction ()Lio/dataloom/api/security/RedactionAction;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/security/RedactedAttributes {
+	public static final field Companion Lio/dataloom/api/security/RedactedAttributes$Companion;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun get (Ljava/lang/String;)Ljava/lang/String;
+	public final fun getEntries ()Ljava/util/Map;
+	public final fun getSize ()I
+	public fun hashCode ()I
+	public final fun isEmpty ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/security/RedactedAttributes$Companion {
+	public final fun getEmpty ()Lio/dataloom/api/security/RedactedAttributes;
+}
+
+public final class io/dataloom/api/security/RedactionAction : java/lang/Enum {
+	public static final field KEEP Lio/dataloom/api/security/RedactionAction;
+	public static final field MASK Lio/dataloom/api/security/RedactionAction;
+	public static final field REMOVE Lio/dataloom/api/security/RedactionAction;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/security/RedactionAction;
+	public static fun values ()[Lio/dataloom/api/security/RedactionAction;
+}
+
+public final class io/dataloom/api/security/RedactionResult {
+	public fun <init> (Lio/dataloom/api/security/RedactedAttributes;Lio/dataloom/api/security/RedactionSummary;)V
+	public final fun component1 ()Lio/dataloom/api/security/RedactedAttributes;
+	public final fun component2 ()Lio/dataloom/api/security/RedactionSummary;
+	public final fun copy (Lio/dataloom/api/security/RedactedAttributes;Lio/dataloom/api/security/RedactionSummary;)Lio/dataloom/api/security/RedactionResult;
+	public static synthetic fun copy$default (Lio/dataloom/api/security/RedactionResult;Lio/dataloom/api/security/RedactedAttributes;Lio/dataloom/api/security/RedactionSummary;ILjava/lang/Object;)Lio/dataloom/api/security/RedactionResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAttributes ()Lio/dataloom/api/security/RedactedAttributes;
+	public final fun getSummary ()Lio/dataloom/api/security/RedactionSummary;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/security/RedactionSummary {
+	public fun <init> (IIIIII)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()I
+	public final fun component6 ()I
+	public final fun copy (IIIIII)Lio/dataloom/api/security/RedactionSummary;
+	public static synthetic fun copy$default (Lio/dataloom/api/security/RedactionSummary;IIIIIIILjava/lang/Object;)Lio/dataloom/api/security/RedactionSummary;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEmittedFieldCount ()I
+	public final fun getInputFieldCount ()I
+	public final fun getMaskedFieldCount ()I
+	public final fun getOverflowFieldCount ()I
+	public final fun getRemovedFieldCount ()I
+	public final fun getTruncatedFieldCount ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/security/StrictDataLoomRedactor : io/dataloom/api/security/DataLoomRedactor {
+	public fun <init> ()V
+	public fun <init> (Lio/dataloom/api/security/DataRedactionPolicy;)V
+	public synthetic fun <init> (Lio/dataloom/api/security/DataRedactionPolicy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun redact (Lio/dataloom/api/security/ClassifiedData;)Lio/dataloom/api/security/RedactionResult;
 }
 
 public final class io/dataloom/api/storage/InboundChangeApplyRequest {

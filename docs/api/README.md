@@ -54,7 +54,7 @@ complete V1 strategy, asset, plugin, governance, or observability engine.
 | Submit and process durable work | [Queue submission](./queue-submission.md), [circuit-aware queue submission](./circuit-queue-submission.md), [circuit-aware queue processing](./circuit-queue-processing.md), [circuit-aware queue worker](./circuit-queue-worker.md), [circuit-protected worker scheduling](./circuit-queue-worker-scheduler.md), [queue provider](./queue-provider.md), [Apple durable queue](../apple/queue-state-store.md), [queue-provider timeouts](./queue-provider-timeouts.md), [queue circuit adapter](./queue-circuit-operation-adapter.md), and [queue worker](./queue-worker-coordinator.md) |
 | Evaluate and administer retries | [Retry policy](./retry-policy.md), [retry orchestration](./retry-orchestration.md), [retry timeouts](./retry-timeouts.md), [circuit breaker](./circuit-breaker.md), [circuit execution gate](./circuit-execution-gate.md), [retry administration](./retry-administration.md), and [circuit administration](./circuit-administration.md) |
 | Detect and resolve conflicts | [Conflict contracts](./conflict-contracts.md) and [conflict orchestration](./conflict-orchestration.md) |
-| Observe execution | [Synchronization events](./synchronization-events.md), [event dispatcher](./synchronization-event-dispatcher.md), [runtime operational events](./runtime-operational-events.md), and [retry/circuit telemetry](./retry-circuit-telemetry.md) |
+| Observe execution | [Operational envelope and redaction](./operational-envelope-redaction.md), [synchronization events](./synchronization-events.md), [event dispatcher](./synchronization-event-dispatcher.md), [runtime operational events](./runtime-operational-events.md), and [retry/circuit telemetry](./retry-circuit-telemetry.md) |
 
 ## Core request, data, and result contracts
 
@@ -170,6 +170,7 @@ protection, quarantine, and metrics.
 
 | Document | Current status | Scope |
 |---|---|---|
+| [Operational envelope and redaction](./operational-envelope-redaction.md) | Available foundation | Canonical versioned identity/routing/payload-description envelope plus deterministic bounded classification and redaction. |
 | [Synchronization events](./synchronization-events.md) | Available contract; partial V1 subsystem | Lifecycle, progress, retry, conflict, and completion event variants. |
 | [Synchronization event dispatcher](./synchronization-event-dispatcher.md) | Available foundation | In-process sequential observer dispatch and ordinary-failure isolation. |
 | [Runtime lifecycle events](./runtime-lifecycle-events.md) | Available foundation | Started, phase, and completed runtime integration. |
@@ -179,9 +180,9 @@ protection, quarantine, and metrics.
 The compatibility synchronization-event path remains synchronous and
 in-process. Retry/circuit telemetry now has bounded exporter-isolated delivery,
 fixed-cardinality metrics, structured-log/trace adapters, and a redacted local
-health snapshot. V1 still requires a
-canonical versioned envelope, durable delivery/outbox, replay, filtering,
-authoritative ordering, schema evolution, event persistence, complete
+health snapshot. A canonical versioned envelope and shared redaction boundary
+now exist. V1 still requires durable delivery/outbox, replay, filtering,
+authoritative ordering, wire compatibility/upcasting, event persistence, complete
 subsystem instrumentation, health aggregation, and an operational read
 model/reference dashboard.
 
