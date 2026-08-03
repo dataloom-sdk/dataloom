@@ -35,7 +35,7 @@ Apple validation lanes are required on the final review commit.
 
 ## Remaining work
 
-- generic canonical operational/audit envelope and centralized redaction;
+- adaptation to the canonical operational/audit envelope and shared redaction;
 - durable outbox, acknowledgement, replay, retention, filtering, ordering, and
   schema upcasting;
 - monotonic duration measurement and sampling;
