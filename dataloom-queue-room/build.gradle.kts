@@ -60,6 +60,7 @@ dependencies {
     testImplementation(libs.room.testing)
 
     androidTestImplementation(kotlin("test-junit"))
+    androidTestImplementation(project(":dataloom-runtime"))
     androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.room.testing)
     androidTestImplementation(libs.androidx.test.core.ktx)
