@@ -5,9 +5,9 @@
 > **Status:** Partial V1 subsystem. Explicit scope, durable Android/Apple state,
 > deterministic closed/open/half-open transitions, controlled probe leases,
 > provider/queue/scheduler runtime assembly, common authorized operations
-> contracts, and production Android operations persistence/execution are
-> implemented. Apple operations execution, complete observability, and
-> end-to-end qualification remain.
+> contracts, and production Android/Apple operations persistence/execution are
+> implemented. Operations assembly, complete observability, and end-to-end
+> qualification remain.
 
 ## Scope
 
@@ -89,13 +89,12 @@ selected built-in strategy paths can use explicitly configured circuit
 protection without changing historical unprotected entry points.
 
 Common [circuit-administration](./circuit-administration.md) contracts add
-deny-by-default, idempotent, durably audited open/close/reset coordination. The
-platform command stores and atomic mutation/receipt executors are a separate
-remaining slice.
+deny-by-default, idempotent, durably audited open/close/reset coordination.
+Production Room and Apple file stores atomically commit the platform circuit
+mutation with its successful command receipt.
 
 ## Remaining V1 work
 
-- production Apple circuit-administration store and atomic executor;
 - circuit-administration facade/operations assembly;
 - canonical circuit events, metrics, logs, and trace fields;
 - process-death, multi-process, and high-contention platform qualification; and

@@ -80,17 +80,13 @@ public class AppleFileCircuitBreakerStateStore(
     directoryPath: String,
     fileName: String = DEFAULT_FILE_NAME,
 ) : CircuitBreakerStateStore {
-    private val normalizedDirectoryPath: String = validateDirectoryPath(directoryPath)
-    private val validatedFileName: String = validateFileName(fileName)
-    private val dataFilePath: String = "$normalizedDirectoryPath/$validatedFileName"
-    private val lockFilePath: String = "$dataFilePath.lock"
-    private val temporaryFilePath: String = "$dataFilePath.tmp"
+    private val boundary = AppleCircuitStateFileBoundary(directoryPath, fileName)
 
     override suspend fun load(
         scope: CircuitBreakerScope,
     ): ProviderOperationResult<CircuitBreakerLoadResult> = protect {
         withExclusiveLock {
-            val record = readRecords()[scopeStorageKey(scope)]
+            val record = boundary.readSnapshot().circuitRecords[scopeStorageKey(scope)]
             if (record == null) {
                 CircuitBreakerLoadResult.Missing
             } else {
@@ -107,7 +103,8 @@ public class AppleFileCircuitBreakerStateStore(
         }
         return protect {
             withExclusiveLock {
-                val records = readRecords()
+                val snapshot = boundary.readSnapshot()
+                val records = snapshot.circuitRecords
                 val key = scopeStorageKey(request.scope)
                 val current = records[key]
                 val matches = when (val expected = request.expectedVersion) {
@@ -124,7 +121,7 @@ public class AppleFileCircuitBreakerStateStore(
                     )
                     records[key] = nextRecord
                     currentCoroutineContext().ensureActive()
-                    writeRecords(records)
+                    boundary.writeSnapshot(snapshot)
                     CircuitBreakerCompareAndSetResult.Updated(nextRecord)
                 }
             }
@@ -140,6 +137,8 @@ public class AppleFileCircuitBreakerStateStore(
         throw cancelled
     } catch (_: AppleCircuitStateLimitException) {
         ProviderOperationResult.Failure(AppleCircuitStoreError.stateLimitExceeded())
+    } catch (_: AppleCircuitAdministrationRecordLimitException) {
+        ProviderOperationResult.Failure(AppleCircuitStoreError.stateLimitExceeded())
     } catch (_: MalformedAppleCircuitStateException) {
         ProviderOperationResult.Failure(AppleCircuitStoreError.integrityFailure())
     } catch (_: AppleCircuitFileException) {
@@ -150,7 +149,25 @@ public class AppleFileCircuitBreakerStateStore(
 
     private suspend fun <T> withExclusiveLock(
         block: suspend () -> T,
-    ): T {
+    ): T = boundary.withExclusiveLock(block)
+
+    public companion object {
+        public const val DEFAULT_FILE_NAME: String = "dataloom-circuit-state-v1.tsv"
+    }
+}
+
+/** Shared lock and atomic-snapshot boundary for Apple circuit state and administration. */
+internal class AppleCircuitStateFileBoundary(
+    directoryPath: String,
+    fileName: String,
+) {
+    private val normalizedDirectoryPath: String = validateDirectoryPath(directoryPath)
+    private val validatedFileName: String = validateFileName(fileName)
+    private val dataFilePath: String = "$normalizedDirectoryPath/$validatedFileName"
+    private val lockFilePath: String = "$dataFilePath.lock"
+    private val temporaryFilePath: String = "$dataFilePath.tmp"
+
+    suspend fun <T> withExclusiveLock(block: suspend () -> T): T {
         ensurePrivateDirectory(normalizedDirectoryPath)
         val descriptor = openOwnerOnly(lockFilePath, O_RDWR or O_CREAT)
         try {
@@ -166,6 +183,19 @@ public class AppleFileCircuitBreakerStateStore(
         }
     }
 
+    fun readSnapshot(): AppleCircuitStateSnapshot {
+        val content = readUtf8FileOrNull(dataFilePath) ?: return AppleCircuitStateSnapshot()
+        return AppleCircuitStateFileCodec.decodeSnapshot(content)
+    }
+
+    fun writeSnapshot(snapshot: AppleCircuitStateSnapshot) {
+        writeUtf8FileAtomically(
+            temporaryPath = temporaryFilePath,
+            destinationPath = dataFilePath,
+            content = AppleCircuitStateFileCodec.encodeSnapshot(snapshot),
+        )
+    }
+
     private suspend fun acquireExclusiveLock(descriptor: Int) {
         while (true) {
             currentCoroutineContext().ensureActive()
@@ -177,41 +207,50 @@ public class AppleFileCircuitBreakerStateStore(
             }
         }
     }
-
-    private fun readRecords(): MutableMap<String, CircuitBreakerStateRecord> {
-        val content = readUtf8FileOrNull(dataFilePath) ?: return linkedMapOf()
-        return AppleCircuitStateFileCodec.decode(content)
-    }
-
-    private fun writeRecords(records: Map<String, CircuitBreakerStateRecord>) {
-        val content = AppleCircuitStateFileCodec.encode(records)
-        writeUtf8FileAtomically(
-            temporaryPath = temporaryFilePath,
-            destinationPath = dataFilePath,
-            content = content,
-        )
-    }
-
-    public companion object {
-        public const val DEFAULT_FILE_NAME: String = "dataloom-circuit-state-v1.tsv"
-    }
 }
 
+internal data class AppleCircuitStateSnapshot(
+    val circuitRecords: MutableMap<String, CircuitBreakerStateRecord> = linkedMapOf(),
+    val administrationRecords: MutableMap<String, io.dataloom.api.circuit.CircuitAdministrationStateRecord> =
+        linkedMapOf(),
+)
+
 internal object AppleCircuitStateFileCodec {
-    private const val HEADER = "DATALOOM_CIRCUIT_STATE\t1"
+    private const val HEADER_V1 = "DATALOOM_CIRCUIT_STATE\t1"
+    private const val HEADER_V2 = "DATALOOM_CIRCUIT_STATE\t2"
+    private const val STATE_TAG = "S\t"
+    private const val ADMINISTRATION_TAG = "A\t"
     private const val FIELD_COUNT = 14
 
     fun encode(records: Map<String, CircuitBreakerStateRecord>): String {
+        return encodeSnapshot(
+            AppleCircuitStateSnapshot(circuitRecords = records.toMutableMap()),
+        )
+    }
+
+    fun encodeSnapshot(snapshot: AppleCircuitStateSnapshot): String {
+        if (snapshot.administrationRecords.size > APPLE_CIRCUIT_ADMIN_MAX_RECORD_COUNT) {
+            throw AppleCircuitAdministrationRecordLimitException()
+        }
         val content = buildString {
-            append(HEADER)
+            append(HEADER_V2)
             append('\n')
-            records.entries.sortedBy { it.key }.forEach { entry ->
+            snapshot.circuitRecords.entries.sortedBy { it.key }.forEach { entry ->
                 val key = entry.key
                 val record = entry.value
                 check(key == scopeStorageKey(record.state.scope)) {
                     "Circuit-state map key does not match the record scope."
                 }
+                append(STATE_TAG)
                 append(encodeRecord(record))
+                append('\n')
+            }
+            snapshot.administrationRecords.entries.sortedBy { it.key }.forEach { entry ->
+                check(entry.key == entry.value.state.request.commandId.value) {
+                    "Circuit-administration map key does not match the command identifier."
+                }
+                append(ADMINISTRATION_TAG)
+                append(AppleCircuitAdministrationStateFileCodec.encodeRecord(entry.value))
                 append('\n')
             }
         }
@@ -222,25 +261,58 @@ internal object AppleCircuitStateFileCodec {
     }
 
     fun decode(content: String): MutableMap<String, CircuitBreakerStateRecord> {
+        return decodeSnapshot(content).circuitRecords
+    }
+
+    fun decodeSnapshot(content: String): AppleCircuitStateSnapshot {
         if (content.encodeToByteArray().size > MAX_STATE_FILE_BYTES) {
             throw AppleCircuitStateLimitException()
         }
         return try {
             val lines = content.split('\n')
-            require(lines.isNotEmpty() && lines.first() == HEADER)
-            val records = linkedMapOf<String, CircuitBreakerStateRecord>()
+            require(lines.isNotEmpty())
+            val version = when (lines.first()) {
+                HEADER_V1 -> 1
+                HEADER_V2 -> 2
+                else -> error("Unsupported Apple circuit-state format.")
+            }
+            val snapshot = AppleCircuitStateSnapshot()
             for (index in 1 until lines.size) {
                 val line = lines[index]
                 if (line.isEmpty()) {
                     require(index == lines.lastIndex)
                     continue
                 }
-                val record = decodeRecord(line)
-                val key = scopeStorageKey(record.state.scope)
-                require(records.put(key, record) == null)
+                if (version == 1) {
+                    val record = decodeRecord(line)
+                    val key = scopeStorageKey(record.state.scope)
+                    require(snapshot.circuitRecords.put(key, record) == null)
+                } else when {
+                    line.startsWith(STATE_TAG) -> {
+                        val record = decodeRecord(line.removePrefix(STATE_TAG))
+                        val key = scopeStorageKey(record.state.scope)
+                        require(snapshot.circuitRecords.put(key, record) == null)
+                    }
+                    line.startsWith(ADMINISTRATION_TAG) -> {
+                        if (
+                            snapshot.administrationRecords.size >=
+                            APPLE_CIRCUIT_ADMIN_MAX_RECORD_COUNT
+                        ) {
+                            throw AppleCircuitAdministrationRecordLimitException()
+                        }
+                        val record = AppleCircuitAdministrationStateFileCodec.decodeRecord(
+                            line.removePrefix(ADMINISTRATION_TAG),
+                        )
+                        val key = record.state.request.commandId.value
+                        require(snapshot.administrationRecords.put(key, record) == null)
+                    }
+                    else -> error("Unknown Apple circuit-state record tag.")
+                }
             }
-            records
+            snapshot
         } catch (invalid: AppleCircuitStateLimitException) {
+            throw invalid
+        } catch (invalid: AppleCircuitAdministrationRecordLimitException) {
             throw invalid
         } catch (invalid: Exception) {
             throw MalformedAppleCircuitStateException(invalid)
@@ -398,7 +470,7 @@ private fun openOwnerOnly(path: String, flags: Int): Int {
     return descriptor
 }
 
-private fun readUtf8FileOrNull(path: String): String? {
+internal fun readUtf8FileOrNull(path: String): String? {
     val descriptor = open(path, O_RDONLY)
     if (descriptor < 0) {
         if (errno == ENOENT) return null
@@ -560,9 +632,10 @@ private object AppleCircuitStoreError {
     ) : DataLoomError
 }
 
-private class AppleCircuitFileException : Exception()
-private class AppleCircuitStateLimitException : Exception()
-private class MalformedAppleCircuitStateException(cause: Throwable) : Exception(cause)
+internal class AppleCircuitFileException : Exception()
+internal class AppleCircuitStateLimitException : Exception()
+internal class AppleCircuitAdministrationRecordLimitException : Exception()
+internal class MalformedAppleCircuitStateException(cause: Throwable) : Exception(cause)
 
 private const val NULL_MARKER = "-"
 private const val HEX_DIGITS = "0123456789abcdef"

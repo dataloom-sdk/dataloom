@@ -2,10 +2,10 @@
 
 [API reference index](./README.md)
 
-> **Status:** Available common contract and coordination foundation with a
-> production Android Room command store and atomic circuit-state executor.
-> Apple production execution and operations assembly remain required before
-> this becomes a complete V1 capability.
+> **Status:** Available common contract and coordination foundation with
+> production Android Room and Apple file-backed command stores plus atomic
+> circuit-state executors. Operations assembly and complete qualification remain
+> required before this becomes a complete V1 capability.
 
 Circuit administration is an explicit privileged path for manually opening,
 closing, or resetting one exact `CircuitBreakerScope`. It does not bypass,
@@ -111,12 +111,26 @@ Authorization denial is durable and replayable. Cancellation and unexpected
 exceptions propagate unchanged. Clock regression after durable authorization
 fails closed before executor redelivery.
 
+## Apple file implementation
+
+`AppleFileCircuitAdministrationStateStore`,
+`AppleFileCircuitAdministrationExecutor`, and
+`AppleFileCircuitBreakerStateStore` must use the same directory and file name.
+Their shared process lock and bounded snapshot form one persistence boundary.
+
+The v2 snapshot tags circuit and command records independently. It reads legacy
+v1 circuit-only snapshots and upgrades them on the next successful write.
+Administrative execution validates the exact durable authorization, advances
+the circuit version, and stores the exact `SUCCEEDED` result in one crash-durable
+temporary-write, fsync, rename, and directory-fsync sequence. Replay cannot
+advance the circuit a second time.
+
 ## Current boundary
 
 This slice provides common contracts, validation, deterministic coordination,
-tests, and external JVM/Apple consumer compilation. Remaining work includes:
+production Android/Apple persistence and execution, tests, and external
+consumer compilation. Remaining work includes:
 
-- production Apple command-state persistence and atomic execution;
 - facade/operations assembly;
 - circuit-administration events, metrics, logs, tracing, health, and dashboard
   integration; and
