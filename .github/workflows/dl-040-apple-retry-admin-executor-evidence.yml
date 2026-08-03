@@ -43,13 +43,17 @@ jobs:
           set -euo pipefail
           chmod +x gradlew
           ./gradlew \
+            :dataloom-runtime:updateKotlinAbi \
+            --configuration-cache \
+            --stacktrace \
+            --console=plain
+          ./gradlew \
             :dataloom-runtime:jvmTest \
             :dataloom-runtime:iosSimulatorArm64Test \
             :runtime-external-consumer:compileKotlinJvm \
             :runtime-external-consumer:compileKotlinIosArm64 \
             :runtime-external-consumer:compileKotlinIosSimulatorArm64 \
             :runtime-external-consumer:compileKotlinIosX64 \
-            :dataloom-runtime:updateKotlinAbi \
             :dataloom-runtime:checkKotlinAbi \
             :dataloom-runtime:checkPublicAbiBoundaries \
             :dataloom-apple:checkKotlinAbi \
