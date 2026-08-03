@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 60944)
+Total output lines: 3141
+
 public final class io/dataloom/api/change/ChangeEvent {
 	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/change/EntityReference;Lio/dataloom/api/model/ChangeOperation;Lio/dataloom/api/payload/DataLoomPayload;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/change/EntityReference;Lio/dataloom/api/model/ChangeOperation;Lio/dataloom/api/payload/DataLoomPayload;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -851,6 +854,158 @@ public abstract interface class io/dataloom/api/observation/SynchronizationObser
 	public abstract fun onEvent (Lio/dataloom/api/synchronization/SynchronizationEvent;)V
 }
 
+public final class io/dataloom/api/operational/OperationalEventCategory : java/lang/Enum {
+	public static final field AUDIT Lio/dataloom/api/operational/OperationalEventCategory;
+	public static final field DIAGNOSTIC Lio/dataloom/api/operational/OperationalEventCategory;
+	public static final field DOMAIN Lio/dataloom/api/operational/OperationalEventCategory;
+	public static final field LIFECYCLE Lio/dataloom/api/operational/OperationalEventCategory;
+	public static final field SYSTEM Lio/dataloom/api/operational/OperationalEventCategory;
+	public static final field TELEMETRY Lio/dataloom/api/operational/OperationalEventCategory;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/operational/OperationalEventCategory;
+	public static fun values ()[Lio/dataloom/api/operational/OperationalEventCategory;
+}
+
+public final class io/dataloom/api/operational/OperationalEventEnvelope {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/operational/OperationalEventCategory;ILio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/operational/OperationalPayloadDescriptor;Lio/dataloom/api/security/RedactedAttributes;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/operational/OperationalEventCategory;ILio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/operational/OperationalPayloadDescriptor;Lio/dataloom/api/security/RedactedAttributes;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-OHEWrhI ()Ljava/lang/String;
+	public final fun component10-FOnZjVk ()Ljava/lang/String;
+	public final fun component11-RNYfoJA ()Ljava/lang/String;
+	public final fun component12 ()Lio/dataloom/api/operational/OperationalPayloadDescriptor;
+	public final fun component13 ()Lio/dataloom/api/security/RedactedAttributes;
+	public final fun component2-5IuMa4Y ()Ljava/lang/String;
+	public final fun component3-oklEKtw ()Ljava/lang/String;
+	public final fun component4 ()Lio/dataloom/api/operational/OperationalEventCategory;
+	public final fun component5-16kySkA ()I
+	public final fun component6 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component7-RwjzmdE ()Ljava/lang/String;
+	public final fun component8-AkDfCiw ()Ljava/lang/String;
+	public final fun component9-rhgDUuU ()Ljava/lang/String;
+	public final fun copy-l92cObE (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/operational/OperationalEventCategory;ILio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/operational/OperationalPayloadDescriptor;Lio/dataloom/api/security/RedactedAttributes;)Lio/dataloom/api/operational/OperationalEventEnvelope;
+	public static synthetic fun copy-l92cObE$default (Lio/dataloom/api/operational/OperationalEventEnvelope;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/operational/OperationalEventCategory;ILio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/operational/OperationalPayloadDescriptor;Lio/dataloom/api/security/RedactedAttributes;ILjava/lang/Object;)Lio/dataloom/api/operational/OperationalEventEnvelope;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAttributes ()Lio/dataloom/api/security/RedactedAttributes;
+	public final fun getCategory ()Lio/dataloom/api/operational/OperationalEventCategory;
+	public final fun getCausationId-AkDfCiw ()Ljava/lang/String;
+	public final fun getCorrelationId-RwjzmdE ()Ljava/lang/String;
+	public final fun getId-OHEWrhI ()Ljava/lang/String;
+	public final fun getOccurredAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getPayload ()Lio/dataloom/api/operational/OperationalPayloadDescriptor;
+	public final fun getSchemaVersion-16kySkA ()I
+	public final fun getSource-oklEKtw ()Ljava/lang/String;
+	public final fun getTenantId-FOnZjVk ()Ljava/lang/String;
+	public final fun getTraceId-rhgDUuU ()Ljava/lang/String;
+	public final fun getType-5IuMa4Y ()Ljava/lang/String;
+	public final fun getWorkflowId-RNYfoJA ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalEventId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/operational/OperationalEventId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalEventSource {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/operational/OperationalEventSource;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalEventType {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/operational/OperationalEventType;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalPayloadDescriptor {
+	public synthetic fun <init> (Ljava/lang/String;ILjava/lang/String;Lio/dataloom/api/security/DataClassification;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;ILjava/lang/String;Lio/dataloom/api/security/DataClassification;Ljava/lang/Long;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-JW3qmKM ()Ljava/lang/String;
+	public final fun component2-16kySkA ()I
+	public final fun component3-wq17U0M ()Ljava/lang/String;
+	public final fun component4 ()Lio/dataloom/api/security/DataClassification;
+	public final fun component5 ()Ljava/lang/Long;
+	public final fun copy-zWI_cfU (Ljava/lang/String;ILjava/lang/String;Lio/dataloom/api/security/DataClassification;Ljava/lang/Long;)Lio/dataloom/api/operational/OperationalPayloadDescriptor;
+	public static synthetic fun copy-zWI_cfU$default (Lio/dataloom/api/operational/OperationalPayloadDescriptor;Ljava/lang/String;ILjava/lang/String;Lio/dataloom/api/security/DataClassification;Ljava/lang/Long;ILjava/lang/Object;)Lio/dataloom/api/operational/OperationalPayloadDescriptor;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getClassification ()Lio/dataloom/api/security/DataClassification;
+	public final fun getEncodedSizeBytes ()Ljava/lang/Long;
+	public final fun getEncoding-wq17U0M ()Ljava/lang/String;
+	public final fun getSchemaVersion-16kySkA ()I
+	public final fun getType-JW3qmKM ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalPayloadEncoding {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/operational/OperationalPayloadEncoding;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalPayloadType {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/operational/OperationalPayloadType;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalSchemaVersion {
+	public static final synthetic fun box-impl (I)Lio/dataloom/api/operational/OperationalSchemaVersion;
+	public static fun constructor-impl (I)I
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
+	public final fun getValue ()I
+	public fun hashCode ()I
+	public static fun hashCode-impl (I)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
+}
+
 public final class io/dataloom/api/payload/DataLoomPayload {
 	public synthetic fun <init> (Ljava/lang/String;[BLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun copyBytes ()[B
@@ -1141,557 +1296,89 @@ public final class io/dataloom/api/queue/QueueRescheduleRequest {
 	public final fun component6 ()Lio/dataloom/api/context/DataLoomMetadata;
 	public final fun component7 ()Lio/dataloom/api/retry/RetryBudgetState;
 	public final fun copy-t_Vd_v4 (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;Lio/dataloom/api/retry/RetryBudgetState;)Lio/dataloom/api/queue/QueueRescheduleRequest;
-	public static synthetic fun copy-t_Vd_v4$default (Lio/dataloom/api/queue/QueueRescheduleRequest;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/context/DataLoomMetadata;Lio/dataloom/api/retry/RetryBudgetState;ILjava/lang/Object;)Lio/dataloom/api/queue/QueueRescheduleRequest;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getAvailableAt ()Lio/dataloom/api/time/DataLoomInstant;
-	public final fun getEntryId-ARA1dI0 ()Ljava/lang/String;
-	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
-	public final fun getLeaseId-__BVD4c ()Ljava/lang/String;
-	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
-	public final fun getRetryAttempt ()Lio/dataloom/api/retry/RetryAttempt;
-	public final fun getRetryBudgetState ()Lio/dataloom/api/retry/RetryBudgetState;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/retry/AuthorizedRetryAdministrationCommand {
-	public synthetic fun <init> (Lio/dataloom/api/retry/RetryAdministrationRequest;Ljava/lang/String;Lio/dataloom/api/error/Recoverability;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lio/dataloom/api/retry/RetryAdministrationRequest;
-	public final fun component2-ATenDio ()Ljava/lang/String;
-	public final fun component3 ()Lio/dataloom/api/error/Recoverability;
-	public final fun copy-CL_GB1Q (Lio/dataloom/api/retry/RetryAdministrationRequest;Ljava/lang/String;Lio/dataloom/api/error/Recoverability;)Lio/dataloom/api/retry/AuthorizedRetryAdministrationCommand;
-	public static synthetic fun copy-CL_GB1Q$default (Lio/dataloom/api/retry/AuthorizedRetryAdministrationCommand;Lio/dataloom/api/retry/RetryAdministrationRequest;Ljava/lang/String;Lio/dataloom/api/error/Recoverability;ILjava/lang/Object;)Lio/dataloom/api/retry/AuthorizedRetryAdministrationCommand;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getAuthorizationId-ATenDio ()Ljava/lang/String;
-	public final fun getEffectiveRecoverability ()Lio/dataloom/api/error/Recoverability;
-	public final fun getRequest ()Lio/dataloom/api/retry/RetryAdministrationRequest;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/retry/RetryAdministrationAction : java/lang/Enum {
-	public static final field RECLASSIFY_AND_REQUEUE Lio/dataloom/api/retry/RetryAdministrationAction;
-	public static final field REQUEUE Lio/dataloom/api/retry/RetryAdministrationAction;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/retry/RetryAdministrationAction;
-	public static fun values ()[Lio/dataloom/api/retry/RetryAdministrationAction;
-}
-
-public abstract interface class io/dataloom/api/retry/RetryAdministrationAuthorizationDecision {
-}
-
-public final class io/dataloom/api/retry/RetryAdministrationAuthorizationDecision$Authorized : io/dataloom/api/retry/RetryAdministrationAuthorizationDecision {
-	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1-ATenDio ()Ljava/lang/String;
-	public final fun copy-md1wgL4 (Ljava/lang/String;)Lio/dataloom/api/retry/RetryAdministrationAuthorizationDecision$Authorized;
-	public static synthetic fun copy-md1wgL4$default (Lio/dataloom/api/retry/RetryAdministrationAuthorizationDecision$Authorized;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/retry/RetryAdministrationAuthorizationDecision$Authorized;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getAuthorizationId-ATenDio ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/retry/RetryAdministrationAuthorizationDecision$Denied : io/dataloom/api/retry/RetryAdministrationAuthorizationDecision {
-	public fun <init> (Ljava/lang/String;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;)Lio/dataloom/api/retry/RetryAdministrationAuthorizationDecision$Denied;
-	public static synthetic fun copy$default (Lio/dataloom/api/retry/RetryAdministrationAuthorizationDecision$Denied;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/retry/RetryAdministrationAuthorizationDecision$Denied;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getReasonCode ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/retry/RetryAdministrationAuthorizationId {
-	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/retry/RetryAdministrationAuthorizationId;
-	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
-	public fun equals (Ljava/lang/Object;)Z
-	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
-	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
-	public final fun getValue ()Ljava/lang/String;
-	public fun hashCode ()I
-	public static fun hashCode-impl (Ljava/lang/String;)I
-	public fun toString ()Ljava/lang/String;
-	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
-	public final synthetic fun unbox-impl ()Ljava/lang/String;
-}
-
-public abstract interface class io/dataloom/api/retry/RetryAdministrationAuthorizer {
-	public abstract fun authorize (Lio/dataloom/api/retry/RetryAdministrationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
-public final class io/dataloom/api/retry/RetryAdministrationCommandId {
-	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/retry/RetryAdministrationCommandId;
-	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
-	public fun equals (Ljava/lang/Object;)Z
-	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
-	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
-	public final fun getValue ()Ljava/lang/String;
-	public fun hashCode ()I
-	public static fun hashCode-impl (Ljava/lang/String;)I
-	public fun toString ()Ljava/lang/String;
-	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
-	public final synthetic fun unbox-impl ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/retry/RetryAdministrationCommandState {
-	public synthetic fun <init> (Lio/dataloom/api/retry/RetryAdministrationRequest;Lio/dataloom/api/retry/RetryAdministrationCommandStatus;Ljava/lang/String;Lio/dataloom/api/error/Recoverability;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Lio/dataloom/api/retry/RetryFailureSnapshot;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Lio/dataloom/api/retry/RetryAdministrationRequest;Lio/dataloom/api/retry/RetryAdministrationCommandStatus;Ljava/lang/String;Lio/dataloom/api/error/Recoverability;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Lio/dataloom/api/retry/RetryFailureSnapshot;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lio/dataloom/api/retry/RetryAdministrationRequest;
-	public final fun component2 ()Lio/dataloom/api/retry/RetryAdministrationCommandStatus;
-	public final fun component3-U_TmG0w ()Ljava/lang/String;
-	public final fun component4 ()Lio/dataloom/api/error/Recoverability;
-	public final fun component5 ()Lio/dataloom/api/time/DataLoomInstant;
+	public static synthetic fun copy-t_Vd_v4$default (Lio/dataloom/api/queue/QueueRescheduleRequ…10944 tokens truncated…curity/RedactionAction;
+	public final fun component1 ()Lio/dataloom/api/security/RedactionAction;
+	public final fun component2 ()Lio/dataloom/api/security/RedactionAction;
+	public final fun component3 ()Lio/dataloom/api/security/RedactionAction;
+	public final fun component4 ()I
+	public final fun component5 ()I
 	public final fun component6 ()Ljava/lang/String;
-	public final fun component7 ()Lio/dataloom/api/retry/RetryFailureSnapshot;
-	public final fun copy-CCNL4Q0 (Lio/dataloom/api/retry/RetryAdministrationRequest;Lio/dataloom/api/retry/RetryAdministrationCommandStatus;Ljava/lang/String;Lio/dataloom/api/error/Recoverability;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Lio/dataloom/api/retry/RetryFailureSnapshot;)Lio/dataloom/api/retry/RetryAdministrationCommandState;
-	public static synthetic fun copy-CCNL4Q0$default (Lio/dataloom/api/retry/RetryAdministrationCommandState;Lio/dataloom/api/retry/RetryAdministrationRequest;Lio/dataloom/api/retry/RetryAdministrationCommandStatus;Ljava/lang/String;Lio/dataloom/api/error/Recoverability;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Lio/dataloom/api/retry/RetryFailureSnapshot;ILjava/lang/Object;)Lio/dataloom/api/retry/RetryAdministrationCommandState;
+	public final fun copy (Lio/dataloom/api/security/RedactionAction;Lio/dataloom/api/security/RedactionAction;Lio/dataloom/api/security/RedactionAction;IILjava/lang/String;)Lio/dataloom/api/security/DataRedactionPolicy;
+	public static synthetic fun copy$default (Lio/dataloom/api/security/DataRedactionPolicy;Lio/dataloom/api/security/RedactionAction;Lio/dataloom/api/security/RedactionAction;Lio/dataloom/api/security/RedactionAction;IILjava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/security/DataRedactionPolicy;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getAuthorizationId-U_TmG0w ()Ljava/lang/String;
-	public final fun getEffectiveRecoverability ()Lio/dataloom/api/error/Recoverability;
-	public final fun getExecutionFailure ()Lio/dataloom/api/retry/RetryFailureSnapshot;
-	public final fun getRejectionReasonCode ()Ljava/lang/String;
-	public final fun getRequest ()Lio/dataloom/api/retry/RetryAdministrationRequest;
-	public final fun getStatus ()Lio/dataloom/api/retry/RetryAdministrationCommandStatus;
-	public final fun getUpdatedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getConfidentialAction ()Lio/dataloom/api/security/RedactionAction;
+	public final fun getInternalAction ()Lio/dataloom/api/security/RedactionAction;
+	public final fun getMask ()Ljava/lang/String;
+	public final fun getMaximumOutputFields ()I
+	public final fun getMaximumOutputValueLength ()I
+	public final fun getPublicAction ()Lio/dataloom/api/security/RedactionAction;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class io/dataloom/api/retry/RetryAdministrationCommandStatus : java/lang/Enum {
-	public static final field AUTHORIZATION_DENIED Lio/dataloom/api/retry/RetryAdministrationCommandStatus;
-	public static final field AUTHORIZED Lio/dataloom/api/retry/RetryAdministrationCommandStatus;
-	public static final field EXECUTION_FAILED Lio/dataloom/api/retry/RetryAdministrationCommandStatus;
-	public static final field EXECUTION_REJECTED Lio/dataloom/api/retry/RetryAdministrationCommandStatus;
-	public static final field POLICY_REJECTED Lio/dataloom/api/retry/RetryAdministrationCommandStatus;
-	public static final field SUCCEEDED Lio/dataloom/api/retry/RetryAdministrationCommandStatus;
+public final class io/dataloom/api/security/RedactedAttributes {
+	public static final field Companion Lio/dataloom/api/security/RedactedAttributes$Companion;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun get (Ljava/lang/String;)Ljava/lang/String;
+	public final fun getEntries ()Ljava/util/Map;
+	public final fun getSize ()I
+	public fun hashCode ()I
+	public final fun isEmpty ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/security/RedactedAttributes$Companion {
+	public final fun getEmpty ()Lio/dataloom/api/security/RedactedAttributes;
+}
+
+public final class io/dataloom/api/security/RedactionAction : java/lang/Enum {
+	public static final field KEEP Lio/dataloom/api/security/RedactionAction;
+	public static final field MASK Lio/dataloom/api/security/RedactionAction;
+	public static final field REMOVE Lio/dataloom/api/security/RedactionAction;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/retry/RetryAdministrationCommandStatus;
-	public static fun values ()[Lio/dataloom/api/retry/RetryAdministrationCommandStatus;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/security/RedactionAction;
+	public static fun values ()[Lio/dataloom/api/security/RedactionAction;
 }
 
-public final class io/dataloom/api/retry/RetryAdministrationCompareAndSetRequest {
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Long;Lio/dataloom/api/retry/RetryAdministrationCommandState;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1-HusCT6Y ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/Long;
-	public final fun component3 ()Lio/dataloom/api/retry/RetryAdministrationCommandState;
-	public final fun copy-pQ2BDyM (Ljava/lang/String;Ljava/lang/Long;Lio/dataloom/api/retry/RetryAdministrationCommandState;)Lio/dataloom/api/retry/RetryAdministrationCompareAndSetRequest;
-	public static synthetic fun copy-pQ2BDyM$default (Lio/dataloom/api/retry/RetryAdministrationCompareAndSetRequest;Ljava/lang/String;Ljava/lang/Long;Lio/dataloom/api/retry/RetryAdministrationCommandState;ILjava/lang/Object;)Lio/dataloom/api/retry/RetryAdministrationCompareAndSetRequest;
+public final class io/dataloom/api/security/RedactionResult {
+	public fun <init> (Lio/dataloom/api/security/RedactedAttributes;Lio/dataloom/api/security/RedactionSummary;)V
+	public final fun component1 ()Lio/dataloom/api/security/RedactedAttributes;
+	public final fun component2 ()Lio/dataloom/api/security/RedactionSummary;
+	public final fun copy (Lio/dataloom/api/security/RedactedAttributes;Lio/dataloom/api/security/RedactionSummary;)Lio/dataloom/api/security/RedactionResult;
+	public static synthetic fun copy$default (Lio/dataloom/api/security/RedactionResult;Lio/dataloom/api/security/RedactedAttributes;Lio/dataloom/api/security/RedactionSummary;ILjava/lang/Object;)Lio/dataloom/api/security/RedactionResult;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCommandId-HusCT6Y ()Ljava/lang/String;
-	public final fun getExpectedVersion ()Ljava/lang/Long;
-	public final fun getNextState ()Lio/dataloom/api/retry/RetryAdministrationCommandState;
+	public final fun getAttributes ()Lio/dataloom/api/security/RedactedAttributes;
+	public final fun getSummary ()Lio/dataloom/api/security/RedactionSummary;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public abstract interface class io/dataloom/api/retry/RetryAdministrationCompareAndSetResult {
-}
-
-public final class io/dataloom/api/retry/RetryAdministrationCompareAndSetResult$Conflict : io/dataloom/api/retry/RetryAdministrationCompareAndSetResult {
-	public fun <init> (Lio/dataloom/api/retry/RetryAdministrationStateRecord;)V
-	public final fun component1 ()Lio/dataloom/api/retry/RetryAdministrationStateRecord;
-	public final fun copy (Lio/dataloom/api/retry/RetryAdministrationStateRecord;)Lio/dataloom/api/retry/RetryAdministrationCompareAndSetResult$Conflict;
-	public static synthetic fun copy$default (Lio/dataloom/api/retry/RetryAdministrationCompareAndSetResult$Conflict;Lio/dataloom/api/retry/RetryAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/api/retry/RetryAdministrationCompareAndSetResult$Conflict;
+public final class io/dataloom/api/security/RedactionSummary {
+	public fun <init> (IIIIII)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()I
+	public final fun component6 ()I
+	public final fun copy (IIIIII)Lio/dataloom/api/security/RedactionSummary;
+	public static synthetic fun copy$default (Lio/dataloom/api/security/RedactionSummary;IIIIIIILjava/lang/Object;)Lio/dataloom/api/security/RedactionSummary;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCurrent ()Lio/dataloom/api/retry/RetryAdministrationStateRecord;
+	public final fun getEmittedFieldCount ()I
+	public final fun getInputFieldCount ()I
+	public final fun getMaskedFieldCount ()I
+	public final fun getOverflowFieldCount ()I
+	public final fun getRemovedFieldCount ()I
+	public final fun getTruncatedFieldCount ()I
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class io/dataloom/api/retry/RetryAdministrationCompareAndSetResult$Updated : io/dataloom/api/retry/RetryAdministrationCompareAndSetResult {
-	public fun <init> (Lio/dataloom/api/retry/RetryAdministrationStateRecord;)V
-	public final fun component1 ()Lio/dataloom/api/retry/RetryAdministrationStateRecord;
-	public final fun copy (Lio/dataloom/api/retry/RetryAdministrationStateRecord;)Lio/dataloom/api/retry/RetryAdministrationCompareAndSetResult$Updated;
-	public static synthetic fun copy$default (Lio/dataloom/api/retry/RetryAdministrationCompareAndSetResult$Updated;Lio/dataloom/api/retry/RetryAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/api/retry/RetryAdministrationCompareAndSetResult$Updated;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getRecord ()Lio/dataloom/api/retry/RetryAdministrationStateRecord;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public abstract interface class io/dataloom/api/retry/RetryAdministrationExecutionResult {
-}
-
-public final class io/dataloom/api/retry/RetryAdministrationExecutionResult$Applied : io/dataloom/api/retry/RetryAdministrationExecutionResult {
-	public static final field INSTANCE Lio/dataloom/api/retry/RetryAdministrationExecutionResult$Applied;
-	public fun equals (Ljava/lang/Object;)Z
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/retry/RetryAdministrationExecutionResult$Failed : io/dataloom/api/retry/RetryAdministrationExecutionResult {
-	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
-	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
-	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/api/retry/RetryAdministrationExecutionResult$Failed;
-	public static synthetic fun copy$default (Lio/dataloom/api/retry/RetryAdministrationExecutionResult$Failed;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/api/retry/RetryAdministrationExecutionResult$Failed;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/retry/RetryAdministrationExecutionResult$Rejected : io/dataloom/api/retry/RetryAdministrationExecutionResult {
-	public fun <init> (Ljava/lang/String;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;)Lio/dataloom/api/retry/RetryAdministrationExecutionResult$Rejected;
-	public static synthetic fun copy$default (Lio/dataloom/api/retry/RetryAdministrationExecutionResult$Rejected;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/retry/RetryAdministrationExecutionResult$Rejected;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getReasonCode ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public abstract interface class io/dataloom/api/retry/RetryAdministrationExecutor {
-	public abstract fun execute (Lio/dataloom/api/retry/AuthorizedRetryAdministrationCommand;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
-public abstract interface class io/dataloom/api/retry/RetryAdministrationLoadResult {
-}
-
-public final class io/dataloom/api/retry/RetryAdministrationLoadResult$Found : io/dataloom/api/retry/RetryAdministrationLoadResult {
-	public fun <init> (Lio/dataloom/api/retry/RetryAdministrationStateRecord;)V
-	public final fun component1 ()Lio/dataloom/api/retry/RetryAdministrationStateRecord;
-	public final fun copy (Lio/dataloom/api/retry/RetryAdministrationStateRecord;)Lio/dataloom/api/retry/RetryAdministrationLoadResult$Found;
-	public static synthetic fun copy$default (Lio/dataloom/api/retry/RetryAdministrationLoadResult$Found;Lio/dataloom/api/retry/RetryAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/api/retry/RetryAdministrationLoadResult$Found;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getRecord ()Lio/dataloom/api/retry/RetryAdministrationStateRecord;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/retry/RetryAdministrationLoadResult$Missing : io/dataloom/api/retry/RetryAdministrationLoadResult {
-	public static final field INSTANCE Lio/dataloom/api/retry/RetryAdministrationLoadResult$Missing;
-	public fun equals (Ljava/lang/Object;)Z
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/retry/RetryAdministrationPrincipalId {
-	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/retry/RetryAdministrationPrincipalId;
-	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
-	public fun equals (Ljava/lang/Object;)Z
-	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
-	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
-	public final fun getValue ()Ljava/lang/String;
-	public fun hashCode ()I
-	public static fun hashCode-impl (Ljava/lang/String;)I
-	public fun toString ()Ljava/lang/String;
-	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
-	public final synthetic fun unbox-impl ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/retry/RetryAdministrationReason {
-	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/retry/RetryAdministrationReason;
-	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
-	public fun equals (Ljava/lang/Object;)Z
-	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
-	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
-	public final fun getValue ()Ljava/lang/String;
-	public fun hashCode ()I
-	public static fun hashCode-impl (Ljava/lang/String;)I
-	public fun toString ()Ljava/lang/String;
-	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
-	public final synthetic fun unbox-impl ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/retry/RetryAdministrationRequest {
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/retry/RetryAdministrationAction;Ljava/lang/String;Lio/dataloom/api/retry/RetryFailureSnapshot;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1-HusCT6Y ()Ljava/lang/String;
-	public final fun component2-ARA1dI0 ()Ljava/lang/String;
-	public final fun component3-cLXNxoQ ()Ljava/lang/String;
-	public final fun component4 ()Lio/dataloom/api/time/DataLoomInstant;
-	public final fun component5 ()Lio/dataloom/api/retry/RetryAdministrationAction;
-	public final fun component6-QSOHdX0 ()Ljava/lang/String;
-	public final fun component7 ()Lio/dataloom/api/retry/RetryFailureSnapshot;
-	public final fun copy-j4Vr5UE (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/retry/RetryAdministrationAction;Ljava/lang/String;Lio/dataloom/api/retry/RetryFailureSnapshot;)Lio/dataloom/api/retry/RetryAdministrationRequest;
-	public static synthetic fun copy-j4Vr5UE$default (Lio/dataloom/api/retry/RetryAdministrationRequest;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/retry/RetryAdministrationAction;Ljava/lang/String;Lio/dataloom/api/retry/RetryFailureSnapshot;ILjava/lang/Object;)Lio/dataloom/api/retry/RetryAdministrationRequest;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getAction ()Lio/dataloom/api/retry/RetryAdministrationAction;
-	public final fun getCommandId-HusCT6Y ()Ljava/lang/String;
-	public final fun getOriginalFailure ()Lio/dataloom/api/retry/RetryFailureSnapshot;
-	public final fun getPrincipalId-cLXNxoQ ()Ljava/lang/String;
-	public final fun getQueueEntryId-ARA1dI0 ()Ljava/lang/String;
-	public final fun getReason-QSOHdX0 ()Ljava/lang/String;
-	public final fun getRequestedAt ()Lio/dataloom/api/time/DataLoomInstant;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/retry/RetryAdministrationStateRecord {
-	public fun <init> (Lio/dataloom/api/retry/RetryAdministrationCommandState;J)V
-	public final fun component1 ()Lio/dataloom/api/retry/RetryAdministrationCommandState;
-	public final fun component2 ()J
-	public final fun copy (Lio/dataloom/api/retry/RetryAdministrationCommandState;J)Lio/dataloom/api/retry/RetryAdministrationStateRecord;
-	public static synthetic fun copy$default (Lio/dataloom/api/retry/RetryAdministrationStateRecord;Lio/dataloom/api/retry/RetryAdministrationCommandState;JILjava/lang/Object;)Lio/dataloom/api/retry/RetryAdministrationStateRecord;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getState ()Lio/dataloom/api/retry/RetryAdministrationCommandState;
-	public final fun getVersion ()J
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public abstract interface class io/dataloom/api/retry/RetryAdministrationStateStore {
-	public abstract fun compareAndSet (Lio/dataloom/api/retry/RetryAdministrationCompareAndSetRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun load-D0WhFSQ (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
-public final class io/dataloom/api/retry/RetryAttempt {
-	public fun <init> (I)V
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getNumber ()I
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/retry/RetryBudgetState {
-	public fun <init> (Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/scheduling/SchedulingDelay;)V
-	public final fun component1 ()Lio/dataloom/api/time/DataLoomInstant;
-	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
-	public final fun component3 ()Lio/dataloom/api/scheduling/SchedulingDelay;
-	public final fun copy (Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/scheduling/SchedulingDelay;)Lio/dataloom/api/retry/RetryBudgetState;
-	public static synthetic fun copy$default (Lio/dataloom/api/retry/RetryBudgetState;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/scheduling/SchedulingDelay;ILjava/lang/Object;)Lio/dataloom/api/retry/RetryBudgetState;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCumulativeDelay ()Lio/dataloom/api/scheduling/SchedulingDelay;
-	public final fun getLastEvaluatedAt ()Lio/dataloom/api/time/DataLoomInstant;
-	public final fun getWindowStartedAt ()Lio/dataloom/api/time/DataLoomInstant;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public abstract interface class io/dataloom/api/retry/RetryDecision {
-}
-
-public final class io/dataloom/api/retry/RetryDecision$Retry : io/dataloom/api/retry/RetryDecision {
-	public fun <init> (Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/context/DataLoomMetadata;)V
-	public synthetic fun <init> (Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lio/dataloom/api/scheduling/SchedulingDelay;
-	public final fun component2 ()Lio/dataloom/api/context/DataLoomMetadata;
-	public final fun copy (Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/retry/RetryDecision$Retry;
-	public static synthetic fun copy$default (Lio/dataloom/api/retry/RetryDecision$Retry;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/retry/RetryDecision$Retry;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getDelay ()Lio/dataloom/api/scheduling/SchedulingDelay;
-	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/retry/RetryDecision$Stop : io/dataloom/api/retry/RetryDecision {
-	public fun <init> (Lio/dataloom/api/retry/RetryStopReason;Lio/dataloom/api/context/DataLoomMetadata;)V
-	public synthetic fun <init> (Lio/dataloom/api/retry/RetryStopReason;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lio/dataloom/api/retry/RetryStopReason;
-	public final fun component2 ()Lio/dataloom/api/context/DataLoomMetadata;
-	public final fun copy (Lio/dataloom/api/retry/RetryStopReason;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/retry/RetryDecision$Stop;
-	public static synthetic fun copy$default (Lio/dataloom/api/retry/RetryDecision$Stop;Lio/dataloom/api/retry/RetryStopReason;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/retry/RetryDecision$Stop;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
-	public final fun getReason ()Lio/dataloom/api/retry/RetryStopReason;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/retry/RetryEvaluationRequest {
-	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/api/context/DataLoomMetadata;Lio/dataloom/api/error/RetryDelayHint;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/api/context/DataLoomMetadata;Lio/dataloom/api/error/RetryDelayHint;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lio/dataloom/api/model/SynchronizationRequest;
-	public final fun component2-TGFxZV8 ()Ljava/lang/String;
-	public final fun component3 ()Lio/dataloom/api/error/DataLoomError;
-	public final fun component4 ()Lio/dataloom/api/retry/RetryAttempt;
-	public final fun component5 ()Lio/dataloom/api/scheduling/SchedulingDelay;
-	public final fun component6 ()Lio/dataloom/api/provider/ProviderDescriptor;
-	public final fun component7 ()Lio/dataloom/api/context/DataLoomMetadata;
-	public final fun component8 ()Lio/dataloom/api/error/RetryDelayHint;
-	public final fun copy-MzVPQkM (Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/api/context/DataLoomMetadata;Lio/dataloom/api/error/RetryDelayHint;)Lio/dataloom/api/retry/RetryEvaluationRequest;
-	public static synthetic fun copy-MzVPQkM$default (Lio/dataloom/api/retry/RetryEvaluationRequest;Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/api/context/DataLoomMetadata;Lio/dataloom/api/error/RetryDelayHint;ILjava/lang/Object;)Lio/dataloom/api/retry/RetryEvaluationRequest;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getAttempt ()Lio/dataloom/api/retry/RetryAttempt;
-	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
-	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
-	public final fun getOperation-TGFxZV8 ()Ljava/lang/String;
-	public final fun getPreviousDelay ()Lio/dataloom/api/scheduling/SchedulingDelay;
-	public final fun getProvider ()Lio/dataloom/api/provider/ProviderDescriptor;
-	public final fun getRetryDelayHint ()Lio/dataloom/api/error/RetryDelayHint;
-	public final fun getSynchronizationRequest ()Lio/dataloom/api/model/SynchronizationRequest;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/retry/RetryFailureSnapshot {
-	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/error/ErrorCategory;Lio/dataloom/api/error/ErrorSeverity;Lio/dataloom/api/error/Recoverability;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1-7tkViRw ()Ljava/lang/String;
-	public final fun component2 ()Lio/dataloom/api/error/ErrorCategory;
-	public final fun component3 ()Lio/dataloom/api/error/ErrorSeverity;
-	public final fun component4 ()Lio/dataloom/api/error/Recoverability;
-	public final fun copy-CyM4FxY (Ljava/lang/String;Lio/dataloom/api/error/ErrorCategory;Lio/dataloom/api/error/ErrorSeverity;Lio/dataloom/api/error/Recoverability;)Lio/dataloom/api/retry/RetryFailureSnapshot;
-	public static synthetic fun copy-CyM4FxY$default (Lio/dataloom/api/retry/RetryFailureSnapshot;Ljava/lang/String;Lio/dataloom/api/error/ErrorCategory;Lio/dataloom/api/error/ErrorSeverity;Lio/dataloom/api/error/Recoverability;ILjava/lang/Object;)Lio/dataloom/api/retry/RetryFailureSnapshot;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCategory ()Lio/dataloom/api/error/ErrorCategory;
-	public final fun getCode-7tkViRw ()Ljava/lang/String;
-	public final fun getRecoverability ()Lio/dataloom/api/error/Recoverability;
-	public final fun getSeverity ()Lio/dataloom/api/error/ErrorSeverity;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/retry/RetryOperation {
-	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/retry/RetryOperation;
-	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
-	public fun equals (Ljava/lang/Object;)Z
-	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
-	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
-	public final fun getValue ()Ljava/lang/String;
-	public fun hashCode ()I
-	public static fun hashCode-impl (Ljava/lang/String;)I
-	public fun toString ()Ljava/lang/String;
-	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
-	public final synthetic fun unbox-impl ()Ljava/lang/String;
-}
-
-public abstract interface class io/dataloom/api/retry/RetryPolicy {
-	public abstract fun evaluate (Lio/dataloom/api/retry/RetryEvaluationRequest;)Lio/dataloom/api/retry/RetryDecision;
-	public abstract fun getId-Bqc1ZN8 ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/retry/RetryStopReason : java/lang/Enum {
-	public static final field ATTEMPT_LIMIT_REACHED Lio/dataloom/api/retry/RetryStopReason;
-	public static final field CLOCK_REGRESSION_DETECTED Lio/dataloom/api/retry/RetryStopReason;
-	public static final field CUMULATIVE_DELAY_LIMIT_REACHED Lio/dataloom/api/retry/RetryStopReason;
-	public static final field ELAPSED_TIME_LIMIT_REACHED Lio/dataloom/api/retry/RetryStopReason;
-	public static final field NON_RECOVERABLE Lio/dataloom/api/retry/RetryStopReason;
-	public static final field POLICY_REJECTED Lio/dataloom/api/retry/RetryStopReason;
-	public static final field UNSUPPORTED_OPERATION Lio/dataloom/api/retry/RetryStopReason;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/retry/RetryStopReason;
-	public static fun values ()[Lio/dataloom/api/retry/RetryStopReason;
-}
-
-public final class io/dataloom/api/retry/WorkflowTimeoutState {
-	public static final field Companion Lio/dataloom/api/retry/WorkflowTimeoutState$Companion;
-	public fun <init> (Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;)V
-	public final fun component1 ()Lio/dataloom/api/time/DataLoomInstant;
-	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
-	public final fun copy (Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/api/retry/WorkflowTimeoutState;
-	public static synthetic fun copy$default (Lio/dataloom/api/retry/WorkflowTimeoutState;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/api/retry/WorkflowTimeoutState;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getDeadline ()Lio/dataloom/api/time/DataLoomInstant;
-	public final fun getStartedAt ()Lio/dataloom/api/time/DataLoomInstant;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/retry/WorkflowTimeoutState$Companion {
-	public final fun from (Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/scheduling/SchedulingDelay;)Lio/dataloom/api/retry/WorkflowTimeoutState;
-}
-
-public final class io/dataloom/api/runtime/RuntimeDependencies {
-	public fun <init> (Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/runtime/RuntimeIdentifierGenerators;)V
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getClock ()Lio/dataloom/api/time/DataLoomClock;
-	public final fun getIdentifiers ()Lio/dataloom/api/runtime/RuntimeIdentifierGenerators;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/runtime/RuntimeIdentifierGenerators {
-	public fun <init> (Lio/dataloom/api/identifier/IdentifierGenerator;Lio/dataloom/api/identifier/IdentifierGenerator;Lio/dataloom/api/identifier/IdentifierGenerator;Lio/dataloom/api/identifier/IdentifierGenerator;)V
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getConflictIds ()Lio/dataloom/api/identifier/IdentifierGenerator;
-	public final fun getQueueEntryIds ()Lio/dataloom/api/identifier/IdentifierGenerator;
-	public final fun getQueueLeaseIds ()Lio/dataloom/api/identifier/IdentifierGenerator;
-	public final fun getSynchronizationEventIds ()Lio/dataloom/api/identifier/IdentifierGenerator;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/scheduling/ExistingSchedulePolicy : java/lang/Enum {
-	public static final field KEEP Lio/dataloom/api/scheduling/ExistingSchedulePolicy;
-	public static final field REPLACE Lio/dataloom/api/scheduling/ExistingSchedulePolicy;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/scheduling/ExistingSchedulePolicy;
-	public static fun values ()[Lio/dataloom/api/scheduling/ExistingSchedulePolicy;
-}
-
-public final class io/dataloom/api/scheduling/ScheduleCancellationRequest {
-	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/context/ExecutionContext;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1-Rq7uEjc ()Ljava/lang/String;
-	public final fun component2 ()Lio/dataloom/api/context/ExecutionContext;
-	public final fun copy-grcA6FI (Ljava/lang/String;Lio/dataloom/api/context/ExecutionContext;)Lio/dataloom/api/scheduling/ScheduleCancellationRequest;
-	public static synthetic fun copy-grcA6FI$default (Lio/dataloom/api/scheduling/ScheduleCancellationRequest;Ljava/lang/String;Lio/dataloom/api/context/ExecutionContext;ILjava/lang/Object;)Lio/dataloom/api/scheduling/ScheduleCancellationRequest;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getContext ()Lio/dataloom/api/context/ExecutionContext;
-	public final fun getId-Rq7uEjc ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/scheduling/ScheduleConstraints {
+public final class io/dataloom/api/security/StrictDataLoomRedactor : io/dataloom/api/security/DataLoomRedactor {
 	public fun <init> ()V
-	public fun <init> (Lio/dataloom/api/connectivity/ConnectivityRequirement;ZLio/dataloom/api/context/DataLoomMetadata;)V
-	public synthetic fun <init> (Lio/dataloom/api/connectivity/ConnectivityRequirement;ZLio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lio/dataloom/api/connectivity/ConnectivityRequirement;
-	public final fun component2 ()Z
-	public final fun component3 ()Lio/dataloom/api/context/DataLoomMetadata;
-	public final fun copy (Lio/dataloom/api/connectivity/ConnectivityRequirement;ZLio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/scheduling/ScheduleConstraints;
-	public static synthetic fun copy$default (Lio/dataloom/api/scheduling/ScheduleConstraints;Lio/dataloom/api/connectivity/ConnectivityRequirement;ZLio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/scheduling/ScheduleConstraints;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getConnectivity ()Lio/dataloom/api/connectivity/ConnectivityRequirement;
-	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
-	public final fun getRequiresCharging ()Z
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/scheduling/ScheduleReceipt {
-	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1-Rq7uEjc ()Ljava/lang/String;
-	public final fun component2 ()Lio/dataloom/api/context/DataLoomMetadata;
-	public final fun copy-grcA6FI (Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/scheduling/ScheduleReceipt;
-	public static synthetic fun copy-grcA6FI$default (Lio/dataloom/api/scheduling/ScheduleReceipt;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/scheduling/ScheduleReceipt;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getId-Rq7uEjc ()Ljava/lang/String;
-	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/scheduling/ScheduleRequest {
-	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/ScheduleConstraints;Lio/dataloom/api/scheduling/ExistingSchedulePolicy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/ScheduleConstraints;Lio/dataloom/api/scheduling/ExistingSchedulePolicy;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1-Rq7uEjc ()Ljava/lang/String;
-	public final fun component2 ()Lio/dataloom/api/model/SynchronizationRequest;
-	public final fun component3 ()Lio/dataloom/api/scheduling/SchedulingDelay;
-	public final fun component4 ()Lio/dataloom/api/scheduling/ScheduleConstraints;
-	public final fun component5 ()Lio/dataloom/api/scheduling/ExistingSchedulePolicy;
-	public final fun copy-GYGjtXY (Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/ScheduleConstraints;Lio/dataloom/api/scheduling/ExistingSchedulePolicy;)Lio/dataloom/api/scheduling/ScheduleRequest;
-	public static synthetic fun copy-GYGjtXY$default (Lio/dataloom/api/scheduling/ScheduleRequest;Ljava/lang/String;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/ScheduleConstraints;Lio/dataloom/api/scheduling/ExistingSchedulePolicy;ILjava/lang/Object;)Lio/dataloom/api/scheduling/ScheduleRequest;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getConstraints ()Lio/dataloom/api/scheduling/ScheduleConstraints;
-	public final fun getDelay ()Lio/dataloom/api/scheduling/SchedulingDelay;
-	public final fun getExistingPolicy ()Lio/dataloom/api/scheduling/ExistingSchedulePolicy;
-	public final fun getId-Rq7uEjc ()Ljava/lang/String;
-	public final fun getSynchronizationRequest ()Lio/dataloom/api/model/SynchronizationRequest;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public abstract interface class io/dataloom/api/scheduling/SchedulerProvider : io/dataloom/api/provider/DataLoomProvider {
-	public abstract fun cancel (Lio/dataloom/api/scheduling/ScheduleCancellationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
-	public abstract fun schedule (Lio/dataloom/api/scheduling/ScheduleRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
-public final class io/dataloom/api/scheduling/SchedulingDelay {
-	public static final field Companion Lio/dataloom/api/scheduling/SchedulingDelay$Companion;
-	public fun <init> (J)V
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getMilliseconds ()J
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/dataloom/api/scheduling/SchedulingDelay$Companion {
-	public final fun getZERO ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public fun <init> (Lio/dataloom/api/security/DataRedactionPolicy;)V
+	public synthetic fun <init> (Lio/dataloom/api/security/DataRedactionPolicy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun redact (Lio/dataloom/api/security/ClassifiedData;)Lio/dataloom/api/security/RedactionResult;
 }
 
 public final class io/dataloom/api/storage/InboundChangeApplyRequest {
