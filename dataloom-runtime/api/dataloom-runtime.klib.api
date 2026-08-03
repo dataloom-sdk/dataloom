@@ -198,6 +198,20 @@ final enum class io.dataloom.runtime.observation/SynchronizationObserverDispatch
     final fun values(): kotlin/Array<io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason> // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.runtime.operational/OperationalEnvelopeUpcastFailure : kotlin/Enum<io.dataloom.runtime.operational/OperationalEnvelopeUpcastFailure> { // io.dataloom.runtime.operational/OperationalEnvelopeUpcastFailure|null[0]
+    enum entry NO_UPCAST_PATH // io.dataloom.runtime.operational/OperationalEnvelopeUpcastFailure.NO_UPCAST_PATH|null[0]
+    enum entry STEP_LIMIT_EXCEEDED // io.dataloom.runtime.operational/OperationalEnvelopeUpcastFailure.STEP_LIMIT_EXCEEDED|null[0]
+    enum entry TARGET_OLDER_THAN_RECORD // io.dataloom.runtime.operational/OperationalEnvelopeUpcastFailure.TARGET_OLDER_THAN_RECORD|null[0]
+    enum entry UPCASTER_CONTRACT_VIOLATION // io.dataloom.runtime.operational/OperationalEnvelopeUpcastFailure.UPCASTER_CONTRACT_VIOLATION|null[0]
+    enum entry UPCASTER_FAILED // io.dataloom.runtime.operational/OperationalEnvelopeUpcastFailure.UPCASTER_FAILED|null[0]
+
+    final val entries // io.dataloom.runtime.operational/OperationalEnvelopeUpcastFailure.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.operational/OperationalEnvelopeUpcastFailure> // io.dataloom.runtime.operational/OperationalEnvelopeUpcastFailure.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.operational/OperationalEnvelopeUpcastFailure // io.dataloom.runtime.operational/OperationalEnvelopeUpcastFailure.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.operational/OperationalEnvelopeUpcastFailure> // io.dataloom.runtime.operational/OperationalEnvelopeUpcastFailure.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.runtime.queue/QueueCircuitProviderFailureDisposition : kotlin/Enum<io.dataloom.runtime.queue/QueueCircuitProviderFailureDisposition> { // io.dataloom.runtime.queue/QueueCircuitProviderFailureDisposition|null[0]
     enum entry CIRCUIT_FAILURE // io.dataloom.runtime.queue/QueueCircuitProviderFailureDisposition.CIRCUIT_FAILURE|null[0]
     enum entry NON_CIRCUIT_FAILURE // io.dataloom.runtime.queue/QueueCircuitProviderFailureDisposition.NON_CIRCUIT_FAILURE|null[0]
@@ -508,6 +522,17 @@ abstract interface io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEx
 
 abstract interface io.dataloom.runtime.observation.retry/RetryCircuitTraceSink { // io.dataloom.runtime.observation.retry/RetryCircuitTraceSink|null[0]
     abstract suspend fun record(io.dataloom.runtime.observation.retry/RetryCircuitTraceSignal) // io.dataloom.runtime.observation.retry/RetryCircuitTraceSink.record|record(io.dataloom.runtime.observation.retry.RetryCircuitTraceSignal){}[0]
+}
+
+abstract interface io.dataloom.runtime.operational/OperationalEnvelopeUpcaster { // io.dataloom.runtime.operational/OperationalEnvelopeUpcaster|null[0]
+    abstract val eventType // io.dataloom.runtime.operational/OperationalEnvelopeUpcaster.eventType|{}eventType[0]
+        abstract fun <get-eventType>(): io.dataloom.api.operational/OperationalEventType // io.dataloom.runtime.operational/OperationalEnvelopeUpcaster.eventType.<get-eventType>|<get-eventType>(){}[0]
+    abstract val fromSchemaVersion // io.dataloom.runtime.operational/OperationalEnvelopeUpcaster.fromSchemaVersion|{}fromSchemaVersion[0]
+        abstract fun <get-fromSchemaVersion>(): io.dataloom.api.operational/OperationalSchemaVersion // io.dataloom.runtime.operational/OperationalEnvelopeUpcaster.fromSchemaVersion.<get-fromSchemaVersion>|<get-fromSchemaVersion>(){}[0]
+    abstract val toSchemaVersion // io.dataloom.runtime.operational/OperationalEnvelopeUpcaster.toSchemaVersion|{}toSchemaVersion[0]
+        abstract fun <get-toSchemaVersion>(): io.dataloom.api.operational/OperationalSchemaVersion // io.dataloom.runtime.operational/OperationalEnvelopeUpcaster.toSchemaVersion.<get-toSchemaVersion>|<get-toSchemaVersion>(){}[0]
+
+    abstract fun upcast(io.dataloom.api.operational/OperationalEventEnvelope): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.runtime.operational/OperationalEnvelopeUpcaster.upcast|upcast(io.dataloom.api.operational.OperationalEventEnvelope){}[0]
 }
 
 abstract interface io.dataloom.runtime.retry/RetryTimeoutExecutor { // io.dataloom.runtime.retry/RetryTimeoutExecutor|null[0]
@@ -927,6 +952,56 @@ sealed interface io.dataloom.runtime.observation/SynchronizationEventDispatchRes
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.PartiallyDelivered.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.PartiallyDelivered.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.runtime.observation/SynchronizationEventDispatchResult.PartiallyDelivered.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult { // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult|null[0]
+    final class NotRequired : io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult { // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.NotRequired|null[0]
+        constructor <init>(io.dataloom.api.operational/OperationalEventEnvelope) // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.NotRequired.<init>|<init>(io.dataloom.api.operational.OperationalEventEnvelope){}[0]
+
+        final val envelope // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.NotRequired.envelope|{}envelope[0]
+            final fun <get-envelope>(): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.NotRequired.envelope.<get-envelope>|<get-envelope>(){}[0]
+
+        final fun component1(): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.NotRequired.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.operational/OperationalEventEnvelope = ...): io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.NotRequired // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.NotRequired.copy|copy(io.dataloom.api.operational.OperationalEventEnvelope){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.NotRequired.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.NotRequired.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.NotRequired.toString|toString(){}[0]
+    }
+
+    final class Rejected : io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult { // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Rejected|null[0]
+        constructor <init>(io.dataloom.runtime.operational/OperationalEnvelopeUpcastFailure, io.dataloom.api.operational/OperationalSchemaVersion, kotlin/Int) // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Rejected.<init>|<init>(io.dataloom.runtime.operational.OperationalEnvelopeUpcastFailure;io.dataloom.api.operational.OperationalSchemaVersion;kotlin.Int){}[0]
+
+        final val appliedStepCount // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Rejected.appliedStepCount|{}appliedStepCount[0]
+            final fun <get-appliedStepCount>(): kotlin/Int // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Rejected.appliedStepCount.<get-appliedStepCount>|<get-appliedStepCount>(){}[0]
+        final val failure // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Rejected.failure|{}failure[0]
+            final fun <get-failure>(): io.dataloom.runtime.operational/OperationalEnvelopeUpcastFailure // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Rejected.failure.<get-failure>|<get-failure>(){}[0]
+        final val lastSchemaVersion // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Rejected.lastSchemaVersion|{}lastSchemaVersion[0]
+            final fun <get-lastSchemaVersion>(): io.dataloom.api.operational/OperationalSchemaVersion // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Rejected.lastSchemaVersion.<get-lastSchemaVersion>|<get-lastSchemaVersion>(){}[0]
+
+        final fun component1(): io.dataloom.runtime.operational/OperationalEnvelopeUpcastFailure // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Rejected.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.operational/OperationalSchemaVersion // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Rejected.component2|component2(){}[0]
+        final fun component3(): kotlin/Int // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Rejected.component3|component3(){}[0]
+        final fun copy(io.dataloom.runtime.operational/OperationalEnvelopeUpcastFailure = ..., io.dataloom.api.operational/OperationalSchemaVersion = ..., kotlin/Int = ...): io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Rejected // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Rejected.copy|copy(io.dataloom.runtime.operational.OperationalEnvelopeUpcastFailure;io.dataloom.api.operational.OperationalSchemaVersion;kotlin.Int){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Rejected.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Rejected.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Rejected.toString|toString(){}[0]
+    }
+
+    final class Upcasted : io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult { // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Upcasted|null[0]
+        constructor <init>(io.dataloom.api.operational/OperationalEventEnvelope, kotlin/Int) // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Upcasted.<init>|<init>(io.dataloom.api.operational.OperationalEventEnvelope;kotlin.Int){}[0]
+
+        final val appliedStepCount // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Upcasted.appliedStepCount|{}appliedStepCount[0]
+            final fun <get-appliedStepCount>(): kotlin/Int // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Upcasted.appliedStepCount.<get-appliedStepCount>|<get-appliedStepCount>(){}[0]
+        final val envelope // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Upcasted.envelope|{}envelope[0]
+            final fun <get-envelope>(): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Upcasted.envelope.<get-envelope>|<get-envelope>(){}[0]
+
+        final fun component1(): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Upcasted.component1|component1(){}[0]
+        final fun component2(): kotlin/Int // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Upcasted.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.operational/OperationalEventEnvelope = ..., kotlin/Int = ...): io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Upcasted // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Upcasted.copy|copy(io.dataloom.api.operational.OperationalEventEnvelope;kotlin.Int){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Upcasted.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Upcasted.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Upcasted.toString|toString(){}[0]
     }
 }
 
@@ -3144,6 +3219,16 @@ final class io.dataloom.runtime.observation/SynchronizationObserverRegistry { //
     final fun isEmpty(): kotlin/Boolean // io.dataloom.runtime.observation/SynchronizationObserverRegistry.isEmpty|isEmpty(){}[0]
     final fun lookup(io.dataloom.api.identifier/SynchronizationObserverId): io.dataloom.api.observation/SynchronizationObserver? // io.dataloom.runtime.observation/SynchronizationObserverRegistry.lookup|lookup(io.dataloom.api.identifier.SynchronizationObserverId){}[0]
     final fun toString(): kotlin/String // io.dataloom.runtime.observation/SynchronizationObserverRegistry.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.operational/OperationalEnvelopeUpcasterRegistry { // io.dataloom.runtime.operational/OperationalEnvelopeUpcasterRegistry|null[0]
+    constructor <init>(kotlin.collections/Collection<io.dataloom.runtime.operational/OperationalEnvelopeUpcaster>) // io.dataloom.runtime.operational/OperationalEnvelopeUpcasterRegistry.<init>|<init>(kotlin.collections.Collection<io.dataloom.runtime.operational.OperationalEnvelopeUpcaster>){}[0]
+
+    final val size // io.dataloom.runtime.operational/OperationalEnvelopeUpcasterRegistry.size|{}size[0]
+        final fun <get-size>(): kotlin/Int // io.dataloom.runtime.operational/OperationalEnvelopeUpcasterRegistry.size.<get-size>|<get-size>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.runtime.operational/OperationalEnvelopeUpcasterRegistry.toString|toString(){}[0]
+    final fun upcast(io.dataloom.api.operational/OperationalEventEnvelope, io.dataloom.api.operational/OperationalSchemaVersion): io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult // io.dataloom.runtime.operational/OperationalEnvelopeUpcasterRegistry.upcast|upcast(io.dataloom.api.operational.OperationalEventEnvelope;io.dataloom.api.operational.OperationalSchemaVersion){}[0]
 }
 
 final class io.dataloom.runtime.queue/AppleFileQueueProvider : io.dataloom.api.queue/QueueProvider { // io.dataloom.runtime.queue/AppleFileQueueProvider|null[0]
