@@ -43,7 +43,6 @@ the final review commit.
 
 ## Remaining acceptance work
 
-- define and freeze canonical wire serialization plus schema upcasting;
 - adapt existing synchronization and retry/circuit signals to the envelope;
 - implement the durable event/audit outbox, ordering, replay, retention, and
   delivery isolation;
@@ -53,3 +52,6 @@ the final review commit.
 - complete configuration, generalized transactional state, publication, and
   mandatory platform artifact work; and
 - qualify centralized redaction against every V1 subsystem and support output.
+
+Canonical wire serialization and schema upcasting are continued in the
+[operational wire compatibility checkpoint](./DL-039-operational-wire-compatibility-checkpoint.md).

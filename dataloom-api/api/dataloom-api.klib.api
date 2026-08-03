@@ -166,6 +166,21 @@ final enum class io.dataloom.api.model/WorkflowPriority : kotlin/Enum<io.dataloo
     final fun values(): kotlin/Array<io.dataloom.api.model/WorkflowPriority> // io.dataloom.api.model/WorkflowPriority.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.api.operational/OperationalEnvelopeDecodeFailure : kotlin/Enum<io.dataloom.api.operational/OperationalEnvelopeDecodeFailure> { // io.dataloom.api.operational/OperationalEnvelopeDecodeFailure|null[0]
+    enum entry EMPTY_INPUT // io.dataloom.api.operational/OperationalEnvelopeDecodeFailure.EMPTY_INPUT|null[0]
+    enum entry FRAME_TOO_LARGE // io.dataloom.api.operational/OperationalEnvelopeDecodeFailure.FRAME_TOO_LARGE|null[0]
+    enum entry INVALID_FIELD // io.dataloom.api.operational/OperationalEnvelopeDecodeFailure.INVALID_FIELD|null[0]
+    enum entry INVALID_MAGIC // io.dataloom.api.operational/OperationalEnvelopeDecodeFailure.INVALID_MAGIC|null[0]
+    enum entry TRAILING_DATA // io.dataloom.api.operational/OperationalEnvelopeDecodeFailure.TRAILING_DATA|null[0]
+    enum entry UNSUPPORTED_WIRE_VERSION // io.dataloom.api.operational/OperationalEnvelopeDecodeFailure.UNSUPPORTED_WIRE_VERSION|null[0]
+
+    final val entries // io.dataloom.api.operational/OperationalEnvelopeDecodeFailure.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.operational/OperationalEnvelopeDecodeFailure> // io.dataloom.api.operational/OperationalEnvelopeDecodeFailure.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.operational/OperationalEnvelopeDecodeFailure // io.dataloom.api.operational/OperationalEnvelopeDecodeFailure.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.operational/OperationalEnvelopeDecodeFailure> // io.dataloom.api.operational/OperationalEnvelopeDecodeFailure.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.api.operational/OperationalEventCategory : kotlin/Enum<io.dataloom.api.operational/OperationalEventCategory> { // io.dataloom.api.operational/OperationalEventCategory|null[0]
     enum entry AUDIT // io.dataloom.api.operational/OperationalEventCategory.AUDIT|null[0]
     enum entry DIAGNOSTIC // io.dataloom.api.operational/OperationalEventCategory.DIAGNOSTIC|null[0]
@@ -997,6 +1012,34 @@ sealed interface io.dataloom.api.conflict/ConflictResolutionDecision { // io.dat
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.conflict/ConflictResolutionDecision.UseRemote.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.api.conflict/ConflictResolutionDecision.UseRemote.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.api.conflict/ConflictResolutionDecision.UseRemote.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.operational/OperationalEnvelopeDecodeResult { // io.dataloom.api.operational/OperationalEnvelopeDecodeResult|null[0]
+    final class Decoded : io.dataloom.api.operational/OperationalEnvelopeDecodeResult { // io.dataloom.api.operational/OperationalEnvelopeDecodeResult.Decoded|null[0]
+        constructor <init>(io.dataloom.api.operational/OperationalEventEnvelope) // io.dataloom.api.operational/OperationalEnvelopeDecodeResult.Decoded.<init>|<init>(io.dataloom.api.operational.OperationalEventEnvelope){}[0]
+
+        final val envelope // io.dataloom.api.operational/OperationalEnvelopeDecodeResult.Decoded.envelope|{}envelope[0]
+            final fun <get-envelope>(): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.api.operational/OperationalEnvelopeDecodeResult.Decoded.envelope.<get-envelope>|<get-envelope>(){}[0]
+
+        final fun component1(): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.api.operational/OperationalEnvelopeDecodeResult.Decoded.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.operational/OperationalEventEnvelope = ...): io.dataloom.api.operational/OperationalEnvelopeDecodeResult.Decoded // io.dataloom.api.operational/OperationalEnvelopeDecodeResult.Decoded.copy|copy(io.dataloom.api.operational.OperationalEventEnvelope){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/OperationalEnvelopeDecodeResult.Decoded.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.operational/OperationalEnvelopeDecodeResult.Decoded.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.operational/OperationalEnvelopeDecodeResult.Decoded.toString|toString(){}[0]
+    }
+
+    final class Rejected : io.dataloom.api.operational/OperationalEnvelopeDecodeResult { // io.dataloom.api.operational/OperationalEnvelopeDecodeResult.Rejected|null[0]
+        constructor <init>(io.dataloom.api.operational/OperationalEnvelopeDecodeFailure) // io.dataloom.api.operational/OperationalEnvelopeDecodeResult.Rejected.<init>|<init>(io.dataloom.api.operational.OperationalEnvelopeDecodeFailure){}[0]
+
+        final val failure // io.dataloom.api.operational/OperationalEnvelopeDecodeResult.Rejected.failure|{}failure[0]
+            final fun <get-failure>(): io.dataloom.api.operational/OperationalEnvelopeDecodeFailure // io.dataloom.api.operational/OperationalEnvelopeDecodeResult.Rejected.failure.<get-failure>|<get-failure>(){}[0]
+
+        final fun component1(): io.dataloom.api.operational/OperationalEnvelopeDecodeFailure // io.dataloom.api.operational/OperationalEnvelopeDecodeResult.Rejected.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.operational/OperationalEnvelopeDecodeFailure = ...): io.dataloom.api.operational/OperationalEnvelopeDecodeResult.Rejected // io.dataloom.api.operational/OperationalEnvelopeDecodeResult.Rejected.copy|copy(io.dataloom.api.operational.OperationalEnvelopeDecodeFailure){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/OperationalEnvelopeDecodeResult.Rejected.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.operational/OperationalEnvelopeDecodeResult.Rejected.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.operational/OperationalEnvelopeDecodeResult.Rejected.toString|toString(){}[0]
     }
 }
 
@@ -3767,4 +3810,14 @@ final value class io.dataloom.api.strategy/StrategyProfileId { // io.dataloom.ap
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyProfileId.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyProfileId.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyProfileId.toString|toString(){}[0]
+}
+
+final object io.dataloom.api.operational/OperationalEnvelopeWireCodec { // io.dataloom.api.operational/OperationalEnvelopeWireCodec|null[0]
+    final const val MAX_FRAME_SIZE_BYTES // io.dataloom.api.operational/OperationalEnvelopeWireCodec.MAX_FRAME_SIZE_BYTES|{}MAX_FRAME_SIZE_BYTES[0]
+        final fun <get-MAX_FRAME_SIZE_BYTES>(): kotlin/Int // io.dataloom.api.operational/OperationalEnvelopeWireCodec.MAX_FRAME_SIZE_BYTES.<get-MAX_FRAME_SIZE_BYTES>|<get-MAX_FRAME_SIZE_BYTES>(){}[0]
+    final const val WIRE_VERSION // io.dataloom.api.operational/OperationalEnvelopeWireCodec.WIRE_VERSION|{}WIRE_VERSION[0]
+        final fun <get-WIRE_VERSION>(): kotlin/Int // io.dataloom.api.operational/OperationalEnvelopeWireCodec.WIRE_VERSION.<get-WIRE_VERSION>|<get-WIRE_VERSION>(){}[0]
+
+    final fun decode(kotlin/ByteArray): io.dataloom.api.operational/OperationalEnvelopeDecodeResult // io.dataloom.api.operational/OperationalEnvelopeWireCodec.decode|decode(kotlin.ByteArray){}[0]
+    final fun encode(io.dataloom.api.operational/OperationalEventEnvelope): kotlin/ByteArray // io.dataloom.api.operational/OperationalEnvelopeWireCodec.encode|encode(io.dataloom.api.operational.OperationalEventEnvelope){}[0]
 }

@@ -111,8 +111,27 @@ public class RedactedAttributes private constructor(
     public companion object {
         public val Empty: RedactedAttributes = RedactedAttributes(emptyMap())
 
-        internal fun fromRedactor(entries: Map<String, String>): RedactedAttributes =
-            if (entries.isEmpty()) Empty else RedactedAttributes(entries.toMap())
+        internal fun fromRedactor(entries: Map<String, String>): RedactedAttributes {
+            if (entries.isEmpty()) {
+                return Empty
+            }
+            require(entries.size <= MAX_REDACTED_FIELD_COUNT) {
+                "Redacted attributes contain too many fields."
+            }
+            entries.forEach { (key: String, value: String) ->
+                require(key.length in 1..MAX_REDACTED_KEY_LENGTH && key.isSafeAttributeKey()) {
+                    "Redacted attribute key must be a bounded ASCII token."
+                }
+                require(value.length <= MAX_REDACTED_VALUE_LENGTH) {
+                    "Redacted attribute value exceeds the maximum supported length."
+                }
+            }
+            return RedactedAttributes(entries.toMap())
+        }
+
+        private const val MAX_REDACTED_FIELD_COUNT: Int = 256
+        private const val MAX_REDACTED_KEY_LENGTH: Int = 128
+        private const val MAX_REDACTED_VALUE_LENGTH: Int = 4_096
     }
 }
 
