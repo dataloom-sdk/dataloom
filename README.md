@@ -64,24 +64,70 @@ execution are implemented. Durable decision persistence, the remaining strategy
 runtimes, and complete platform qualification remain required before the
 strategy engine is complete.
 
-## Current capability
+## Market-readiness dashboard
 
-| Area | Current repository | V1 requirement |
-|---|---|---|
-| Shared contracts and runtime | Implemented foundation | Stable, published, qualified API |
-| Push, pull, bidirectional flows | Implemented foundation | Strategy-aware deterministic plans |
-| Six synchronization strategies | Versioned planner plus direct network-only and remote-first slices implemented | All six built in and fully qualified |
-| Durable queue | Implemented foundation | Correct deferral, recovery, migration, and restart semantics |
-| Retry and circuit breaking | Fail-closed classification, deterministic backoff/jitter, durable budgets, bounded hints, independent timeout contracts, durable circuit state, and common provider/retry execution gates; broader engine partial | Production durable circuit stores, direct pipeline assembly, operations, observability, and full qualification |
-| Conflict handling | Custom contracts/orchestration are partial | Built-in generic policies, persistence, recovery, and audit |
-| Events and observability | In-process dispatch is partial | Durable events, metrics, traces, health, and operational views |
-| Asset transfer | Missing | Upload/download, chunking, streaming, integrity, and resume |
-| Plugin platform | Provider interfaces only | Permission-bounded plugin lifecycle and governance |
-| Enterprise governance | Missing | Tenant isolation, administration, policy, audit, and controls |
+- **Last reconciled:** 2026-08-03
+- **Recorded V1 target:** 2026-08-27
+- **Current verdict:** **NO-GO — not production-ready or market-ready**
+- **Accepted engineering/release gates:** **0 of 10** (`#93`–`#102` are open)
 
-See the
-[V1 production-readiness audit](./docs/audits/DL-AUDIT-004-v1-production-readiness.md)
-for the requirement matrix and no-go gates.
+Progress below is acceptance-based, not a percentage of code written. A gate is
+`COMPLETE` only when its issue criteria have executable evidence on the same
+reviewed commit. `IN PROGRESS` therefore includes substantial implementations
+that still have unqualified release behavior.
+
+| Next priority | V1 gate | Status | Finished on `main` | Still pending before the gate is complete |
+|---:|---|---|---|---|
+| 1 | [DL-039 foundations, artifacts, compatibility](https://github.com/dataloom-sdk/dataloom/issues/93) | IN PROGRESS | Public API/provider/runtime boundaries, module rules, JVM and Kotlin/Native ABI baselines, external-consumer compilation, durable state primitives, deterministic clocks/randomness, configuration and policy foundations | Finish canonical audit/event envelope and centralized redaction; complete configuration/policy rollout and rollback; close remaining security, migration, artifact, and compatibility criteria |
+| 2 | [DL-039B six strategy engine](https://github.com/dataloom-sdk/dataloom/issues/102) | IN PROGRESS | Versioned contracts and deterministic planner for all six strategies; direct network-only and remote-first vertical slices | Complete offline-first, cache-first, hybrid, and adaptive runtimes; persist effective decisions; qualify the full connectivity/cache/fallback/retry/conflict/restart matrix without silent strategy changes |
+| 3 | [DL-039A Android/KMP/iOS parity](https://github.com/dataloom-sdk/dataloom/issues/101) | IN PROGRESS | Native Android adapters, Kotlin/Native Apple targets, XCFramework assembly, Swift smoke compilation, and initial Apple file-backed persistence | Add explicit KMP Android variants, production `dataloom-android`/`dataloom-ios` aggregation, iOS lifecycle/connectivity/background/security adapters, staged external consumers, and the complete parity matrix |
+| 4 | [DL-040 retry and circuit breaker](https://github.com/dataloom-sdk/dataloom/issues/94) | QUALIFICATION BLOCKED | FR-RETRY-001–012 implementation mapping; built-in backoff/jitter, limits, hints, six timeout boundaries, durable Room/Apple circuit state, half-open leases, authorized administration, bounded telemetry, and common/platform-store recovery flows | Prove real Android and Apple process termination/relaunch, genuine cross-process probe contention where supported, and the complete AC-FUNC-004 provider flow through native Android, KMP Android, and KMP iOS |
+| 5 | [DL-041 conflict engine](https://github.com/dataloom-sdk/dataloom/issues/95) | IN PROGRESS | Custom detector/resolver contracts and orchestration foundations | Ship deterministic built-in strategies, decision application, durable unresolved/manual state, audit, loop prevention/quarantine, precedence, restart/concurrency proof, and AC-FUNC-002 |
+| 6 | [DL-042 events, observability, health, dashboard](https://github.com/dataloom-sdk/dataloom/issues/96) | IN PROGRESS | In-process event dispatch plus bounded retry/circuit metrics, logs, traces, exporter isolation, and redacted health snapshot | Add the canonical durable outbox, ordering, acknowledgement/replay, retention, filtering, centralized redaction, SDK-wide instrumentation, health/read model, and deployable operations dashboard/adaptor |
+| 7 | [DL-043 asset synchronization](https://github.com/dataloom-sdk/dataloom/issues/97) | NOT STARTED | No production asset subsystem accepted | Implement manifest, bounded streaming, upload/download chunking, durable resume, integrity, encryption metadata, quota, cancellation, secure temporary files, cleanup, content policy, and AC-FUNC-005 |
+| 8 | [DL-044 plugin platform](https://github.com/dataloom-sdk/dataloom/issues/98) | NOT STARTED | Provider SPI exists; no V1 plugin lifecycle is accepted | Implement manifests, compatibility, deny-by-default permissions, lifecycle, resource bounds, deterministic ordering, isolation, hot disable, audit, certification kit, and a reference non-provider plugin |
+| 9 | [DL-045 enterprise governance](https://github.com/dataloom-sdk/dataloom/issues/99) | NOT STARTED | Tenant identifiers and limited retry/circuit administration foundations exist | Enforce tenant isolation, RBAC, signed policy packs, tamper-evident/offline audit, residency, support/fleet diagnostics, configuration locks, LTS/catalog governance, and AC-FUNC-010 |
+| 10 | [DL-046 immutable V1 release](https://github.com/dataloom-sdk/dataloom/issues/100) | BLOCKED / NO-GO | Continuous JVM, Android, Apple, ABI, XCFramework, header, Swift-smoke, schema, and migration validation foundations exist | Close #93–#99 and #101–#102; qualify one immutable candidate; verify staged consumers, compatibility, performance, security, SBOM/provenance/signatures/licenses, documentation, legal approval, publication, rollback, and post-publish smoke tests |
+
+### Market evidence gates
+
+Engineering completion alone does not make DataLoom market-ready. The following
+product evidence is required in addition to the V1 release gates.
+
+| Market gate | Required target | Evidence accepted in repository | Remaining |
+|---|---:|---:|---|
+| Fully qualified built-in strategies | 6 | 0 of 6 | All six must pass their complete runtime, restart, failure, and platform matrices; planner-only or partial vertical slices do not count |
+| Reference applications | 3 | 0 of 3 | Native Android, KMP Android, and KMP iOS reference consumers using staged/published-style artifacts |
+| No-loss/no-duplication fault proof | Required | Partial | Complete crash, restart, duplicate, concurrency, cancellation, scheduler-failure, migration, and network-partition evidence across mandatory paths |
+| Performance/resource benchmarks | Required | None accepted | Publish reproducible latency, throughput, memory, storage, battery/background, large-queue, and large-asset results with limits |
+| Customer/problem interviews | 20 | 0 evidenced | Conduct and record twenty qualified interviews with findings and decision changes |
+| Design partners | 5 | 0 evidenced | Secure five partners actively validating integration and product fit |
+| Production pilots | 3 | 0 evidenced | Complete three monitored pilots with acceptance, reliability, and support evidence |
+| Paid pilot | 1 | 0 evidenced | Convert at least one pilot to a paid engagement |
+| Legal/publication approval | Required | Not accepted | Finalize license, namespace, signing/key custody, compliance evidence, support terms, and publication authority |
+
+### Immediate execution order
+
+1. Close the shared foundation gaps in #93 so later engines do not create
+   duplicate state, policy, security, or event models.
+2. Deliver one end-to-end strategy/platform vertical slice across native
+   Android, KMP Android, and KMP iOS, then complete all six strategies through
+   the same architecture (#102 + #101).
+3. Add the host-controlled process lifecycle and cross-process harness needed
+   to close the remaining retry/circuit acceptance criteria in #94.
+4. Complete conflict, durable events/operations, assets, plugins, and enterprise
+   governance in dependency order (#95–#99).
+5. Build the three staged-artifact reference apps and publish the benchmark and
+   fault-injection evidence.
+6. Run customer validation alongside engineering: interviews, design partners,
+   pilots, then one paid pilot.
+7. Build and qualify one immutable V1 candidate and promote that exact artifact
+   only after every engineering, security, legal, and market gate passes (#100).
+
+Detailed evidence lives in the
+[current DL-040 acceptance reconciliation](./docs/audits/DL-040-current-acceptance-reconciliation.md)
+and the
+[V1 production-readiness audit](./docs/audits/DL-AUDIT-004-v1-production-readiness.md).
 
 ## Supported V1 consumer paths
 
