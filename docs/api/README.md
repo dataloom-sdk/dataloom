@@ -52,7 +52,7 @@ complete V1 strategy, asset, plugin, governance, or observability engine.
 | Understand admission, resolution, and pipeline selection | [Synchronization execution](./synchronization-execution.md) |
 | Register and resolve providers | [Provider registry](./provider-registry.md), [provider lifecycle](./provider-lifecycle.md), and [provider bindings](./provider-bindings.md) |
 | Submit and process durable work | [Queue submission](./queue-submission.md), [circuit-aware queue submission](./circuit-queue-submission.md), [circuit-aware queue processing](./circuit-queue-processing.md), [circuit-aware queue worker](./circuit-queue-worker.md), [circuit-protected worker scheduling](./circuit-queue-worker-scheduler.md), [queue provider](./queue-provider.md), [Apple durable queue](../apple/queue-state-store.md), [queue-provider timeouts](./queue-provider-timeouts.md), [queue circuit adapter](./queue-circuit-operation-adapter.md), and [queue worker](./queue-worker-coordinator.md) |
-| Evaluate and administer retries | [Retry policy](./retry-policy.md), [retry orchestration](./retry-orchestration.md), [retry timeouts](./retry-timeouts.md), [circuit breaker](./circuit-breaker.md), [circuit execution gate](./circuit-execution-gate.md), and [retry administration](./retry-administration.md) |
+| Evaluate and administer retries | [Retry policy](./retry-policy.md), [retry orchestration](./retry-orchestration.md), [retry timeouts](./retry-timeouts.md), [circuit breaker](./circuit-breaker.md), [circuit execution gate](./circuit-execution-gate.md), [retry administration](./retry-administration.md), and [circuit administration](./circuit-administration.md) |
 | Detect and resolve conflicts | [Conflict contracts](./conflict-contracts.md) and [conflict orchestration](./conflict-orchestration.md) |
 | Observe execution | [Synchronization events](./synchronization-events.md), [event dispatcher](./synchronization-event-dispatcher.md), and [runtime operational events](./runtime-operational-events.md) |
 
@@ -155,6 +155,7 @@ adapters, executable relaunch evidence, and end-to-end qualification remain open
 | [Provider-protected strategy execution](./provider-protected-strategy-execution.md) | Partial V1 subsystem | Plan-aware network-only and remote-first timeout/circuit protection with independent local-fallback policy and bounded ordered evidence. |
 | [Queue circuit operation adapter](./queue-circuit-operation-adapter.md) | Partial V1 subsystem | Exact queue operation scopes and provider/circuit result preservation without transparent mutation replay risk. |
 | [Retry administration](./retry-administration.md) | Partial V1 subsystem | Stable facade assembly, authorized/idempotent commands, durable audit state, and atomic Android/Apple administrative requeue execution. |
+| [Circuit administration](./circuit-administration.md) | Partial V1 subsystem | Authorized/idempotent common open, close, and reset command contracts with durable coordination; production command stores/executors remain. |
 | [Conflict contracts](./conflict-contracts.md) | Partial V1 subsystem | Custom detector, resolver, request, conflict, and decision contracts. |
 | [Conflict orchestration](./conflict-orchestration.md) | Partial V1 subsystem | Exact detector/resolver lookup and one-cycle decision orchestration. |
 

@@ -2,11 +2,11 @@
 
 [API reference index](./README.md)
 
-> **Status:** Partial V1 subsystem. Explicit scope, durable state contracts,
-> atomic compare-and-set persistence, deterministic closed/open/half-open
-> transitions, one controlled half-open probe, and persisted probe-lease recovery
-> are implemented. Production Android/iOS stores, direct pipeline assembly,
-> operations, and observability remain.
+> **Status:** Partial V1 subsystem. Explicit scope, durable Android/Apple state,
+> deterministic closed/open/half-open transitions, controlled probe leases,
+> provider/queue/scheduler runtime assembly, and common authorized operations
+> contracts are implemented. Production operations persistence/execution,
+> complete observability, and end-to-end qualification remain.
 
 ## Scope
 
@@ -81,16 +81,21 @@ half-open state is loaded again after process recreation. If a process dies or a
 caller is cancelled after acquiring the sole probe, its lease eventually expires
 and a later compare-and-set winner safely advances the generation.
 
-The current repository includes in-test stores proving the state-machine,
-compare-and-set, restart, lease-boundary, stale-result, and overflow semantics. A
-production durable platform store is the next persistence slice and remains
-mandatory before V1.
+The repository includes production Android Room and KMP Apple file stores plus
+focused restart, compare-and-set, lease-boundary, stale-result, corruption, and
+overflow coverage. Storage, transport, queue, scheduler, direct facade, and
+selected built-in strategy paths can use explicitly configured circuit
+protection without changing historical unprotected entry points.
+
+Common [circuit-administration](./circuit-administration.md) contracts add
+deny-by-default, idempotent, durably audited open/close/reset coordination. The
+platform command stores and atomic mutation/receipt executors are a separate
+remaining slice.
 
 ## Remaining V1 work
 
-- Android Room and KMP iOS durable store implementations and migrations;
-- direct transport, storage, queue, scheduler, and synchronization assembly;
+- production Android/Apple circuit-administration stores and atomic executors;
+- circuit-administration facade/operations assembly;
 - canonical circuit events, metrics, logs, and trace fields;
-- authorized manual open/close/reset operations with audit;
 - process-death, multi-process, and high-contention platform qualification; and
 - Book 2 AC-FUNC-004 end-to-end recovery evidence.
