@@ -57,8 +57,12 @@ import platform.posix.flock
  *
  * Successful mutations write an owner-only temporary file, fsync it, atomically
  * rename it over the previous snapshot, and fsync the parent directory before
- * returning success. The complete snapshot is capped at 32 MiB and 10,000
- * entries so synchronous POSIX work remains bounded.
+ * returning success. The complete snapshot is capped at 32 MiB, 10,000 queue
+ * entries, and 10,000 administrative retry receipts.
+ *
+ * Version-1 entry-only snapshots remain readable. Every successful mutation
+ * writes the version-2 entry-plus-receipt format and preserves existing
+ * administrative retry receipts.
  *
  * The provider persists synchronization identifiers, safe metadata, retry
  * history, retry budgets, immutable workflow timeout evidence, lease state, and
@@ -96,7 +100,8 @@ public class AppleFileQueueProvider(
         request: QueueEnqueueRequest,
     ): ProviderOperationResult<Unit> = appleQueueExecute {
         appleQueueWithExclusiveLock {
-            val entries = appleQueueReadEntries()
+            val snapshot = appleQueueReadSnapshot()
+            val entries = snapshot.entries
             val entryId = request.entry.id.value
             if (entries.containsKey(entryId)) {
                 return@appleQueueWithExclusiveLock ProviderOperationResult.Failure(
@@ -108,7 +113,7 @@ public class AppleFileQueueProvider(
             }
             entries[entryId] = request.entry.copy(lastError = null)
             currentCoroutineContext().ensureActive()
-            appleQueueWriteEntries(entries)
+            appleQueueWriteSnapshot(snapshot)
             ProviderOperationResult.Success(Unit)
         }
     }
@@ -117,7 +122,8 @@ public class AppleFileQueueProvider(
         request: QueueAcquireRequest,
     ): ProviderOperationResult<QueueAcquireResult> = appleQueueExecute {
         appleQueueWithExclusiveLock {
-            val entries = appleQueueReadEntries()
+            val snapshot = appleQueueReadSnapshot()
+            val entries = snapshot.entries
             val eligible = entries.values
                 .asSequence()
                 .filter { entry ->
@@ -155,7 +161,7 @@ public class AppleFileQueueProvider(
                 ).also { leased -> entries[leased.id.value] = leased }
             }
             currentCoroutineContext().ensureActive()
-            appleQueueWriteEntries(entries)
+            appleQueueWriteSnapshot(snapshot)
             ProviderOperationResult.Success(
                 QueueAcquireResult.Entries(
                     lease = lease,
@@ -232,7 +238,8 @@ public class AppleFileQueueProvider(
         request: QueueCancellationRequest,
     ): ProviderOperationResult<Unit> = appleQueueExecute {
         appleQueueWithExclusiveLock {
-            val entries = appleQueueReadEntries()
+            val snapshot = appleQueueReadSnapshot()
+            val entries = snapshot.entries
             val entry = entries[request.entryId.value]
             if (entry == null ||
                 (entry.state != QueueEntryState.PENDING &&
@@ -247,7 +254,7 @@ public class AppleFileQueueProvider(
                 lastError = null,
             )
             currentCoroutineContext().ensureActive()
-            appleQueueWriteEntries(entries)
+            appleQueueWriteSnapshot(snapshot)
             ProviderOperationResult.Success(Unit)
         }
     }
@@ -256,7 +263,8 @@ public class AppleFileQueueProvider(
         request: ExpiredLeaseRecoveryRequest,
     ): ProviderOperationResult<ExpiredLeaseRecoveryResult> = appleQueueExecute {
         appleQueueWithExclusiveLock {
-            val entries = appleQueueReadEntries()
+            val snapshot = appleQueueReadSnapshot()
+            val entries = snapshot.entries
             var recovered = 0
             entries.values.toList().forEach { entry ->
                 val lease = entry.lease
@@ -278,7 +286,7 @@ public class AppleFileQueueProvider(
             }
             if (recovered > 0) {
                 currentCoroutineContext().ensureActive()
-                appleQueueWriteEntries(entries)
+                appleQueueWriteSnapshot(snapshot)
             }
             ProviderOperationResult.Success(ExpiredLeaseRecoveryResult(recovered))
         }
@@ -290,7 +298,8 @@ public class AppleFileQueueProvider(
         transition: (QueueEntry) -> QueueEntry,
     ): ProviderOperationResult<Unit> = appleQueueExecute {
         appleQueueWithExclusiveLock {
-            val entries = appleQueueReadEntries()
+            val snapshot = appleQueueReadSnapshot()
+            val entries = snapshot.entries
             val current = entries[entryId.value]
             if (current == null ||
                 current.state != QueueEntryState.LEASED ||
@@ -302,7 +311,7 @@ public class AppleFileQueueProvider(
             }
             entries[entryId.value] = transition(current)
             currentCoroutineContext().ensureActive()
-            appleQueueWriteEntries(entries)
+            appleQueueWriteSnapshot(snapshot)
             ProviderOperationResult.Success(Unit)
         }
     }
@@ -318,6 +327,8 @@ public class AppleFileQueueProvider(
         ProviderOperationResult.Failure(AppleQueueProviderError.stateLimitExceeded())
     } catch (_: AppleQueueEntryLimitException) {
         ProviderOperationResult.Failure(AppleQueueProviderError.entryLimitExceeded())
+    } catch (_: AppleQueueReceiptLimitException) {
+        ProviderOperationResult.Failure(AppleQueueProviderError.stateLimitExceeded())
     } catch (_: AppleQueueMalformedStateException) {
         ProviderOperationResult.Failure(AppleQueueProviderError.integrityFailure())
     } catch (_: AppleQueueFileException) {
@@ -356,13 +367,13 @@ public class AppleFileQueueProvider(
         }
     }
 
-    private fun appleQueueReadEntries(): MutableMap<String, QueueEntry> {
-        val content = appleQueueReadUtf8FileOrNull(dataFilePath) ?: return linkedMapOf()
-        return AppleQueueStateFileCodec.decode(content)
+    private fun appleQueueReadSnapshot(): AppleQueueSnapshot {
+        val content = appleQueueReadUtf8FileOrNull(dataFilePath) ?: return AppleQueueSnapshot()
+        return AppleQueueStateFileCodec.decodeSnapshot(content)
     }
 
-    private fun appleQueueWriteEntries(entries: Map<String, QueueEntry>) {
-        val content = AppleQueueStateFileCodec.encode(entries)
+    private fun appleQueueWriteSnapshot(snapshot: AppleQueueSnapshot) {
+        val content = AppleQueueStateFileCodec.encodeSnapshot(snapshot)
         appleQueueWriteUtf8FileAtomically(
             temporaryPath = temporaryFilePath,
             destinationPath = dataFilePath,
@@ -371,6 +382,7 @@ public class AppleFileQueueProvider(
     }
 
     public companion object {
+        /** Historical file name retained so version-1 snapshots migrate in place. */
         public const val DEFAULT_FILE_NAME: String = "dataloom-queue-state-v1.tsv"
     }
 }

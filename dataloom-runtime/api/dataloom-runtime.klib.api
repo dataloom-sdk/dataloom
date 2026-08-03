@@ -2776,6 +2776,12 @@ final class io.dataloom.runtime.retry/AppleFileCircuitBreakerStateStore : io.dat
     }
 }
 
+final class io.dataloom.runtime.retry/AppleFileRetryAdministrationExecutor : io.dataloom.api.retry/RetryAdministrationExecutor { // io.dataloom.runtime.retry/AppleFileRetryAdministrationExecutor|null[0]
+    constructor <init>(kotlin/String, io.dataloom.api.time/DataLoomClock, kotlin/String = ...) // io.dataloom.runtime.retry/AppleFileRetryAdministrationExecutor.<init>|<init>(kotlin.String;io.dataloom.api.time.DataLoomClock;kotlin.String){}[0]
+
+    final suspend fun execute(io.dataloom.api.retry/AuthorizedRetryAdministrationCommand): io.dataloom.api.retry/RetryAdministrationExecutionResult // io.dataloom.runtime.retry/AppleFileRetryAdministrationExecutor.execute|execute(io.dataloom.api.retry.AuthorizedRetryAdministrationCommand){}[0]
+}
+
 final class io.dataloom.runtime.retry/AppleFileRetryAdministrationStateStore : io.dataloom.api.retry/RetryAdministrationStateStore { // io.dataloom.runtime.retry/AppleFileRetryAdministrationStateStore|null[0]
     constructor <init>(kotlin/String, kotlin/String = ...) // io.dataloom.runtime.retry/AppleFileRetryAdministrationStateStore.<init>|<init>(kotlin.String;kotlin.String){}[0]
 

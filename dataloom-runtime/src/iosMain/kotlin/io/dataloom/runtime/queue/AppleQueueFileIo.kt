@@ -180,11 +180,13 @@ private fun appleQueueFsyncDirectory(path: String) {
 internal class AppleQueueFileException : Exception()
 internal class AppleQueueFileLimitException : Exception()
 internal class AppleQueueEntryLimitException : Exception()
+internal class AppleQueueReceiptLimitException : Exception()
 internal class AppleQueueMalformedStateException(cause: Throwable) : Exception(cause)
 
 internal const val APPLE_QUEUE_NULL_MARKER: String = "-"
 internal const val APPLE_QUEUE_HEX_DIGITS: String = "0123456789abcdef"
 internal const val APPLE_QUEUE_MAX_STATE_FILE_BYTES: Int = 32 * 1024 * 1024
 internal const val APPLE_QUEUE_MAX_ENTRY_COUNT: Int = 10_000
+internal const val APPLE_QUEUE_MAX_RETRY_ADMINISTRATION_RECEIPT_COUNT: Int = 10_000
 internal const val APPLE_QUEUE_FILE_IO_BUFFER_BYTES: Int = 16 * 1024
 internal const val APPLE_QUEUE_LOCK_RETRY_DELAY_MILLISECONDS: Long = 5L
