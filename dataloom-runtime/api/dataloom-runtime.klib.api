@@ -2920,6 +2920,29 @@ final class io.dataloom.runtime.queue/QueuedSynchronizationWork { // io.dataloom
     final fun toString(): kotlin/String // io.dataloom.runtime.queue/QueuedSynchronizationWork.toString|toString(){}[0]
 }
 
+final class io.dataloom.runtime.retry/AppleFileCircuitAdministrationExecutor : io.dataloom.api.circuit/CircuitAdministrationExecutor { // io.dataloom.runtime.retry/AppleFileCircuitAdministrationExecutor|null[0]
+    constructor <init>(kotlin/String, io.dataloom.api.time/DataLoomClock, kotlin/String = ...) // io.dataloom.runtime.retry/AppleFileCircuitAdministrationExecutor.<init>|<init>(kotlin.String;io.dataloom.api.time.DataLoomClock;kotlin.String){}[0]
+
+    final suspend fun execute(io.dataloom.api.circuit/AuthorizedCircuitAdministrationCommand): io.dataloom.api.circuit/CircuitAdministrationExecutionResult // io.dataloom.runtime.retry/AppleFileCircuitAdministrationExecutor.execute|execute(io.dataloom.api.circuit.AuthorizedCircuitAdministrationCommand){}[0]
+
+    final object Companion { // io.dataloom.runtime.retry/AppleFileCircuitAdministrationExecutor.Companion|null[0]
+        final const val DEFAULT_FILE_NAME // io.dataloom.runtime.retry/AppleFileCircuitAdministrationExecutor.Companion.DEFAULT_FILE_NAME|{}DEFAULT_FILE_NAME[0]
+            final fun <get-DEFAULT_FILE_NAME>(): kotlin/String // io.dataloom.runtime.retry/AppleFileCircuitAdministrationExecutor.Companion.DEFAULT_FILE_NAME.<get-DEFAULT_FILE_NAME>|<get-DEFAULT_FILE_NAME>(){}[0]
+    }
+}
+
+final class io.dataloom.runtime.retry/AppleFileCircuitAdministrationStateStore : io.dataloom.api.circuit/CircuitAdministrationStateStore { // io.dataloom.runtime.retry/AppleFileCircuitAdministrationStateStore|null[0]
+    constructor <init>(kotlin/String, kotlin/String = ...) // io.dataloom.runtime.retry/AppleFileCircuitAdministrationStateStore.<init>|<init>(kotlin.String;kotlin.String){}[0]
+
+    final suspend fun compareAndSet(io.dataloom.api.circuit/CircuitAdministrationCompareAndSetRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult> // io.dataloom.runtime.retry/AppleFileCircuitAdministrationStateStore.compareAndSet|compareAndSet(io.dataloom.api.circuit.CircuitAdministrationCompareAndSetRequest){}[0]
+    final suspend fun load(io.dataloom.api.circuit/CircuitAdministrationCommandId): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.circuit/CircuitAdministrationLoadResult> // io.dataloom.runtime.retry/AppleFileCircuitAdministrationStateStore.load|load(io.dataloom.api.circuit.CircuitAdministrationCommandId){}[0]
+
+    final object Companion { // io.dataloom.runtime.retry/AppleFileCircuitAdministrationStateStore.Companion|null[0]
+        final const val DEFAULT_FILE_NAME // io.dataloom.runtime.retry/AppleFileCircuitAdministrationStateStore.Companion.DEFAULT_FILE_NAME|{}DEFAULT_FILE_NAME[0]
+            final fun <get-DEFAULT_FILE_NAME>(): kotlin/String // io.dataloom.runtime.retry/AppleFileCircuitAdministrationStateStore.Companion.DEFAULT_FILE_NAME.<get-DEFAULT_FILE_NAME>|<get-DEFAULT_FILE_NAME>(){}[0]
+    }
+}
+
 final class io.dataloom.runtime.retry/AppleFileCircuitBreakerStateStore : io.dataloom.api.circuit/CircuitBreakerStateStore { // io.dataloom.runtime.retry/AppleFileCircuitBreakerStateStore|null[0]
     constructor <init>(kotlin/String, kotlin/String = ...) // io.dataloom.runtime.retry/AppleFileCircuitBreakerStateStore.<init>|<init>(kotlin.String;kotlin.String){}[0]
 

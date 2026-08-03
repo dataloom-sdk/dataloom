@@ -1,8 +1,9 @@
 # Apple circuit-breaker state store
 
-> **Status:** Production KMP Apple circuit-state persistence is available as a
-> bounded file-backed compare-and-set store. This does not complete Apple queue,
-> retry-budget, outbox, conflict, audit, or administration persistence.
+> **Status:** Production KMP Apple circuit-state and circuit-administration
+> persistence are available through one bounded file-backed snapshot. This does
+> not complete Apple outbox, conflict, asset, governance, or broader audit
+> persistence.
 
 `AppleFileCircuitBreakerStateStore` is the Apple implementation of
 `CircuitBreakerStateStore`. It is available from the `iosArm64`,
@@ -18,7 +19,17 @@ Application Support:
 val circuitStore = AppleFileCircuitBreakerStateStore(
     directoryPath = applicationSupportDirectory + "/DataLoom/Circuit",
 )
+val administrationStore = AppleFileCircuitAdministrationStateStore(
+    directoryPath = applicationSupportDirectory + "/DataLoom/Circuit",
+)
+val administrationExecutor = AppleFileCircuitAdministrationExecutor(
+    directoryPath = applicationSupportDirectory + "/DataLoom/Circuit",
+    clock = clock,
+)
 ```
+
+All three instances must use the same directory and file name. The shared lock
+and snapshot are the Apple transaction boundary for administrative execution.
 
 The constructor performs no file access. The directory and lock file are created
 lazily on the first `load` or `compareAndSet` operation.
@@ -67,8 +78,8 @@ access with `CIRCUIT_STATE_VERSION_EXHAUSTED`.
 
 ## Stored data
 
-The snapshot contains only the bounded circuit fields required by the public
-state model:
+The v2 snapshot contains only the bounded circuit and circuit-administration
+fields required by the public state models:
 
 - exact circuit scope kind and identifiers;
 - phase;
@@ -77,6 +88,16 @@ state model:
 - probe generation, active-probe marker, and probe lease deadline;
 - update timestamp; and
 - record version.
+
+Administrative records add the bounded command, principal, authorization,
+action, reason, timestamps, terminal reason code, resulting circuit record, and
+canonical execution error code/category/severity/recoverability. The file admits
+at most 10,000 administrative command records and remains subject to the same
+4 MiB total cap.
+
+Existing v1 circuit-only snapshots are accepted unchanged. The next successful
+write upgrades the complete snapshot to tagged v2 records while preserving the
+exact circuit state and version.
 
 Identifiers are UTF-8 hex encoded before entering the tab-separated snapshot.
 The store does not persist payloads, credentials, headers, exception messages,
@@ -97,6 +118,25 @@ Neither error includes snapshot content or an underlying exception.
 | Corrupt persisted state | `CIRCUIT_APPLE_STATE_CORRUPT` | `STATE` | `NON_RECOVERABLE` |
 | Snapshot exceeds 4 MiB | `CIRCUIT_APPLE_STATE_LIMIT_EXCEEDED` | `STATE` | `NON_RECOVERABLE` |
 | Record version exhausted | `CIRCUIT_STATE_VERSION_EXHAUSTED` | `STATE` | `NON_RECOVERABLE` |
+
+Administration-store failures use the corresponding
+`CIRCUIT_ADMIN_APPLE_*` codes. Executor storage and integrity failures are
+redacted as `CIRCUIT_ADMIN_APPLE_EXECUTOR_FILE_IO_FAILURE` and
+`CIRCUIT_ADMIN_APPLE_EXECUTOR_STATE_CORRUPT`.
+
+## Atomic circuit administration
+
+`AppleFileCircuitAdministrationStateStore` protects immutable command input and
+provides exact compare-and-set conflicts.
+`AppleFileCircuitAdministrationExecutor` requires the durable command to be
+`AUTHORIZED`, validates the exact request and authorization ID, and then derives
+the requested `OPEN`, `CLOSE`, or `RESET` transition.
+
+One atomic replacement writes both the next circuit version and a `SUCCEEDED`
+command record containing that exact `CircuitBreakerStateRecord`. Redelivery
+returns the durable result without a second circuit mutation. Authorization
+mismatch, command-ID reuse, an expired open deadline, clock regression, corrupt
+state, and exhausted versions fail closed before replacement.
 
 ## Cancellation and synchronous I/O
 
@@ -137,6 +177,11 @@ Implemented evidence:
 - all public circuit scope shapes, including Unicode identifiers;
 - half-open probe generation and lease restoration;
 - corruption fail-closed behavior;
+- v1-to-v2 upgrade without circuit-state loss;
+- exact administration command persistence and immutable-input protection;
+- atomic reset/result receipt and idempotent replay;
+- authorization mismatch, command conflict, deadline, and clock fail-closed
+  behavior;
 - cancellation propagation;
 - iOS Simulator tests;
 - external `iosArm64`, `iosSimulatorArm64`, and `iosX64` compilation;
@@ -150,5 +195,5 @@ Still required for full KMP iOS V1 acceptance:
 - app-group and Data Protection integration guidance/evidence;
 - high-contention and forced-process-death fault injection;
 - migration behavior if the file format changes;
-- integration with authorized circuit administration and operational telemetry;
+- operational telemetry and facade assembly for circuit administration;
 - complete KMP iOS synchronization reference flows.
