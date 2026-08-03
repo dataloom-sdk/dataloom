@@ -73,7 +73,7 @@ on Android adapters. No current Android adapter depends directly on
 |---|---|---|
 | `dataloom-connectivity-android` | Bounded `ConnectivityProvider` query using `ConnectivityManager` | Polling, endpoint reachability, or strategy selection |
 | `dataloom-scheduler-workmanager` | `SchedulerProvider`, `CoroutineWorker`, and explicit `WorkerFactory` bridge | Retry policy, queue persistence, or runtime initialization |
-| `dataloom-queue-room` | Transactional Room-backed `QueueProvider` and `CircuitBreakerStateStore` | Application domain storage, scheduling, retry policy, or synchronization execution |
+| `dataloom-queue-room` | Transactional Room-backed queue, circuit state, retry administration, and circuit administration | Application domain storage, scheduling, retry policy, or synchronization execution |
 
 The modules are optional and do not depend on one another. An application can
 use only the adapter it needs.

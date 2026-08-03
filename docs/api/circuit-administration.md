@@ -2,9 +2,10 @@
 
 [API reference index](./README.md)
 
-> **Status:** Available common contract and coordination foundation. Production
-> Android/Apple command persistence and atomic circuit-state executors remain
-> required before this becomes an operational V1 capability.
+> **Status:** Available common contract and coordination foundation with a
+> production Android Room command store and atomic circuit-state executor.
+> Apple production execution and operations assembly remain required before
+> this becomes a complete V1 capability.
 
 Circuit administration is an explicit privileged path for manually opening,
 closing, or resetting one exact `CircuitBreakerScope`. It does not bypass,
@@ -92,6 +93,20 @@ circuit state and version, and canonical error code/category/severity/recoverabi
 does not contain payloads, credentials, headers, exception messages, stack
 traces, provider instances, or arbitrary metadata.
 
+## Android Room implementation
+
+`RoomCircuitAdministrationStateStore` persists the complete immutable command,
+authorization decision, bounded terminal evidence, and resulting circuit-state
+record in schema version 6. `RoomCircuitAdministrationExecutor` requires the
+command row and `circuit_breaker_states` row to live in the same
+`DataLoomRoomDatabase`.
+
+On success, one Room transaction applies the circuit mutation and advances the
+command from `AUTHORIZED` to `SUCCEEDED` with the exact resulting state and
+version. Redelivery loads that receipt and returns it without a second mutation.
+`OPEN`, `CLOSE`, and `RESET` preserve the monotonic probe generation so an old
+probe permit cannot become valid again after an administrative transition.
+
 Authorization denial is durable and replayable. Cancellation and unexpected
 exceptions propagate unchanged. Clock regression after durable authorization
 fails closed before executor redelivery.
@@ -101,9 +116,7 @@ fails closed before executor redelivery.
 This slice provides common contracts, validation, deterministic coordination,
 tests, and external JVM/Apple consumer compilation. Remaining work includes:
 
-- production Android and Apple command-state stores;
-- platform executors that atomically commit circuit mutation plus command
-  receipt;
+- production Apple command-state persistence and atomic execution;
 - facade/operations assembly;
 - circuit-administration events, metrics, logs, tracing, health, and dashboard
   integration; and
