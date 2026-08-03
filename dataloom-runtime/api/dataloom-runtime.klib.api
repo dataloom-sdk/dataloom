@@ -340,6 +340,8 @@ abstract interface io.dataloom.runtime.facade/DataLoom { // io.dataloom.runtime.
         open fun <get-protectedStrategySynchronization>(): io.dataloom.runtime.facade/DataLoomProtectedStrategySynchronization? // io.dataloom.runtime.facade/DataLoom.protectedStrategySynchronization.<get-protectedStrategySynchronization>|<get-protectedStrategySynchronization>(){}[0]
     open val protectedSynchronization // io.dataloom.runtime.facade/DataLoom.protectedSynchronization|{}protectedSynchronization[0]
         open fun <get-protectedSynchronization>(): io.dataloom.runtime.facade/DataLoomProtectedSynchronization? // io.dataloom.runtime.facade/DataLoom.protectedSynchronization.<get-protectedSynchronization>|<get-protectedSynchronization>(){}[0]
+    open val retryAdministration // io.dataloom.runtime.facade/DataLoom.retryAdministration|{}retryAdministration[0]
+        open fun <get-retryAdministration>(): io.dataloom.runtime.facade/DataLoomRetryAdministration? // io.dataloom.runtime.facade/DataLoom.retryAdministration.<get-retryAdministration>|<get-retryAdministration>(){}[0]
 
     abstract suspend fun initialize(): io.dataloom.api.provider/ProviderLifecycleResult // io.dataloom.runtime.facade/DataLoom.initialize|initialize(){}[0]
     abstract suspend fun shutdown(): io.dataloom.api.provider/ProviderLifecycleResult // io.dataloom.runtime.facade/DataLoom.shutdown|shutdown(){}[0]
@@ -365,6 +367,10 @@ abstract interface io.dataloom.runtime.facade/DataLoomProtectedSynchronization {
 
 abstract interface io.dataloom.runtime.facade/DataLoomQueueWorker { // io.dataloom.runtime.facade/DataLoomQueueWorker|null[0]
     abstract suspend fun run(io.dataloom.runtime.worker/QueueWorkerRunRequest): io.dataloom.runtime.worker/QueueWorkerRunResult // io.dataloom.runtime.facade/DataLoomQueueWorker.run|run(io.dataloom.runtime.worker.QueueWorkerRunRequest){}[0]
+}
+
+abstract interface io.dataloom.runtime.facade/DataLoomRetryAdministration { // io.dataloom.runtime.facade/DataLoomRetryAdministration|null[0]
+    abstract suspend fun execute(io.dataloom.api.retry/RetryAdministrationRequest): io.dataloom.runtime.retry/RetryAdministrationResult // io.dataloom.runtime.facade/DataLoomRetryAdministration.execute|execute(io.dataloom.api.retry.RetryAdministrationRequest){}[0]
 }
 
 abstract interface io.dataloom.runtime.retry/RetryTimeoutExecutor { // io.dataloom.runtime.retry/RetryTimeoutExecutor|null[0]
@@ -2397,6 +2403,7 @@ final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.
     final fun queueSubmissionConfiguration(io.dataloom.runtime.facade/DataLoomQueueSubmissionSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.queueSubmissionConfiguration|queueSubmissionConfiguration(io.dataloom.runtime.facade.DataLoomQueueSubmissionSpec){}[0]
     final fun queueSubmissionEncoder(io.dataloom.runtime.submission/QueuedSynchronizationWorkEncoder): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.queueSubmissionEncoder|queueSubmissionEncoder(io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder){}[0]
     final fun queueWorkerConfiguration(io.dataloom.runtime.facade/DataLoomQueueWorkerSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.queueWorkerConfiguration|queueWorkerConfiguration(io.dataloom.runtime.facade.DataLoomQueueWorkerSpec){}[0]
+    final fun retryAdministrationConfiguration(io.dataloom.runtime.facade/DataLoomRetryAdministrationSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.retryAdministrationConfiguration|retryAdministrationConfiguration(io.dataloom.runtime.facade.DataLoomRetryAdministrationSpec){}[0]
     final fun runtimeDependencies(io.dataloom.api.runtime/RuntimeDependencies): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.runtimeDependencies|runtimeDependencies(io.dataloom.api.runtime.RuntimeDependencies){}[0]
     final fun strategyProviderProtectionConfiguration(io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.strategyProviderProtectionConfiguration|strategyProviderProtectionConfiguration(io.dataloom.runtime.facade.DataLoomStrategyProviderProtectionSpec){}[0]
 }
@@ -2466,6 +2473,21 @@ final class io.dataloom.runtime.facade/DataLoomQueueWorkerSpec { // io.dataloom.
         final fun <get-retryPolicy>(): io.dataloom.api.retry/RetryPolicy // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec.retryPolicy.<get-retryPolicy>|<get-retryPolicy>(){}[0]
     final val workResolver // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec.workResolver|{}workResolver[0]
         final fun <get-workResolver>(): io.dataloom.runtime.queue/QueuedSynchronizationWorkResolver // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec.workResolver.<get-workResolver>|<get-workResolver>(){}[0]
+}
+
+final class io.dataloom.runtime.facade/DataLoomRetryAdministrationSpec { // io.dataloom.runtime.facade/DataLoomRetryAdministrationSpec|null[0]
+    constructor <init>(io.dataloom.api.retry/RetryAdministrationAuthorizer, io.dataloom.api.retry/RetryAdministrationStateStore, io.dataloom.api.retry/RetryAdministrationExecutor, kotlin/Int = ...) // io.dataloom.runtime.facade/DataLoomRetryAdministrationSpec.<init>|<init>(io.dataloom.api.retry.RetryAdministrationAuthorizer;io.dataloom.api.retry.RetryAdministrationStateStore;io.dataloom.api.retry.RetryAdministrationExecutor;kotlin.Int){}[0]
+
+    final val authorizer // io.dataloom.runtime.facade/DataLoomRetryAdministrationSpec.authorizer|{}authorizer[0]
+        final fun <get-authorizer>(): io.dataloom.api.retry/RetryAdministrationAuthorizer // io.dataloom.runtime.facade/DataLoomRetryAdministrationSpec.authorizer.<get-authorizer>|<get-authorizer>(){}[0]
+    final val executor // io.dataloom.runtime.facade/DataLoomRetryAdministrationSpec.executor|{}executor[0]
+        final fun <get-executor>(): io.dataloom.api.retry/RetryAdministrationExecutor // io.dataloom.runtime.facade/DataLoomRetryAdministrationSpec.executor.<get-executor>|<get-executor>(){}[0]
+    final val maximumStateUpdateAttempts // io.dataloom.runtime.facade/DataLoomRetryAdministrationSpec.maximumStateUpdateAttempts|{}maximumStateUpdateAttempts[0]
+        final fun <get-maximumStateUpdateAttempts>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomRetryAdministrationSpec.maximumStateUpdateAttempts.<get-maximumStateUpdateAttempts>|<get-maximumStateUpdateAttempts>(){}[0]
+    final val stateStore // io.dataloom.runtime.facade/DataLoomRetryAdministrationSpec.stateStore|{}stateStore[0]
+        final fun <get-stateStore>(): io.dataloom.api.retry/RetryAdministrationStateStore // io.dataloom.runtime.facade/DataLoomRetryAdministrationSpec.stateStore.<get-stateStore>|<get-stateStore>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.runtime.facade/DataLoomRetryAdministrationSpec.toString|toString(){}[0]
 }
 
 final class io.dataloom.runtime.facade/DataLoomStorageProtectionSpec { // io.dataloom.runtime.facade/DataLoomStorageProtectionSpec|null[0]

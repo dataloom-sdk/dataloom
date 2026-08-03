@@ -36,6 +36,7 @@ import io.dataloom.runtime.queue.QueuedSynchronizationExecutionHandler
 import io.dataloom.runtime.retry.CircuitBreakerCoordinator
 import io.dataloom.runtime.retry.CircuitBreakerExecutionGate
 import io.dataloom.runtime.retry.QueueCircuitOperation
+import io.dataloom.runtime.retry.RetryAdministrationCoordinator
 import io.dataloom.runtime.retry.SchedulerCircuitOperation
 import io.dataloom.runtime.retry.StorageCircuitProtectionRuntime
 import io.dataloom.runtime.retry.SynchronizationRetryEvaluator
@@ -75,6 +76,7 @@ import io.dataloom.runtime.worker.assembleQueueWorkerQueueProvider
  * - Execute synchronization.
  * - Read the clock.
  * - Generate identifiers.
+ * - Authorize or persist retry-administration commands.
  * - Enqueue work.
  * - Launch coroutines.
  * - Start background workers.
@@ -137,6 +139,7 @@ public class DataLoomBuilder {
     private var queueSubmissionSpecValue: DataLoomQueueSubmissionSpec? = null
     private var providerProtectionSpec: DataLoomProviderProtectionSpec? = null
     private var strategyProviderProtectionSpec: DataLoomStrategyProviderProtectionSpec? = null
+    private var retryAdministrationSpec: DataLoomRetryAdministrationSpec? = null
     private var built: Boolean = false
 
     // =========================================================================
@@ -347,6 +350,24 @@ public class DataLoomBuilder {
         spec: DataLoomStrategyProviderProtectionSpec,
     ): DataLoomBuilder = apply {
         strategyProviderProtectionSpec = spec
+    }
+
+    /**
+     * Configures the optional authorized retry-administration capability.
+     *
+     * The supplied collaborators are retained by immutable reference and are
+     * not invoked during [build]. The runtime clock from
+     * [runtimeDependencies] is used for authorization, command-state, and
+     * terminal execution evidence when a command is executed.
+     *
+     * @param spec explicit host authorization, durable command-state, queue
+     *   execution, and contention-bound configuration.
+     * @return this builder for chaining.
+     */
+    public fun retryAdministrationConfiguration(
+        spec: DataLoomRetryAdministrationSpec,
+    ): DataLoomBuilder = apply {
+        retryAdministrationSpec = spec
     }
 
     /**
@@ -659,6 +680,19 @@ public class DataLoomBuilder {
             )
         }
 
+        // --- 13. Build optional retry-administration operations capability ---
+        val retryAdministration = retryAdministrationSpec?.let { spec ->
+            DefaultDataLoomRetryAdministration(
+                coordinator = RetryAdministrationCoordinator(
+                    clock = deps.clock,
+                    authorizer = spec.authorizer,
+                    stateStore = spec.stateStore,
+                    executor = spec.executor,
+                    maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
+                ),
+            )
+        }
+
         return DefaultDataLoom(
             lifecycleCoordinator = lifecycleCoordinator,
             executionCoordinator = executionCoordinator,
@@ -670,6 +704,7 @@ public class DataLoomBuilder {
             protectedSynchronization = protectedSynchronization,
             protectedStrategySynchronization = protectedStrategySynchronization,
             queueSubmission = queueSubmission,
+            retryAdministration = retryAdministration,
         )
     }
 

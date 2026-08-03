@@ -1,8 +1,9 @@
 # Retry administration
 
-**Status:** Authorized command coordination and production Android/Apple state
-persistence are available. Android Room provides atomic queue execution;
-complete Apple execution and operational assembly remain partial.
+**Status:** Authorized command coordination, stable facade/builder assembly,
+and production Android/Apple persistence plus atomic queue execution are
+available. Complete administration observability and end-to-end operational
+qualification remain partial.
 
 DataLoom exposes an explicit administrative boundary for manual retry and
 failure reclassification. It does not weaken the normal fail-closed retry
@@ -21,6 +22,10 @@ state and execution implementations.
   idempotently by command id.
 - `RetryAdministrationCoordinator` orders authorization, policy enforcement,
   durable admission, execution, and terminal recording.
+- `DataLoomRetryAdministrationSpec` supplies the host authorizer, durable
+  command store, platform executor, and bounded contention configuration.
+- `DataLoomRetryAdministration` is the optional stable operations capability
+  exposed by `DataLoom.retryAdministration`.
 
 The retained `RetryFailureSnapshot` contains only stable error code, category,
 severity, and recoverability. It excludes exception text, payloads, credentials,
@@ -118,7 +123,7 @@ non-terminal targets, missing failure evidence, and failure-snapshot mismatch.
 Database, integrity, version-exhaustion, and clock-regression outcomes use
 canonical sanitized errors.
 
-## Apple durable state
+## Apple durable state and atomic execution
 
 `AppleFileRetryAdministrationStateStore` is the production KMP Apple
 implementation of the state-store contract. It provides process-shared exact
@@ -130,15 +135,49 @@ See the [Apple retry-administration state-store guide](../apple/retry-administra
 for construction, persistence boundaries, error behavior, and platform
 responsibilities.
 
-Apple does not yet have a queue-specific executor with a command receipt in the
-same durable queue mutation. That work requires an explicit migration of the
-Apple queue file format and remains separate from the qualified state store.
+`AppleFileRetryAdministrationExecutor` validates the durable authorized command
+and terminal queue failure, then commits the requeued entry and an immutable
+command receipt in the same crash-durable queue snapshot replacement. The
+version 2 snapshot retains strict read compatibility with entry-only version 1
+files. Identical command replay returns the stored receipt without another
+queue mutation; changed immutable input fails closed.
+
+## Facade and builder assembly
+
+Applications opt in explicitly:
+
+```kotlin
+val dataLoom = DataLoomBuilder()
+    .runtimeDependencies(runtimeDependencies)
+    .providers(storageProvider, transportProvider)
+    .defaultProviderBindings(bindings)
+    .retryAdministrationConfiguration(
+        DataLoomRetryAdministrationSpec(
+            authorizer = retryAdministrationAuthorizer,
+            stateStore = retryAdministrationStateStore,
+            executor = retryAdministrationExecutor,
+        ),
+    )
+    .build()
+
+val result = checkNotNull(dataLoom.retryAdministration).execute(command)
+```
+
+When configuration is absent, `DataLoom.retryAdministration` is `null`.
+Construction and property access perform no authorization, state load/write,
+queue mutation, clock read, identifier generation, or coroutine launch. The
+facade exposes no collaborator and returns the coordinator's exact typed result.
+
+`DataLoomRetryAdministrationSpec` requires a positive compare-and-set attempt
+limit and defaults to eight. Its diagnostic string renders only that limit,
+never collaborator implementation state.
 
 ## Current boundary
 
 DataLoom now includes common public contracts, deterministic coordination,
-production Android and Apple command-state persistence, and atomic Android Room
-administrative requeue execution. Remaining work includes Apple atomic queue
-execution/format migration, builder or operations-facade assembly, role and UI
-integration beyond the authorizer SPI, complete administration events/metrics/
-tracing, and cross-platform process-loss and high-contention qualification.
+explicit stable facade assembly, production Android and Apple command-state
+persistence, and atomic Android Room and Apple administrative requeue
+execution. Remaining work includes role and UI integration beyond the host
+authorizer SPI, circuit administration, complete administration events/metrics/
+logs/tracing/health, executable process-loss and higher-contention evidence,
+and full cross-platform `AC-FUNC-004` qualification.

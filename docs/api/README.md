@@ -22,13 +22,14 @@ The authoritative readiness decision is
 ## Current reference map
 
 ```mermaid
-flowchart LR
+flowchart TB
     App[Application] --> Facade[DataLoom facade]
     Facade --> Request[SynchronizationRequest]
     Facade --> Lifecycle[Provider lifecycle]
     Facade --> Execution[Execution coordinator]
     Facade --> Submission[Queue submission]
     Facade --> Worker[Queue worker]
+    Facade --> Administration[Retry administration]
     Execution --> Bindings[Provider bindings and resolver]
     Bindings --> Providers[Storage transport connectivity providers]
     Execution --> Pipelines[Push pull bidirectional pipelines]
@@ -51,7 +52,7 @@ complete V1 strategy, asset, plugin, governance, or observability engine.
 | Understand admission, resolution, and pipeline selection | [Synchronization execution](./synchronization-execution.md) |
 | Register and resolve providers | [Provider registry](./provider-registry.md), [provider lifecycle](./provider-lifecycle.md), and [provider bindings](./provider-bindings.md) |
 | Submit and process durable work | [Queue submission](./queue-submission.md), [circuit-aware queue submission](./circuit-queue-submission.md), [circuit-aware queue processing](./circuit-queue-processing.md), [circuit-aware queue worker](./circuit-queue-worker.md), [circuit-protected worker scheduling](./circuit-queue-worker-scheduler.md), [queue provider](./queue-provider.md), [Apple durable queue](../apple/queue-state-store.md), [queue-provider timeouts](./queue-provider-timeouts.md), [queue circuit adapter](./queue-circuit-operation-adapter.md), and [queue worker](./queue-worker-coordinator.md) |
-| Evaluate retries | [Retry policy](./retry-policy.md), [retry orchestration](./retry-orchestration.md), [retry timeouts](./retry-timeouts.md), [circuit breaker](./circuit-breaker.md), and [circuit execution gate](./circuit-execution-gate.md) |
+| Evaluate and administer retries | [Retry policy](./retry-policy.md), [retry orchestration](./retry-orchestration.md), [retry timeouts](./retry-timeouts.md), [circuit breaker](./circuit-breaker.md), [circuit execution gate](./circuit-execution-gate.md), and [retry administration](./retry-administration.md) |
 | Detect and resolve conflicts | [Conflict contracts](./conflict-contracts.md) and [conflict orchestration](./conflict-orchestration.md) |
 | Observe execution | [Synchronization events](./synchronization-events.md), [event dispatcher](./synchronization-event-dispatcher.md), and [runtime operational events](./runtime-operational-events.md) |
 
@@ -134,7 +135,7 @@ operation adaptation, submission, bounded acquisition/transitions, and
 circuit-aware recovery/worker coordination, explicit builder/facade adoption,
 and separately configured scheduler-circuit policy now exist. KMP iOS
 queue and circuit persistence now exist; executable relaunch, background
-adapters, administration persistence, and end-to-end qualification remain open.
+adapters, executable relaunch evidence, and end-to-end qualification remain open.
 
 ## Retry and conflict
 
@@ -153,11 +154,12 @@ adapters, administration persistence, and end-to-end qualification remain open.
 | [DataLoomBuilder provider protection](./builder-provider-protection.md) | Partial V1 subsystem | Explicit facade assembly for protected direct synchronization with durable stores and exact operation scopes. |
 | [Provider-protected strategy execution](./provider-protected-strategy-execution.md) | Partial V1 subsystem | Plan-aware network-only and remote-first timeout/circuit protection with independent local-fallback policy and bounded ordered evidence. |
 | [Queue circuit operation adapter](./queue-circuit-operation-adapter.md) | Partial V1 subsystem | Exact queue operation scopes and provider/circuit result preservation without transparent mutation replay risk. |
+| [Retry administration](./retry-administration.md) | Partial V1 subsystem | Stable facade assembly, authorized/idempotent commands, durable audit state, and atomic Android/Apple administrative requeue execution. |
 | [Conflict contracts](./conflict-contracts.md) | Partial V1 subsystem | Custom detector, resolver, request, conflict, and decision contracts. |
 | [Conflict orchestration](./conflict-orchestration.md) | Partial V1 subsystem | Exact detector/resolver lookup and one-cycle decision orchestration. |
 
 V1 retry work still requires complete offline-first, cache-first, hybrid, and adaptive strategy execution,
-remaining protocol integrations, durable administration execution, complete
+remaining protocol integrations, circuit administration, complete
 observability, executable restart evidence, and platform qualification.
 Conflict work still requires built-in policies, precedence, atomic decision
 application, unresolved-conflict persistence, audit, convergence, loop
@@ -190,7 +192,7 @@ The following are product commitments, not descriptions of completed APIs:
 | Network-only strategy | Direct transport-only runtime implemented; full event/result and platform qualification remain |
 | Hybrid strategy | Complete built-in strategy and qualification not implemented |
 | Adaptive strategy | Complete built-in strategy and qualification not implemented |
-| Standard retry and durable circuit breaker | Fail-closed protection, standard backoff/jitter, durable budgets, bounded hints, timeout contracts and selected runtime assembly, circuit state, and common gates implemented; complete platform/runtime integration, administration, observability, and qualification remain |
+| Standard retry and durable circuit breaker | Fail-closed protection, standard backoff/jitter, durable budgets, bounded hints, timeout contracts, selected runtime assembly, circuit state, and authorized cross-platform manual retry are implemented; circuit administration, complete observability, and qualification remain |
 | Built-in conflict policies and persistence | Partial custom contracts/orchestration only |
 | Lifecycle and operational observability | Partial in-process event foundation only |
 | Asset upload/download, chunking, streaming, and resume | Not implemented |

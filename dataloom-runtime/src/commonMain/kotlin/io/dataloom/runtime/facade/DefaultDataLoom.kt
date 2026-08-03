@@ -50,6 +50,8 @@ import io.dataloom.runtime.submission.DataLoomQueueSubmission
  *   `null` when not configured.
  * @param queueSubmission the optional queue-submission capability; `null` when
  *   not configured.
+ * @param retryAdministration the optional authorized operations capability;
+ *   `null` when not configured.
  */
 internal class DefaultDataLoom(
     private val lifecycleCoordinator: ProviderLifecycleCoordinator,
@@ -62,6 +64,7 @@ internal class DefaultDataLoom(
     override val protectedSynchronization: DataLoomProtectedSynchronization?,
     override val protectedStrategySynchronization: DataLoomProtectedStrategySynchronization?,
     override val queueSubmission: DataLoomQueueSubmission?,
+    override val retryAdministration: DataLoomRetryAdministration?,
 ) : DataLoom {
 
     override val providerLifecycleState: ProviderLifecycleCoordinatorState
