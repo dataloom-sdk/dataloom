@@ -1197,12 +1197,6 @@ sealed interface io.dataloom.runtime.retry/CircuitAdministrationResult { // io.d
         final fun toString(): kotlin/String // io.dataloom.runtime.retry/CircuitAdministrationResult.CommandConflict.toString|toString(){}[0]
     }
 
-    final object ContentionLimitReached : io.dataloom.runtime.retry/CircuitAdministrationResult { // io.dataloom.runtime.retry/CircuitAdministrationResult.ContentionLimitReached|null[0]
-        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/CircuitAdministrationResult.ContentionLimitReached.equals|equals(kotlin.Any?){}[0]
-        final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/CircuitAdministrationResult.ContentionLimitReached.hashCode|hashCode(){}[0]
-        final fun toString(): kotlin/String // io.dataloom.runtime.retry/CircuitAdministrationResult.ContentionLimitReached.toString|toString(){}[0]
-    }
-
     final class ExecutionFailed : io.dataloom.runtime.retry/CircuitAdministrationResult { // io.dataloom.runtime.retry/CircuitAdministrationResult.ExecutionFailed|null[0]
         constructor <init>(io.dataloom.api.circuit/CircuitAdministrationStateRecord) // io.dataloom.runtime.retry/CircuitAdministrationResult.ExecutionFailed.<init>|<init>(io.dataloom.api.circuit.CircuitAdministrationStateRecord){}[0]
 
@@ -1285,6 +1279,12 @@ sealed interface io.dataloom.runtime.retry/CircuitAdministrationResult { // io.d
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/CircuitAdministrationResult.Succeeded.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/CircuitAdministrationResult.Succeeded.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.runtime.retry/CircuitAdministrationResult.Succeeded.toString|toString(){}[0]
+    }
+
+    final object ContentionLimitReached : io.dataloom.runtime.retry/CircuitAdministrationResult { // io.dataloom.runtime.retry/CircuitAdministrationResult.ContentionLimitReached|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/CircuitAdministrationResult.ContentionLimitReached.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/CircuitAdministrationResult.ContentionLimitReached.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.retry/CircuitAdministrationResult.ContentionLimitReached.toString|toString(){}[0]
     }
 }
 
