@@ -1146,6 +1146,132 @@ public abstract interface class io/dataloom/runtime/queue/QueuedSynchronizationW
 	public abstract fun resolve (Lio/dataloom/api/queue/QueueEntry;)Lio/dataloom/runtime/queue/QueuedSynchronizationWorkResolution;
 }
 
+public final class io/dataloom/runtime/retry/CircuitAdministrationCoordinator {
+	public fun <init> (Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/circuit/CircuitAdministrationAuthorizer;Lio/dataloom/api/circuit/CircuitAdministrationStateStore;Lio/dataloom/api/circuit/CircuitAdministrationExecutor;I)V
+	public synthetic fun <init> (Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/circuit/CircuitAdministrationAuthorizer;Lio/dataloom/api/circuit/CircuitAdministrationStateStore;Lio/dataloom/api/circuit/CircuitAdministrationExecutor;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final synthetic fun access$admit (Lio/dataloom/runtime/retry/CircuitAdministrationCoordinator;Lio/dataloom/api/circuit/CircuitAdministrationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final synthetic fun access$compareAndSet (Lio/dataloom/runtime/retry/CircuitAdministrationCoordinator;Lio/dataloom/api/circuit/CircuitAdministrationCompareAndSetRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final synthetic fun access$create (Lio/dataloom/runtime/retry/CircuitAdministrationCoordinator;Lio/dataloom/api/circuit/CircuitAdministrationCommandState;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final synthetic fun access$load (Lio/dataloom/runtime/retry/CircuitAdministrationCoordinator;Lio/dataloom/api/circuit/CircuitAdministrationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final synthetic fun access$update (Lio/dataloom/runtime/retry/CircuitAdministrationCoordinator;Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;Lio/dataloom/api/circuit/CircuitAdministrationCommandState;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun execute (Lio/dataloom/api/circuit/CircuitAdministrationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/dataloom/runtime/retry/CircuitAdministrationResult {
+}
+
+public final class io/dataloom/runtime/retry/CircuitAdministrationResult$AuthorizationDenied : io/dataloom/runtime/retry/CircuitAdministrationResult {
+	public fun <init> (Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;)Lio/dataloom/runtime/retry/CircuitAdministrationResult$AuthorizationDenied;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/CircuitAdministrationResult$AuthorizationDenied;Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/runtime/retry/CircuitAdministrationResult$AuthorizationDenied;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/CircuitAdministrationResult$ClockRegression : io/dataloom/runtime/retry/CircuitAdministrationResult {
+	public fun <init> (Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;)V
+	public final fun component1 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy (Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/runtime/retry/CircuitAdministrationResult$ClockRegression;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/CircuitAdministrationResult$ClockRegression;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/runtime/retry/CircuitAdministrationResult$ClockRegression;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getObservedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getPersistedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/CircuitAdministrationResult$CommandConflict : io/dataloom/runtime/retry/CircuitAdministrationResult {
+	public fun <init> (Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;)Lio/dataloom/runtime/retry/CircuitAdministrationResult$CommandConflict;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/CircuitAdministrationResult$CommandConflict;Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/runtime/retry/CircuitAdministrationResult$CommandConflict;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExisting ()Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/CircuitAdministrationResult$ContentionLimitReached : io/dataloom/runtime/retry/CircuitAdministrationResult {
+	public static final field INSTANCE Lio/dataloom/runtime/retry/CircuitAdministrationResult$ContentionLimitReached;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/CircuitAdministrationResult$ExecutionFailed : io/dataloom/runtime/retry/CircuitAdministrationResult {
+	public fun <init> (Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;)Lio/dataloom/runtime/retry/CircuitAdministrationResult$ExecutionFailed;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/CircuitAdministrationResult$ExecutionFailed;Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/runtime/retry/CircuitAdministrationResult$ExecutionFailed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/CircuitAdministrationResult$ExecutionRecordingUnconfirmed : io/dataloom/runtime/retry/CircuitAdministrationResult {
+	public fun <init> (Lio/dataloom/api/circuit/AuthorizedCircuitAdministrationCommand;Lio/dataloom/api/circuit/CircuitAdministrationExecutionResult;Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/AuthorizedCircuitAdministrationCommand;
+	public final fun component2 ()Lio/dataloom/api/circuit/CircuitAdministrationExecutionResult;
+	public final fun component3 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/circuit/AuthorizedCircuitAdministrationCommand;Lio/dataloom/api/circuit/CircuitAdministrationExecutionResult;Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/runtime/retry/CircuitAdministrationResult$ExecutionRecordingUnconfirmed;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/CircuitAdministrationResult$ExecutionRecordingUnconfirmed;Lio/dataloom/api/circuit/AuthorizedCircuitAdministrationCommand;Lio/dataloom/api/circuit/CircuitAdministrationExecutionResult;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/runtime/retry/CircuitAdministrationResult$ExecutionRecordingUnconfirmed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCommand ()Lio/dataloom/api/circuit/AuthorizedCircuitAdministrationCommand;
+	public final fun getExecutionResult ()Lio/dataloom/api/circuit/CircuitAdministrationExecutionResult;
+	public final fun getPersistenceError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/CircuitAdministrationResult$ExecutionRejected : io/dataloom/runtime/retry/CircuitAdministrationResult {
+	public fun <init> (Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;)Lio/dataloom/runtime/retry/CircuitAdministrationResult$ExecutionRejected;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/CircuitAdministrationResult$ExecutionRejected;Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/runtime/retry/CircuitAdministrationResult$ExecutionRejected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/CircuitAdministrationResult$PersistenceFailure : io/dataloom/runtime/retry/CircuitAdministrationResult {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/runtime/retry/CircuitAdministrationResult$PersistenceFailure;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/CircuitAdministrationResult$PersistenceFailure;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/runtime/retry/CircuitAdministrationResult$PersistenceFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/CircuitAdministrationResult$PolicyRejected : io/dataloom/runtime/retry/CircuitAdministrationResult {
+	public fun <init> (Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;)Lio/dataloom/runtime/retry/CircuitAdministrationResult$PolicyRejected;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/CircuitAdministrationResult$PolicyRejected;Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/runtime/retry/CircuitAdministrationResult$PolicyRejected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/CircuitAdministrationResult$Succeeded : io/dataloom/runtime/retry/CircuitAdministrationResult {
+	public fun <init> (Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;)Lio/dataloom/runtime/retry/CircuitAdministrationResult$Succeeded;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/CircuitAdministrationResult$Succeeded;Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/runtime/retry/CircuitAdministrationResult$Succeeded;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/runtime/retry/CircuitBreakerConfiguration {
 	public fun <init> (ILio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;ILio/dataloom/api/scheduling/SchedulingDelay;)V
 	public synthetic fun <init> (ILio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/api/scheduling/SchedulingDelay;ILio/dataloom/api/scheduling/SchedulingDelay;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -2840,4 +2966,3 @@ public final class io/dataloom/runtime/worker/QueueWorkerWakeUpReason : java/lan
 	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/worker/QueueWorkerWakeUpReason;
 	public static fun values ()[Lio/dataloom/runtime/worker/QueueWorkerWakeUpReason;
 }
-

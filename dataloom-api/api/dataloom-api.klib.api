@@ -6,6 +6,33 @@
 // - Show declarations: true
 
 // Library unique name: <dataloom:dataloom-api>
+final enum class io.dataloom.api.circuit/CircuitAdministrationAction : kotlin/Enum<io.dataloom.api.circuit/CircuitAdministrationAction> { // io.dataloom.api.circuit/CircuitAdministrationAction|null[0]
+    enum entry CLOSE // io.dataloom.api.circuit/CircuitAdministrationAction.CLOSE|null[0]
+    enum entry OPEN // io.dataloom.api.circuit/CircuitAdministrationAction.OPEN|null[0]
+    enum entry RESET // io.dataloom.api.circuit/CircuitAdministrationAction.RESET|null[0]
+
+    final val entries // io.dataloom.api.circuit/CircuitAdministrationAction.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.circuit/CircuitAdministrationAction> // io.dataloom.api.circuit/CircuitAdministrationAction.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.circuit/CircuitAdministrationAction // io.dataloom.api.circuit/CircuitAdministrationAction.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.circuit/CircuitAdministrationAction> // io.dataloom.api.circuit/CircuitAdministrationAction.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.api.circuit/CircuitAdministrationCommandStatus : kotlin/Enum<io.dataloom.api.circuit/CircuitAdministrationCommandStatus> { // io.dataloom.api.circuit/CircuitAdministrationCommandStatus|null[0]
+    enum entry AUTHORIZATION_DENIED // io.dataloom.api.circuit/CircuitAdministrationCommandStatus.AUTHORIZATION_DENIED|null[0]
+    enum entry AUTHORIZED // io.dataloom.api.circuit/CircuitAdministrationCommandStatus.AUTHORIZED|null[0]
+    enum entry EXECUTION_FAILED // io.dataloom.api.circuit/CircuitAdministrationCommandStatus.EXECUTION_FAILED|null[0]
+    enum entry EXECUTION_REJECTED // io.dataloom.api.circuit/CircuitAdministrationCommandStatus.EXECUTION_REJECTED|null[0]
+    enum entry POLICY_REJECTED // io.dataloom.api.circuit/CircuitAdministrationCommandStatus.POLICY_REJECTED|null[0]
+    enum entry SUCCEEDED // io.dataloom.api.circuit/CircuitAdministrationCommandStatus.SUCCEEDED|null[0]
+
+    final val entries // io.dataloom.api.circuit/CircuitAdministrationCommandStatus.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.circuit/CircuitAdministrationCommandStatus> // io.dataloom.api.circuit/CircuitAdministrationCommandStatus.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.circuit/CircuitAdministrationCommandStatus // io.dataloom.api.circuit/CircuitAdministrationCommandStatus.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.circuit/CircuitAdministrationCommandStatus> // io.dataloom.api.circuit/CircuitAdministrationCommandStatus.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.api.circuit/CircuitBreakerPhase : kotlin/Enum<io.dataloom.api.circuit/CircuitBreakerPhase> { // io.dataloom.api.circuit/CircuitBreakerPhase|null[0]
     enum entry CLOSED // io.dataloom.api.circuit/CircuitBreakerPhase.CLOSED|null[0]
     enum entry HALF_OPEN // io.dataloom.api.circuit/CircuitBreakerPhase.HALF_OPEN|null[0]
@@ -523,6 +550,19 @@ abstract fun interface io.dataloom.api.strategy/SynchronizationStrategyEvaluator
     abstract fun evaluate(io.dataloom.api.strategy/StrategyEvaluationRequest): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.api.strategy/SynchronizationStrategyEvaluator.evaluate|evaluate(io.dataloom.api.strategy.StrategyEvaluationRequest){}[0]
 }
 
+abstract interface io.dataloom.api.circuit/CircuitAdministrationAuthorizer { // io.dataloom.api.circuit/CircuitAdministrationAuthorizer|null[0]
+    abstract suspend fun authorize(io.dataloom.api.circuit/CircuitAdministrationRequest): io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision // io.dataloom.api.circuit/CircuitAdministrationAuthorizer.authorize|authorize(io.dataloom.api.circuit.CircuitAdministrationRequest){}[0]
+}
+
+abstract interface io.dataloom.api.circuit/CircuitAdministrationExecutor { // io.dataloom.api.circuit/CircuitAdministrationExecutor|null[0]
+    abstract suspend fun execute(io.dataloom.api.circuit/AuthorizedCircuitAdministrationCommand): io.dataloom.api.circuit/CircuitAdministrationExecutionResult // io.dataloom.api.circuit/CircuitAdministrationExecutor.execute|execute(io.dataloom.api.circuit.AuthorizedCircuitAdministrationCommand){}[0]
+}
+
+abstract interface io.dataloom.api.circuit/CircuitAdministrationStateStore { // io.dataloom.api.circuit/CircuitAdministrationStateStore|null[0]
+    abstract suspend fun compareAndSet(io.dataloom.api.circuit/CircuitAdministrationCompareAndSetRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult> // io.dataloom.api.circuit/CircuitAdministrationStateStore.compareAndSet|compareAndSet(io.dataloom.api.circuit.CircuitAdministrationCompareAndSetRequest){}[0]
+    abstract suspend fun load(io.dataloom.api.circuit/CircuitAdministrationCommandId): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.circuit/CircuitAdministrationLoadResult> // io.dataloom.api.circuit/CircuitAdministrationStateStore.load|load(io.dataloom.api.circuit.CircuitAdministrationCommandId){}[0]
+}
+
 abstract interface io.dataloom.api.circuit/CircuitBreakerStateStore { // io.dataloom.api.circuit/CircuitBreakerStateStore|null[0]
     abstract suspend fun compareAndSet(io.dataloom.api.circuit/CircuitBreakerCompareAndSetRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult> // io.dataloom.api.circuit/CircuitBreakerStateStore.compareAndSet|compareAndSet(io.dataloom.api.circuit.CircuitBreakerCompareAndSetRequest){}[0]
     abstract suspend fun load(io.dataloom.api.circuit/CircuitBreakerScope): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.circuit/CircuitBreakerLoadResult> // io.dataloom.api.circuit/CircuitBreakerStateStore.load|load(io.dataloom.api.circuit.CircuitBreakerScope){}[0]
@@ -650,6 +690,124 @@ abstract interface io.dataloom.api.transport/TransportProvider : io.dataloom.api
 
     abstract suspend fun pullChanges(io.dataloom.api.transport/PullChangesRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.transport/PullChangesResult> // io.dataloom.api.transport/TransportProvider.pullChanges|pullChanges(io.dataloom.api.transport.PullChangesRequest){}[0]
     abstract suspend fun pushChanges(io.dataloom.api.transport/PushChangesRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.synchronization/ChangeSetAcknowledgement> // io.dataloom.api.transport/TransportProvider.pushChanges|pushChanges(io.dataloom.api.transport.PushChangesRequest){}[0]
+}
+
+sealed interface io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision { // io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision|null[0]
+    final class Authorized : io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision { // io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision.Authorized|null[0]
+        constructor <init>(io.dataloom.api.circuit/CircuitAdministrationAuthorizationId) // io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision.Authorized.<init>|<init>(io.dataloom.api.circuit.CircuitAdministrationAuthorizationId){}[0]
+
+        final val authorizationId // io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision.Authorized.authorizationId|{}authorizationId[0]
+            final fun <get-authorizationId>(): io.dataloom.api.circuit/CircuitAdministrationAuthorizationId // io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision.Authorized.authorizationId.<get-authorizationId>|<get-authorizationId>(){}[0]
+
+        final fun component1(): io.dataloom.api.circuit/CircuitAdministrationAuthorizationId // io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision.Authorized.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.circuit/CircuitAdministrationAuthorizationId = ...): io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision.Authorized // io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision.Authorized.copy|copy(io.dataloom.api.circuit.CircuitAdministrationAuthorizationId){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision.Authorized.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision.Authorized.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision.Authorized.toString|toString(){}[0]
+    }
+
+    final class Denied : io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision { // io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision.Denied|null[0]
+        constructor <init>(kotlin/String) // io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision.Denied.<init>|<init>(kotlin.String){}[0]
+
+        final val reasonCode // io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision.Denied.reasonCode|{}reasonCode[0]
+            final fun <get-reasonCode>(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision.Denied.reasonCode.<get-reasonCode>|<get-reasonCode>(){}[0]
+
+        final fun component1(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision.Denied.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision.Denied // io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision.Denied.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision.Denied.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision.Denied.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision.Denied.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult { // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult|null[0]
+    final class Conflict : io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult { // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult.Conflict|null[0]
+        constructor <init>(io.dataloom.api.circuit/CircuitAdministrationStateRecord?) // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult.Conflict.<init>|<init>(io.dataloom.api.circuit.CircuitAdministrationStateRecord?){}[0]
+
+        final val current // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult.Conflict.current|{}current[0]
+            final fun <get-current>(): io.dataloom.api.circuit/CircuitAdministrationStateRecord? // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult.Conflict.current.<get-current>|<get-current>(){}[0]
+
+        final fun component1(): io.dataloom.api.circuit/CircuitAdministrationStateRecord? // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult.Conflict.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.circuit/CircuitAdministrationStateRecord? = ...): io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult.Conflict // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult.Conflict.copy|copy(io.dataloom.api.circuit.CircuitAdministrationStateRecord?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult.Conflict.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult.Conflict.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult.Conflict.toString|toString(){}[0]
+    }
+
+    final class Updated : io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult { // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult.Updated|null[0]
+        constructor <init>(io.dataloom.api.circuit/CircuitAdministrationStateRecord) // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult.Updated.<init>|<init>(io.dataloom.api.circuit.CircuitAdministrationStateRecord){}[0]
+
+        final val record // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult.Updated.record|{}record[0]
+            final fun <get-record>(): io.dataloom.api.circuit/CircuitAdministrationStateRecord // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult.Updated.record.<get-record>|<get-record>(){}[0]
+
+        final fun component1(): io.dataloom.api.circuit/CircuitAdministrationStateRecord // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult.Updated.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.circuit/CircuitAdministrationStateRecord = ...): io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult.Updated // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult.Updated.copy|copy(io.dataloom.api.circuit.CircuitAdministrationStateRecord){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult.Updated.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult.Updated.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetResult.Updated.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.circuit/CircuitAdministrationExecutionResult { // io.dataloom.api.circuit/CircuitAdministrationExecutionResult|null[0]
+    final class Applied : io.dataloom.api.circuit/CircuitAdministrationExecutionResult { // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Applied|null[0]
+        constructor <init>(io.dataloom.api.circuit/CircuitBreakerStateRecord) // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Applied.<init>|<init>(io.dataloom.api.circuit.CircuitBreakerStateRecord){}[0]
+
+        final val record // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Applied.record|{}record[0]
+            final fun <get-record>(): io.dataloom.api.circuit/CircuitBreakerStateRecord // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Applied.record.<get-record>|<get-record>(){}[0]
+
+        final fun component1(): io.dataloom.api.circuit/CircuitBreakerStateRecord // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Applied.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.circuit/CircuitBreakerStateRecord = ...): io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Applied // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Applied.copy|copy(io.dataloom.api.circuit.CircuitBreakerStateRecord){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Applied.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Applied.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Applied.toString|toString(){}[0]
+    }
+
+    final class Failed : io.dataloom.api.circuit/CircuitAdministrationExecutionResult { // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Failed|null[0]
+        constructor <init>(io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot) // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Failed.<init>|<init>(io.dataloom.api.circuit.CircuitAdministrationFailureSnapshot){}[0]
+
+        final val failure // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Failed.failure|{}failure[0]
+            final fun <get-failure>(): io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Failed.failure.<get-failure>|<get-failure>(){}[0]
+
+        final fun component1(): io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Failed.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot = ...): io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Failed // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Failed.copy|copy(io.dataloom.api.circuit.CircuitAdministrationFailureSnapshot){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Failed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Failed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Failed.toString|toString(){}[0]
+    }
+
+    final class Rejected : io.dataloom.api.circuit/CircuitAdministrationExecutionResult { // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Rejected|null[0]
+        constructor <init>(kotlin/String) // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Rejected.<init>|<init>(kotlin.String){}[0]
+
+        final val reasonCode // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Rejected.reasonCode|{}reasonCode[0]
+            final fun <get-reasonCode>(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Rejected.reasonCode.<get-reasonCode>|<get-reasonCode>(){}[0]
+
+        final fun component1(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Rejected.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Rejected // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Rejected.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Rejected.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Rejected.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationExecutionResult.Rejected.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.circuit/CircuitAdministrationLoadResult { // io.dataloom.api.circuit/CircuitAdministrationLoadResult|null[0]
+    final class Found : io.dataloom.api.circuit/CircuitAdministrationLoadResult { // io.dataloom.api.circuit/CircuitAdministrationLoadResult.Found|null[0]
+        constructor <init>(io.dataloom.api.circuit/CircuitAdministrationStateRecord) // io.dataloom.api.circuit/CircuitAdministrationLoadResult.Found.<init>|<init>(io.dataloom.api.circuit.CircuitAdministrationStateRecord){}[0]
+
+        final val record // io.dataloom.api.circuit/CircuitAdministrationLoadResult.Found.record|{}record[0]
+            final fun <get-record>(): io.dataloom.api.circuit/CircuitAdministrationStateRecord // io.dataloom.api.circuit/CircuitAdministrationLoadResult.Found.record.<get-record>|<get-record>(){}[0]
+
+        final fun component1(): io.dataloom.api.circuit/CircuitAdministrationStateRecord // io.dataloom.api.circuit/CircuitAdministrationLoadResult.Found.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.circuit/CircuitAdministrationStateRecord = ...): io.dataloom.api.circuit/CircuitAdministrationLoadResult.Found // io.dataloom.api.circuit/CircuitAdministrationLoadResult.Found.copy|copy(io.dataloom.api.circuit.CircuitAdministrationStateRecord){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitAdministrationLoadResult.Found.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitAdministrationLoadResult.Found.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationLoadResult.Found.toString|toString(){}[0]
+    }
+
+    final object Missing : io.dataloom.api.circuit/CircuitAdministrationLoadResult { // io.dataloom.api.circuit/CircuitAdministrationLoadResult.Missing|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitAdministrationLoadResult.Missing.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitAdministrationLoadResult.Missing.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationLoadResult.Missing.toString|toString(){}[0]
+    }
 }
 
 sealed interface io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult { // io.dataloom.api.circuit/CircuitBreakerCompareAndSetResult|null[0]
@@ -1502,6 +1660,141 @@ final class io.dataloom.api.change/EntityReference { // io.dataloom.api.change/E
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.change/EntityReference.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.change/EntityReference.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.change/EntityReference.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.circuit/AuthorizedCircuitAdministrationCommand { // io.dataloom.api.circuit/AuthorizedCircuitAdministrationCommand|null[0]
+    constructor <init>(io.dataloom.api.circuit/CircuitAdministrationRequest, io.dataloom.api.circuit/CircuitAdministrationAuthorizationId) // io.dataloom.api.circuit/AuthorizedCircuitAdministrationCommand.<init>|<init>(io.dataloom.api.circuit.CircuitAdministrationRequest;io.dataloom.api.circuit.CircuitAdministrationAuthorizationId){}[0]
+
+    final val authorizationId // io.dataloom.api.circuit/AuthorizedCircuitAdministrationCommand.authorizationId|{}authorizationId[0]
+        final fun <get-authorizationId>(): io.dataloom.api.circuit/CircuitAdministrationAuthorizationId // io.dataloom.api.circuit/AuthorizedCircuitAdministrationCommand.authorizationId.<get-authorizationId>|<get-authorizationId>(){}[0]
+    final val request // io.dataloom.api.circuit/AuthorizedCircuitAdministrationCommand.request|{}request[0]
+        final fun <get-request>(): io.dataloom.api.circuit/CircuitAdministrationRequest // io.dataloom.api.circuit/AuthorizedCircuitAdministrationCommand.request.<get-request>|<get-request>(){}[0]
+
+    final fun component1(): io.dataloom.api.circuit/CircuitAdministrationRequest // io.dataloom.api.circuit/AuthorizedCircuitAdministrationCommand.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.circuit/CircuitAdministrationAuthorizationId // io.dataloom.api.circuit/AuthorizedCircuitAdministrationCommand.component2|component2(){}[0]
+    final fun copy(io.dataloom.api.circuit/CircuitAdministrationRequest = ..., io.dataloom.api.circuit/CircuitAdministrationAuthorizationId = ...): io.dataloom.api.circuit/AuthorizedCircuitAdministrationCommand // io.dataloom.api.circuit/AuthorizedCircuitAdministrationCommand.copy|copy(io.dataloom.api.circuit.CircuitAdministrationRequest;io.dataloom.api.circuit.CircuitAdministrationAuthorizationId){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/AuthorizedCircuitAdministrationCommand.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/AuthorizedCircuitAdministrationCommand.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.circuit/AuthorizedCircuitAdministrationCommand.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.circuit/CircuitAdministrationCommandState { // io.dataloom.api.circuit/CircuitAdministrationCommandState|null[0]
+    constructor <init>(io.dataloom.api.circuit/CircuitAdministrationRequest, io.dataloom.api.circuit/CircuitAdministrationCommandStatus, io.dataloom.api.circuit/CircuitAdministrationAuthorizationId?, io.dataloom.api.time/DataLoomInstant, kotlin/String? = ..., io.dataloom.api.circuit/CircuitBreakerStateRecord? = ..., io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot? = ...) // io.dataloom.api.circuit/CircuitAdministrationCommandState.<init>|<init>(io.dataloom.api.circuit.CircuitAdministrationRequest;io.dataloom.api.circuit.CircuitAdministrationCommandStatus;io.dataloom.api.circuit.CircuitAdministrationAuthorizationId?;io.dataloom.api.time.DataLoomInstant;kotlin.String?;io.dataloom.api.circuit.CircuitBreakerStateRecord?;io.dataloom.api.circuit.CircuitAdministrationFailureSnapshot?){}[0]
+
+    final val authorizationId // io.dataloom.api.circuit/CircuitAdministrationCommandState.authorizationId|{}authorizationId[0]
+        final fun <get-authorizationId>(): io.dataloom.api.circuit/CircuitAdministrationAuthorizationId? // io.dataloom.api.circuit/CircuitAdministrationCommandState.authorizationId.<get-authorizationId>|<get-authorizationId>(){}[0]
+    final val executionFailure // io.dataloom.api.circuit/CircuitAdministrationCommandState.executionFailure|{}executionFailure[0]
+        final fun <get-executionFailure>(): io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot? // io.dataloom.api.circuit/CircuitAdministrationCommandState.executionFailure.<get-executionFailure>|<get-executionFailure>(){}[0]
+    final val rejectionReasonCode // io.dataloom.api.circuit/CircuitAdministrationCommandState.rejectionReasonCode|{}rejectionReasonCode[0]
+        final fun <get-rejectionReasonCode>(): kotlin/String? // io.dataloom.api.circuit/CircuitAdministrationCommandState.rejectionReasonCode.<get-rejectionReasonCode>|<get-rejectionReasonCode>(){}[0]
+    final val request // io.dataloom.api.circuit/CircuitAdministrationCommandState.request|{}request[0]
+        final fun <get-request>(): io.dataloom.api.circuit/CircuitAdministrationRequest // io.dataloom.api.circuit/CircuitAdministrationCommandState.request.<get-request>|<get-request>(){}[0]
+    final val resultingRecord // io.dataloom.api.circuit/CircuitAdministrationCommandState.resultingRecord|{}resultingRecord[0]
+        final fun <get-resultingRecord>(): io.dataloom.api.circuit/CircuitBreakerStateRecord? // io.dataloom.api.circuit/CircuitAdministrationCommandState.resultingRecord.<get-resultingRecord>|<get-resultingRecord>(){}[0]
+    final val status // io.dataloom.api.circuit/CircuitAdministrationCommandState.status|{}status[0]
+        final fun <get-status>(): io.dataloom.api.circuit/CircuitAdministrationCommandStatus // io.dataloom.api.circuit/CircuitAdministrationCommandState.status.<get-status>|<get-status>(){}[0]
+    final val updatedAt // io.dataloom.api.circuit/CircuitAdministrationCommandState.updatedAt|{}updatedAt[0]
+        final fun <get-updatedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.circuit/CircuitAdministrationCommandState.updatedAt.<get-updatedAt>|<get-updatedAt>(){}[0]
+
+    final fun component1(): io.dataloom.api.circuit/CircuitAdministrationRequest // io.dataloom.api.circuit/CircuitAdministrationCommandState.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.circuit/CircuitAdministrationCommandStatus // io.dataloom.api.circuit/CircuitAdministrationCommandState.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.circuit/CircuitAdministrationAuthorizationId? // io.dataloom.api.circuit/CircuitAdministrationCommandState.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.circuit/CircuitAdministrationCommandState.component4|component4(){}[0]
+    final fun component5(): kotlin/String? // io.dataloom.api.circuit/CircuitAdministrationCommandState.component5|component5(){}[0]
+    final fun component6(): io.dataloom.api.circuit/CircuitBreakerStateRecord? // io.dataloom.api.circuit/CircuitAdministrationCommandState.component6|component6(){}[0]
+    final fun component7(): io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot? // io.dataloom.api.circuit/CircuitAdministrationCommandState.component7|component7(){}[0]
+    final fun copy(io.dataloom.api.circuit/CircuitAdministrationRequest = ..., io.dataloom.api.circuit/CircuitAdministrationCommandStatus = ..., io.dataloom.api.circuit/CircuitAdministrationAuthorizationId? = ..., io.dataloom.api.time/DataLoomInstant = ..., kotlin/String? = ..., io.dataloom.api.circuit/CircuitBreakerStateRecord? = ..., io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot? = ...): io.dataloom.api.circuit/CircuitAdministrationCommandState // io.dataloom.api.circuit/CircuitAdministrationCommandState.copy|copy(io.dataloom.api.circuit.CircuitAdministrationRequest;io.dataloom.api.circuit.CircuitAdministrationCommandStatus;io.dataloom.api.circuit.CircuitAdministrationAuthorizationId?;io.dataloom.api.time.DataLoomInstant;kotlin.String?;io.dataloom.api.circuit.CircuitBreakerStateRecord?;io.dataloom.api.circuit.CircuitAdministrationFailureSnapshot?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitAdministrationCommandState.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitAdministrationCommandState.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationCommandState.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.circuit/CircuitAdministrationCompareAndSetRequest { // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetRequest|null[0]
+    constructor <init>(io.dataloom.api.circuit/CircuitAdministrationCommandId, kotlin/Long?, io.dataloom.api.circuit/CircuitAdministrationCommandState) // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetRequest.<init>|<init>(io.dataloom.api.circuit.CircuitAdministrationCommandId;kotlin.Long?;io.dataloom.api.circuit.CircuitAdministrationCommandState){}[0]
+
+    final val commandId // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetRequest.commandId|{}commandId[0]
+        final fun <get-commandId>(): io.dataloom.api.circuit/CircuitAdministrationCommandId // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetRequest.commandId.<get-commandId>|<get-commandId>(){}[0]
+    final val expectedVersion // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetRequest.expectedVersion|{}expectedVersion[0]
+        final fun <get-expectedVersion>(): kotlin/Long? // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetRequest.expectedVersion.<get-expectedVersion>|<get-expectedVersion>(){}[0]
+    final val nextState // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetRequest.nextState|{}nextState[0]
+        final fun <get-nextState>(): io.dataloom.api.circuit/CircuitAdministrationCommandState // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetRequest.nextState.<get-nextState>|<get-nextState>(){}[0]
+
+    final fun component1(): io.dataloom.api.circuit/CircuitAdministrationCommandId // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetRequest.component1|component1(){}[0]
+    final fun component2(): kotlin/Long? // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetRequest.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.circuit/CircuitAdministrationCommandState // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetRequest.component3|component3(){}[0]
+    final fun copy(io.dataloom.api.circuit/CircuitAdministrationCommandId = ..., kotlin/Long? = ..., io.dataloom.api.circuit/CircuitAdministrationCommandState = ...): io.dataloom.api.circuit/CircuitAdministrationCompareAndSetRequest // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetRequest.copy|copy(io.dataloom.api.circuit.CircuitAdministrationCommandId;kotlin.Long?;io.dataloom.api.circuit.CircuitAdministrationCommandState){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetRequest.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetRequest.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationCompareAndSetRequest.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot { // io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot|null[0]
+    constructor <init>(io.dataloom.api.error/ErrorCode, io.dataloom.api.error/ErrorCategory, io.dataloom.api.error/ErrorSeverity, io.dataloom.api.error/Recoverability) // io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot.<init>|<init>(io.dataloom.api.error.ErrorCode;io.dataloom.api.error.ErrorCategory;io.dataloom.api.error.ErrorSeverity;io.dataloom.api.error.Recoverability){}[0]
+
+    final val category // io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot.category|{}category[0]
+        final fun <get-category>(): io.dataloom.api.error/ErrorCategory // io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot.category.<get-category>|<get-category>(){}[0]
+    final val code // io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot.code|{}code[0]
+        final fun <get-code>(): io.dataloom.api.error/ErrorCode // io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot.code.<get-code>|<get-code>(){}[0]
+    final val recoverability // io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot.recoverability|{}recoverability[0]
+        final fun <get-recoverability>(): io.dataloom.api.error/Recoverability // io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot.recoverability.<get-recoverability>|<get-recoverability>(){}[0]
+    final val severity // io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot.severity|{}severity[0]
+        final fun <get-severity>(): io.dataloom.api.error/ErrorSeverity // io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot.severity.<get-severity>|<get-severity>(){}[0]
+
+    final fun component1(): io.dataloom.api.error/ErrorCode // io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.error/ErrorCategory // io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.error/ErrorSeverity // io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.error/Recoverability // io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot.component4|component4(){}[0]
+    final fun copy(io.dataloom.api.error/ErrorCode = ..., io.dataloom.api.error/ErrorCategory = ..., io.dataloom.api.error/ErrorSeverity = ..., io.dataloom.api.error/Recoverability = ...): io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot // io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot.copy|copy(io.dataloom.api.error.ErrorCode;io.dataloom.api.error.ErrorCategory;io.dataloom.api.error.ErrorSeverity;io.dataloom.api.error.Recoverability){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationFailureSnapshot.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.circuit/CircuitAdministrationRequest { // io.dataloom.api.circuit/CircuitAdministrationRequest|null[0]
+    constructor <init>(io.dataloom.api.circuit/CircuitAdministrationCommandId, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.circuit/CircuitAdministrationPrincipalId, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.circuit/CircuitAdministrationAction, io.dataloom.api.circuit/CircuitAdministrationReason, io.dataloom.api.time/DataLoomInstant? = ...) // io.dataloom.api.circuit/CircuitAdministrationRequest.<init>|<init>(io.dataloom.api.circuit.CircuitAdministrationCommandId;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitAdministrationPrincipalId;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.circuit.CircuitAdministrationAction;io.dataloom.api.circuit.CircuitAdministrationReason;io.dataloom.api.time.DataLoomInstant?){}[0]
+
+    final val action // io.dataloom.api.circuit/CircuitAdministrationRequest.action|{}action[0]
+        final fun <get-action>(): io.dataloom.api.circuit/CircuitAdministrationAction // io.dataloom.api.circuit/CircuitAdministrationRequest.action.<get-action>|<get-action>(){}[0]
+    final val commandId // io.dataloom.api.circuit/CircuitAdministrationRequest.commandId|{}commandId[0]
+        final fun <get-commandId>(): io.dataloom.api.circuit/CircuitAdministrationCommandId // io.dataloom.api.circuit/CircuitAdministrationRequest.commandId.<get-commandId>|<get-commandId>(){}[0]
+    final val openUntil // io.dataloom.api.circuit/CircuitAdministrationRequest.openUntil|{}openUntil[0]
+        final fun <get-openUntil>(): io.dataloom.api.time/DataLoomInstant? // io.dataloom.api.circuit/CircuitAdministrationRequest.openUntil.<get-openUntil>|<get-openUntil>(){}[0]
+    final val principalId // io.dataloom.api.circuit/CircuitAdministrationRequest.principalId|{}principalId[0]
+        final fun <get-principalId>(): io.dataloom.api.circuit/CircuitAdministrationPrincipalId // io.dataloom.api.circuit/CircuitAdministrationRequest.principalId.<get-principalId>|<get-principalId>(){}[0]
+    final val reason // io.dataloom.api.circuit/CircuitAdministrationRequest.reason|{}reason[0]
+        final fun <get-reason>(): io.dataloom.api.circuit/CircuitAdministrationReason // io.dataloom.api.circuit/CircuitAdministrationRequest.reason.<get-reason>|<get-reason>(){}[0]
+    final val requestedAt // io.dataloom.api.circuit/CircuitAdministrationRequest.requestedAt|{}requestedAt[0]
+        final fun <get-requestedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.circuit/CircuitAdministrationRequest.requestedAt.<get-requestedAt>|<get-requestedAt>(){}[0]
+    final val scope // io.dataloom.api.circuit/CircuitAdministrationRequest.scope|{}scope[0]
+        final fun <get-scope>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.api.circuit/CircuitAdministrationRequest.scope.<get-scope>|<get-scope>(){}[0]
+
+    final fun component1(): io.dataloom.api.circuit/CircuitAdministrationCommandId // io.dataloom.api.circuit/CircuitAdministrationRequest.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.api.circuit/CircuitAdministrationRequest.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.circuit/CircuitAdministrationPrincipalId // io.dataloom.api.circuit/CircuitAdministrationRequest.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.circuit/CircuitAdministrationRequest.component4|component4(){}[0]
+    final fun component5(): io.dataloom.api.circuit/CircuitAdministrationAction // io.dataloom.api.circuit/CircuitAdministrationRequest.component5|component5(){}[0]
+    final fun component6(): io.dataloom.api.circuit/CircuitAdministrationReason // io.dataloom.api.circuit/CircuitAdministrationRequest.component6|component6(){}[0]
+    final fun component7(): io.dataloom.api.time/DataLoomInstant? // io.dataloom.api.circuit/CircuitAdministrationRequest.component7|component7(){}[0]
+    final fun copy(io.dataloom.api.circuit/CircuitAdministrationCommandId = ..., io.dataloom.api.circuit/CircuitBreakerScope = ..., io.dataloom.api.circuit/CircuitAdministrationPrincipalId = ..., io.dataloom.api.time/DataLoomInstant = ..., io.dataloom.api.circuit/CircuitAdministrationAction = ..., io.dataloom.api.circuit/CircuitAdministrationReason = ..., io.dataloom.api.time/DataLoomInstant? = ...): io.dataloom.api.circuit/CircuitAdministrationRequest // io.dataloom.api.circuit/CircuitAdministrationRequest.copy|copy(io.dataloom.api.circuit.CircuitAdministrationCommandId;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitAdministrationPrincipalId;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.circuit.CircuitAdministrationAction;io.dataloom.api.circuit.CircuitAdministrationReason;io.dataloom.api.time.DataLoomInstant?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitAdministrationRequest.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitAdministrationRequest.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationRequest.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.circuit/CircuitAdministrationStateRecord { // io.dataloom.api.circuit/CircuitAdministrationStateRecord|null[0]
+    constructor <init>(io.dataloom.api.circuit/CircuitAdministrationCommandState, kotlin/Long) // io.dataloom.api.circuit/CircuitAdministrationStateRecord.<init>|<init>(io.dataloom.api.circuit.CircuitAdministrationCommandState;kotlin.Long){}[0]
+
+    final val state // io.dataloom.api.circuit/CircuitAdministrationStateRecord.state|{}state[0]
+        final fun <get-state>(): io.dataloom.api.circuit/CircuitAdministrationCommandState // io.dataloom.api.circuit/CircuitAdministrationStateRecord.state.<get-state>|<get-state>(){}[0]
+    final val version // io.dataloom.api.circuit/CircuitAdministrationStateRecord.version|{}version[0]
+        final fun <get-version>(): kotlin/Long // io.dataloom.api.circuit/CircuitAdministrationStateRecord.version.<get-version>|<get-version>(){}[0]
+
+    final fun component1(): io.dataloom.api.circuit/CircuitAdministrationCommandState // io.dataloom.api.circuit/CircuitAdministrationStateRecord.component1|component1(){}[0]
+    final fun component2(): kotlin/Long // io.dataloom.api.circuit/CircuitAdministrationStateRecord.component2|component2(){}[0]
+    final fun copy(io.dataloom.api.circuit/CircuitAdministrationCommandState = ..., kotlin/Long = ...): io.dataloom.api.circuit/CircuitAdministrationStateRecord // io.dataloom.api.circuit/CircuitAdministrationStateRecord.copy|copy(io.dataloom.api.circuit.CircuitAdministrationCommandState;kotlin.Long){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitAdministrationStateRecord.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitAdministrationStateRecord.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationStateRecord.toString|toString(){}[0]
 }
 
 final class io.dataloom.api.circuit/CircuitBreakerCompareAndSetRequest { // io.dataloom.api.circuit/CircuitBreakerCompareAndSetRequest|null[0]
@@ -2993,6 +3286,50 @@ final class io.dataloom.api.transport/PushChangesRequest { // io.dataloom.api.tr
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.transport/PushChangesRequest.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.transport/PushChangesRequest.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.transport/PushChangesRequest.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.circuit/CircuitAdministrationAuthorizationId { // io.dataloom.api.circuit/CircuitAdministrationAuthorizationId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.circuit/CircuitAdministrationAuthorizationId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.circuit/CircuitAdministrationAuthorizationId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationAuthorizationId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitAdministrationAuthorizationId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitAdministrationAuthorizationId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationAuthorizationId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.circuit/CircuitAdministrationCommandId { // io.dataloom.api.circuit/CircuitAdministrationCommandId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.circuit/CircuitAdministrationCommandId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.circuit/CircuitAdministrationCommandId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationCommandId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitAdministrationCommandId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitAdministrationCommandId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationCommandId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.circuit/CircuitAdministrationPrincipalId { // io.dataloom.api.circuit/CircuitAdministrationPrincipalId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.circuit/CircuitAdministrationPrincipalId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.circuit/CircuitAdministrationPrincipalId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationPrincipalId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitAdministrationPrincipalId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitAdministrationPrincipalId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationPrincipalId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.circuit/CircuitAdministrationReason { // io.dataloom.api.circuit/CircuitAdministrationReason|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.circuit/CircuitAdministrationReason.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.circuit/CircuitAdministrationReason.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationReason.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitAdministrationReason.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitAdministrationReason.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationReason.toString|toString(){}[0]
 }
 
 final value class io.dataloom.api.payload/EntityVersion { // io.dataloom.api.payload/EntityVersion|null[0]

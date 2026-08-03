@@ -45,6 +45,309 @@ public final class io/dataloom/api/change/EntityReference {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/api/circuit/AuthorizedCircuitAdministrationCommand {
+	public synthetic fun <init> (Lio/dataloom/api/circuit/CircuitAdministrationRequest;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitAdministrationRequest;
+	public final fun component2-31IjI84 ()Ljava/lang/String;
+	public final fun copy-hSlLNjI (Lio/dataloom/api/circuit/CircuitAdministrationRequest;Ljava/lang/String;)Lio/dataloom/api/circuit/AuthorizedCircuitAdministrationCommand;
+	public static synthetic fun copy-hSlLNjI$default (Lio/dataloom/api/circuit/AuthorizedCircuitAdministrationCommand;Lio/dataloom/api/circuit/CircuitAdministrationRequest;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/circuit/AuthorizedCircuitAdministrationCommand;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAuthorizationId-31IjI84 ()Ljava/lang/String;
+	public final fun getRequest ()Lio/dataloom/api/circuit/CircuitAdministrationRequest;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/circuit/CircuitAdministrationAction : java/lang/Enum {
+	public static final field CLOSE Lio/dataloom/api/circuit/CircuitAdministrationAction;
+	public static final field OPEN Lio/dataloom/api/circuit/CircuitAdministrationAction;
+	public static final field RESET Lio/dataloom/api/circuit/CircuitAdministrationAction;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/circuit/CircuitAdministrationAction;
+	public static fun values ()[Lio/dataloom/api/circuit/CircuitAdministrationAction;
+}
+
+public abstract interface class io/dataloom/api/circuit/CircuitAdministrationAuthorizationDecision {
+}
+
+public final class io/dataloom/api/circuit/CircuitAdministrationAuthorizationDecision$Authorized : io/dataloom/api/circuit/CircuitAdministrationAuthorizationDecision {
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-31IjI84 ()Ljava/lang/String;
+	public final fun copy-HBRM7mE (Ljava/lang/String;)Lio/dataloom/api/circuit/CircuitAdministrationAuthorizationDecision$Authorized;
+	public static synthetic fun copy-HBRM7mE$default (Lio/dataloom/api/circuit/CircuitAdministrationAuthorizationDecision$Authorized;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/circuit/CircuitAdministrationAuthorizationDecision$Authorized;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAuthorizationId-31IjI84 ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/circuit/CircuitAdministrationAuthorizationDecision$Denied : io/dataloom/api/circuit/CircuitAdministrationAuthorizationDecision {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lio/dataloom/api/circuit/CircuitAdministrationAuthorizationDecision$Denied;
+	public static synthetic fun copy$default (Lio/dataloom/api/circuit/CircuitAdministrationAuthorizationDecision$Denied;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/circuit/CircuitAdministrationAuthorizationDecision$Denied;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReasonCode ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/circuit/CircuitAdministrationAuthorizationId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/circuit/CircuitAdministrationAuthorizationId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/circuit/CircuitAdministrationAuthorizer {
+	public abstract fun authorize (Lio/dataloom/api/circuit/CircuitAdministrationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/api/circuit/CircuitAdministrationCommandId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/circuit/CircuitAdministrationCommandId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/circuit/CircuitAdministrationCommandState {
+	public synthetic fun <init> (Lio/dataloom/api/circuit/CircuitAdministrationRequest;Lio/dataloom/api/circuit/CircuitAdministrationCommandStatus;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Lio/dataloom/api/circuit/CircuitBreakerStateRecord;Lio/dataloom/api/circuit/CircuitAdministrationFailureSnapshot;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/circuit/CircuitAdministrationRequest;Lio/dataloom/api/circuit/CircuitAdministrationCommandStatus;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Lio/dataloom/api/circuit/CircuitBreakerStateRecord;Lio/dataloom/api/circuit/CircuitAdministrationFailureSnapshot;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitAdministrationRequest;
+	public final fun component2 ()Lio/dataloom/api/circuit/CircuitAdministrationCommandStatus;
+	public final fun component3-6yMdktY ()Ljava/lang/String;
+	public final fun component4 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Lio/dataloom/api/circuit/CircuitBreakerStateRecord;
+	public final fun component7 ()Lio/dataloom/api/circuit/CircuitAdministrationFailureSnapshot;
+	public final fun copy-ndtqrSA (Lio/dataloom/api/circuit/CircuitAdministrationRequest;Lio/dataloom/api/circuit/CircuitAdministrationCommandStatus;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Lio/dataloom/api/circuit/CircuitBreakerStateRecord;Lio/dataloom/api/circuit/CircuitAdministrationFailureSnapshot;)Lio/dataloom/api/circuit/CircuitAdministrationCommandState;
+	public static synthetic fun copy-ndtqrSA$default (Lio/dataloom/api/circuit/CircuitAdministrationCommandState;Lio/dataloom/api/circuit/CircuitAdministrationRequest;Lio/dataloom/api/circuit/CircuitAdministrationCommandStatus;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Lio/dataloom/api/circuit/CircuitBreakerStateRecord;Lio/dataloom/api/circuit/CircuitAdministrationFailureSnapshot;ILjava/lang/Object;)Lio/dataloom/api/circuit/CircuitAdministrationCommandState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAuthorizationId-6yMdktY ()Ljava/lang/String;
+	public final fun getExecutionFailure ()Lio/dataloom/api/circuit/CircuitAdministrationFailureSnapshot;
+	public final fun getRejectionReasonCode ()Ljava/lang/String;
+	public final fun getRequest ()Lio/dataloom/api/circuit/CircuitAdministrationRequest;
+	public final fun getResultingRecord ()Lio/dataloom/api/circuit/CircuitBreakerStateRecord;
+	public final fun getStatus ()Lio/dataloom/api/circuit/CircuitAdministrationCommandStatus;
+	public final fun getUpdatedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/circuit/CircuitAdministrationCommandStatus : java/lang/Enum {
+	public static final field AUTHORIZATION_DENIED Lio/dataloom/api/circuit/CircuitAdministrationCommandStatus;
+	public static final field AUTHORIZED Lio/dataloom/api/circuit/CircuitAdministrationCommandStatus;
+	public static final field EXECUTION_FAILED Lio/dataloom/api/circuit/CircuitAdministrationCommandStatus;
+	public static final field EXECUTION_REJECTED Lio/dataloom/api/circuit/CircuitAdministrationCommandStatus;
+	public static final field POLICY_REJECTED Lio/dataloom/api/circuit/CircuitAdministrationCommandStatus;
+	public static final field SUCCEEDED Lio/dataloom/api/circuit/CircuitAdministrationCommandStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/circuit/CircuitAdministrationCommandStatus;
+	public static fun values ()[Lio/dataloom/api/circuit/CircuitAdministrationCommandStatus;
+}
+
+public final class io/dataloom/api/circuit/CircuitAdministrationCompareAndSetRequest {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Long;Lio/dataloom/api/circuit/CircuitAdministrationCommandState;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-zayOCQc ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/Long;
+	public final fun component3 ()Lio/dataloom/api/circuit/CircuitAdministrationCommandState;
+	public final fun copy-pBnVA4A (Ljava/lang/String;Ljava/lang/Long;Lio/dataloom/api/circuit/CircuitAdministrationCommandState;)Lio/dataloom/api/circuit/CircuitAdministrationCompareAndSetRequest;
+	public static synthetic fun copy-pBnVA4A$default (Lio/dataloom/api/circuit/CircuitAdministrationCompareAndSetRequest;Ljava/lang/String;Ljava/lang/Long;Lio/dataloom/api/circuit/CircuitAdministrationCommandState;ILjava/lang/Object;)Lio/dataloom/api/circuit/CircuitAdministrationCompareAndSetRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCommandId-zayOCQc ()Ljava/lang/String;
+	public final fun getExpectedVersion ()Ljava/lang/Long;
+	public final fun getNextState ()Lio/dataloom/api/circuit/CircuitAdministrationCommandState;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/circuit/CircuitAdministrationCompareAndSetResult {
+}
+
+public final class io/dataloom/api/circuit/CircuitAdministrationCompareAndSetResult$Conflict : io/dataloom/api/circuit/CircuitAdministrationCompareAndSetResult {
+	public fun <init> (Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;)Lio/dataloom/api/circuit/CircuitAdministrationCompareAndSetResult$Conflict;
+	public static synthetic fun copy$default (Lio/dataloom/api/circuit/CircuitAdministrationCompareAndSetResult$Conflict;Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/api/circuit/CircuitAdministrationCompareAndSetResult$Conflict;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCurrent ()Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/circuit/CircuitAdministrationCompareAndSetResult$Updated : io/dataloom/api/circuit/CircuitAdministrationCompareAndSetResult {
+	public fun <init> (Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;)Lio/dataloom/api/circuit/CircuitAdministrationCompareAndSetResult$Updated;
+	public static synthetic fun copy$default (Lio/dataloom/api/circuit/CircuitAdministrationCompareAndSetResult$Updated;Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/api/circuit/CircuitAdministrationCompareAndSetResult$Updated;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/circuit/CircuitAdministrationExecutionResult {
+}
+
+public final class io/dataloom/api/circuit/CircuitAdministrationExecutionResult$Applied : io/dataloom/api/circuit/CircuitAdministrationExecutionResult {
+	public fun <init> (Lio/dataloom/api/circuit/CircuitBreakerStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitBreakerStateRecord;
+	public final fun copy (Lio/dataloom/api/circuit/CircuitBreakerStateRecord;)Lio/dataloom/api/circuit/CircuitAdministrationExecutionResult$Applied;
+	public static synthetic fun copy$default (Lio/dataloom/api/circuit/CircuitAdministrationExecutionResult$Applied;Lio/dataloom/api/circuit/CircuitBreakerStateRecord;ILjava/lang/Object;)Lio/dataloom/api/circuit/CircuitAdministrationExecutionResult$Applied;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/circuit/CircuitBreakerStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/circuit/CircuitAdministrationExecutionResult$Failed : io/dataloom/api/circuit/CircuitAdministrationExecutionResult {
+	public fun <init> (Lio/dataloom/api/circuit/CircuitAdministrationFailureSnapshot;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitAdministrationFailureSnapshot;
+	public final fun copy (Lio/dataloom/api/circuit/CircuitAdministrationFailureSnapshot;)Lio/dataloom/api/circuit/CircuitAdministrationExecutionResult$Failed;
+	public static synthetic fun copy$default (Lio/dataloom/api/circuit/CircuitAdministrationExecutionResult$Failed;Lio/dataloom/api/circuit/CircuitAdministrationFailureSnapshot;ILjava/lang/Object;)Lio/dataloom/api/circuit/CircuitAdministrationExecutionResult$Failed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFailure ()Lio/dataloom/api/circuit/CircuitAdministrationFailureSnapshot;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/circuit/CircuitAdministrationExecutionResult$Rejected : io/dataloom/api/circuit/CircuitAdministrationExecutionResult {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lio/dataloom/api/circuit/CircuitAdministrationExecutionResult$Rejected;
+	public static synthetic fun copy$default (Lio/dataloom/api/circuit/CircuitAdministrationExecutionResult$Rejected;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/circuit/CircuitAdministrationExecutionResult$Rejected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReasonCode ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/circuit/CircuitAdministrationExecutor {
+	public abstract fun execute (Lio/dataloom/api/circuit/AuthorizedCircuitAdministrationCommand;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/api/circuit/CircuitAdministrationFailureSnapshot {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/error/ErrorCategory;Lio/dataloom/api/error/ErrorSeverity;Lio/dataloom/api/error/Recoverability;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-7tkViRw ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/error/ErrorCategory;
+	public final fun component3 ()Lio/dataloom/api/error/ErrorSeverity;
+	public final fun component4 ()Lio/dataloom/api/error/Recoverability;
+	public final fun copy-CyM4FxY (Ljava/lang/String;Lio/dataloom/api/error/ErrorCategory;Lio/dataloom/api/error/ErrorSeverity;Lio/dataloom/api/error/Recoverability;)Lio/dataloom/api/circuit/CircuitAdministrationFailureSnapshot;
+	public static synthetic fun copy-CyM4FxY$default (Lio/dataloom/api/circuit/CircuitAdministrationFailureSnapshot;Ljava/lang/String;Lio/dataloom/api/error/ErrorCategory;Lio/dataloom/api/error/ErrorSeverity;Lio/dataloom/api/error/Recoverability;ILjava/lang/Object;)Lio/dataloom/api/circuit/CircuitAdministrationFailureSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCategory ()Lio/dataloom/api/error/ErrorCategory;
+	public final fun getCode-7tkViRw ()Ljava/lang/String;
+	public final fun getRecoverability ()Lio/dataloom/api/error/Recoverability;
+	public final fun getSeverity ()Lio/dataloom/api/error/ErrorSeverity;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/circuit/CircuitAdministrationLoadResult {
+}
+
+public final class io/dataloom/api/circuit/CircuitAdministrationLoadResult$Found : io/dataloom/api/circuit/CircuitAdministrationLoadResult {
+	public fun <init> (Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;)Lio/dataloom/api/circuit/CircuitAdministrationLoadResult$Found;
+	public static synthetic fun copy$default (Lio/dataloom/api/circuit/CircuitAdministrationLoadResult$Found;Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/api/circuit/CircuitAdministrationLoadResult$Found;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/circuit/CircuitAdministrationLoadResult$Missing : io/dataloom/api/circuit/CircuitAdministrationLoadResult {
+	public static final field INSTANCE Lio/dataloom/api/circuit/CircuitAdministrationLoadResult$Missing;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/circuit/CircuitAdministrationPrincipalId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/circuit/CircuitAdministrationPrincipalId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/circuit/CircuitAdministrationReason {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/circuit/CircuitAdministrationReason;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/circuit/CircuitAdministrationRequest {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/circuit/CircuitBreakerScope;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/circuit/CircuitAdministrationAction;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/circuit/CircuitBreakerScope;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/circuit/CircuitAdministrationAction;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-zayOCQc ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component3-3vrxMMM ()Ljava/lang/String;
+	public final fun component4 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component5 ()Lio/dataloom/api/circuit/CircuitAdministrationAction;
+	public final fun component6-jp4sEZo ()Ljava/lang/String;
+	public final fun component7 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy-4cEnjns (Ljava/lang/String;Lio/dataloom/api/circuit/CircuitBreakerScope;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/circuit/CircuitAdministrationAction;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/api/circuit/CircuitAdministrationRequest;
+	public static synthetic fun copy-4cEnjns$default (Lio/dataloom/api/circuit/CircuitAdministrationRequest;Ljava/lang/String;Lio/dataloom/api/circuit/CircuitBreakerScope;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/circuit/CircuitAdministrationAction;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/api/circuit/CircuitAdministrationRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAction ()Lio/dataloom/api/circuit/CircuitAdministrationAction;
+	public final fun getCommandId-zayOCQc ()Ljava/lang/String;
+	public final fun getOpenUntil ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getPrincipalId-3vrxMMM ()Ljava/lang/String;
+	public final fun getReason-jp4sEZo ()Ljava/lang/String;
+	public final fun getRequestedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getScope ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/circuit/CircuitAdministrationStateRecord {
+	public fun <init> (Lio/dataloom/api/circuit/CircuitAdministrationCommandState;J)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitAdministrationCommandState;
+	public final fun component2 ()J
+	public final fun copy (Lio/dataloom/api/circuit/CircuitAdministrationCommandState;J)Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;
+	public static synthetic fun copy$default (Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;Lio/dataloom/api/circuit/CircuitAdministrationCommandState;JILjava/lang/Object;)Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getState ()Lio/dataloom/api/circuit/CircuitAdministrationCommandState;
+	public final fun getVersion ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/circuit/CircuitAdministrationStateStore {
+	public abstract fun compareAndSet (Lio/dataloom/api/circuit/CircuitAdministrationCompareAndSetRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun load-MHPyJ0s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
 public final class io/dataloom/api/circuit/CircuitBreakerCompareAndSetRequest {
 	public fun <init> (Lio/dataloom/api/circuit/CircuitBreakerScope;Ljava/lang/Long;Lio/dataloom/api/circuit/CircuitBreakerState;)V
 	public final fun component1 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
@@ -2552,4 +2855,3 @@ public abstract interface class io/dataloom/api/transport/TransportProvider : io
 	public abstract fun pullChanges (Lio/dataloom/api/transport/PullChangesRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun pushChanges (Lio/dataloom/api/transport/PushChangesRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
-
