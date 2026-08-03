@@ -60,6 +60,23 @@ import io.dataloom.api.queue.QueueEnqueueRequest
 import io.dataloom.api.queue.QueueFailureRequest
 import io.dataloom.api.queue.QueueRescheduleRequest
 import io.dataloom.api.retry.RetryAttempt
+import io.dataloom.api.retry.AuthorizedRetryAdministrationCommand
+import io.dataloom.api.retry.RetryAdministrationAction
+import io.dataloom.api.retry.RetryAdministrationAuthorizationDecision
+import io.dataloom.api.retry.RetryAdministrationAuthorizationId
+import io.dataloom.api.retry.RetryAdministrationAuthorizer
+import io.dataloom.api.retry.RetryAdministrationCommandId
+import io.dataloom.api.retry.RetryAdministrationCompareAndSetRequest
+import io.dataloom.api.retry.RetryAdministrationCompareAndSetResult
+import io.dataloom.api.retry.RetryAdministrationExecutionResult
+import io.dataloom.api.retry.RetryAdministrationExecutor
+import io.dataloom.api.retry.RetryAdministrationLoadResult
+import io.dataloom.api.retry.RetryAdministrationPrincipalId
+import io.dataloom.api.retry.RetryAdministrationReason
+import io.dataloom.api.retry.RetryAdministrationRequest
+import io.dataloom.api.retry.RetryAdministrationStateRecord
+import io.dataloom.api.retry.RetryAdministrationStateStore
+import io.dataloom.api.retry.RetryFailureSnapshot
 import io.dataloom.api.retry.RetryDecision
 import io.dataloom.api.retry.RetryEvaluationRequest
 import io.dataloom.api.retry.RetryOperation
@@ -124,6 +141,7 @@ import io.dataloom.runtime.queue.QueuedSynchronizationWork
 import io.dataloom.runtime.queue.QueuedSynchronizationWorkResolution
 import io.dataloom.runtime.queue.QueuedSynchronizationWorkResolver
 import io.dataloom.runtime.queue.QueueProcessingRequest
+import io.dataloom.runtime.retry.RetryAdministrationResult
 import io.dataloom.runtime.worker.QueueWorkerConfiguration
 import io.dataloom.runtime.worker.QueueWorkerRunRequest
 import io.dataloom.runtime.worker.QueueWorkerRunResult
@@ -203,6 +221,79 @@ class DataLoomBuilderTest {
         override val message: String = "Classified remote failure.",
         override val cause: Throwable? = null,
     ) : ClassifiedStrategyRemoteError
+
+    private class RecordingRetryAdministrationAuthorizer : RetryAdministrationAuthorizer {
+        var callCount: Int = 0
+        var lastRequest: RetryAdministrationRequest? = null
+
+        override suspend fun authorize(
+            request: RetryAdministrationRequest,
+        ): RetryAdministrationAuthorizationDecision {
+            callCount++
+            lastRequest = request
+            return RetryAdministrationAuthorizationDecision.Authorized(
+                RetryAdministrationAuthorizationId("authorization-001"),
+            )
+        }
+    }
+
+    private class InMemoryRetryAdministrationStateStore : RetryAdministrationStateStore {
+        var loadCallCount: Int = 0
+        var compareAndSetCallCount: Int = 0
+        var record: RetryAdministrationStateRecord? = null
+
+        override suspend fun load(
+            commandId: RetryAdministrationCommandId,
+        ): ProviderOperationResult<RetryAdministrationLoadResult> {
+            loadCallCount++
+            val current = record
+            return ProviderOperationResult.Success(
+                if (current == null) {
+                    RetryAdministrationLoadResult.Missing
+                } else {
+                    RetryAdministrationLoadResult.Found(current)
+                },
+            )
+        }
+
+        override suspend fun compareAndSet(
+            request: RetryAdministrationCompareAndSetRequest,
+        ): ProviderOperationResult<RetryAdministrationCompareAndSetResult> {
+            compareAndSetCallCount++
+            val current = record
+            val versionMatches = if (request.expectedVersion == null) {
+                current == null
+            } else {
+                current?.version == request.expectedVersion
+            }
+            if (!versionMatches) {
+                return ProviderOperationResult.Success(
+                    RetryAdministrationCompareAndSetResult.Conflict(current),
+                )
+            }
+            val updated = RetryAdministrationStateRecord(
+                state = request.nextState,
+                version = (current?.version ?: -1L) + 1L,
+            )
+            record = updated
+            return ProviderOperationResult.Success(
+                RetryAdministrationCompareAndSetResult.Updated(updated),
+            )
+        }
+    }
+
+    private class RecordingRetryAdministrationExecutor : RetryAdministrationExecutor {
+        var callCount: Int = 0
+        var lastCommand: AuthorizedRetryAdministrationCommand? = null
+
+        override suspend fun execute(
+            command: AuthorizedRetryAdministrationCommand,
+        ): RetryAdministrationExecutionResult {
+            callCount++
+            lastCommand = command
+            return RetryAdministrationExecutionResult.Applied
+        }
+    }
 
     // =========================================================================
     // Fake providers
@@ -543,6 +634,22 @@ class DataLoomBuilderTest {
             context = ExecutionContext(
                 executionId = ExecutionId("exec-001"),
                 correlationId = CorrelationId("corr-001"),
+            ),
+        )
+
+    private fun makeRetryAdministrationRequest(): RetryAdministrationRequest =
+        RetryAdministrationRequest(
+            commandId = RetryAdministrationCommandId("retry-command-001"),
+            queueEntryId = QueueEntryId("queue-failed-001"),
+            principalId = RetryAdministrationPrincipalId("operator-001"),
+            requestedAt = DataLoomInstant(999_000L),
+            action = RetryAdministrationAction.REQUEUE,
+            reason = RetryAdministrationReason("Operator requested a bounded retry."),
+            originalFailure = RetryFailureSnapshot(
+                code = ErrorCode("NETWORK_FINAL"),
+                category = ErrorCategory.NETWORK,
+                severity = ErrorSeverity.ERROR,
+                recoverability = Recoverability.RECOVERABLE,
             ),
         )
 
@@ -1493,6 +1600,125 @@ class DataLoomBuilderTest {
 
         assertIs<QueueWorkerRunResult.ProcessingCompleted>(result)
         assertEquals(1, queue.acquireCallCount)
+    }
+
+    // =========================================================================
+    // Retry-administration operations builder integration
+    // =========================================================================
+
+    @Test
+    fun retryAdministration_isNullWhenNotConfigured() {
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(FakeStorageProvider(), FakeTransportProvider())
+            .defaultProviderBindings(makeBindings())
+            .build()
+
+        assertNull(dataLoom.retryAdministration)
+    }
+
+    @Test
+    fun retryAdministration_isNonNullWhenConfiguredWithoutInvokingCollaborators() {
+        val authorizer = RecordingRetryAdministrationAuthorizer()
+        val stateStore = InMemoryRetryAdministrationStateStore()
+        val executor = RecordingRetryAdministrationExecutor()
+
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(FakeStorageProvider(), FakeTransportProvider())
+            .defaultProviderBindings(makeBindings())
+            .retryAdministrationConfiguration(
+                DataLoomRetryAdministrationSpec(authorizer, stateStore, executor),
+            )
+            .build()
+
+        assertNotNull(dataLoom.retryAdministration)
+        assertEquals(0, authorizer.callCount)
+        assertEquals(0, stateStore.loadCallCount)
+        assertEquals(0, stateStore.compareAndSetCallCount)
+        assertEquals(0, executor.callCount)
+    }
+
+    @Test
+    fun retryAdministration_executesExactRequestAndReturnsCoordinatorResult() {
+        val authorizer = RecordingRetryAdministrationAuthorizer()
+        val stateStore = InMemoryRetryAdministrationStateStore()
+        val executor = RecordingRetryAdministrationExecutor()
+        val request = makeRetryAdministrationRequest()
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(FakeStorageProvider(), FakeTransportProvider())
+            .defaultProviderBindings(makeBindings())
+            .retryAdministrationConfiguration(
+                DataLoomRetryAdministrationSpec(authorizer, stateStore, executor),
+            )
+            .build()
+
+        val result = runSuspend {
+            checkNotNull(dataLoom.retryAdministration).execute(request)
+        }
+
+        val succeeded = assertIs<RetryAdministrationResult.Succeeded>(result)
+        assertSame(request, authorizer.lastRequest)
+        assertSame(request, executor.lastCommand?.request)
+        assertEquals(Recoverability.RECOVERABLE, executor.lastCommand?.effectiveRecoverability)
+        assertEquals("authorization-001", executor.lastCommand?.authorizationId?.value)
+        assertEquals(1L, succeeded.record.version)
+        assertEquals(1, authorizer.callCount)
+        assertEquals(1, executor.callCount)
+        assertEquals(2, stateStore.compareAndSetCallCount)
+    }
+
+    @Test
+    fun retryAdministration_replaysTerminalCommandWithoutReauthorizationOrMutation() {
+        val authorizer = RecordingRetryAdministrationAuthorizer()
+        val stateStore = InMemoryRetryAdministrationStateStore()
+        val executor = RecordingRetryAdministrationExecutor()
+        val request = makeRetryAdministrationRequest()
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(makeRuntimeDependencies())
+            .providers(FakeStorageProvider(), FakeTransportProvider())
+            .defaultProviderBindings(makeBindings())
+            .retryAdministrationConfiguration(
+                DataLoomRetryAdministrationSpec(authorizer, stateStore, executor),
+            )
+            .build()
+
+        val operations = checkNotNull(dataLoom.retryAdministration)
+        assertIs<RetryAdministrationResult.Succeeded>(runSuspend { operations.execute(request) })
+        assertIs<RetryAdministrationResult.Succeeded>(runSuspend { operations.execute(request) })
+
+        assertEquals(1, authorizer.callCount)
+        assertEquals(1, executor.callCount)
+        assertEquals(2, stateStore.compareAndSetCallCount)
+        assertEquals(2, stateStore.loadCallCount)
+    }
+
+    @Test
+    fun retryAdministrationSpec_rejectsUnboundedContentionAttempts() {
+        assertFailsWith<IllegalArgumentException> {
+            DataLoomRetryAdministrationSpec(
+                authorizer = RecordingRetryAdministrationAuthorizer(),
+                stateStore = InMemoryRetryAdministrationStateStore(),
+                executor = RecordingRetryAdministrationExecutor(),
+                maximumStateUpdateAttempts = 0,
+            )
+        }
+    }
+
+    @Test
+    fun retryAdministrationSpec_diagnosticsDoNotRenderCollaborators() {
+        val spec = DataLoomRetryAdministrationSpec(
+            authorizer = RecordingRetryAdministrationAuthorizer(),
+            stateStore = InMemoryRetryAdministrationStateStore(),
+            executor = RecordingRetryAdministrationExecutor(),
+            maximumStateUpdateAttempts = 3,
+        )
+
+        assertEquals(
+            "DataLoomRetryAdministrationSpec(maximumStateUpdateAttempts=3)",
+            spec.toString(),
+        )
     }
 
     // =========================================================================

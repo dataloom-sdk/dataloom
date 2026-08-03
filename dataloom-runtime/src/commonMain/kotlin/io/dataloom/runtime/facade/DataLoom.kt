@@ -147,6 +147,20 @@ public interface DataLoom {
     public val queueSubmission: DataLoomQueueSubmission?
 
     /**
+     * Optional authorized retry-administration operations capability.
+     *
+     * `null` unless [DataLoomBuilder.retryAdministrationConfiguration] was
+     * supplied. The capability does not expose the configured authorizer,
+     * durable state store, or platform queue executor. Access performs no I/O
+     * and does not initialize providers automatically.
+     *
+     * A default getter preserves source compatibility for custom pre-V1
+     * [DataLoom] implementations.
+     */
+    public val retryAdministration: DataLoomRetryAdministration?
+        get() = null
+
+    /**
      * Initializes all registered providers in registration order.
      *
      * Initializes the internal provider lifecycle coordinator and returns its

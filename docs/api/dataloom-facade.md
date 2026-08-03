@@ -25,6 +25,7 @@ flowchart TB
     Facade --> Submission[Optional queue submission]
     Facade --> Worker[Optional direct queue worker]
     Facade --> CircuitWorker[Optional circuit-aware queue worker]
+    Facade --> Administration[Optional retry administration]
     Execution --> Resolver[SynchronizationProviderResolver]
     Execution --> Registry[SynchronizationPipelineRegistry]
     Resolver --> Providers[Resolved providers]
@@ -55,6 +56,10 @@ complete merely by assembling their available components.
 - `DataLoomQueueWorker` — optional narrow direct queue-worker capability
 - `DataLoomCircuitQueueWorker` — optional circuit-aware queue-worker capability
 - `DataLoomCircuitQueueWorkerSpec` — explicit circuit-worker builder specification
+- `DataLoomRetryAdministration` — optional authorized retry-administration
+  operations capability
+- `DataLoomRetryAdministrationSpec` — explicit host-owned administration
+  collaborator specification
 - `DataLoomBuildException` — thrown when `DataLoomBuilder.build()` fails
   validation
 - `DataLoomQueueSubmission` _(DL-034)_ — optional narrow queue-submission
@@ -70,6 +75,7 @@ public interface DataLoom {
     public val queueWorker: DataLoomQueueWorker?
     public val circuitQueueWorker: DataLoomCircuitQueueWorker?
     public val queueSubmission: DataLoomQueueSubmission?
+    public val retryAdministration: DataLoomRetryAdministration?
     public suspend fun initialize(): ProviderLifecycleResult
     public suspend fun synchronize(request: SynchronizationRequest): SynchronizationExecutionResult
     public suspend fun synchronize(
@@ -110,6 +116,20 @@ a valid `QueueProvider` binding was absent. Non-null when a
 configured. Queue submission and queue worker are independently configurable.
 
 `QueueProvider` is not exposed through this property.
+
+### retryAdministration
+
+`null` unless `DataLoomBuilder.retryAdministrationConfiguration(...)` was
+supplied. Non-null when the application explicitly supplies an authorizer,
+durable command-state store, and idempotent queue executor through
+`DataLoomRetryAdministrationSpec`.
+
+The capability exposes only `execute(request)`. It does not expose the
+collaborators, authorize eagerly, read the clock, persist state, or mutate a
+queue during construction or property access. Execution returns the exact
+typed `RetryAdministrationResult` from the qualified coordinator.
+
+See [Retry administration](./retry-administration.md).
 
 ### initialize
 
@@ -195,6 +215,7 @@ share it across threads or call `build()` more than once.
 | `circuitQueueWorkerConfiguration(spec)` | Configures the circuit-aware queue worker and clears direct-worker configuration. |
 | `queueSubmissionEncoder(e)` | Configures direct queue submission with no provider timeout. |
 | `queueSubmissionConfiguration(spec)` | Configures queue submission with an optional enqueue timeout. |
+| `retryAdministrationConfiguration(spec)` | Configures authorized, durable, idempotent retry administration. |
 
 ### Build-time validation
 
@@ -362,6 +383,33 @@ submission API reference.
 
 ---
 
+## Retry-administration boundary
+
+`DataLoomRetryAdministration` is exposed through
+`DataLoom.retryAdministration` only when
+`DataLoomBuilder.retryAdministrationConfiguration` receives a
+`DataLoomRetryAdministrationSpec`.
+
+The specification requires:
+
+- `RetryAdministrationAuthorizer`, owned by the host identity/role boundary;
+- `RetryAdministrationStateStore`, providing durable compare-and-set command
+  state and immutable audit evidence;
+- `RetryAdministrationExecutor`, providing idempotent platform queue mutation;
+  and
+- a positive bounded compare-and-set attempt limit, defaulting to eight.
+
+The builder reuses the injected `RuntimeDependencies.clock`. It performs no
+authorization, persistence, queue mutation, clock read, identifier generation,
+or coroutine launch. The capability preserves command replay, conflict,
+authorization, policy, persistence, execution, and contention results without
+collapsing them.
+
+See [Retry administration](./retry-administration.md) for action policy,
+platform durability, replay behavior, and safety invariants.
+
+---
+
 ## Concurrency and cancellation
 
 - `initialize()` and `shutdown()` should be serialized by the caller.
@@ -388,6 +436,10 @@ submission API reference.
 
 No provider implementation state, payloads, credentials, tokens, or stack
 traces are included in diagnostic messages.
+
+`DataLoomRetryAdministrationSpec.toString()` renders only its bounded attempt
+count. It never renders authorizer, state-store, or executor implementation
+state.
 
 ---
 
@@ -435,6 +487,6 @@ dataLoom.shutdown()
 
 ## KMP compatibility
 
-All `DataLoom`, `DataLoomBuilder`, and `DataLoomQueueWorker` contracts are
-declared in `commonMain` and use no Android, JVM-only, or platform-specific
-APIs.
+All `DataLoom`, `DataLoomBuilder`, `DataLoomQueueWorker`, and
+`DataLoomRetryAdministration` contracts are declared in `commonMain` and use
+no Android, JVM-only, or platform-specific APIs.
