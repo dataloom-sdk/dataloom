@@ -84,7 +84,56 @@ public object DataLoomRoomMigrations {
         }
     }
 
+    /** Adds durable authorized circuit-administration command and result state. */
+    public val MIGRATION_5_6: Migration = object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS circuit_administration_states (
+                    command_id TEXT NOT NULL,
+                    scope_key TEXT NOT NULL,
+                    scope_kind TEXT NOT NULL,
+                    provider_id TEXT,
+                    operation TEXT,
+                    tenant_id TEXT,
+                    workflow_id TEXT,
+                    principal_id TEXT NOT NULL,
+                    requested_at_ms INTEGER NOT NULL,
+                    action TEXT NOT NULL,
+                    reason TEXT NOT NULL,
+                    requested_open_until_ms INTEGER,
+                    status TEXT NOT NULL,
+                    authorization_id TEXT,
+                    updated_at_ms INTEGER NOT NULL,
+                    rejection_reason_code TEXT,
+                    result_phase TEXT,
+                    result_consecutive_failures INTEGER,
+                    result_failure_window_started_at_ms INTEGER,
+                    result_open_until_ms INTEGER,
+                    result_probe_generation INTEGER,
+                    result_probe_in_flight INTEGER,
+                    result_probe_lease_until_ms INTEGER,
+                    result_updated_at_ms INTEGER,
+                    result_record_version INTEGER,
+                    execution_error_code TEXT,
+                    execution_error_category TEXT,
+                    execution_error_severity TEXT,
+                    execution_error_recoverability TEXT,
+                    record_version INTEGER NOT NULL,
+                    PRIMARY KEY(command_id)
+                )
+                """.trimIndent(),
+            )
+        }
+    }
+
     /** Complete ordered migration set used by [DataLoomDatabaseBuilder]. */
     public val ALL: Array<Migration>
-        get() = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+        get() = arrayOf(
+            MIGRATION_1_2,
+            MIGRATION_2_3,
+            MIGRATION_3_4,
+            MIGRATION_4_5,
+            MIGRATION_5_6,
+        )
 }

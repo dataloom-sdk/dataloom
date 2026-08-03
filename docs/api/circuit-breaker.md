@@ -4,9 +4,10 @@
 
 > **Status:** Partial V1 subsystem. Explicit scope, durable Android/Apple state,
 > deterministic closed/open/half-open transitions, controlled probe leases,
-> provider/queue/scheduler runtime assembly, and common authorized operations
-> contracts are implemented. Production operations persistence/execution,
-> complete observability, and end-to-end qualification remain.
+> provider/queue/scheduler runtime assembly, common authorized operations
+> contracts, and production Android operations persistence/execution are
+> implemented. Apple operations execution, complete observability, and
+> end-to-end qualification remain.
 
 ## Scope
 
@@ -94,7 +95,7 @@ remaining slice.
 
 ## Remaining V1 work
 
-- production Android/Apple circuit-administration stores and atomic executors;
+- production Apple circuit-administration store and atomic executor;
 - circuit-administration facade/operations assembly;
 - canonical circuit events, metrics, logs, and trace fields;
 - process-death, multi-process, and high-contention platform qualification; and

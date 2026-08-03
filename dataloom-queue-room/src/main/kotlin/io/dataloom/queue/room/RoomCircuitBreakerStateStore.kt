@@ -33,11 +33,11 @@ public class RoomCircuitBreakerStateStore(
     override suspend fun load(
         scope: CircuitBreakerScope,
     ): ProviderOperationResult<CircuitBreakerLoadResult> = protect {
-        val entity = dao.load(scopeKey(scope))
+        val entity = dao.load(circuitBreakerScopeKey(scope))
         if (entity == null) {
             CircuitBreakerLoadResult.Missing
         } else {
-            CircuitBreakerLoadResult.Found(entity.toRecord())
+            CircuitBreakerLoadResult.Found(entity.toCircuitBreakerRecord())
         }
     }
 
@@ -49,12 +49,14 @@ public class RoomCircuitBreakerStateStore(
         }
         return protect {
             val nextVersion = request.expectedVersion?.plus(1L) ?: 0L
-            val next = request.nextState.toEntity(nextVersion)
+            val next = request.nextState.toCircuitBreakerEntity(nextVersion)
             when (val result = dao.compareAndSet(request.expectedVersion, next)) {
                 is CircuitBreakerCompareAndSetEntityResult.Updated ->
-                    CircuitBreakerCompareAndSetResult.Updated(result.entity.toRecord())
+                    CircuitBreakerCompareAndSetResult.Updated(result.entity.toCircuitBreakerRecord())
                 is CircuitBreakerCompareAndSetEntityResult.Conflict ->
-                    CircuitBreakerCompareAndSetResult.Conflict(result.current?.toRecord())
+                    CircuitBreakerCompareAndSetResult.Conflict(
+                        result.current?.toCircuitBreakerRecord(),
+                    )
             }
         }
     }
@@ -70,9 +72,9 @@ public class RoomCircuitBreakerStateStore(
     }
 }
 
-private fun CircuitBreakerState.toEntity(version: Long): CircuitBreakerStateEntity =
+internal fun CircuitBreakerState.toCircuitBreakerEntity(version: Long): CircuitBreakerStateEntity =
     CircuitBreakerStateEntity(
-        scopeKey = scopeKey(scope),
+        scopeKey = circuitBreakerScopeKey(scope),
         scopeKind = scope.kind.name,
         providerId = scope.providerId?.value,
         operation = scope.operation?.value,
@@ -89,7 +91,7 @@ private fun CircuitBreakerState.toEntity(version: Long): CircuitBreakerStateEnti
         recordVersion = version,
     )
 
-private fun CircuitBreakerStateEntity.toRecord(): CircuitBreakerStateRecord = try {
+internal fun CircuitBreakerStateEntity.toCircuitBreakerRecord(): CircuitBreakerStateRecord = try {
     val kind = CircuitBreakerScopeKind.valueOf(scopeKind)
     val scope = CircuitBreakerScope(
         kind = kind,
@@ -98,7 +100,9 @@ private fun CircuitBreakerStateEntity.toRecord(): CircuitBreakerStateRecord = tr
         tenantId = tenantId?.let(::TenantId),
         workflowId = workflowId?.let(::WorkflowId),
     )
-    check(scopeKey(scope) == scopeKey) { "Persisted circuit scope key does not match its fields." }
+    check(circuitBreakerScopeKey(scope) == scopeKey) {
+        "Persisted circuit scope key does not match its fields."
+    }
     CircuitBreakerStateRecord(
         state = CircuitBreakerState(
             scope = scope,
@@ -119,7 +123,7 @@ private fun CircuitBreakerStateEntity.toRecord(): CircuitBreakerStateRecord = tr
     throw MalformedCircuitStateException(invalid)
 }
 
-private fun scopeKey(scope: CircuitBreakerScope): String = buildString {
+internal fun circuitBreakerScopeKey(scope: CircuitBreakerScope): String = buildString {
     append(scope.kind.name)
     appendPart(scope.providerId?.value)
     appendPart(scope.operation?.value)

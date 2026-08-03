@@ -1,0 +1,625 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 6,
+    "identityHash": "55b94bad54de59f5750399cb64f0974b",
+    "entities": [
+      {
+        "tableName": "queue_entries",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`entry_id` TEXT NOT NULL, `workflow_id` TEXT NOT NULL, `session_id` TEXT NOT NULL, `direction` TEXT NOT NULL, `mode` TEXT NOT NULL, `priority` TEXT NOT NULL, `exec_execution_id` TEXT NOT NULL, `exec_correlation_id` TEXT NOT NULL, `exec_trace_id` TEXT, `exec_request_id` TEXT, `exec_tenant_id` TEXT, `exec_user_id` TEXT, `exec_locale_tag` TEXT, `exec_runtime_version` TEXT, `exec_config_version` TEXT, `exec_metadata_json` TEXT, `state` TEXT NOT NULL, `enqueued_at_ms` INTEGER NOT NULL, `available_at_ms` INTEGER NOT NULL, `retry_attempt_number` INTEGER, `retry_window_started_at_ms` INTEGER, `retry_last_evaluated_at_ms` INTEGER, `retry_cumulative_delay_ms` INTEGER, `workflow_started_at_ms` INTEGER, `workflow_deadline_at_ms` INTEGER, `lease_id` TEXT, `lease_consumer_id` TEXT, `lease_acquired_at_ms` INTEGER, `lease_expires_at_ms` INTEGER, `last_error_code` TEXT, `last_error_category` TEXT, `last_error_severity` TEXT, `last_error_recoverability` TEXT, `last_error_message` TEXT, `entry_metadata_json` TEXT, PRIMARY KEY(`entry_id`))",
+        "fields": [
+          {
+            "fieldPath": "entryId",
+            "columnName": "entry_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "workflowId",
+            "columnName": "workflow_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sessionId",
+            "columnName": "session_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "direction",
+            "columnName": "direction",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mode",
+            "columnName": "mode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "priority",
+            "columnName": "priority",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "execExecutionId",
+            "columnName": "exec_execution_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "execCorrelationId",
+            "columnName": "exec_correlation_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "execTraceId",
+            "columnName": "exec_trace_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "execRequestId",
+            "columnName": "exec_request_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "execTenantId",
+            "columnName": "exec_tenant_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "execUserId",
+            "columnName": "exec_user_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "execLocaleTag",
+            "columnName": "exec_locale_tag",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "execRuntimeVersion",
+            "columnName": "exec_runtime_version",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "execConfigVersion",
+            "columnName": "exec_config_version",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "execMetadataJson",
+            "columnName": "exec_metadata_json",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "enqueuedAtMs",
+            "columnName": "enqueued_at_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "availableAtMs",
+            "columnName": "available_at_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "retryAttemptNumber",
+            "columnName": "retry_attempt_number",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "retryWindowStartedAtMs",
+            "columnName": "retry_window_started_at_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "retryLastEvaluatedAtMs",
+            "columnName": "retry_last_evaluated_at_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "retryCumulativeDelayMs",
+            "columnName": "retry_cumulative_delay_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "workflowStartedAtMs",
+            "columnName": "workflow_started_at_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "workflowDeadlineAtMs",
+            "columnName": "workflow_deadline_at_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "leaseId",
+            "columnName": "lease_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "leaseConsumerId",
+            "columnName": "lease_consumer_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "leaseAcquiredAtMs",
+            "columnName": "lease_acquired_at_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "leaseExpiresAtMs",
+            "columnName": "lease_expires_at_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "lastErrorCode",
+            "columnName": "last_error_code",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastErrorCategory",
+            "columnName": "last_error_category",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastErrorSeverity",
+            "columnName": "last_error_severity",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastErrorRecoverability",
+            "columnName": "last_error_recoverability",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastErrorMessage",
+            "columnName": "last_error_message",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "entryMetadataJson",
+            "columnName": "entry_metadata_json",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "entry_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "idx_state_available_at",
+            "unique": false,
+            "columnNames": [
+              "state",
+              "available_at_ms"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `idx_state_available_at` ON `${TABLE_NAME}` (`state`, `available_at_ms`)"
+          },
+          {
+            "name": "idx_state_lease_expires",
+            "unique": false,
+            "columnNames": [
+              "state",
+              "lease_expires_at_ms"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `idx_state_lease_expires` ON `${TABLE_NAME}` (`state`, `lease_expires_at_ms`)"
+          }
+        ]
+      },
+      {
+        "tableName": "circuit_breaker_states",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`scope_key` TEXT NOT NULL, `scope_kind` TEXT NOT NULL, `provider_id` TEXT, `operation` TEXT, `tenant_id` TEXT, `workflow_id` TEXT, `phase` TEXT NOT NULL, `consecutive_failures` INTEGER NOT NULL, `failure_window_started_at_ms` INTEGER, `open_until_ms` INTEGER, `probe_generation` INTEGER NOT NULL, `probe_in_flight` INTEGER NOT NULL, `probe_lease_until_ms` INTEGER, `updated_at_ms` INTEGER NOT NULL, `record_version` INTEGER NOT NULL, PRIMARY KEY(`scope_key`))",
+        "fields": [
+          {
+            "fieldPath": "scopeKey",
+            "columnName": "scope_key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scopeKind",
+            "columnName": "scope_kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "providerId",
+            "columnName": "provider_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "operation",
+            "columnName": "operation",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "tenantId",
+            "columnName": "tenant_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "workflowId",
+            "columnName": "workflow_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "phase",
+            "columnName": "phase",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "consecutiveFailures",
+            "columnName": "consecutive_failures",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "failureWindowStartedAtMs",
+            "columnName": "failure_window_started_at_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "openUntilMs",
+            "columnName": "open_until_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "probeGeneration",
+            "columnName": "probe_generation",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "probeInFlight",
+            "columnName": "probe_in_flight",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "probeLeaseUntilMs",
+            "columnName": "probe_lease_until_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "updatedAtMs",
+            "columnName": "updated_at_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recordVersion",
+            "columnName": "record_version",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "scope_key"
+          ]
+        }
+      },
+      {
+        "tableName": "retry_administration_states",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`command_id` TEXT NOT NULL, `queue_entry_id` TEXT NOT NULL, `principal_id` TEXT NOT NULL, `requested_at_ms` INTEGER NOT NULL, `action` TEXT NOT NULL, `reason` TEXT NOT NULL, `original_error_code` TEXT NOT NULL, `original_error_category` TEXT NOT NULL, `original_error_severity` TEXT NOT NULL, `original_error_recoverability` TEXT NOT NULL, `status` TEXT NOT NULL, `authorization_id` TEXT, `effective_recoverability` TEXT, `updated_at_ms` INTEGER NOT NULL, `rejection_reason_code` TEXT, `execution_error_code` TEXT, `execution_error_category` TEXT, `execution_error_severity` TEXT, `execution_error_recoverability` TEXT, `record_version` INTEGER NOT NULL, PRIMARY KEY(`command_id`))",
+        "fields": [
+          {
+            "fieldPath": "commandId",
+            "columnName": "command_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "queueEntryId",
+            "columnName": "queue_entry_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "principalId",
+            "columnName": "principal_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "requestedAtMs",
+            "columnName": "requested_at_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "action",
+            "columnName": "action",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reason",
+            "columnName": "reason",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "originalErrorCode",
+            "columnName": "original_error_code",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "originalErrorCategory",
+            "columnName": "original_error_category",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "originalErrorSeverity",
+            "columnName": "original_error_severity",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "originalErrorRecoverability",
+            "columnName": "original_error_recoverability",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "authorizationId",
+            "columnName": "authorization_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "effectiveRecoverability",
+            "columnName": "effective_recoverability",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updatedAtMs",
+            "columnName": "updated_at_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rejectionReasonCode",
+            "columnName": "rejection_reason_code",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "executionErrorCode",
+            "columnName": "execution_error_code",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "executionErrorCategory",
+            "columnName": "execution_error_category",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "executionErrorSeverity",
+            "columnName": "execution_error_severity",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "executionErrorRecoverability",
+            "columnName": "execution_error_recoverability",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "recordVersion",
+            "columnName": "record_version",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "command_id"
+          ]
+        }
+      },
+      {
+        "tableName": "circuit_administration_states",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`command_id` TEXT NOT NULL, `scope_key` TEXT NOT NULL, `scope_kind` TEXT NOT NULL, `provider_id` TEXT, `operation` TEXT, `tenant_id` TEXT, `workflow_id` TEXT, `principal_id` TEXT NOT NULL, `requested_at_ms` INTEGER NOT NULL, `action` TEXT NOT NULL, `reason` TEXT NOT NULL, `requested_open_until_ms` INTEGER, `status` TEXT NOT NULL, `authorization_id` TEXT, `updated_at_ms` INTEGER NOT NULL, `rejection_reason_code` TEXT, `result_phase` TEXT, `result_consecutive_failures` INTEGER, `result_failure_window_started_at_ms` INTEGER, `result_open_until_ms` INTEGER, `result_probe_generation` INTEGER, `result_probe_in_flight` INTEGER, `result_probe_lease_until_ms` INTEGER, `result_updated_at_ms` INTEGER, `result_record_version` INTEGER, `execution_error_code` TEXT, `execution_error_category` TEXT, `execution_error_severity` TEXT, `execution_error_recoverability` TEXT, `record_version` INTEGER NOT NULL, PRIMARY KEY(`command_id`))",
+        "fields": [
+          {
+            "fieldPath": "commandId",
+            "columnName": "command_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scopeKey",
+            "columnName": "scope_key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scopeKind",
+            "columnName": "scope_kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "providerId",
+            "columnName": "provider_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "operation",
+            "columnName": "operation",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "tenantId",
+            "columnName": "tenant_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "workflowId",
+            "columnName": "workflow_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "principalId",
+            "columnName": "principal_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "requestedAtMs",
+            "columnName": "requested_at_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "action",
+            "columnName": "action",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reason",
+            "columnName": "reason",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "requestedOpenUntilMs",
+            "columnName": "requested_open_until_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "authorizationId",
+            "columnName": "authorization_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updatedAtMs",
+            "columnName": "updated_at_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rejectionReasonCode",
+            "columnName": "rejection_reason_code",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "resultPhase",
+            "columnName": "result_phase",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "resultConsecutiveFailures",
+            "columnName": "result_consecutive_failures",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "resultFailureWindowStartedAtMs",
+            "columnName": "result_failure_window_started_at_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "resultOpenUntilMs",
+            "columnName": "result_open_until_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "resultProbeGeneration",
+            "columnName": "result_probe_generation",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "resultProbeInFlight",
+            "columnName": "result_probe_in_flight",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "resultProbeLeaseUntilMs",
+            "columnName": "result_probe_lease_until_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "resultUpdatedAtMs",
+            "columnName": "result_updated_at_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "resultRecordVersion",
+            "columnName": "result_record_version",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "executionErrorCode",
+            "columnName": "execution_error_code",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "executionErrorCategory",
+            "columnName": "execution_error_category",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "executionErrorSeverity",
+            "columnName": "execution_error_severity",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "executionErrorRecoverability",
+            "columnName": "execution_error_recoverability",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "recordVersion",
+            "columnName": "record_version",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "command_id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '55b94bad54de59f5750399cb64f0974b')"
+    ]
+  }
+}

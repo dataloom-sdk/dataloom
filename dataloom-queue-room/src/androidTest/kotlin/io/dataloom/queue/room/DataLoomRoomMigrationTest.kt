@@ -219,6 +219,63 @@ class DataLoomRoomMigrationTest {
         openCurrentDatabase(TEST_DATABASE_4_5)
     }
 
+    @Test
+    fun version5MigratesToVersion6WithoutLosingCircuitState() {
+        val version5 = migrationTestHelper.createDatabase(TEST_DATABASE_5_6, 5)
+        version5.execSQL(
+            """
+            INSERT INTO circuit_breaker_states (
+                scope_key, scope_kind, provider_id, operation, tenant_id, workflow_id,
+                phase, consecutive_failures, failure_window_started_at_ms, open_until_ms,
+                probe_generation, probe_in_flight, probe_lease_until_ms, updated_at_ms,
+                record_version
+            ) VALUES (
+                'GLOBAL|-|-|-|-', 'GLOBAL', NULL, NULL, NULL, NULL,
+                'OPEN', 0, NULL, 9000, 4, 0, NULL, 5000, 7
+            )
+            """.trimIndent(),
+        )
+        version5.close()
+
+        val migrated = migrationTestHelper.runMigrationsAndValidate(
+            TEST_DATABASE_5_6,
+            6,
+            true,
+            DataLoomRoomMigrations.MIGRATION_5_6,
+        )
+        val circuitCursor = migrated.query(
+            """
+            SELECT phase, open_until_ms, probe_generation, record_version
+            FROM circuit_breaker_states WHERE scope_key = 'GLOBAL|-|-|-|-'
+            """.trimIndent(),
+        )
+        val tableCursor = migrated.query(
+            """
+            SELECT name FROM sqlite_master
+            WHERE type = 'table' AND name = 'circuit_administration_states'
+            """.trimIndent(),
+        )
+        val countCursor = migrated.query("SELECT COUNT(*) FROM circuit_administration_states")
+        try {
+            assertTrue(circuitCursor.moveToFirst())
+            assertEquals("OPEN", circuitCursor.getString(0))
+            assertEquals(9_000L, circuitCursor.getLong(1))
+            assertEquals(4L, circuitCursor.getLong(2))
+            assertEquals(7L, circuitCursor.getLong(3))
+            assertTrue(tableCursor.moveToFirst())
+            assertEquals("circuit_administration_states", tableCursor.getString(0))
+            assertTrue(countCursor.moveToFirst())
+            assertEquals(0, countCursor.getInt(0))
+        } finally {
+            circuitCursor.close()
+            tableCursor.close()
+            countCursor.close()
+            migrated.close()
+        }
+
+        openCurrentDatabase(TEST_DATABASE_5_6)
+    }
+
     private fun openCurrentDatabase(name: String) {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val database = Room.databaseBuilder(
@@ -239,5 +296,6 @@ class DataLoomRoomMigrationTest {
         const val TEST_DATABASE_2_3 = "dataloom-room-migration-2-3-test"
         const val TEST_DATABASE_3_4 = "dataloom-room-migration-3-4-test"
         const val TEST_DATABASE_4_5 = "dataloom-room-migration-4-5-test"
+        const val TEST_DATABASE_5_6 = "dataloom-room-migration-5-6-test"
     }
 }

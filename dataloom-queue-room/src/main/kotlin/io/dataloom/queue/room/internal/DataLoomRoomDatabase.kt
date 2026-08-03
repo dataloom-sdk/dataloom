@@ -4,7 +4,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 
 /**
- * Room database for DataLoom durable queue, circuit-breaker, and retry-administration persistence.
+ * Room database for DataLoom durable queue, circuit-breaker, and administration persistence.
  *
  * The database type is public because host applications may explicitly own its
  * lifecycle and pass it to DataLoom Room-backed providers. DAOs remain internal
@@ -15,8 +15,9 @@ import androidx.room.RoomDatabase
         QueueEntryEntity::class,
         CircuitBreakerStateEntity::class,
         RetryAdministrationStateEntity::class,
+        CircuitAdministrationStateEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 public abstract class DataLoomRoomDatabase : RoomDatabase() {
@@ -24,4 +25,6 @@ public abstract class DataLoomRoomDatabase : RoomDatabase() {
     internal abstract fun circuitBreakerStateDao(): CircuitBreakerStateDao
     internal abstract fun retryAdministrationStateDao(): RetryAdministrationStateDao
     internal abstract fun retryAdministrationExecutionDao(): RetryAdministrationExecutionDao
+    internal abstract fun circuitAdministrationStateDao(): CircuitAdministrationStateDao
+    internal abstract fun circuitAdministrationExecutionDao(): CircuitAdministrationExecutionDao
 }

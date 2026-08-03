@@ -1,8 +1,8 @@
-# Room queue and circuit persistence
+# Room queue, circuit, and administration persistence
 
 > **Audience:** Android developers and maintainers of durable queue and circuit behavior  
-> **Purpose:** Explain the Room-backed `QueueProvider` and
-> `CircuitBreakerStateStore`, their migrations, atomicity, and durability limits  
+> **Purpose:** Explain the Room-backed queue, circuit, and administration
+> adapters, their migrations, atomicity, and durability limits
 > **Status:** Implemented Android persistence foundation; not a general
 > `StorageProvider` or complete cross-platform V1 persistence layer
 
@@ -10,12 +10,16 @@
 [Worker integration](worker-integration.md) ·
 [Security and R8](security-and-r8.md)
 
-The `dataloom-queue-room` module contains two independent adapters over one
+The `dataloom-queue-room` module contains production adapters over one
 application-owned AndroidX Room database:
 
 - `RoomQueueProvider` implements the shared `QueueProvider` contract.
 - `RoomCircuitBreakerStateStore` implements the shared
   `CircuitBreakerStateStore` contract.
+- `RoomRetryAdministrationStateStore` and `RoomRetryAdministrationExecutor`
+  persist and atomically execute authorized manual retries.
+- `RoomCircuitAdministrationStateStore` and `RoomCircuitAdministrationExecutor`
+  persist and atomically execute authorized circuit operations.
 
 ## Module and setup
 
@@ -27,6 +31,8 @@ implementation(project(":dataloom-queue-room"))
 val database = DataLoomDatabaseBuilder.build(context)
 val queueProvider = RoomQueueProvider(database)
 val circuitStateStore = RoomCircuitBreakerStateStore(database)
+val circuitAdministrationStore = RoomCircuitAdministrationStateStore(database)
+val circuitAdministrationExecutor = RoomCircuitAdministrationExecutor(database, clock)
 ```
 
 Hold the database as an application-process singleton. Neither adapter owns or
@@ -37,10 +43,10 @@ closes the database lifecycle. Published V1 coordinates are not available yet.
 | Property | Current value |
 |---|---|
 | Default database name | `dataloom-queue.db` |
-| Schema version | `3` |
+| Schema version | `6` |
 | Schema export | Enabled |
-| Committed schema | `dataloom-queue-room/schemas/io.dataloom.queue.room.internal.DataLoomRoomDatabase/3.json` |
-| Tables | `queue_entries`, `circuit_breaker_states` |
+| Committed schema | `dataloom-queue-room/schemas/io.dataloom.queue.room.internal.DataLoomRoomDatabase/6.json` |
+| Tables | `queue_entries`, `circuit_breaker_states`, `retry_administration_states`, `circuit_administration_states` |
 
 Persisted enum-like values use stable names, never ordinals. Changing a
 persisted name is therefore a compatibility change.
@@ -128,6 +134,20 @@ implicit scope inheritance or fallback in the database layer.
 The store never overwrites a newer record. Version exhaustion fails closed as a
 non-recoverable state error.
 
+## Circuit-administration persistence and execution
+
+`RoomCircuitAdministrationStateStore` persists exact immutable request input,
+authorization, bounded terminal evidence, and the resulting circuit-state
+record through command-scoped compare-and-set. Reuse of a command identifier
+with different immutable input returns the current record as a conflict.
+
+`RoomCircuitAdministrationExecutor` uses one Room transaction to validate the
+durable command and authorization, load the exact circuit scope, apply the
+requested transition, and advance the command to `SUCCEEDED` with the resulting
+circuit version. A repeated command replays that receipt without changing the
+circuit again. Manual transitions preserve monotonic probe generations; reset
+clears operational failure-window state but cannot revive a stale probe permit.
+
 ### Integrity validation
 
 Every loaded row is reconstructed through the public circuit scope and state
@@ -156,9 +176,15 @@ budget fields remain null because version 1 did not record that evidence.
 rewrite or delete `queue_entries`; existing attempts, availability, leases,
 errors, metadata, and retry-budget evidence remain unchanged.
 
-Instrumented migration tests validate version 1 to 2 and version 2 to 3,
-preserve representative queue rows, verify the new circuit table, and reopen the
-current database through the production migration set.
+`MIGRATION_3_4` adds nullable immutable workflow start/deadline evidence.
+`MIGRATION_4_5` adds durable retry-administration command state.
+`MIGRATION_5_6` adds durable circuit-administration command, authorization,
+result, and redacted failure evidence without rewriting queue, circuit, or retry
+administration rows.
+
+Instrumented migration tests validate every adjacent migration through version
+6, preserve representative queue and circuit rows, verify each new table, and
+reopen the current database through the production migration set.
 
 SDK maintainers must add and test an explicit migration whenever the schema
 changes and keep committed JSON schemas synchronized with generated output. The
@@ -192,10 +218,16 @@ implemented and qualified. See [Security and R8](security-and-r8.md#data-at-rest
 | `CIRCUIT_ROOM_DATABASE_FAILURE` | An unexpected circuit database operation failed |
 | `CIRCUIT_ROOM_STATE_CORRUPT` | A durable circuit row failed invariant validation |
 | `CIRCUIT_STATE_VERSION_EXHAUSTED` | The compare-and-set record version cannot advance |
+| `CIRCUIT_ADMIN_ROOM_DATABASE_FAILURE` | A circuit-administration command-store operation failed |
+| `CIRCUIT_ADMIN_ROOM_STATE_CORRUPT` | Circuit-administration audit state failed validation |
+| `CIRCUIT_ADMIN_ROOM_EXECUTOR_DATABASE_FAILURE` | Atomic circuit administration failed in Room |
+| `CIRCUIT_ADMIN_ROOM_EXECUTOR_STATE_CORRUPT` | Command or circuit state failed executor validation |
+| `CIRCUIT_ADMIN_STATE_VERSION_EXHAUSTED` | A command or circuit version cannot advance safely |
+| `CIRCUIT_ADMIN_EXECUTION_CLOCK_REGRESSION` | Execution time regressed behind durable evidence |
 
-This module supplies Android queue and circuit durability only. It does not
-implement application domain storage, KMP iOS persistence, strategy selection,
-retry policy, scheduling, or synchronization execution.
+This module supplies Android queue, circuit, and administration durability. It
+does not implement application domain storage, KMP iOS persistence, strategy
+selection, retry policy, scheduling, or synchronization execution.
 
 ## Related documentation
 
