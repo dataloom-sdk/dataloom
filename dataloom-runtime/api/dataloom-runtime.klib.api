@@ -82,6 +82,122 @@ final enum class io.dataloom.runtime.observation/SynchronizationObserverDispatch
     final fun values(): kotlin/Array<io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason> // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.runtime.observation.retry/RetryCircuitExporterFailureReason : kotlin/Enum<io.dataloom.runtime.observation.retry/RetryCircuitExporterFailureReason> { // io.dataloom.runtime.observation.retry/RetryCircuitExporterFailureReason|null[0]
+    enum entry EXCEPTION // io.dataloom.runtime.observation.retry/RetryCircuitExporterFailureReason.EXCEPTION|null[0]
+    enum entry TIMEOUT // io.dataloom.runtime.observation.retry/RetryCircuitExporterFailureReason.TIMEOUT|null[0]
+
+    final val entries // io.dataloom.runtime.observation.retry/RetryCircuitExporterFailureReason.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.observation.retry/RetryCircuitExporterFailureReason> // io.dataloom.runtime.observation.retry/RetryCircuitExporterFailureReason.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.observation.retry/RetryCircuitExporterFailureReason // io.dataloom.runtime.observation.retry/RetryCircuitExporterFailureReason.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.observation.retry/RetryCircuitExporterFailureReason> // io.dataloom.runtime.observation.retry/RetryCircuitExporterFailureReason.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.runtime.observation.retry/RetryCircuitExporterHealth : kotlin/Enum<io.dataloom.runtime.observation.retry/RetryCircuitExporterHealth> { // io.dataloom.runtime.observation.retry/RetryCircuitExporterHealth|null[0]
+    enum entry DEGRADED // io.dataloom.runtime.observation.retry/RetryCircuitExporterHealth.DEGRADED|null[0]
+    enum entry HEALTHY // io.dataloom.runtime.observation.retry/RetryCircuitExporterHealth.HEALTHY|null[0]
+    enum entry STOPPED // io.dataloom.runtime.observation.retry/RetryCircuitExporterHealth.STOPPED|null[0]
+
+    final val entries // io.dataloom.runtime.observation.retry/RetryCircuitExporterHealth.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.observation.retry/RetryCircuitExporterHealth> // io.dataloom.runtime.observation.retry/RetryCircuitExporterHealth.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.observation.retry/RetryCircuitExporterHealth // io.dataloom.runtime.observation.retry/RetryCircuitExporterHealth.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.observation.retry/RetryCircuitExporterHealth> // io.dataloom.runtime.observation.retry/RetryCircuitExporterHealth.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.runtime.observation.retry/RetryCircuitLogSeverity : kotlin/Enum<io.dataloom.runtime.observation.retry/RetryCircuitLogSeverity> { // io.dataloom.runtime.observation.retry/RetryCircuitLogSeverity|null[0]
+    enum entry ERROR // io.dataloom.runtime.observation.retry/RetryCircuitLogSeverity.ERROR|null[0]
+    enum entry INFO // io.dataloom.runtime.observation.retry/RetryCircuitLogSeverity.INFO|null[0]
+    enum entry WARNING // io.dataloom.runtime.observation.retry/RetryCircuitLogSeverity.WARNING|null[0]
+
+    final val entries // io.dataloom.runtime.observation.retry/RetryCircuitLogSeverity.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.observation.retry/RetryCircuitLogSeverity> // io.dataloom.runtime.observation.retry/RetryCircuitLogSeverity.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.observation.retry/RetryCircuitLogSeverity // io.dataloom.runtime.observation.retry/RetryCircuitLogSeverity.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.observation.retry/RetryCircuitLogSeverity> // io.dataloom.runtime.observation.retry/RetryCircuitLogSeverity.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail : kotlin/Enum<io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail> { // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail|null[0]
+    enum entry OPEN // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail.OPEN|null[0]
+    enum entry PERMISSION_CLOCK_REGRESSION // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail.PERMISSION_CLOCK_REGRESSION|null[0]
+    enum entry PROBE_GENERATION_EXHAUSTED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail.PROBE_GENERATION_EXHAUSTED|null[0]
+    enum entry PROBE_IN_FLIGHT // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail.PROBE_IN_FLIGHT|null[0]
+    enum entry PROBE_LEASE_DEADLINE_EXHAUSTED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail.PROBE_LEASE_DEADLINE_EXHAUSTED|null[0]
+    enum entry PROBE_LEASE_EXPIRED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail.PROBE_LEASE_EXPIRED|null[0]
+    enum entry STALE_PROBE // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail.STALE_PROBE|null[0]
+    enum entry STATE_CLOCK_REGRESSION // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail.STATE_CLOCK_REGRESSION|null[0]
+    enum entry STATE_CONTENTION // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail.STATE_CONTENTION|null[0]
+    enum entry STATE_IGNORED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail.STATE_IGNORED|null[0]
+    enum entry STATE_PERSISTENCE_FAILED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail.STATE_PERSISTENCE_FAILED|null[0]
+    enum entry STATE_RECORDED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail.STATE_RECORDED|null[0]
+
+    final val entries // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail> // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail> // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome : kotlin/Enum<io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome> { // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome|null[0]
+    enum entry CIRCUIT_FAILURE // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome.CIRCUIT_FAILURE|null[0]
+    enum entry NON_CIRCUIT_FAILURE // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome.NON_CIRCUIT_FAILURE|null[0]
+    enum entry SUCCEEDED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome.SUCCEEDED|null[0]
+
+    final val entries // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome> // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome> // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOverflowPolicy : kotlin/Enum<io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOverflowPolicy> { // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOverflowPolicy|null[0]
+    enum entry DROP_LATEST // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOverflowPolicy.DROP_LATEST|null[0]
+
+    final val entries // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOverflowPolicy.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOverflowPolicy> // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOverflowPolicy.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOverflowPolicy // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOverflowPolicy.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOverflowPolicy> // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOverflowPolicy.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal : kotlin/Enum<io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal> { // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal|null[0]
+    enum entry CIRCUIT_ADMINISTRATION_AUTHORIZATION_DENIED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CIRCUIT_ADMINISTRATION_AUTHORIZATION_DENIED|null[0]
+    enum entry CIRCUIT_ADMINISTRATION_CLOCK_REGRESSION // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CIRCUIT_ADMINISTRATION_CLOCK_REGRESSION|null[0]
+    enum entry CIRCUIT_ADMINISTRATION_COMMAND_CONFLICT // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CIRCUIT_ADMINISTRATION_COMMAND_CONFLICT|null[0]
+    enum entry CIRCUIT_ADMINISTRATION_CONTENTION // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CIRCUIT_ADMINISTRATION_CONTENTION|null[0]
+    enum entry CIRCUIT_ADMINISTRATION_EXECUTION_FAILED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CIRCUIT_ADMINISTRATION_EXECUTION_FAILED|null[0]
+    enum entry CIRCUIT_ADMINISTRATION_EXECUTION_REJECTED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CIRCUIT_ADMINISTRATION_EXECUTION_REJECTED|null[0]
+    enum entry CIRCUIT_ADMINISTRATION_PERSISTENCE_FAILED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CIRCUIT_ADMINISTRATION_PERSISTENCE_FAILED|null[0]
+    enum entry CIRCUIT_ADMINISTRATION_POLICY_REJECTED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CIRCUIT_ADMINISTRATION_POLICY_REJECTED|null[0]
+    enum entry CIRCUIT_ADMINISTRATION_RECORDING_UNCONFIRMED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CIRCUIT_ADMINISTRATION_RECORDING_UNCONFIRMED|null[0]
+    enum entry CIRCUIT_ADMINISTRATION_SUCCEEDED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CIRCUIT_ADMINISTRATION_SUCCEEDED|null[0]
+    enum entry CIRCUIT_EXECUTED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CIRCUIT_EXECUTED|null[0]
+    enum entry CIRCUIT_PERMISSION_CONTENTION // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CIRCUIT_PERMISSION_CONTENTION|null[0]
+    enum entry CIRCUIT_PERMISSION_PERSISTENCE_FAILED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CIRCUIT_PERMISSION_PERSISTENCE_FAILED|null[0]
+    enum entry CIRCUIT_REJECTED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CIRCUIT_REJECTED|null[0]
+    enum entry RETRY_ADMINISTRATION_AUTHORIZATION_DENIED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.RETRY_ADMINISTRATION_AUTHORIZATION_DENIED|null[0]
+    enum entry RETRY_ADMINISTRATION_CLOCK_REGRESSION // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.RETRY_ADMINISTRATION_CLOCK_REGRESSION|null[0]
+    enum entry RETRY_ADMINISTRATION_COMMAND_CONFLICT // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.RETRY_ADMINISTRATION_COMMAND_CONFLICT|null[0]
+    enum entry RETRY_ADMINISTRATION_CONTENTION // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.RETRY_ADMINISTRATION_CONTENTION|null[0]
+    enum entry RETRY_ADMINISTRATION_EXECUTION_FAILED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.RETRY_ADMINISTRATION_EXECUTION_FAILED|null[0]
+    enum entry RETRY_ADMINISTRATION_EXECUTION_REJECTED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.RETRY_ADMINISTRATION_EXECUTION_REJECTED|null[0]
+    enum entry RETRY_ADMINISTRATION_PERSISTENCE_FAILED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.RETRY_ADMINISTRATION_PERSISTENCE_FAILED|null[0]
+    enum entry RETRY_ADMINISTRATION_POLICY_REJECTED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.RETRY_ADMINISTRATION_POLICY_REJECTED|null[0]
+    enum entry RETRY_ADMINISTRATION_RECORDING_UNCONFIRMED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.RETRY_ADMINISTRATION_RECORDING_UNCONFIRMED|null[0]
+    enum entry RETRY_ADMINISTRATION_SUCCEEDED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.RETRY_ADMINISTRATION_SUCCEEDED|null[0]
+    enum entry RETRY_NOT_REQUIRED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.RETRY_NOT_REQUIRED|null[0]
+    enum entry RETRY_SCHEDULED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.RETRY_SCHEDULED|null[0]
+    enum entry RETRY_SCHEDULER_FAILED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.RETRY_SCHEDULER_FAILED|null[0]
+    enum entry RETRY_SCHEDULER_NOT_CONFIGURED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.RETRY_SCHEDULER_NOT_CONFIGURED|null[0]
+    enum entry RETRY_STOPPED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.RETRY_STOPPED|null[0]
+
+    final val entries // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal> // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal> // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.runtime.queue/QueueCircuitProviderFailureDisposition : kotlin/Enum<io.dataloom.runtime.queue/QueueCircuitProviderFailureDisposition> { // io.dataloom.runtime.queue/QueueCircuitProviderFailureDisposition|null[0]
     enum entry CIRCUIT_FAILURE // io.dataloom.runtime.queue/QueueCircuitProviderFailureDisposition.CIRCUIT_FAILURE|null[0]
     enum entry NON_CIRCUIT_FAILURE // io.dataloom.runtime.queue/QueueCircuitProviderFailureDisposition.NON_CIRCUIT_FAILURE|null[0]
@@ -377,6 +493,21 @@ abstract interface io.dataloom.runtime.facade/DataLoomQueueWorker { // io.datalo
 
 abstract interface io.dataloom.runtime.facade/DataLoomRetryAdministration { // io.dataloom.runtime.facade/DataLoomRetryAdministration|null[0]
     abstract suspend fun execute(io.dataloom.api.retry/RetryAdministrationRequest): io.dataloom.runtime.retry/RetryAdministrationResult // io.dataloom.runtime.facade/DataLoomRetryAdministration.execute|execute(io.dataloom.api.retry.RetryAdministrationRequest){}[0]
+}
+
+abstract interface io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogSink { // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogSink|null[0]
+    abstract suspend fun write(io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord) // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogSink.write|write(io.dataloom.runtime.observation.retry.RetryCircuitStructuredLogRecord){}[0]
+}
+
+abstract interface io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporter { // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporter|null[0]
+    abstract val id // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporter.id|{}id[0]
+        abstract fun <get-id>(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporterId // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporter.id.<get-id>|<get-id>(){}[0]
+
+    abstract suspend fun export(io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent) // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporter.export|export(io.dataloom.runtime.observation.retry.RetryCircuitTelemetryEvent){}[0]
+}
+
+abstract interface io.dataloom.runtime.observation.retry/RetryCircuitTraceSink { // io.dataloom.runtime.observation.retry/RetryCircuitTraceSink|null[0]
+    abstract suspend fun record(io.dataloom.runtime.observation.retry/RetryCircuitTraceSignal) // io.dataloom.runtime.observation.retry/RetryCircuitTraceSink.record|record(io.dataloom.runtime.observation.retry.RetryCircuitTraceSignal){}[0]
 }
 
 abstract interface io.dataloom.runtime.retry/RetryTimeoutExecutor { // io.dataloom.runtime.retry/RetryTimeoutExecutor|null[0]
@@ -2779,6 +2910,242 @@ final class io.dataloom.runtime.observation/SynchronizationObserverRegistry { //
     final fun toString(): kotlin/String // io.dataloom.runtime.observation/SynchronizationObserverRegistry.toString|toString(){}[0]
 }
 
+final class io.dataloom.runtime.observation.retry/BoundedRetryCircuitTelemetry { // io.dataloom.runtime.observation.retry/BoundedRetryCircuitTelemetry|null[0]
+    constructor <init>(kotlin.coroutines/CoroutineContext, io.dataloom.runtime.observation.retry/RetryCircuitTelemetryConfiguration, kotlin.collections/List<io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporter>) // io.dataloom.runtime.observation.retry/BoundedRetryCircuitTelemetry.<init>|<init>(kotlin.coroutines.CoroutineContext;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryConfiguration;kotlin.collections.List<io.dataloom.runtime.observation.retry.RetryCircuitTelemetryExporter>){}[0]
+
+    final fun close() // io.dataloom.runtime.observation.retry/BoundedRetryCircuitTelemetry.close|close(){}[0]
+    final suspend fun join() // io.dataloom.runtime.observation.retry/BoundedRetryCircuitTelemetry.join|join(){}[0]
+    final fun record(io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryRecordResult // io.dataloom.runtime.observation.retry/BoundedRetryCircuitTelemetry.record|record(io.dataloom.runtime.observation.retry.RetryCircuitTelemetryEvent){}[0]
+    final fun snapshot(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySnapshot // io.dataloom.runtime.observation.retry/BoundedRetryCircuitTelemetry.snapshot|snapshot(){}[0]
+}
+
+final class io.dataloom.runtime.observation.retry/ObservedCircuitAdministrationCoordinator { // io.dataloom.runtime.observation.retry/ObservedCircuitAdministrationCoordinator|null[0]
+    constructor <init>(io.dataloom.runtime.retry/CircuitAdministrationCoordinator, io.dataloom.api.time/DataLoomClock, io.dataloom.runtime.observation.retry/BoundedRetryCircuitTelemetry) // io.dataloom.runtime.observation.retry/ObservedCircuitAdministrationCoordinator.<init>|<init>(io.dataloom.runtime.retry.CircuitAdministrationCoordinator;io.dataloom.api.time.DataLoomClock;io.dataloom.runtime.observation.retry.BoundedRetryCircuitTelemetry){}[0]
+
+    final suspend fun execute(io.dataloom.api.circuit/CircuitAdministrationRequest): io.dataloom.runtime.retry/CircuitAdministrationResult // io.dataloom.runtime.observation.retry/ObservedCircuitAdministrationCoordinator.execute|execute(io.dataloom.api.circuit.CircuitAdministrationRequest){}[0]
+}
+
+final class io.dataloom.runtime.observation.retry/ObservedCircuitBreakerExecutionGate { // io.dataloom.runtime.observation.retry/ObservedCircuitBreakerExecutionGate|null[0]
+    constructor <init>(io.dataloom.runtime.retry/CircuitBreakerExecutionGate, io.dataloom.api.time/DataLoomClock, io.dataloom.runtime.observation.retry/BoundedRetryCircuitTelemetry) // io.dataloom.runtime.observation.retry/ObservedCircuitBreakerExecutionGate.<init>|<init>(io.dataloom.runtime.retry.CircuitBreakerExecutionGate;io.dataloom.api.time.DataLoomClock;io.dataloom.runtime.observation.retry.BoundedRetryCircuitTelemetry){}[0]
+
+    final suspend fun <#A1: kotlin/Any?> execute(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.runtime.observation.retry/RetryCircuitTelemetryContext = ..., kotlin.coroutines/SuspendFunction0<io.dataloom.runtime.retry/CircuitProtectedOperationResult<#A1>>): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<#A1> // io.dataloom.runtime.observation.retry/ObservedCircuitBreakerExecutionGate.execute|execute(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryContext;kotlin.coroutines.SuspendFunction0<io.dataloom.runtime.retry.CircuitProtectedOperationResult<0:0>>){0§<kotlin.Any?>}[0]
+}
+
+final class io.dataloom.runtime.observation.retry/ObservedRetryAdministrationCoordinator { // io.dataloom.runtime.observation.retry/ObservedRetryAdministrationCoordinator|null[0]
+    constructor <init>(io.dataloom.runtime.retry/RetryAdministrationCoordinator, io.dataloom.api.time/DataLoomClock, io.dataloom.runtime.observation.retry/BoundedRetryCircuitTelemetry) // io.dataloom.runtime.observation.retry/ObservedRetryAdministrationCoordinator.<init>|<init>(io.dataloom.runtime.retry.RetryAdministrationCoordinator;io.dataloom.api.time.DataLoomClock;io.dataloom.runtime.observation.retry.BoundedRetryCircuitTelemetry){}[0]
+
+    final suspend fun execute(io.dataloom.api.retry/RetryAdministrationRequest): io.dataloom.runtime.retry/RetryAdministrationResult // io.dataloom.runtime.observation.retry/ObservedRetryAdministrationCoordinator.execute|execute(io.dataloom.api.retry.RetryAdministrationRequest){}[0]
+}
+
+final class io.dataloom.runtime.observation.retry/ObservedSynchronizationRetryOrchestrator { // io.dataloom.runtime.observation.retry/ObservedSynchronizationRetryOrchestrator|null[0]
+    constructor <init>(io.dataloom.runtime.retry/SynchronizationRetryOrchestrator, io.dataloom.api.time/DataLoomClock, io.dataloom.runtime.observation.retry/BoundedRetryCircuitTelemetry) // io.dataloom.runtime.observation.retry/ObservedSynchronizationRetryOrchestrator.<init>|<init>(io.dataloom.runtime.retry.SynchronizationRetryOrchestrator;io.dataloom.api.time.DataLoomClock;io.dataloom.runtime.observation.retry.BoundedRetryCircuitTelemetry){}[0]
+
+    final suspend fun evaluateAndSchedule(io.dataloom.runtime.retry/SynchronizationRetryRequest): io.dataloom.runtime.retry/RetryOrchestrationResult // io.dataloom.runtime.observation.retry/ObservedSynchronizationRetryOrchestrator.evaluateAndSchedule|evaluateAndSchedule(io.dataloom.runtime.retry.SynchronizationRetryRequest){}[0]
+}
+
+final class io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot { // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot|null[0]
+    constructor <init>(io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporterId, io.dataloom.runtime.observation.retry/RetryCircuitExporterHealth, kotlin/Long, kotlin/Long, kotlin/Long, kotlin/Long, kotlin/Long, io.dataloom.runtime.observation.retry/RetryCircuitExporterFailureReason?) // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.<init>|<init>(io.dataloom.runtime.observation.retry.RetryCircuitTelemetryExporterId;io.dataloom.runtime.observation.retry.RetryCircuitExporterHealth;kotlin.Long;kotlin.Long;kotlin.Long;kotlin.Long;kotlin.Long;io.dataloom.runtime.observation.retry.RetryCircuitExporterFailureReason?){}[0]
+
+    final val acceptedCount // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.acceptedCount|{}acceptedCount[0]
+        final fun <get-acceptedCount>(): kotlin/Long // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.acceptedCount.<get-acceptedCount>|<get-acceptedCount>(){}[0]
+    final val droppedCount // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.droppedCount|{}droppedCount[0]
+        final fun <get-droppedCount>(): kotlin/Long // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.droppedCount.<get-droppedCount>|<get-droppedCount>(){}[0]
+    final val exportedCount // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.exportedCount|{}exportedCount[0]
+        final fun <get-exportedCount>(): kotlin/Long // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.exportedCount.<get-exportedCount>|<get-exportedCount>(){}[0]
+    final val exporterId // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.exporterId|{}exporterId[0]
+        final fun <get-exporterId>(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporterId // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.exporterId.<get-exporterId>|<get-exporterId>(){}[0]
+    final val failureCount // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.failureCount|{}failureCount[0]
+        final fun <get-failureCount>(): kotlin/Long // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.failureCount.<get-failureCount>|<get-failureCount>(){}[0]
+    final val health // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.health|{}health[0]
+        final fun <get-health>(): io.dataloom.runtime.observation.retry/RetryCircuitExporterHealth // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.health.<get-health>|<get-health>(){}[0]
+    final val lastFailureReason // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.lastFailureReason|{}lastFailureReason[0]
+        final fun <get-lastFailureReason>(): io.dataloom.runtime.observation.retry/RetryCircuitExporterFailureReason? // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.lastFailureReason.<get-lastFailureReason>|<get-lastFailureReason>(){}[0]
+    final val timeoutCount // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.timeoutCount|{}timeoutCount[0]
+        final fun <get-timeoutCount>(): kotlin/Long // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.timeoutCount.<get-timeoutCount>|<get-timeoutCount>(){}[0]
+
+    final fun component1(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporterId // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.component1|component1(){}[0]
+    final fun component2(): io.dataloom.runtime.observation.retry/RetryCircuitExporterHealth // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.component2|component2(){}[0]
+    final fun component3(): kotlin/Long // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.component3|component3(){}[0]
+    final fun component4(): kotlin/Long // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.component4|component4(){}[0]
+    final fun component5(): kotlin/Long // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.component5|component5(){}[0]
+    final fun component6(): kotlin/Long // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.component6|component6(){}[0]
+    final fun component7(): kotlin/Long // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.component7|component7(){}[0]
+    final fun component8(): io.dataloom.runtime.observation.retry/RetryCircuitExporterFailureReason? // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.component8|component8(){}[0]
+    final fun copy(io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporterId = ..., io.dataloom.runtime.observation.retry/RetryCircuitExporterHealth = ..., kotlin/Long = ..., kotlin/Long = ..., kotlin/Long = ..., kotlin/Long = ..., kotlin/Long = ..., io.dataloom.runtime.observation.retry/RetryCircuitExporterFailureReason? = ...): io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.copy|copy(io.dataloom.runtime.observation.retry.RetryCircuitTelemetryExporterId;io.dataloom.runtime.observation.retry.RetryCircuitExporterHealth;kotlin.Long;kotlin.Long;kotlin.Long;kotlin.Long;kotlin.Long;io.dataloom.runtime.observation.retry.RetryCircuitExporterFailureReason?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.observation.retry/RetryCircuitMetricKey { // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey|null[0]
+    constructor <init>(io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal, io.dataloom.api.circuit/CircuitBreakerScopeKind?, io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome?, io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail?) // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.<init>|<init>(io.dataloom.runtime.observation.retry.RetryCircuitTelemetrySignal;io.dataloom.api.circuit.CircuitBreakerScopeKind?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryOperationOutcome?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryCircuitDetail?){}[0]
+
+    final val circuitDetail // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.circuitDetail|{}circuitDetail[0]
+        final fun <get-circuitDetail>(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail? // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.circuitDetail.<get-circuitDetail>|<get-circuitDetail>(){}[0]
+    final val circuitOperationOutcome // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.circuitOperationOutcome|{}circuitOperationOutcome[0]
+        final fun <get-circuitOperationOutcome>(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome? // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.circuitOperationOutcome.<get-circuitOperationOutcome>|<get-circuitOperationOutcome>(){}[0]
+    final val scopeKind // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.scopeKind|{}scopeKind[0]
+        final fun <get-scopeKind>(): io.dataloom.api.circuit/CircuitBreakerScopeKind? // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.scopeKind.<get-scopeKind>|<get-scopeKind>(){}[0]
+    final val signal // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.signal|{}signal[0]
+        final fun <get-signal>(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.signal.<get-signal>|<get-signal>(){}[0]
+
+    final fun component1(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.circuit/CircuitBreakerScopeKind? // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.component2|component2(){}[0]
+    final fun component3(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome? // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.component3|component3(){}[0]
+    final fun component4(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail? // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.component4|component4(){}[0]
+    final fun copy(io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal = ..., io.dataloom.api.circuit/CircuitBreakerScopeKind? = ..., io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome? = ..., io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail? = ...): io.dataloom.runtime.observation.retry/RetryCircuitMetricKey // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.copy|copy(io.dataloom.runtime.observation.retry.RetryCircuitTelemetrySignal;io.dataloom.api.circuit.CircuitBreakerScopeKind?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryOperationOutcome?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryCircuitDetail?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogExporter : io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporter { // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogExporter|null[0]
+    constructor <init>(io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporterId, io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogSink) // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogExporter.<init>|<init>(io.dataloom.runtime.observation.retry.RetryCircuitTelemetryExporterId;io.dataloom.runtime.observation.retry.RetryCircuitStructuredLogSink){}[0]
+
+    final val id // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogExporter.id|{}id[0]
+        final fun <get-id>(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporterId // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogExporter.id.<get-id>|<get-id>(){}[0]
+
+    final suspend fun export(io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent) // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogExporter.export|export(io.dataloom.runtime.observation.retry.RetryCircuitTelemetryEvent){}[0]
+}
+
+final class io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord { // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord|null[0]
+    constructor <init>(kotlin/Int, io.dataloom.runtime.observation.retry/RetryCircuitLogSeverity, io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.identifier/WorkflowId?, io.dataloom.api.identifier/TenantId?, io.dataloom.api.identifier/CorrelationId?, io.dataloom.api.identifier/TraceId?, io.dataloom.api.circuit/CircuitBreakerScopeKind?, io.dataloom.api.circuit/CircuitBreakerPhase?, io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome?, io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail?, kotlin/Int?, kotlin/Long?, io.dataloom.api.error/ErrorCode?) // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.<init>|<init>(kotlin.Int;io.dataloom.runtime.observation.retry.RetryCircuitLogSeverity;io.dataloom.runtime.observation.retry.RetryCircuitTelemetrySignal;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.identifier.WorkflowId?;io.dataloom.api.identifier.TenantId?;io.dataloom.api.identifier.CorrelationId?;io.dataloom.api.identifier.TraceId?;io.dataloom.api.circuit.CircuitBreakerScopeKind?;io.dataloom.api.circuit.CircuitBreakerPhase?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryOperationOutcome?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryCircuitDetail?;kotlin.Int?;kotlin.Long?;io.dataloom.api.error.ErrorCode?){}[0]
+
+    final val circuitDetail // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.circuitDetail|{}circuitDetail[0]
+        final fun <get-circuitDetail>(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail? // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.circuitDetail.<get-circuitDetail>|<get-circuitDetail>(){}[0]
+    final val circuitOperationOutcome // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.circuitOperationOutcome|{}circuitOperationOutcome[0]
+        final fun <get-circuitOperationOutcome>(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome? // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.circuitOperationOutcome.<get-circuitOperationOutcome>|<get-circuitOperationOutcome>(){}[0]
+    final val circuitPhase // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.circuitPhase|{}circuitPhase[0]
+        final fun <get-circuitPhase>(): io.dataloom.api.circuit/CircuitBreakerPhase? // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.circuitPhase.<get-circuitPhase>|<get-circuitPhase>(){}[0]
+    final val correlationId // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.correlationId|{}correlationId[0]
+        final fun <get-correlationId>(): io.dataloom.api.identifier/CorrelationId? // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.correlationId.<get-correlationId>|<get-correlationId>(){}[0]
+    final val errorCode // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.errorCode|{}errorCode[0]
+        final fun <get-errorCode>(): io.dataloom.api.error/ErrorCode? // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.errorCode.<get-errorCode>|<get-errorCode>(){}[0]
+    final val occurredAt // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.occurredAt|{}occurredAt[0]
+        final fun <get-occurredAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.occurredAt.<get-occurredAt>|<get-occurredAt>(){}[0]
+    final val retryAttemptNumber // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.retryAttemptNumber|{}retryAttemptNumber[0]
+        final fun <get-retryAttemptNumber>(): kotlin/Int? // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.retryAttemptNumber.<get-retryAttemptNumber>|<get-retryAttemptNumber>(){}[0]
+    final val schemaVersion // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.schemaVersion|{}schemaVersion[0]
+        final fun <get-schemaVersion>(): kotlin/Int // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.schemaVersion.<get-schemaVersion>|<get-schemaVersion>(){}[0]
+    final val scopeKind // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.scopeKind|{}scopeKind[0]
+        final fun <get-scopeKind>(): io.dataloom.api.circuit/CircuitBreakerScopeKind? // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.scopeKind.<get-scopeKind>|<get-scopeKind>(){}[0]
+    final val selectedDelayMillis // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.selectedDelayMillis|{}selectedDelayMillis[0]
+        final fun <get-selectedDelayMillis>(): kotlin/Long? // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.selectedDelayMillis.<get-selectedDelayMillis>|<get-selectedDelayMillis>(){}[0]
+    final val severity // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.severity|{}severity[0]
+        final fun <get-severity>(): io.dataloom.runtime.observation.retry/RetryCircuitLogSeverity // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.severity.<get-severity>|<get-severity>(){}[0]
+    final val signal // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.signal|{}signal[0]
+        final fun <get-signal>(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.signal.<get-signal>|<get-signal>(){}[0]
+    final val tenantId // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.tenantId|{}tenantId[0]
+        final fun <get-tenantId>(): io.dataloom.api.identifier/TenantId? // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.tenantId.<get-tenantId>|<get-tenantId>(){}[0]
+    final val traceId // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.traceId|{}traceId[0]
+        final fun <get-traceId>(): io.dataloom.api.identifier/TraceId? // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.traceId.<get-traceId>|<get-traceId>(){}[0]
+    final val workflowId // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.workflowId|{}workflowId[0]
+        final fun <get-workflowId>(): io.dataloom.api.identifier/WorkflowId? // io.dataloom.runtime.observation.retry/RetryCircuitStructuredLogRecord.workflowId.<get-workflowId>|<get-workflowId>(){}[0]
+}
+
+final class io.dataloom.runtime.observation.retry/RetryCircuitTelemetryConfiguration { // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryConfiguration|null[0]
+    constructor <init>(kotlin/Int = ..., io.dataloom.api.scheduling/SchedulingDelay = ..., io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOverflowPolicy = ...) // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryConfiguration.<init>|<init>(kotlin.Int;io.dataloom.api.scheduling.SchedulingDelay;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryOverflowPolicy){}[0]
+
+    final val bufferCapacityPerExporter // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryConfiguration.bufferCapacityPerExporter|{}bufferCapacityPerExporter[0]
+        final fun <get-bufferCapacityPerExporter>(): kotlin/Int // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryConfiguration.bufferCapacityPerExporter.<get-bufferCapacityPerExporter>|<get-bufferCapacityPerExporter>(){}[0]
+    final val exporterTimeout // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryConfiguration.exporterTimeout|{}exporterTimeout[0]
+        final fun <get-exporterTimeout>(): io.dataloom.api.scheduling/SchedulingDelay // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryConfiguration.exporterTimeout.<get-exporterTimeout>|<get-exporterTimeout>(){}[0]
+    final val overflowPolicy // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryConfiguration.overflowPolicy|{}overflowPolicy[0]
+        final fun <get-overflowPolicy>(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOverflowPolicy // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryConfiguration.overflowPolicy.<get-overflowPolicy>|<get-overflowPolicy>(){}[0]
+}
+
+final class io.dataloom.runtime.observation.retry/RetryCircuitTelemetryContext { // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryContext|null[0]
+    constructor <init>(io.dataloom.api.identifier/WorkflowId? = ..., io.dataloom.api.identifier/TenantId? = ..., io.dataloom.api.identifier/CorrelationId? = ..., io.dataloom.api.identifier/TraceId? = ...) // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryContext.<init>|<init>(io.dataloom.api.identifier.WorkflowId?;io.dataloom.api.identifier.TenantId?;io.dataloom.api.identifier.CorrelationId?;io.dataloom.api.identifier.TraceId?){}[0]
+
+    final val correlationId // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryContext.correlationId|{}correlationId[0]
+        final fun <get-correlationId>(): io.dataloom.api.identifier/CorrelationId? // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryContext.correlationId.<get-correlationId>|<get-correlationId>(){}[0]
+    final val tenantId // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryContext.tenantId|{}tenantId[0]
+        final fun <get-tenantId>(): io.dataloom.api.identifier/TenantId? // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryContext.tenantId.<get-tenantId>|<get-tenantId>(){}[0]
+    final val traceId // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryContext.traceId|{}traceId[0]
+        final fun <get-traceId>(): io.dataloom.api.identifier/TraceId? // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryContext.traceId.<get-traceId>|<get-traceId>(){}[0]
+    final val workflowId // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryContext.workflowId|{}workflowId[0]
+        final fun <get-workflowId>(): io.dataloom.api.identifier/WorkflowId? // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryContext.workflowId.<get-workflowId>|<get-workflowId>(){}[0]
+}
+
+final class io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent { // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent|null[0]
+    constructor <init>(io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal, io.dataloom.api.time/DataLoomInstant, io.dataloom.runtime.observation.retry/RetryCircuitTelemetryContext = ..., io.dataloom.api.circuit/CircuitBreakerScopeKind? = ..., io.dataloom.api.circuit/CircuitBreakerPhase? = ..., io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome? = ..., io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail? = ..., io.dataloom.api.retry/RetryAttempt? = ..., io.dataloom.api.scheduling/SchedulingDelay? = ..., io.dataloom.api.error/ErrorCode? = ...) // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.<init>|<init>(io.dataloom.runtime.observation.retry.RetryCircuitTelemetrySignal;io.dataloom.api.time.DataLoomInstant;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryContext;io.dataloom.api.circuit.CircuitBreakerScopeKind?;io.dataloom.api.circuit.CircuitBreakerPhase?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryOperationOutcome?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryCircuitDetail?;io.dataloom.api.retry.RetryAttempt?;io.dataloom.api.scheduling.SchedulingDelay?;io.dataloom.api.error.ErrorCode?){}[0]
+
+    final val circuitDetail // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.circuitDetail|{}circuitDetail[0]
+        final fun <get-circuitDetail>(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail? // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.circuitDetail.<get-circuitDetail>|<get-circuitDetail>(){}[0]
+    final val circuitOperationOutcome // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.circuitOperationOutcome|{}circuitOperationOutcome[0]
+        final fun <get-circuitOperationOutcome>(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome? // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.circuitOperationOutcome.<get-circuitOperationOutcome>|<get-circuitOperationOutcome>(){}[0]
+    final val circuitPhase // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.circuitPhase|{}circuitPhase[0]
+        final fun <get-circuitPhase>(): io.dataloom.api.circuit/CircuitBreakerPhase? // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.circuitPhase.<get-circuitPhase>|<get-circuitPhase>(){}[0]
+    final val context // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.context|{}context[0]
+        final fun <get-context>(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryContext // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.context.<get-context>|<get-context>(){}[0]
+    final val errorCode // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.errorCode|{}errorCode[0]
+        final fun <get-errorCode>(): io.dataloom.api.error/ErrorCode? // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.errorCode.<get-errorCode>|<get-errorCode>(){}[0]
+    final val occurredAt // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.occurredAt|{}occurredAt[0]
+        final fun <get-occurredAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.occurredAt.<get-occurredAt>|<get-occurredAt>(){}[0]
+    final val retryAttempt // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.retryAttempt|{}retryAttempt[0]
+        final fun <get-retryAttempt>(): io.dataloom.api.retry/RetryAttempt? // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.retryAttempt.<get-retryAttempt>|<get-retryAttempt>(){}[0]
+    final val schemaVersion // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.schemaVersion|{}schemaVersion[0]
+        final fun <get-schemaVersion>(): kotlin/Int // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.schemaVersion.<get-schemaVersion>|<get-schemaVersion>(){}[0]
+    final val scopeKind // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.scopeKind|{}scopeKind[0]
+        final fun <get-scopeKind>(): io.dataloom.api.circuit/CircuitBreakerScopeKind? // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.scopeKind.<get-scopeKind>|<get-scopeKind>(){}[0]
+    final val selectedDelay // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.selectedDelay|{}selectedDelay[0]
+        final fun <get-selectedDelay>(): io.dataloom.api.scheduling/SchedulingDelay? // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.selectedDelay.<get-selectedDelay>|<get-selectedDelay>(){}[0]
+    final val signal // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.signal|{}signal[0]
+        final fun <get-signal>(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.signal.<get-signal>|<get-signal>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.observation.retry/RetryCircuitTelemetryRecordResult { // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryRecordResult|null[0]
+    constructor <init>(kotlin/Int, kotlin/Int, kotlin/Int) // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryRecordResult.<init>|<init>(kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+
+    final val acceptedExporterCount // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryRecordResult.acceptedExporterCount|{}acceptedExporterCount[0]
+        final fun <get-acceptedExporterCount>(): kotlin/Int // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryRecordResult.acceptedExporterCount.<get-acceptedExporterCount>|<get-acceptedExporterCount>(){}[0]
+    final val configuredExporterCount // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryRecordResult.configuredExporterCount|{}configuredExporterCount[0]
+        final fun <get-configuredExporterCount>(): kotlin/Int // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryRecordResult.configuredExporterCount.<get-configuredExporterCount>|<get-configuredExporterCount>(){}[0]
+    final val droppedExporterCount // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryRecordResult.droppedExporterCount|{}droppedExporterCount[0]
+        final fun <get-droppedExporterCount>(): kotlin/Int // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryRecordResult.droppedExporterCount.<get-droppedExporterCount>|<get-droppedExporterCount>(){}[0]
+}
+
+final class io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySnapshot { // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySnapshot|null[0]
+    constructor <init>(kotlin.collections/Map<io.dataloom.runtime.observation.retry/RetryCircuitMetricKey, kotlin/Long>, kotlin.collections/List<io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot>) // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySnapshot.<init>|<init>(kotlin.collections.Map<io.dataloom.runtime.observation.retry.RetryCircuitMetricKey,kotlin.Long>;kotlin.collections.List<io.dataloom.runtime.observation.retry.RetryCircuitExporterSnapshot>){}[0]
+
+    final val degraded // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySnapshot.degraded|{}degraded[0]
+        final fun <get-degraded>(): kotlin/Boolean // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySnapshot.degraded.<get-degraded>|<get-degraded>(){}[0]
+    final val exporters // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySnapshot.exporters|{}exporters[0]
+        final fun <get-exporters>(): kotlin.collections/List<io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot> // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySnapshot.exporters.<get-exporters>|<get-exporters>(){}[0]
+    final val metricCounts // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySnapshot.metricCounts|{}metricCounts[0]
+        final fun <get-metricCounts>(): kotlin.collections/Map<io.dataloom.runtime.observation.retry/RetryCircuitMetricKey, kotlin/Long> // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySnapshot.metricCounts.<get-metricCounts>|<get-metricCounts>(){}[0]
+}
+
+final class io.dataloom.runtime.observation.retry/RetryCircuitTraceExporter : io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporter { // io.dataloom.runtime.observation.retry/RetryCircuitTraceExporter|null[0]
+    constructor <init>(io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporterId, io.dataloom.runtime.observation.retry/RetryCircuitTraceSink) // io.dataloom.runtime.observation.retry/RetryCircuitTraceExporter.<init>|<init>(io.dataloom.runtime.observation.retry.RetryCircuitTelemetryExporterId;io.dataloom.runtime.observation.retry.RetryCircuitTraceSink){}[0]
+
+    final val id // io.dataloom.runtime.observation.retry/RetryCircuitTraceExporter.id|{}id[0]
+        final fun <get-id>(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporterId // io.dataloom.runtime.observation.retry/RetryCircuitTraceExporter.id.<get-id>|<get-id>(){}[0]
+
+    final suspend fun export(io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent) // io.dataloom.runtime.observation.retry/RetryCircuitTraceExporter.export|export(io.dataloom.runtime.observation.retry.RetryCircuitTelemetryEvent){}[0]
+}
+
+final class io.dataloom.runtime.observation.retry/RetryCircuitTraceSignal { // io.dataloom.runtime.observation.retry/RetryCircuitTraceSignal|null[0]
+    constructor <init>(kotlin/Int, io.dataloom.api.identifier/TraceId, io.dataloom.api.identifier/CorrelationId?, io.dataloom.api.identifier/WorkflowId?, io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.error/ErrorCode?) // io.dataloom.runtime.observation.retry/RetryCircuitTraceSignal.<init>|<init>(kotlin.Int;io.dataloom.api.identifier.TraceId;io.dataloom.api.identifier.CorrelationId?;io.dataloom.api.identifier.WorkflowId?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetrySignal;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.error.ErrorCode?){}[0]
+
+    final val correlationId // io.dataloom.runtime.observation.retry/RetryCircuitTraceSignal.correlationId|{}correlationId[0]
+        final fun <get-correlationId>(): io.dataloom.api.identifier/CorrelationId? // io.dataloom.runtime.observation.retry/RetryCircuitTraceSignal.correlationId.<get-correlationId>|<get-correlationId>(){}[0]
+    final val errorCode // io.dataloom.runtime.observation.retry/RetryCircuitTraceSignal.errorCode|{}errorCode[0]
+        final fun <get-errorCode>(): io.dataloom.api.error/ErrorCode? // io.dataloom.runtime.observation.retry/RetryCircuitTraceSignal.errorCode.<get-errorCode>|<get-errorCode>(){}[0]
+    final val occurredAt // io.dataloom.runtime.observation.retry/RetryCircuitTraceSignal.occurredAt|{}occurredAt[0]
+        final fun <get-occurredAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.observation.retry/RetryCircuitTraceSignal.occurredAt.<get-occurredAt>|<get-occurredAt>(){}[0]
+    final val schemaVersion // io.dataloom.runtime.observation.retry/RetryCircuitTraceSignal.schemaVersion|{}schemaVersion[0]
+        final fun <get-schemaVersion>(): kotlin/Int // io.dataloom.runtime.observation.retry/RetryCircuitTraceSignal.schemaVersion.<get-schemaVersion>|<get-schemaVersion>(){}[0]
+    final val signal // io.dataloom.runtime.observation.retry/RetryCircuitTraceSignal.signal|{}signal[0]
+        final fun <get-signal>(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal // io.dataloom.runtime.observation.retry/RetryCircuitTraceSignal.signal.<get-signal>|<get-signal>(){}[0]
+    final val traceId // io.dataloom.runtime.observation.retry/RetryCircuitTraceSignal.traceId|{}traceId[0]
+        final fun <get-traceId>(): io.dataloom.api.identifier/TraceId // io.dataloom.runtime.observation.retry/RetryCircuitTraceSignal.traceId.<get-traceId>|<get-traceId>(){}[0]
+    final val workflowId // io.dataloom.runtime.observation.retry/RetryCircuitTraceSignal.workflowId|{}workflowId[0]
+        final fun <get-workflowId>(): io.dataloom.api.identifier/WorkflowId? // io.dataloom.runtime.observation.retry/RetryCircuitTraceSignal.workflowId.<get-workflowId>|<get-workflowId>(){}[0]
+}
+
 final class io.dataloom.runtime.queue/AppleFileQueueProvider : io.dataloom.api.queue/QueueProvider { // io.dataloom.runtime.queue/AppleFileQueueProvider|null[0]
     constructor <init>(kotlin/String, kotlin/String = ...) // io.dataloom.runtime.queue/AppleFileQueueProvider.<init>|<init>(kotlin.String;kotlin.String){}[0]
 
@@ -3616,6 +3983,17 @@ final class io.dataloom.runtime.worker/QueueWorkerRunRequest { // io.dataloom.ru
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.worker/QueueWorkerRunRequest.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.runtime.worker/QueueWorkerRunRequest.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.runtime.worker/QueueWorkerRunRequest.toString|toString(){}[0]
+}
+
+final value class io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporterId { // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporterId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporterId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporterId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporterId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporterId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporterId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporterId.toString|toString(){}[0]
 }
 
 final object io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationRuntime { // io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationRuntime|null[0]
