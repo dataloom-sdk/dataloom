@@ -2855,3 +2855,4 @@ public abstract interface class io/dataloom/api/transport/TransportProvider : io
 	public abstract fun pullChanges (Lio/dataloom/api/transport/PullChangesRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun pushChanges (Lio/dataloom/api/transport/PushChangesRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
+
