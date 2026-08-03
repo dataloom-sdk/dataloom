@@ -3,9 +3,8 @@
 ## Scope
 
 This checkpoint records production KMP Apple command persistence and atomic
-circuit-administration execution. It does not claim facade assembly, complete
-observability, executable process-death qualification, AC-FUNC-004 acceptance,
-or V1 readiness.
+circuit-administration execution. It does not claim complete observability,
+executable process-death qualification, AC-FUNC-004 acceptance, or V1 readiness.
 
 ## Implemented boundary
 
@@ -55,7 +54,6 @@ XCFramework/header audit, and Swift smoke compilation.
 
 ## Remaining DL-040 work
 
-- facade and operations assembly;
 - retry/circuit events, bounded metrics, logs, traces, health, exporters, and
   an operational read model;
 - executable relaunch, multi-process contention, and forced-failure injection;

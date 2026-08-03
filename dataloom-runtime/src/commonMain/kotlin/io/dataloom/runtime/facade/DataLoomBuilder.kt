@@ -33,6 +33,7 @@ import io.dataloom.runtime.observation.SynchronizationEventDispatcher
 import io.dataloom.runtime.observation.SynchronizationObserverRegistry
 import io.dataloom.runtime.queue.DurableQueueExecutionProcessor
 import io.dataloom.runtime.queue.QueuedSynchronizationExecutionHandler
+import io.dataloom.runtime.retry.CircuitAdministrationCoordinator
 import io.dataloom.runtime.retry.CircuitBreakerCoordinator
 import io.dataloom.runtime.retry.CircuitBreakerExecutionGate
 import io.dataloom.runtime.retry.QueueCircuitOperation
@@ -140,6 +141,7 @@ public class DataLoomBuilder {
     private var providerProtectionSpec: DataLoomProviderProtectionSpec? = null
     private var strategyProviderProtectionSpec: DataLoomStrategyProviderProtectionSpec? = null
     private var retryAdministrationSpec: DataLoomRetryAdministrationSpec? = null
+    private var circuitAdministrationSpec: DataLoomCircuitAdministrationSpec? = null
     private var built: Boolean = false
 
     // =========================================================================
@@ -368,6 +370,18 @@ public class DataLoomBuilder {
         spec: DataLoomRetryAdministrationSpec,
     ): DataLoomBuilder = apply {
         retryAdministrationSpec = spec
+    }
+
+    /**
+     * Configures the optional authorized circuit-administration capability.
+     *
+     * Construction retains the collaborators without invoking authorization,
+     * persistence, execution, or the runtime clock.
+     */
+    public fun circuitAdministrationConfiguration(
+        spec: DataLoomCircuitAdministrationSpec,
+    ): DataLoomBuilder = apply {
+        circuitAdministrationSpec = spec
     }
 
     /**
@@ -693,6 +707,19 @@ public class DataLoomBuilder {
             )
         }
 
+        // --- 14. Build optional circuit-administration operations capability ---
+        val circuitAdministration = circuitAdministrationSpec?.let { spec ->
+            DefaultDataLoomCircuitAdministration(
+                coordinator = CircuitAdministrationCoordinator(
+                    clock = deps.clock,
+                    authorizer = spec.authorizer,
+                    stateStore = spec.stateStore,
+                    executor = spec.executor,
+                    maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
+                ),
+            )
+        }
+
         return DefaultDataLoom(
             lifecycleCoordinator = lifecycleCoordinator,
             executionCoordinator = executionCoordinator,
@@ -705,6 +732,7 @@ public class DataLoomBuilder {
             protectedStrategySynchronization = protectedStrategySynchronization,
             queueSubmission = queueSubmission,
             retryAdministration = retryAdministration,
+            circuitAdministration = circuitAdministration,
         )
     }
 

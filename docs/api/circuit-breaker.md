@@ -6,8 +6,8 @@
 > deterministic closed/open/half-open transitions, controlled probe leases,
 > provider/queue/scheduler runtime assembly, common authorized operations
 > contracts, and production Android/Apple operations persistence/execution are
-> implemented. Operations assembly, complete observability, and end-to-end
-> qualification remain.
+> implemented and assembled behind an optional operations facade. Complete
+> observability and end-to-end qualification remain.
 
 ## Scope
 
@@ -95,7 +95,6 @@ mutation with its successful command receipt.
 
 ## Remaining V1 work
 
-- circuit-administration facade/operations assembly;
 - canonical circuit events, metrics, logs, and trace fields;
 - process-death, multi-process, and high-contention platform qualification; and
 - Book 2 AC-FUNC-004 end-to-end recovery evidence.

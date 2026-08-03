@@ -400,6 +400,7 @@ public final class io/dataloom/runtime/execution/protection/ProviderProtectionPr
 }
 
 public abstract interface class io/dataloom/runtime/facade/DataLoom {
+	public fun getCircuitAdministration ()Lio/dataloom/runtime/facade/DataLoomCircuitAdministration;
 	public fun getCircuitQueueWorker ()Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorker;
 	public fun getProtectedStrategySynchronization ()Lio/dataloom/runtime/facade/DataLoomProtectedStrategySynchronization;
 	public fun getProtectedSynchronization ()Lio/dataloom/runtime/facade/DataLoomProtectedSynchronization;
@@ -416,6 +417,7 @@ public abstract interface class io/dataloom/runtime/facade/DataLoom {
 }
 
 public final class io/dataloom/runtime/facade/DataLoom$DefaultImpls {
+	public static fun getCircuitAdministration (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomCircuitAdministration;
 	public static fun getCircuitQueueWorker (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorker;
 	public static fun getProtectedStrategySynchronization (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomProtectedStrategySynchronization;
 	public static fun getProtectedSynchronization (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomProtectedSynchronization;
@@ -430,6 +432,7 @@ public final class io/dataloom/runtime/facade/DataLoomBuilder {
 	public fun <init> ()V
 	public final fun bidirectionalConfiguration (Lio/dataloom/runtime/execution/bidirectional/BidirectionalPipelineConfiguration;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun build ()Lio/dataloom/runtime/facade/DataLoom;
+	public final fun circuitAdministrationConfiguration (Lio/dataloom/runtime/facade/DataLoomCircuitAdministrationSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun circuitQueueWorkerConfiguration (Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorkerSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun circuitQueueWorkerSchedulerConfiguration (Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorkerSchedulerSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun connectivityConfiguration (Lio/dataloom/runtime/connectivity/SynchronizationConnectivityConfiguration;)Lio/dataloom/runtime/facade/DataLoomBuilder;
@@ -449,6 +452,20 @@ public final class io/dataloom/runtime/facade/DataLoomBuilder {
 	public final fun retryAdministrationConfiguration (Lio/dataloom/runtime/facade/DataLoomRetryAdministrationSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun runtimeDependencies (Lio/dataloom/api/runtime/RuntimeDependencies;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun strategyProviderProtectionConfiguration (Lio/dataloom/runtime/facade/DataLoomStrategyProviderProtectionSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
+}
+
+public abstract interface class io/dataloom/runtime/facade/DataLoomCircuitAdministration {
+	public abstract fun execute (Lio/dataloom/api/circuit/CircuitAdministrationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/facade/DataLoomCircuitAdministrationSpec {
+	public fun <init> (Lio/dataloom/api/circuit/CircuitAdministrationAuthorizer;Lio/dataloom/api/circuit/CircuitAdministrationStateStore;Lio/dataloom/api/circuit/CircuitAdministrationExecutor;I)V
+	public synthetic fun <init> (Lio/dataloom/api/circuit/CircuitAdministrationAuthorizer;Lio/dataloom/api/circuit/CircuitAdministrationStateStore;Lio/dataloom/api/circuit/CircuitAdministrationExecutor;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAuthorizer ()Lio/dataloom/api/circuit/CircuitAdministrationAuthorizer;
+	public final fun getExecutor ()Lio/dataloom/api/circuit/CircuitAdministrationExecutor;
+	public final fun getMaximumStateUpdateAttempts ()I
+	public final fun getStateStore ()Lio/dataloom/api/circuit/CircuitAdministrationStateStore;
+	public fun toString ()Ljava/lang/String;
 }
 
 public abstract interface class io/dataloom/runtime/facade/DataLoomCircuitQueueWorker {

@@ -161,6 +161,19 @@ public interface DataLoom {
         get() = null
 
     /**
+     * Optional authorized circuit-administration operations capability.
+     *
+     * `null` unless [DataLoomBuilder.circuitAdministrationConfiguration] was
+     * supplied. Property access performs no authorization, persistence,
+     * execution, clock read, or provider initialization.
+     *
+     * A default getter preserves source compatibility for custom pre-V1
+     * [DataLoom] implementations.
+     */
+    public val circuitAdministration: DataLoomCircuitAdministration?
+        get() = null
+
+    /**
      * Initializes all registered providers in registration order.
      *
      * Initializes the internal provider lifecycle coordinator and returns its

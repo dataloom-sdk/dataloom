@@ -155,12 +155,12 @@ adapters, executable relaunch evidence, and end-to-end qualification remain open
 | [Provider-protected strategy execution](./provider-protected-strategy-execution.md) | Partial V1 subsystem | Plan-aware network-only and remote-first timeout/circuit protection with independent local-fallback policy and bounded ordered evidence. |
 | [Queue circuit operation adapter](./queue-circuit-operation-adapter.md) | Partial V1 subsystem | Exact queue operation scopes and provider/circuit result preservation without transparent mutation replay risk. |
 | [Retry administration](./retry-administration.md) | Partial V1 subsystem | Stable facade assembly, authorized/idempotent commands, durable audit state, and atomic Android/Apple administrative requeue execution. |
-| [Circuit administration](./circuit-administration.md) | Partial V1 subsystem | Authorized/idempotent open, close, and reset coordination with production Android Room and Apple file persistence/atomic execution; operations assembly remains. |
+| [Circuit administration](./circuit-administration.md) | Partial V1 subsystem | Authorized/idempotent open, close, and reset coordination, production Android/Apple atomic execution, and optional `DataLoom` operations assembly. |
 | [Conflict contracts](./conflict-contracts.md) | Partial V1 subsystem | Custom detector, resolver, request, conflict, and decision contracts. |
 | [Conflict orchestration](./conflict-orchestration.md) | Partial V1 subsystem | Exact detector/resolver lookup and one-cycle decision orchestration. |
 
 V1 retry work still requires complete offline-first, cache-first, hybrid, and adaptive strategy execution,
-remaining protocol integrations, circuit-administration assembly, complete
+remaining protocol integrations, circuit-administration observability, complete
 observability, executable restart evidence, and platform qualification.
 Conflict work still requires built-in policies, precedence, atomic decision
 application, unresolved-conflict persistence, audit, convergence, loop
@@ -193,7 +193,7 @@ The following are product commitments, not descriptions of completed APIs:
 | Network-only strategy | Direct transport-only runtime implemented; full event/result and platform qualification remain |
 | Hybrid strategy | Complete built-in strategy and qualification not implemented |
 | Adaptive strategy | Complete built-in strategy and qualification not implemented |
-| Standard retry and durable circuit breaker | Fail-closed protection, standard backoff/jitter, durable budgets, bounded hints, timeout contracts, selected runtime assembly, circuit state, authorized cross-platform manual retry, and Android/Apple circuit administration are implemented; operations assembly, complete observability, and qualification remain |
+| Standard retry and durable circuit breaker | Fail-closed protection, standard backoff/jitter, durable budgets, bounded hints, timeout contracts, selected runtime assembly, circuit state, authorized cross-platform manual retry, and assembled Android/Apple circuit administration are implemented; complete observability and qualification remain |
 | Built-in conflict policies and persistence | Partial custom contracts/orchestration only |
 | Lifecycle and operational observability | Partial in-process event foundation only |
 | Asset upload/download, chunking, streaming, and resume | Not implemented |
