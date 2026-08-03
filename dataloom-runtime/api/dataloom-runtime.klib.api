@@ -72,16 +72,6 @@ final enum class io.dataloom.runtime.execution/SynchronizationExecutionRejection
     final fun values(): kotlin/Array<io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason> // io.dataloom.runtime.execution/SynchronizationExecutionRejectionReason.values|values#static(){}[0]
 }
 
-final enum class io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason : kotlin/Enum<io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason> { // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason|null[0]
-    enum entry OBSERVER_CALLBACK_FAILED // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason.OBSERVER_CALLBACK_FAILED|null[0]
-
-    final val entries // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason.entries|#static{}entries[0]
-        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason> // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason.entries.<get-entries>|<get-entries>#static(){}[0]
-
-    final fun valueOf(kotlin/String): io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason.valueOf|valueOf#static(kotlin.String){}[0]
-    final fun values(): kotlin/Array<io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason> // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason.values|values#static(){}[0]
-}
-
 final enum class io.dataloom.runtime.observation.retry/RetryCircuitExporterFailureReason : kotlin/Enum<io.dataloom.runtime.observation.retry/RetryCircuitExporterFailureReason> { // io.dataloom.runtime.observation.retry/RetryCircuitExporterFailureReason|null[0]
     enum entry EXCEPTION // io.dataloom.runtime.observation.retry/RetryCircuitExporterFailureReason.EXCEPTION|null[0]
     enum entry TIMEOUT // io.dataloom.runtime.observation.retry/RetryCircuitExporterFailureReason.TIMEOUT|null[0]
@@ -196,6 +186,16 @@ final enum class io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySign
 
     final fun valueOf(kotlin/String): io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.valueOf|valueOf#static(kotlin.String){}[0]
     final fun values(): kotlin/Array<io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal> // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason : kotlin/Enum<io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason> { // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason|null[0]
+    enum entry OBSERVER_CALLBACK_FAILED // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason.OBSERVER_CALLBACK_FAILED|null[0]
+
+    final val entries // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason> // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason> // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason.values|values#static(){}[0]
 }
 
 final enum class io.dataloom.runtime.queue/QueueCircuitProviderFailureDisposition : kotlin/Enum<io.dataloom.runtime.queue/QueueCircuitProviderFailureDisposition> { // io.dataloom.runtime.queue/QueueCircuitProviderFailureDisposition|null[0]
@@ -2841,82 +2841,13 @@ final class io.dataloom.runtime.facade/DataLoomTransportProtectionSpec { // io.d
     final fun toString(): kotlin/String // io.dataloom.runtime.facade/DataLoomTransportProtectionSpec.toString|toString(){}[0]
 }
 
-final class io.dataloom.runtime.observation/SynchronizationEventDispatchSummary { // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary|null[0]
-    constructor <init>(kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int) // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.<init>|<init>(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
-
-    final val attemptedObserverCount // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.attemptedObserverCount|{}attemptedObserverCount[0]
-        final fun <get-attemptedObserverCount>(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.attemptedObserverCount.<get-attemptedObserverCount>|<get-attemptedObserverCount>(){}[0]
-    final val deliveredObserverCount // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.deliveredObserverCount|{}deliveredObserverCount[0]
-        final fun <get-deliveredObserverCount>(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.deliveredObserverCount.<get-deliveredObserverCount>|<get-deliveredObserverCount>(){}[0]
-    final val failedObserverCount // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.failedObserverCount|{}failedObserverCount[0]
-        final fun <get-failedObserverCount>(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.failedObserverCount.<get-failedObserverCount>|<get-failedObserverCount>(){}[0]
-    final val registeredObserverCount // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.registeredObserverCount|{}registeredObserverCount[0]
-        final fun <get-registeredObserverCount>(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.registeredObserverCount.<get-registeredObserverCount>|<get-registeredObserverCount>(){}[0]
-
-    final fun component1(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.component1|component1(){}[0]
-    final fun component2(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.component2|component2(){}[0]
-    final fun component3(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.component3|component3(){}[0]
-    final fun component4(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.component4|component4(){}[0]
-    final fun copy(kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...): io.dataloom.runtime.observation/SynchronizationEventDispatchSummary // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.copy|copy(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
-    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.equals|equals(kotlin.Any?){}[0]
-    final fun hashCode(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.hashCode|hashCode(){}[0]
-    final fun toString(): kotlin/String // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.toString|toString(){}[0]
-
-    final object Companion { // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.Companion|null[0]
-        final val Zero // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.Companion.Zero|{}Zero[0]
-            final fun <get-Zero>(): io.dataloom.runtime.observation/SynchronizationEventDispatchSummary // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.Companion.Zero.<get-Zero>|<get-Zero>(){}[0]
-    }
-}
-
-final class io.dataloom.runtime.observation/SynchronizationEventDispatcher { // io.dataloom.runtime.observation/SynchronizationEventDispatcher|null[0]
-    constructor <init>(io.dataloom.runtime.observation/SynchronizationObserverRegistry) // io.dataloom.runtime.observation/SynchronizationEventDispatcher.<init>|<init>(io.dataloom.runtime.observation.SynchronizationObserverRegistry){}[0]
-
-    final fun dispatch(io.dataloom.api.synchronization/SynchronizationEvent): io.dataloom.runtime.observation/SynchronizationEventDispatchResult // io.dataloom.runtime.observation/SynchronizationEventDispatcher.dispatch|dispatch(io.dataloom.api.synchronization.SynchronizationEvent){}[0]
-    final fun toString(): kotlin/String // io.dataloom.runtime.observation/SynchronizationEventDispatcher.toString|toString(){}[0]
-}
-
-final class io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure { // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure|null[0]
-    constructor <init>(io.dataloom.api.identifier/SynchronizationObserverId, io.dataloom.api.identifier/SynchronizationEventId, io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason, io.dataloom.api.error/DataLoomError) // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.<init>|<init>(io.dataloom.api.identifier.SynchronizationObserverId;io.dataloom.api.identifier.SynchronizationEventId;io.dataloom.runtime.observation.SynchronizationObserverDispatchFailureReason;io.dataloom.api.error.DataLoomError){}[0]
-
-    final val error // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.error|{}error[0]
-        final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.error.<get-error>|<get-error>(){}[0]
-    final val eventId // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.eventId|{}eventId[0]
-        final fun <get-eventId>(): io.dataloom.api.identifier/SynchronizationEventId // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.eventId.<get-eventId>|<get-eventId>(){}[0]
-    final val observerId // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.observerId|{}observerId[0]
-        final fun <get-observerId>(): io.dataloom.api.identifier/SynchronizationObserverId // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.observerId.<get-observerId>|<get-observerId>(){}[0]
-    final val reason // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.reason|{}reason[0]
-        final fun <get-reason>(): io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.reason.<get-reason>|<get-reason>(){}[0]
-
-    final fun component1(): io.dataloom.api.identifier/SynchronizationObserverId // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.component1|component1(){}[0]
-    final fun component2(): io.dataloom.api.identifier/SynchronizationEventId // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.component2|component2(){}[0]
-    final fun component3(): io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.component3|component3(){}[0]
-    final fun component4(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.component4|component4(){}[0]
-    final fun copy(io.dataloom.api.identifier/SynchronizationObserverId = ..., io.dataloom.api.identifier/SynchronizationEventId = ..., io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason = ..., io.dataloom.api.error/DataLoomError = ...): io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.copy|copy(io.dataloom.api.identifier.SynchronizationObserverId;io.dataloom.api.identifier.SynchronizationEventId;io.dataloom.runtime.observation.SynchronizationObserverDispatchFailureReason;io.dataloom.api.error.DataLoomError){}[0]
-    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.equals|equals(kotlin.Any?){}[0]
-    final fun hashCode(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.hashCode|hashCode(){}[0]
-    final fun toString(): kotlin/String // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.toString|toString(){}[0]
-}
-
-final class io.dataloom.runtime.observation/SynchronizationObserverRegistry { // io.dataloom.runtime.observation/SynchronizationObserverRegistry|null[0]
-    constructor <init>(kotlin.collections/Collection<io.dataloom.api.observation/SynchronizationObserver>) // io.dataloom.runtime.observation/SynchronizationObserverRegistry.<init>|<init>(kotlin.collections.Collection<io.dataloom.api.observation.SynchronizationObserver>){}[0]
-
-    final val observers // io.dataloom.runtime.observation/SynchronizationObserverRegistry.observers|{}observers[0]
-        final fun <get-observers>(): kotlin.collections/List<io.dataloom.api.observation/SynchronizationObserver> // io.dataloom.runtime.observation/SynchronizationObserverRegistry.observers.<get-observers>|<get-observers>(){}[0]
-    final val size // io.dataloom.runtime.observation/SynchronizationObserverRegistry.size|{}size[0]
-        final fun <get-size>(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationObserverRegistry.size.<get-size>|<get-size>(){}[0]
-
-    final fun isEmpty(): kotlin/Boolean // io.dataloom.runtime.observation/SynchronizationObserverRegistry.isEmpty|isEmpty(){}[0]
-    final fun lookup(io.dataloom.api.identifier/SynchronizationObserverId): io.dataloom.api.observation/SynchronizationObserver? // io.dataloom.runtime.observation/SynchronizationObserverRegistry.lookup|lookup(io.dataloom.api.identifier.SynchronizationObserverId){}[0]
-    final fun toString(): kotlin/String // io.dataloom.runtime.observation/SynchronizationObserverRegistry.toString|toString(){}[0]
-}
-
 final class io.dataloom.runtime.observation.retry/BoundedRetryCircuitTelemetry { // io.dataloom.runtime.observation.retry/BoundedRetryCircuitTelemetry|null[0]
     constructor <init>(kotlin.coroutines/CoroutineContext, io.dataloom.runtime.observation.retry/RetryCircuitTelemetryConfiguration, kotlin.collections/List<io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExporter>) // io.dataloom.runtime.observation.retry/BoundedRetryCircuitTelemetry.<init>|<init>(kotlin.coroutines.CoroutineContext;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryConfiguration;kotlin.collections.List<io.dataloom.runtime.observation.retry.RetryCircuitTelemetryExporter>){}[0]
 
     final fun close() // io.dataloom.runtime.observation.retry/BoundedRetryCircuitTelemetry.close|close(){}[0]
-    final suspend fun join() // io.dataloom.runtime.observation.retry/BoundedRetryCircuitTelemetry.join|join(){}[0]
     final fun record(io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryRecordResult // io.dataloom.runtime.observation.retry/BoundedRetryCircuitTelemetry.record|record(io.dataloom.runtime.observation.retry.RetryCircuitTelemetryEvent){}[0]
     final fun snapshot(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySnapshot // io.dataloom.runtime.observation.retry/BoundedRetryCircuitTelemetry.snapshot|snapshot(){}[0]
+    final suspend fun join() // io.dataloom.runtime.observation.retry/BoundedRetryCircuitTelemetry.join|join(){}[0]
 }
 
 final class io.dataloom.runtime.observation.retry/ObservedCircuitAdministrationCoordinator { // io.dataloom.runtime.observation.retry/ObservedCircuitAdministrationCoordinator|null[0]
@@ -3144,6 +3075,75 @@ final class io.dataloom.runtime.observation.retry/RetryCircuitTraceSignal { // i
         final fun <get-traceId>(): io.dataloom.api.identifier/TraceId // io.dataloom.runtime.observation.retry/RetryCircuitTraceSignal.traceId.<get-traceId>|<get-traceId>(){}[0]
     final val workflowId // io.dataloom.runtime.observation.retry/RetryCircuitTraceSignal.workflowId|{}workflowId[0]
         final fun <get-workflowId>(): io.dataloom.api.identifier/WorkflowId? // io.dataloom.runtime.observation.retry/RetryCircuitTraceSignal.workflowId.<get-workflowId>|<get-workflowId>(){}[0]
+}
+
+final class io.dataloom.runtime.observation/SynchronizationEventDispatchSummary { // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary|null[0]
+    constructor <init>(kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int) // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.<init>|<init>(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+
+    final val attemptedObserverCount // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.attemptedObserverCount|{}attemptedObserverCount[0]
+        final fun <get-attemptedObserverCount>(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.attemptedObserverCount.<get-attemptedObserverCount>|<get-attemptedObserverCount>(){}[0]
+    final val deliveredObserverCount // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.deliveredObserverCount|{}deliveredObserverCount[0]
+        final fun <get-deliveredObserverCount>(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.deliveredObserverCount.<get-deliveredObserverCount>|<get-deliveredObserverCount>(){}[0]
+    final val failedObserverCount // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.failedObserverCount|{}failedObserverCount[0]
+        final fun <get-failedObserverCount>(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.failedObserverCount.<get-failedObserverCount>|<get-failedObserverCount>(){}[0]
+    final val registeredObserverCount // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.registeredObserverCount|{}registeredObserverCount[0]
+        final fun <get-registeredObserverCount>(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.registeredObserverCount.<get-registeredObserverCount>|<get-registeredObserverCount>(){}[0]
+
+    final fun component1(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.component1|component1(){}[0]
+    final fun component2(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.component2|component2(){}[0]
+    final fun component3(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.component3|component3(){}[0]
+    final fun component4(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.component4|component4(){}[0]
+    final fun copy(kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...): io.dataloom.runtime.observation/SynchronizationEventDispatchSummary // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.copy|copy(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.toString|toString(){}[0]
+
+    final object Companion { // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.Companion|null[0]
+        final val Zero // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.Companion.Zero|{}Zero[0]
+            final fun <get-Zero>(): io.dataloom.runtime.observation/SynchronizationEventDispatchSummary // io.dataloom.runtime.observation/SynchronizationEventDispatchSummary.Companion.Zero.<get-Zero>|<get-Zero>(){}[0]
+    }
+}
+
+final class io.dataloom.runtime.observation/SynchronizationEventDispatcher { // io.dataloom.runtime.observation/SynchronizationEventDispatcher|null[0]
+    constructor <init>(io.dataloom.runtime.observation/SynchronizationObserverRegistry) // io.dataloom.runtime.observation/SynchronizationEventDispatcher.<init>|<init>(io.dataloom.runtime.observation.SynchronizationObserverRegistry){}[0]
+
+    final fun dispatch(io.dataloom.api.synchronization/SynchronizationEvent): io.dataloom.runtime.observation/SynchronizationEventDispatchResult // io.dataloom.runtime.observation/SynchronizationEventDispatcher.dispatch|dispatch(io.dataloom.api.synchronization.SynchronizationEvent){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.observation/SynchronizationEventDispatcher.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure { // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure|null[0]
+    constructor <init>(io.dataloom.api.identifier/SynchronizationObserverId, io.dataloom.api.identifier/SynchronizationEventId, io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason, io.dataloom.api.error/DataLoomError) // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.<init>|<init>(io.dataloom.api.identifier.SynchronizationObserverId;io.dataloom.api.identifier.SynchronizationEventId;io.dataloom.runtime.observation.SynchronizationObserverDispatchFailureReason;io.dataloom.api.error.DataLoomError){}[0]
+
+    final val error // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.error|{}error[0]
+        final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.error.<get-error>|<get-error>(){}[0]
+    final val eventId // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.eventId|{}eventId[0]
+        final fun <get-eventId>(): io.dataloom.api.identifier/SynchronizationEventId // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.eventId.<get-eventId>|<get-eventId>(){}[0]
+    final val observerId // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.observerId|{}observerId[0]
+        final fun <get-observerId>(): io.dataloom.api.identifier/SynchronizationObserverId // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.observerId.<get-observerId>|<get-observerId>(){}[0]
+    final val reason // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.reason|{}reason[0]
+        final fun <get-reason>(): io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.reason.<get-reason>|<get-reason>(){}[0]
+
+    final fun component1(): io.dataloom.api.identifier/SynchronizationObserverId // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.identifier/SynchronizationEventId // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.component2|component2(){}[0]
+    final fun component3(): io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.component4|component4(){}[0]
+    final fun copy(io.dataloom.api.identifier/SynchronizationObserverId = ..., io.dataloom.api.identifier/SynchronizationEventId = ..., io.dataloom.runtime.observation/SynchronizationObserverDispatchFailureReason = ..., io.dataloom.api.error/DataLoomError = ...): io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.copy|copy(io.dataloom.api.identifier.SynchronizationObserverId;io.dataloom.api.identifier.SynchronizationEventId;io.dataloom.runtime.observation.SynchronizationObserverDispatchFailureReason;io.dataloom.api.error.DataLoomError){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.observation/SynchronizationObserverDispatchFailure.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.observation/SynchronizationObserverRegistry { // io.dataloom.runtime.observation/SynchronizationObserverRegistry|null[0]
+    constructor <init>(kotlin.collections/Collection<io.dataloom.api.observation/SynchronizationObserver>) // io.dataloom.runtime.observation/SynchronizationObserverRegistry.<init>|<init>(kotlin.collections.Collection<io.dataloom.api.observation.SynchronizationObserver>){}[0]
+
+    final val observers // io.dataloom.runtime.observation/SynchronizationObserverRegistry.observers|{}observers[0]
+        final fun <get-observers>(): kotlin.collections/List<io.dataloom.api.observation/SynchronizationObserver> // io.dataloom.runtime.observation/SynchronizationObserverRegistry.observers.<get-observers>|<get-observers>(){}[0]
+    final val size // io.dataloom.runtime.observation/SynchronizationObserverRegistry.size|{}size[0]
+        final fun <get-size>(): kotlin/Int // io.dataloom.runtime.observation/SynchronizationObserverRegistry.size.<get-size>|<get-size>(){}[0]
+
+    final fun isEmpty(): kotlin/Boolean // io.dataloom.runtime.observation/SynchronizationObserverRegistry.isEmpty|isEmpty(){}[0]
+    final fun lookup(io.dataloom.api.identifier/SynchronizationObserverId): io.dataloom.api.observation/SynchronizationObserver? // io.dataloom.runtime.observation/SynchronizationObserverRegistry.lookup|lookup(io.dataloom.api.identifier.SynchronizationObserverId){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.observation/SynchronizationObserverRegistry.toString|toString(){}[0]
 }
 
 final class io.dataloom.runtime.queue/AppleFileQueueProvider : io.dataloom.api.queue/QueueProvider { // io.dataloom.runtime.queue/AppleFileQueueProvider|null[0]
