@@ -726,6 +726,290 @@ public final class io/dataloom/runtime/observation/SynchronizationObserverRegist
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/runtime/observation/retry/BoundedRetryCircuitTelemetry {
+	public fun <init> (Lkotlin/coroutines/CoroutineContext;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryConfiguration;Ljava/util/List;)V
+	public final fun close ()V
+	public final fun join (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun record (Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryEvent;)Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryRecordResult;
+	public final fun snapshot ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySnapshot;
+}
+
+public final class io/dataloom/runtime/observation/retry/ObservedCircuitAdministrationCoordinator {
+	public fun <init> (Lio/dataloom/runtime/retry/CircuitAdministrationCoordinator;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/observation/retry/BoundedRetryCircuitTelemetry;)V
+	public final fun execute (Lio/dataloom/api/circuit/CircuitAdministrationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/observation/retry/ObservedCircuitBreakerExecutionGate {
+	public fun <init> (Lio/dataloom/runtime/retry/CircuitBreakerExecutionGate;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/observation/retry/BoundedRetryCircuitTelemetry;)V
+	public final fun execute (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryContext;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun execute$default (Lio/dataloom/runtime/observation/retry/ObservedCircuitBreakerExecutionGate;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryContext;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/observation/retry/ObservedRetryAdministrationCoordinator {
+	public fun <init> (Lio/dataloom/runtime/retry/RetryAdministrationCoordinator;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/observation/retry/BoundedRetryCircuitTelemetry;)V
+	public final fun execute (Lio/dataloom/api/retry/RetryAdministrationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/observation/retry/ObservedSynchronizationRetryOrchestrator {
+	public fun <init> (Lio/dataloom/runtime/retry/SynchronizationRetryOrchestrator;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/observation/retry/BoundedRetryCircuitTelemetry;)V
+	public final fun evaluateAndSchedule (Lio/dataloom/runtime/retry/SynchronizationRetryRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/observation/retry/RetryCircuitExporterFailureReason : java/lang/Enum {
+	public static final field EXCEPTION Lio/dataloom/runtime/observation/retry/RetryCircuitExporterFailureReason;
+	public static final field TIMEOUT Lio/dataloom/runtime/observation/retry/RetryCircuitExporterFailureReason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/observation/retry/RetryCircuitExporterFailureReason;
+	public static fun values ()[Lio/dataloom/runtime/observation/retry/RetryCircuitExporterFailureReason;
+}
+
+public final class io/dataloom/runtime/observation/retry/RetryCircuitExporterHealth : java/lang/Enum {
+	public static final field DEGRADED Lio/dataloom/runtime/observation/retry/RetryCircuitExporterHealth;
+	public static final field HEALTHY Lio/dataloom/runtime/observation/retry/RetryCircuitExporterHealth;
+	public static final field STOPPED Lio/dataloom/runtime/observation/retry/RetryCircuitExporterHealth;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/observation/retry/RetryCircuitExporterHealth;
+	public static fun values ()[Lio/dataloom/runtime/observation/retry/RetryCircuitExporterHealth;
+}
+
+public final class io/dataloom/runtime/observation/retry/RetryCircuitExporterSnapshot {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/runtime/observation/retry/RetryCircuitExporterHealth;JJJJJLio/dataloom/runtime/observation/retry/RetryCircuitExporterFailureReason;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-I6ovuC4 ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/runtime/observation/retry/RetryCircuitExporterHealth;
+	public final fun component3 ()J
+	public final fun component4 ()J
+	public final fun component5 ()J
+	public final fun component6 ()J
+	public final fun component7 ()J
+	public final fun component8 ()Lio/dataloom/runtime/observation/retry/RetryCircuitExporterFailureReason;
+	public final fun copy-XqeWSD0 (Ljava/lang/String;Lio/dataloom/runtime/observation/retry/RetryCircuitExporterHealth;JJJJJLio/dataloom/runtime/observation/retry/RetryCircuitExporterFailureReason;)Lio/dataloom/runtime/observation/retry/RetryCircuitExporterSnapshot;
+	public static synthetic fun copy-XqeWSD0$default (Lio/dataloom/runtime/observation/retry/RetryCircuitExporterSnapshot;Ljava/lang/String;Lio/dataloom/runtime/observation/retry/RetryCircuitExporterHealth;JJJJJLio/dataloom/runtime/observation/retry/RetryCircuitExporterFailureReason;ILjava/lang/Object;)Lio/dataloom/runtime/observation/retry/RetryCircuitExporterSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAcceptedCount ()J
+	public final fun getDroppedCount ()J
+	public final fun getExportedCount ()J
+	public final fun getExporterId-I6ovuC4 ()Ljava/lang/String;
+	public final fun getFailureCount ()J
+	public final fun getHealth ()Lio/dataloom/runtime/observation/retry/RetryCircuitExporterHealth;
+	public final fun getLastFailureReason ()Lio/dataloom/runtime/observation/retry/RetryCircuitExporterFailureReason;
+	public final fun getTimeoutCount ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/observation/retry/RetryCircuitLogSeverity : java/lang/Enum {
+	public static final field ERROR Lio/dataloom/runtime/observation/retry/RetryCircuitLogSeverity;
+	public static final field INFO Lio/dataloom/runtime/observation/retry/RetryCircuitLogSeverity;
+	public static final field WARNING Lio/dataloom/runtime/observation/retry/RetryCircuitLogSeverity;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/observation/retry/RetryCircuitLogSeverity;
+	public static fun values ()[Lio/dataloom/runtime/observation/retry/RetryCircuitLogSeverity;
+}
+
+public final class io/dataloom/runtime/observation/retry/RetryCircuitMetricKey {
+	public fun <init> (Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;Lio/dataloom/api/circuit/CircuitBreakerScopeKind;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;)V
+	public final fun component1 ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public final fun component2 ()Lio/dataloom/api/circuit/CircuitBreakerScopeKind;
+	public final fun component3 ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;
+	public final fun component4 ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;
+	public final fun copy (Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;Lio/dataloom/api/circuit/CircuitBreakerScopeKind;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;)Lio/dataloom/runtime/observation/retry/RetryCircuitMetricKey;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/observation/retry/RetryCircuitMetricKey;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;Lio/dataloom/api/circuit/CircuitBreakerScopeKind;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;ILjava/lang/Object;)Lio/dataloom/runtime/observation/retry/RetryCircuitMetricKey;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCircuitDetail ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;
+	public final fun getCircuitOperationOutcome ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;
+	public final fun getScopeKind ()Lio/dataloom/api/circuit/CircuitBreakerScopeKind;
+	public final fun getSignal ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/observation/retry/RetryCircuitStructuredLogExporter : io/dataloom/runtime/observation/retry/RetryCircuitTelemetryExporter {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/runtime/observation/retry/RetryCircuitStructuredLogSink;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun export (Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryEvent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getId-I6ovuC4 ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/observation/retry/RetryCircuitStructuredLogRecord {
+	public synthetic fun <init> (ILio/dataloom/runtime/observation/retry/RetryCircuitLogSeverity;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/circuit/CircuitBreakerScopeKind;Lio/dataloom/api/circuit/CircuitBreakerPhase;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;Ljava/lang/Integer;Ljava/lang/Long;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCircuitDetail ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;
+	public final fun getCircuitOperationOutcome ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;
+	public final fun getCircuitPhase ()Lio/dataloom/api/circuit/CircuitBreakerPhase;
+	public final fun getCorrelationId-8D7avHI ()Ljava/lang/String;
+	public final fun getErrorCode-xOVhP9Q ()Ljava/lang/String;
+	public final fun getOccurredAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getRetryAttemptNumber ()Ljava/lang/Integer;
+	public final fun getSchemaVersion ()I
+	public final fun getScopeKind ()Lio/dataloom/api/circuit/CircuitBreakerScopeKind;
+	public final fun getSelectedDelayMillis ()Ljava/lang/Long;
+	public final fun getSeverity ()Lio/dataloom/runtime/observation/retry/RetryCircuitLogSeverity;
+	public final fun getSignal ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public final fun getTenantId-FOnZjVk ()Ljava/lang/String;
+	public final fun getTraceId-rhgDUuU ()Ljava/lang/String;
+	public final fun getWorkflowId-RNYfoJA ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/runtime/observation/retry/RetryCircuitStructuredLogSink {
+	public abstract fun write (Lio/dataloom/runtime/observation/retry/RetryCircuitStructuredLogRecord;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail : java/lang/Enum {
+	public static final field OPEN Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;
+	public static final field PERMISSION_CLOCK_REGRESSION Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;
+	public static final field PROBE_GENERATION_EXHAUSTED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;
+	public static final field PROBE_IN_FLIGHT Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;
+	public static final field PROBE_LEASE_DEADLINE_EXHAUSTED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;
+	public static final field PROBE_LEASE_EXPIRED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;
+	public static final field STALE_PROBE Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;
+	public static final field STATE_CLOCK_REGRESSION Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;
+	public static final field STATE_CONTENTION Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;
+	public static final field STATE_IGNORED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;
+	public static final field STATE_PERSISTENCE_FAILED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;
+	public static final field STATE_RECORDED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;
+	public static fun values ()[Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;
+}
+
+public final class io/dataloom/runtime/observation/retry/RetryCircuitTelemetryConfiguration {
+	public fun <init> ()V
+	public fun <init> (ILio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOverflowPolicy;)V
+	public synthetic fun <init> (ILio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOverflowPolicy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getBufferCapacityPerExporter ()I
+	public final fun getExporterTimeout ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun getOverflowPolicy ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOverflowPolicy;
+}
+
+public final class io/dataloom/runtime/observation/retry/RetryCircuitTelemetryContext {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCorrelationId-8D7avHI ()Ljava/lang/String;
+	public final fun getTenantId-FOnZjVk ()Ljava/lang/String;
+	public final fun getTraceId-rhgDUuU ()Ljava/lang/String;
+	public final fun getWorkflowId-RNYfoJA ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/observation/retry/RetryCircuitTelemetryEvent {
+	public synthetic fun <init> (Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryContext;Lio/dataloom/api/circuit/CircuitBreakerScopeKind;Lio/dataloom/api/circuit/CircuitBreakerPhase;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryContext;Lio/dataloom/api/circuit/CircuitBreakerScopeKind;Lio/dataloom/api/circuit/CircuitBreakerPhase;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCircuitDetail ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;
+	public final fun getCircuitOperationOutcome ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;
+	public final fun getCircuitPhase ()Lio/dataloom/api/circuit/CircuitBreakerPhase;
+	public final fun getContext ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryContext;
+	public final fun getErrorCode-xOVhP9Q ()Ljava/lang/String;
+	public final fun getOccurredAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getRetryAttempt ()Lio/dataloom/api/retry/RetryAttempt;
+	public final fun getSchemaVersion ()I
+	public final fun getScopeKind ()Lio/dataloom/api/circuit/CircuitBreakerScopeKind;
+	public final fun getSelectedDelay ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun getSignal ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/runtime/observation/retry/RetryCircuitTelemetryExporter {
+	public abstract fun export (Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryEvent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getId-I6ovuC4 ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/observation/retry/RetryCircuitTelemetryExporterId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryExporterId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome : java/lang/Enum {
+	public static final field CIRCUIT_FAILURE Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;
+	public static final field NON_CIRCUIT_FAILURE Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;
+	public static final field SUCCEEDED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;
+	public static fun values ()[Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;
+}
+
+public final class io/dataloom/runtime/observation/retry/RetryCircuitTelemetryOverflowPolicy : java/lang/Enum {
+	public static final field DROP_LATEST Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOverflowPolicy;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOverflowPolicy;
+	public static fun values ()[Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOverflowPolicy;
+}
+
+public final class io/dataloom/runtime/observation/retry/RetryCircuitTelemetryRecordResult {
+	public fun <init> (III)V
+	public final fun getAcceptedExporterCount ()I
+	public final fun getConfiguredExporterCount ()I
+	public final fun getDroppedExporterCount ()I
+}
+
+public final class io/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal : java/lang/Enum {
+	public static final field CIRCUIT_ADMINISTRATION_AUTHORIZATION_DENIED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field CIRCUIT_ADMINISTRATION_CLOCK_REGRESSION Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field CIRCUIT_ADMINISTRATION_COMMAND_CONFLICT Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field CIRCUIT_ADMINISTRATION_CONTENTION Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field CIRCUIT_ADMINISTRATION_EXECUTION_FAILED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field CIRCUIT_ADMINISTRATION_EXECUTION_REJECTED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field CIRCUIT_ADMINISTRATION_PERSISTENCE_FAILED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field CIRCUIT_ADMINISTRATION_POLICY_REJECTED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field CIRCUIT_ADMINISTRATION_RECORDING_UNCONFIRMED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field CIRCUIT_ADMINISTRATION_SUCCEEDED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field CIRCUIT_EXECUTED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field CIRCUIT_PERMISSION_CONTENTION Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field CIRCUIT_PERMISSION_PERSISTENCE_FAILED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field CIRCUIT_REJECTED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field RETRY_ADMINISTRATION_AUTHORIZATION_DENIED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field RETRY_ADMINISTRATION_CLOCK_REGRESSION Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field RETRY_ADMINISTRATION_COMMAND_CONFLICT Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field RETRY_ADMINISTRATION_CONTENTION Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field RETRY_ADMINISTRATION_EXECUTION_FAILED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field RETRY_ADMINISTRATION_EXECUTION_REJECTED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field RETRY_ADMINISTRATION_PERSISTENCE_FAILED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field RETRY_ADMINISTRATION_POLICY_REJECTED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field RETRY_ADMINISTRATION_RECORDING_UNCONFIRMED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field RETRY_ADMINISTRATION_SUCCEEDED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field RETRY_NOT_REQUIRED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field RETRY_SCHEDULED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field RETRY_SCHEDULER_FAILED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field RETRY_SCHEDULER_NOT_CONFIGURED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field RETRY_STOPPED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static fun values ()[Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+}
+
+public final class io/dataloom/runtime/observation/retry/RetryCircuitTelemetrySnapshot {
+	public fun <init> (Ljava/util/Map;Ljava/util/List;)V
+	public final fun getDegraded ()Z
+	public final fun getExporters ()Ljava/util/List;
+	public final fun getMetricCounts ()Ljava/util/Map;
+}
+
+public final class io/dataloom/runtime/observation/retry/RetryCircuitTraceExporter : io/dataloom/runtime/observation/retry/RetryCircuitTelemetryExporter {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/runtime/observation/retry/RetryCircuitTraceSink;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun export (Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryEvent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getId-I6ovuC4 ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/observation/retry/RetryCircuitTraceSignal {
+	public synthetic fun <init> (ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCorrelationId-8D7avHI ()Ljava/lang/String;
+	public final fun getErrorCode-xOVhP9Q ()Ljava/lang/String;
+	public final fun getOccurredAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getSchemaVersion ()I
+	public final fun getSignal ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public final fun getTraceId-13XjI7g ()Ljava/lang/String;
+	public final fun getWorkflowId-RNYfoJA ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/runtime/observation/retry/RetryCircuitTraceSink {
+	public abstract fun record (Lio/dataloom/runtime/observation/retry/RetryCircuitTraceSignal;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
 public final class io/dataloom/runtime/queue/CircuitBreakerDurableQueueExecutionProcessor {
 	public fun <init> (Lio/dataloom/runtime/retry/CircuitBreakerQueueOperationAdapter;Lio/dataloom/runtime/queue/QueueEntryExecutionHandler;Lio/dataloom/runtime/queue/QueueProcessingCircuitScopes;)V
 	public final fun process (Lio/dataloom/runtime/queue/QueueProcessingRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
