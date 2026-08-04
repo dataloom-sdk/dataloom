@@ -24,6 +24,7 @@ import io.dataloom.api.retry.RetryPolicy
 import io.dataloom.api.retry.RetryStopReason
 import io.dataloom.api.scheduling.SchedulingDelay
 import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
+import io.dataloom.api.strategy.StrategyCacheState
 import io.dataloom.api.strategy.StrategyConfigurationVersion
 import io.dataloom.api.strategy.StrategyConsistency
 import io.dataloom.api.strategy.StrategyDataOrigin
@@ -35,6 +36,7 @@ import io.dataloom.api.strategy.StrategyOperation
 import io.dataloom.api.strategy.StrategyPlanId
 import io.dataloom.api.strategy.StrategyProfileId
 import io.dataloom.api.strategy.StrategyProviderCapability
+import io.dataloom.api.strategy.StrategyRemoteOutcome
 import io.dataloom.api.strategy.StrategyTransportOutput
 import io.dataloom.api.synchronization.SynchronizationResult
 import io.dataloom.api.synchronization.SynchronizationSummary
@@ -79,9 +81,65 @@ class StrategyQueueExecutionOutcomeMapperTest {
             entry = entry(),
         )
 
-        val failed = assertIs<QueueEntryExecutionOutcome.Failed>(outcome)
-        assertEquals(protected.code, failed.error.code)
-        assertEquals(ErrorCategory.AUTHENTICATION, failed.error.category)
+        assertProtectedFailure(outcome, protected)
+    }
+
+    @Test
+    fun successfulFallbackDoesNotHideUnresolvedPartialPushFailure() {
+        val retryable = TestError(
+            code = ErrorCode("FALLBACK_PUSH_RETRYABLE"),
+        )
+        val protected = TestError(
+            code = ErrorCode("FALLBACK_PUSH_VALIDATION"),
+            category = ErrorCategory.VALIDATION,
+        )
+        val pullUnavailable = TestError(
+            code = ErrorCode("FALLBACK_PULL_UNAVAILABLE"),
+        )
+        val result = StrategySynchronizationExecutionResult.FallbackActivated(
+            evaluation = evaluation(),
+            completedAt = DataLoomInstant(3_000L),
+            remoteOutcome = StrategyRemoteOutcome.UNAVAILABLE,
+            remoteAttempted = true,
+            cacheState = StrategyCacheState.STALE,
+            primaryError = pullUnavailable,
+            completedOperations = listOf(
+                StrategyOperation.PUSH_REMOTE,
+                StrategyOperation.SERVE_LOCAL,
+            ),
+            partialOutput = StrategyTransportOutput.ProviderBacked(
+                partialPush(listOf(retryable, protected)),
+            ),
+        )
+
+        val outcome = mapper(AlwaysRetryPolicy).map(result, entry())
+
+        assertProtectedFailure(outcome, protected)
+    }
+
+    @Test
+    fun terminalFallbackFailureCannotHideProtectedPartialPushFailure() {
+        val protected = TestError(
+            code = ErrorCode("TERMINAL_PUSH_AUTHORIZATION"),
+            category = ErrorCategory.AUTHORIZATION,
+        )
+        val result = StrategySynchronizationExecutionResult.Failed(
+            evaluation = evaluation(),
+            completedAt = DataLoomInstant(3_000L),
+            error = TestError(code = ErrorCode("FALLBACK_PROVIDER_FAILURE")),
+            transportAttempted = true,
+            completedOperations = listOf(StrategyOperation.PUSH_REMOTE),
+            partialOutput = StrategyTransportOutput.ProviderBacked(
+                partialPush(listOf(protected)),
+            ),
+            remoteOutcome = StrategyRemoteOutcome.UNAVAILABLE,
+            primaryError = TestError(code = ErrorCode("PULL_UNAVAILABLE")),
+            fallbackAttempted = true,
+        )
+
+        val outcome = mapper(AlwaysRetryPolicy).map(result, entry())
+
+        assertProtectedFailure(outcome, protected)
     }
 
     @Test
@@ -116,6 +174,15 @@ class StrategyQueueExecutionOutcomeMapperTest {
 
         val cancelled = assertIs<QueueEntryExecutionOutcome.Cancelled>(outcome)
         assertEquals(request().context, cancelled.context)
+    }
+
+    private fun assertProtectedFailure(
+        outcome: QueueEntryExecutionOutcome,
+        expected: DataLoomError,
+    ) {
+        val failed = assertIs<QueueEntryExecutionOutcome.Failed>(outcome)
+        assertEquals(expected.code, failed.error.code)
+        assertEquals(expected.category, failed.error.category)
     }
 
     private fun mapper(
