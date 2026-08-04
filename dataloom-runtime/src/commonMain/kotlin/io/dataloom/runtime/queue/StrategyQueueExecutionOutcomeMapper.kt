@@ -41,8 +41,14 @@ internal class StrategyQueueExecutionOutcomeMapper(
                 is StrategyTransportOutput.Bidirectional,
                 -> QueueEntryExecutionOutcome.Completed(result.completedAt)
             }
-        is StrategySynchronizationExecutionResult.FallbackActivated ->
-            QueueEntryExecutionOutcome.Completed(result.completedAt)
+        is StrategySynchronizationExecutionResult.FallbackActivated -> {
+            val unresolvedErrors = errorsFrom(result.partialOutput)
+            if (unresolvedErrors.isEmpty()) {
+                QueueEntryExecutionOutcome.Completed(result.completedAt)
+            } else {
+                evaluateRetry(unresolvedErrors, result.completedAt, entry)
+            }
+        }
         is StrategySynchronizationExecutionResult.Cancelled ->
             when (val output = result.output) {
                 is StrategyTransportOutput.ProviderBacked -> {
@@ -56,13 +62,24 @@ internal class StrategyQueueExecutionOutcomeMapper(
                 )
             }
         is StrategySynchronizationExecutionResult.Failed ->
-            evaluateRetry(result.error, result.completedAt, entry)
+            evaluateRetry(
+                errors = unresolvedErrors(
+                    partialOutput = result.partialOutput,
+                    primaryError = result.primaryError,
+                    terminalError = result.error,
+                ),
+                completedAt = result.completedAt,
+                entry = entry,
+            )
         is StrategySynchronizationExecutionResult.FallbackUnavailable -> {
-            val primary = result.primaryError
-            if (primary == null) {
+            val errors = unresolvedErrors(
+                partialOutput = result.partialOutput,
+                primaryError = result.primaryError,
+            )
+            if (errors.isEmpty()) {
                 failed(AcceptedPlanFallbackUnavailableError())
             } else {
-                evaluateRetry(primary, result.completedAt, entry)
+                evaluateRetry(errors, result.completedAt, entry)
             }
         }
         is StrategySynchronizationExecutionResult.Deferred ->
@@ -100,19 +117,71 @@ internal class StrategyQueueExecutionOutcomeMapper(
         -> evaluateRetry(result, entry)
     }
 
+    private fun unresolvedErrors(
+        partialOutput: StrategyTransportOutput?,
+        primaryError: DataLoomError? = null,
+        terminalError: DataLoomError? = null,
+    ): List<DataLoomError> =
+        (errorsFrom(partialOutput) + listOfNotNull(primaryError, terminalError)).distinct()
+
+    private fun errorsFrom(
+        output: StrategyTransportOutput?,
+    ): List<DataLoomError> = when (output) {
+        is StrategyTransportOutput.ProviderBacked -> errorsFrom(output.result)
+        is StrategyTransportOutput.RemoteFirstBidirectional -> errorsFrom(output.pushResult)
+        is StrategyTransportOutput.Pushed,
+        is StrategyTransportOutput.Pulled,
+        is StrategyTransportOutput.Bidirectional,
+        null,
+        -> emptyList()
+    }
+
+    private fun errorsFrom(
+        result: SynchronizationResult,
+    ): List<DataLoomError> = when (result) {
+        is SynchronizationResult.Failed -> listOf(result.error)
+        is SynchronizationResult.PartiallySucceeded -> result.errors
+        is SynchronizationResult.Succeeded,
+        is SynchronizationResult.Skipped,
+        is SynchronizationResult.Cancelled,
+        -> emptyList()
+    }
+
     private fun evaluateRetry(
         error: DataLoomError,
         completedAt: DataLoomInstant,
         entry: QueueEntry,
     ): QueueEntryExecutionOutcome = evaluateRetry(
-        result = SynchronizationResult.Failed(
-            request = entry.synchronizationRequest,
-            completedAt = completedAt,
-            summary = SynchronizationSummary(),
-            error = error,
-        ),
+        errors = listOf(error),
+        completedAt = completedAt,
         entry = entry,
     )
+
+    private fun evaluateRetry(
+        errors: List<DataLoomError>,
+        completedAt: DataLoomInstant,
+        entry: QueueEntry,
+    ): QueueEntryExecutionOutcome {
+        if (errors.isEmpty()) {
+            return failed(AcceptedPlanRetryEvaluationInconsistentError())
+        }
+        val result = if (errors.size == 1) {
+            SynchronizationResult.Failed(
+                request = entry.synchronizationRequest,
+                completedAt = completedAt,
+                summary = SynchronizationSummary(),
+                error = errors.single(),
+            )
+        } else {
+            SynchronizationResult.PartiallySucceeded(
+                request = entry.synchronizationRequest,
+                completedAt = completedAt,
+                summary = SynchronizationSummary(),
+                errors = errors,
+            )
+        }
+        return evaluateRetry(result, entry)
+    }
 
     private fun evaluateRetry(
         result: SynchronizationResult,
