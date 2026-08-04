@@ -81,10 +81,9 @@ internal class StrategyQueueExecutionOutcomeMapper(
         -> QueueEntryExecutionOutcome.Completed(completedAt)
         is SynchronizationResult.Cancelled ->
             QueueEntryExecutionOutcome.Cancelled(pushResult.request.context)
-        is SynchronizationResult.Failed ->
-            evaluateRetry(pushResult.error, completedAt, entry)
-        is SynchronizationResult.PartiallySucceeded ->
-            evaluateRetry(pushResult.errors.first(), completedAt, entry)
+        is SynchronizationResult.Failed,
+        is SynchronizationResult.PartiallySucceeded,
+        -> evaluateRetry(pushResult, entry)
     }
 
     private fun mapSynchronizationResult(
@@ -96,15 +95,27 @@ internal class StrategyQueueExecutionOutcomeMapper(
         -> QueueEntryExecutionOutcome.Completed(result.completedAt)
         is SynchronizationResult.Cancelled ->
             QueueEntryExecutionOutcome.Cancelled(result.request.context)
-        is SynchronizationResult.Failed ->
-            evaluateRetry(result.error, result.completedAt, entry)
-        is SynchronizationResult.PartiallySucceeded ->
-            evaluateRetry(result.errors.first(), result.completedAt, entry)
+        is SynchronizationResult.Failed,
+        is SynchronizationResult.PartiallySucceeded,
+        -> evaluateRetry(result, entry)
     }
 
     private fun evaluateRetry(
         error: DataLoomError,
         completedAt: DataLoomInstant,
+        entry: QueueEntry,
+    ): QueueEntryExecutionOutcome = evaluateRetry(
+        result = SynchronizationResult.Failed(
+            request = entry.synchronizationRequest,
+            completedAt = completedAt,
+            summary = SynchronizationSummary(),
+            error = error,
+        ),
+        entry = entry,
+    )
+
+    private fun evaluateRetry(
+        result: SynchronizationResult,
         entry: QueueEntry,
     ): QueueEntryExecutionOutcome {
         val currentAttempt = entry.retryAttempt?.number ?: 0
@@ -112,15 +123,9 @@ internal class StrategyQueueExecutionOutcomeMapper(
             return failed(AcceptedPlanRetryAttemptExhaustedError())
         }
         val retryAttempt = RetryAttempt(currentAttempt + 1)
-        val failure = SynchronizationResult.Failed(
-            request = entry.synchronizationRequest,
-            completedAt = completedAt,
-            summary = SynchronizationSummary(),
-            error = error,
-        )
         return when (
             val evaluation = retryEvaluator.evaluate(
-                result = failure,
+                result = result,
                 retryAttempt = retryAttempt,
                 retryOperation = retryOperation,
                 retryBudgetState = entry.retryBudgetState,
