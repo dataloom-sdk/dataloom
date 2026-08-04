@@ -1,5 +1,5 @@
 DL-039B durable strategy decision evidence failed.
-Source head: a15d11d03b60384e2dec55644441f5312ba8de19
+Source head: c0c0ef8fa36c180b45045e4c428e5889db0bcfc5
 
 Repository status:
  M .github/evidence/dl-strategy-002-last-failure.txt
@@ -37,72 +37,182 @@ Repository status:
 ?? docs/audits/DL-039B-durable-strategy-decision-persistence-checkpoint.md
 ?? runtime-external-consumer/src/commonMain/kotlin/io/dataloom/consumer/DurableStrategyDecisionExternalConsumerProbe.kt
 
+===== 01-patch.log compiler diagnostics =====
+
+===== 01-patch.log head =====
+Corrected Apple blockquote replacement target.
+DL-039B durable strategy decision patch applied.
+DL-039B follow-up hardening patch applied.
+
 ===== 01-patch.log tail =====
 Corrected Apple blockquote replacement target.
 DL-039B durable strategy decision patch applied.
 DL-039B follow-up hardening patch applied.
 
+===== 02-generate.log compiler diagnostics =====
+98-> Task :dataloom-api:exportCrossCompilationMetadataForIosX64ApiElements
+99-> Task :dataloom-core:compileKotlinIosX64
+100-> Task :dataloom-core:exportCrossCompilationMetadataForIosX64ApiElements
+101-
+102-> Task :dataloom-runtime:compileKotlinIosSimulatorArm64 FAILED
+103:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:131:20 Incorrect character literal.
+104:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:131:21 Syntax error: Expecting ','.
+105:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:132:1 Incorrect character literal.
+106:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:133:13 Unresolved reference 'entries'.
+107:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:133:20 Syntax error: Expecting an element.
+108:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:133:28 Syntax error: Expecting an element.
+109:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:133:40 Unresolved reference 'it'.
+110:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:133:59 Cannot infer type for value parameter 'mapEntry'. Specify it explicitly.
+111:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:134:35 Unresolved reference 'key'.
+112:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:135:38 Unresolved reference 'value'.
+113:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:143:24 Incorrect character literal.
+114:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:143:25 Syntax error: Expecting ','.
+115:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:144:1 Incorrect character literal.
+116:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:144:3 Syntax error: Expecting ')'.
+117:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:145:14 Syntax error: Expecting ')'.
+118-
+119-> Task :dataloom-runtime:compileKotlinIosArm64 FAILED
+120:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:131:20 Incorrect character literal.
+121:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:131:21 Syntax error: Expecting ','.
+122:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:132:1 Incorrect character literal.
+123:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:133:13 Unresolved reference 'entries'.
+124:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:133:20 Syntax error: Expecting an element.
+125:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:133:28 Syntax error: Expecting an element.
+126:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:133:40 Unresolved reference 'it'.
+127:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:133:59 Cannot infer type for value parameter 'mapEntry'. Specify it explicitly.
+128:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:134:35 Unresolved reference 'key'.
+129:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:135:38 Unresolved reference 'value'.
+130:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:143:24 Incorrect character literal.
+131:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:143:25 Syntax error: Expecting ','.
+132:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:144:1 Incorrect character literal.
+133:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:144:3 Syntax error: Expecting ')'.
+134:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:145:14 Syntax error: Expecting ')'.
+135-
+136-> Task :dataloom-runtime:compileKotlinIosX64 FAILED
+137:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:131:20 Incorrect character literal.
+138:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:131:21 Syntax error: Expecting ','.
+139:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:132:1 Incorrect character literal.
+140:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:133:13 Unresolved reference 'entries'.
+141:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:133:20 Syntax error: Expecting an element.
+142:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:133:28 Syntax error: Expecting an element.
+143:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:133:40 Unresolved reference 'it'.
+144:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:133:59 Cannot infer type for value parameter 'mapEntry'. Specify it explicitly.
+145:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:134:35 Unresolved reference 'key'.
+146:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:135:38 Unresolved reference 'value'.
+147:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:143:24 Incorrect character literal.
+148:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:143:25 Syntax error: Expecting ','.
+149:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:144:1 Incorrect character literal.
+150:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:144:3 Syntax error: Expecting ')'.
+151:e: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt:145:14 Syntax error: Expecting ')'.
+152-gradle/actions: Writing build results to /Users/runner/work/_temp/.gradle-actions/build-results/__run_4-1785823343047.json
+153-
+154-FAILURE: Build completed with 3 failures.
+155-
+156-1: Task failed with an exception.
+
+===== 02-generate.log head =====
+
+Welcome to Gradle 9.5.0!
+
+Here are the highlights of this release:
+ - Task provenance in reports and failure messages
+ - Type-safe accessors for precompiled Kotlin Settings plugins
+
+For more details see https://docs.gradle.org/9.5.0/release-notes.html
+
+Starting a Gradle Daemon (subsequent builds will be faster)
+Calculating task graph as no cached configuration is available for tasks: updateKotlinAbi :dataloom-queue-room:kspDebugKotlin
+> Task :build-logic:compileJava FROM-CACHE
+> Task :build-logic:pluginDescriptors
+> Task :build-logic:processResources
+> Task :build-logic:classes
+> Task :build-logic:jar
+> Task :dataloom-model:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-model:jvmProcessResources NO-SOURCE
+> Task :dataloom-model:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-api:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-model:processJvmMainResources SKIPPED
+> Task :dataloom-provider-api:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-provider-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-provider-api:jvmProcessResources NO-SOURCE
+> Task :dataloom-provider-api:processJvmMainResources SKIPPED
+> Task :dataloom-model:compileKotlinJvm FROM-CACHE
+> Task :dataloom-model:compileJvmMainJava NO-SOURCE
+> Task :dataloom-model:jvmMainClasses UP-TO-DATE
+> Task :dataloom-model:jvmJar
+> Task :dataloom-provider-api:compileKotlinJvm FROM-CACHE
+> Task :dataloom-provider-api:compileJvmMainJava NO-SOURCE
+> Task :dataloom-provider-api:jvmMainClasses UP-TO-DATE
+> Task :dataloom-provider-api:jvmJar
+
+> Task :dataloom-api:downloadKotlinNativeDistribution
+Kotlin/Native bundle directory /Users/runner/.konan/kotlin-native-prebuilt-macos-aarch64-2.4.10 is not empty. Native bundle files will be overwritten.
+
+> Task :dataloom-api:compileKotlinJvm
+> Task :dataloom-api:compileJvmMainJava NO-SOURCE
+
+> Task :dataloom-model:downloadKotlinNativeDistribution
+Downloading native dependencies (LLVM, sysroot etc). This is a one-time action performed only on the first run of the compiler.
+Downloading dependency https://download.jetbrains.com/kotlin/native/resources/llvm/21-aarch64-macos/llvm-21-aarch64-macos-essentials-97.tar.gz to /Users/runner/.konan/dependencies/cache/llvm-21-aarch64-macos-essentials-97.tar.gz
+
+> Task :dataloom-model:exportCrossCompilationMetadataForIosArm64ApiElements
+
+> Task :dataloom-model:downloadKotlinNativeDistribution
+Done.
+Extracting dependency: /Users/runner/.konan/dependencies/cache/llvm-21-aarch64-macos-essentials-97.tar.gz into /Users/runner/.konan/dependencies
+Downloading dependency https://download.jetbrains.com/kotlin/native/libffi-3.3-1-macos-arm64.tar.gz to /Users/runner/.konan/dependencies/cache/libffi-3.3-1-macos-arm64.tar.gz
+Done.
+Extracting dependency: /Users/runner/.konan/dependencies/cache/libffi-3.3-1-macos-arm64.tar.gz into /Users/runner/.konan/dependencies
+
+> Task :dataloom-provider-api:downloadKotlinNativeDistribution
+> Task :dataloom-provider-api:exportCrossCompilationMetadataForIosArm64ApiElements
+> Task :dataloom-model:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
+> Task :dataloom-provider-api:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
+> Task :dataloom-model:compileKotlinIosSimulatorArm64 FROM-CACHE
+> Task :dataloom-provider-api:compileKotlinIosSimulatorArm64 FROM-CACHE
+> Task :dataloom-model:compileKotlinIosX64 FROM-CACHE
+> Task :dataloom-model:exportCrossCompilationMetadataForIosX64ApiElements
+> Task :dataloom-model:compileKotlinIosArm64 FROM-CACHE
+> Task :dataloom-provider-api:compileKotlinIosX64 FROM-CACHE
+> Task :dataloom-provider-api:exportCrossCompilationMetadataForIosX64ApiElements
+> Task :dataloom-provider-api:compileKotlinIosArm64 FROM-CACHE
+> Task :dataloom-api:compileKotlinIosSimulatorArm64
+> Task :dataloom-api:compileKotlinIosArm64
+> Task :dataloom-api:iosArm64ProcessResources NO-SOURCE
+> Task :dataloom-api:iosArm64MainKlibrary
+> Task :dataloom-api:iosSimulatorArm64ProcessResources NO-SOURCE
+> Task :dataloom-api:iosSimulatorArm64MainKlibrary
+> Task :dataloom-api:iosX64ProcessResources NO-SOURCE
+> Task :dataloom-api:jvmProcessResources NO-SOURCE
+> Task :dataloom-api:processJvmMainResources SKIPPED
+> Task :dataloom-api:jvmMainClasses
+> Task :dataloom-apple:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-apple:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-api:exportCrossCompilationMetadataForIosArm64ApiElements
+> Task :dataloom-core:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-apple:downloadKotlinNativeDistribution
+> Task :dataloom-core:downloadKotlinNativeDistribution
+> Task :dataloom-core:exportCrossCompilationMetadataForIosArm64ApiElements
+> Task :dataloom-runtime:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-runtime:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-runtime:downloadKotlinNativeDistribution
+> Task :dataloom-runtime:exportCrossCompilationMetadataForIosArm64ApiElements
+> Task :dataloom-api:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
+> Task :dataloom-api:compileKotlinIosX64
+> Task :dataloom-api:iosX64MainKlibrary
+> Task :dataloom-core:compileKotlinIosSimulatorArm64
+> Task :dataloom-core:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
+> Task :dataloom-core:compileKotlinIosArm64
+> Task :dataloom-api:internalDumpKotlinAbi
+> Task :dataloom-api:updateKotlinAbi
+> Task :dataloom-runtime:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
+> Task :dataloom-api:exportCrossCompilationMetadataForIosX64ApiElements
+> Task :dataloom-core:compileKotlinIosX64
+> Task :dataloom-core:exportCrossCompilationMetadataForIosX64ApiElements
+
 ===== 02-generate.log tail =====
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:54)
-	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
-	at org.gradle.execution.plan.DefaultNodeExecutor.executeLocalTaskNode(DefaultNodeExecutor.java:55)
-	at org.gradle.execution.plan.DefaultNodeExecutor.execute(DefaultNodeExecutor.java:34)
-	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:355)
-	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:343)
-	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:339)
-	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:84)
-	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:339)
-	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:328)
-	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
-	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
-	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
-	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
-	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
-	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
-	at java.base/java.lang.Thread.run(Thread.java:840)
-Caused by: org.jetbrains.kotlin.backend.konan.KonanCompilationException: Compilation finished with errors
-	at org.jetbrains.kotlin.cli.bc.K2Native$Companion.mainNoExitWithRenderer$lambda$0(K2Native.kt:300)
-	at org.jetbrains.kotlin.util.UtilKt.profileIf(Util.kt:22)
-	at org.jetbrains.kotlin.util.UtilKt.profile(Util.kt:16)
-	at org.jetbrains.kotlin.cli.bc.K2Native$Companion.mainNoExitWithRenderer(K2Native.kt:298)
-	at org.jetbrains.kotlin.cli.bc.K2NativeKt.mainNoExitWithGradleRenderer(K2Native.kt:316)
-	at org.jetbrains.kotlin.cli.utilities.MainKt$daemonMain$1.invoke(main.kt:47)
-	at org.jetbrains.kotlin.cli.utilities.MainKt$daemonMain$1.invoke(main.kt:47)
-	at org.jetbrains.kotlin.cli.utilities.MainKt.mainImpl(main.kt:20)
-	at org.jetbrains.kotlin.cli.utilities.MainKt.inProcessMain(main.kt:53)
-	at org.jetbrains.kotlin.cli.utilities.MainKt.daemonMain(main.kt:47)
-	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
-	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
-	at org.jetbrains.kotlin.internal.compilerRunner.native.KotlinNativeToolRunner.runInProcess(KotlinNativeToolRunner.kt:176)
-	at org.jetbrains.kotlin.internal.compilerRunner.native.KotlinNativeToolRunner.runTool(KotlinNativeToolRunner.kt:66)
-	at org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile$compile$1.invoke(KotlinNativeTasks.kt:590)
-	at org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile$compile$1.invoke(KotlinNativeTasks.kt:574)
-	at org.jetbrains.kotlin.compilerRunner.ReportUtilsKt.addBuildMetricsForTaskAction(reportUtils.kt:114)
-	at org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile.compile(KotlinNativeTasks.kt:574)
-	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
-	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
-	at org.gradle.internal.reflect.JavaMethod.invoke(JavaMethod.java:125)
-	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.doExecute(StandardTaskAction.java:58)
-	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:51)
-	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:29)
-	at org.gradle.api.internal.tasks.execution.TaskExecution$3.run(TaskExecution.java:259)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:30)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:27)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:48)
-	at org.gradle.api.internal.tasks.execution.TaskExecution.executeAction(TaskExecution.java:244)
-	at org.gradle.api.internal.tasks.execution.TaskExecution.executeActions(TaskExecution.java:227)
-	at org.gradle.api.internal.tasks.execution.TaskExecution.executeWithPreviousOutputFiles(TaskExecution.java:210)
 	at org.gradle.api.internal.tasks.execution.TaskExecution.execute(TaskExecution.java:176)
 	at org.gradle.internal.execution.steps.ExecuteStep.executeInternal(ExecuteStep.java:167)
 	at org.gradle.internal.execution.steps.ExecuteStep.access$000(ExecuteStep.java:47)
@@ -200,6 +310,6 @@ Caused by: org.jetbrains.kotlin.backend.konan.KonanCompilationException: Compila
 
 ==============================================================================
 
-BUILD FAILED in 1m 12s
+BUILD FAILED in 1m 22s
 52 actionable tasks: 43 executed, 9 from cache
 Configuration cache entry stored.
