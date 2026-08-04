@@ -11,7 +11,7 @@ import io.dataloom.api.storage.StorageProvider
  * credentials, provider values, exception text, and arbitrary metadata are not
  * accepted by this contract.
  */
-public data class StrategyReconciliationRequest(
+public class StrategyReconciliationRequest(
     public val request: SynchronizationRequest,
     public val decisionId: StrategyDecisionId,
     public val planId: StrategyPlanId,
@@ -30,6 +30,31 @@ public data class StrategyReconciliationRequest(
 
     public val completedOperations: List<StrategyOperation>
         get() = completedSnapshot.toList()
+
+    override fun equals(other: Any?): Boolean =
+        other is StrategyReconciliationRequest &&
+            request == other.request &&
+            decisionId == other.decisionId &&
+            planId == other.planId &&
+            profileId == other.profileId &&
+            configurationVersion == other.configurationVersion &&
+            completedSnapshot == other.completedSnapshot
+
+    override fun hashCode(): Int {
+        var result = request.hashCode()
+        result = 31 * result + decisionId.hashCode()
+        result = 31 * result + planId.hashCode()
+        result = 31 * result + profileId.hashCode()
+        result = 31 * result + configurationVersion.hashCode()
+        result = 31 * result + completedSnapshot.hashCode()
+        return result
+    }
+
+    /** Bounded diagnostics that exclude request payload and dynamic identifiers. */
+    override fun toString(): String =
+        "StrategyReconciliationRequest(" +
+            "operationCount=${completedSnapshot.size}, " +
+            "configurationVersion=${configurationVersion.value})"
 }
 
 /** Terminal result of the bounded strategy reconciliation hook. */
