@@ -43,13 +43,19 @@ jobs:
       - name: Prepare evidence logs
         run: mkdir -p /tmp/dl-strategy-005-hardening-logs
 
-      - name: Apply reviewed hardening patch
+      - name: Apply reviewed hardening patches
         shell: bash
         run: |
           set -euo pipefail
           {
-            python3 -m py_compile .github/scripts/dl_strategy_005_hardening.py
-            python3 .github/scripts/dl_strategy_005_hardening.py
+            scripts=(
+              .github/scripts/dl_strategy_005_hardening.py
+              .github/scripts/dl_strategy_005_hardening_followup.py
+            )
+            for script in "${scripts[@]}"; do
+              python3 -m py_compile "$script"
+              python3 "$script"
+            done
             git diff --check
           } 2>&1 | tee /tmp/dl-strategy-005-hardening-logs/01-patch.log
 
@@ -136,6 +142,7 @@ jobs:
           set -euo pipefail
           rm .github/workflows/dl-strategy-005-hardening-evidence.yml
           rm .github/scripts/dl_strategy_005_hardening.py
+          rm .github/scripts/dl_strategy_005_hardening_followup.py
           rm -rf .github/scripts/__pycache__
           rm -f .github/evidence/dl-strategy-005-hardening-last-failure.txt
           rmdir .github/evidence 2>/dev/null || true
