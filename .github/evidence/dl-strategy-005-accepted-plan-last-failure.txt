@@ -1,7 +1,8 @@
 DL-039B persisted accepted-plan execution evidence failed.
-Source head: b22472ac7a79bfb5762af38e987d5747eb502653
+Source head: c3fe713cc71c2d8b0339c6c356eaa68edd04a2fb
 
 Repository status:
+ M .github/evidence/dl-strategy-005-accepted-plan-last-failure.txt
  M dataloom-queue-room/src/main/kotlin/io/dataloom/queue/room/DataLoomRoomMigrations.kt
  M dataloom-queue-room/src/main/kotlin/io/dataloom/queue/room/internal/DataLoomRoomDatabase.kt
  M dataloom-queue-room/src/main/kotlin/io/dataloom/queue/room/internal/Mappers.kt
@@ -13,7 +14,6 @@ Repository status:
  M docs/android/room-queue-provider.md
  M docs/api/queue-model.md
  M docs/apple/queue-state-store.md
-?? .github/evidence/
 ?? .github/scripts/__pycache__/
 ?? docs/audits/DL-039B-immutable-plan-persistence-checkpoint.md
 
