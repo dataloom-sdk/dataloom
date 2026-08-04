@@ -21,6 +21,9 @@ public enum class StrategyExecutionRejectionReason {
     PROVIDER_PROTECTION_NOT_CONFIGURED,
     PROVIDER_PROTECTION_SCOPE_MISMATCH,
     LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED,
+    ACCEPTED_PLAN_MISMATCH,
+    ACCEPTED_PLAN_CONTINUATION_MISSING,
+    RECONCILIATION_PROVIDER_NOT_CONFIGURED,
     UNSUPPORTED_PLAN,
 }
 
@@ -154,7 +157,7 @@ public sealed interface StrategySynchronizationExecutionResult {
                 "partialOutput=$partialOutput)"
     }
 
-    /** The fallback transition was allowed, but synchronized local state was unavailable. */
+    /** Fallback was allowed but no acceptable local state was available. */
     public data class FallbackUnavailable(
         override val evaluation: StrategyEvaluationResult,
         override val completedAt: DataLoomInstant,
@@ -163,26 +166,22 @@ public sealed interface StrategySynchronizationExecutionResult {
         public val localResult: StrategyLocalFallbackResult.Unavailable,
         public val primaryError: DataLoomError? = null,
         public val partialOutput: StrategyTransportOutput? = null,
-    ) : StrategySynchronizationExecutionResult {
-        init {
-            require(remoteAttempted == (primaryError != null)) {
-                "Remote-attempt evidence and primaryError must agree."
-            }
-        }
-    }
+    ) : StrategySynchronizationExecutionResult
 
-    /** A provider-backed pipeline returned explicit cancellation. */
+    /** Cancellation remains terminal and is never converted into fallback. */
     public data class Cancelled(
         override val evaluation: StrategyEvaluationResult,
         override val completedAt: DataLoomInstant,
-        public val output: StrategyTransportOutput.ProviderBacked,
+        public val output: StrategyTransportOutput,
     ) : StrategySynchronizationExecutionResult
 
+    /** Strategy admitted durable work instead of running transport directly. */
     public data class Deferred(
         override val evaluation: StrategyEvaluationResult,
         override val completedAt: DataLoomInstant,
     ) : StrategySynchronizationExecutionResult
 
+    /** Execution was rejected before a provider operation. */
     public class Rejected(
         override val evaluation: StrategyEvaluationResult,
         override val completedAt: DataLoomInstant,
@@ -196,10 +195,10 @@ public sealed interface StrategySynchronizationExecutionResult {
             bindingFailures.toList()
 
         public val missingCapabilities: Set<StrategyProviderCapability>
-            get() = missingSnapshot
+            get() = missingSnapshot.toSet()
 
         public val bindingFailures: List<ProviderBindingFailure>
-            get() = failuresSnapshot
+            get() = failuresSnapshot.toList()
 
         override fun equals(other: Any?): Boolean =
             other is Rejected &&
@@ -224,6 +223,6 @@ public sealed interface StrategySynchronizationExecutionResult {
                 "planId=${evaluation.plan.id}, " +
                 "reason=$reason, " +
                 "missingCapabilities=$missingSnapshot, " +
-                "bindingFailures=$failuresSnapshot)"
+                "bindingFailureCount=${failuresSnapshot.size})"
     }
 }
