@@ -11,24 +11,35 @@ def write(path: str, content: str) -> None:
     (ROOT / path).write_text(content.rstrip() + "\n")
 
 
-def replace_once(path: str, old: str, new: str) -> None:
+def replace_once_unless_present(
+    path: str,
+    old: str,
+    new: str,
+    present: str,
+) -> None:
     content = read(path)
+    if present in content:
+        return
     count = content.count(old)
     if count != 1:
-        raise SystemExit(f"Expected one accepted-plan facade match in {path}, found {count}: {old[:120]!r}")
+        raise SystemExit(
+            f"Expected one accepted-plan facade match in {path}, found {count}: "
+            f"{old[:140]!r}",
+        )
     write(path, content.replace(old, new, 1))
 
 
 data_loom = "dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/facade/DataLoom.kt"
-replace_once(
+replace_once_unless_present(
     data_loom,
     "import io.dataloom.api.strategy.StrategySynchronizationRequest\n",
     """import io.dataloom.api.strategy.PersistedStrategyDecision
 import io.dataloom.api.strategy.StrategyExecutionPlan
 import io.dataloom.api.strategy.StrategySynchronizationRequest
 """,
+    "import io.dataloom.api.strategy.PersistedStrategyDecision\n",
 )
-replace_once(
+replace_once_unless_present(
     data_loom,
     """    public suspend fun synchronize(
         request: StrategySynchronizationRequest,
@@ -36,7 +47,7 @@ replace_once(
     ): StrategySynchronizationExecutionResult
 
     /**
-     * Returns a diagnostic snapshot of the current facade state.
+     * Shuts down all successfully initialized providers in reverse
 """,
     """    public suspend fun synchronize(
         request: StrategySynchronizationRequest,
@@ -65,27 +76,30 @@ replace_once(
     ): StrategySynchronizationExecutionResult
 
     /**
-     * Returns a diagnostic snapshot of the current facade state.
+     * Shuts down all successfully initialized providers in reverse
 """,
+    "public suspend fun synchronizeAcceptedPlan(\n",
 )
 
 default_loom = "dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/facade/DefaultDataLoom.kt"
-replace_once(
+replace_once_unless_present(
     default_loom,
     "import io.dataloom.api.strategy.StrategySynchronizationRequest\n",
     """import io.dataloom.api.strategy.PersistedStrategyDecision
 import io.dataloom.api.strategy.StrategyExecutionPlan
 import io.dataloom.api.strategy.StrategySynchronizationRequest
 """,
+    "import io.dataloom.api.strategy.PersistedStrategyDecision\n",
 )
-replace_once(
+replace_once_unless_present(
     default_loom,
     "import io.dataloom.runtime.strategy.StrategySynchronizationExecutionCoordinator\n",
     """import io.dataloom.runtime.strategy.AcceptedStrategyPlanExecutionCoordinator
 import io.dataloom.runtime.strategy.StrategySynchronizationExecutionCoordinator
 """,
+    "import io.dataloom.runtime.strategy.AcceptedStrategyPlanExecutionCoordinator\n",
 )
-replace_once(
+replace_once_unless_present(
     default_loom,
     """    private val strategyExecutionCoordinator: StrategySynchronizationExecutionCoordinator,
     private val defaultBindings: SynchronizationProviderBindings?,
@@ -94,8 +108,9 @@ replace_once(
     private val acceptedStrategyPlanCoordinator: AcceptedStrategyPlanExecutionCoordinator,
     private val defaultBindings: SynchronizationProviderBindings?,
 """,
+    "private val acceptedStrategyPlanCoordinator: AcceptedStrategyPlanExecutionCoordinator,\n",
 )
-replace_once(
+replace_once_unless_present(
     default_loom,
     """    override suspend fun synchronize(
         request: StrategySynchronizationRequest,
@@ -103,7 +118,7 @@ replace_once(
     ): StrategySynchronizationExecutionResult =
         strategyExecutionCoordinator.execute(request, bindings)
 
-    override fun health(): DataLoomHealth = DataLoomHealth(
+    override suspend fun shutdown(): ProviderLifecycleResult =
 """,
     """    override suspend fun synchronize(
         request: StrategySynchronizationRequest,
@@ -136,19 +151,21 @@ replace_once(
             bindings = bindings,
         )
 
-    override fun health(): DataLoomHealth = DataLoomHealth(
+    override suspend fun shutdown(): ProviderLifecycleResult =
 """,
+    "override suspend fun synchronizeAcceptedPlan(\n",
 )
 
 builder = "dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/facade/DataLoomBuilder.kt"
-replace_once(
+replace_once_unless_present(
     builder,
     "import io.dataloom.runtime.strategy.BuiltInSynchronizationStrategyEvaluator\n",
     """import io.dataloom.runtime.strategy.AcceptedStrategyPlanExecutionCoordinator
 import io.dataloom.runtime.strategy.BuiltInSynchronizationStrategyEvaluator
 """,
+    "import io.dataloom.runtime.strategy.AcceptedStrategyPlanExecutionCoordinator\n",
 )
-replace_once(
+replace_once_unless_present(
     builder,
     """        val strategyExecutionCoordinator = StrategySynchronizationExecutionCoordinator(
             lifecycleCoordinator = lifecycleCoordinator,
@@ -179,8 +196,9 @@ replace_once(
             lifecycleEventEmitter = lifecycleEventEmitter,
         )
 """,
+    "val acceptedStrategyPlanCoordinator = AcceptedStrategyPlanExecutionCoordinator(\n",
 )
-replace_once(
+replace_once_unless_present(
     builder,
     """            strategyExecutionCoordinator = strategyExecutionCoordinator,
             defaultBindings = bindings,
@@ -189,6 +207,7 @@ replace_once(
             acceptedStrategyPlanCoordinator = acceptedStrategyPlanCoordinator,
             defaultBindings = bindings,
 """,
+    "acceptedStrategyPlanCoordinator = acceptedStrategyPlanCoordinator,\n",
 )
 
 print("Assembled direct accepted-plan facade execution.")
