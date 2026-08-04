@@ -69,4 +69,37 @@ replace_once_unless_present(
     "internal suspend fun execute(\n        request: SynchronizationRequest,\n        decision: PersistedStrategyDecision,\n",
 )
 
-print("Corrected accepted-plan coordinator public/internal execution boundary.")
+queued_test = (
+    "dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/queue/"
+    "AcceptedStrategyQueuedExecutionRoutingTest.kt"
+)
+replace_once_unless_present(
+    queued_test,
+    """    private fun <T> fixed(value: T): IdentifierGenerator<T> = IdentifierGenerator { value }
+""",
+    """    private fun <T> fixed(value: T): IdentifierGenerator<T> =
+        object : IdentifierGenerator<T> {
+            override fun generate(): T = value
+        }
+""",
+    "private fun <T> fixed(value: T): IdentifierGenerator<T> =\n        object : IdentifierGenerator<T>",
+)
+
+coordinator_test = (
+    "dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/strategy/"
+    "AcceptedStrategyPlanExecutionCoordinatorTest.kt"
+)
+replace_once_unless_present(
+    coordinator_test,
+    """    private fun <T> fixedGenerator(value: T): IdentifierGenerator<T> =
+        IdentifierGenerator { value }
+""",
+    """    private fun <T> fixedGenerator(value: T): IdentifierGenerator<T> =
+        object : IdentifierGenerator<T> {
+            override fun generate(): T = value
+        }
+""",
+    "private fun <T> fixedGenerator(value: T): IdentifierGenerator<T> =\n        object : IdentifierGenerator<T>",
+)
+
+print("Corrected accepted-plan coordinator and Native identifier test fixtures.")
