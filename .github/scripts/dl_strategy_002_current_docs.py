@@ -66,7 +66,8 @@ Android, and KMP iOS.
 plan-aware provider resolution, direct network-only execution, direct provider-
 backed remote-first execution, and bounded strategy-decision queue persistence
 are implemented in common Kotlin. Room and Apple stores preserve the same
-identity used by native Android and KMP platform paths.
+bounded identity; complete native Android, KMP Android, and KMP iOS reference
+qualification remains open.
 """,
 )
 replace_once(
