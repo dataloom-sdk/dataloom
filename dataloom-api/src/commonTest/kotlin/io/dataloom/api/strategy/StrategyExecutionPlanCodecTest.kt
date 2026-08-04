@@ -47,6 +47,18 @@ class StrategyExecutionPlanCodecTest {
     }
 
     @Test
+    fun invalidUtf8IdentifierFramesReturnOnlyTheSanitizedCodecFailure() {
+        val fields = StrategyExecutionPlanCodec.encode(plan()).split('|').toMutableList()
+        fields[2] = "ff"
+
+        val failure = assertFailsWith<IllegalArgumentException> {
+            StrategyExecutionPlanCodec.decode(fields.joinToString("|"))
+        }
+
+        assertEquals("Malformed strategy execution plan frame.", failure.message)
+    }
+
+    @Test
     fun diagnosticsDoNotExposeEncodedDynamicIdentifiers() {
         val plan = plan(
             planId = "sensitive-plan",
