@@ -113,7 +113,7 @@ internal class StrategyQueueExecutionOutcomeMapper(
                 )
             is SynchronizationRetryEvaluation.StopRetry -> failed(evaluation.error)
             SynchronizationRetryEvaluation.NotRequired ->
-                QueueEntryExecutionOutcome.Completed(completedAt)
+                failed(AcceptedPlanRetryEvaluationInconsistentError())
         }
     }
 
@@ -151,6 +151,17 @@ internal class StrategyQueueExecutionOutcomeMapper(
         override val severity: ErrorSeverity = ErrorSeverity.ERROR,
         override val recoverability: Recoverability = Recoverability.NON_RECOVERABLE,
         override val message: String = "Accepted strategy plan execution was rejected: $reason.",
+        override val cause: Throwable? = null,
+    ) : DataLoomError
+
+    private data class AcceptedPlanRetryEvaluationInconsistentError(
+        override val code: ErrorCode =
+            ErrorCode("DL-Q-ACCEPTED-PLAN-RETRY-EVALUATION-INCONSISTENT"),
+        override val category: ErrorCategory = ErrorCategory.STATE,
+        override val severity: ErrorSeverity = ErrorSeverity.ERROR,
+        override val recoverability: Recoverability = Recoverability.NON_RECOVERABLE,
+        override val message: String =
+            "Retry evaluation returned NotRequired for a known accepted-plan failure.",
         override val cause: Throwable? = null,
     ) : DataLoomError
 

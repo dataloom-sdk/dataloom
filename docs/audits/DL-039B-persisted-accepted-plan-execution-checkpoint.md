@@ -12,18 +12,25 @@ current `StrategyRuntimeEvidence`.
 - Exact decision/plan/request correspondence is validated before provider
   resolution.
 - Provider roles are derived only from the durable continuation.
-- Unsupported capabilities reject before provider invocation.
+- Unsupported, extra, missing, or operation-inconsistent capability sets reject before provider resolution.
+- Replay accepts only finite direction-specific operation sequences that match the executor actually invoked.
+- Local serving and fallback require persisted cache-state evidence; no current or invented evidence is used.
+- Protected failure classes and cancellation cannot be converted into local fallback.
 - Provider-backed PUSH/PULL/BIDIRECTIONAL reuse canonical pipelines.
 - Non-persisting remote pull remains transport-only.
 - Typed fallback uses only the persisted fallback allowlist and evaluated cache
   state.
-- `RECONCILE` uses the optional narrow `StrategyReconciliationProvider` and has
-  independent circuit/timeout protection.
+- `RECONCILE` uses the optional narrow storage-owned
+  `StrategyReconciliationProvider`; it does not require an otherwise unused
+  transport binding, and it has independent circuit/timeout protection.
 - Direct and protected facade overloads expose the capability additively.
 - Ordinary and circuit-aware queue workers route plan-bearing work through the
   accepted coordinator; protected queue execution preserves ordered protection
   evidence.
 - Entries without a complete plan retain the historical execution path.
+- A retry evaluator inconsistency for known failed work is terminal and can never become queue completion.
+- A pipeline that skips before provider effects contributes no fabricated
+  completed-operation evidence and does not trigger reconciliation.
 
 ## Persistence evidence
 

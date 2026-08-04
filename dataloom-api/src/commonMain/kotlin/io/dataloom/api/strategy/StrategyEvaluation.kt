@@ -37,7 +37,7 @@ public class StrategyEvaluationResult(
     }
 
     public val reasonCodes: List<String>
-        get() = reasons
+        get() = reasons.toList()
 
     override fun equals(other: Any?): Boolean =
         other is StrategyEvaluationResult &&

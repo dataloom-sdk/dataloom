@@ -759,7 +759,6 @@ public class BuiltInSynchronizationStrategyEvaluator : SynchronizationStrategyEv
                 }
                 StrategyOperation.RECONCILE -> {
                     capabilities += StrategyProviderCapability.STORAGE
-                    capabilities += StrategyProviderCapability.TRANSPORT
                     capabilities += StrategyProviderCapability.CONFLICT_STATE
                 }
             }

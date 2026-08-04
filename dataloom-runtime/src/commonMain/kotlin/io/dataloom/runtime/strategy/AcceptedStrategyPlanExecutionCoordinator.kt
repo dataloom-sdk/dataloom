@@ -123,6 +123,11 @@ internal class AcceptedStrategyPlanExecutionCoordinator(
             )
         }
 
+        validateReplayPlanStructure(
+            acceptedPlan = acceptedPlan,
+            continuation = continuation,
+        )?.let { reason -> return rejected(evaluation, reason) }
+
         val providerCapabilities = continuation.requiredCapabilities -
             StrategyProviderCapability.CONFLICT_STATE
         val resolved = when (
@@ -147,8 +152,7 @@ internal class AcceptedStrategyPlanExecutionCoordinator(
                 return rejected(evaluation, preparation.reason)
         }
 
-        validateReplayPlan(
-            acceptedPlan = acceptedPlan,
+        validateReplayProviders(
             continuation = continuation,
             providers = executableProviders,
         )?.let { reason -> return rejected(evaluation, reason) }
@@ -161,12 +165,56 @@ internal class AcceptedStrategyPlanExecutionCoordinator(
         )
     }
 
-    private fun validateReplayPlan(
+    private fun validateReplayPlanStructure(
         acceptedPlan: StrategyExecutionPlan,
         continuation: StrategyDurableContinuationPlan,
-        providers: StrategyProviderSet,
     ): StrategyExecutionRejectionReason? {
         val operations = continuation.operations
+        val fallbackOperations = continuation.fallbackPlan?.operations ?: emptyList()
+        val expectedCapabilities = minimumReplayCapabilities(
+            operations + fallbackOperations,
+        )
+        if (continuation.requiredCapabilities != expectedCapabilities) {
+            return StrategyExecutionRejectionReason.UNSUPPORTED_PLAN
+        }
+        val executableOperations = operations.filterNot {
+            it == StrategyOperation.RECONCILE
+        }
+        val supportedSequence = when (acceptedPlan.direction) {
+            SynchronizationDirection.PUSH ->
+                executableOperations == listOf(
+                    StrategyOperation.READ_LOCAL,
+                    StrategyOperation.PUSH_REMOTE,
+                )
+            SynchronizationDirection.PULL ->
+                executableOperations == listOf(StrategyOperation.PULL_REMOTE) ||
+                    executableOperations == listOf(
+                        StrategyOperation.READ_CHECKPOINT,
+                        StrategyOperation.PULL_REMOTE,
+                        StrategyOperation.PERSIST_REMOTE,
+                    ) ||
+                    executableOperations == listOf(StrategyOperation.SERVE_LOCAL)
+            SynchronizationDirection.BIDIRECTIONAL ->
+                executableOperations == listOf(
+                    StrategyOperation.READ_LOCAL,
+                    StrategyOperation.PUSH_REMOTE,
+                    StrategyOperation.PULL_REMOTE,
+                ) ||
+                    executableOperations == listOf(
+                        StrategyOperation.READ_LOCAL,
+                        StrategyOperation.PUSH_REMOTE,
+                        StrategyOperation.READ_CHECKPOINT,
+                        StrategyOperation.PULL_REMOTE,
+                        StrategyOperation.PERSIST_REMOTE,
+                    ) ||
+                    executableOperations == listOf(
+                        StrategyOperation.READ_LOCAL,
+                        StrategyOperation.SERVE_LOCAL,
+                    )
+        }
+        if (!supportedSequence) {
+            return StrategyExecutionRejectionReason.UNSUPPORTED_PLAN
+        }
         if (operations.size != operations.toSet().size) {
             return StrategyExecutionRejectionReason.UNSUPPORTED_PLAN
         }
@@ -219,28 +267,6 @@ internal class AcceptedStrategyPlanExecutionCoordinator(
         ) {
             return StrategyExecutionRejectionReason.UNSUPPORTED_PLAN
         }
-        val admittedFallbackPlan = continuation.fallbackPlan
-        if (
-            admittedFallbackPlan != null &&
-            StrategyOperation.SERVE_LOCAL !in admittedFallbackPlan.operations
-        ) {
-            return StrategyExecutionRejectionReason.UNSUPPORTED_PLAN
-        }
-        val requiresFallback =
-            admittedFallbackPlan != null ||
-                StrategyOperation.SERVE_LOCAL in operations
-        if (
-            requiresFallback &&
-            providers.storageProvider !is StrategyLocalFallbackProvider
-        ) {
-            return StrategyExecutionRejectionReason.LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED
-        }
-        if (
-            StrategyOperation.RECONCILE in operations &&
-            providers.storageProvider !is StrategyReconciliationProvider
-        ) {
-            return StrategyExecutionRejectionReason.RECONCILIATION_PROVIDER_NOT_CONFIGURED
-        }
         if (
             acceptedPlan.direction == SynchronizationDirection.PUSH &&
             (
@@ -259,6 +285,55 @@ internal class AcceptedStrategyPlanExecutionCoordinator(
             return StrategyExecutionRejectionReason.UNSUPPORTED_PLAN
         }
         return null
+    }
+
+    private fun validateReplayProviders(
+        continuation: StrategyDurableContinuationPlan,
+        providers: StrategyProviderSet,
+    ): StrategyExecutionRejectionReason? {
+        val requiresFallback =
+            continuation.fallbackPlan != null ||
+                StrategyOperation.SERVE_LOCAL in continuation.operations
+        if (
+            requiresFallback &&
+            providers.storageProvider !is StrategyLocalFallbackProvider
+        ) {
+            return StrategyExecutionRejectionReason.LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED
+        }
+        if (
+            StrategyOperation.RECONCILE in continuation.operations &&
+            providers.storageProvider !is StrategyReconciliationProvider
+        ) {
+            return StrategyExecutionRejectionReason.RECONCILIATION_PROVIDER_NOT_CONFIGURED
+        }
+        return null
+    }
+
+    private fun minimumReplayCapabilities(
+        operations: Iterable<StrategyOperation>,
+    ): Set<StrategyProviderCapability> {
+        val capabilities = mutableSetOf<StrategyProviderCapability>()
+        operations.forEach { operation ->
+            when (operation) {
+                StrategyOperation.READ_LOCAL,
+                StrategyOperation.READ_CHECKPOINT,
+                StrategyOperation.ACCEPT_LOCAL,
+                StrategyOperation.SERVE_LOCAL,
+                StrategyOperation.PERSIST_REMOTE,
+                -> capabilities += StrategyProviderCapability.STORAGE
+                StrategyOperation.PUSH_REMOTE,
+                StrategyOperation.PULL_REMOTE,
+                -> capabilities += StrategyProviderCapability.TRANSPORT
+                StrategyOperation.RECONCILE -> {
+                    capabilities += StrategyProviderCapability.STORAGE
+                    capabilities += StrategyProviderCapability.CONFLICT_STATE
+                }
+                StrategyOperation.ENQUEUE_DURABLE_WORK,
+                StrategyOperation.SCHEDULE_REFRESH,
+                -> return emptySet()
+            }
+        }
+        return capabilities
     }
 
     private fun replayEvaluation(
@@ -325,7 +400,10 @@ private class AcceptedStrategyContinuationExecutor(
         providers: StrategyProviderSet,
         continuation: StrategyDurableContinuationPlan,
     ): StrategySynchronizationExecutionResult {
-        val fallbackProvider = if (continuation.fallbackPlan != null) {
+        val requiresFallback =
+            continuation.fallbackPlan != null ||
+                StrategyOperation.SERVE_LOCAL in continuation.operations
+        val fallbackProvider = if (requiresFallback) {
             providers.storageProvider as? StrategyLocalFallbackProvider
                 ?: return rejected(
                     evaluation,
@@ -336,7 +414,7 @@ private class AcceptedStrategyContinuationExecutor(
         }
 
         if (StrategyOperation.SERVE_LOCAL in continuation.operations) {
-            return executeFallback(
+            val mapped = executeFallback(
                 request = request,
                 evaluation = evaluation,
                 providers = providers,
@@ -346,6 +424,18 @@ private class AcceptedStrategyContinuationExecutor(
                 remoteAttempted = false,
                 primaryError = null,
                 completedOperations = emptyList(),
+            )
+            return finalizeReconciliation(
+                request = request,
+                evaluation = evaluation,
+                providers = providers,
+                continuation = continuation,
+                result = mapped,
+                completedOperations = completedOperationsFor(
+                    result = mapped,
+                    continuation = continuation,
+                    observedOperations = emptyList(),
+                ),
             )
         }
 
@@ -654,8 +744,11 @@ private class AcceptedStrategyContinuationExecutor(
             configurationVersion = evaluation.plan.configurationVersion,
             remoteOutcome = remoteOutcome,
             remoteAttempted = remoteAttempted,
-            evaluatedCacheState =
-                continuation.evaluatedCacheState ?: StrategyCacheState.MISSING,
+            evaluatedCacheState = requireNotNull(
+                continuation.evaluatedCacheState,
+            ) {
+                "Accepted local fallback requires persisted cache-state evidence."
+            },
         )
         val mapped = when (val result = provider.evaluateLocalFallback(fallbackRequest)) {
             is ProviderOperationResult.Success -> when (val local = result.value) {
@@ -707,10 +800,13 @@ private class AcceptedStrategyContinuationExecutor(
             result.completedOperations
         is StrategySynchronizationExecutionResult.Executed -> {
             val providerBacked = result.output as? StrategyTransportOutput.ProviderBacked
-            if (providerBacked?.result is SynchronizationResult.PartiallySucceeded) {
-                observedOperations
-            } else {
-                continuation.operations.filterNot { it == StrategyOperation.RECONCILE }
+            when (providerBacked?.result) {
+                is SynchronizationResult.PartiallySucceeded,
+                is SynchronizationResult.Skipped,
+                -> observedOperations
+                else -> continuation.operations.filterNot {
+                    it == StrategyOperation.RECONCILE
+                }
             }
         }
         else -> observedOperations
@@ -740,9 +836,7 @@ private class AcceptedStrategyContinuationExecutor(
                 )
         val evidence = completedOperations
             .filterNot { it == StrategyOperation.RECONCILE }
-            .ifEmpty {
-                continuation.operations.filterNot { it == StrategyOperation.RECONCILE }
-            }
+        if (evidence.isEmpty()) return result
         return when (
             val reconciliation = reconciliationProvider.reconcileStrategy(
                 StrategyReconciliationRequest(
@@ -759,10 +853,15 @@ private class AcceptedStrategyContinuationExecutor(
             is ProviderOperationResult.Failure -> failed(
                 evaluation = evaluation,
                 error = reconciliation.error,
-                transportAttempted = completedOperations.any {
-                    it == StrategyOperation.PUSH_REMOTE ||
-                        it == StrategyOperation.PULL_REMOTE
-                },
+                transportAttempted =
+                    (
+                        result is StrategySynchronizationExecutionResult.FallbackActivated &&
+                            result.remoteAttempted
+                        ) ||
+                        completedOperations.any {
+                            it == StrategyOperation.PUSH_REMOTE ||
+                                it == StrategyOperation.PULL_REMOTE
+                        },
                 completedOperations = evidence,
                 primaryError = if (
                     result is StrategySynchronizationExecutionResult.FallbackActivated

@@ -88,7 +88,7 @@ class QueueSubmissionStrategyDecisionPreflightTest {
     fun encoderCannotChangeDropOrInventStrategyPlan() {
         val decision = decision()
         val original = plan()
-        val changed = plan(continuationOperation = StrategyOperation.RECONCILE)
+        val changed = plan(continuationConsistency = StrategyConsistency.EVENTUAL)
         assertIs<QueueSubmissionPreflightResult.ContractViolation>(
             QueueSubmissionPreflight(encoder(entry(decision, changed)))
                 .prepare(submission(decision, original)),
@@ -139,7 +139,8 @@ class QueueSubmissionStrategyDecisionPreflightTest {
     )
 
     private fun plan(
-        continuationOperation: StrategyOperation = StrategyOperation.PUSH_REMOTE,
+        continuationConsistency: StrategyConsistency =
+            StrategyConsistency.LOCAL_AUTHORITATIVE,
     ): StrategyExecutionPlan = StrategyExecutionPlan(
         id = StrategyPlanId("plan-1"),
         requestedStrategy = BuiltInSynchronizationStrategy.ADAPTIVE,
@@ -155,14 +156,10 @@ class QueueSubmissionStrategyDecisionPreflightTest {
         consistency = StrategyConsistency.LOCAL_AUTHORITATIVE,
         deferralReason = StrategyDeferralReason.CONNECTIVITY_UNAVAILABLE,
         durableContinuation = StrategyDurableContinuationPlan(
-            operations = if (continuationOperation == StrategyOperation.RECONCILE) {
-                listOf(StrategyOperation.PUSH_REMOTE, StrategyOperation.RECONCILE)
-            } else {
-                listOf(StrategyOperation.PUSH_REMOTE)
-            },
+            operations = listOf(StrategyOperation.PUSH_REMOTE),
             requiredCapabilities = setOf(StrategyProviderCapability.TRANSPORT),
             dataOrigin = StrategyDataOrigin.NONE,
-            consistency = StrategyConsistency.LOCAL_AUTHORITATIVE,
+            consistency = continuationConsistency,
         ),
     )
 

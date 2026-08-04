@@ -56,6 +56,45 @@ public enum class StrategyRejectionReason {
     UNSUPPORTED_DIRECTION,
 }
 
+private val protectedFallbackOutcomes: Set<StrategyRemoteOutcome> = setOf(
+    StrategyRemoteOutcome.CANCELLED,
+    StrategyRemoteOutcome.AUTHENTICATION_FAILURE,
+    StrategyRemoteOutcome.AUTHORIZATION_FAILURE,
+    StrategyRemoteOutcome.VALIDATION_FAILURE,
+    StrategyRemoteOutcome.INTEGRITY_FAILURE,
+    StrategyRemoteOutcome.CONFLICT,
+)
+
+private fun minimumCapabilitiesFor(
+    operations: Iterable<StrategyOperation>,
+): Set<StrategyProviderCapability> {
+    val capabilities = mutableSetOf<StrategyProviderCapability>()
+    operations.forEach { operation ->
+        when (operation) {
+            StrategyOperation.READ_LOCAL,
+            StrategyOperation.READ_CHECKPOINT,
+            StrategyOperation.ACCEPT_LOCAL,
+            StrategyOperation.SERVE_LOCAL,
+            StrategyOperation.PERSIST_REMOTE,
+            -> capabilities += StrategyProviderCapability.STORAGE
+            StrategyOperation.ENQUEUE_DURABLE_WORK ->
+                capabilities += StrategyProviderCapability.QUEUE
+            StrategyOperation.PUSH_REMOTE,
+            StrategyOperation.PULL_REMOTE,
+            -> capabilities += StrategyProviderCapability.TRANSPORT
+            StrategyOperation.SCHEDULE_REFRESH -> {
+                capabilities += StrategyProviderCapability.SCHEDULER
+                capabilities += StrategyProviderCapability.QUEUE
+            }
+            StrategyOperation.RECONCILE -> {
+                capabilities += StrategyProviderCapability.STORAGE
+                capabilities += StrategyProviderCapability.CONFLICT_STATE
+            }
+        }
+    }
+    return capabilities
+}
+
 /**
  * Finite fallback branch admitted with a primary strategy plan.
  *
@@ -77,6 +116,23 @@ public class StrategyFallbackPlan(
         }
         require(operationSnapshot.isNotEmpty()) {
             "StrategyFallbackPlan requires at least one fallback operation."
+        }
+        require(operationSnapshot.size == operationSnapshot.distinct().size) {
+            "StrategyFallbackPlan operations must be unique and ordered."
+        }
+        require(StrategyOperation.SERVE_LOCAL in operationSnapshot) {
+            "A local fallback branch must explicitly serve local state."
+        }
+        require(remoteOutcomeSnapshot.none { it in protectedFallbackOutcomes }) {
+            "A fallback branch must not hide cancellation, protected failures, or conflict."
+        }
+        require(
+            operationSnapshot.all {
+                it == StrategyOperation.READ_LOCAL ||
+                    it == StrategyOperation.SERVE_LOCAL
+            },
+        ) {
+            "A local fallback branch may only read and serve local state."
         }
         require(dataOrigin != StrategyDataOrigin.REMOTE) {
             "A fallback branch must not claim REMOTE data origin."
@@ -139,6 +195,12 @@ public class StrategyDurableContinuationPlan(
         require(orderedOperations.isNotEmpty()) {
             "StrategyDurableContinuationPlan requires at least one operation."
         }
+        require(orderedOperations.size == orderedOperations.distinct().size) {
+            "StrategyDurableContinuationPlan operations must be unique and ordered."
+        }
+        require(StrategyOperation.ACCEPT_LOCAL !in orderedOperations) {
+            "A durable continuation must not repeat original local admission."
+        }
         require(
             StrategyOperation.ENQUEUE_DURABLE_WORK !in orderedOperations &&
                 StrategyOperation.SCHEDULE_REFRESH !in orderedOperations,
@@ -150,6 +212,21 @@ public class StrategyDurableContinuationPlan(
                 StrategyOperation.PULL_REMOTE in orderedOperations,
         ) {
             "A durable fallback branch requires a remote pull operation."
+        }
+        require(
+            evaluatedCacheState != null ||
+                (
+                    fallbackPlan == null &&
+                        StrategyOperation.SERVE_LOCAL !in orderedOperations
+                    ),
+        ) {
+            "Durable local fallback or serving requires persisted cache-state evidence."
+        }
+        val minimumCapabilities = minimumCapabilitiesFor(
+            orderedOperations + (fallbackPlan?.operations ?: emptyList()),
+        )
+        require(providerCapabilities.containsAll(minimumCapabilities)) {
+            "Durable continuation capabilities must cover every admitted operation."
         }
     }
 
@@ -247,6 +324,9 @@ public class StrategyExecutionPlan(
         ) {
             "Non-rejected strategy plans require at least one operation."
         }
+        require(orderedOperations.size == orderedOperations.distinct().size) {
+            "StrategyExecutionPlan operations must be unique and ordered."
+        }
         require(
             fallbackPlan == null || disposition == StrategyDisposition.EXECUTE,
         ) {
@@ -291,10 +371,10 @@ public class StrategyExecutionPlan(
     }
 
     public val operations: List<StrategyOperation>
-        get() = orderedOperations
+        get() = orderedOperations.toList()
 
     public val requiredCapabilities: Set<StrategyProviderCapability>
-        get() = providerCapabilities
+        get() = providerCapabilities.toSet()
 
     override fun equals(other: Any?): Boolean =
         other is StrategyExecutionPlan &&

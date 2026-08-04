@@ -47,8 +47,10 @@ class QueuedStrategyPlanCorrespondenceTest {
             QueuedStrategyDecisionCorrespondence.validate(
                 decision,
                 decision,
-                plan(continuationOperation = StrategyOperation.PUSH_REMOTE),
-                plan(continuationOperation = StrategyOperation.RECONCILE),
+                plan(
+                    continuationConsistency = StrategyConsistency.LOCAL_AUTHORITATIVE,
+                ),
+                plan(continuationConsistency = StrategyConsistency.EVENTUAL),
             ),
         )
         assertPlanFailure(
@@ -104,7 +106,8 @@ class QueuedStrategyPlanCorrespondenceTest {
 
     private fun plan(
         planId: String = "plan-1",
-        continuationOperation: StrategyOperation = StrategyOperation.PUSH_REMOTE,
+        continuationConsistency: StrategyConsistency =
+            StrategyConsistency.LOCAL_AUTHORITATIVE,
     ): StrategyExecutionPlan = StrategyExecutionPlan(
         id = StrategyPlanId(planId),
         requestedStrategy = BuiltInSynchronizationStrategy.ADAPTIVE,
@@ -120,14 +123,10 @@ class QueuedStrategyPlanCorrespondenceTest {
         consistency = StrategyConsistency.LOCAL_AUTHORITATIVE,
         deferralReason = StrategyDeferralReason.CONNECTIVITY_UNAVAILABLE,
         durableContinuation = StrategyDurableContinuationPlan(
-            operations = if (continuationOperation == StrategyOperation.RECONCILE) {
-                listOf(StrategyOperation.PUSH_REMOTE, StrategyOperation.RECONCILE)
-            } else {
-                listOf(StrategyOperation.PUSH_REMOTE)
-            },
+            operations = listOf(StrategyOperation.PUSH_REMOTE),
             requiredCapabilities = setOf(StrategyProviderCapability.TRANSPORT),
             dataOrigin = StrategyDataOrigin.NONE,
-            consistency = StrategyConsistency.LOCAL_AUTHORITATIVE,
+            consistency = continuationConsistency,
         ),
     )
 }

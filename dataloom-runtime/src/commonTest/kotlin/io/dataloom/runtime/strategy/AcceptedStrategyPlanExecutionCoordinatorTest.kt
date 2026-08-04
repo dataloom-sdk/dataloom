@@ -68,6 +68,7 @@ import io.dataloom.api.synchronization.CheckpointWriteRequest
 import io.dataloom.api.synchronization.OutboundChangeAcknowledgementRequest
 import io.dataloom.api.synchronization.SynchronizationCheckpoint
 import io.dataloom.api.synchronization.SynchronizationResult
+import io.dataloom.api.synchronization.SynchronizationSkipReason
 import io.dataloom.api.synchronization.SynchronizationSummary
 import io.dataloom.api.time.DataLoomClock
 import io.dataloom.api.time.DataLoomInstant
@@ -258,6 +259,242 @@ class AcceptedStrategyPlanExecutionCoordinatorTest {
         assertEquals(0, fixture.pushPipeline.calls)
     }
 
+    @Test
+    fun extraReplayCapabilityRejectsBeforeProviderExecution() = runTest {
+        val storage = RecordingStrategyStorage()
+        val transport = RecordingTransport()
+        val fixture = fixture(storage, transport)
+        val plan = StrategyExecutionPlan(
+            id = StrategyPlanId("plan-1"),
+            requestedStrategy = BuiltInSynchronizationStrategy.REMOTE_FIRST,
+            effectiveProfileId = StrategyProfileId("remote-profile"),
+            effectiveStrategy = BuiltInSynchronizationStrategy.REMOTE_FIRST,
+            configurationVersion = StrategyConfigurationVersion(1L),
+            direction = SynchronizationDirection.PULL,
+            mode = SynchronizationMode.DELTA,
+            disposition = StrategyDisposition.DEFER,
+            operations = listOf(StrategyOperation.ENQUEUE_DURABLE_WORK),
+            requiredCapabilities = setOf(StrategyProviderCapability.QUEUE),
+            dataOrigin = StrategyDataOrigin.NONE,
+            consistency = StrategyConsistency.REMOTE_AUTHORITATIVE,
+            deferralReason = StrategyDeferralReason.CONNECTIVITY_UNKNOWN,
+            durableContinuation = StrategyDurableContinuationPlan(
+                operations = listOf(StrategyOperation.PULL_REMOTE),
+                requiredCapabilities = setOf(
+                    StrategyProviderCapability.TRANSPORT,
+                    StrategyProviderCapability.STORAGE,
+                ),
+                dataOrigin = StrategyDataOrigin.REMOTE,
+                consistency = StrategyConsistency.REMOTE_AUTHORITATIVE,
+            ),
+        )
+
+        val result = fixture.coordinator.execute(
+            request = request(SynchronizationDirection.PULL),
+            decision = decision(
+                requested = BuiltInSynchronizationStrategy.REMOTE_FIRST,
+                effective = BuiltInSynchronizationStrategy.REMOTE_FIRST,
+                profileId = "remote-profile",
+                disposition = StrategyDisposition.DEFER,
+            ),
+            acceptedPlan = plan,
+            bindings = bindings(storage, transport),
+        )
+
+        val rejected = assertIs<StrategySynchronizationExecutionResult.Rejected>(result)
+        assertEquals(StrategyExecutionRejectionReason.UNSUPPORTED_PLAN, rejected.reason)
+        assertEquals(0, transport.pullCalls)
+        assertEquals(0, fixture.pullPipeline.calls)
+    }
+
+    @Test
+    fun localOnlyContinuationUsesPersistedCacheEvidenceWithoutTransport() = runTest {
+        val storage = RecordingStrategyStorage(
+            fallbackResult = ProviderOperationResult.Success(
+                StrategyLocalFallbackResult.Available(StrategyCacheState.STALE),
+            ),
+        )
+        val transport = RecordingTransport()
+        val fixture = fixture(storage, transport)
+        val plan = StrategyExecutionPlan(
+            id = StrategyPlanId("plan-1"),
+            requestedStrategy = BuiltInSynchronizationStrategy.CACHE_FIRST,
+            effectiveProfileId = StrategyProfileId("cache-profile"),
+            effectiveStrategy = BuiltInSynchronizationStrategy.CACHE_FIRST,
+            configurationVersion = StrategyConfigurationVersion(1L),
+            direction = SynchronizationDirection.PULL,
+            mode = SynchronizationMode.DELTA,
+            disposition = StrategyDisposition.DEFER,
+            operations = listOf(StrategyOperation.ENQUEUE_DURABLE_WORK),
+            requiredCapabilities = setOf(StrategyProviderCapability.QUEUE),
+            dataOrigin = StrategyDataOrigin.LOCAL,
+            consistency = StrategyConsistency.EVENTUAL,
+            deferralReason = StrategyDeferralReason.CONNECTIVITY_UNAVAILABLE,
+            durableContinuation = StrategyDurableContinuationPlan(
+                operations = listOf(StrategyOperation.SERVE_LOCAL),
+                requiredCapabilities = setOf(StrategyProviderCapability.STORAGE),
+                dataOrigin = StrategyDataOrigin.LOCAL,
+                consistency = StrategyConsistency.EVENTUAL,
+                evaluatedCacheState = StrategyCacheState.STALE,
+            ),
+        )
+
+        val result = fixture.coordinator.execute(
+            request = request(SynchronizationDirection.PULL),
+            decision = decision(
+                requested = BuiltInSynchronizationStrategy.CACHE_FIRST,
+                effective = BuiltInSynchronizationStrategy.CACHE_FIRST,
+                profileId = "cache-profile",
+                disposition = StrategyDisposition.DEFER,
+            ),
+            acceptedPlan = plan,
+            bindings = StrategyProviderBindings(
+                storageProviderId = storage.descriptor.id,
+            ),
+        )
+
+        val fallback = assertIs<StrategySynchronizationExecutionResult.FallbackActivated>(result)
+        assertEquals(StrategyCacheState.STALE, fallback.cacheState)
+        assertEquals(StrategyCacheState.STALE, storage.lastFallback?.evaluatedCacheState)
+        assertEquals(0, transport.pullCalls)
+        assertEquals(0, fixture.pullPipeline.calls)
+    }
+
+    @Test
+    fun unsupportedReplaySequenceRejectsBeforeProviderExecution() = runTest {
+        val storage = RecordingStrategyStorage()
+        val transport = RecordingTransport()
+        val fixture = fixture(storage, transport)
+        val plan = StrategyExecutionPlan(
+            id = StrategyPlanId("plan-1"),
+            requestedStrategy = BuiltInSynchronizationStrategy.REMOTE_FIRST,
+            effectiveProfileId = StrategyProfileId("remote-profile"),
+            effectiveStrategy = BuiltInSynchronizationStrategy.REMOTE_FIRST,
+            configurationVersion = StrategyConfigurationVersion(1L),
+            direction = SynchronizationDirection.PULL,
+            mode = SynchronizationMode.DELTA,
+            disposition = StrategyDisposition.DEFER,
+            operations = listOf(StrategyOperation.ENQUEUE_DURABLE_WORK),
+            requiredCapabilities = setOf(StrategyProviderCapability.QUEUE),
+            dataOrigin = StrategyDataOrigin.NONE,
+            consistency = StrategyConsistency.REMOTE_AUTHORITATIVE,
+            deferralReason = StrategyDeferralReason.CONNECTIVITY_UNKNOWN,
+            durableContinuation = StrategyDurableContinuationPlan(
+                operations = listOf(
+                    StrategyOperation.READ_LOCAL,
+                    StrategyOperation.PULL_REMOTE,
+                ),
+                requiredCapabilities = setOf(
+                    StrategyProviderCapability.STORAGE,
+                    StrategyProviderCapability.TRANSPORT,
+                ),
+                dataOrigin = StrategyDataOrigin.REMOTE,
+                consistency = StrategyConsistency.REMOTE_AUTHORITATIVE,
+            ),
+        )
+
+        val result = fixture.coordinator.execute(
+            request = request(SynchronizationDirection.PULL),
+            decision = decision(
+                requested = BuiltInSynchronizationStrategy.REMOTE_FIRST,
+                effective = BuiltInSynchronizationStrategy.REMOTE_FIRST,
+                profileId = "remote-profile",
+                disposition = StrategyDisposition.DEFER,
+            ),
+            acceptedPlan = plan,
+            bindings = bindings(storage, transport),
+        )
+
+        val rejected = assertIs<StrategySynchronizationExecutionResult.Rejected>(result)
+        assertEquals(StrategyExecutionRejectionReason.UNSUPPORTED_PLAN, rejected.reason)
+        assertEquals(0, transport.pullCalls)
+        assertEquals(0, fixture.pullPipeline.calls)
+    }
+
+    @Test
+    fun localOnlyReconciliationExecutesExactlyOnce() = runTest {
+        val storage = RecordingStrategyStorage(
+            fallbackResult = ProviderOperationResult.Success(
+                StrategyLocalFallbackResult.Available(StrategyCacheState.STALE),
+            ),
+        )
+        val transport = RecordingTransport()
+        val fixture = fixture(storage, transport)
+        val plan = StrategyExecutionPlan(
+            id = StrategyPlanId("plan-1"),
+            requestedStrategy = BuiltInSynchronizationStrategy.HYBRID,
+            effectiveProfileId = StrategyProfileId("hybrid-profile"),
+            effectiveStrategy = BuiltInSynchronizationStrategy.HYBRID,
+            configurationVersion = StrategyConfigurationVersion(1L),
+            direction = SynchronizationDirection.PULL,
+            mode = SynchronizationMode.DELTA,
+            disposition = StrategyDisposition.DEFER,
+            operations = listOf(StrategyOperation.ENQUEUE_DURABLE_WORK),
+            requiredCapabilities = setOf(StrategyProviderCapability.QUEUE),
+            dataOrigin = StrategyDataOrigin.LOCAL,
+            consistency = StrategyConsistency.READ_YOUR_WRITES,
+            deferralReason = StrategyDeferralReason.CONNECTIVITY_UNAVAILABLE,
+            durableContinuation = StrategyDurableContinuationPlan(
+                operations = listOf(
+                    StrategyOperation.SERVE_LOCAL,
+                    StrategyOperation.RECONCILE,
+                ),
+                requiredCapabilities = setOf(
+                    StrategyProviderCapability.STORAGE,
+                    StrategyProviderCapability.CONFLICT_STATE,
+                ),
+                dataOrigin = StrategyDataOrigin.LOCAL,
+                consistency = StrategyConsistency.READ_YOUR_WRITES,
+                evaluatedCacheState = StrategyCacheState.STALE,
+            ),
+        )
+
+        val result = fixture.coordinator.execute(
+            request = request(SynchronizationDirection.PULL),
+            decision = decision(
+                requested = BuiltInSynchronizationStrategy.HYBRID,
+                effective = BuiltInSynchronizationStrategy.HYBRID,
+                profileId = "hybrid-profile",
+                disposition = StrategyDisposition.DEFER,
+            ),
+            acceptedPlan = plan,
+            bindings = StrategyProviderBindings(
+                storageProviderId = storage.descriptor.id,
+            ),
+        )
+
+        val fallback = assertIs<StrategySynchronizationExecutionResult.FallbackActivated>(result)
+        assertEquals(StrategyCacheState.STALE, fallback.cacheState)
+        assertEquals(1, storage.reconcileCalls)
+        assertEquals(
+            listOf(StrategyOperation.SERVE_LOCAL),
+            storage.lastReconciliation?.completedOperations,
+        )
+        assertEquals(0, transport.pullCalls)
+        assertEquals(0, fixture.pullPipeline.calls)
+    }
+
+    @Test
+    fun skippedReplayWithoutProviderEffectDoesNotReconcile() = runTest {
+        val storage = RecordingStrategyStorage()
+        val transport = RecordingTransport()
+        val fixture = fixture(storage, transport)
+        fixture.pushPipeline.skipWithoutProviderCalls = true
+
+        val result = fixture.coordinator.execute(
+            request = request(SynchronizationDirection.PUSH),
+            decision = decision(),
+            acceptedPlan = offlinePlan(),
+            bindings = bindings(storage, transport),
+        )
+
+        val executed = assertIs<StrategySynchronizationExecutionResult.Executed>(result)
+        val output = assertIs<StrategyTransportOutput.ProviderBacked>(executed.output)
+        assertIs<SynchronizationResult.Skipped>(output.result)
+        assertEquals(0, storage.reconcileCalls)
+        assertEquals(0, transport.pushCalls)
+    }
+
     private suspend fun fixture(
         storage: io.dataloom.api.storage.StorageProvider?,
         transport: TransportProvider,
@@ -421,15 +658,26 @@ class AcceptedStrategyPlanExecutionCoordinatorTest {
         override val direction: SynchronizationDirection,
     ) : SynchronizationPipeline {
         var calls: Int = 0
+        var skipWithoutProviderCalls: Boolean = false
+
         override suspend fun execute(
             context: SynchronizationExecutionContext,
         ): SynchronizationResult {
             calls++
-            return SynchronizationResult.Succeeded(
-                request = context.request,
-                completedAt = DataLoomInstant(8_000L),
-                summary = SynchronizationSummary(),
-            )
+            return if (skipWithoutProviderCalls) {
+                SynchronizationResult.Skipped(
+                    request = context.request,
+                    completedAt = DataLoomInstant(8_000L),
+                    summary = SynchronizationSummary(),
+                    reason = SynchronizationSkipReason.NO_CHANGES,
+                )
+            } else {
+                SynchronizationResult.Succeeded(
+                    request = context.request,
+                    completedAt = DataLoomInstant(8_000L),
+                    summary = SynchronizationSummary(),
+                )
+            }
         }
     }
 
