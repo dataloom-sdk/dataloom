@@ -100,9 +100,7 @@ public object StrategyExecutionPlanCodec {
                 fallbackPlan = fallback,
                 durableContinuation = continuation,
             )
-        } catch (_: IllegalArgumentException) {
-            throw IllegalArgumentException("Malformed strategy execution plan frame.")
-        } catch (_: IndexOutOfBoundsException) {
+        } catch (_: Exception) {
             throw IllegalArgumentException("Malformed strategy execution plan frame.")
         }
     }
