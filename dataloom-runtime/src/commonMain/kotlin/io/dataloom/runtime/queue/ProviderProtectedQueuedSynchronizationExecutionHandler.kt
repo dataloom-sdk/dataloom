@@ -16,6 +16,7 @@ import io.dataloom.api.time.DataLoomInstant
 import io.dataloom.runtime.connectivity.SynchronizationConnectivityConfiguration
 import io.dataloom.runtime.execution.SynchronizationExecutionRejectionReason
 import io.dataloom.runtime.execution.SynchronizationExecutionResult
+import io.dataloom.runtime.facade.DataLoomProtectedStrategySynchronization
 import io.dataloom.runtime.facade.DataLoomProtectedSynchronization
 import io.dataloom.runtime.facade.ProviderProtectedSynchronizationExecutionResult
 import io.dataloom.runtime.retry.SynchronizationRetryEvaluation
@@ -44,7 +45,12 @@ public class ProviderProtectedQueuedSynchronizationExecutionHandler(
     private val connectivityConfiguration: SynchronizationConnectivityConfiguration? = null,
     private val clock: DataLoomClock? = null,
     private val workflowTimeoutExecutor: WorkflowTimeoutStateExecutor? = null,
+    private val protectedStrategySynchronization: DataLoomProtectedStrategySynchronization? = null,
 ) {
+    private val strategyOutcomeMapper = StrategyQueueExecutionOutcomeMapper(
+        retryEvaluator = retryEvaluator,
+        retryOperation = retryOperation,
+    )
 
     /**
      * Executes the exact [entry] once after local work resolution.
@@ -62,6 +68,38 @@ public class ProviderProtectedQueuedSynchronizationExecutionHandler(
         val work = (resolution as QueuedSynchronizationWorkResolution.Resolved).work
         QueuedStrategyDecisionCorrespondence.validate(entry, work)?.let { error ->
             return localFailure(entry, error)
+        }
+
+        val acceptedPlan = work.strategyPlan
+        if (acceptedPlan != null) {
+            val protectedStrategy = protectedStrategySynchronization
+                ?: return localFailure(entry, AcceptedStrategyProtectionMissingError())
+            val decision = work.strategyDecision
+                ?: return localFailure(entry, AcceptedStrategyDecisionMissingError())
+            val protectedResult = when (val timedExecution = executeQueuedWorkflowWithTimeout(
+                entry = entry,
+                timeoutExecutor = workflowTimeoutExecutor,
+            ) {
+                protectedStrategy.synchronizeAcceptedPlan(
+                    request = work.request,
+                    decision = decision,
+                    plan = acceptedPlan,
+                    bindings = work.bindings.toStrategyProviderBindings(),
+                )
+            }) {
+                is QueuedWorkflowTimeoutExecution.Completed -> timedExecution.value
+                is QueuedWorkflowTimeoutExecution.Failed -> {
+                    return localFailure(entry, timedExecution.error)
+                }
+            }
+            return ProviderProtectedQueueEntryExecutionResult(
+                entryId = entry.id,
+                outcome = strategyOutcomeMapper.map(
+                    protectedResult.strategyResult,
+                    entry,
+                ),
+                strategyExecutionResult = protectedResult,
+            )
         }
 
         val protectedExecution = when (val timedExecution = executeQueuedWorkflowWithTimeout(
@@ -198,6 +236,28 @@ public class ProviderProtectedQueuedSynchronizationExecutionHandler(
 
     private fun connectivityProviderMissingError(): DataLoomError =
         ConnectivityProviderMissingError()
+
+    private data class AcceptedStrategyProtectionMissingError(
+        override val code: ErrorCode =
+            ErrorCode("DL-PROTECTED-QUEUE-ACCEPTED-PLAN-NOT-CONFIGURED"),
+        override val category: ErrorCategory = ErrorCategory.CONFIGURATION,
+        override val severity: ErrorSeverity = ErrorSeverity.ERROR,
+        override val recoverability: Recoverability = Recoverability.NON_RECOVERABLE,
+        override val message: String =
+            "Protected queued accepted-plan execution is not configured.",
+        override val cause: Throwable? = null,
+    ) : DataLoomError
+
+    private data class AcceptedStrategyDecisionMissingError(
+        override val code: ErrorCode =
+            ErrorCode("DL-PROTECTED-QUEUE-ACCEPTED-PLAN-DECISION-MISSING"),
+        override val category: ErrorCategory = ErrorCategory.CONFIGURATION,
+        override val severity: ErrorSeverity = ErrorSeverity.ERROR,
+        override val recoverability: Recoverability = Recoverability.NON_RECOVERABLE,
+        override val message: String =
+            "Protected queued accepted-plan execution requires a durable decision.",
+        override val cause: Throwable? = null,
+    ) : DataLoomError
 
     private data class StructuralRejectionError(
         private val reason: SynchronizationExecutionRejectionReason,

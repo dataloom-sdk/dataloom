@@ -2585,6 +2585,40 @@ public final class io/dataloom/api/strategy/StrategyProviderHealth : java/lang/E
 	public static fun values ()[Lio/dataloom/api/strategy/StrategyProviderHealth;
 }
 
+public abstract interface class io/dataloom/api/strategy/StrategyReconciliationProvider : io/dataloom/api/storage/StorageProvider {
+	public abstract fun reconcileStrategy (Lio/dataloom/api/strategy/StrategyReconciliationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/api/strategy/StrategyReconciliationRequest {
+	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCompletedOperations ()Ljava/util/List;
+	public final fun getConfigurationVersion-UL4oDQM ()J
+	public final fun getDecisionId-F9AG820 ()Ljava/lang/String;
+	public final fun getPlanId-msoz1rs ()Ljava/lang/String;
+	public final fun getProfileId-csSrl6c ()Ljava/lang/String;
+	public final fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/strategy/StrategyReconciliationResult {
+}
+
+public final class io/dataloom/api/strategy/StrategyReconciliationResult$Applied : io/dataloom/api/strategy/StrategyReconciliationResult {
+	public static final field INSTANCE Lio/dataloom/api/strategy/StrategyReconciliationResult$Applied;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/strategy/StrategyReconciliationResult$NotRequired : io/dataloom/api/strategy/StrategyReconciliationResult {
+	public static final field INSTANCE Lio/dataloom/api/strategy/StrategyReconciliationResult$NotRequired;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/api/strategy/StrategyRejectionReason : java/lang/Enum {
 	public static final field CACHE_MISS Lio/dataloom/api/strategy/StrategyRejectionReason;
 	public static final field CONNECTIVITY_UNAVAILABLE Lio/dataloom/api/strategy/StrategyRejectionReason;

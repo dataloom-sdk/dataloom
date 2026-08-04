@@ -60,10 +60,10 @@ import platform.posix.flock
  * returning success. The complete snapshot is capped at 32 MiB, 10,000 queue
  * entries, and 10,000 administrative retry receipts.
  *
- * Version-1 entry-only and version-2 entry-plus-receipt snapshots remain
- * readable. Every successful mutation writes the version-3
- * entry-plus-receipt-plus-strategy-decision format and preserves existing
- * administrative retry receipts and bounded strategy identity.
+ * Version-1 entry-only, version-2 entry-plus-receipt, and version-3
+ * strategy-decision snapshots remain readable. Every successful mutation writes
+ * version 4 with the complete immutable accepted strategy plan and preserves
+ * existing receipts, bounded strategy identity, and legacy identity-only work.
  *
  * The provider persists synchronization identifiers, safe metadata, retry
  * history, retry budgets, immutable workflow timeout evidence, bounded strategy

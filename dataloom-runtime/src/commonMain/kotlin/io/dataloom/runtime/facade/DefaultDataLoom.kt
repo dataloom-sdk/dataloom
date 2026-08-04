@@ -6,10 +6,13 @@ import io.dataloom.api.provider.ProviderLifecycleCoordinatorState
 import io.dataloom.api.provider.ProviderLifecycleResult
 import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.api.provider.SynchronizationProviderBindings
+import io.dataloom.api.strategy.PersistedStrategyDecision
+import io.dataloom.api.strategy.StrategyExecutionPlan
 import io.dataloom.api.strategy.StrategySynchronizationRequest
 import io.dataloom.runtime.execution.SynchronizationExecutionCoordinator
 import io.dataloom.runtime.execution.SynchronizationExecutionResult
 import io.dataloom.runtime.execution.SynchronizationExecutionRejectionReason
+import io.dataloom.runtime.strategy.AcceptedStrategyPlanExecutionCoordinator
 import io.dataloom.runtime.strategy.StrategySynchronizationExecutionCoordinator
 import io.dataloom.runtime.strategy.StrategySynchronizationExecutionResult
 import io.dataloom.runtime.submission.DataLoomQueueSubmission
@@ -59,6 +62,7 @@ internal class DefaultDataLoom(
     private val lifecycleCoordinator: ProviderLifecycleCoordinator,
     private val executionCoordinator: SynchronizationExecutionCoordinator,
     private val strategyExecutionCoordinator: StrategySynchronizationExecutionCoordinator,
+    private val acceptedStrategyPlanCoordinator: AcceptedStrategyPlanExecutionCoordinator,
     private val defaultBindings: SynchronizationProviderBindings?,
     private val defaultStrategyBindings: StrategyProviderBindings,
     override val queueWorker: DataLoomQueueWorker?,
@@ -102,6 +106,31 @@ internal class DefaultDataLoom(
         bindings: StrategyProviderBindings,
     ): StrategySynchronizationExecutionResult =
         strategyExecutionCoordinator.execute(request, bindings)
+
+    override suspend fun synchronizeAcceptedPlan(
+        request: SynchronizationRequest,
+        decision: PersistedStrategyDecision,
+        plan: StrategyExecutionPlan,
+    ): StrategySynchronizationExecutionResult =
+        acceptedStrategyPlanCoordinator.execute(
+            request = request,
+            decision = decision,
+            acceptedPlan = plan,
+            bindings = defaultStrategyBindings,
+        )
+
+    override suspend fun synchronizeAcceptedPlan(
+        request: SynchronizationRequest,
+        decision: PersistedStrategyDecision,
+        plan: StrategyExecutionPlan,
+        bindings: StrategyProviderBindings,
+    ): StrategySynchronizationExecutionResult =
+        acceptedStrategyPlanCoordinator.execute(
+            request = request,
+            decision = decision,
+            acceptedPlan = plan,
+            bindings = bindings,
+        )
 
     override suspend fun shutdown(): ProviderLifecycleResult =
         lifecycleCoordinator.shutdown()

@@ -743,6 +743,10 @@ abstract interface io.dataloom.api.strategy/StrategyLocalFallbackProvider : io.d
     abstract suspend fun evaluateLocalFallback(io.dataloom.api.strategy/StrategyLocalFallbackRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.strategy/StrategyLocalFallbackResult> // io.dataloom.api.strategy/StrategyLocalFallbackProvider.evaluateLocalFallback|evaluateLocalFallback(io.dataloom.api.strategy.StrategyLocalFallbackRequest){}[0]
 }
 
+abstract interface io.dataloom.api.strategy/StrategyReconciliationProvider : io.dataloom.api.storage/StorageProvider { // io.dataloom.api.strategy/StrategyReconciliationProvider|null[0]
+    abstract suspend fun reconcileStrategy(io.dataloom.api.strategy/StrategyReconciliationRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.strategy/StrategyReconciliationResult> // io.dataloom.api.strategy/StrategyReconciliationProvider.reconcileStrategy|reconcileStrategy(io.dataloom.api.strategy.StrategyReconciliationRequest){}[0]
+}
+
 abstract interface io.dataloom.api.transport/TransportProvider : io.dataloom.api.provider/DataLoomProvider { // io.dataloom.api.transport/TransportProvider|null[0]
     abstract val descriptor // io.dataloom.api.transport/TransportProvider.descriptor|{}descriptor[0]
         abstract fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.api.transport/TransportProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
@@ -1283,6 +1287,20 @@ sealed interface io.dataloom.api.strategy/StrategyOperationInput { // io.dataloo
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyOperationInput.ProviderBacked.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyOperationInput.ProviderBacked.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyOperationInput.ProviderBacked.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.strategy/StrategyReconciliationResult { // io.dataloom.api.strategy/StrategyReconciliationResult|null[0]
+    final object Applied : io.dataloom.api.strategy/StrategyReconciliationResult { // io.dataloom.api.strategy/StrategyReconciliationResult.Applied|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyReconciliationResult.Applied.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyReconciliationResult.Applied.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyReconciliationResult.Applied.toString|toString(){}[0]
+    }
+
+    final object NotRequired : io.dataloom.api.strategy/StrategyReconciliationResult { // io.dataloom.api.strategy/StrategyReconciliationResult.NotRequired|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyReconciliationResult.NotRequired.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyReconciliationResult.NotRequired.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyReconciliationResult.NotRequired.toString|toString(){}[0]
     }
 }
 
@@ -3346,6 +3364,27 @@ final class io.dataloom.api.strategy/StrategyLocalFallbackRequest { // io.datalo
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyLocalFallbackRequest.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyLocalFallbackRequest.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyLocalFallbackRequest.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.strategy/StrategyReconciliationRequest { // io.dataloom.api.strategy/StrategyReconciliationRequest|null[0]
+    constructor <init>(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.strategy/StrategyDecisionId, io.dataloom.api.strategy/StrategyPlanId, io.dataloom.api.strategy/StrategyProfileId, io.dataloom.api.strategy/StrategyConfigurationVersion, kotlin.collections/List<io.dataloom.api.strategy/StrategyOperation>) // io.dataloom.api.strategy/StrategyReconciliationRequest.<init>|<init>(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.strategy.StrategyDecisionId;io.dataloom.api.strategy.StrategyPlanId;io.dataloom.api.strategy.StrategyProfileId;io.dataloom.api.strategy.StrategyConfigurationVersion;kotlin.collections.List<io.dataloom.api.strategy.StrategyOperation>){}[0]
+
+    final val completedOperations // io.dataloom.api.strategy/StrategyReconciliationRequest.completedOperations|{}completedOperations[0]
+        final fun <get-completedOperations>(): kotlin.collections/List<io.dataloom.api.strategy/StrategyOperation> // io.dataloom.api.strategy/StrategyReconciliationRequest.completedOperations.<get-completedOperations>|<get-completedOperations>(){}[0]
+    final val configurationVersion // io.dataloom.api.strategy/StrategyReconciliationRequest.configurationVersion|{}configurationVersion[0]
+        final fun <get-configurationVersion>(): io.dataloom.api.strategy/StrategyConfigurationVersion // io.dataloom.api.strategy/StrategyReconciliationRequest.configurationVersion.<get-configurationVersion>|<get-configurationVersion>(){}[0]
+    final val decisionId // io.dataloom.api.strategy/StrategyReconciliationRequest.decisionId|{}decisionId[0]
+        final fun <get-decisionId>(): io.dataloom.api.strategy/StrategyDecisionId // io.dataloom.api.strategy/StrategyReconciliationRequest.decisionId.<get-decisionId>|<get-decisionId>(){}[0]
+    final val planId // io.dataloom.api.strategy/StrategyReconciliationRequest.planId|{}planId[0]
+        final fun <get-planId>(): io.dataloom.api.strategy/StrategyPlanId // io.dataloom.api.strategy/StrategyReconciliationRequest.planId.<get-planId>|<get-planId>(){}[0]
+    final val profileId // io.dataloom.api.strategy/StrategyReconciliationRequest.profileId|{}profileId[0]
+        final fun <get-profileId>(): io.dataloom.api.strategy/StrategyProfileId // io.dataloom.api.strategy/StrategyReconciliationRequest.profileId.<get-profileId>|<get-profileId>(){}[0]
+    final val request // io.dataloom.api.strategy/StrategyReconciliationRequest.request|{}request[0]
+        final fun <get-request>(): io.dataloom.api.model/SynchronizationRequest // io.dataloom.api.strategy/StrategyReconciliationRequest.request.<get-request>|<get-request>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyReconciliationRequest.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyReconciliationRequest.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyReconciliationRequest.toString|toString(){}[0]
 }
 
 final class io.dataloom.api.strategy/StrategyRuntimeEvidence { // io.dataloom.api.strategy/StrategyRuntimeEvidence|null[0]

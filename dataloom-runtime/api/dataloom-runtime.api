@@ -414,6 +414,8 @@ public abstract interface class io/dataloom/runtime/facade/DataLoom {
 	public abstract fun synchronize (Lio/dataloom/api/model/SynchronizationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun synchronize (Lio/dataloom/api/strategy/StrategySynchronizationRequest;Lio/dataloom/api/provider/StrategyProviderBindings;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun synchronize (Lio/dataloom/api/strategy/StrategySynchronizationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun synchronizeAcceptedPlan (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/strategy/PersistedStrategyDecision;Lio/dataloom/api/strategy/StrategyExecutionPlan;Lio/dataloom/api/provider/StrategyProviderBindings;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun synchronizeAcceptedPlan (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/strategy/PersistedStrategyDecision;Lio/dataloom/api/strategy/StrategyExecutionPlan;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/dataloom/runtime/facade/DataLoom$DefaultImpls {
@@ -495,6 +497,8 @@ public final class io/dataloom/runtime/facade/DataLoomCircuitQueueWorkerSpec {
 public abstract interface class io/dataloom/runtime/facade/DataLoomProtectedStrategySynchronization {
 	public abstract fun synchronize (Lio/dataloom/api/strategy/StrategySynchronizationRequest;Lio/dataloom/api/provider/StrategyProviderBindings;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun synchronize (Lio/dataloom/api/strategy/StrategySynchronizationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun synchronizeAcceptedPlan (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/strategy/PersistedStrategyDecision;Lio/dataloom/api/strategy/StrategyExecutionPlan;Lio/dataloom/api/provider/StrategyProviderBindings;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun synchronizeAcceptedPlan (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/strategy/PersistedStrategyDecision;Lio/dataloom/api/strategy/StrategyExecutionPlan;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public abstract interface class io/dataloom/runtime/facade/DataLoomProtectedSynchronization {
@@ -568,11 +572,23 @@ public final class io/dataloom/runtime/facade/DataLoomStrategyLocalFallbackProte
 
 public final class io/dataloom/runtime/facade/DataLoomStrategyProviderProtectionSpec {
 	public fun <init> ()V
-	public fun <init> (Lio/dataloom/runtime/facade/DataLoomStorageProtectionSpec;Lio/dataloom/runtime/facade/DataLoomTransportProtectionSpec;Lio/dataloom/runtime/facade/DataLoomStrategyLocalFallbackProtectionSpec;)V
-	public synthetic fun <init> (Lio/dataloom/runtime/facade/DataLoomStorageProtectionSpec;Lio/dataloom/runtime/facade/DataLoomTransportProtectionSpec;Lio/dataloom/runtime/facade/DataLoomStrategyLocalFallbackProtectionSpec;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/dataloom/runtime/facade/DataLoomStorageProtectionSpec;Lio/dataloom/runtime/facade/DataLoomTransportProtectionSpec;Lio/dataloom/runtime/facade/DataLoomStrategyLocalFallbackProtectionSpec;Lio/dataloom/runtime/facade/DataLoomStrategyReconciliationProtectionSpec;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/facade/DataLoomStorageProtectionSpec;Lio/dataloom/runtime/facade/DataLoomTransportProtectionSpec;Lio/dataloom/runtime/facade/DataLoomStrategyLocalFallbackProtectionSpec;Lio/dataloom/runtime/facade/DataLoomStrategyReconciliationProtectionSpec;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getLocalFallback ()Lio/dataloom/runtime/facade/DataLoomStrategyLocalFallbackProtectionSpec;
+	public final fun getReconciliation ()Lio/dataloom/runtime/facade/DataLoomStrategyReconciliationProtectionSpec;
 	public final fun getStorage ()Lio/dataloom/runtime/facade/DataLoomStorageProtectionSpec;
 	public final fun getTransport ()Lio/dataloom/runtime/facade/DataLoomTransportProtectionSpec;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/facade/DataLoomStrategyReconciliationProtectionSpec {
+	public fun <init> (Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;Lio/dataloom/api/circuit/CircuitBreakerStateStore;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;Lio/dataloom/api/circuit/CircuitBreakerStateStore;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCircuitBreakerConfiguration ()Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;
+	public final fun getCircuitBreakerStateStore ()Lio/dataloom/api/circuit/CircuitBreakerStateStore;
+	public final fun getFailureClassifier ()Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;
+	public final fun getProviderTimeout ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun getScope ()Lio/dataloom/api/circuit/CircuitBreakerScope;
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -1196,20 +1212,21 @@ public final class io/dataloom/runtime/queue/DurableQueueExecutionProcessor {
 }
 
 public final class io/dataloom/runtime/queue/ProviderProtectedQueueEntryExecutionResult {
-	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/runtime/queue/QueueEntryExecutionOutcome;Lio/dataloom/runtime/facade/ProviderProtectedSynchronizationExecutionResult;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/runtime/queue/QueueEntryExecutionOutcome;Lio/dataloom/runtime/facade/ProviderProtectedSynchronizationExecutionResult;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/runtime/queue/QueueEntryExecutionOutcome;Lio/dataloom/runtime/facade/ProviderProtectedSynchronizationExecutionResult;Lio/dataloom/runtime/execution/protection/ProviderProtectedStrategySynchronizationResult;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/runtime/queue/QueueEntryExecutionOutcome;Lio/dataloom/runtime/facade/ProviderProtectedSynchronizationExecutionResult;Lio/dataloom/runtime/execution/protection/ProviderProtectedStrategySynchronizationResult;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getEntryId-ARA1dI0 ()Ljava/lang/String;
 	public final fun getExecutionResult ()Lio/dataloom/runtime/facade/ProviderProtectedSynchronizationExecutionResult;
 	public final fun getOperationEvidence ()Ljava/util/List;
 	public final fun getOutcome ()Lio/dataloom/runtime/queue/QueueEntryExecutionOutcome;
+	public final fun getStrategyExecutionResult ()Lio/dataloom/runtime/execution/protection/ProviderProtectedStrategySynchronizationResult;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/dataloom/runtime/queue/ProviderProtectedQueuedSynchronizationExecutionHandler {
-	public synthetic fun <init> (Lio/dataloom/runtime/queue/QueuedSynchronizationWorkResolver;Lio/dataloom/runtime/facade/DataLoomProtectedSynchronization;Lio/dataloom/runtime/retry/SynchronizationRetryEvaluator;Ljava/lang/String;Lio/dataloom/runtime/connectivity/SynchronizationConnectivityConfiguration;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/retry/WorkflowTimeoutStateExecutor;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Lio/dataloom/runtime/queue/QueuedSynchronizationWorkResolver;Lio/dataloom/runtime/facade/DataLoomProtectedSynchronization;Lio/dataloom/runtime/retry/SynchronizationRetryEvaluator;Ljava/lang/String;Lio/dataloom/runtime/connectivity/SynchronizationConnectivityConfiguration;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/retry/WorkflowTimeoutStateExecutor;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/queue/QueuedSynchronizationWorkResolver;Lio/dataloom/runtime/facade/DataLoomProtectedSynchronization;Lio/dataloom/runtime/retry/SynchronizationRetryEvaluator;Ljava/lang/String;Lio/dataloom/runtime/connectivity/SynchronizationConnectivityConfiguration;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/retry/WorkflowTimeoutStateExecutor;Lio/dataloom/runtime/facade/DataLoomProtectedStrategySynchronization;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/queue/QueuedSynchronizationWorkResolver;Lio/dataloom/runtime/facade/DataLoomProtectedSynchronization;Lio/dataloom/runtime/retry/SynchronizationRetryEvaluator;Ljava/lang/String;Lio/dataloom/runtime/connectivity/SynchronizationConnectivityConfiguration;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/retry/WorkflowTimeoutStateExecutor;Lio/dataloom/runtime/facade/DataLoomProtectedStrategySynchronization;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun execute (Lio/dataloom/api/queue/QueueEntry;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
@@ -2528,6 +2545,19 @@ public final class io/dataloom/runtime/retry/StrategyLocalFallbackCircuitOperati
 	public static fun values ()[Lio/dataloom/runtime/retry/StrategyLocalFallbackCircuitOperation;
 }
 
+public final class io/dataloom/runtime/retry/StrategyReconciliationCircuitBreakerFailureClassifier : io/dataloom/runtime/retry/CircuitBreakerFailureClassifier {
+	public static final field INSTANCE Lio/dataloom/runtime/retry/StrategyReconciliationCircuitBreakerFailureClassifier;
+	public fun classify (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/runtime/retry/CircuitBreakerFailureDisposition;
+}
+
+public final class io/dataloom/runtime/retry/StrategyReconciliationCircuitOperation : java/lang/Enum {
+	public static final field RECONCILE Lio/dataloom/runtime/retry/StrategyReconciliationCircuitOperation;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getRetryOperation-TGFxZV8 ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/retry/StrategyReconciliationCircuitOperation;
+	public static fun values ()[Lio/dataloom/runtime/retry/StrategyReconciliationCircuitOperation;
+}
+
 public abstract interface class io/dataloom/runtime/retry/SynchronizationRetryEvaluation {
 }
 
@@ -2737,6 +2767,8 @@ public final class io/dataloom/runtime/strategy/BuiltInSynchronizationStrategyEv
 }
 
 public final class io/dataloom/runtime/strategy/StrategyExecutionRejectionReason : java/lang/Enum {
+	public static final field ACCEPTED_PLAN_CONTINUATION_MISSING Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
+	public static final field ACCEPTED_PLAN_MISMATCH Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field INCOMPATIBLE_INPUT Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field INCOMPATIBLE_TRIGGER Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
@@ -2744,6 +2776,7 @@ public final class io/dataloom/runtime/strategy/StrategyExecutionRejectionReason
 	public static final field PROVIDER_PROTECTION_NOT_CONFIGURED Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field PROVIDER_PROTECTION_SCOPE_MISMATCH Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field PROVIDER_RESOLUTION_FAILED Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
+	public static final field RECONCILIATION_PROVIDER_NOT_CONFIGURED Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field STRATEGY_REJECTED Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field UNSUPPORTED_PLAN Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
@@ -2757,16 +2790,16 @@ public abstract interface class io/dataloom/runtime/strategy/StrategySynchroniza
 }
 
 public final class io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$Cancelled : io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult {
-	public fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyTransportOutput$ProviderBacked;)V
+	public fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyTransportOutput;)V
 	public final fun component1 ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
 	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
-	public final fun component3 ()Lio/dataloom/api/strategy/StrategyTransportOutput$ProviderBacked;
-	public final fun copy (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyTransportOutput$ProviderBacked;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$Cancelled;
-	public static synthetic fun copy$default (Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$Cancelled;Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyTransportOutput$ProviderBacked;ILjava/lang/Object;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$Cancelled;
+	public final fun component3 ()Lio/dataloom/api/strategy/StrategyTransportOutput;
+	public final fun copy (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyTransportOutput;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$Cancelled;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$Cancelled;Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyTransportOutput;ILjava/lang/Object;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$Cancelled;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
 	public fun getEvaluation ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
-	public final fun getOutput ()Lio/dataloom/api/strategy/StrategyTransportOutput$ProviderBacked;
+	public final fun getOutput ()Lio/dataloom/api/strategy/StrategyTransportOutput;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }

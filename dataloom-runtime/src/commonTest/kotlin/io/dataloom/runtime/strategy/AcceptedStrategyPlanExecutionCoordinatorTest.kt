@@ -59,6 +59,9 @@ import io.dataloom.api.strategy.StrategyReconciliationRequest
 import io.dataloom.api.strategy.StrategyReconciliationResult
 import io.dataloom.api.strategy.StrategyRemoteOutcome
 import io.dataloom.api.strategy.StrategyTransportOutput
+import io.dataloom.api.identifier.ChangeEventId
+import io.dataloom.api.synchronization.ChangeAcknowledgementStatus
+import io.dataloom.api.synchronization.ChangeEventAcknowledgement
 import io.dataloom.api.synchronization.ChangeSetAcknowledgement
 import io.dataloom.api.synchronization.CheckpointReadRequest
 import io.dataloom.api.synchronization.CheckpointWriteRequest
@@ -192,7 +195,50 @@ class AcceptedStrategyPlanExecutionCoordinatorTest {
     }
 
     @Test
-    fun missingReconciliationCapabilityFailsBeforeClaimingSuccess() = runTest {
+    fun fallbackReconciliationRunsOnceWithoutClaimingFailedPullCompleted() = runTest {
+        val storage = RecordingStrategyStorage(
+            fallbackResult = ProviderOperationResult.Success(
+                StrategyLocalFallbackResult.Available(StrategyCacheState.STALE),
+            ),
+        )
+        val unavailable = ClassifiedError(StrategyRemoteOutcome.UNAVAILABLE)
+        val transport = RecordingTransport(
+            pullResult = ProviderOperationResult.Failure(unavailable),
+        )
+        val fixture = fixture(storage, transport)
+        val fallbackPlan = StrategyFallbackPlan(
+            remoteOutcomes = setOf(StrategyRemoteOutcome.UNAVAILABLE),
+            operations = listOf(StrategyOperation.SERVE_LOCAL),
+            dataOrigin = StrategyDataOrigin.LOCAL,
+        )
+
+        val result = fixture.coordinator.execute(
+            request = request(SynchronizationDirection.PULL),
+            decision = decision(
+                requested = BuiltInSynchronizationStrategy.REMOTE_FIRST,
+                effective = BuiltInSynchronizationStrategy.REMOTE_FIRST,
+                profileId = "remote-profile",
+                disposition = StrategyDisposition.DEFER,
+            ),
+            acceptedPlan = remotePullPlan(
+                fallback = fallbackPlan,
+                reconcile = true,
+            ),
+            bindings = bindings(storage, transport),
+        )
+
+        val fallback = assertIs<StrategySynchronizationExecutionResult.FallbackActivated>(result)
+        assertEquals(1, transport.pullCalls)
+        assertEquals(1, storage.reconcileCalls)
+        assertEquals(
+            listOf(StrategyOperation.SERVE_LOCAL),
+            storage.lastReconciliation?.completedOperations,
+        )
+        assertEquals(listOf(StrategyOperation.SERVE_LOCAL), fallback.completedOperations)
+    }
+
+    @Test
+    fun missingReconciliationCapabilityFailsBeforeProviderExecution() = runTest {
         val storage = PlainStorage()
         val transport = RecordingTransport()
         val fixture = fixture(storage, transport)
@@ -209,7 +255,7 @@ class AcceptedStrategyPlanExecutionCoordinatorTest {
             StrategyExecutionRejectionReason.RECONCILIATION_PROVIDER_NOT_CONFIGURED,
             rejected.reason,
         )
-        assertEquals(1, fixture.pushPipeline.calls)
+        assertEquals(0, fixture.pushPipeline.calls)
     }
 
     private suspend fun fixture(
@@ -274,6 +320,7 @@ class AcceptedStrategyPlanExecutionCoordinatorTest {
 
     private fun remotePullPlan(
         fallback: StrategyFallbackPlan?,
+        reconcile: Boolean = false,
     ): StrategyExecutionPlan = StrategyExecutionPlan(
         id = StrategyPlanId("plan-1"),
         requestedStrategy = BuiltInSynchronizationStrategy.REMOTE_FIRST,
@@ -289,15 +336,20 @@ class AcceptedStrategyPlanExecutionCoordinatorTest {
         consistency = StrategyConsistency.REMOTE_AUTHORITATIVE,
         deferralReason = StrategyDeferralReason.CONNECTIVITY_UNKNOWN,
         durableContinuation = StrategyDurableContinuationPlan(
-            operations = listOf(StrategyOperation.PULL_REMOTE),
-            requiredCapabilities = if (fallback == null) {
-                setOf(StrategyProviderCapability.TRANSPORT)
-            } else {
-                setOf(
-                    StrategyProviderCapability.STORAGE,
-                    StrategyProviderCapability.TRANSPORT,
-                )
-            },
+            operations = listOf(StrategyOperation.PULL_REMOTE) +
+                if (reconcile) listOf(StrategyOperation.RECONCILE) else emptyList(),
+            requiredCapabilities =
+                setOf(StrategyProviderCapability.TRANSPORT) +
+                    if (fallback != null || reconcile) {
+                        setOf(StrategyProviderCapability.STORAGE)
+                    } else {
+                        emptySet()
+                    } +
+                    if (reconcile) {
+                        setOf(StrategyProviderCapability.CONFLICT_STATE)
+                    } else {
+                        emptySet()
+                    },
             dataOrigin = StrategyDataOrigin.REMOTE,
             consistency = StrategyConsistency.REMOTE_AUTHORITATIVE,
             evaluatedCacheState = StrategyCacheState.STALE,
@@ -355,7 +407,9 @@ class AcceptedStrategyPlanExecutionCoordinatorTest {
     }
 
     private fun <T> fixedGenerator(value: T): IdentifierGenerator<T> =
-        IdentifierGenerator { value }
+        object : IdentifierGenerator<T> {
+            override fun generate(): T = value
+        }
 
     private data class Fixture(
         val coordinator: AcceptedStrategyPlanExecutionCoordinator,
@@ -439,7 +493,12 @@ class AcceptedStrategyPlanExecutionCoordinatorTest {
             return ProviderOperationResult.Success(
                 ChangeSetAcknowledgement(
                     changeSetId = request.changeSet.id,
-                    events = emptyList(),
+                    events = listOf(
+                        ChangeEventAcknowledgement(
+                            eventId = ChangeEventId("event-ack"),
+                            status = ChangeAcknowledgementStatus.ACCEPTED,
+                        ),
+                    ),
                 ),
             )
         }

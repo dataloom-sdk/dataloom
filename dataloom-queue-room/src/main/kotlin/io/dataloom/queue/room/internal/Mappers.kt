@@ -36,6 +36,7 @@ import io.dataloom.api.strategy.PersistedStrategyDecision
 import io.dataloom.api.strategy.StrategyConfigurationVersion
 import io.dataloom.api.strategy.StrategyDecisionId
 import io.dataloom.api.strategy.StrategyDisposition
+import io.dataloom.api.strategy.StrategyExecutionPlanCodec
 import io.dataloom.api.strategy.StrategyPlanId
 import io.dataloom.api.strategy.StrategyProfileId
 import io.dataloom.api.scheduling.SchedulingDelay
@@ -96,6 +97,7 @@ internal fun QueueEntry.toEntity(): QueueEntryEntity {
         strategyEffectiveStrategy = strategyDecision?.effectiveStrategy?.name,
         strategyConfigurationVersion = strategyDecision?.configurationVersion?.value,
         strategyDisposition = strategyDecision?.disposition?.name,
+        strategyPlanSnapshot = strategyPlan?.let(StrategyExecutionPlanCodec::encode),
     )
 }
 
@@ -215,6 +217,7 @@ internal fun QueueEntryEntity.toDomain(): QueueEntry {
             disposition = StrategyDisposition.valueOf(checkNotNull(strategyDisposition)),
         )
     }
+    val strategyPlan = strategyPlanSnapshot?.let(StrategyExecutionPlanCodec::decode)
 
     return QueueEntry(
         id = QueueEntryId(entryId),
@@ -229,6 +232,7 @@ internal fun QueueEntryEntity.toDomain(): QueueEntry {
         retryBudgetState = retryBudgetState,
         workflowTimeoutState = workflowTimeoutState,
         strategyDecision = strategyDecision,
+        strategyPlan = strategyPlan,
     )
 }
 

@@ -184,21 +184,29 @@ Every built-in plan that admits durable work now freezes a
 capabilities, origin, consistency, evaluated cache state, and finite fallback
 branch. `StrategyExecutionPlanCodec` provides a bounded deterministic V1 frame.
 
-Queue encoders and work resolvers must preserve both the exact decision and the
+Queue encoders and work resolvers preserve both the exact decision and the
 complete plan. Changed, dropped, or invented plan evidence fails before timeout,
-clock, provider, circuit, retry, or coordinator work. Platform stores and the
-accepted-plan execution coordinator are the next integration boundary; they
-must never re-evaluate current policy after retry, restart, or rescheduling.
+clock, provider, circuit, retry, or coordinator work. Android Room schema 8 and
+Apple queue format 4 preserve the bounded plan frame across retry, deferral,
+reopen, migration, and lease recovery.
+
+`DataLoom.synchronizeAcceptedPlan(...)` and its protected counterpart execute
+only the stored durable continuation. They accept no profile and no current
+runtime evidence. Provider roles are resolved from the continuation; typed
+fallback uses the stored evaluated cache state, and `RECONCILE` invokes the
+narrow optional `StrategyReconciliationProvider`. Plan-bearing queue work is
+routed through the same accepted coordinator and never falls back to the legacy
+or current-policy strategy coordinator.
 
 ## Current integration boundary
 
 The profile contracts, deterministic planner, fail-closed durable admission,
-plan-aware provider resolution, direct network-only execution, direct provider-
-backed remote-first execution, bounded strategy-decision queue persistence,
-and fail-closed queued resolver correspondence are implemented in common
-Kotlin. Room and Apple stores preserve the same
-bounded identity; complete native Android, KMP Android, and KMP iOS reference
-qualification remains open.
+plan-aware provider resolution, direct network-only and remote-first execution,
+bounded strategy-decision and complete-plan persistence, resolver
+correspondence, and direct/protected/queued accepted-plan execution are
+implemented in common Kotlin. Room and Apple preserve the same accepted plan;
+complete native Android, KMP Android, and KMP iOS reference qualification
+remains open.
 
 `StrategyProviderBindings` makes every provider role optional. After policy
 evaluation, `StrategyProviderResolver` resolves only the capabilities in the
@@ -245,9 +253,11 @@ implement `StrategyLocalFallbackProvider`. The fallback contract reports
 availability and freshness only—application repositories still own domain
 reads.
 
-Remote-first durable triggers, offline-first atomic admission/execution,
-cache-first, hybrid, and adaptive runtime execution, immutable accepted-plan
-reconstruction/replay, conflict application, complete strategy event enrichment,
-and full native Android/KMP Android/KMP iOS reference qualification remain
-separate integration gates. Unsupported plans and triggers are rejected rather
-than silently executed through the legacy pipeline.
+Accepted-plan replay now covers the frozen storage/transport operations,
+typed local fallback, bounded reconciliation, direct protection, and queue
+routing without current-policy evaluation. Remaining gates are atomic
+application intent/outbox admission, cache value/refresh ownership contracts,
+complete hybrid coherence and conflict application, strategy-specific durable
+events/diagnostics, and full native Android/KMP Android/KMP iOS reference
+qualification. Unsupported capabilities fail closed rather than silently
+executing through the legacy pipeline.

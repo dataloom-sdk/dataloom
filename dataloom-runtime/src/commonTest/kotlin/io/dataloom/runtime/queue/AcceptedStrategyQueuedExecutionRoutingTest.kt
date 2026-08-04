@@ -219,7 +219,10 @@ class AcceptedStrategyQueuedExecutionRoutingTest {
         ),
     )
 
-    private fun <T> fixed(value: T): IdentifierGenerator<T> = IdentifierGenerator { value }
+    private fun <T> fixed(value: T): IdentifierGenerator<T> =
+        object : IdentifierGenerator<T> {
+            override fun generate(): T = value
+        }
 
     private object StopPolicy : RetryPolicy {
         override val id: RetryPolicyId = RetryPolicyId("stop")

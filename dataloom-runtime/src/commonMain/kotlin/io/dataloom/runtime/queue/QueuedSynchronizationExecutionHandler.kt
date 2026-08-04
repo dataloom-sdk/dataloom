@@ -7,6 +7,7 @@ import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
 import io.dataloom.api.queue.QueueDeferralReason
 import io.dataloom.api.queue.QueueEntry
+import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.api.queue.QueueFailureDisposition
 import io.dataloom.api.retry.RetryAttempt
 import io.dataloom.api.retry.RetryOperation
@@ -20,6 +21,7 @@ import io.dataloom.runtime.execution.SynchronizationExecutionResult
 import io.dataloom.runtime.retry.SynchronizationRetryEvaluation
 import io.dataloom.runtime.retry.SynchronizationRetryEvaluator
 import io.dataloom.runtime.retry.WorkflowTimeoutStateExecutor
+import io.dataloom.runtime.strategy.AcceptedStrategyPlanExecutionCoordinator
 
 /**
  * [QueueEntryExecutionHandler] implementation that orchestrates queued
@@ -139,7 +141,12 @@ internal class QueuedSynchronizationExecutionHandler(
     private val connectivityConfiguration: SynchronizationConnectivityConfiguration? = null,
     private val clock: DataLoomClock? = null,
     private val workflowTimeoutExecutor: WorkflowTimeoutStateExecutor? = null,
+    private val acceptedStrategyPlanCoordinator: AcceptedStrategyPlanExecutionCoordinator? = null,
 ) : QueueEntryExecutionHandler {
+    private val strategyOutcomeMapper = StrategyQueueExecutionOutcomeMapper(
+        retryEvaluator = retryEvaluator,
+        retryOperation = retryOperation,
+    )
 
     /**
      * Executes the supplied [entry] by resolving work, invoking the
@@ -173,6 +180,40 @@ internal class QueuedSynchronizationExecutionHandler(
                 error = error,
                 disposition = QueueFailureDisposition.FAILED,
             )
+        }
+
+        val acceptedPlan = work.strategyPlan
+        if (acceptedPlan != null) {
+            val coordinator = acceptedStrategyPlanCoordinator
+                ?: return QueueEntryExecutionOutcome.Failed(
+                    error = AcceptedStrategyPlanCoordinatorMissingError(),
+                    disposition = QueueFailureDisposition.FAILED,
+                )
+            val decision = work.strategyDecision
+                ?: return QueueEntryExecutionOutcome.Failed(
+                    error = AcceptedStrategyDecisionMissingError(),
+                    disposition = QueueFailureDisposition.FAILED,
+                )
+            val strategyResult = when (val timedExecution = executeQueuedWorkflowWithTimeout(
+                entry = entry,
+                timeoutExecutor = workflowTimeoutExecutor,
+            ) {
+                coordinator.execute(
+                    request = work.request,
+                    decision = decision,
+                    acceptedPlan = acceptedPlan,
+                    bindings = work.bindings.toStrategyProviderBindings(),
+                )
+            }) {
+                is QueuedWorkflowTimeoutExecution.Completed -> timedExecution.value
+                is QueuedWorkflowTimeoutExecution.Failed -> {
+                    return QueueEntryExecutionOutcome.Failed(
+                        error = timedExecution.error,
+                        disposition = QueueFailureDisposition.FAILED,
+                    )
+                }
+            }
+            return strategyOutcomeMapper.map(strategyResult, entry)
         }
 
         // Step 4–5: Execute synchronization; map coordinator rejections.
@@ -395,6 +436,28 @@ internal class QueuedSynchronizationExecutionHandler(
      * include provider references, credentials, tokens, stack traces, or
      * sensitive runtime state.
      */
+    private data class AcceptedStrategyPlanCoordinatorMissingError(
+        override val code: ErrorCode =
+            ErrorCode("DL-Q-ACCEPTED-PLAN-COORDINATOR-NOT-CONFIGURED"),
+        override val category: ErrorCategory = ErrorCategory.CONFIGURATION,
+        override val severity: ErrorSeverity = ErrorSeverity.ERROR,
+        override val recoverability: Recoverability = Recoverability.NON_RECOVERABLE,
+        override val message: String =
+            "Queued accepted-plan execution requires the accepted-plan coordinator.",
+        override val cause: Throwable? = null,
+    ) : DataLoomError
+
+    private data class AcceptedStrategyDecisionMissingError(
+        override val code: ErrorCode =
+            ErrorCode("DL-Q-ACCEPTED-PLAN-DECISION-MISSING"),
+        override val category: ErrorCategory = ErrorCategory.CONFIGURATION,
+        override val severity: ErrorSeverity = ErrorSeverity.ERROR,
+        override val recoverability: Recoverability = Recoverability.NON_RECOVERABLE,
+        override val message: String =
+            "Queued accepted-plan execution requires the durable strategy decision.",
+        override val cause: Throwable? = null,
+    ) : DataLoomError
+
     private class StructuralRejectionError(
         private val reason: io.dataloom.runtime.execution.SynchronizationExecutionRejectionReason,
     ) : DataLoomError {
@@ -426,3 +489,13 @@ internal class QueuedSynchronizationExecutionHandler(
     }
 
 }
+
+
+internal fun io.dataloom.api.provider.SynchronizationProviderBindings.toStrategyProviderBindings():
+    StrategyProviderBindings = StrategyProviderBindings(
+        storageProviderId = storageProviderId,
+        transportProviderId = transportProviderId,
+        schedulerProviderId = schedulerProviderId,
+        connectivityProviderId = connectivityProviderId,
+        queueProviderId = queueProviderId,
+    )

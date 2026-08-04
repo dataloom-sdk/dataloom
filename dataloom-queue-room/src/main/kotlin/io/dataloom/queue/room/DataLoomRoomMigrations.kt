@@ -142,6 +142,18 @@ public object DataLoomRoomMigrations {
         }
     }
 
+    /**
+     * Adds the nullable complete immutable accepted-plan snapshot.
+     *
+     * Version-7 strategy work remains readable as identity-only legacy work.
+     * Migration never evaluates current policy or invents a current plan.
+     */
+    public val MIGRATION_7_8: Migration = object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE queue_entries ADD COLUMN strategy_plan_snapshot TEXT")
+        }
+    }
+
     /** Complete ordered migration set used by [DataLoomDatabaseBuilder]. */
     public val ALL: Array<Migration>
         get() = arrayOf(
@@ -151,5 +163,6 @@ public object DataLoomRoomMigrations {
             MIGRATION_4_5,
             MIGRATION_5_6,
             MIGRATION_6_7,
+            MIGRATION_7_8,
         )
 }

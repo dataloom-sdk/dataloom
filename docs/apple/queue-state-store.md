@@ -3,7 +3,7 @@
 > **Status:** Production KMP Apple queue persistence is available as a bounded,
 > file-backed `QueueProvider`. This completes the platform persistence boundary
 > for queue entries, retry attempts, retry budgets, availability, leases,
-> immutable workflow deadlines, and bounded strategy-decision identity. It does not complete Apple background
+> immutable workflow deadlines, bounded strategy-decision identity, and complete immutable accepted-plan frames. It does not complete Apple background
 > scheduling, executable process-relaunch qualification, administration stores,
 > or full KMP iOS synchronization flows.
 
@@ -92,7 +92,7 @@ The complete queue entry is reconstructed after restart, including:
 - retry attempt, retry-window start, most recent evaluation, and cumulative
   accepted delay;
 - immutable workflow start and absolute deadline;
-- bounded strategy decision, plan, profile, configuration, and disposition identity;
+- bounded strategy decision identity plus the complete immutable accepted plan and durable continuation;
 - active lease id, consumer, acquisition time, and expiry;
 - canonical error code, category, severity, recoverability, and sanitized
   message.
@@ -127,14 +127,15 @@ repeat an ambiguous mutation.
 
 ## Integrity validation
 
-The current version-3 format has exactly 42 fields per entry. Historical
-version-1 and version-2 entries retain their original 35-field layout and remain
+The current version-4 format has exactly 43 fields per entry. Version-3
+strategy-decision entries retain their 42-field layout, while historical
+version-1 and version-2 entries retain the original 35-field layout. All remain
 strictly readable. On every read, the provider validates:
 
 - header and field count;
 - strict UTF-8 and hexadecimal encoding;
 - enum names and numeric values;
-- complete-or-null retry budget, workflow deadline, lease, error, and strategy groups;
+- complete-or-null retry budget, workflow deadline, lease, error, strategy identity, and accepted-plan frames;
 - unique queue entry ids;
 - `QueueEntry`, `QueueLease`, `RetryBudgetState`, and `WorkflowTimeoutState`
   constructor invariants; and
@@ -185,14 +186,15 @@ Still required for full KMP iOS V1 acceptance:
 - Apple background scheduling and connectivity providers;
 - Data Protection and backup-exclusion integration evidence;
 - durable retry-administration state and queue-specific administrative executor;
-- queued immutable-plan reconstruction and replay from the persisted decision; and
+- queued immutable-plan execution through the accepted continuation without policy re-evaluation; and
 - complete native Android, KMP Android, and KMP iOS strategy reference flows.
 
-## Queue snapshot version 3
+## Queue snapshot version 4
 
-The current Apple queue snapshot is version 3. It appends the bounded strategy
-decision to each queue entry while retaining strict reads for entry-only version
-1 and entry-plus-receipt version 2 snapshots. The next successful write upgrades
-a historical snapshot atomically. A partially populated decision group is
-rejected as corrupt state, and historical entries remain explicitly unplanned
-rather than receiving current configuration.
+The current Apple queue snapshot is version 4. It appends the bounded encoded
+complete accepted plan after the version-3 strategy-decision fields while
+retaining strict reads for entry-only version 1, entry-plus-receipt version 2,
+and identity-only version 3 snapshots. The next successful write upgrades a
+historical snapshot atomically. A malformed plan or decision/plan mismatch is
+rejected as corrupt state. Historical identity-only entries remain explicitly
+unplanned rather than receiving current configuration.
