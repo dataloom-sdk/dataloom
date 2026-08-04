@@ -43,6 +43,7 @@ import io.dataloom.runtime.retry.StorageCircuitProtectionRuntime
 import io.dataloom.runtime.retry.SynchronizationRetryEvaluator
 import io.dataloom.runtime.retry.WorkflowTimeoutStateExecutor
 import io.dataloom.runtime.retry.TransportCircuitProtectionRuntime
+import io.dataloom.runtime.strategy.AcceptedStrategyPlanExecutionCoordinator
 import io.dataloom.runtime.strategy.BuiltInSynchronizationStrategyEvaluator
 import io.dataloom.runtime.strategy.StrategySynchronizationExecutionCoordinator
 import io.dataloom.runtime.submission.DataLoomQueueSubmission
@@ -604,13 +605,22 @@ public class DataLoomBuilder {
             connectivityConfiguration = effectiveConnectivityConfiguration,
             connectivityPreflight = connectivityPreflight,
         )
+        val strategyPipelineRegistry = buildStrategyPipelineRegistry()
         val strategyExecutionCoordinator = StrategySynchronizationExecutionCoordinator(
             lifecycleCoordinator = lifecycleCoordinator,
             evaluator = BuiltInSynchronizationStrategyEvaluator(),
             providerResolver = strategyResolver,
             clock = deps.clock,
             runtimeDependencies = deps,
-            pipelineRegistry = buildStrategyPipelineRegistry(),
+            pipelineRegistry = strategyPipelineRegistry,
+            lifecycleEventEmitter = lifecycleEventEmitter,
+        )
+        val acceptedStrategyPlanCoordinator = AcceptedStrategyPlanExecutionCoordinator(
+            lifecycleCoordinator = lifecycleCoordinator,
+            providerResolver = strategyResolver,
+            clock = deps.clock,
+            runtimeDependencies = deps,
+            pipelineRegistry = strategyPipelineRegistry,
             lifecycleEventEmitter = lifecycleEventEmitter,
         )
 
@@ -619,6 +629,7 @@ public class DataLoomBuilder {
             DefaultDataLoomProtectedStrategySynchronization(
                 coordinator = ProviderProtectedStrategySynchronizationCoordinator(
                     strategyCoordinator = strategyExecutionCoordinator,
+                    acceptedPlanCoordinator = acceptedStrategyPlanCoordinator,
                     protectionSpec = spec,
                     clock = deps.clock,
                 ),
@@ -659,6 +670,7 @@ public class DataLoomBuilder {
                 bindings = legacyBindings,
                 deps = deps,
                 executionCoordinator = executionCoordinator,
+                acceptedStrategyPlanCoordinator = acceptedStrategyPlanCoordinator,
             )
         }
 
@@ -675,6 +687,7 @@ public class DataLoomBuilder {
                 bindings = legacyBindings,
                 deps = deps,
                 executionCoordinator = executionCoordinator,
+                acceptedStrategyPlanCoordinator = acceptedStrategyPlanCoordinator,
                 schedulerCircuitSpec = circuitQueueWorkerSchedulerSpec,
             )
         }
@@ -724,6 +737,7 @@ public class DataLoomBuilder {
             lifecycleCoordinator = lifecycleCoordinator,
             executionCoordinator = executionCoordinator,
             strategyExecutionCoordinator = strategyExecutionCoordinator,
+            acceptedStrategyPlanCoordinator = acceptedStrategyPlanCoordinator,
             defaultBindings = bindings,
             defaultStrategyBindings = strategyBindings,
             queueWorker = queueWorker,
@@ -931,6 +945,7 @@ public class DataLoomBuilder {
         bindings: SynchronizationProviderBindings,
         deps: RuntimeDependencies,
         executionCoordinator: SynchronizationExecutionCoordinator,
+        acceptedStrategyPlanCoordinator: AcceptedStrategyPlanExecutionCoordinator,
     ): DataLoomQueueWorker {
         // Validate queue provider binding.
         val queueProviderId = bindings.queueProviderId
@@ -982,6 +997,7 @@ public class DataLoomBuilder {
             connectivityConfiguration = connectivityConfiguration,
             clock = if (connectivityConfiguration != null) deps.clock else null,
             workflowTimeoutExecutor = WorkflowTimeoutStateExecutor(deps.clock),
+            acceptedStrategyPlanCoordinator = acceptedStrategyPlanCoordinator,
         )
 
         val queueProviderTimeout = spec.queueProviderTimeout
@@ -1024,6 +1040,7 @@ public class DataLoomBuilder {
         bindings: SynchronizationProviderBindings,
         deps: RuntimeDependencies,
         executionCoordinator: SynchronizationExecutionCoordinator,
+        acceptedStrategyPlanCoordinator: AcceptedStrategyPlanExecutionCoordinator,
         schedulerCircuitSpec: DataLoomCircuitQueueWorkerSchedulerSpec?,
     ): DataLoomCircuitQueueWorker {
         val queueProviderId = bindings.queueProviderId
@@ -1133,6 +1150,7 @@ public class DataLoomBuilder {
             connectivityConfiguration = connectivityConfiguration,
             clock = if (connectivityConfiguration != null) deps.clock else null,
             workflowTimeoutExecutor = WorkflowTimeoutStateExecutor(deps.clock),
+            acceptedStrategyPlanCoordinator = acceptedStrategyPlanCoordinator,
         )
         val protectedQueueProvider = assembleQueueWorkerQueueProvider(
             queueProvider = queueProvider,

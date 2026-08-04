@@ -60,10 +60,12 @@ the shared runtime foundation, provider contracts, push/pull/bidirectional
 pipelines, durable queue processing, Android adapters, Apple compilation paths,
 and the versioned six-strategy contract plus deterministic built-in planner.
 Plan-aware provider resolution and direct network-only/remote-first operation
-execution are implemented. Bounded strategy-decision identity is preserved by
-the in-memory, Android Room, and Apple durable queue stores. Immutable accepted
-execution-plan replay, the remaining strategy runtimes, and complete platform
-qualification remain required before the strategy engine is complete.
+execution are implemented. Bounded strategy decisions and complete immutable
+accepted plans survive the in-memory, Android Room, and Apple queues. Direct,
+provider-protected, and queued replay execute the frozen continuation without
+current-policy evaluation. Atomic application outbox semantics, complete
+cache/hybrid/conflict behavior, durable strategy events, and platform reference
+qualification remain before the strategy engine is complete.
 
 ## Market-readiness dashboard
 
@@ -80,7 +82,7 @@ that still have unqualified release behavior.
 | Next priority | V1 gate | Status | Finished on `main` | Still pending before the gate is complete |
 |---:|---|---|---|---|
 | — | [DL-039 foundations, artifacts, compatibility](https://github.com/dataloom-sdk/dataloom/issues/93) | COMPLETE | Public API/provider/runtime boundaries, module rules, JVM and Kotlin/Native ABI baselines, external-consumer compilation, durable state primitives, deterministic clocks/randomness, configuration and policy foundations, canonical envelope/redaction contracts, and a deterministic bounded V1 wire codec/upcast registry | — |
-| 1 | [DL-039B six strategy engine](https://github.com/dataloom-sdk/dataloom/issues/102) | IN PROGRESS | Versioned contracts and deterministic planner for all six strategies; direct network-only and remote-first vertical slices; fail-closed queue admission, durable strategy-decision identity across in-memory, Room, and Apple queues, and queued resolver correspondence before execution | Complete offline-first, cache-first, hybrid, and adaptive runtimes; persist/replay the immutable accepted execution plan without current-policy re-evaluation; qualify the full connectivity/cache/fallback/retry/conflict/restart matrix without silent strategy changes |
+| 1 | [DL-039B six strategy engine](https://github.com/dataloom-sdk/dataloom/issues/102) | IN PROGRESS | Versioned contracts and deterministic planner for all six strategies; direct network-only and remote-first slices; fail-closed queue admission; Room v8/Apple v4 accepted-plan persistence; exact encoder/resolver correspondence; direct, protected, and queued replay without current-policy evaluation; typed fallback and reconciliation hooks | Complete atomic offline-first intent/outbox admission, cache value/refresh ownership, hybrid coherence/conflict application, durable strategy events/diagnostics, and the full native Android/KMP Android/KMP iOS failure/restart matrix |
 | 2 | [DL-039A Android/KMP/iOS parity](https://github.com/dataloom-sdk/dataloom/issues/101) | IN PROGRESS | Native Android adapters, Kotlin/Native Apple targets, XCFramework assembly, Swift smoke compilation, and initial Apple file-backed persistence | Add explicit KMP Android variants, production `dataloom-android`/`dataloom-ios` aggregation, iOS lifecycle/connectivity/background/security adapters, staged external consumers, and the complete parity matrix |
 | 3 | [DL-040 retry and circuit breaker](https://github.com/dataloom-sdk/dataloom/issues/94) | QUALIFICATION BLOCKED | FR-RETRY-001–012 implementation mapping; built-in backoff/jitter, limits, hints, six timeout boundaries, durable Room/Apple circuit state, half-open leases, authorized administration, bounded telemetry, and common/platform-store recovery flows | Prove real Android and Apple process termination/relaunch, genuine cross-process probe contention where supported, and the complete AC-FUNC-004 provider flow through native Android, KMP Android, and KMP iOS |
 | 4 | [DL-041 conflict engine](https://github.com/dataloom-sdk/dataloom/issues/95) | IN PROGRESS | Custom detector/resolver contracts and orchestration foundations | Ship deterministic built-in strategies, decision application, durable unresolved/manual state, audit, loop prevention/quarantine, precedence, restart/concurrency proof, and AC-FUNC-002 |

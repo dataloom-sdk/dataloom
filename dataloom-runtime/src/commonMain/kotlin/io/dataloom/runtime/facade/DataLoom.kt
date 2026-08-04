@@ -5,6 +5,8 @@ import io.dataloom.api.provider.ProviderLifecycleCoordinatorState
 import io.dataloom.api.provider.ProviderLifecycleResult
 import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.api.provider.SynchronizationProviderBindings
+import io.dataloom.api.strategy.PersistedStrategyDecision
+import io.dataloom.api.strategy.StrategyExecutionPlan
 import io.dataloom.api.strategy.StrategySynchronizationRequest
 import io.dataloom.runtime.execution.SynchronizationExecutionResult
 import io.dataloom.runtime.strategy.StrategySynchronizationExecutionResult
@@ -249,6 +251,27 @@ public interface DataLoom {
      */
     public suspend fun synchronize(
         request: StrategySynchronizationRequest,
+        bindings: StrategyProviderBindings,
+    ): StrategySynchronizationExecutionResult
+
+    /**
+     * Executes the immutable accepted strategy plan using default strategy
+     * provider bindings. Current profiles and runtime evidence are not read.
+     */
+    public suspend fun synchronizeAcceptedPlan(
+        request: SynchronizationRequest,
+        decision: PersistedStrategyDecision,
+        plan: StrategyExecutionPlan,
+    ): StrategySynchronizationExecutionResult
+
+    /**
+     * Executes the immutable accepted strategy plan with exact caller-supplied
+     * strategy bindings. No strategy policy evaluation occurs.
+     */
+    public suspend fun synchronizeAcceptedPlan(
+        request: SynchronizationRequest,
+        decision: PersistedStrategyDecision,
+        plan: StrategyExecutionPlan,
         bindings: StrategyProviderBindings,
     ): StrategySynchronizationExecutionResult
 

@@ -358,6 +358,18 @@ final enum class io.dataloom.runtime.retry/StrategyLocalFallbackCircuitOperation
     final fun values(): kotlin/Array<io.dataloom.runtime.retry/StrategyLocalFallbackCircuitOperation> // io.dataloom.runtime.retry/StrategyLocalFallbackCircuitOperation.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.runtime.retry/StrategyReconciliationCircuitOperation : kotlin/Enum<io.dataloom.runtime.retry/StrategyReconciliationCircuitOperation> { // io.dataloom.runtime.retry/StrategyReconciliationCircuitOperation|null[0]
+    enum entry RECONCILE // io.dataloom.runtime.retry/StrategyReconciliationCircuitOperation.RECONCILE|null[0]
+
+    final val entries // io.dataloom.runtime.retry/StrategyReconciliationCircuitOperation.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.retry/StrategyReconciliationCircuitOperation> // io.dataloom.runtime.retry/StrategyReconciliationCircuitOperation.entries.<get-entries>|<get-entries>#static(){}[0]
+    final val retryOperation // io.dataloom.runtime.retry/StrategyReconciliationCircuitOperation.retryOperation|{}retryOperation[0]
+        final fun <get-retryOperation>(): io.dataloom.api.retry/RetryOperation // io.dataloom.runtime.retry/StrategyReconciliationCircuitOperation.retryOperation.<get-retryOperation>|<get-retryOperation>(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.retry/StrategyReconciliationCircuitOperation // io.dataloom.runtime.retry/StrategyReconciliationCircuitOperation.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.retry/StrategyReconciliationCircuitOperation> // io.dataloom.runtime.retry/StrategyReconciliationCircuitOperation.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.runtime.retry/TransportCircuitOperation : kotlin/Enum<io.dataloom.runtime.retry/TransportCircuitOperation> { // io.dataloom.runtime.retry/TransportCircuitOperation|null[0]
     enum entry CLOSE // io.dataloom.runtime.retry/TransportCircuitOperation.CLOSE|null[0]
     enum entry HEALTH // io.dataloom.runtime.retry/TransportCircuitOperation.HEALTH|null[0]
@@ -375,6 +387,8 @@ final enum class io.dataloom.runtime.retry/TransportCircuitOperation : kotlin/En
 }
 
 final enum class io.dataloom.runtime.strategy/StrategyExecutionRejectionReason : kotlin/Enum<io.dataloom.runtime.strategy/StrategyExecutionRejectionReason> { // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason|null[0]
+    enum entry ACCEPTED_PLAN_CONTINUATION_MISSING // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.ACCEPTED_PLAN_CONTINUATION_MISSING|null[0]
+    enum entry ACCEPTED_PLAN_MISMATCH // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.ACCEPTED_PLAN_MISMATCH|null[0]
     enum entry INCOMPATIBLE_INPUT // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT|null[0]
     enum entry INCOMPATIBLE_TRIGGER // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.INCOMPATIBLE_TRIGGER|null[0]
     enum entry LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED|null[0]
@@ -382,6 +396,7 @@ final enum class io.dataloom.runtime.strategy/StrategyExecutionRejectionReason :
     enum entry PROVIDER_PROTECTION_NOT_CONFIGURED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.PROVIDER_PROTECTION_NOT_CONFIGURED|null[0]
     enum entry PROVIDER_PROTECTION_SCOPE_MISMATCH // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.PROVIDER_PROTECTION_SCOPE_MISMATCH|null[0]
     enum entry PROVIDER_RESOLUTION_FAILED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.PROVIDER_RESOLUTION_FAILED|null[0]
+    enum entry RECONCILIATION_PROVIDER_NOT_CONFIGURED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.RECONCILIATION_PROVIDER_NOT_CONFIGURED|null[0]
     enum entry STRATEGY_REJECTED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.STRATEGY_REJECTED|null[0]
     enum entry UNSUPPORTED_PLAN // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.UNSUPPORTED_PLAN|null[0]
 
@@ -481,6 +496,8 @@ abstract interface io.dataloom.runtime.facade/DataLoom { // io.dataloom.runtime.
     abstract suspend fun synchronize(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.provider/SynchronizationProviderBindings): io.dataloom.runtime.execution/SynchronizationExecutionResult // io.dataloom.runtime.facade/DataLoom.synchronize|synchronize(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.provider.SynchronizationProviderBindings){}[0]
     abstract suspend fun synchronize(io.dataloom.api.strategy/StrategySynchronizationRequest): io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult // io.dataloom.runtime.facade/DataLoom.synchronize|synchronize(io.dataloom.api.strategy.StrategySynchronizationRequest){}[0]
     abstract suspend fun synchronize(io.dataloom.api.strategy/StrategySynchronizationRequest, io.dataloom.api.provider/StrategyProviderBindings): io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult // io.dataloom.runtime.facade/DataLoom.synchronize|synchronize(io.dataloom.api.strategy.StrategySynchronizationRequest;io.dataloom.api.provider.StrategyProviderBindings){}[0]
+    abstract suspend fun synchronizeAcceptedPlan(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.strategy/PersistedStrategyDecision, io.dataloom.api.strategy/StrategyExecutionPlan): io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult // io.dataloom.runtime.facade/DataLoom.synchronizeAcceptedPlan|synchronizeAcceptedPlan(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.strategy.PersistedStrategyDecision;io.dataloom.api.strategy.StrategyExecutionPlan){}[0]
+    abstract suspend fun synchronizeAcceptedPlan(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.strategy/PersistedStrategyDecision, io.dataloom.api.strategy/StrategyExecutionPlan, io.dataloom.api.provider/StrategyProviderBindings): io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult // io.dataloom.runtime.facade/DataLoom.synchronizeAcceptedPlan|synchronizeAcceptedPlan(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.strategy.PersistedStrategyDecision;io.dataloom.api.strategy.StrategyExecutionPlan;io.dataloom.api.provider.StrategyProviderBindings){}[0]
 }
 
 abstract interface io.dataloom.runtime.facade/DataLoomCircuitAdministration { // io.dataloom.runtime.facade/DataLoomCircuitAdministration|null[0]
@@ -494,6 +511,8 @@ abstract interface io.dataloom.runtime.facade/DataLoomCircuitQueueWorker { // io
 abstract interface io.dataloom.runtime.facade/DataLoomProtectedStrategySynchronization { // io.dataloom.runtime.facade/DataLoomProtectedStrategySynchronization|null[0]
     abstract suspend fun synchronize(io.dataloom.api.strategy/StrategySynchronizationRequest): io.dataloom.runtime.execution.protection/ProviderProtectedStrategySynchronizationResult // io.dataloom.runtime.facade/DataLoomProtectedStrategySynchronization.synchronize|synchronize(io.dataloom.api.strategy.StrategySynchronizationRequest){}[0]
     abstract suspend fun synchronize(io.dataloom.api.strategy/StrategySynchronizationRequest, io.dataloom.api.provider/StrategyProviderBindings): io.dataloom.runtime.execution.protection/ProviderProtectedStrategySynchronizationResult // io.dataloom.runtime.facade/DataLoomProtectedStrategySynchronization.synchronize|synchronize(io.dataloom.api.strategy.StrategySynchronizationRequest;io.dataloom.api.provider.StrategyProviderBindings){}[0]
+    abstract suspend fun synchronizeAcceptedPlan(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.strategy/PersistedStrategyDecision, io.dataloom.api.strategy/StrategyExecutionPlan): io.dataloom.runtime.execution.protection/ProviderProtectedStrategySynchronizationResult // io.dataloom.runtime.facade/DataLoomProtectedStrategySynchronization.synchronizeAcceptedPlan|synchronizeAcceptedPlan(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.strategy.PersistedStrategyDecision;io.dataloom.api.strategy.StrategyExecutionPlan){}[0]
+    abstract suspend fun synchronizeAcceptedPlan(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.strategy/PersistedStrategyDecision, io.dataloom.api.strategy/StrategyExecutionPlan, io.dataloom.api.provider/StrategyProviderBindings): io.dataloom.runtime.execution.protection/ProviderProtectedStrategySynchronizationResult // io.dataloom.runtime.facade/DataLoomProtectedStrategySynchronization.synchronizeAcceptedPlan|synchronizeAcceptedPlan(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.strategy.PersistedStrategyDecision;io.dataloom.api.strategy.StrategyExecutionPlan;io.dataloom.api.provider.StrategyProviderBindings){}[0]
 }
 
 abstract interface io.dataloom.runtime.facade/DataLoomProtectedSynchronization { // io.dataloom.runtime.facade/DataLoomProtectedSynchronization|null[0]
@@ -1896,19 +1915,19 @@ sealed interface io.dataloom.runtime.strategy/StrategySynchronizationExecutionRe
         abstract fun <get-evaluation>(): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.evaluation.<get-evaluation>|<get-evaluation>(){}[0]
 
     final class Cancelled : io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult { // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled|null[0]
-        constructor <init>(io.dataloom.api.strategy/StrategyEvaluationResult, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.strategy/StrategyTransportOutput.ProviderBacked) // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled.<init>|<init>(io.dataloom.api.strategy.StrategyEvaluationResult;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.strategy.StrategyTransportOutput.ProviderBacked){}[0]
+        constructor <init>(io.dataloom.api.strategy/StrategyEvaluationResult, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.strategy/StrategyTransportOutput) // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled.<init>|<init>(io.dataloom.api.strategy.StrategyEvaluationResult;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.strategy.StrategyTransportOutput){}[0]
 
         final val completedAt // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled.completedAt|{}completedAt[0]
             final fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
         final val evaluation // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled.evaluation|{}evaluation[0]
             final fun <get-evaluation>(): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled.evaluation.<get-evaluation>|<get-evaluation>(){}[0]
         final val output // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled.output|{}output[0]
-            final fun <get-output>(): io.dataloom.api.strategy/StrategyTransportOutput.ProviderBacked // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled.output.<get-output>|<get-output>(){}[0]
+            final fun <get-output>(): io.dataloom.api.strategy/StrategyTransportOutput // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled.output.<get-output>|<get-output>(){}[0]
 
         final fun component1(): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled.component1|component1(){}[0]
         final fun component2(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled.component2|component2(){}[0]
-        final fun component3(): io.dataloom.api.strategy/StrategyTransportOutput.ProviderBacked // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled.component3|component3(){}[0]
-        final fun copy(io.dataloom.api.strategy/StrategyEvaluationResult = ..., io.dataloom.api.time/DataLoomInstant = ..., io.dataloom.api.strategy/StrategyTransportOutput.ProviderBacked = ...): io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled.copy|copy(io.dataloom.api.strategy.StrategyEvaluationResult;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.strategy.StrategyTransportOutput.ProviderBacked){}[0]
+        final fun component3(): io.dataloom.api.strategy/StrategyTransportOutput // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled.component3|component3(){}[0]
+        final fun copy(io.dataloom.api.strategy/StrategyEvaluationResult = ..., io.dataloom.api.time/DataLoomInstant = ..., io.dataloom.api.strategy/StrategyTransportOutput = ...): io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled.copy|copy(io.dataloom.api.strategy.StrategyEvaluationResult;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.strategy.StrategyTransportOutput){}[0]
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled.toString|toString(){}[0]
@@ -2887,16 +2906,35 @@ final class io.dataloom.runtime.facade/DataLoomStrategyLocalFallbackProtectionSp
 }
 
 final class io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec { // io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec|null[0]
-    constructor <init>(io.dataloom.runtime.facade/DataLoomStorageProtectionSpec? = ..., io.dataloom.runtime.facade/DataLoomTransportProtectionSpec? = ..., io.dataloom.runtime.facade/DataLoomStrategyLocalFallbackProtectionSpec? = ...) // io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec.<init>|<init>(io.dataloom.runtime.facade.DataLoomStorageProtectionSpec?;io.dataloom.runtime.facade.DataLoomTransportProtectionSpec?;io.dataloom.runtime.facade.DataLoomStrategyLocalFallbackProtectionSpec?){}[0]
+    constructor <init>(io.dataloom.runtime.facade/DataLoomStorageProtectionSpec? = ..., io.dataloom.runtime.facade/DataLoomTransportProtectionSpec? = ..., io.dataloom.runtime.facade/DataLoomStrategyLocalFallbackProtectionSpec? = ..., io.dataloom.runtime.facade/DataLoomStrategyReconciliationProtectionSpec? = ...) // io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec.<init>|<init>(io.dataloom.runtime.facade.DataLoomStorageProtectionSpec?;io.dataloom.runtime.facade.DataLoomTransportProtectionSpec?;io.dataloom.runtime.facade.DataLoomStrategyLocalFallbackProtectionSpec?;io.dataloom.runtime.facade.DataLoomStrategyReconciliationProtectionSpec?){}[0]
 
     final val localFallback // io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec.localFallback|{}localFallback[0]
         final fun <get-localFallback>(): io.dataloom.runtime.facade/DataLoomStrategyLocalFallbackProtectionSpec? // io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec.localFallback.<get-localFallback>|<get-localFallback>(){}[0]
+    final val reconciliation // io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec.reconciliation|{}reconciliation[0]
+        final fun <get-reconciliation>(): io.dataloom.runtime.facade/DataLoomStrategyReconciliationProtectionSpec? // io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec.reconciliation.<get-reconciliation>|<get-reconciliation>(){}[0]
     final val storage // io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec.storage|{}storage[0]
         final fun <get-storage>(): io.dataloom.runtime.facade/DataLoomStorageProtectionSpec? // io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec.storage.<get-storage>|<get-storage>(){}[0]
     final val transport // io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec.transport|{}transport[0]
         final fun <get-transport>(): io.dataloom.runtime.facade/DataLoomTransportProtectionSpec? // io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec.transport.<get-transport>|<get-transport>(){}[0]
 
     final fun toString(): kotlin/String // io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.facade/DataLoomStrategyReconciliationProtectionSpec { // io.dataloom.runtime.facade/DataLoomStrategyReconciliationProtectionSpec|null[0]
+    constructor <init>(io.dataloom.runtime.retry/CircuitBreakerConfiguration, io.dataloom.api.circuit/CircuitBreakerStateStore, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.scheduling/SchedulingDelay? = ..., io.dataloom.runtime.retry/CircuitBreakerFailureClassifier = ...) // io.dataloom.runtime.facade/DataLoomStrategyReconciliationProtectionSpec.<init>|<init>(io.dataloom.runtime.retry.CircuitBreakerConfiguration;io.dataloom.api.circuit.CircuitBreakerStateStore;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.scheduling.SchedulingDelay?;io.dataloom.runtime.retry.CircuitBreakerFailureClassifier){}[0]
+
+    final val circuitBreakerConfiguration // io.dataloom.runtime.facade/DataLoomStrategyReconciliationProtectionSpec.circuitBreakerConfiguration|{}circuitBreakerConfiguration[0]
+        final fun <get-circuitBreakerConfiguration>(): io.dataloom.runtime.retry/CircuitBreakerConfiguration // io.dataloom.runtime.facade/DataLoomStrategyReconciliationProtectionSpec.circuitBreakerConfiguration.<get-circuitBreakerConfiguration>|<get-circuitBreakerConfiguration>(){}[0]
+    final val circuitBreakerStateStore // io.dataloom.runtime.facade/DataLoomStrategyReconciliationProtectionSpec.circuitBreakerStateStore|{}circuitBreakerStateStore[0]
+        final fun <get-circuitBreakerStateStore>(): io.dataloom.api.circuit/CircuitBreakerStateStore // io.dataloom.runtime.facade/DataLoomStrategyReconciliationProtectionSpec.circuitBreakerStateStore.<get-circuitBreakerStateStore>|<get-circuitBreakerStateStore>(){}[0]
+    final val failureClassifier // io.dataloom.runtime.facade/DataLoomStrategyReconciliationProtectionSpec.failureClassifier|{}failureClassifier[0]
+        final fun <get-failureClassifier>(): io.dataloom.runtime.retry/CircuitBreakerFailureClassifier // io.dataloom.runtime.facade/DataLoomStrategyReconciliationProtectionSpec.failureClassifier.<get-failureClassifier>|<get-failureClassifier>(){}[0]
+    final val providerTimeout // io.dataloom.runtime.facade/DataLoomStrategyReconciliationProtectionSpec.providerTimeout|{}providerTimeout[0]
+        final fun <get-providerTimeout>(): io.dataloom.api.scheduling/SchedulingDelay? // io.dataloom.runtime.facade/DataLoomStrategyReconciliationProtectionSpec.providerTimeout.<get-providerTimeout>|<get-providerTimeout>(){}[0]
+    final val scope // io.dataloom.runtime.facade/DataLoomStrategyReconciliationProtectionSpec.scope|{}scope[0]
+        final fun <get-scope>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.facade/DataLoomStrategyReconciliationProtectionSpec.scope.<get-scope>|<get-scope>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.runtime.facade/DataLoomStrategyReconciliationProtectionSpec.toString|toString(){}[0]
 }
 
 final class io.dataloom.runtime.facade/DataLoomTransportProtectionSpec { // io.dataloom.runtime.facade/DataLoomTransportProtectionSpec|null[0]
@@ -3268,7 +3306,7 @@ final class io.dataloom.runtime.queue/DurableQueueExecutionProcessor { // io.dat
 }
 
 final class io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult { // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult|null[0]
-    constructor <init>(io.dataloom.api.identifier/QueueEntryId, io.dataloom.runtime.queue/QueueEntryExecutionOutcome, io.dataloom.runtime.facade/ProviderProtectedSynchronizationExecutionResult? = ...) // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult.<init>|<init>(io.dataloom.api.identifier.QueueEntryId;io.dataloom.runtime.queue.QueueEntryExecutionOutcome;io.dataloom.runtime.facade.ProviderProtectedSynchronizationExecutionResult?){}[0]
+    constructor <init>(io.dataloom.api.identifier/QueueEntryId, io.dataloom.runtime.queue/QueueEntryExecutionOutcome, io.dataloom.runtime.facade/ProviderProtectedSynchronizationExecutionResult? = ..., io.dataloom.runtime.execution.protection/ProviderProtectedStrategySynchronizationResult? = ...) // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult.<init>|<init>(io.dataloom.api.identifier.QueueEntryId;io.dataloom.runtime.queue.QueueEntryExecutionOutcome;io.dataloom.runtime.facade.ProviderProtectedSynchronizationExecutionResult?;io.dataloom.runtime.execution.protection.ProviderProtectedStrategySynchronizationResult?){}[0]
 
     final val entryId // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult.entryId|{}entryId[0]
         final fun <get-entryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult.entryId.<get-entryId>|<get-entryId>(){}[0]
@@ -3278,6 +3316,8 @@ final class io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult
         final fun <get-operationEvidence>(): kotlin.collections/List<io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence> // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult.operationEvidence.<get-operationEvidence>|<get-operationEvidence>(){}[0]
     final val outcome // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult.outcome|{}outcome[0]
         final fun <get-outcome>(): io.dataloom.runtime.queue/QueueEntryExecutionOutcome // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult.outcome.<get-outcome>|<get-outcome>(){}[0]
+    final val strategyExecutionResult // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult.strategyExecutionResult|{}strategyExecutionResult[0]
+        final fun <get-strategyExecutionResult>(): io.dataloom.runtime.execution.protection/ProviderProtectedStrategySynchronizationResult? // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult.strategyExecutionResult.<get-strategyExecutionResult>|<get-strategyExecutionResult>(){}[0]
 
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult.hashCode|hashCode(){}[0]
@@ -3285,7 +3325,7 @@ final class io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult
 }
 
 final class io.dataloom.runtime.queue/ProviderProtectedQueuedSynchronizationExecutionHandler { // io.dataloom.runtime.queue/ProviderProtectedQueuedSynchronizationExecutionHandler|null[0]
-    constructor <init>(io.dataloom.runtime.queue/QueuedSynchronizationWorkResolver, io.dataloom.runtime.facade/DataLoomProtectedSynchronization, io.dataloom.runtime.retry/SynchronizationRetryEvaluator, io.dataloom.api.retry/RetryOperation, io.dataloom.runtime.connectivity/SynchronizationConnectivityConfiguration? = ..., io.dataloom.api.time/DataLoomClock? = ..., io.dataloom.runtime.retry/WorkflowTimeoutStateExecutor? = ...) // io.dataloom.runtime.queue/ProviderProtectedQueuedSynchronizationExecutionHandler.<init>|<init>(io.dataloom.runtime.queue.QueuedSynchronizationWorkResolver;io.dataloom.runtime.facade.DataLoomProtectedSynchronization;io.dataloom.runtime.retry.SynchronizationRetryEvaluator;io.dataloom.api.retry.RetryOperation;io.dataloom.runtime.connectivity.SynchronizationConnectivityConfiguration?;io.dataloom.api.time.DataLoomClock?;io.dataloom.runtime.retry.WorkflowTimeoutStateExecutor?){}[0]
+    constructor <init>(io.dataloom.runtime.queue/QueuedSynchronizationWorkResolver, io.dataloom.runtime.facade/DataLoomProtectedSynchronization, io.dataloom.runtime.retry/SynchronizationRetryEvaluator, io.dataloom.api.retry/RetryOperation, io.dataloom.runtime.connectivity/SynchronizationConnectivityConfiguration? = ..., io.dataloom.api.time/DataLoomClock? = ..., io.dataloom.runtime.retry/WorkflowTimeoutStateExecutor? = ..., io.dataloom.runtime.facade/DataLoomProtectedStrategySynchronization? = ...) // io.dataloom.runtime.queue/ProviderProtectedQueuedSynchronizationExecutionHandler.<init>|<init>(io.dataloom.runtime.queue.QueuedSynchronizationWorkResolver;io.dataloom.runtime.facade.DataLoomProtectedSynchronization;io.dataloom.runtime.retry.SynchronizationRetryEvaluator;io.dataloom.api.retry.RetryOperation;io.dataloom.runtime.connectivity.SynchronizationConnectivityConfiguration?;io.dataloom.api.time.DataLoomClock?;io.dataloom.runtime.retry.WorkflowTimeoutStateExecutor?;io.dataloom.runtime.facade.DataLoomProtectedStrategySynchronization?){}[0]
 
     final suspend fun execute(io.dataloom.api.queue/QueueEntry): io.dataloom.runtime.queue/ProviderProtectedQueueEntryExecutionResult // io.dataloom.runtime.queue/ProviderProtectedQueuedSynchronizationExecutionHandler.execute|execute(io.dataloom.api.queue.QueueEntry){}[0]
 }
@@ -3382,7 +3422,7 @@ final class io.dataloom.runtime.queue/QueueProcessingSummary { // io.dataloom.ru
 }
 
 final class io.dataloom.runtime.queue/QueuedSynchronizationWork { // io.dataloom.runtime.queue/QueuedSynchronizationWork|null[0]
-    constructor <init>(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.provider/SynchronizationProviderBindings, io.dataloom.api.strategy/PersistedStrategyDecision? = ...) // io.dataloom.runtime.queue/QueuedSynchronizationWork.<init>|<init>(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.provider.SynchronizationProviderBindings;io.dataloom.api.strategy.PersistedStrategyDecision?){}[0]
+    constructor <init>(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.provider/SynchronizationProviderBindings, io.dataloom.api.strategy/PersistedStrategyDecision? = ..., io.dataloom.api.strategy/StrategyExecutionPlan? = ...) // io.dataloom.runtime.queue/QueuedSynchronizationWork.<init>|<init>(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.provider.SynchronizationProviderBindings;io.dataloom.api.strategy.PersistedStrategyDecision?;io.dataloom.api.strategy.StrategyExecutionPlan?){}[0]
 
     final val bindings // io.dataloom.runtime.queue/QueuedSynchronizationWork.bindings|{}bindings[0]
         final fun <get-bindings>(): io.dataloom.api.provider/SynchronizationProviderBindings // io.dataloom.runtime.queue/QueuedSynchronizationWork.bindings.<get-bindings>|<get-bindings>(){}[0]
@@ -3390,6 +3430,8 @@ final class io.dataloom.runtime.queue/QueuedSynchronizationWork { // io.dataloom
         final fun <get-request>(): io.dataloom.api.model/SynchronizationRequest // io.dataloom.runtime.queue/QueuedSynchronizationWork.request.<get-request>|<get-request>(){}[0]
     final val strategyDecision // io.dataloom.runtime.queue/QueuedSynchronizationWork.strategyDecision|{}strategyDecision[0]
         final fun <get-strategyDecision>(): io.dataloom.api.strategy/PersistedStrategyDecision? // io.dataloom.runtime.queue/QueuedSynchronizationWork.strategyDecision.<get-strategyDecision>|<get-strategyDecision>(){}[0]
+    final val strategyPlan // io.dataloom.runtime.queue/QueuedSynchronizationWork.strategyPlan|{}strategyPlan[0]
+        final fun <get-strategyPlan>(): io.dataloom.api.strategy/StrategyExecutionPlan? // io.dataloom.runtime.queue/QueuedSynchronizationWork.strategyPlan.<get-strategyPlan>|<get-strategyPlan>(){}[0]
 
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.queue/QueuedSynchronizationWork.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.runtime.queue/QueuedSynchronizationWork.hashCode|hashCode(){}[0]
@@ -4109,6 +4151,10 @@ final object io.dataloom.runtime.retry/StorageProviderTimeoutRuntime { // io.dat
 
 final object io.dataloom.runtime.retry/StrategyLocalFallbackCircuitBreakerFailureClassifier : io.dataloom.runtime.retry/CircuitBreakerFailureClassifier { // io.dataloom.runtime.retry/StrategyLocalFallbackCircuitBreakerFailureClassifier|null[0]
     final fun classify(io.dataloom.api.error/DataLoomError): io.dataloom.runtime.retry/CircuitBreakerFailureDisposition // io.dataloom.runtime.retry/StrategyLocalFallbackCircuitBreakerFailureClassifier.classify|classify(io.dataloom.api.error.DataLoomError){}[0]
+}
+
+final object io.dataloom.runtime.retry/StrategyReconciliationCircuitBreakerFailureClassifier : io.dataloom.runtime.retry/CircuitBreakerFailureClassifier { // io.dataloom.runtime.retry/StrategyReconciliationCircuitBreakerFailureClassifier|null[0]
+    final fun classify(io.dataloom.api.error/DataLoomError): io.dataloom.runtime.retry/CircuitBreakerFailureDisposition // io.dataloom.runtime.retry/StrategyReconciliationCircuitBreakerFailureClassifier.classify|classify(io.dataloom.api.error.DataLoomError){}[0]
 }
 
 final object io.dataloom.runtime.retry/TransportCircuitBreakerFailureClassifier : io.dataloom.runtime.retry/CircuitBreakerFailureClassifier { // io.dataloom.runtime.retry/TransportCircuitBreakerFailureClassifier|null[0]

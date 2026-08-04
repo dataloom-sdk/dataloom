@@ -7,6 +7,7 @@ import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
 import io.dataloom.api.queue.QueueEntry
 import io.dataloom.api.strategy.PersistedStrategyDecision
+import io.dataloom.api.strategy.StrategyExecutionPlan
 
 /**
  * Fail-closed correspondence check between durable queue state and resolved work.
@@ -24,15 +25,29 @@ internal object QueuedStrategyDecisionCorrespondence {
     ): DataLoomError? = validate(
         durableDecision = entry.strategyDecision,
         resolvedDecision = work.strategyDecision,
+        durablePlan = entry.strategyPlan,
+        resolvedPlan = work.strategyPlan,
     )
 
     internal fun validate(
         durableDecision: PersistedStrategyDecision?,
         resolvedDecision: PersistedStrategyDecision?,
-    ): DataLoomError? = if (durableDecision == resolvedDecision) {
-        null
-    } else {
-        QueuedStrategyDecisionMismatchError()
+    ): DataLoomError? = validate(
+        durableDecision = durableDecision,
+        resolvedDecision = resolvedDecision,
+        durablePlan = null,
+        resolvedPlan = null,
+    )
+
+    internal fun validate(
+        durableDecision: PersistedStrategyDecision?,
+        resolvedDecision: PersistedStrategyDecision?,
+        durablePlan: StrategyExecutionPlan?,
+        resolvedPlan: StrategyExecutionPlan?,
+    ): DataLoomError? = when {
+        durableDecision != resolvedDecision -> QueuedStrategyDecisionMismatchError()
+        durablePlan != resolvedPlan -> QueuedStrategyPlanMismatchError()
+        else -> null
     }
 
     /** Canonical, redacted resolver-contract failure. */
@@ -43,6 +58,17 @@ internal object QueuedStrategyDecisionCorrespondence {
         override val recoverability: Recoverability = Recoverability.NON_RECOVERABLE,
         override val message: String =
             "Resolved queued work does not match the durable strategy decision.",
+        override val cause: Throwable? = null,
+    ) : DataLoomError
+
+    /** Canonical, redacted complete-plan resolver-contract failure. */
+    private data class QueuedStrategyPlanMismatchError(
+        override val code: ErrorCode = ErrorCode("DL-Q-STRATEGY-PLAN-MISMATCH"),
+        override val category: ErrorCategory = ErrorCategory.CONFIGURATION,
+        override val severity: ErrorSeverity = ErrorSeverity.ERROR,
+        override val recoverability: Recoverability = Recoverability.NON_RECOVERABLE,
+        override val message: String =
+            "Resolved queued work does not match the durable strategy plan.",
         override val cause: Throwable? = null,
     ) : DataLoomError
 }

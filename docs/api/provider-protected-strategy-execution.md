@@ -105,3 +105,17 @@ This slice does not complete:
 - durable strategy events, metrics, logs, traces, or operational read models;
 - multi-process, process-death, high-contention, and Book 2 `AC-FUNC-004`
   qualification.
+
+## Persisted accepted-plan execution
+
+`DataLoomProtectedStrategySynchronization.synchronizeAcceptedPlan(...)` executes
+the exact persisted plan and continuation without evaluating a profile or
+current runtime evidence. Storage, transport, local fallback, and reconciliation
+are independently protected by the configured circuit and provider-timeout
+specifications. Missing protection for a resolved required role rejects before
+provider invocation.
+
+Plan-bearing protected queue work uses this method directly and returns ordered
+provider/circuit evidence in `ProviderProtectedQueueEntryExecutionResult`.
+Legacy protected synchronization remains unchanged for entries without an
+accepted plan.

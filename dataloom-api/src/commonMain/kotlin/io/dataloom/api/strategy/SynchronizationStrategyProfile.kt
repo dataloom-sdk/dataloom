@@ -59,7 +59,7 @@ public class RemoteFirstStrategyProfile(
     }
 
     public val fallbackOn: Set<StrategyRemoteOutcome>
-        get() = fallbackOutcomes
+        get() = fallbackOutcomes.toSet()
 
     override fun equals(other: Any?): Boolean =
         other is RemoteFirstStrategyProfile &&
@@ -176,7 +176,7 @@ public class AdaptiveStrategyProfile(
     }
 
     public val candidates: List<SynchronizationStrategyProfile>
-        get() = candidateProfiles
+        get() = candidateProfiles.toList()
 
     override fun equals(other: Any?): Boolean =
         other is AdaptiveStrategyProfile &&

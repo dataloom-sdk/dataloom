@@ -511,3 +511,15 @@ stable decision, plan, profile, strategy, configuration-version, and disposition
 identity. Queue providers must preserve it across acquisition, retry, non-retry
 deferral, lease recovery, process reconstruction, and migrations. Legacy and
 non-strategy queue entries retain `null` rather than receiving an invented plan.
+
+## Immutable accepted strategy plan
+
+Strategy queue work may carry both `PersistedStrategyDecision` and the complete
+`StrategyExecutionPlan`. The plan contains the original durable continuation
+selected before admission. Android Room schema 8 and Apple queue format 4
+preserve its bounded deterministic codec frame through retry, deferral, reopen,
+lease recovery, and migration.
+
+Legacy identity-only work remains readable with a null plan. New plan-bearing
+work fails closed when the snapshot is malformed or no longer corresponds to
+the durable decision, request direction, or transfer mode.

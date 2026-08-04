@@ -1,6 +1,7 @@
 package io.dataloom.runtime.queue
 
 import io.dataloom.api.identifier.QueueEntryId
+import io.dataloom.runtime.execution.protection.ProviderProtectedStrategySynchronizationResult
 import io.dataloom.runtime.execution.protection.ProviderProtectionOperationEvidence
 import io.dataloom.runtime.facade.ProviderProtectedSynchronizationExecutionResult
 
@@ -8,11 +9,11 @@ import io.dataloom.runtime.facade.ProviderProtectedSynchronizationExecutionResul
  * Exact result of resolving and executing one acquired queue entry through
  * provider timeout and circuit protection.
  *
- * [outcome] is the single requested durable queue transition. [executionResult]
- * preserves the exact protected synchronization admission or execution result
- * when the protected facade was reached. A null execution result means local
- * queue work resolution or persisted workflow-deadline enforcement stopped
- * before protected synchronization was invoked.
+ * [outcome] is the single requested durable queue transition.
+ * [executionResult] preserves the historical synchronization result and
+ * [strategyExecutionResult] preserves accepted-strategy replay. At most one is
+ * non-null. Both are null when local resolution, correspondence, or deadline
+ * enforcement stops before protected execution.
  */
 public class ProviderProtectedQueueEntryExecutionResult(
     /** Exact acquired queue entry identity. */
@@ -21,22 +22,26 @@ public class ProviderProtectedQueueEntryExecutionResult(
     /** Requested queue transition derived from the terminal synchronization result. */
     public val outcome: QueueEntryExecutionOutcome,
 
-    /** Exact protected synchronization result, or null when execution never reached it. */
+    /** Historical protected synchronization result. */
     public val executionResult: ProviderProtectedSynchronizationExecutionResult? = null,
+
+    /** Protected immutable accepted-strategy result. */
+    public val strategyExecutionResult: ProviderProtectedStrategySynchronizationResult? = null,
 ) {
-    /**
-     * Defensive provider-operation evidence in execution order.
-     *
-     * Empty for pre-execution admission rejection and local resolution/deadline
-     * failures. Provider values and payloads are not present in this evidence.
-     */
+    init {
+        require(executionResult == null || strategyExecutionResult == null) {
+            "A protected queued result cannot contain both legacy and strategy execution."
+        }
+    }
+
+    /** Defensive provider-operation evidence in execution order. */
     public val operationEvidence: List<ProviderProtectionOperationEvidence> =
-        when (val protectedResult = executionResult) {
-            is ProviderProtectedSynchronizationExecutionResult.Executed ->
-                protectedResult.result.operationEvidence.toList()
-            is ProviderProtectedSynchronizationExecutionResult.Rejected,
-            null,
-            -> emptyList()
+        when {
+            strategyExecutionResult != null ->
+                strategyExecutionResult.operationEvidence.toList()
+            executionResult is ProviderProtectedSynchronizationExecutionResult.Executed ->
+                executionResult.result.operationEvidence.toList()
+            else -> emptyList()
         }
 
     override fun equals(other: Any?): Boolean {
@@ -45,6 +50,7 @@ public class ProviderProtectedQueueEntryExecutionResult(
         return entryId == other.entryId &&
             outcome == other.outcome &&
             executionResult == other.executionResult &&
+            strategyExecutionResult == other.strategyExecutionResult &&
             operationEvidence == other.operationEvidence
     }
 
@@ -52,6 +58,7 @@ public class ProviderProtectedQueueEntryExecutionResult(
         var result = entryId.hashCode()
         result = 31 * result + outcome.hashCode()
         result = 31 * result + (executionResult?.hashCode() ?: 0)
+        result = 31 * result + (strategyExecutionResult?.hashCode() ?: 0)
         result = 31 * result + operationEvidence.hashCode()
         return result
     }
@@ -61,7 +68,8 @@ public class ProviderProtectedQueueEntryExecutionResult(
         "ProviderProtectedQueueEntryExecutionResult(" +
             "entryId=${entryId.value}, " +
             "outcome=${outcomeStatus(outcome)}, " +
-            "protectedExecutionReached=${executionResult != null}, " +
+            "protectedExecutionReached=${executionResult != null || strategyExecutionResult != null}, " +
+            "strategyExecution=${strategyExecutionResult != null}, " +
             "operationEvidenceCount=${operationEvidence.size}" +
             ")"
 }

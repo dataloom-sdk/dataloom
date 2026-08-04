@@ -10,7 +10,7 @@ import androidx.room.PrimaryKey
  *
  * ## Schema version
  *
- * This entity is part of [DataLoomRoomDatabase] schema version 7.
+ * This entity is part of [DataLoomRoomDatabase] schema version 8.
  *
  * ## State storage
  *
@@ -249,4 +249,8 @@ internal data class QueueEntryEntity(
     /** Accepted strategy disposition enum name. */
     @ColumnInfo(name = "strategy_disposition")
     val strategyDisposition: String?,
+
+    /** Complete immutable accepted strategy-plan snapshot. */
+    @ColumnInfo(name = "strategy_plan_snapshot")
+    val strategyPlanSnapshot: String?,
 )

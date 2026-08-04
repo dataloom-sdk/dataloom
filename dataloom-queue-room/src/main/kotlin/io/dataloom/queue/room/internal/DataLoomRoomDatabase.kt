@@ -17,7 +17,7 @@ import androidx.room.RoomDatabase
         RetryAdministrationStateEntity::class,
         CircuitAdministrationStateEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = true,
 )
 public abstract class DataLoomRoomDatabase : RoomDatabase() {

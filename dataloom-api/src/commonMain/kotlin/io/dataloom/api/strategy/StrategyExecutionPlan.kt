@@ -56,6 +56,45 @@ public enum class StrategyRejectionReason {
     UNSUPPORTED_DIRECTION,
 }
 
+private val protectedFallbackOutcomes: Set<StrategyRemoteOutcome> = setOf(
+    StrategyRemoteOutcome.CANCELLED,
+    StrategyRemoteOutcome.AUTHENTICATION_FAILURE,
+    StrategyRemoteOutcome.AUTHORIZATION_FAILURE,
+    StrategyRemoteOutcome.VALIDATION_FAILURE,
+    StrategyRemoteOutcome.INTEGRITY_FAILURE,
+    StrategyRemoteOutcome.CONFLICT,
+)
+
+private fun minimumCapabilitiesFor(
+    operations: Iterable<StrategyOperation>,
+): Set<StrategyProviderCapability> {
+    val capabilities = mutableSetOf<StrategyProviderCapability>()
+    operations.forEach { operation ->
+        when (operation) {
+            StrategyOperation.READ_LOCAL,
+            StrategyOperation.READ_CHECKPOINT,
+            StrategyOperation.ACCEPT_LOCAL,
+            StrategyOperation.SERVE_LOCAL,
+            StrategyOperation.PERSIST_REMOTE,
+            -> capabilities += StrategyProviderCapability.STORAGE
+            StrategyOperation.ENQUEUE_DURABLE_WORK ->
+                capabilities += StrategyProviderCapability.QUEUE
+            StrategyOperation.PUSH_REMOTE,
+            StrategyOperation.PULL_REMOTE,
+            -> capabilities += StrategyProviderCapability.TRANSPORT
+            StrategyOperation.SCHEDULE_REFRESH -> {
+                capabilities += StrategyProviderCapability.SCHEDULER
+                capabilities += StrategyProviderCapability.QUEUE
+            }
+            StrategyOperation.RECONCILE -> {
+                capabilities += StrategyProviderCapability.STORAGE
+                capabilities += StrategyProviderCapability.CONFLICT_STATE
+            }
+        }
+    }
+    return capabilities
+}
+
 /**
  * Finite fallback branch admitted with a primary strategy plan.
  *
@@ -77,6 +116,23 @@ public class StrategyFallbackPlan(
         }
         require(operationSnapshot.isNotEmpty()) {
             "StrategyFallbackPlan requires at least one fallback operation."
+        }
+        require(operationSnapshot.size == operationSnapshot.distinct().size) {
+            "StrategyFallbackPlan operations must be unique and ordered."
+        }
+        require(StrategyOperation.SERVE_LOCAL in operationSnapshot) {
+            "A local fallback branch must explicitly serve local state."
+        }
+        require(remoteOutcomeSnapshot.none { it in protectedFallbackOutcomes }) {
+            "A fallback branch must not hide cancellation, protected failures, or conflict."
+        }
+        require(
+            operationSnapshot.all {
+                it == StrategyOperation.READ_LOCAL ||
+                    it == StrategyOperation.SERVE_LOCAL
+            },
+        ) {
+            "A local fallback branch may only read and serve local state."
         }
         require(dataOrigin != StrategyDataOrigin.REMOTE) {
             "A fallback branch must not claim REMOTE data origin."
@@ -117,10 +173,103 @@ public class StrategyFallbackPlan(
 }
 
 /**
+ * Immutable execution projection that is admitted for later durable replay.
+ *
+ * The continuation is selected during the original deterministic evaluation.
+ * Queue acquisition executes this projection without evaluating current policy,
+ * connectivity, provider health, cache state, or configuration again.
+ */
+public class StrategyDurableContinuationPlan(
+    operations: List<StrategyOperation>,
+    requiredCapabilities: Set<StrategyProviderCapability>,
+    public val dataOrigin: StrategyDataOrigin,
+    public val consistency: StrategyConsistency,
+    public val evaluatedCacheState: StrategyCacheState? = null,
+    public val fallbackPlan: StrategyFallbackPlan? = null,
+) {
+    private val orderedOperations: List<StrategyOperation> = operations.toList()
+    private val providerCapabilities: Set<StrategyProviderCapability> =
+        requiredCapabilities.toSet()
+
+    init {
+        require(orderedOperations.isNotEmpty()) {
+            "StrategyDurableContinuationPlan requires at least one operation."
+        }
+        require(orderedOperations.size == orderedOperations.distinct().size) {
+            "StrategyDurableContinuationPlan operations must be unique and ordered."
+        }
+        require(StrategyOperation.ACCEPT_LOCAL !in orderedOperations) {
+            "A durable continuation must not repeat original local admission."
+        }
+        require(
+            StrategyOperation.ENQUEUE_DURABLE_WORK !in orderedOperations &&
+                StrategyOperation.SCHEDULE_REFRESH !in orderedOperations,
+        ) {
+            "A durable continuation must not enqueue or schedule another copy of itself."
+        }
+        require(
+            fallbackPlan == null ||
+                StrategyOperation.PULL_REMOTE in orderedOperations,
+        ) {
+            "A durable fallback branch requires a remote pull operation."
+        }
+        require(
+            evaluatedCacheState != null ||
+                (
+                    fallbackPlan == null &&
+                        StrategyOperation.SERVE_LOCAL !in orderedOperations
+                    ),
+        ) {
+            "Durable local fallback or serving requires persisted cache-state evidence."
+        }
+        val minimumCapabilities = minimumCapabilitiesFor(
+            orderedOperations + (fallbackPlan?.operations ?: emptyList()),
+        )
+        require(providerCapabilities.containsAll(minimumCapabilities)) {
+            "Durable continuation capabilities must cover every admitted operation."
+        }
+    }
+
+    public val operations: List<StrategyOperation>
+        get() = orderedOperations.toList()
+
+    public val requiredCapabilities: Set<StrategyProviderCapability>
+        get() = providerCapabilities.toSet()
+
+    override fun equals(other: Any?): Boolean =
+        other is StrategyDurableContinuationPlan &&
+            orderedOperations == other.orderedOperations &&
+            providerCapabilities == other.providerCapabilities &&
+            dataOrigin == other.dataOrigin &&
+            consistency == other.consistency &&
+            evaluatedCacheState == other.evaluatedCacheState &&
+            fallbackPlan == other.fallbackPlan
+
+    override fun hashCode(): Int {
+        var result = orderedOperations.hashCode()
+        result = 31 * result + providerCapabilities.hashCode()
+        result = 31 * result + dataOrigin.hashCode()
+        result = 31 * result + consistency.hashCode()
+        result = 31 * result + (evaluatedCacheState?.hashCode() ?: 0)
+        result = 31 * result + (fallbackPlan?.hashCode() ?: 0)
+        return result
+    }
+
+    override fun toString(): String =
+        "StrategyDurableContinuationPlan(" +
+            "operations=$orderedOperations, " +
+            "requiredCapabilities=$providerCapabilities, " +
+            "dataOrigin=$dataOrigin, consistency=$consistency, " +
+            "evaluatedCacheState=$evaluatedCacheState, " +
+            "fallbackPlan=$fallbackPlan)"
+}
+
+/**
  * Immutable execution plan produced before provider resolution.
  *
  * Provider requirements are derived from [operations], not from a universal
- * storage-plus-transport assumption.
+ * storage-plus-transport assumption. [durableContinuation] freezes the exact
+ * later execution projection whenever the immediate plan admits durable work.
  */
 public class StrategyExecutionPlan(
     public val id: StrategyPlanId,
@@ -138,6 +287,7 @@ public class StrategyExecutionPlan(
     public val deferralReason: StrategyDeferralReason? = null,
     public val rejectionReason: StrategyRejectionReason? = null,
     public val fallbackPlan: StrategyFallbackPlan? = null,
+    public val durableContinuation: StrategyDurableContinuationPlan? = null,
 ) {
     private val orderedOperations: List<StrategyOperation> = operations.toList()
     private val providerCapabilities: Set<StrategyProviderCapability> =
@@ -174,10 +324,24 @@ public class StrategyExecutionPlan(
         ) {
             "Non-rejected strategy plans require at least one operation."
         }
+        require(orderedOperations.size == orderedOperations.distinct().size) {
+            "StrategyExecutionPlan operations must be unique and ordered."
+        }
         require(
             fallbackPlan == null || disposition == StrategyDisposition.EXECUTE,
         ) {
             "Only executable strategy plans may define a fallback branch."
+        }
+        require(
+            durableContinuation == null || disposition != StrategyDisposition.REJECT,
+        ) {
+            "Rejected strategy plans must not define a durable continuation."
+        }
+        require(
+            durableContinuation == null ||
+                StrategyOperation.ENQUEUE_DURABLE_WORK in orderedOperations,
+        ) {
+            "A durable continuation requires explicit durable queue admission."
         }
         if (effectiveStrategy == BuiltInSynchronizationStrategy.NETWORK_ONLY) {
             require(fallbackPlan == null) {
@@ -207,10 +371,10 @@ public class StrategyExecutionPlan(
     }
 
     public val operations: List<StrategyOperation>
-        get() = orderedOperations
+        get() = orderedOperations.toList()
 
     public val requiredCapabilities: Set<StrategyProviderCapability>
-        get() = providerCapabilities
+        get() = providerCapabilities.toSet()
 
     override fun equals(other: Any?): Boolean =
         other is StrategyExecutionPlan &&
@@ -228,7 +392,8 @@ public class StrategyExecutionPlan(
             consistency == other.consistency &&
             deferralReason == other.deferralReason &&
             rejectionReason == other.rejectionReason &&
-            fallbackPlan == other.fallbackPlan
+            fallbackPlan == other.fallbackPlan &&
+            durableContinuation == other.durableContinuation
 
     override fun hashCode(): Int {
         var result = id.hashCode()
@@ -246,6 +411,7 @@ public class StrategyExecutionPlan(
         result = 31 * result + (deferralReason?.hashCode() ?: 0)
         result = 31 * result + (rejectionReason?.hashCode() ?: 0)
         result = 31 * result + (fallbackPlan?.hashCode() ?: 0)
+        result = 31 * result + (durableContinuation?.hashCode() ?: 0)
         return result
     }
 
@@ -256,5 +422,6 @@ public class StrategyExecutionPlan(
             "disposition=$disposition, operations=$orderedOperations, " +
             "requiredCapabilities=$providerCapabilities, dataOrigin=$dataOrigin, " +
             "consistency=$consistency, deferralReason=$deferralReason, " +
-            "rejectionReason=$rejectionReason, fallbackPlan=$fallbackPlan)"
+            "rejectionReason=$rejectionReason, fallbackPlan=$fallbackPlan, " +
+            "durableContinuation=$durableContinuation)"
 }

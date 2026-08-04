@@ -13,6 +13,7 @@ internal enum class StrategyQueueAdmissionRejectionReason {
     PLAN_REJECTED,
     MISSING_DURABLE_QUEUE_OPERATION,
     MISSING_QUEUE_CAPABILITY,
+    MISSING_DURABLE_CONTINUATION,
 }
 
 /** Provider-free result of validating one evaluated strategy plan for durable admission. */
@@ -37,8 +38,9 @@ internal sealed interface StrategyQueueAdmissionResult {
  * This evaluator performs no provider calls, I/O, clock reads, identifier generation,
  * scheduling, retry evaluation, or mutation. It admits only plans that explicitly contain
  * [StrategyOperation.ENQUEUE_DURABLE_WORK] and explicitly require
- * [StrategyProviderCapability.QUEUE]. A rejected strategy plan can never be converted into
- * queue work.
+ * [StrategyProviderCapability.QUEUE] and contain the immutable continuation
+ * selected by the original policy evaluation. A rejected or identity-only plan
+ * can never be converted into queue work.
  */
 internal object StrategyQueueAdmissionEvaluator {
 
@@ -65,6 +67,13 @@ internal object StrategyQueueAdmissionEvaluator {
             return StrategyQueueAdmissionResult.Rejected(
                 planId = plan.id,
                 reason = StrategyQueueAdmissionRejectionReason.MISSING_QUEUE_CAPABILITY,
+            )
+        }
+
+        if (plan.durableContinuation == null) {
+            return StrategyQueueAdmissionResult.Rejected(
+                planId = plan.id,
+                reason = StrategyQueueAdmissionRejectionReason.MISSING_DURABLE_CONTINUATION,
             )
         }
 

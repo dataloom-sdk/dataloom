@@ -650,6 +650,12 @@ public class BuiltInSynchronizationStrategyEvaluator : SynchronizationStrategyEv
         val capabilities = deriveCapabilities(
             operations + (fallbackPlan?.operations ?: emptyList()),
         )
+        val durableContinuation = deriveDurableContinuation(
+            request = request,
+            profile = profile,
+            operations = operations,
+            consistency = consistency,
+        )
         return StrategyEvaluationResult(
             decisionId = request.decisionId,
             plan = StrategyExecutionPlan(
@@ -668,8 +674,65 @@ public class BuiltInSynchronizationStrategyEvaluator : SynchronizationStrategyEv
                 deferralReason = deferralReason,
                 rejectionReason = rejectionReason,
                 fallbackPlan = fallbackPlan,
+                durableContinuation = durableContinuation,
             ),
             reasonCodes = reasons,
+        )
+    }
+
+    private fun deriveDurableContinuation(
+        request: StrategyEvaluationRequest,
+        profile: SynchronizationStrategyProfile,
+        operations: List<StrategyOperation>,
+        consistency: StrategyConsistency,
+    ): io.dataloom.api.strategy.StrategyDurableContinuationPlan? {
+        if (StrategyOperation.ENQUEUE_DURABLE_WORK !in operations) return null
+
+        val continuationOperations = when (profile) {
+            is OfflineFirstStrategyProfile ->
+                remoteOperations(request.direction, persistRemote = true).toMutableList().also {
+                    if (profile.reconcileWhenOnline) it += StrategyOperation.RECONCILE
+                }
+            is RemoteFirstStrategyProfile ->
+                remoteOperations(
+                    request.direction,
+                    persistRemote = profile.persistRemoteResult,
+                )
+            is CacheFirstStrategyProfile -> when (request.direction) {
+                SynchronizationDirection.PUSH -> listOf(
+                    StrategyOperation.READ_LOCAL,
+                    StrategyOperation.PUSH_REMOTE,
+                )
+                SynchronizationDirection.PULL,
+                SynchronizationDirection.BIDIRECTIONAL,
+                -> remoteOperations(request.direction, persistRemote = true)
+            }
+            is HybridStrategyProfile ->
+                remoteOperations(
+                    request.direction,
+                    persistRemote = profile.persistRemoteResult,
+                ).toMutableList().also {
+                    if (profile.reconcileAfterFallback) it += StrategyOperation.RECONCILE
+                }
+            is NetworkOnlyStrategyProfile ->
+                error("Network-only plans cannot admit durable queue work.")
+            is AdaptiveStrategyProfile ->
+                error("Nested adaptive profiles are rejected before plan construction.")
+        }
+        val continuationFallback = when (profile) {
+            is RemoteFirstStrategyProfile -> remoteFallbackPlan(profile, request.direction)
+            else -> null
+        }
+        return io.dataloom.api.strategy.StrategyDurableContinuationPlan(
+            operations = continuationOperations,
+            requiredCapabilities = deriveCapabilities(
+                continuationOperations +
+                    (continuationFallback?.operations ?: emptyList()),
+            ),
+            dataOrigin = originForOperations(request.direction, continuationOperations),
+            consistency = consistency,
+            evaluatedCacheState = request.evidence.cacheState,
+            fallbackPlan = continuationFallback,
         )
     }
 
@@ -696,7 +759,6 @@ public class BuiltInSynchronizationStrategyEvaluator : SynchronizationStrategyEv
                 }
                 StrategyOperation.RECONCILE -> {
                     capabilities += StrategyProviderCapability.STORAGE
-                    capabilities += StrategyProviderCapability.TRANSPORT
                     capabilities += StrategyProviderCapability.CONFLICT_STATE
                 }
             }
