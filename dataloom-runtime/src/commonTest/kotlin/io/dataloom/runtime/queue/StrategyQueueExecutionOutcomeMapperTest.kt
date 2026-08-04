@@ -22,6 +22,7 @@ import io.dataloom.api.retry.RetryEvaluationRequest
 import io.dataloom.api.retry.RetryOperation
 import io.dataloom.api.retry.RetryPolicy
 import io.dataloom.api.retry.RetryStopReason
+import io.dataloom.api.scheduling.SchedulingDelay
 import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
 import io.dataloom.api.strategy.StrategyConfigurationVersion
 import io.dataloom.api.strategy.StrategyConsistency
@@ -51,12 +52,7 @@ class StrategyQueueExecutionOutcomeMapperTest {
     @Test
     fun partialBidirectionalPushUsesRetryPolicyInsteadOfCompletingQueueEntry() {
         val error = TestError()
-        val pushResult = SynchronizationResult.PartiallySucceeded(
-            request = request(),
-            completedAt = DataLoomInstant(2_000L),
-            summary = SynchronizationSummary(),
-            errors = listOf(error),
-        )
+        val pushResult = partialPush(listOf(error))
 
         val outcome = mapper().map(
             result = executed(pushResult),
@@ -65,6 +61,27 @@ class StrategyQueueExecutionOutcomeMapperTest {
 
         val failed = assertIs<QueueEntryExecutionOutcome.Failed>(outcome)
         assertEquals(error.code, failed.error.code)
+    }
+
+    @Test
+    fun partialBidirectionalPushEvaluatesEveryErrorAndCannotHideProtectedFailure() {
+        val retryable = TestError(
+            code = ErrorCode("BIDIRECTIONAL_PUSH_RETRYABLE"),
+        )
+        val protected = TestError(
+            code = ErrorCode("BIDIRECTIONAL_PUSH_AUTHENTICATION"),
+            category = ErrorCategory.AUTHENTICATION,
+        )
+        val pushResult = partialPush(listOf(retryable, protected))
+
+        val outcome = mapper(AlwaysRetryPolicy).map(
+            result = executed(pushResult),
+            entry = entry(),
+        )
+
+        val failed = assertIs<QueueEntryExecutionOutcome.Failed>(outcome)
+        assertEquals(protected.code, failed.error.code)
+        assertEquals(ErrorCategory.AUTHENTICATION, failed.error.category)
     }
 
     @Test
@@ -101,13 +118,25 @@ class StrategyQueueExecutionOutcomeMapperTest {
         assertEquals(request().context, cancelled.context)
     }
 
-    private fun mapper(): StrategyQueueExecutionOutcomeMapper =
+    private fun mapper(
+        retryPolicy: RetryPolicy = StopPolicy,
+    ): StrategyQueueExecutionOutcomeMapper =
         StrategyQueueExecutionOutcomeMapper(
             retryEvaluator = SynchronizationRetryEvaluator(
-                retryPolicy = StopPolicy,
+                retryPolicy = retryPolicy,
                 clock = FixedClock(DataLoomInstant(4_000L)),
             ),
             retryOperation = RetryOperation("strategy.accepted.bidirectional"),
+        )
+
+    private fun partialPush(
+        errors: List<DataLoomError>,
+    ): SynchronizationResult.PartiallySucceeded =
+        SynchronizationResult.PartiallySucceeded(
+            request = request(),
+            completedAt = DataLoomInstant(2_000L),
+            summary = SynchronizationSummary(),
+            errors = errors,
         )
 
     private fun executed(
@@ -172,6 +201,13 @@ class StrategyQueueExecutionOutcomeMapperTest {
 
         override fun evaluate(request: RetryEvaluationRequest): RetryDecision =
             RetryDecision.Stop(RetryStopReason.POLICY_REJECTED)
+    }
+
+    private object AlwaysRetryPolicy : RetryPolicy {
+        override val id: RetryPolicyId = RetryPolicyId("always-retry")
+
+        override fun evaluate(request: RetryEvaluationRequest): RetryDecision =
+            RetryDecision.Retry(SchedulingDelay(1_000L))
     }
 
     private class FixedClock(private val instant: DataLoomInstant) : DataLoomClock {
