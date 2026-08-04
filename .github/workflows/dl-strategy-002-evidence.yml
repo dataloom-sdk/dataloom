@@ -51,6 +51,8 @@ jobs:
           {
             python3 -m py_compile .github/scripts/dl_strategy_002_patch.py
             python3 -m py_compile .github/scripts/dl_strategy_002_followup.py
+            python3 -m py_compile .github/scripts/dl_strategy_002_followup_fix.py
+            python3 .github/scripts/dl_strategy_002_followup_fix.py
             python3 .github/scripts/dl_strategy_002_patch.py
             python3 .github/scripts/dl_strategy_002_followup.py
             git diff --check
@@ -169,6 +171,7 @@ jobs:
           rm .github/workflows/dl-strategy-002-evidence.yml
           rm .github/scripts/dl_strategy_002_patch.py
           rm .github/scripts/dl_strategy_002_followup.py
+          rm .github/scripts/dl_strategy_002_followup_fix.py
           rm -rf .github/scripts/__pycache__
           rm -f .github/evidence/dl-strategy-002-last-failure.txt
           rmdir .github/evidence 2>/dev/null || true
