@@ -1,7 +1,8 @@
 DL-039B durable strategy decision evidence failed.
-Source head: d3af10bfe6ba1dbb53931d6dc6fea53337cc7d49
+Source head: 73ce367a94ef843bb75ade02b72e71f4cb73728f
 
 Repository status:
+ M .github/evidence/dl-strategy-002-last-failure.txt
  M dataloom-api/src/commonMain/kotlin/io/dataloom/api/queue/QueueEntry.kt
  M dataloom-api/src/commonMain/kotlin/io/dataloom/api/strategy/StrategyEvaluation.kt
  M dataloom-api/src/commonMain/kotlin/io/dataloom/api/strategy/StrategyIdentity.kt
@@ -18,7 +19,6 @@ Repository status:
  M docs/api/queue-model.md
  M docs/api/queue-submission.md
  M docs/apple/queue-state-store.md
-?? .github/evidence/
 ?? .github/scripts/__pycache__/
 ?? dataloom-api/src/commonTest/kotlin/io/dataloom/api/queue/QueueEntryDiagnosticsTest.kt
 ?? dataloom-api/src/commonTest/kotlin/io/dataloom/api/strategy/PersistedStrategyDecisionDiagnosticsTest.kt
