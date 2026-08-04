@@ -1,0 +1,37 @@
+DL-039B durable strategy decision evidence failed.
+Source head: d3af10bfe6ba1dbb53931d6dc6fea53337cc7d49
+
+Repository status:
+ M dataloom-api/src/commonMain/kotlin/io/dataloom/api/queue/QueueEntry.kt
+ M dataloom-api/src/commonMain/kotlin/io/dataloom/api/strategy/StrategyEvaluation.kt
+ M dataloom-api/src/commonMain/kotlin/io/dataloom/api/strategy/StrategyIdentity.kt
+ M dataloom-queue-room/src/androidTest/kotlin/io/dataloom/queue/room/DataLoomRoomMigrationTest.kt
+ M dataloom-queue-room/src/main/kotlin/io/dataloom/queue/room/DataLoomRoomMigrations.kt
+ M dataloom-queue-room/src/main/kotlin/io/dataloom/queue/room/internal/DataLoomRoomDatabase.kt
+ M dataloom-queue-room/src/main/kotlin/io/dataloom/queue/room/internal/Mappers.kt
+ M dataloom-queue-room/src/main/kotlin/io/dataloom/queue/room/internal/QueueEntryEntity.kt
+ M dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/queue/QueuedSynchronizationWork.kt
+ M dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/submission/QueueSubmissionPreflight.kt
+ M dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt
+ M dataloom-runtime/src/iosTest/kotlin/io/dataloom/runtime/retry/AppleFileRetryAdministrationExecutorTest.kt
+ M docs/android/room-queue-provider.md
+ M docs/api/queue-model.md
+ M docs/api/queue-submission.md
+ M docs/apple/queue-state-store.md
+?? .github/evidence/
+?? .github/scripts/__pycache__/
+?? dataloom-api/src/commonTest/kotlin/io/dataloom/api/queue/QueueEntryDiagnosticsTest.kt
+?? dataloom-api/src/commonTest/kotlin/io/dataloom/api/strategy/PersistedStrategyDecisionDiagnosticsTest.kt
+?? dataloom-api/src/commonTest/kotlin/io/dataloom/api/strategy/PersistedStrategyDecisionTest.kt
+?? dataloom-api/src/commonTest/kotlin/io/dataloom/api/strategy/StrategyIdentifierBoundsTest.kt
+?? dataloom-queue-room/src/androidTest/kotlin/io/dataloom/queue/room/StrategyDecisionRoomCorruptionInstrumentedTest.kt
+?? dataloom-queue-room/src/androidTest/kotlin/io/dataloom/queue/room/StrategyDecisionRoomPersistenceInstrumentedTest.kt
+?? dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/submission/QueueSubmissionStrategyDecisionPreflightTest.kt
+?? dataloom-runtime/src/iosTest/kotlin/io/dataloom/runtime/queue/AppleStrategyDecisionQueuePersistenceTest.kt
+?? dataloom-testing/src/commonTest/kotlin/io/dataloom/testing/queue/StrategyDecisionInMemoryQueueProviderTest.kt
+?? docs/audits/DL-039B-durable-strategy-decision-persistence-checkpoint.md
+?? runtime-external-consumer/src/commonMain/kotlin/io/dataloom/consumer/DurableStrategyDecisionExternalConsumerProbe.kt
+
+===== 01-patch.log tail =====
+DL-039B durable strategy decision patch applied.
+Expected exactly one match in docs/apple/queue-state-store.md, found 0: 'for queue entries, retry attempts, retry budgets, availability, leases, and\nimmutable workflow deadl'
