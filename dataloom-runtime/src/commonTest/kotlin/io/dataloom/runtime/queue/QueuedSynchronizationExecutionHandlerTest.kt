@@ -40,6 +40,13 @@ import io.dataloom.api.retry.RetryEvaluationRequest
 import io.dataloom.api.retry.RetryOperation
 import io.dataloom.api.retry.RetryPolicy
 import io.dataloom.api.retry.RetryStopReason
+import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
+import io.dataloom.api.strategy.PersistedStrategyDecision
+import io.dataloom.api.strategy.StrategyConfigurationVersion
+import io.dataloom.api.strategy.StrategyDecisionId
+import io.dataloom.api.strategy.StrategyDisposition
+import io.dataloom.api.strategy.StrategyPlanId
+import io.dataloom.api.strategy.StrategyProfileId
 import io.dataloom.api.scheduling.SchedulingDelay
 import io.dataloom.api.storage.InboundChangeApplyRequest
 import io.dataloom.api.storage.OutboundChangeReadRequest
@@ -404,6 +411,7 @@ class QueuedSynchronizationExecutionHandlerTest {
     private fun makeLeasedEntry(
         request: SynchronizationRequest = sampleRequest,
         retryAttempt: RetryAttempt? = null,
+        strategyDecision: PersistedStrategyDecision? = null,
     ): QueueEntry {
         val lease = QueueLease(
             id = QueueLeaseId("lease-001"),
@@ -419,8 +427,21 @@ class QueuedSynchronizationExecutionHandlerTest {
             availableAt = t0,
             lease = lease,
             retryAttempt = retryAttempt,
+            strategyDecision = strategyDecision,
         )
     }
+
+    private fun strategyDecision(
+        version: Long,
+    ): PersistedStrategyDecision = PersistedStrategyDecision(
+        decisionId = StrategyDecisionId("decision-queued-1"),
+        planId = StrategyPlanId("plan-queued-1"),
+        requestedStrategy = BuiltInSynchronizationStrategy.ADAPTIVE,
+        effectiveProfileId = StrategyProfileId("offline-profile"),
+        effectiveStrategy = BuiltInSynchronizationStrategy.OFFLINE_FIRST,
+        configurationVersion = StrategyConfigurationVersion(version),
+        disposition = StrategyDisposition.DEFER,
+    )
 
     private fun makeSucceededResult() = SynchronizationResult.Succeeded(
         request = sampleRequest,
@@ -509,6 +530,39 @@ class QueuedSynchronizationExecutionHandlerTest {
         val outcome = runSuspend { handler.execute(makeLeasedEntry()) }
         outcome as QueueEntryExecutionOutcome.Failed
         assertEquals(QueueFailureDisposition.FAILED, outcome.disposition)
+    }
+
+    @Test
+    fun `changed resolved strategy decision fails before pipeline invocation`() {
+        val pipeline = ControlledPipeline { makeSucceededResult() }
+        val (coordinator, bindings) = makeCoordinatorWithPipeline(pipeline)
+        val resolver = QueuedSynchronizationWorkResolver { entry ->
+            QueuedSynchronizationWorkResolution.Resolved(
+                QueuedSynchronizationWork(
+                    request = entry.synchronizationRequest,
+                    bindings = bindings,
+                    strategyDecision = strategyDecision(version = 4L),
+                ),
+            )
+        }
+        val handler = QueuedSynchronizationExecutionHandler(
+            workResolver = resolver,
+            executionCoordinator = coordinator,
+            retryEvaluator = makeRetryEvaluator(),
+            retryOperation = retryOp,
+        )
+
+        val outcome = runSuspend {
+            handler.execute(
+                makeLeasedEntry(strategyDecision = strategyDecision(version = 3L)),
+            )
+        }
+
+        val failed = assertIs<QueueEntryExecutionOutcome.Failed>(outcome)
+        assertEquals("DL-Q-STRATEGY-DECISION-MISMATCH", failed.error.code.value)
+        assertEquals(ErrorCategory.CONFIGURATION, failed.error.category)
+        assertEquals(Recoverability.NON_RECOVERABLE, failed.error.recoverability)
+        assertEquals(0, pipeline.executeCallCount)
     }
 
     // =========================================================================

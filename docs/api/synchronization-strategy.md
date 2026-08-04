@@ -174,7 +174,10 @@ Queue-submission preflight rejects a changed, dropped, or invented decision
 before timeout, circuit, or queue-provider policy. In-memory, Android Room, and
 Apple file-backed queues preserve the exact identity through retry, non-retry
 deferral, lease recovery, reopen, and migration. Legacy work remains explicitly
-unplanned (`null`) rather than receiving current configuration.
+unplanned (`null`) rather than receiving current configuration. Both direct and
+provider-protected queued handlers require the application resolver to return
+the exact durable decision before timeout, clock, coordinator, provider, or
+retry activity.
 
 The next execution gate must reconstruct or load the immutable accepted plan
 from this identity. It must not re-evaluate current policy after retry, restart,
@@ -185,8 +188,9 @@ accepted plan.
 
 The profile contracts, deterministic planner, fail-closed durable admission,
 plan-aware provider resolution, direct network-only execution, direct provider-
-backed remote-first execution, and bounded strategy-decision queue persistence
-are implemented in common Kotlin. Room and Apple stores preserve the same
+backed remote-first execution, bounded strategy-decision queue persistence,
+and fail-closed queued resolver correspondence are implemented in common
+Kotlin. Room and Apple stores preserve the same
 bounded identity; complete native Android, KMP Android, and KMP iOS reference
 qualification remains open.
 
