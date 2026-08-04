@@ -1,0 +1,751 @@
+DL-039B accepted-plan replay hardening failed.
+Source head: 5c90421f60a6eb589babacec3d06e1d75cdafbcb
+
+Repository status:
+ M dataloom-api/src/commonMain/kotlin/io/dataloom/api/strategy/StrategyEvaluation.kt
+ M dataloom-api/src/commonMain/kotlin/io/dataloom/api/strategy/StrategyExecutionPlan.kt
+ M dataloom-api/src/commonMain/kotlin/io/dataloom/api/strategy/SynchronizationStrategyProfile.kt
+ M dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/AcceptedStrategyPlanExecutionCoordinator.kt
+ M dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/strategy/AcceptedStrategyPlanExecutionCoordinatorTest.kt
+ M docs/audits/DL-039B-persisted-accepted-plan-execution-checkpoint.md
+?? .github/evidence/
+?? .github/scripts/__pycache__/
+?? dataloom-api/src/commonTest/kotlin/io/dataloom/api/strategy/StrategyExecutionPlanHardeningTest.kt
+
+===== 01-patch.log diagnostics =====
+
+===== 01-patch.log head =====
+Applied accepted-plan replay hardening and adversarial tests.
+
+===== 01-patch.log tail =====
+Applied accepted-plan replay hardening and adversarial tests.
+
+===== 02-abi.log diagnostics =====
+
+===== 02-abi.log head =====
+
+Welcome to Gradle 9.5.0!
+
+Here are the highlights of this release:
+ - Task provenance in reports and failure messages
+ - Type-safe accessors for precompiled Kotlin Settings plugins
+
+For more details see https://docs.gradle.org/9.5.0/release-notes.html
+
+Starting a Gradle Daemon (subsequent builds will be faster)
+Calculating task graph as no cached configuration is available for tasks: updateKotlinAbi
+> Task :build-logic:compileJava FROM-CACHE
+> Task :build-logic:pluginDescriptors
+> Task :build-logic:processResources
+> Task :build-logic:classes
+> Task :build-logic:jar
+> Task :dataloom-api:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-model:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-model:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-model:jvmProcessResources NO-SOURCE
+> Task :dataloom-model:processJvmMainResources SKIPPED
+> Task :dataloom-provider-api:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-provider-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-provider-api:jvmProcessResources NO-SOURCE
+> Task :dataloom-provider-api:processJvmMainResources SKIPPED
+> Task :dataloom-model:compileKotlinJvm FROM-CACHE
+> Task :dataloom-model:compileJvmMainJava NO-SOURCE
+> Task :dataloom-model:jvmMainClasses UP-TO-DATE
+> Task :dataloom-model:jvmJar
+> Task :dataloom-provider-api:compileKotlinJvm FROM-CACHE
+> Task :dataloom-provider-api:compileJvmMainJava NO-SOURCE
+> Task :dataloom-provider-api:jvmMainClasses UP-TO-DATE
+> Task :dataloom-provider-api:jvmJar
+
+> Task :dataloom-api:downloadKotlinNativeDistribution
+Kotlin/Native bundle directory /Users/runner/.konan/kotlin-native-prebuilt-macos-aarch64-2.4.10 is not empty. Native bundle files will be overwritten.
+
+> Task :dataloom-api:compileKotlinJvm
+> Task :dataloom-api:compileJvmMainJava NO-SOURCE
+> Task :dataloom-model:exportCrossCompilationMetadataForIosArm64ApiElements
+
+> Task :dataloom-model:downloadKotlinNativeDistribution
+Downloading native dependencies (LLVM, sysroot etc). This is a one-time action performed only on the first run of the compiler.
+Downloading dependency https://download.jetbrains.com/kotlin/native/resources/llvm/21-aarch64-macos/llvm-21-aarch64-macos-essentials-97.tar.gz to /Users/runner/.konan/dependencies/cache/llvm-21-aarch64-macos-essentials-97.tar.gz
+Done.
+Extracting dependency: /Users/runner/.konan/dependencies/cache/llvm-21-aarch64-macos-essentials-97.tar.gz into /Users/runner/.konan/dependencies
+Downloading dependency https://download.jetbrains.com/kotlin/native/libffi-3.3-1-macos-arm64.tar.gz to /Users/runner/.konan/dependencies/cache/libffi-3.3-1-macos-arm64.tar.gz
+Done.
+Extracting dependency: /Users/runner/.konan/dependencies/cache/libffi-3.3-1-macos-arm64.tar.gz into /Users/runner/.konan/dependencies
+
+> Task :dataloom-provider-api:downloadKotlinNativeDistribution
+> Task :dataloom-provider-api:exportCrossCompilationMetadataForIosArm64ApiElements
+> Task :dataloom-model:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
+> Task :dataloom-provider-api:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
+> Task :dataloom-model:compileKotlinIosArm64 FROM-CACHE
+> Task :dataloom-model:compileKotlinIosSimulatorArm64 FROM-CACHE
+> Task :dataloom-provider-api:compileKotlinIosArm64 FROM-CACHE
+> Task :dataloom-provider-api:compileKotlinIosSimulatorArm64 FROM-CACHE
+> Task :dataloom-model:compileKotlinIosX64 FROM-CACHE
+> Task :dataloom-model:exportCrossCompilationMetadataForIosX64ApiElements
+> Task :dataloom-provider-api:compileKotlinIosX64 FROM-CACHE
+> Task :dataloom-provider-api:exportCrossCompilationMetadataForIosX64ApiElements
+> Task :dataloom-api:compileKotlinIosSimulatorArm64
+> Task :dataloom-api:compileKotlinIosX64
+> Task :dataloom-api:compileKotlinIosArm64
+> Task :dataloom-api:iosArm64ProcessResources NO-SOURCE
+> Task :dataloom-api:iosX64ProcessResources NO-SOURCE
+> Task :dataloom-api:iosSimulatorArm64ProcessResources NO-SOURCE
+> Task :dataloom-api:iosX64MainKlibrary
+> Task :dataloom-api:iosArm64MainKlibrary
+> Task :dataloom-api:jvmProcessResources NO-SOURCE
+> Task :dataloom-api:iosSimulatorArm64MainKlibrary
+> Task :dataloom-api:processJvmMainResources SKIPPED
+> Task :dataloom-api:jvmMainClasses
+> Task :dataloom-apple:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-api:exportCrossCompilationMetadataForIosArm64ApiElements
+> Task :dataloom-apple:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-core:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-apple:downloadKotlinNativeDistribution
+> Task :dataloom-core:exportCrossCompilationMetadataForIosArm64ApiElements
+> Task :dataloom-runtime:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-runtime:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-runtime:downloadKotlinNativeDistribution
+> Task :dataloom-runtime:exportCrossCompilationMetadataForIosArm64ApiElements
+> Task :dataloom-api:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
+> Task :dataloom-core:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
+> Task :dataloom-runtime:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
+> Task :dataloom-api:exportCrossCompilationMetadataForIosX64ApiElements
+> Task :dataloom-core:downloadKotlinNativeDistribution
+> Task :dataloom-core:exportCrossCompilationMetadataForIosX64ApiElements
+> Task :dataloom-core:compileKotlinIosArm64
+> Task :dataloom-core:compileKotlinIosSimulatorArm64
+> Task :dataloom-api:internalDumpKotlinAbi
+> Task :dataloom-api:updateKotlinAbi
+> Task :dataloom-core:compileKotlinIosX64
+> Task :dataloom-runtime:compileKotlinIosSimulatorArm64
+> Task :dataloom-runtime:compileKotlinIosArm64
+> Task :dataloom-apple:compileKotlinIosArm64
+> Task :dataloom-runtime:exportCrossCompilationMetadataForIosX64ApiElements
+> Task :dataloom-apple:iosArm64ProcessResources NO-SOURCE
+> Task :dataloom-apple:iosArm64MainKlibrary
+> Task :dataloom-apple:iosSimulatorArm64ProcessResources NO-SOURCE
+> Task :dataloom-apple:iosX64ProcessResources NO-SOURCE
+> Task :dataloom-apple:compileKotlinIosSimulatorArm64
+> Task :dataloom-apple:iosSimulatorArm64MainKlibrary
+> Task :dataloom-core:iosArm64ProcessResources NO-SOURCE
+> Task :dataloom-core:iosArm64MainKlibrary
+> Task :dataloom-core:iosSimulatorArm64ProcessResources NO-SOURCE
+> Task :dataloom-core:iosSimulatorArm64MainKlibrary
+> Task :dataloom-core:iosX64ProcessResources NO-SOURCE
+> Task :dataloom-core:iosX64MainKlibrary
+> Task :dataloom-core:jvmProcessResources NO-SOURCE
+> Task :dataloom-core:processJvmMainResources SKIPPED
+> Task :dataloom-model:iosArm64ProcessResources NO-SOURCE
+> Task :dataloom-model:iosArm64MainKlibrary UP-TO-DATE
+> Task :dataloom-model:iosSimulatorArm64ProcessResources NO-SOURCE
+> Task :dataloom-model:iosSimulatorArm64MainKlibrary UP-TO-DATE
+> Task :dataloom-model:iosX64ProcessResources NO-SOURCE
+> Task :dataloom-model:iosX64MainKlibrary UP-TO-DATE
+> Task :dataloom-model:internalDumpKotlinAbi FROM-CACHE
+> Task :dataloom-model:updateKotlinAbi
+> Task :dataloom-provider-api:iosArm64ProcessResources NO-SOURCE
+> Task :dataloom-provider-api:iosArm64MainKlibrary UP-TO-DATE
+> Task :dataloom-provider-api:iosSimulatorArm64ProcessResources NO-SOURCE
+> Task :dataloom-provider-api:iosSimulatorArm64MainKlibrary UP-TO-DATE
+> Task :dataloom-provider-api:iosX64ProcessResources NO-SOURCE
+> Task :dataloom-provider-api:iosX64MainKlibrary UP-TO-DATE
+> Task :dataloom-provider-api:internalDumpKotlinAbi FROM-CACHE
+> Task :dataloom-provider-api:updateKotlinAbi
+> Task :dataloom-runtime:iosArm64ProcessResources NO-SOURCE
+> Task :dataloom-runtime:iosArm64MainKlibrary
+> Task :dataloom-runtime:iosSimulatorArm64ProcessResources NO-SOURCE
+> Task :dataloom-runtime:iosSimulatorArm64MainKlibrary
+> Task :dataloom-runtime:iosX64ProcessResources NO-SOURCE
+> Task :dataloom-runtime:jvmProcessResources NO-SOURCE
+> Task :dataloom-runtime:processJvmMainResources SKIPPED
+> Task :dataloom-testing:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-testing:checkKotlinGradlePluginConfigurationErrors SKIPPED
+
+===== 02-abi.log tail =====
+
+Welcome to Gradle 9.5.0!
+
+Here are the highlights of this release:
+ - Task provenance in reports and failure messages
+ - Type-safe accessors for precompiled Kotlin Settings plugins
+
+For more details see https://docs.gradle.org/9.5.0/release-notes.html
+
+Starting a Gradle Daemon (subsequent builds will be faster)
+Calculating task graph as no cached configuration is available for tasks: updateKotlinAbi
+> Task :build-logic:compileJava FROM-CACHE
+> Task :build-logic:pluginDescriptors
+> Task :build-logic:processResources
+> Task :build-logic:classes
+> Task :build-logic:jar
+> Task :dataloom-api:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-model:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-model:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-model:jvmProcessResources NO-SOURCE
+> Task :dataloom-model:processJvmMainResources SKIPPED
+> Task :dataloom-provider-api:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-provider-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-provider-api:jvmProcessResources NO-SOURCE
+> Task :dataloom-provider-api:processJvmMainResources SKIPPED
+> Task :dataloom-model:compileKotlinJvm FROM-CACHE
+> Task :dataloom-model:compileJvmMainJava NO-SOURCE
+> Task :dataloom-model:jvmMainClasses UP-TO-DATE
+> Task :dataloom-model:jvmJar
+> Task :dataloom-provider-api:compileKotlinJvm FROM-CACHE
+> Task :dataloom-provider-api:compileJvmMainJava NO-SOURCE
+> Task :dataloom-provider-api:jvmMainClasses UP-TO-DATE
+> Task :dataloom-provider-api:jvmJar
+
+> Task :dataloom-api:downloadKotlinNativeDistribution
+Kotlin/Native bundle directory /Users/runner/.konan/kotlin-native-prebuilt-macos-aarch64-2.4.10 is not empty. Native bundle files will be overwritten.
+
+> Task :dataloom-api:compileKotlinJvm
+> Task :dataloom-api:compileJvmMainJava NO-SOURCE
+> Task :dataloom-model:exportCrossCompilationMetadataForIosArm64ApiElements
+
+> Task :dataloom-model:downloadKotlinNativeDistribution
+Downloading native dependencies (LLVM, sysroot etc). This is a one-time action performed only on the first run of the compiler.
+Downloading dependency https://download.jetbrains.com/kotlin/native/resources/llvm/21-aarch64-macos/llvm-21-aarch64-macos-essentials-97.tar.gz to /Users/runner/.konan/dependencies/cache/llvm-21-aarch64-macos-essentials-97.tar.gz
+Done.
+Extracting dependency: /Users/runner/.konan/dependencies/cache/llvm-21-aarch64-macos-essentials-97.tar.gz into /Users/runner/.konan/dependencies
+Downloading dependency https://download.jetbrains.com/kotlin/native/libffi-3.3-1-macos-arm64.tar.gz to /Users/runner/.konan/dependencies/cache/libffi-3.3-1-macos-arm64.tar.gz
+Done.
+Extracting dependency: /Users/runner/.konan/dependencies/cache/libffi-3.3-1-macos-arm64.tar.gz into /Users/runner/.konan/dependencies
+
+> Task :dataloom-provider-api:downloadKotlinNativeDistribution
+> Task :dataloom-provider-api:exportCrossCompilationMetadataForIosArm64ApiElements
+> Task :dataloom-model:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
+> Task :dataloom-provider-api:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
+> Task :dataloom-model:compileKotlinIosArm64 FROM-CACHE
+> Task :dataloom-model:compileKotlinIosSimulatorArm64 FROM-CACHE
+> Task :dataloom-provider-api:compileKotlinIosArm64 FROM-CACHE
+> Task :dataloom-provider-api:compileKotlinIosSimulatorArm64 FROM-CACHE
+> Task :dataloom-model:compileKotlinIosX64 FROM-CACHE
+> Task :dataloom-model:exportCrossCompilationMetadataForIosX64ApiElements
+> Task :dataloom-provider-api:compileKotlinIosX64 FROM-CACHE
+> Task :dataloom-provider-api:exportCrossCompilationMetadataForIosX64ApiElements
+> Task :dataloom-api:compileKotlinIosSimulatorArm64
+> Task :dataloom-api:compileKotlinIosX64
+> Task :dataloom-api:compileKotlinIosArm64
+> Task :dataloom-api:iosArm64ProcessResources NO-SOURCE
+> Task :dataloom-api:iosX64ProcessResources NO-SOURCE
+> Task :dataloom-api:iosSimulatorArm64ProcessResources NO-SOURCE
+> Task :dataloom-api:iosX64MainKlibrary
+> Task :dataloom-api:iosArm64MainKlibrary
+> Task :dataloom-api:jvmProcessResources NO-SOURCE
+> Task :dataloom-api:iosSimulatorArm64MainKlibrary
+> Task :dataloom-api:processJvmMainResources SKIPPED
+> Task :dataloom-api:jvmMainClasses
+> Task :dataloom-apple:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-api:exportCrossCompilationMetadataForIosArm64ApiElements
+> Task :dataloom-apple:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-core:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-apple:downloadKotlinNativeDistribution
+> Task :dataloom-core:exportCrossCompilationMetadataForIosArm64ApiElements
+> Task :dataloom-runtime:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-runtime:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-runtime:downloadKotlinNativeDistribution
+> Task :dataloom-runtime:exportCrossCompilationMetadataForIosArm64ApiElements
+> Task :dataloom-api:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
+> Task :dataloom-core:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
+> Task :dataloom-runtime:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
+> Task :dataloom-api:exportCrossCompilationMetadataForIosX64ApiElements
+> Task :dataloom-core:downloadKotlinNativeDistribution
+> Task :dataloom-core:exportCrossCompilationMetadataForIosX64ApiElements
+> Task :dataloom-core:compileKotlinIosArm64
+> Task :dataloom-core:compileKotlinIosSimulatorArm64
+> Task :dataloom-api:internalDumpKotlinAbi
+> Task :dataloom-api:updateKotlinAbi
+> Task :dataloom-core:compileKotlinIosX64
+> Task :dataloom-runtime:compileKotlinIosSimulatorArm64
+> Task :dataloom-runtime:compileKotlinIosArm64
+> Task :dataloom-apple:compileKotlinIosArm64
+> Task :dataloom-runtime:exportCrossCompilationMetadataForIosX64ApiElements
+> Task :dataloom-apple:iosArm64ProcessResources NO-SOURCE
+> Task :dataloom-apple:iosArm64MainKlibrary
+> Task :dataloom-apple:iosSimulatorArm64ProcessResources NO-SOURCE
+> Task :dataloom-apple:iosX64ProcessResources NO-SOURCE
+> Task :dataloom-apple:compileKotlinIosSimulatorArm64
+> Task :dataloom-apple:iosSimulatorArm64MainKlibrary
+> Task :dataloom-core:iosArm64ProcessResources NO-SOURCE
+> Task :dataloom-core:iosArm64MainKlibrary
+> Task :dataloom-core:iosSimulatorArm64ProcessResources NO-SOURCE
+> Task :dataloom-core:iosSimulatorArm64MainKlibrary
+> Task :dataloom-core:iosX64ProcessResources NO-SOURCE
+> Task :dataloom-core:iosX64MainKlibrary
+> Task :dataloom-core:jvmProcessResources NO-SOURCE
+> Task :dataloom-core:processJvmMainResources SKIPPED
+> Task :dataloom-model:iosArm64ProcessResources NO-SOURCE
+> Task :dataloom-model:iosArm64MainKlibrary UP-TO-DATE
+> Task :dataloom-model:iosSimulatorArm64ProcessResources NO-SOURCE
+> Task :dataloom-model:iosSimulatorArm64MainKlibrary UP-TO-DATE
+> Task :dataloom-model:iosX64ProcessResources NO-SOURCE
+> Task :dataloom-model:iosX64MainKlibrary UP-TO-DATE
+> Task :dataloom-model:internalDumpKotlinAbi FROM-CACHE
+> Task :dataloom-model:updateKotlinAbi
+> Task :dataloom-provider-api:iosArm64ProcessResources NO-SOURCE
+> Task :dataloom-provider-api:iosArm64MainKlibrary UP-TO-DATE
+> Task :dataloom-provider-api:iosSimulatorArm64ProcessResources NO-SOURCE
+> Task :dataloom-provider-api:iosSimulatorArm64MainKlibrary UP-TO-DATE
+> Task :dataloom-provider-api:iosX64ProcessResources NO-SOURCE
+> Task :dataloom-provider-api:iosX64MainKlibrary UP-TO-DATE
+> Task :dataloom-provider-api:internalDumpKotlinAbi FROM-CACHE
+> Task :dataloom-provider-api:updateKotlinAbi
+> Task :dataloom-runtime:iosArm64ProcessResources NO-SOURCE
+> Task :dataloom-runtime:iosArm64MainKlibrary
+> Task :dataloom-runtime:iosSimulatorArm64ProcessResources NO-SOURCE
+> Task :dataloom-runtime:iosSimulatorArm64MainKlibrary
+> Task :dataloom-runtime:iosX64ProcessResources NO-SOURCE
+> Task :dataloom-runtime:jvmProcessResources NO-SOURCE
+> Task :dataloom-runtime:processJvmMainResources SKIPPED
+> Task :dataloom-testing:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-testing:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-testing:downloadKotlinNativeDistribution
+> Task :dataloom-api:jvmJar
+> Task :dataloom-runtime:compileKotlinIosX64
+> Task :dataloom-apple:compileKotlinIosX64
+> Task :dataloom-apple:iosX64MainKlibrary
+> Task :dataloom-apple:internalDumpKotlinAbi FROM-CACHE
+> Task :dataloom-apple:updateKotlinAbi
+> Task :dataloom-runtime:iosX64MainKlibrary
+> Task :dataloom-testing:compileKotlinIosArm64
+> Task :dataloom-core:compileKotlinJvm
+> Task :dataloom-core:compileJvmMainJava NO-SOURCE
+> Task :dataloom-core:jvmMainClasses
+> Task :dataloom-core:internalDumpKotlinAbi FROM-CACHE
+> Task :dataloom-core:updateKotlinAbi
+> Task :dataloom-core:jvmJar
+> Task :dataloom-testing:compileKotlinIosSimulatorArm64
+> Task :dataloom-testing:iosArm64ProcessResources NO-SOURCE
+> Task :dataloom-testing:iosArm64MainKlibrary
+> Task :dataloom-testing:iosSimulatorArm64ProcessResources NO-SOURCE
+> Task :dataloom-testing:iosSimulatorArm64MainKlibrary
+> Task :dataloom-testing:iosX64ProcessResources NO-SOURCE
+> Task :dataloom-testing:jvmProcessResources NO-SOURCE
+> Task :dataloom-testing:processJvmMainResources SKIPPED
+> Task :dataloom-testing:compileKotlinIosX64
+> Task :dataloom-testing:iosX64MainKlibrary
+> Task :dataloom-runtime:compileKotlinJvm
+> Task :dataloom-runtime:compileJvmMainJava NO-SOURCE
+> Task :dataloom-runtime:jvmMainClasses
+> Task :dataloom-runtime:jvmJar
+> Task :dataloom-runtime:internalDumpKotlinAbi
+> Task :dataloom-runtime:updateKotlinAbi
+> Task :dataloom-testing:compileKotlinJvm
+> Task :dataloom-testing:compileJvmMainJava NO-SOURCE
+> Task :dataloom-testing:jvmMainClasses
+> Task :dataloom-testing:internalDumpKotlinAbi
+> Task :dataloom-testing:updateKotlinAbi
+gradle/actions: Writing build results to /Users/runner/work/_temp/.gradle-actions/build-results/__run_4-1785843136866.json
+
+BUILD SUCCESSFUL in 1m 39s
+79 actionable tasks: 66 executed, 13 from cache
+Configuration cache entry stored.
+
+===== 03-validate.log diagnostics =====
+151-> Task :dataloom-api:jvmTestProcessResources NO-SOURCE
+152-> Task :dataloom-api:processJvmTestResources SKIPPED
+153-> Task :dataloom-api:jvmTestClasses
+154-
+155-> Task :dataloom-api:jvmTest
+156-
+157:StrategyExecutionPlanHardeningTest[jvm] > exposedPlanAndProfileCollectionsCannotMutateInternalSnapshots()[jvm] FAILED
+158-    java.lang.UnsupportedOperationException at StrategyExecutionPlanHardeningTest.kt:91
+159-
+160-606 tests completed, 1 failed
+161-There were failing tests. See the report at: file:///Users/runner/work/dataloom/dataloom/dataloom-api/build/reports/tests/jvmTest/index.html
+162-
+163-> Task :dataloom-api:internalDumpKotlinAbi UP-TO-DATE
+--
+286-
+287-> Task :dataloom-apple:linkDebugFrameworkIosSimulatorArm64
+288-w: The number of threads 4 is more than the number of processors 3
+289-
+290-> Task :dataloom-apple:linkDebugFrameworkIosX64
+291-> Task :dataloom-apple:linkReleaseFrameworkIosArm64
+292:> Task :dataloom-api:allTests FAILED
+293-> Task :dataloom-apple:linkReleaseFrameworkIosSimulatorArm64
+294-gradle/actions: Writing build results to /Users/runner/work/_temp/.gradle-actions/build-results/__run_5-1785843236619.json
+295-
+296-FAILURE: Build failed with an exception.
+297-
+298-* What went wrong:
+--
+441-	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:38)
+442-	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:68)
+443-	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:132)
+444-	... 30 more
+445-
+446-
+447:BUILD FAILED in 5m 56s
+448-159 actionable tasks: 107 executed, 2 from cache, 50 up-to-date
+449-Configuration cache entry stored.
+
+===== 03-validate.log head =====
+Calculating task graph as no cached configuration is available for tasks: :build-logic:test build :runtime-external-consumer:checkRuntimeExternalConsumer :runtime-external-consumer:compileKotlinIosArm64 :runtime-external-consumer:compileKotlinIosSimulatorArm64 :runtime-external-consumer:compileKotlinIosX64 :dataloom-runtime:iosSimulatorArm64Test :dataloom-queue-room:assembleDebugAndroidTest :dataloom-queue-room:testDebugUnitTest :dataloom-apple:assembleDataLoomReleaseXCFramework checkKotlinAbi
+> Task :build-logic:compileJava UP-TO-DATE
+> Task :build-logic:pluginDescriptors UP-TO-DATE
+> Task :build-logic:processResources UP-TO-DATE
+> Task :build-logic:classes UP-TO-DATE
+> Task :build-logic:jar UP-TO-DATE
+> Task :build-logic:processTestResources NO-SOURCE
+> Task :build-logic:compileTestJava NO-SOURCE
+> Task :build-logic:testClasses UP-TO-DATE
+> Task :dataloom-model:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-api:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-model:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :build-logic:pluginUnderTestMetadata
+> Task :dataloom-model:metadataCommonMainProcessResources NO-SOURCE
+> Task :dataloom-model:generateProjectStructureMetadata
+> Task :dataloom-model:metadataNativeMainProcessResources NO-SOURCE
+> Task :dataloom-model:metadataAppleMainProcessResources NO-SOURCE
+> Task :dataloom-model:metadataIosMainProcessResources NO-SOURCE
+> Task :dataloom-provider-api:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-provider-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-model:exportRootPublicationCoordinatesForMetadataApiElements
+> Task :dataloom-provider-api:generateProjectStructureMetadata
+> Task :dataloom-provider-api:metadataCommonMainProcessResources NO-SOURCE
+> Task :dataloom-model:transformCommonMainDependenciesMetadata
+> Task :dataloom-model:compileCommonMainKotlinMetadata FROM-CACHE
+> Task :dataloom-model:metadataCommonMainClasses UP-TO-DATE
+> Task :dataloom-model:allMetadataJar
+> Task :dataloom-model:transformNativeMainDependenciesMetadata
+> Task :dataloom-model:transformAppleMainDependenciesMetadata
+> Task :dataloom-model:transformIosMainDependenciesMetadata
+> Task :dataloom-provider-api:metadataNativeMainProcessResources NO-SOURCE
+> Task :dataloom-provider-api:metadataAppleMainProcessResources NO-SOURCE
+> Task :dataloom-provider-api:metadataIosMainProcessResources NO-SOURCE
+> Task :dataloom-provider-api:exportRootPublicationCoordinatesForMetadataApiElements
+> Task :dataloom-api:generateProjectStructureMetadata
+> Task :dataloom-api:metadataCommonMainProcessResources NO-SOURCE
+> Task :dataloom-model:commonizeNativeDistribution
+> Task :dataloom-provider-api:commonizeNativeDistribution
+> Task :dataloom-api:commonizeNativeDistribution
+> Task :dataloom-api:metadataNativeMainProcessResources NO-SOURCE
+> Task :dataloom-api:metadataAppleMainProcessResources NO-SOURCE
+> Task :dataloom-model:compileNativeMainKotlinMetadata NO-SOURCE
+> Task :dataloom-model:metadataNativeMainClasses UP-TO-DATE
+> Task :dataloom-model:compileAppleMainKotlinMetadata NO-SOURCE
+> Task :dataloom-model:metadataAppleMainClasses UP-TO-DATE
+> Task :dataloom-model:compileIosMainKotlinMetadata NO-SOURCE
+> Task :dataloom-model:metadataIosMainClasses UP-TO-DATE
+> Task :dataloom-model:downloadKotlinNativeDistribution UP-TO-DATE
+> Task :dataloom-api:downloadKotlinNativeDistribution UP-TO-DATE
+> Task :dataloom-model:iosSimulatorArm64MetadataElements
+> Task :dataloom-model:iosArm64MetadataElements
+> Task :dataloom-model:iosX64MetadataElements
+> Task :dataloom-model:exportCrossCompilationMetadataForIosArm64ApiElements UP-TO-DATE
+> Task :dataloom-provider-api:downloadKotlinNativeDistribution UP-TO-DATE
+> Task :dataloom-provider-api:exportCrossCompilationMetadataForIosArm64ApiElements UP-TO-DATE
+> Task :dataloom-model:exportCommonSourceSetsMetadataLocationsForMetadataApiElements
+> Task :dataloom-provider-api:transformCommonMainDependenciesMetadata
+> Task :dataloom-provider-api:compileCommonMainKotlinMetadata FROM-CACHE
+> Task :dataloom-provider-api:metadataCommonMainClasses UP-TO-DATE
+> Task :dataloom-provider-api:allMetadataJar
+> Task :dataloom-model:compileKotlinIosSimulatorArm64 UP-TO-DATE
+> Task :dataloom-model:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements UP-TO-DATE
+> Task :dataloom-provider-api:transformNativeMainDependenciesMetadata
+> Task :dataloom-provider-api:compileNativeMainKotlinMetadata NO-SOURCE
+> Task :dataloom-provider-api:metadataNativeMainClasses UP-TO-DATE
+> Task :dataloom-provider-api:compileKotlinIosSimulatorArm64 UP-TO-DATE
+> Task :dataloom-provider-api:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements UP-TO-DATE
+> Task :dataloom-provider-api:transformAppleMainDependenciesMetadata
+> Task :dataloom-model:compileKotlinIosArm64 UP-TO-DATE
+> Task :dataloom-provider-api:compileAppleMainKotlinMetadata NO-SOURCE
+> Task :dataloom-provider-api:metadataAppleMainClasses UP-TO-DATE
+> Task :dataloom-api:compileKotlinIosSimulatorArm64 UP-TO-DATE
+> Task :dataloom-provider-api:compileKotlinIosArm64 UP-TO-DATE
+> Task :dataloom-provider-api:transformIosMainDependenciesMetadata
+> Task :dataloom-provider-api:compileIosMainKotlinMetadata NO-SOURCE
+> Task :dataloom-provider-api:metadataIosMainClasses UP-TO-DATE
+> Task :dataloom-api:compileKotlinIosArm64 UP-TO-DATE
+> Task :dataloom-provider-api:exportCommonSourceSetsMetadataLocationsForMetadataApiElements
+> Task :dataloom-provider-api:iosArm64MetadataElements
+> Task :dataloom-provider-api:iosX64MetadataElements
+> Task :dataloom-provider-api:iosSimulatorArm64MetadataElements
+> Task :dataloom-model:exportCrossCompilationMetadataForIosX64ApiElements UP-TO-DATE
+> Task :dataloom-provider-api:exportCrossCompilationMetadataForIosX64ApiElements UP-TO-DATE
+> Task :dataloom-api:iosArm64ProcessResources NO-SOURCE
+> Task :dataloom-api:iosArm64MainKlibrary UP-TO-DATE
+> Task :dataloom-api:transformCommonMainDependenciesMetadata
+> Task :dataloom-model:compileKotlinIosX64 UP-TO-DATE
+> Task :dataloom-api:transformNativeMainDependenciesMetadata
+> Task :dataloom-api:transformAppleMainDependenciesMetadata
+> Task :dataloom-api:transformIosMainDependenciesMetadata
+> Task :dataloom-provider-api:compileKotlinIosX64 UP-TO-DATE
+> Task :dataloom-api:compileKotlinIosX64 UP-TO-DATE
+> Task :dataloom-api:iosSimulatorArm64ProcessResources NO-SOURCE
+> Task :dataloom-api:iosSimulatorArm64MainKlibrary UP-TO-DATE
+> Task :build-logic:test NO-SOURCE
+> Task :dataloom-api:compileCommonMainKotlinMetadata
+> Task :dataloom-api:metadataCommonMainClasses
+> Task :dataloom-api:allMetadataJar
+> Task :dataloom-api:compileNativeMainKotlinMetadata NO-SOURCE
+> Task :dataloom-api:metadataNativeMainClasses UP-TO-DATE
+> Task :dataloom-api:compileAppleMainKotlinMetadata NO-SOURCE
+> Task :dataloom-api:metadataAppleMainClasses UP-TO-DATE
+> Task :dataloom-api:compileIosMainKotlinMetadata NO-SOURCE
+> Task :dataloom-api:iosX64ProcessResources NO-SOURCE
+> Task :dataloom-api:iosX64MainKlibrary UP-TO-DATE
+> Task :dataloom-api:compileTestKotlinIosArm64
+> Task :dataloom-api:metadataIosMainProcessResources NO-SOURCE
+> Task :dataloom-api:metadataIosMainClasses UP-TO-DATE
+> Task :dataloom-api:iosArm64MetadataElements
+> Task :dataloom-api:iosSimulatorArm64MetadataElements
+> Task :dataloom-api:iosX64MetadataElements
+> Task :dataloom-api:compileTestKotlinIosSimulatorArm64
+> Task :dataloom-model:jvmProcessResources NO-SOURCE
+> Task :dataloom-model:processJvmMainResources SKIPPED
+> Task :dataloom-provider-api:jvmProcessResources NO-SOURCE
+> Task :dataloom-model:compileKotlinJvm UP-TO-DATE
+> Task :dataloom-provider-api:processJvmMainResources SKIPPED
+> Task :dataloom-api:jvmProcessResources NO-SOURCE
+> Task :dataloom-api:processJvmMainResources SKIPPED
+> Task :dataloom-model:compileJvmMainJava NO-SOURCE
+> Task :dataloom-model:jvmMainClasses UP-TO-DATE
+> Task :dataloom-model:jvmJar UP-TO-DATE
+> Task :dataloom-api:computeLocalPackageDependencyInputFiles
+> Task :dataloom-provider-api:compileKotlinJvm UP-TO-DATE
+> Task :dataloom-api:generateSyntheticLinkageSwiftPMImportProjectForCinteropsAndLdDump SKIPPED
+> Task :dataloom-provider-api:compileJvmMainJava NO-SOURCE
+> Task :dataloom-provider-api:jvmMainClasses UP-TO-DATE
+> Task :dataloom-provider-api:jvmJar UP-TO-DATE
+> Task :dataloom-api:serializeSwiftPMDependenciesMetadataForLockFiles
+> Task :dataloom-api:compileKotlinJvm UP-TO-DATE
+> Task :dataloom-api:compileJvmMainJava NO-SOURCE
+> Task :dataloom-api:jvmMainClasses UP-TO-DATE
+> Task :dataloom-api:jvmJar UP-TO-DATE
+> Task :dataloom-apple:serializeSwiftPMDependenciesMetadataForLockFiles
+> Task :dataloom-model:serializeSwiftPMDependenciesMetadataForLockFiles
+> Task :dataloom-core:serializeSwiftPMDependenciesMetadataForLockFiles
+> Task :dataloom-provider-api:serializeSwiftPMDependenciesMetadataForLockFiles
+> Task :dataloom-runtime:serializeSwiftPMDependenciesMetadataForLockFiles
+> Task :dataloom-testing:serializeSwiftPMDependenciesMetadataForLockFiles
+
+===== 03-validate.log tail =====
+> Task :dataloom-apple:compileNativeMainKotlinMetadata NO-SOURCE
+> Task :dataloom-apple:metadataNativeMainProcessResources NO-SOURCE
+> Task :dataloom-apple:metadataNativeMainClasses UP-TO-DATE
+> Task :dataloom-apple:transformAppleMainDependenciesMetadata
+> Task :dataloom-apple:compileAppleMainKotlinMetadata NO-SOURCE
+> Task :dataloom-apple:metadataAppleMainProcessResources NO-SOURCE
+> Task :dataloom-apple:metadataAppleMainClasses UP-TO-DATE
+> Task :dataloom-apple:transformIosMainDependenciesMetadata
+> Task :dataloom-apple:compileIosMainKotlinMetadata NO-SOURCE
+> Task :dataloom-api:exportCrossCompilationMetadataForIosArm64ApiElements UP-TO-DATE
+> Task :dataloom-apple:downloadKotlinNativeDistribution UP-TO-DATE
+> Task :dataloom-core:downloadKotlinNativeDistribution UP-TO-DATE
+> Task :dataloom-core:compileKotlinIosArm64 UP-TO-DATE
+> Task :dataloom-core:exportCrossCompilationMetadataForIosArm64ApiElements UP-TO-DATE
+> Task :dataloom-runtime:downloadKotlinNativeDistribution UP-TO-DATE
+> Task :dataloom-runtime:compileKotlinIosArm64 UP-TO-DATE
+> Task :dataloom-runtime:exportCrossCompilationMetadataForIosArm64ApiElements UP-TO-DATE
+> Task :dataloom-apple:compileKotlinIosArm64 UP-TO-DATE
+> Task :dataloom-api:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements UP-TO-DATE
+> Task :dataloom-core:compileKotlinIosSimulatorArm64 UP-TO-DATE
+> Task :dataloom-core:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements UP-TO-DATE
+> Task :dataloom-runtime:compileKotlinIosSimulatorArm64 UP-TO-DATE
+> Task :dataloom-runtime:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements UP-TO-DATE
+> Task :dataloom-apple:compileKotlinIosSimulatorArm64 UP-TO-DATE
+> Task :dataloom-api:exportCrossCompilationMetadataForIosX64ApiElements UP-TO-DATE
+> Task :dataloom-core:compileKotlinIosX64 UP-TO-DATE
+> Task :dataloom-core:exportCrossCompilationMetadataForIosX64ApiElements UP-TO-DATE
+> Task :dataloom-runtime:compileKotlinIosX64 UP-TO-DATE
+> Task :dataloom-runtime:exportCrossCompilationMetadataForIosX64ApiElements UP-TO-DATE
+> Task :dataloom-apple:compileKotlinIosX64 UP-TO-DATE
+> Task :dataloom-apple:iosArm64ProcessResources NO-SOURCE
+> Task :dataloom-apple:iosArm64MainKlibrary UP-TO-DATE
+> Task :dataloom-apple:compileTestKotlinIosArm64 NO-SOURCE
+> Task :dataloom-apple:iosSimulatorArm64ProcessResources NO-SOURCE
+> Task :dataloom-apple:iosSimulatorArm64MainKlibrary UP-TO-DATE
+> Task :dataloom-apple:compileTestKotlinIosSimulatorArm64 NO-SOURCE
+> Task :dataloom-apple:iosX64ProcessResources NO-SOURCE
+> Task :dataloom-apple:iosX64MainKlibrary UP-TO-DATE
+> Task :dataloom-apple:compileTestKotlinIosX64 NO-SOURCE
+> Task :dataloom-apple:metadataIosMainProcessResources NO-SOURCE
+> Task :dataloom-apple:metadataIosMainClasses UP-TO-DATE
+> Task :dataloom-apple:iosArm64MetadataElements
+> Task :dataloom-apple:iosSimulatorArm64MetadataElements
+> Task :dataloom-apple:iosX64MetadataElements
+> Task :dataloom-api:linkDebugTestIosX64
+
+> Task :dataloom-api:linkDebugTestIosSimulatorArm64
+w: The number of threads 4 is more than the number of processors 3
+
+> Task :dataloom-api:iosX64Test SKIPPED
+> Task :dataloom-apple:linkDebugFrameworkIosArm64
+> Task :dataloom-api:iosSimulatorArm64Test
+> Task :dataloom-apple:linkDebugFrameworkIosSimulatorArm64
+
+> Task :dataloom-apple:linkDebugFrameworkIosArm64
+w: The number of threads 4 is more than the number of processors 3
+
+> Task :dataloom-apple:linkDebugFrameworkIosSimulatorArm64
+w: The number of threads 4 is more than the number of processors 3
+
+> Task :dataloom-apple:linkDebugFrameworkIosX64
+> Task :dataloom-apple:linkReleaseFrameworkIosArm64
+> Task :dataloom-api:allTests FAILED
+> Task :dataloom-apple:linkReleaseFrameworkIosSimulatorArm64
+gradle/actions: Writing build results to /Users/runner/work/_temp/.gradle-actions/build-results/__run_5-1785843236619.json
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':dataloom-api:allTests' (registered by plugin 'io.dataloom.kotlin.multiplatform-library').
+> There were failing tests. See the report at: file:///Users/runner/work/dataloom/dataloom/dataloom-api/build/reports/tests/allTests/index.html
+
+* Try:
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+* Exception is:
+org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':dataloom-api:allTests' (registered by plugin 'io.dataloom.kotlin.multiplatform-library').
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.lambda$executeIfValid$1(ExecuteActionsTaskExecuter.java:135)
+	at org.gradle.internal.Try$Failure.ifSuccessfulOrElse(Try.java:288)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:133)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:121)
+	at org.gradle.api.internal.tasks.execution.ProblemsTaskPathTrackingTaskExecuter.execute(ProblemsTaskPathTrackingTaskExecuter.java:41)
+	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
+	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
+	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
+	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
+	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:210)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:205)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:54)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
+	at org.gradle.execution.plan.DefaultNodeExecutor.executeLocalTaskNode(DefaultNodeExecutor.java:55)
+	at org.gradle.execution.plan.DefaultNodeExecutor.execute(DefaultNodeExecutor.java:34)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:355)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:343)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:339)
+	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:84)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:339)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:328)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
+	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
+Caused by: org.gradle.api.GradleException: There were failing tests. See the report at: file:///Users/runner/work/dataloom/dataloom/dataloom-api/build/reports/tests/allTests/index.html
+	at org.jetbrains.kotlin.gradle.testing.internal.KotlinTestReport.checkFailedTests(KotlinTestReport.kt:152)
+	at org.gradle.internal.reflect.JavaMethod.invoke(JavaMethod.java:125)
+	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.doExecute(StandardTaskAction.java:58)
+	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:51)
+	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:29)
+	at org.gradle.api.internal.tasks.execution.TaskExecution$3.run(TaskExecution.java:259)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:30)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:27)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:48)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeAction(TaskExecution.java:244)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeActions(TaskExecution.java:227)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeWithPreviousOutputFiles(TaskExecution.java:210)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.execute(TaskExecution.java:176)
+	at org.gradle.internal.execution.steps.ExecuteStep.executeInternal(ExecuteStep.java:167)
+	at org.gradle.internal.execution.steps.ExecuteStep.access$000(ExecuteStep.java:47)
+	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:137)
+	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:134)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:210)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:205)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:54)
+	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:134)
+	at org.gradle.internal.execution.steps.ExecuteStep$Mutable.execute(ExecuteStep.java:80)
+	at org.gradle.internal.execution.steps.CancelExecutionStep.execute(CancelExecutionStep.java:42)
+	at org.gradle.internal.execution.steps.TimeoutStep.executeWithoutTimeout(TimeoutStep.java:75)
+	at org.gradle.internal.execution.steps.TimeoutStep.execute(TimeoutStep.java:55)
+	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:51)
+	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:29)
+	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.executeMutable(RemovePreviousOutputsStep.java:67)
+	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.executeMutable(RemovePreviousOutputsStep.java:39)
+	at org.gradle.internal.execution.steps.MutableStep.execute(MutableStep.java:26)
+	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:42)
+	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:24)
+	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:69)
+	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:46)
+	at org.gradle.internal.execution.steps.ResolveInputChangesStep.executeMutable(ResolveInputChangesStep.java:39)
+	at org.gradle.internal.execution.steps.ResolveInputChangesStep.executeMutable(ResolveInputChangesStep.java:28)
+	at org.gradle.internal.execution.steps.MutableStep.execute(MutableStep.java:26)
+	at org.gradle.internal.execution.steps.BuildCacheStep.executeWithoutCache(BuildCacheStep.java:189)
+	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$execute$1(BuildCacheStep.java:76)
+	at org.gradle.internal.Either$Right.fold(Either.java:176)
+	at org.gradle.internal.execution.caching.CachingState.fold(CachingState.java:62)
+	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:74)
+	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:49)
+	at org.gradle.internal.execution.steps.StoreExecutionStateStep.executeMutable(StoreExecutionStateStep.java:46)
+	at org.gradle.internal.execution.steps.StoreExecutionStateStep.executeMutable(StoreExecutionStateStep.java:35)
+	at org.gradle.internal.execution.steps.MutableStep.execute(MutableStep.java:26)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.executeBecause(SkipUpToDateStep.java:75)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.lambda$execute$2(SkipUpToDateStep.java:53)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:53)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:35)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:37)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:27)
+	at org.gradle.internal.execution.steps.ResolveMutableCachingStateStep.executeDelegate(ResolveMutableCachingStateStep.java:70)
+	at org.gradle.internal.execution.steps.ResolveMutableCachingStateStep.executeDelegate(ResolveMutableCachingStateStep.java:32)
+	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:69)
+	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:37)
+	at org.gradle.internal.execution.steps.ResolveChangesStep.executeMutable(ResolveChangesStep.java:63)
+	at org.gradle.internal.execution.steps.ResolveChangesStep.executeMutable(ResolveChangesStep.java:34)
+	at org.gradle.internal.execution.steps.MutableStep.execute(MutableStep.java:26)
+	at org.gradle.internal.execution.steps.ValidateStep$Mutable.executeDelegate(ValidateStep.java:79)
+	at org.gradle.internal.execution.steps.ValidateStep$Mutable.executeDelegate(ValidateStep.java:65)
+	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:99)
+	at org.gradle.internal.execution.steps.ValidateStep$Mutable.execute(ValidateStep.java:65)
+	at org.gradle.internal.execution.steps.CaptureMutableStateBeforeExecutionStep.executeMutable(CaptureMutableStateBeforeExecutionStep.java:86)
+	at org.gradle.internal.execution.steps.CaptureMutableStateBeforeExecutionStep.execute(CaptureMutableStateBeforeExecutionStep.java:65)
+	at org.gradle.internal.execution.steps.CaptureMutableStateBeforeExecutionStep.execute(CaptureMutableStateBeforeExecutionStep.java:45)
+	at org.gradle.internal.execution.steps.SkipEmptyMutableWorkStep.executeWithNonEmptySources(SkipEmptyMutableWorkStep.java:210)
+	at org.gradle.internal.execution.steps.SkipEmptyMutableWorkStep.executeMutable(SkipEmptyMutableWorkStep.java:90)
+	at org.gradle.internal.execution.steps.SkipEmptyMutableWorkStep.executeMutable(SkipEmptyMutableWorkStep.java:53)
+	at org.gradle.internal.execution.steps.MutableStep.execute(MutableStep.java:26)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsStartedStep.execute(MarkSnapshottingInputsStartedStep.java:38)
+	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.executeMutable(LoadPreviousExecutionStateStep.java:36)
+	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.executeMutable(LoadPreviousExecutionStateStep.java:23)
+	at org.gradle.internal.execution.steps.MutableStep.execute(MutableStep.java:26)
+	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.executeMutable(HandleStaleOutputsStep.java:77)
+	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.executeMutable(HandleStaleOutputsStep.java:43)
+	at org.gradle.internal.execution.steps.MutableStep.execute(MutableStep.java:26)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.lambda$executeMutable$0(AssignMutableWorkspaceStep.java:34)
+	at org.gradle.api.internal.tasks.execution.TaskExecution$4.withWorkspace(TaskExecution.java:305)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.executeMutable(AssignMutableWorkspaceStep.java:30)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.executeMutable(AssignMutableWorkspaceStep.java:21)
+	at org.gradle.internal.execution.steps.MutableStep.execute(MutableStep.java:26)
+	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:40)
+	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:23)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.lambda$execute$2(ExecuteWorkBuildOperationFiringStep.java:67)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:67)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:39)
+	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:46)
+	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:34)
+	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:56)
+	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:38)
+	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:68)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:132)
+	... 30 more
+
+
+BUILD FAILED in 5m 56s
+159 actionable tasks: 107 executed, 2 from cache, 50 up-to-date
+Configuration cache entry stored.
