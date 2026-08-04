@@ -1,5 +1,5 @@
 DL-039B persisted accepted-plan execution evidence failed.
-Source head: d0fd9f076e9ae780c43ba01f5709d55d1a80c589
+Source head: e724e9554445e91395ff2ae6a77d3f4a6b9d47eb
 
 Repository status:
  M .github/evidence/dl-strategy-005-accepted-plan-last-failure.txt
