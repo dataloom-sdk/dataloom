@@ -1,5 +1,6 @@
 name: DL-039B Immutable Strategy Plan Persistence Evidence
 
+# This workflow is intentionally one-time and removes itself after qualification.
 on:
   push:
     branches:
