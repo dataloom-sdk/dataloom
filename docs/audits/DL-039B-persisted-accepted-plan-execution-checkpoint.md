@@ -12,10 +12,14 @@ current `StrategyRuntimeEvidence`.
 - Exact decision/plan/request correspondence is validated before provider
   resolution.
 - Provider roles are derived only from the durable continuation.
-- Unsupported, extra, missing, or operation-inconsistent capability sets reject before provider resolution.
-- Replay accepts only finite direction-specific operation sequences that match the executor actually invoked.
-- Local serving and fallback require persisted cache-state evidence; no current or invented evidence is used.
-- Protected failure classes and cancellation cannot be converted into local fallback.
+- Unsupported, extra, missing, or operation-inconsistent capability sets reject
+  before provider resolution.
+- Replay accepts only finite direction-specific operation sequences that match
+  the executor actually invoked.
+- Local serving and fallback require persisted cache-state evidence; no current
+  or invented evidence is used.
+- Protected failure classes and cancellation cannot be converted into local
+  fallback.
 - Provider-backed PUSH/PULL/BIDIRECTIONAL reuse canonical pipelines.
 - Non-persisting remote pull remains transport-only.
 - Typed fallback uses only the persisted fallback allowlist and evaluated cache
@@ -28,7 +32,8 @@ current `StrategyRuntimeEvidence`.
   accepted coordinator; protected queue execution preserves ordered protection
   evidence.
 - Entries without a complete plan retain the historical execution path.
-- A retry evaluator inconsistency for known failed work is terminal and can never become queue completion.
+- A retry evaluator inconsistency for known failed work is terminal and can
+  never become queue completion.
 - A pipeline that skips before provider effects contributes no fabricated
   completed-operation evidence and does not trigger reconciliation.
 
@@ -37,6 +42,15 @@ current `StrategyRuntimeEvidence`.
 The same reviewed tree includes Room schema 8 and Apple queue format 4. Complete
 plans survive migration, reopen, retry, non-retry deferral, and expired-lease
 recovery. Malformed frames fail closed.
+
+## Qualification evidence
+
+The accepted-plan replay tree passed the combined common/JVM, Kotlin/Native,
+iOS simulator, Android compilation, external-consumer, ABI, XCFramework, and
+repository-hygiene lane before its one-time qualification helpers and failure
+evidence were removed. This checkpoint-only follow-up does not change runtime,
+API, persistence, schema, or test sources; it provides a repository-owner head
+for the standard pull-request, Android, and Apple validation workflows.
 
 ## Remaining strategy acceptance
 
