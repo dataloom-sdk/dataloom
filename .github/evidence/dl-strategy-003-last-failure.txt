@@ -1,13 +1,13 @@
 DL-039B queued strategy decision correspondence evidence failed.
-Source head: 8cddd28fab879ecdc284988f249d1b032e9819a6
+Source head: 01bf6e5920456ac04c4cb2fc738637ca7efe1ad9
 
 Repository status:
+ M .github/evidence/dl-strategy-003-last-failure.txt
  M dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/queue/ProviderProtectedQueuedSynchronizationExecutionHandler.kt
  M dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/queue/QueuedSynchronizationExecutionHandler.kt
  M dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/queue/ProviderProtectedQueuedSynchronizationExecutionHandlerTest.kt
  M dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/queue/QueuedSynchronizationExecutionHandlerTest.kt
  M docs/api/synchronization-strategy.md
-?? .github/evidence/
 ?? .github/scripts/__pycache__/
 
 ===== 01-patch.log compiler diagnostics =====
