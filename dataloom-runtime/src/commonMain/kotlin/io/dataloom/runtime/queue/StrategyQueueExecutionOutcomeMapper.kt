@@ -12,6 +12,7 @@ import io.dataloom.api.retry.RetryOperation
 import io.dataloom.api.strategy.StrategyTransportOutput
 import io.dataloom.api.synchronization.SynchronizationResult
 import io.dataloom.api.synchronization.SynchronizationSummary
+import io.dataloom.api.time.DataLoomInstant
 import io.dataloom.runtime.retry.SynchronizationRetryEvaluation
 import io.dataloom.runtime.retry.SynchronizationRetryEvaluator
 import io.dataloom.runtime.strategy.StrategySynchronizationExecutionResult
@@ -29,10 +30,15 @@ internal class StrategyQueueExecutionOutcomeMapper(
             when (val output = result.output) {
                 is StrategyTransportOutput.ProviderBacked ->
                     mapSynchronizationResult(output.result, entry)
+                is StrategyTransportOutput.RemoteFirstBidirectional ->
+                    mapRemoteFirstBidirectional(
+                        output = output,
+                        completedAt = result.completedAt,
+                        entry = entry,
+                    )
                 is StrategyTransportOutput.Pushed,
                 is StrategyTransportOutput.Pulled,
                 is StrategyTransportOutput.Bidirectional,
-                is StrategyTransportOutput.RemoteFirstBidirectional,
                 -> QueueEntryExecutionOutcome.Completed(result.completedAt)
             }
         is StrategySynchronizationExecutionResult.FallbackActivated ->
@@ -65,6 +71,22 @@ internal class StrategyQueueExecutionOutcomeMapper(
             failed(AcceptedPlanRejectedError(result.reason.name))
     }
 
+    private fun mapRemoteFirstBidirectional(
+        output: StrategyTransportOutput.RemoteFirstBidirectional,
+        completedAt: DataLoomInstant,
+        entry: QueueEntry,
+    ): QueueEntryExecutionOutcome = when (val pushResult = output.pushResult) {
+        is SynchronizationResult.Succeeded,
+        is SynchronizationResult.Skipped,
+        -> QueueEntryExecutionOutcome.Completed(completedAt)
+        is SynchronizationResult.Cancelled ->
+            QueueEntryExecutionOutcome.Cancelled(pushResult.request.context)
+        is SynchronizationResult.Failed ->
+            evaluateRetry(pushResult.error, completedAt, entry)
+        is SynchronizationResult.PartiallySucceeded ->
+            evaluateRetry(pushResult.errors.first(), completedAt, entry)
+    }
+
     private fun mapSynchronizationResult(
         result: SynchronizationResult,
         entry: QueueEntry,
@@ -82,7 +104,7 @@ internal class StrategyQueueExecutionOutcomeMapper(
 
     private fun evaluateRetry(
         error: DataLoomError,
-        completedAt: io.dataloom.api.time.DataLoomInstant,
+        completedAt: DataLoomInstant,
         entry: QueueEntry,
     ): QueueEntryExecutionOutcome {
         val currentAttempt = entry.retryAttempt?.number ?: 0
