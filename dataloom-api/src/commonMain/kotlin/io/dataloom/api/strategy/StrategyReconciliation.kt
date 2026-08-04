@@ -26,6 +26,15 @@ public class StrategyReconciliationRequest(
         require(completedSnapshot.isNotEmpty()) {
             "StrategyReconciliationRequest requires completed operation evidence."
         }
+        require(completedSnapshot.size <= StrategyOperation.entries.size) {
+            "StrategyReconciliationRequest operation evidence exceeds the finite operation set."
+        }
+        require(completedSnapshot.size == completedSnapshot.distinct().size) {
+            "StrategyReconciliationRequest operation evidence must be unique and ordered."
+        }
+        require(StrategyOperation.RECONCILE !in completedSnapshot) {
+            "StrategyReconciliationRequest must describe work completed before reconciliation."
+        }
     }
 
     public val completedOperations: List<StrategyOperation>
