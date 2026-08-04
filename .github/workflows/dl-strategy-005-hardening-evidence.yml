@@ -53,6 +53,7 @@ jobs:
               .github/scripts/dl_strategy_005_hardening_followup.py
               .github/scripts/dl_strategy_005_capability_alignment.py
               .github/scripts/dl_strategy_005_reconciliation_evidence.py
+              .github/scripts/dl_strategy_005_test_expectation_fix.py
             )
             for script in "${scripts[@]}"; do
               python3 -m py_compile "$script"
@@ -147,6 +148,7 @@ jobs:
           rm .github/scripts/dl_strategy_005_hardening_followup.py
           rm .github/scripts/dl_strategy_005_capability_alignment.py
           rm .github/scripts/dl_strategy_005_reconciliation_evidence.py
+          rm .github/scripts/dl_strategy_005_test_expectation_fix.py
           rm -rf .github/scripts/__pycache__
           rm -f .github/evidence/dl-strategy-005-hardening-last-failure.txt
           rmdir .github/evidence 2>/dev/null || true
