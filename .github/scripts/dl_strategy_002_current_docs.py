@@ -147,7 +147,7 @@ replace_once(
     hub,
     """| Review V1 gaps and release gates | [V1 production-readiness audit](./audits/DL-AUDIT-004-v1-production-readiness.md) |
 """,
-    """| Review V1 gaps and release gates | [Current V1 conformance audit](./audits/DL-AUDIT-005-current-v1-conformance.md) |
+    """| Review V1 gaps and release gates | [Audit index and evidence hierarchy](./audits/README.md) |
 """,
 )
 
@@ -161,7 +161,8 @@ The current strategy API guide and system overview now distinguish accepted
 strategy-decision persistence and retry/circuit foundations from the still-
 missing immutable plan replay, remaining strategy runtimes, process-loss
 qualification, conflict application, and platform reference matrices. Historical
-audits remain unchanged and are still labeled as point-in-time evidence.
+and point-in-time audits remain unchanged; the documentation hub routes readers
+through the audit index and evidence hierarchy.
 """
 write(checkpoint, checkpoint_content)
 
