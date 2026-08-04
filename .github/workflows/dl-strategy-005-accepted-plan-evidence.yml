@@ -60,6 +60,7 @@ jobs:
               .github/scripts/dl_strategy_005_compile_fixes.py
               .github/scripts/dl_strategy_005_semantic_fixes.py
               .github/scripts/dl_strategy_005_semantic_compile_fix.py
+              .github/scripts/dl_strategy_005_abi_fix.py
               .github/scripts/dl_strategy_005_protection.py
               .github/scripts/dl_strategy_005_protected_coordinator.py
               .github/scripts/dl_strategy_005_protected_facade.py
@@ -187,6 +188,7 @@ jobs:
           rm .github/workflows/dl-strategy-005-accepted-plan-evidence.yml
           rm .github/scripts/dl_strategy_004_persistence.py
           rm .github/scripts/dl_strategy_004_persistence_docs.py
+          rm .github/scripts/dl_strategy_005_abi_fix.py
           rm .github/scripts/dl_strategy_005_compile_fixes.py
           rm .github/scripts/dl_strategy_005_docs.py
           rm .github/scripts/dl_strategy_005_facade.py
