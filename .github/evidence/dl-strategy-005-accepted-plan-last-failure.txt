@@ -1,40 +1,64 @@
 DL-039B persisted accepted-plan execution evidence failed.
-Source head: 9b42f12cdc3b7099b391cbac646ee05cf0fa4dc5
+Source head: 6b1532ca46952621841678e511b0858abe5aec68
 
 Repository status:
  M .github/evidence/dl-strategy-005-accepted-plan-last-failure.txt
+ M .github/scripts/dl_strategy_005_protected_coordinator.py
+ M README.md
  M dataloom-queue-room/src/main/kotlin/io/dataloom/queue/room/DataLoomRoomMigrations.kt
  M dataloom-queue-room/src/main/kotlin/io/dataloom/queue/room/internal/DataLoomRoomDatabase.kt
  M dataloom-queue-room/src/main/kotlin/io/dataloom/queue/room/internal/Mappers.kt
  M dataloom-queue-room/src/main/kotlin/io/dataloom/queue/room/internal/QueueEntryEntity.kt
+ M dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/execution/protection/ProviderProtectedStrategySynchronization.kt
+ M dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/execution/protection/ProviderProtectionProviderBridge.kt
  M dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/facade/DataLoom.kt
  M dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/facade/DataLoomBuilder.kt
+ M dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/facade/DataLoomProtectedStrategySynchronization.kt
  M dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/facade/DefaultDataLoom.kt
+ M dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/facade/DefaultDataLoomProtectedStrategySynchronization.kt
+ M dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/queue/ProviderProtectedQueuedSynchronizationExecutionHandler.kt
+ M dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/queue/QueuedSynchronizationExecutionHandler.kt
  M dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/strategy/AcceptedStrategyPlanExecutionCoordinatorTest.kt
  M dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleFileQueueProvider.kt
  M dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt
  M dataloom-runtime/src/iosTest/kotlin/io/dataloom/runtime/retry/AppleFileRetryAdministrationExecutorTest.kt
  M docs/android/room-queue-provider.md
+ M docs/api/provider-protected-strategy-execution.md
  M docs/api/queue-model.md
+ M docs/api/synchronization-strategy.md
  M docs/apple/queue-state-store.md
 ?? .github/scripts/__pycache__/
 ?? docs/audits/DL-039B-immutable-plan-persistence-checkpoint.md
+?? docs/audits/DL-039B-persisted-accepted-plan-execution-checkpoint.md
 
 ===== 01-patch.log compiler diagnostics =====
 
 ===== 01-patch.log head =====
+Removed stale protected-coordinator import patch.
 Applied Room schema 8 and Apple queue format 4 strategy-plan persistence.
 Reconciled Room and Apple immutable-plan persistence documentation.
 Assembled direct accepted-plan facade execution.
 Corrected accepted-plan acknowledgement fixture.
+Added protected strategy reconciliation bridges.
+Assembled protected accepted-plan execution and reconciliation.
+Assembled protected accepted-plan facade methods.
+Routed direct and protected queued work through accepted strategy plans.
+Reconciled persisted accepted-plan execution documentation.
 
 ===== 01-patch.log tail =====
+Removed stale protected-coordinator import patch.
 Applied Room schema 8 and Apple queue format 4 strategy-plan persistence.
 Reconciled Room and Apple immutable-plan persistence documentation.
 Assembled direct accepted-plan facade execution.
 Corrected accepted-plan acknowledgement fixture.
+Added protected strategy reconciliation bridges.
+Assembled protected accepted-plan execution and reconciliation.
+Assembled protected accepted-plan facade methods.
+Routed direct and protected queued work through accepted strategy plans.
+Reconciled persisted accepted-plan execution documentation.
 
 ===== 02-generate.log compiler diagnostics =====
+33-> Task :dataloom-provider-api:jvmMainClasses UP-TO-DATE
 34-> Task :dataloom-provider-api:jvmJar
 35-
 36-> Task :dataloom-api:downloadKotlinNativeDistribution
@@ -43,43 +67,49 @@ Corrected accepted-plan acknowledgement fixture.
 39:> Task :dataloom-api:compileKotlinJvm FAILED
 40:e: file:///Users/runner/work/dataloom/dataloom/dataloom-api/src/commonMain/kotlin/io/dataloom/api/strategy/StrategyReconciliation.kt:20:5 Primary constructor of data class must only have property ('val' / 'var') parameters.
 41-
-42-> Task :dataloom-model:downloadKotlinNativeDistribution
+42-> Task :dataloom-api:downloadKotlinNativeDistribution
 43-Downloading native dependencies (LLVM, sysroot etc). This is a one-time action performed only on the first run of the compiler.
 44-Downloading dependency https://download.jetbrains.com/kotlin/native/resources/llvm/21-aarch64-macos/llvm-21-aarch64-macos-essentials-97.tar.gz to /Users/runner/.konan/dependencies/cache/llvm-21-aarch64-macos-essentials-97.tar.gz
 45-Done.
+46-Extracting dependency: /Users/runner/.konan/dependencies/cache/llvm-21-aarch64-macos-essentials-97.tar.gz into /Users/runner/.konan/dependencies
 --
-54-FAILURE: Build failed with an exception.
 55-
-56-* What went wrong:
-57-Execution failed for task ':dataloom-api:compileKotlinJvm' (registered by plugin 'io.dataloom.kotlin.multiplatform-library').
-58-> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork
-59:   > Compilation error. See log for more details
-60-
-61-* Try:
-62-> Run with --info or --debug option to get more log output.
-63-> Run with --scan to get full insights from a Build Scan (powered by Develocity).
-64-> Get more help at https://help.gradle.org.
+56-FAILURE: Build failed with an exception.
+57-
+58-* What went wrong:
+59-Execution failed for task ':dataloom-api:compileKotlinJvm' (registered by plugin 'io.dataloom.kotlin.multiplatform-library').
+60-> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork
+61:   > Compilation error. See log for more details
+62-
+63-* Try:
+64-> Run with --info or --debug option to get more log output.
+65-> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+66-> Get more help at https://help.gradle.org.
+67-
 --
-215-	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:56)
-216-	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:38)
-217-	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:68)
-218-	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:132)
-219-	... 30 more
-220:Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilation error. See log for more details
-221-	at org.jetbrains.kotlin.gradle.tasks.TasksUtilsKt.throwExceptionIfCompilationFailed(tasksUtils.kt:21)
-222-	at org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork.execute(BuildToolsApiCompilationWork.kt:320)
-223-	at org.gradle.workers.internal.DefaultWorkerServer.execute(DefaultWorkerServer.java:68)
-224-	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:64)
-225-	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:61)
+216-	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:34)
+217-	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:56)
+218-	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:38)
+219-	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:68)
+220-	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:132)
+221-	... 30 more
+222:Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilation error. See log for more details
+223-	at org.jetbrains.kotlin.gradle.tasks.TasksUtilsKt.throwExceptionIfCompilationFailed(tasksUtils.kt:21)
+224-	at org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork.execute(BuildToolsApiCompilationWork.kt:320)
+225-	at org.gradle.workers.internal.DefaultWorkerServer.execute(DefaultWorkerServer.java:68)
+226-	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:64)
+227-	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:61)
+228-	at org.gradle.internal.classloader.ClassLoaderUtils.executeInClassloader(ClassLoaderUtils.java:102)
 --
-250-	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runBatch(DefaultConditionalExecutionQueue.java:163)
-251-	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.run(DefaultConditionalExecutionQueue.java:125)
-252-	... 2 more
-253-
-254-
-255:BUILD FAILED in 46s
-256-14 actionable tasks: 11 executed, 3 from cache
-257-Configuration cache entry stored.
+251-	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:134)
+252-	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runBatch(DefaultConditionalExecutionQueue.java:163)
+253-	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.run(DefaultConditionalExecutionQueue.java:125)
+254-	... 2 more
+255-
+256-
+257:BUILD FAILED in 54s
+258-14 actionable tasks: 11 executed, 3 from cache
+259-Configuration cache entry stored.
 
 ===== 02-generate.log head =====
 
@@ -98,12 +128,12 @@ Calculating task graph as no cached configuration is available for tasks: update
 > Task :build-logic:processResources
 > Task :build-logic:classes
 > Task :build-logic:jar
-> Task :dataloom-api:kmpPartiallyResolvedDependenciesChecker
 > Task :dataloom-model:jvmProcessResources NO-SOURCE
+> Task :dataloom-api:kmpPartiallyResolvedDependenciesChecker
+> Task :dataloom-model:processJvmMainResources SKIPPED
 > Task :dataloom-model:kmpPartiallyResolvedDependenciesChecker
 > Task :dataloom-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :dataloom-model:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :dataloom-model:processJvmMainResources SKIPPED
 > Task :dataloom-provider-api:kmpPartiallyResolvedDependenciesChecker
 > Task :dataloom-provider-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :dataloom-provider-api:jvmProcessResources NO-SOURCE
@@ -123,7 +153,7 @@ Kotlin/Native bundle directory /Users/runner/.konan/kotlin-native-prebuilt-macos
 > Task :dataloom-api:compileKotlinJvm FAILED
 e: file:///Users/runner/work/dataloom/dataloom/dataloom-api/src/commonMain/kotlin/io/dataloom/api/strategy/StrategyReconciliation.kt:20:5 Primary constructor of data class must only have property ('val' / 'var') parameters.
 
-> Task :dataloom-model:downloadKotlinNativeDistribution
+> Task :dataloom-api:downloadKotlinNativeDistribution
 Downloading native dependencies (LLVM, sysroot etc). This is a one-time action performed only on the first run of the compiler.
 Downloading dependency https://download.jetbrains.com/kotlin/native/resources/llvm/21-aarch64-macos/llvm-21-aarch64-macos-essentials-97.tar.gz to /Users/runner/.konan/dependencies/cache/llvm-21-aarch64-macos-essentials-97.tar.gz
 Done.
@@ -131,7 +161,9 @@ Extracting dependency: /Users/runner/.konan/dependencies/cache/llvm-21-aarch64-m
 Downloading dependency https://download.jetbrains.com/kotlin/native/libffi-3.3-1-macos-arm64.tar.gz to /Users/runner/.konan/dependencies/cache/libffi-3.3-1-macos-arm64.tar.gz
 Done.
 Extracting dependency: /Users/runner/.konan/dependencies/cache/libffi-3.3-1-macos-arm64.tar.gz into /Users/runner/.konan/dependencies
-gradle/actions: Writing build results to /Users/runner/work/_temp/.gradle-actions/build-results/__run_4-1785838517465.json
+
+> Task :dataloom-model:downloadKotlinNativeDistribution
+gradle/actions: Writing build results to /Users/runner/work/_temp/.gradle-actions/build-results/__run_4-1785838692449.json
 
 [Incubating] Problems report is available at: file:///Users/runner/work/dataloom/dataloom/build/reports/problems/problems-report.html
 
@@ -202,8 +234,66 @@ Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionExcept
 	at org.gradle.api.internal.tasks.execution.TaskExecution$3.run(TaskExecution.java:267)
 	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:30)
 	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:27)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:48)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeAction(TaskExecution.java:244)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeActions(TaskExecution.java:227)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeWithPreviousOutputFiles(TaskExecution.java:210)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.execute(TaskExecution.java:176)
+	at org.gradle.internal.execution.steps.ExecuteStep.executeInternal(ExecuteStep.java:167)
+	at org.gradle.internal.execution.steps.ExecuteStep.access$000(ExecuteStep.java:47)
+	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:137)
+	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:134)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:210)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:205)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
 
 ===== 02-generate.log tail =====
+e: file:///Users/runner/work/dataloom/dataloom/dataloom-api/src/commonMain/kotlin/io/dataloom/api/strategy/StrategyReconciliation.kt:20:5 Primary constructor of data class must only have property ('val' / 'var') parameters.
+
+> Task :dataloom-api:downloadKotlinNativeDistribution
+Downloading native dependencies (LLVM, sysroot etc). This is a one-time action performed only on the first run of the compiler.
+Downloading dependency https://download.jetbrains.com/kotlin/native/resources/llvm/21-aarch64-macos/llvm-21-aarch64-macos-essentials-97.tar.gz to /Users/runner/.konan/dependencies/cache/llvm-21-aarch64-macos-essentials-97.tar.gz
+Done.
+Extracting dependency: /Users/runner/.konan/dependencies/cache/llvm-21-aarch64-macos-essentials-97.tar.gz into /Users/runner/.konan/dependencies
+Downloading dependency https://download.jetbrains.com/kotlin/native/libffi-3.3-1-macos-arm64.tar.gz to /Users/runner/.konan/dependencies/cache/libffi-3.3-1-macos-arm64.tar.gz
+Done.
+Extracting dependency: /Users/runner/.konan/dependencies/cache/libffi-3.3-1-macos-arm64.tar.gz into /Users/runner/.konan/dependencies
+
+> Task :dataloom-model:downloadKotlinNativeDistribution
+gradle/actions: Writing build results to /Users/runner/work/_temp/.gradle-actions/build-results/__run_4-1785838692449.json
+
+[Incubating] Problems report is available at: file:///Users/runner/work/dataloom/dataloom/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':dataloom-api:compileKotlinJvm' (registered by plugin 'io.dataloom.kotlin.multiplatform-library').
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+* Exception is:
+org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':dataloom-api:compileKotlinJvm' (registered by plugin 'io.dataloom.kotlin.multiplatform-library').
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.lambda$executeIfValid$1(ExecuteActionsTaskExecuter.java:135)
+	at org.gradle.internal.Try$Failure.ifSuccessfulOrElse(Try.java:288)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:133)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:121)
+	at org.gradle.api.internal.tasks.execution.ProblemsTaskPathTrackingTaskExecuter.execute(ProblemsTaskPathTrackingTaskExecuter.java:41)
+	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
+	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
+	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
+	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
+	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
@@ -381,6 +471,6 @@ Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilat
 	... 2 more
 
 
-BUILD FAILED in 46s
+BUILD FAILED in 54s
 14 actionable tasks: 11 executed, 3 from cache
 Configuration cache entry stored.
