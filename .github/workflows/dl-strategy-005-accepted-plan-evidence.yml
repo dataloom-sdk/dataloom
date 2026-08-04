@@ -58,6 +58,7 @@ jobs:
               .github/scripts/dl_strategy_005_facade.py
               .github/scripts/dl_strategy_005_test_fix.py
               .github/scripts/dl_strategy_005_compile_fixes.py
+              .github/scripts/dl_strategy_005_semantic_fixes.py
               .github/scripts/dl_strategy_005_protection.py
               .github/scripts/dl_strategy_005_protected_coordinator.py
               .github/scripts/dl_strategy_005_protected_facade.py
@@ -193,6 +194,7 @@ jobs:
           rm .github/scripts/dl_strategy_005_protected_facade.py
           rm .github/scripts/dl_strategy_005_protection.py
           rm .github/scripts/dl_strategy_005_queue_handlers.py
+          rm .github/scripts/dl_strategy_005_semantic_fixes.py
           rm .github/scripts/dl_strategy_005_test_fix.py
           rm -rf .github/scripts/__pycache__
           rm -f .github/evidence/dl-strategy-004-persistence-last-failure.txt
