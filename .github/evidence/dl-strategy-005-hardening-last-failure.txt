@@ -1,14 +1,16 @@
 DL-039B accepted-plan replay hardening failed.
-Source head: 5c90421f60a6eb589babacec3d06e1d75cdafbcb
+Source head: e0e89a80dea6276e4cb961691f84404556a0403d
 
 Repository status:
+ M .github/evidence/dl-strategy-005-hardening-last-failure.txt
  M dataloom-api/src/commonMain/kotlin/io/dataloom/api/strategy/StrategyEvaluation.kt
  M dataloom-api/src/commonMain/kotlin/io/dataloom/api/strategy/StrategyExecutionPlan.kt
  M dataloom-api/src/commonMain/kotlin/io/dataloom/api/strategy/SynchronizationStrategyProfile.kt
+ M dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/queue/StrategyQueueExecutionOutcomeMapper.kt
  M dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/AcceptedStrategyPlanExecutionCoordinator.kt
+ M dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/BuiltInSynchronizationStrategyEvaluator.kt
  M dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/strategy/AcceptedStrategyPlanExecutionCoordinatorTest.kt
  M docs/audits/DL-039B-persisted-accepted-plan-execution-checkpoint.md
-?? .github/evidence/
 ?? .github/scripts/__pycache__/
 ?? dataloom-api/src/commonTest/kotlin/io/dataloom/api/strategy/StrategyExecutionPlanHardeningTest.kt
 
@@ -16,9 +18,15 @@ Repository status:
 
 ===== 01-patch.log head =====
 Applied accepted-plan replay hardening and adversarial tests.
+Applied exact replay-sequence, local reconciliation, and retry fail-closed hardening.
+Aligned reconciliation capability requirements with the implemented provider boundary.
+Prevented skipped accepted-plan replay from fabricating reconciliation evidence.
 
 ===== 01-patch.log tail =====
 Applied accepted-plan replay hardening and adversarial tests.
+Applied exact replay-sequence, local reconciliation, and retry fail-closed hardening.
+Aligned reconciliation capability requirements with the implemented provider boundary.
+Prevented skipped accepted-plan replay from fabricating reconciliation evidence.
 
 ===== 02-abi.log diagnostics =====
 
@@ -39,14 +47,14 @@ Calculating task graph as no cached configuration is available for tasks: update
 > Task :build-logic:processResources
 > Task :build-logic:classes
 > Task :build-logic:jar
-> Task :dataloom-api:kmpPartiallyResolvedDependenciesChecker
 > Task :dataloom-model:kmpPartiallyResolvedDependenciesChecker
-> Task :dataloom-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :dataloom-model:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-api:kmpPartiallyResolvedDependenciesChecker
 > Task :dataloom-model:jvmProcessResources NO-SOURCE
-> Task :dataloom-model:processJvmMainResources SKIPPED
+> Task :dataloom-model:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :dataloom-provider-api:kmpPartiallyResolvedDependenciesChecker
 > Task :dataloom-provider-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-model:processJvmMainResources SKIPPED
 > Task :dataloom-provider-api:jvmProcessResources NO-SOURCE
 > Task :dataloom-provider-api:processJvmMainResources SKIPPED
 > Task :dataloom-model:compileKotlinJvm FROM-CACHE
@@ -58,14 +66,14 @@ Calculating task graph as no cached configuration is available for tasks: update
 > Task :dataloom-provider-api:jvmMainClasses UP-TO-DATE
 > Task :dataloom-provider-api:jvmJar
 
-> Task :dataloom-api:downloadKotlinNativeDistribution
+> Task :dataloom-model:downloadKotlinNativeDistribution
 Kotlin/Native bundle directory /Users/runner/.konan/kotlin-native-prebuilt-macos-aarch64-2.4.10 is not empty. Native bundle files will be overwritten.
 
 > Task :dataloom-api:compileKotlinJvm
 > Task :dataloom-api:compileJvmMainJava NO-SOURCE
 > Task :dataloom-model:exportCrossCompilationMetadataForIosArm64ApiElements
 
-> Task :dataloom-model:downloadKotlinNativeDistribution
+> Task :dataloom-api:downloadKotlinNativeDistribution
 Downloading native dependencies (LLVM, sysroot etc). This is a one-time action performed only on the first run of the compiler.
 Downloading dependency https://download.jetbrains.com/kotlin/native/resources/llvm/21-aarch64-macos/llvm-21-aarch64-macos-essentials-97.tar.gz to /Users/runner/.konan/dependencies/cache/llvm-21-aarch64-macos-essentials-97.tar.gz
 Done.
@@ -78,58 +86,58 @@ Extracting dependency: /Users/runner/.konan/dependencies/cache/libffi-3.3-1-maco
 > Task :dataloom-provider-api:exportCrossCompilationMetadataForIosArm64ApiElements
 > Task :dataloom-model:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
 > Task :dataloom-provider-api:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
-> Task :dataloom-model:compileKotlinIosArm64 FROM-CACHE
-> Task :dataloom-model:compileKotlinIosSimulatorArm64 FROM-CACHE
-> Task :dataloom-provider-api:compileKotlinIosArm64 FROM-CACHE
-> Task :dataloom-provider-api:compileKotlinIosSimulatorArm64 FROM-CACHE
 > Task :dataloom-model:compileKotlinIosX64 FROM-CACHE
 > Task :dataloom-model:exportCrossCompilationMetadataForIosX64ApiElements
 > Task :dataloom-provider-api:compileKotlinIosX64 FROM-CACHE
 > Task :dataloom-provider-api:exportCrossCompilationMetadataForIosX64ApiElements
+> Task :dataloom-model:compileKotlinIosSimulatorArm64 FROM-CACHE
+> Task :dataloom-model:compileKotlinIosArm64 FROM-CACHE
+> Task :dataloom-provider-api:compileKotlinIosSimulatorArm64 FROM-CACHE
+> Task :dataloom-provider-api:compileKotlinIosArm64 FROM-CACHE
 > Task :dataloom-api:compileKotlinIosSimulatorArm64
-> Task :dataloom-api:compileKotlinIosX64
-> Task :dataloom-api:compileKotlinIosArm64
 > Task :dataloom-api:iosArm64ProcessResources NO-SOURCE
-> Task :dataloom-api:iosX64ProcessResources NO-SOURCE
 > Task :dataloom-api:iosSimulatorArm64ProcessResources NO-SOURCE
-> Task :dataloom-api:iosX64MainKlibrary
-> Task :dataloom-api:iosArm64MainKlibrary
-> Task :dataloom-api:jvmProcessResources NO-SOURCE
 > Task :dataloom-api:iosSimulatorArm64MainKlibrary
+> Task :dataloom-api:iosX64ProcessResources NO-SOURCE
+> Task :dataloom-api:jvmProcessResources NO-SOURCE
 > Task :dataloom-api:processJvmMainResources SKIPPED
 > Task :dataloom-api:jvmMainClasses
-> Task :dataloom-apple:kmpPartiallyResolvedDependenciesChecker
 > Task :dataloom-api:exportCrossCompilationMetadataForIosArm64ApiElements
+> Task :dataloom-api:compileKotlinIosArm64
+> Task :dataloom-api:iosArm64MainKlibrary
+> Task :dataloom-apple:kmpPartiallyResolvedDependenciesChecker
 > Task :dataloom-apple:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :dataloom-core:kmpPartiallyResolvedDependenciesChecker
 > Task :dataloom-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-api:compileKotlinIosX64
+> Task :dataloom-api:iosX64MainKlibrary
 > Task :dataloom-apple:downloadKotlinNativeDistribution
+> Task :dataloom-core:downloadKotlinNativeDistribution
 > Task :dataloom-core:exportCrossCompilationMetadataForIosArm64ApiElements
 > Task :dataloom-runtime:kmpPartiallyResolvedDependenciesChecker
 > Task :dataloom-runtime:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :dataloom-runtime:downloadKotlinNativeDistribution
 > Task :dataloom-runtime:exportCrossCompilationMetadataForIosArm64ApiElements
 > Task :dataloom-api:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
-> Task :dataloom-core:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
-> Task :dataloom-runtime:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
-> Task :dataloom-api:exportCrossCompilationMetadataForIosX64ApiElements
-> Task :dataloom-core:downloadKotlinNativeDistribution
-> Task :dataloom-core:exportCrossCompilationMetadataForIosX64ApiElements
 > Task :dataloom-core:compileKotlinIosArm64
 > Task :dataloom-core:compileKotlinIosSimulatorArm64
+> Task :dataloom-core:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
 > Task :dataloom-api:internalDumpKotlinAbi
 > Task :dataloom-api:updateKotlinAbi
+> Task :dataloom-runtime:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
+> Task :dataloom-api:exportCrossCompilationMetadataForIosX64ApiElements
 > Task :dataloom-core:compileKotlinIosX64
+> Task :dataloom-core:exportCrossCompilationMetadataForIosX64ApiElements
 > Task :dataloom-runtime:compileKotlinIosSimulatorArm64
 > Task :dataloom-runtime:compileKotlinIosArm64
-> Task :dataloom-apple:compileKotlinIosArm64
+> Task :dataloom-apple:compileKotlinIosSimulatorArm64
 > Task :dataloom-runtime:exportCrossCompilationMetadataForIosX64ApiElements
 > Task :dataloom-apple:iosArm64ProcessResources NO-SOURCE
-> Task :dataloom-apple:iosArm64MainKlibrary
 > Task :dataloom-apple:iosSimulatorArm64ProcessResources NO-SOURCE
-> Task :dataloom-apple:iosX64ProcessResources NO-SOURCE
-> Task :dataloom-apple:compileKotlinIosSimulatorArm64
 > Task :dataloom-apple:iosSimulatorArm64MainKlibrary
+> Task :dataloom-apple:iosX64ProcessResources NO-SOURCE
+> Task :dataloom-apple:compileKotlinIosArm64
+> Task :dataloom-apple:iosArm64MainKlibrary
 > Task :dataloom-core:iosArm64ProcessResources NO-SOURCE
 > Task :dataloom-core:iosArm64MainKlibrary
 > Task :dataloom-core:iosSimulatorArm64ProcessResources NO-SOURCE
@@ -181,14 +189,14 @@ Calculating task graph as no cached configuration is available for tasks: update
 > Task :build-logic:processResources
 > Task :build-logic:classes
 > Task :build-logic:jar
-> Task :dataloom-api:kmpPartiallyResolvedDependenciesChecker
 > Task :dataloom-model:kmpPartiallyResolvedDependenciesChecker
-> Task :dataloom-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :dataloom-model:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-api:kmpPartiallyResolvedDependenciesChecker
 > Task :dataloom-model:jvmProcessResources NO-SOURCE
-> Task :dataloom-model:processJvmMainResources SKIPPED
+> Task :dataloom-model:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :dataloom-provider-api:kmpPartiallyResolvedDependenciesChecker
 > Task :dataloom-provider-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-model:processJvmMainResources SKIPPED
 > Task :dataloom-provider-api:jvmProcessResources NO-SOURCE
 > Task :dataloom-provider-api:processJvmMainResources SKIPPED
 > Task :dataloom-model:compileKotlinJvm FROM-CACHE
@@ -200,14 +208,14 @@ Calculating task graph as no cached configuration is available for tasks: update
 > Task :dataloom-provider-api:jvmMainClasses UP-TO-DATE
 > Task :dataloom-provider-api:jvmJar
 
-> Task :dataloom-api:downloadKotlinNativeDistribution
+> Task :dataloom-model:downloadKotlinNativeDistribution
 Kotlin/Native bundle directory /Users/runner/.konan/kotlin-native-prebuilt-macos-aarch64-2.4.10 is not empty. Native bundle files will be overwritten.
 
 > Task :dataloom-api:compileKotlinJvm
 > Task :dataloom-api:compileJvmMainJava NO-SOURCE
 > Task :dataloom-model:exportCrossCompilationMetadataForIosArm64ApiElements
 
-> Task :dataloom-model:downloadKotlinNativeDistribution
+> Task :dataloom-api:downloadKotlinNativeDistribution
 Downloading native dependencies (LLVM, sysroot etc). This is a one-time action performed only on the first run of the compiler.
 Downloading dependency https://download.jetbrains.com/kotlin/native/resources/llvm/21-aarch64-macos/llvm-21-aarch64-macos-essentials-97.tar.gz to /Users/runner/.konan/dependencies/cache/llvm-21-aarch64-macos-essentials-97.tar.gz
 Done.
@@ -220,58 +228,58 @@ Extracting dependency: /Users/runner/.konan/dependencies/cache/libffi-3.3-1-maco
 > Task :dataloom-provider-api:exportCrossCompilationMetadataForIosArm64ApiElements
 > Task :dataloom-model:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
 > Task :dataloom-provider-api:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
-> Task :dataloom-model:compileKotlinIosArm64 FROM-CACHE
-> Task :dataloom-model:compileKotlinIosSimulatorArm64 FROM-CACHE
-> Task :dataloom-provider-api:compileKotlinIosArm64 FROM-CACHE
-> Task :dataloom-provider-api:compileKotlinIosSimulatorArm64 FROM-CACHE
 > Task :dataloom-model:compileKotlinIosX64 FROM-CACHE
 > Task :dataloom-model:exportCrossCompilationMetadataForIosX64ApiElements
 > Task :dataloom-provider-api:compileKotlinIosX64 FROM-CACHE
 > Task :dataloom-provider-api:exportCrossCompilationMetadataForIosX64ApiElements
+> Task :dataloom-model:compileKotlinIosSimulatorArm64 FROM-CACHE
+> Task :dataloom-model:compileKotlinIosArm64 FROM-CACHE
+> Task :dataloom-provider-api:compileKotlinIosSimulatorArm64 FROM-CACHE
+> Task :dataloom-provider-api:compileKotlinIosArm64 FROM-CACHE
 > Task :dataloom-api:compileKotlinIosSimulatorArm64
-> Task :dataloom-api:compileKotlinIosX64
-> Task :dataloom-api:compileKotlinIosArm64
 > Task :dataloom-api:iosArm64ProcessResources NO-SOURCE
-> Task :dataloom-api:iosX64ProcessResources NO-SOURCE
 > Task :dataloom-api:iosSimulatorArm64ProcessResources NO-SOURCE
-> Task :dataloom-api:iosX64MainKlibrary
-> Task :dataloom-api:iosArm64MainKlibrary
-> Task :dataloom-api:jvmProcessResources NO-SOURCE
 > Task :dataloom-api:iosSimulatorArm64MainKlibrary
+> Task :dataloom-api:iosX64ProcessResources NO-SOURCE
+> Task :dataloom-api:jvmProcessResources NO-SOURCE
 > Task :dataloom-api:processJvmMainResources SKIPPED
 > Task :dataloom-api:jvmMainClasses
-> Task :dataloom-apple:kmpPartiallyResolvedDependenciesChecker
 > Task :dataloom-api:exportCrossCompilationMetadataForIosArm64ApiElements
+> Task :dataloom-api:compileKotlinIosArm64
+> Task :dataloom-api:iosArm64MainKlibrary
+> Task :dataloom-apple:kmpPartiallyResolvedDependenciesChecker
 > Task :dataloom-apple:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :dataloom-core:kmpPartiallyResolvedDependenciesChecker
 > Task :dataloom-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-api:compileKotlinIosX64
+> Task :dataloom-api:iosX64MainKlibrary
 > Task :dataloom-apple:downloadKotlinNativeDistribution
+> Task :dataloom-core:downloadKotlinNativeDistribution
 > Task :dataloom-core:exportCrossCompilationMetadataForIosArm64ApiElements
 > Task :dataloom-runtime:kmpPartiallyResolvedDependenciesChecker
 > Task :dataloom-runtime:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :dataloom-runtime:downloadKotlinNativeDistribution
 > Task :dataloom-runtime:exportCrossCompilationMetadataForIosArm64ApiElements
 > Task :dataloom-api:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
-> Task :dataloom-core:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
-> Task :dataloom-runtime:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
-> Task :dataloom-api:exportCrossCompilationMetadataForIosX64ApiElements
-> Task :dataloom-core:downloadKotlinNativeDistribution
-> Task :dataloom-core:exportCrossCompilationMetadataForIosX64ApiElements
 > Task :dataloom-core:compileKotlinIosArm64
 > Task :dataloom-core:compileKotlinIosSimulatorArm64
+> Task :dataloom-core:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
 > Task :dataloom-api:internalDumpKotlinAbi
 > Task :dataloom-api:updateKotlinAbi
+> Task :dataloom-runtime:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
+> Task :dataloom-api:exportCrossCompilationMetadataForIosX64ApiElements
 > Task :dataloom-core:compileKotlinIosX64
+> Task :dataloom-core:exportCrossCompilationMetadataForIosX64ApiElements
 > Task :dataloom-runtime:compileKotlinIosSimulatorArm64
 > Task :dataloom-runtime:compileKotlinIosArm64
-> Task :dataloom-apple:compileKotlinIosArm64
+> Task :dataloom-apple:compileKotlinIosSimulatorArm64
 > Task :dataloom-runtime:exportCrossCompilationMetadataForIosX64ApiElements
 > Task :dataloom-apple:iosArm64ProcessResources NO-SOURCE
-> Task :dataloom-apple:iosArm64MainKlibrary
 > Task :dataloom-apple:iosSimulatorArm64ProcessResources NO-SOURCE
-> Task :dataloom-apple:iosX64ProcessResources NO-SOURCE
-> Task :dataloom-apple:compileKotlinIosSimulatorArm64
 > Task :dataloom-apple:iosSimulatorArm64MainKlibrary
+> Task :dataloom-apple:iosX64ProcessResources NO-SOURCE
+> Task :dataloom-apple:compileKotlinIosArm64
+> Task :dataloom-apple:iosArm64MainKlibrary
 > Task :dataloom-core:iosArm64ProcessResources NO-SOURCE
 > Task :dataloom-core:iosArm64MainKlibrary
 > Task :dataloom-core:iosSimulatorArm64ProcessResources NO-SOURCE
@@ -341,50 +349,70 @@ Extracting dependency: /Users/runner/.konan/dependencies/cache/libffi-3.3-1-maco
 > Task :dataloom-testing:jvmMainClasses
 > Task :dataloom-testing:internalDumpKotlinAbi
 > Task :dataloom-testing:updateKotlinAbi
-gradle/actions: Writing build results to /Users/runner/work/_temp/.gradle-actions/build-results/__run_4-1785843136866.json
+gradle/actions: Writing build results to /Users/runner/work/_temp/.gradle-actions/build-results/__run_4-1785844151763.json
 
-BUILD SUCCESSFUL in 1m 39s
+BUILD SUCCESSFUL in 1m 37s
 79 actionable tasks: 66 executed, 13 from cache
 Configuration cache entry stored.
 
 ===== 03-validate.log diagnostics =====
-151-> Task :dataloom-api:jvmTestProcessResources NO-SOURCE
-152-> Task :dataloom-api:processJvmTestResources SKIPPED
-153-> Task :dataloom-api:jvmTestClasses
-154-
-155-> Task :dataloom-api:jvmTest
-156-
-157:StrategyExecutionPlanHardeningTest[jvm] > exposedPlanAndProfileCollectionsCannotMutateInternalSnapshots()[jvm] FAILED
-158-    java.lang.UnsupportedOperationException at StrategyExecutionPlanHardeningTest.kt:91
-159-
-160-606 tests completed, 1 failed
-161-There were failing tests. See the report at: file:///Users/runner/work/dataloom/dataloom/dataloom-api/build/reports/tests/jvmTest/index.html
-162-
-163-> Task :dataloom-api:internalDumpKotlinAbi UP-TO-DATE
+750-> Task :dataloom-runtime:jvmTestProcessResources NO-SOURCE
+751-> Task :dataloom-runtime:processJvmTestResources SKIPPED
+752-> Task :dataloom-runtime:jvmTestClasses
+753-
+754-> Task :dataloom-runtime:jvmTest
+755-
+756:QueuedStrategyPlanCorrespondenceTest[jvm] > changedDroppedAndInventedPlansFailClosed()[jvm] FAILED
+757-    java.lang.IllegalArgumentException at QueuedStrategyPlanCorrespondenceTest.kt:122
+758-
+759:QueueSubmissionStrategyDecisionPreflightTest[jvm] > encoderCannotChangeDropOrInventStrategyPlan()[jvm] FAILED
+760-    java.lang.IllegalArgumentException at QueueSubmissionStrategyDecisionPreflightTest.kt:157
+761-
+762-1425 tests completed, 2 failed
+763-There were failing tests. See the report at: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/build/reports/tests/jvmTest/index.html
+764-
+765-> Task :dataloom-runtime:internalDumpKotlinAbi UP-TO-DATE
 --
-286-
-287-> Task :dataloom-apple:linkDebugFrameworkIosSimulatorArm64
-288-w: The number of threads 4 is more than the number of processors 3
-289-
-290-> Task :dataloom-apple:linkDebugFrameworkIosX64
-291-> Task :dataloom-apple:linkReleaseFrameworkIosArm64
-292:> Task :dataloom-api:allTests FAILED
-293-> Task :dataloom-apple:linkReleaseFrameworkIosSimulatorArm64
-294-gradle/actions: Writing build results to /Users/runner/work/_temp/.gradle-actions/build-results/__run_5-1785843236619.json
-295-
-296-FAILURE: Build failed with an exception.
-297-
-298-* What went wrong:
+867-> Task :dataloom-scheduler-workmanager:generateDebugUnitTestAssets UP-TO-DATE
+868-> Task :dataloom-scheduler-workmanager:mergeDebugUnitTestAssets
+869-> Task :dataloom-scheduler-workmanager:packageDebugUnitTestForUnitTest
+870-> Task :dataloom-scheduler-workmanager:generateDebugUnitTestConfig
+871-> Task :dataloom-scheduler-workmanager:processDebugUnitTestJavaRes
+872-
+873:io.dataloom.runtime.queue.QueuedStrategyPlanCorrespondenceTest.changedDroppedAndInventedPlansFailClosed[iosSimulatorArm64] FAILED
+874-    kotlin.IllegalArgumentException at /Users/runner/work/dataloom/dataloom/dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/queue/QueuedStrategyPlanCorrespondenceTest.kt:122
+875-
+876:io.dataloom.runtime.submission.QueueSubmissionStrategyDecisionPreflightTest.encoderCannotChangeDropOrInventStrategyPlan[iosSimulatorArm64] FAILED
+877-    kotlin.IllegalArgumentException at /Users/runner/work/dataloom/dataloom/dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/submission/QueueSubmissionStrategyDecisionPreflightTest.kt:157
+878-
+879-> Task :dataloom-runtime:iosSimulatorArm64Test
+880-
+881-1485 tests completed, 2 failed
+882-There were failing tests. See the report at: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/build/reports/tests/iosSimulatorArm64Test/index.html
 --
-441-	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:38)
-442-	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:68)
-443-	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:132)
-444-	... 30 more
-445-
-446-
-447:BUILD FAILED in 5m 56s
-448-159 actionable tasks: 107 executed, 2 from cache, 50 up-to-date
-449-Configuration cache entry stored.
+950-
+951-> Task :dataloom-testing:linkDebugTestIosSimulatorArm64
+952-w: The number of threads 4 is more than the number of processors 3
+953-
+954-> Task :dataloom-testing:iosSimulatorArm64Test
+955-> Task :dataloom-runtime:iosX64Test SKIPPED
+956:> Task :dataloom-runtime:allTests FAILED
+957-
+958-> Task :dataloom-testing:compileTestKotlinJvm
+959-Problem found: Kotlin compiler warning (id: kotlin:compiler:warning:compiler-warning)
+960-  Kotlin compiler warning
+961-    The corresponding parameter in the supertype 'Continuation' is named 'result'. This may cause problems when calling this function with named arguments.
+962-    Location: /Users/runner/work/dataloom/dataloom/dataloom-testing/src/commonTest/kotlin/io/dataloom/testing/queue/StrategyDecisionInMemoryQueueProviderTest.kt line 109
+--
+1114-	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:38)
+1115-	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:68)
+1116-	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:132)
+1117-	... 30 more
+1118-
+1119-
+1120:BUILD FAILED in 10m 56s
+1121-486 actionable tasks: 370 executed, 52 from cache, 64 up-to-date
+1122-Configuration cache entry stored.
 
 ===== 03-validate.log head =====
 Calculating task graph as no cached configuration is available for tasks: :build-logic:test build :runtime-external-consumer:checkRuntimeExternalConsumer :runtime-external-consumer:compileKotlinIosArm64 :runtime-external-consumer:compileKotlinIosSimulatorArm64 :runtime-external-consumer:compileKotlinIosX64 :dataloom-runtime:iosSimulatorArm64Test :dataloom-queue-room:assembleDebugAndroidTest :dataloom-queue-room:testDebugUnitTest :dataloom-apple:assembleDataLoomReleaseXCFramework checkKotlinAbi
@@ -393,12 +421,11 @@ Calculating task graph as no cached configuration is available for tasks: :build
 > Task :build-logic:processResources UP-TO-DATE
 > Task :build-logic:classes UP-TO-DATE
 > Task :build-logic:jar UP-TO-DATE
-> Task :build-logic:processTestResources NO-SOURCE
 > Task :build-logic:compileTestJava NO-SOURCE
-> Task :build-logic:testClasses UP-TO-DATE
-> Task :dataloom-model:kmpPartiallyResolvedDependenciesChecker
+> Task :build-logic:processTestResources NO-SOURCE
 > Task :dataloom-api:kmpPartiallyResolvedDependenciesChecker
 > Task :dataloom-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dataloom-model:kmpPartiallyResolvedDependenciesChecker
 > Task :dataloom-model:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :build-logic:pluginUnderTestMetadata
 > Task :dataloom-model:metadataCommonMainProcessResources NO-SOURCE
@@ -427,16 +454,16 @@ Calculating task graph as no cached configuration is available for tasks: :build
 > Task :dataloom-model:commonizeNativeDistribution
 > Task :dataloom-provider-api:commonizeNativeDistribution
 > Task :dataloom-api:commonizeNativeDistribution
-> Task :dataloom-api:metadataNativeMainProcessResources NO-SOURCE
 > Task :dataloom-api:metadataAppleMainProcessResources NO-SOURCE
+> Task :dataloom-api:metadataNativeMainProcessResources NO-SOURCE
 > Task :dataloom-model:compileNativeMainKotlinMetadata NO-SOURCE
 > Task :dataloom-model:metadataNativeMainClasses UP-TO-DATE
 > Task :dataloom-model:compileAppleMainKotlinMetadata NO-SOURCE
 > Task :dataloom-model:metadataAppleMainClasses UP-TO-DATE
 > Task :dataloom-model:compileIosMainKotlinMetadata NO-SOURCE
 > Task :dataloom-model:metadataIosMainClasses UP-TO-DATE
-> Task :dataloom-model:downloadKotlinNativeDistribution UP-TO-DATE
 > Task :dataloom-api:downloadKotlinNativeDistribution UP-TO-DATE
+> Task :dataloom-model:downloadKotlinNativeDistribution UP-TO-DATE
 > Task :dataloom-model:iosSimulatorArm64MetadataElements
 > Task :dataloom-model:iosArm64MetadataElements
 > Task :dataloom-model:iosX64MetadataElements
@@ -444,162 +471,163 @@ Calculating task graph as no cached configuration is available for tasks: :build
 > Task :dataloom-provider-api:downloadKotlinNativeDistribution UP-TO-DATE
 > Task :dataloom-provider-api:exportCrossCompilationMetadataForIosArm64ApiElements UP-TO-DATE
 > Task :dataloom-model:exportCommonSourceSetsMetadataLocationsForMetadataApiElements
+> Task :dataloom-model:compileKotlinIosSimulatorArm64 UP-TO-DATE
+> Task :dataloom-model:compileKotlinIosArm64 UP-TO-DATE
+> Task :dataloom-model:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements UP-TO-DATE
+> Task :dataloom-provider-api:compileKotlinIosArm64 UP-TO-DATE
+> Task :dataloom-provider-api:compileKotlinIosSimulatorArm64 UP-TO-DATE
+> Task :dataloom-provider-api:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements UP-TO-DATE
+> Task :dataloom-api:compileKotlinIosArm64 UP-TO-DATE
+> Task :dataloom-api:compileKotlinIosSimulatorArm64 UP-TO-DATE
+> Task :dataloom-model:exportCrossCompilationMetadataForIosX64ApiElements UP-TO-DATE
+> Task :dataloom-provider-api:exportCrossCompilationMetadataForIosX64ApiElements UP-TO-DATE
 > Task :dataloom-provider-api:transformCommonMainDependenciesMetadata
+> Task :dataloom-api:iosArm64ProcessResources NO-SOURCE
 > Task :dataloom-provider-api:compileCommonMainKotlinMetadata FROM-CACHE
 > Task :dataloom-provider-api:metadataCommonMainClasses UP-TO-DATE
-> Task :dataloom-provider-api:allMetadataJar
-> Task :dataloom-model:compileKotlinIosSimulatorArm64 UP-TO-DATE
-> Task :dataloom-model:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements UP-TO-DATE
 > Task :dataloom-provider-api:transformNativeMainDependenciesMetadata
 > Task :dataloom-provider-api:compileNativeMainKotlinMetadata NO-SOURCE
 > Task :dataloom-provider-api:metadataNativeMainClasses UP-TO-DATE
-> Task :dataloom-provider-api:compileKotlinIosSimulatorArm64 UP-TO-DATE
-> Task :dataloom-provider-api:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements UP-TO-DATE
+> Task :dataloom-provider-api:allMetadataJar
+> Task :dataloom-api:iosArm64MainKlibrary UP-TO-DATE
 > Task :dataloom-provider-api:transformAppleMainDependenciesMetadata
-> Task :dataloom-model:compileKotlinIosArm64 UP-TO-DATE
 > Task :dataloom-provider-api:compileAppleMainKotlinMetadata NO-SOURCE
 > Task :dataloom-provider-api:metadataAppleMainClasses UP-TO-DATE
-> Task :dataloom-api:compileKotlinIosSimulatorArm64 UP-TO-DATE
-> Task :dataloom-provider-api:compileKotlinIosArm64 UP-TO-DATE
 > Task :dataloom-provider-api:transformIosMainDependenciesMetadata
 > Task :dataloom-provider-api:compileIosMainKotlinMetadata NO-SOURCE
 > Task :dataloom-provider-api:metadataIosMainClasses UP-TO-DATE
-> Task :dataloom-api:compileKotlinIosArm64 UP-TO-DATE
 > Task :dataloom-provider-api:exportCommonSourceSetsMetadataLocationsForMetadataApiElements
 > Task :dataloom-provider-api:iosArm64MetadataElements
-> Task :dataloom-provider-api:iosX64MetadataElements
 > Task :dataloom-provider-api:iosSimulatorArm64MetadataElements
-> Task :dataloom-model:exportCrossCompilationMetadataForIosX64ApiElements UP-TO-DATE
-> Task :dataloom-provider-api:exportCrossCompilationMetadataForIosX64ApiElements UP-TO-DATE
-> Task :dataloom-api:iosArm64ProcessResources NO-SOURCE
-> Task :dataloom-api:iosArm64MainKlibrary UP-TO-DATE
-> Task :dataloom-api:transformCommonMainDependenciesMetadata
+> Task :dataloom-provider-api:iosX64MetadataElements
 > Task :dataloom-model:compileKotlinIosX64 UP-TO-DATE
-> Task :dataloom-api:transformNativeMainDependenciesMetadata
-> Task :dataloom-api:transformAppleMainDependenciesMetadata
-> Task :dataloom-api:transformIosMainDependenciesMetadata
 > Task :dataloom-provider-api:compileKotlinIosX64 UP-TO-DATE
 > Task :dataloom-api:compileKotlinIosX64 UP-TO-DATE
 > Task :dataloom-api:iosSimulatorArm64ProcessResources NO-SOURCE
 > Task :dataloom-api:iosSimulatorArm64MainKlibrary UP-TO-DATE
+> Task :dataloom-api:transformCommonMainDependenciesMetadata
+> Task :build-logic:testClasses UP-TO-DATE
 > Task :build-logic:test NO-SOURCE
 > Task :dataloom-api:compileCommonMainKotlinMetadata
 > Task :dataloom-api:metadataCommonMainClasses
 > Task :dataloom-api:allMetadataJar
+> Task :dataloom-api:transformNativeMainDependenciesMetadata
 > Task :dataloom-api:compileNativeMainKotlinMetadata NO-SOURCE
 > Task :dataloom-api:metadataNativeMainClasses UP-TO-DATE
+> Task :dataloom-api:transformAppleMainDependenciesMetadata
 > Task :dataloom-api:compileAppleMainKotlinMetadata NO-SOURCE
 > Task :dataloom-api:metadataAppleMainClasses UP-TO-DATE
+> Task :dataloom-api:transformIosMainDependenciesMetadata
 > Task :dataloom-api:compileIosMainKotlinMetadata NO-SOURCE
 > Task :dataloom-api:iosX64ProcessResources NO-SOURCE
 > Task :dataloom-api:iosX64MainKlibrary UP-TO-DATE
-> Task :dataloom-api:compileTestKotlinIosArm64
+> Task :dataloom-api:compileTestKotlinIosSimulatorArm64
 > Task :dataloom-api:metadataIosMainProcessResources NO-SOURCE
 > Task :dataloom-api:metadataIosMainClasses UP-TO-DATE
+> Task :dataloom-api:compileTestKotlinIosArm64
 > Task :dataloom-api:iosArm64MetadataElements
-> Task :dataloom-api:iosSimulatorArm64MetadataElements
 > Task :dataloom-api:iosX64MetadataElements
-> Task :dataloom-api:compileTestKotlinIosSimulatorArm64
+> Task :dataloom-api:iosSimulatorArm64MetadataElements
 > Task :dataloom-model:jvmProcessResources NO-SOURCE
 > Task :dataloom-model:processJvmMainResources SKIPPED
-> Task :dataloom-provider-api:jvmProcessResources NO-SOURCE
 > Task :dataloom-model:compileKotlinJvm UP-TO-DATE
+> Task :dataloom-provider-api:jvmProcessResources NO-SOURCE
 > Task :dataloom-provider-api:processJvmMainResources SKIPPED
 > Task :dataloom-api:jvmProcessResources NO-SOURCE
 > Task :dataloom-api:processJvmMainResources SKIPPED
 > Task :dataloom-model:compileJvmMainJava NO-SOURCE
 > Task :dataloom-model:jvmMainClasses UP-TO-DATE
-> Task :dataloom-model:jvmJar UP-TO-DATE
 > Task :dataloom-api:computeLocalPackageDependencyInputFiles
-> Task :dataloom-provider-api:compileKotlinJvm UP-TO-DATE
 > Task :dataloom-api:generateSyntheticLinkageSwiftPMImportProjectForCinteropsAndLdDump SKIPPED
+> Task :dataloom-model:jvmJar UP-TO-DATE
+> Task :dataloom-provider-api:compileKotlinJvm UP-TO-DATE
+> Task :dataloom-api:serializeSwiftPMDependenciesMetadataForLockFiles
 > Task :dataloom-provider-api:compileJvmMainJava NO-SOURCE
 > Task :dataloom-provider-api:jvmMainClasses UP-TO-DATE
+> Task :dataloom-apple:serializeSwiftPMDependenciesMetadataForLockFiles
+> Task :dataloom-core:serializeSwiftPMDependenciesMetadataForLockFiles
 > Task :dataloom-provider-api:jvmJar UP-TO-DATE
-> Task :dataloom-api:serializeSwiftPMDependenciesMetadataForLockFiles
+> Task :dataloom-model:serializeSwiftPMDependenciesMetadataForLockFiles
+> Task :dataloom-provider-api:serializeSwiftPMDependenciesMetadataForLockFiles
 > Task :dataloom-api:compileKotlinJvm UP-TO-DATE
 > Task :dataloom-api:compileJvmMainJava NO-SOURCE
 > Task :dataloom-api:jvmMainClasses UP-TO-DATE
-> Task :dataloom-api:jvmJar UP-TO-DATE
-> Task :dataloom-apple:serializeSwiftPMDependenciesMetadataForLockFiles
-> Task :dataloom-model:serializeSwiftPMDependenciesMetadataForLockFiles
-> Task :dataloom-core:serializeSwiftPMDependenciesMetadataForLockFiles
-> Task :dataloom-provider-api:serializeSwiftPMDependenciesMetadataForLockFiles
 > Task :dataloom-runtime:serializeSwiftPMDependenciesMetadataForLockFiles
+> Task :dataloom-api:jvmJar UP-TO-DATE
 > Task :dataloom-testing:serializeSwiftPMDependenciesMetadataForLockFiles
 
 ===== 03-validate.log tail =====
-> Task :dataloom-apple:compileNativeMainKotlinMetadata NO-SOURCE
-> Task :dataloom-apple:metadataNativeMainProcessResources NO-SOURCE
-> Task :dataloom-apple:metadataNativeMainClasses UP-TO-DATE
-> Task :dataloom-apple:transformAppleMainDependenciesMetadata
-> Task :dataloom-apple:compileAppleMainKotlinMetadata NO-SOURCE
-> Task :dataloom-apple:metadataAppleMainProcessResources NO-SOURCE
-> Task :dataloom-apple:metadataAppleMainClasses UP-TO-DATE
-> Task :dataloom-apple:transformIosMainDependenciesMetadata
-> Task :dataloom-apple:compileIosMainKotlinMetadata NO-SOURCE
-> Task :dataloom-api:exportCrossCompilationMetadataForIosArm64ApiElements UP-TO-DATE
-> Task :dataloom-apple:downloadKotlinNativeDistribution UP-TO-DATE
-> Task :dataloom-core:downloadKotlinNativeDistribution UP-TO-DATE
-> Task :dataloom-core:compileKotlinIosArm64 UP-TO-DATE
-> Task :dataloom-core:exportCrossCompilationMetadataForIosArm64ApiElements UP-TO-DATE
-> Task :dataloom-runtime:downloadKotlinNativeDistribution UP-TO-DATE
-> Task :dataloom-runtime:compileKotlinIosArm64 UP-TO-DATE
-> Task :dataloom-runtime:exportCrossCompilationMetadataForIosArm64ApiElements UP-TO-DATE
-> Task :dataloom-apple:compileKotlinIosArm64 UP-TO-DATE
-> Task :dataloom-api:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements UP-TO-DATE
-> Task :dataloom-core:compileKotlinIosSimulatorArm64 UP-TO-DATE
-> Task :dataloom-core:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements UP-TO-DATE
-> Task :dataloom-runtime:compileKotlinIosSimulatorArm64 UP-TO-DATE
-> Task :dataloom-runtime:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements UP-TO-DATE
-> Task :dataloom-apple:compileKotlinIosSimulatorArm64 UP-TO-DATE
-> Task :dataloom-api:exportCrossCompilationMetadataForIosX64ApiElements UP-TO-DATE
-> Task :dataloom-core:compileKotlinIosX64 UP-TO-DATE
-> Task :dataloom-core:exportCrossCompilationMetadataForIosX64ApiElements UP-TO-DATE
-> Task :dataloom-runtime:compileKotlinIosX64 UP-TO-DATE
-> Task :dataloom-runtime:exportCrossCompilationMetadataForIosX64ApiElements UP-TO-DATE
-> Task :dataloom-apple:compileKotlinIosX64 UP-TO-DATE
-> Task :dataloom-apple:iosArm64ProcessResources NO-SOURCE
-> Task :dataloom-apple:iosArm64MainKlibrary UP-TO-DATE
-> Task :dataloom-apple:compileTestKotlinIosArm64 NO-SOURCE
-> Task :dataloom-apple:iosSimulatorArm64ProcessResources NO-SOURCE
-> Task :dataloom-apple:iosSimulatorArm64MainKlibrary UP-TO-DATE
-> Task :dataloom-apple:compileTestKotlinIosSimulatorArm64 NO-SOURCE
-> Task :dataloom-apple:iosX64ProcessResources NO-SOURCE
-> Task :dataloom-apple:iosX64MainKlibrary UP-TO-DATE
-> Task :dataloom-apple:compileTestKotlinIosX64 NO-SOURCE
-> Task :dataloom-apple:metadataIosMainProcessResources NO-SOURCE
-> Task :dataloom-apple:metadataIosMainClasses UP-TO-DATE
-> Task :dataloom-apple:iosArm64MetadataElements
-> Task :dataloom-apple:iosSimulatorArm64MetadataElements
-> Task :dataloom-apple:iosX64MetadataElements
-> Task :dataloom-api:linkDebugTestIosX64
+> Task :dataloom-testing:compileIosMainKotlinMetadata NO-SOURCE
+> Task :dataloom-testing:downloadKotlinNativeDistribution UP-TO-DATE
+> Task :dataloom-testing:compileKotlinIosArm64 UP-TO-DATE
+> Task :dataloom-testing:compileKotlinIosSimulatorArm64 UP-TO-DATE
+> Task :dataloom-testing:compileKotlinIosX64 UP-TO-DATE
+> Task :dataloom-testing:iosArm64ProcessResources NO-SOURCE
+> Task :dataloom-testing:iosArm64MainKlibrary UP-TO-DATE
+> Task :dataloom-scheduler-workmanager:testDebugUnitTest
+> Task :dataloom-scheduler-workmanager:test
+> Task :dataloom-scheduler-workmanager:check
+> Task :dataloom-scheduler-workmanager:build
+> Task :dataloom-testing:iosSimulatorArm64ProcessResources NO-SOURCE
+> Task :dataloom-testing:iosSimulatorArm64MainKlibrary UP-TO-DATE
 
-> Task :dataloom-api:linkDebugTestIosSimulatorArm64
+> Task :dataloom-testing:compileTestKotlinIosArm64
+w: file:///Users/runner/work/dataloom/dataloom/dataloom-testing/src/commonTest/kotlin/io/dataloom/testing/queue/StrategyDecisionInMemoryQueueProviderTest.kt:109:41 The corresponding parameter in the supertype 'Continuation' is named 'result'. This may cause problems when calling this function with named arguments.
+w: file:///Users/runner/work/dataloom/dataloom/dataloom-testing/src/commonTest/kotlin/io/dataloom/testing/queue/StrategyPlanInMemoryQueueProviderTest.kt:104:41 The corresponding parameter in the supertype 'Continuation' is named 'result'. This may cause problems when calling this function with named arguments.
+
+> Task :dataloom-testing:iosX64ProcessResources NO-SOURCE
+> Task :dataloom-testing:iosX64MainKlibrary UP-TO-DATE
+
+> Task :dataloom-testing:compileTestKotlinIosSimulatorArm64
+w: file:///Users/runner/work/dataloom/dataloom/dataloom-testing/src/commonTest/kotlin/io/dataloom/testing/queue/StrategyDecisionInMemoryQueueProviderTest.kt:109:41 The corresponding parameter in the supertype 'Continuation' is named 'result'. This may cause problems when calling this function with named arguments.
+w: file:///Users/runner/work/dataloom/dataloom/dataloom-testing/src/commonTest/kotlin/io/dataloom/testing/queue/StrategyPlanInMemoryQueueProviderTest.kt:104:41 The corresponding parameter in the supertype 'Continuation' is named 'result'. This may cause problems when calling this function with named arguments.
+
+> Task :dataloom-testing:metadataIosMainProcessResources NO-SOURCE
+> Task :dataloom-testing:metadataIosMainClasses UP-TO-DATE
+> Task :dataloom-testing:iosArm64MetadataElements
+> Task :dataloom-testing:iosSimulatorArm64MetadataElements
+> Task :dataloom-testing:iosX64MetadataElements
+> Task :dataloom-testing:compileKotlinJvm UP-TO-DATE
+> Task :dataloom-testing:compileJvmMainJava NO-SOURCE
+> Task :dataloom-testing:jvmProcessResources NO-SOURCE
+> Task :dataloom-testing:processJvmMainResources SKIPPED
+> Task :dataloom-testing:jvmMainClasses UP-TO-DATE
+> Task :dataloom-testing:jvmJar
+> Task :dataloom-testing:computeLocalPackageDependencyInputFiles
+> Task :dataloom-testing:generateSyntheticLinkageSwiftPMImportProjectForCinteropsAndLdDump SKIPPED
+> Task :dataloom-testing:syncPersistedPackageResolvedToSynthetic SKIPPED
+> Task :dataloom-testing:fetchSyntheticImportProjectPackages SKIPPED
+> Task :dataloom-testing:convertSyntheticImportProjectIntoDefFileIphonesimulator
+
+> Task :dataloom-testing:compileTestKotlinIosX64
+w: file:///Users/runner/work/dataloom/dataloom/dataloom-testing/src/commonTest/kotlin/io/dataloom/testing/queue/StrategyDecisionInMemoryQueueProviderTest.kt:109:41 The corresponding parameter in the supertype 'Continuation' is named 'result'. This may cause problems when calling this function with named arguments.
+w: file:///Users/runner/work/dataloom/dataloom/dataloom-testing/src/commonTest/kotlin/io/dataloom/testing/queue/StrategyPlanInMemoryQueueProviderTest.kt:104:41 The corresponding parameter in the supertype 'Continuation' is named 'result'. This may cause problems when calling this function with named arguments.
+
+> Task :dataloom-testing:assemble
+
+> Task :dataloom-testing:linkDebugTestIosSimulatorArm64
 w: The number of threads 4 is more than the number of processors 3
 
-> Task :dataloom-api:iosX64Test SKIPPED
-> Task :dataloom-apple:linkDebugFrameworkIosArm64
-> Task :dataloom-api:iosSimulatorArm64Test
-> Task :dataloom-apple:linkDebugFrameworkIosSimulatorArm64
+> Task :dataloom-testing:iosSimulatorArm64Test
+> Task :dataloom-runtime:iosX64Test SKIPPED
+> Task :dataloom-runtime:allTests FAILED
 
-> Task :dataloom-apple:linkDebugFrameworkIosArm64
-w: The number of threads 4 is more than the number of processors 3
+> Task :dataloom-testing:compileTestKotlinJvm
+Problem found: Kotlin compiler warning (id: kotlin:compiler:warning:compiler-warning)
+  Kotlin compiler warning
+    The corresponding parameter in the supertype 'Continuation' is named 'result'. This may cause problems when calling this function with named arguments.
+    Location: /Users/runner/work/dataloom/dataloom/dataloom-testing/src/commonTest/kotlin/io/dataloom/testing/queue/StrategyDecisionInMemoryQueueProviderTest.kt line 109
 
-> Task :dataloom-apple:linkDebugFrameworkIosSimulatorArm64
-w: The number of threads 4 is more than the number of processors 3
+> Task :dataloom-testing:linkDebugTestIosX64
+gradle/actions: Writing build results to /Users/runner/work/_temp/.gradle-actions/build-results/__run_5-1785844249558.json
 
-> Task :dataloom-apple:linkDebugFrameworkIosX64
-> Task :dataloom-apple:linkReleaseFrameworkIosArm64
-> Task :dataloom-api:allTests FAILED
-> Task :dataloom-apple:linkReleaseFrameworkIosSimulatorArm64
-gradle/actions: Writing build results to /Users/runner/work/_temp/.gradle-actions/build-results/__run_5-1785843236619.json
+[Incubating] Problems report is available at: file:///Users/runner/work/dataloom/dataloom/build/reports/problems/problems-report.html
 
 FAILURE: Build failed with an exception.
 
 * What went wrong:
-Execution failed for task ':dataloom-api:allTests' (registered by plugin 'io.dataloom.kotlin.multiplatform-library').
-> There were failing tests. See the report at: file:///Users/runner/work/dataloom/dataloom/dataloom-api/build/reports/tests/allTests/index.html
+Execution failed for task ':dataloom-runtime:allTests' (registered by plugin 'io.dataloom.kotlin.multiplatform-library').
+> There were failing tests. See the report at: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/build/reports/tests/allTests/index.html
 
 * Try:
 > Run with --info or --debug option to get more log output.
@@ -607,7 +635,7 @@ Execution failed for task ':dataloom-api:allTests' (registered by plugin 'io.dat
 > Get more help at https://help.gradle.org.
 
 * Exception is:
-org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':dataloom-api:allTests' (registered by plugin 'io.dataloom.kotlin.multiplatform-library').
+org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':dataloom-runtime:allTests' (registered by plugin 'io.dataloom.kotlin.multiplatform-library').
 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.lambda$executeIfValid$1(ExecuteActionsTaskExecuter.java:135)
 	at org.gradle.internal.Try$Failure.ifSuccessfulOrElse(Try.java:288)
 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:133)
@@ -641,7 +669,7 @@ org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':dataloo
 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
-Caused by: org.gradle.api.GradleException: There were failing tests. See the report at: file:///Users/runner/work/dataloom/dataloom/dataloom-api/build/reports/tests/allTests/index.html
+Caused by: org.gradle.api.GradleException: There were failing tests. See the report at: file:///Users/runner/work/dataloom/dataloom/dataloom-runtime/build/reports/tests/allTests/index.html
 	at org.jetbrains.kotlin.gradle.testing.internal.KotlinTestReport.checkFailedTests(KotlinTestReport.kt:152)
 	at org.gradle.internal.reflect.JavaMethod.invoke(JavaMethod.java:125)
 	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.doExecute(StandardTaskAction.java:58)
@@ -746,6 +774,6 @@ Caused by: org.gradle.api.GradleException: There were failing tests. See the rep
 	... 30 more
 
 
-BUILD FAILED in 5m 56s
-159 actionable tasks: 107 executed, 2 from cache, 50 up-to-date
+BUILD FAILED in 10m 56s
+486 actionable tasks: 370 executed, 52 from cache, 64 up-to-date
 Configuration cache entry stored.
