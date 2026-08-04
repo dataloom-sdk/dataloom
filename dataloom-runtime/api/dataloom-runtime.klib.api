@@ -3382,7 +3382,7 @@ final class io.dataloom.runtime.queue/QueueProcessingSummary { // io.dataloom.ru
 }
 
 final class io.dataloom.runtime.queue/QueuedSynchronizationWork { // io.dataloom.runtime.queue/QueuedSynchronizationWork|null[0]
-    constructor <init>(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.provider/SynchronizationProviderBindings, io.dataloom.api.strategy/PersistedStrategyDecision? = ...) // io.dataloom.runtime.queue/QueuedSynchronizationWork.<init>|<init>(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.provider.SynchronizationProviderBindings;io.dataloom.api.strategy.PersistedStrategyDecision?){}[0]
+    constructor <init>(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.provider/SynchronizationProviderBindings, io.dataloom.api.strategy/PersistedStrategyDecision? = ..., io.dataloom.api.strategy/StrategyExecutionPlan? = ...) // io.dataloom.runtime.queue/QueuedSynchronizationWork.<init>|<init>(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.provider.SynchronizationProviderBindings;io.dataloom.api.strategy.PersistedStrategyDecision?;io.dataloom.api.strategy.StrategyExecutionPlan?){}[0]
 
     final val bindings // io.dataloom.runtime.queue/QueuedSynchronizationWork.bindings|{}bindings[0]
         final fun <get-bindings>(): io.dataloom.api.provider/SynchronizationProviderBindings // io.dataloom.runtime.queue/QueuedSynchronizationWork.bindings.<get-bindings>|<get-bindings>(){}[0]
@@ -3390,6 +3390,8 @@ final class io.dataloom.runtime.queue/QueuedSynchronizationWork { // io.dataloom
         final fun <get-request>(): io.dataloom.api.model/SynchronizationRequest // io.dataloom.runtime.queue/QueuedSynchronizationWork.request.<get-request>|<get-request>(){}[0]
     final val strategyDecision // io.dataloom.runtime.queue/QueuedSynchronizationWork.strategyDecision|{}strategyDecision[0]
         final fun <get-strategyDecision>(): io.dataloom.api.strategy/PersistedStrategyDecision? // io.dataloom.runtime.queue/QueuedSynchronizationWork.strategyDecision.<get-strategyDecision>|<get-strategyDecision>(){}[0]
+    final val strategyPlan // io.dataloom.runtime.queue/QueuedSynchronizationWork.strategyPlan|{}strategyPlan[0]
+        final fun <get-strategyPlan>(): io.dataloom.api.strategy/StrategyExecutionPlan? // io.dataloom.runtime.queue/QueuedSynchronizationWork.strategyPlan.<get-strategyPlan>|<get-strategyPlan>(){}[0]
 
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.queue/QueuedSynchronizationWork.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.runtime.queue/QueuedSynchronizationWork.hashCode|hashCode(){}[0]

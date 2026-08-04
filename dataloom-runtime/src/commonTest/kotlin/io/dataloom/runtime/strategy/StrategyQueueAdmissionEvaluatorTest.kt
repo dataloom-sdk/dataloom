@@ -9,6 +9,7 @@ import io.dataloom.api.strategy.StrategyDataOrigin
 import io.dataloom.api.strategy.StrategyDecisionId
 import io.dataloom.api.strategy.StrategyDeferralReason
 import io.dataloom.api.strategy.StrategyDisposition
+import io.dataloom.api.strategy.StrategyDurableContinuationPlan
 import io.dataloom.api.strategy.StrategyEvaluationResult
 import io.dataloom.api.strategy.StrategyExecutionPlan
 import io.dataloom.api.strategy.StrategyOperation
@@ -130,6 +131,26 @@ class StrategyQueueAdmissionEvaluatorTest {
     }
 
     @Test
+    fun planWithoutDurableContinuationIsRejected() {
+        val plan = plan(
+            disposition = StrategyDisposition.DEFER,
+            operations = listOf(StrategyOperation.ENQUEUE_DURABLE_WORK),
+            capabilities = setOf(StrategyProviderCapability.QUEUE),
+            deferralReason = StrategyDeferralReason.CONNECTIVITY_UNAVAILABLE,
+            includeContinuation = false,
+        )
+
+        val rejected = assertIs<StrategyQueueAdmissionResult.Rejected>(
+            StrategyQueueAdmissionEvaluator.evaluate(evaluation(plan)),
+        )
+
+        assertEquals(
+            StrategyQueueAdmissionRejectionReason.MISSING_DURABLE_CONTINUATION,
+            rejected.reason,
+        )
+    }
+
+    @Test
     fun queueOperationWithoutQueueCapabilityIsRejected() {
         val plan = plan(
             disposition = StrategyDisposition.EXECUTE,
@@ -168,6 +189,7 @@ class StrategyQueueAdmissionEvaluatorTest {
         dataOrigin: StrategyDataOrigin = StrategyDataOrigin.LOCAL,
         deferralReason: StrategyDeferralReason? = null,
         rejectionReason: StrategyRejectionReason? = null,
+        includeContinuation: Boolean = true,
     ): StrategyExecutionPlan = StrategyExecutionPlan(
         id = StrategyPlanId("plan-1"),
         requestedStrategy = requestedStrategy,
@@ -183,5 +205,18 @@ class StrategyQueueAdmissionEvaluatorTest {
         consistency = StrategyConsistency.READ_YOUR_WRITES,
         deferralReason = deferralReason,
         rejectionReason = rejectionReason,
+        durableContinuation = if (
+            includeContinuation &&
+            StrategyOperation.ENQUEUE_DURABLE_WORK in operations
+        ) {
+            StrategyDurableContinuationPlan(
+                operations = listOf(StrategyOperation.PUSH_REMOTE),
+                requiredCapabilities = setOf(StrategyProviderCapability.TRANSPORT),
+                dataOrigin = StrategyDataOrigin.NONE,
+                consistency = StrategyConsistency.READ_YOUR_WRITES,
+            )
+        } else {
+            null
+        },
     )
 }

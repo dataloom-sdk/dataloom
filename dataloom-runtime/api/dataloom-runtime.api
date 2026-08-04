@@ -1477,12 +1477,13 @@ public final class io/dataloom/runtime/queue/QueueProcessingSummary {
 }
 
 public final class io/dataloom/runtime/queue/QueuedSynchronizationWork {
-	public fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/provider/SynchronizationProviderBindings;Lio/dataloom/api/strategy/PersistedStrategyDecision;)V
-	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/provider/SynchronizationProviderBindings;Lio/dataloom/api/strategy/PersistedStrategyDecision;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/provider/SynchronizationProviderBindings;Lio/dataloom/api/strategy/PersistedStrategyDecision;Lio/dataloom/api/strategy/StrategyExecutionPlan;)V
+	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/provider/SynchronizationProviderBindings;Lio/dataloom/api/strategy/PersistedStrategyDecision;Lio/dataloom/api/strategy/StrategyExecutionPlan;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getBindings ()Lio/dataloom/api/provider/SynchronizationProviderBindings;
 	public final fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
 	public final fun getStrategyDecision ()Lio/dataloom/api/strategy/PersistedStrategyDecision;
+	public final fun getStrategyPlan ()Lio/dataloom/api/strategy/StrategyExecutionPlan;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }

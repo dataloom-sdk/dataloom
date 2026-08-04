@@ -8,6 +8,8 @@ import io.dataloom.api.retry.RetryAttempt
 import io.dataloom.api.retry.RetryBudgetState
 import io.dataloom.api.retry.WorkflowTimeoutState
 import io.dataloom.api.strategy.PersistedStrategyDecision
+import io.dataloom.api.strategy.StrategyExecutionPlan
+import io.dataloom.api.strategy.correspondsTo
 import io.dataloom.api.time.DataLoomInstant
 
 /**
@@ -50,6 +52,9 @@ public data class QueueEntry(
 
     /** Immutable strategy identity accepted before durable queue admission. */
     public val strategyDecision: PersistedStrategyDecision? = null,
+
+    /** Complete immutable accepted plan used for later durable replay. */
+    public val strategyPlan: StrategyExecutionPlan? = null,
 ) {
     init {
         require(availableAt.epochMilliseconds >= enqueuedAt.epochMilliseconds) {
@@ -74,6 +79,21 @@ public data class QueueEntry(
         require(retryBudgetState == null || retryAttempt != null) {
             "QueueEntry retryBudgetState requires a non-null retryAttempt."
         }
+        require(strategyPlan == null || strategyDecision != null) {
+            "QueueEntry strategyPlan requires a non-null strategyDecision."
+        }
+        require(strategyPlan == null || strategyDecision?.correspondsTo(strategyPlan) == true) {
+            "QueueEntry strategyPlan must match the durable strategy decision."
+        }
+        require(strategyPlan == null || strategyPlan.direction == synchronizationRequest.direction) {
+            "QueueEntry strategyPlan direction must match the synchronization request."
+        }
+        require(strategyPlan == null || strategyPlan.mode == synchronizationRequest.mode) {
+            "QueueEntry strategyPlan mode must match the synchronization request."
+        }
+        require(strategyPlan == null || strategyPlan.durableContinuation != null) {
+            "QueueEntry strategyPlan requires an immutable durable continuation."
+        }
     }
 
     /** Bounded diagnostic output that excludes identifiers, metadata, and errors. */
@@ -88,5 +108,6 @@ public data class QueueEntry(
             "hasLastError=${lastError != null}, " +
             "metadataEntryCount=${metadata.entries.size}, " +
             "hasWorkflowTimeoutState=${workflowTimeoutState != null}, " +
-            "hasStrategyDecision=${strategyDecision != null})"
+            "hasStrategyDecision=${strategyDecision != null}, " +
+            "hasStrategyPlan=${strategyPlan != null})"
 }

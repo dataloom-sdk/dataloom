@@ -179,10 +179,16 @@ provider-protected queued handlers require the application resolver to return
 the exact durable decision before timeout, clock, coordinator, provider, or
 retry activity.
 
-The next execution gate must reconstruct or load the immutable accepted plan
-from this identity. It must not re-evaluate current policy after retry, restart,
-or platform rescheduling. An authorized migration is required to replace an
-accepted plan.
+Every built-in plan that admits durable work now freezes a
+`StrategyDurableContinuationPlan`: exact ordered operations, required
+capabilities, origin, consistency, evaluated cache state, and finite fallback
+branch. `StrategyExecutionPlanCodec` provides a bounded deterministic V1 frame.
+
+Queue encoders and work resolvers must preserve both the exact decision and the
+complete plan. Changed, dropped, or invented plan evidence fails before timeout,
+clock, provider, circuit, retry, or coordinator work. Platform stores and the
+accepted-plan execution coordinator are the next integration boundary; they
+must never re-evaluate current policy after retry, restart, or rescheduling.
 
 ## Current integration boundary
 
