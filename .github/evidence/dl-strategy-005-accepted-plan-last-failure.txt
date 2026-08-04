@@ -1,0 +1,30 @@
+DL-039B persisted accepted-plan execution evidence failed.
+Source head: b22472ac7a79bfb5762af38e987d5747eb502653
+
+Repository status:
+ M dataloom-queue-room/src/main/kotlin/io/dataloom/queue/room/DataLoomRoomMigrations.kt
+ M dataloom-queue-room/src/main/kotlin/io/dataloom/queue/room/internal/DataLoomRoomDatabase.kt
+ M dataloom-queue-room/src/main/kotlin/io/dataloom/queue/room/internal/Mappers.kt
+ M dataloom-queue-room/src/main/kotlin/io/dataloom/queue/room/internal/QueueEntryEntity.kt
+ M dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/facade/DataLoom.kt
+ M dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleFileQueueProvider.kt
+ M dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleQueueStateFileCodec.kt
+ M dataloom-runtime/src/iosTest/kotlin/io/dataloom/runtime/retry/AppleFileRetryAdministrationExecutorTest.kt
+ M docs/android/room-queue-provider.md
+ M docs/api/queue-model.md
+ M docs/apple/queue-state-store.md
+?? .github/evidence/
+?? .github/scripts/__pycache__/
+?? docs/audits/DL-039B-immutable-plan-persistence-checkpoint.md
+
+===== 01-patch.log compiler diagnostics =====
+
+===== 01-patch.log head =====
+Applied Room schema 8 and Apple queue format 4 strategy-plan persistence.
+Reconciled Room and Apple immutable-plan persistence documentation.
+Expected one accepted-plan facade match in dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/facade/DataLoom.kt, found 0: '    public suspend fun synchronize(\n        request: StrategySynchronizationRequest,\n        bindings: StrategyProviderB'
+
+===== 01-patch.log tail =====
+Applied Room schema 8 and Apple queue format 4 strategy-plan persistence.
+Reconciled Room and Apple immutable-plan persistence documentation.
+Expected one accepted-plan facade match in dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/facade/DataLoom.kt, found 0: '    public suspend fun synchronize(\n        request: StrategySynchronizationRequest,\n        bindings: StrategyProviderB'
