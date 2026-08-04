@@ -151,8 +151,16 @@ jobs:
             for log in /tmp/dl-strategy-002-logs/*.log; do
               if [[ -f "$log" ]]; then
                 echo
+                echo "===== $(basename "$log") compiler diagnostics ====="
+                grep -nE -C 5 \
+                  '(^e: |error:|Unresolved reference|Type mismatch|Cannot access|Compilation error|Compilation failed)' \
+                  "$log" | tail -n 260 || true
+                echo
+                echo "===== $(basename "$log") head ====="
+                head -n 100 "$log"
+                echo
                 echo "===== $(basename "$log") tail ====="
-                tail -n 160 "$log"
+                tail -n 100 "$log"
               fi
             done
           } > .github/evidence/dl-strategy-002-last-failure.txt
