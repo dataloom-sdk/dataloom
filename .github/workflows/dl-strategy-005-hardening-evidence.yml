@@ -1,0 +1,151 @@
+name: DL-039B Accepted Plan Replay Hardening Evidence
+
+on:
+  push:
+    branches:
+      - agent/dl-strategy-005-accepted-plan-execution
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dl-strategy-005-hardening-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualify-and-commit:
+    name: Harden and qualify accepted-plan replay
+    runs-on: macos-15
+    timeout-minutes: 75
+    env:
+      DATALOOM_ANDROID_BUILD: "true"
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Prepare evidence logs
+        run: mkdir -p /tmp/dl-strategy-005-hardening-logs
+
+      - name: Apply reviewed hardening patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            python3 -m py_compile .github/scripts/dl_strategy_005_hardening.py
+            python3 .github/scripts/dl_strategy_005_hardening.py
+            git diff --check
+          } 2>&1 | tee /tmp/dl-strategy-005-hardening-logs/01-patch.log
+
+      - name: Regenerate ABI baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew updateKotlinAbi --no-parallel --stacktrace --console=plain \
+            2>&1 | tee /tmp/dl-strategy-005-hardening-logs/02-abi.log
+
+      - name: Validate common, JVM, Android, Apple, consumers, and XCFramework
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            :build-logic:test \
+            build \
+            :runtime-external-consumer:checkRuntimeExternalConsumer \
+            :runtime-external-consumer:compileKotlinIosArm64 \
+            :runtime-external-consumer:compileKotlinIosSimulatorArm64 \
+            :runtime-external-consumer:compileKotlinIosX64 \
+            :dataloom-runtime:iosSimulatorArm64Test \
+            :dataloom-queue-room:assembleDebugAndroidTest \
+            :dataloom-queue-room:testDebugUnitTest \
+            :dataloom-apple:assembleDataLoomReleaseXCFramework \
+            checkKotlinAbi \
+            --no-parallel \
+            --stacktrace \
+            --warning-mode all \
+            --console=plain \
+            2>&1 | tee /tmp/dl-strategy-005-hardening-logs/03-validate.log
+
+      - name: Verify repository hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            git diff --check
+            if find . -path '*/build/*' -prune -o -name '*.rej' -print | grep -q .; then
+              echo "Patch reject files were created."
+              exit 1
+            fi
+          } 2>&1 | tee /tmp/dl-strategy-005-hardening-logs/04-verify.log
+
+      - name: Record bounded failure checkpoint
+        if: failure()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .github/evidence
+          {
+            echo "DL-039B accepted-plan replay hardening failed."
+            echo "Source head: ${GITHUB_SHA}"
+            echo
+            echo "Repository status:"
+            git status --short
+            for log in /tmp/dl-strategy-005-hardening-logs/*.log; do
+              if [[ -f "$log" ]]; then
+                echo
+                echo "===== $(basename "$log") diagnostics ====="
+                grep -nE -C 6 \
+                  '(^e: |error:|Unresolved reference|Type mismatch|Cannot access|Compilation error|Compilation failed|FAILED|Expected one)' \
+                  "$log" | tail -n 620 || true
+                echo
+                echo "===== $(basename "$log") head ====="
+                head -n 140 "$log"
+                echo
+                echo "===== $(basename "$log") tail ====="
+                tail -n 220 "$log"
+              fi
+            done
+          } > .github/evidence/dl-strategy-005-hardening-last-failure.txt
+          git reset
+          git add .github/evidence/dl-strategy-005-hardening-last-failure.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Record accepted-plan hardening failure [skip ci]"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Remove one-time helpers and commit qualified tree
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/dl-strategy-005-hardening-evidence.yml
+          rm .github/scripts/dl_strategy_005_hardening.py
+          rm -rf .github/scripts/__pycache__
+          rm -f .github/evidence/dl-strategy-005-hardening-last-failure.txt
+          rmdir .github/evidence 2>/dev/null || true
+          git diff --check
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No qualified hardening changes were produced."
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "DL-039B: harden accepted strategy plan replay"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
