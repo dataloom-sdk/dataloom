@@ -1,0 +1,19 @@
+DL-039B queued strategy decision correspondence evidence failed.
+Source head: 8cddd28fab879ecdc284988f249d1b032e9819a6
+
+Repository status:
+ M dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/queue/ProviderProtectedQueuedSynchronizationExecutionHandler.kt
+ M dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/queue/QueuedSynchronizationExecutionHandler.kt
+ M dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/queue/ProviderProtectedQueuedSynchronizationExecutionHandlerTest.kt
+ M dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/queue/QueuedSynchronizationExecutionHandlerTest.kt
+ M docs/api/synchronization-strategy.md
+?? .github/evidence/
+?? .github/scripts/__pycache__/
+
+===== 01-patch.log compiler diagnostics =====
+
+===== 01-patch.log head =====
+Expected exactly one match in docs/api/synchronization-strategy.md, found 0: 'protected remote-first execution, and bounded strategy-decision queue persistence\nare implemented in common Kotlin. Room'
+
+===== 01-patch.log tail =====
+Expected exactly one match in docs/api/synchronization-strategy.md, found 0: 'protected remote-first execution, and bounded strategy-decision queue persistence\nare implemented in common Kotlin. Room'
