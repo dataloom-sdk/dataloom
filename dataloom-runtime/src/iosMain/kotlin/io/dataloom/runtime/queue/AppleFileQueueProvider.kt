@@ -60,13 +60,15 @@ import platform.posix.flock
  * returning success. The complete snapshot is capped at 32 MiB, 10,000 queue
  * entries, and 10,000 administrative retry receipts.
  *
- * Version-1 entry-only snapshots remain readable. Every successful mutation
- * writes the version-2 entry-plus-receipt format and preserves existing
- * administrative retry receipts.
+ * Version-1 entry-only and version-2 entry-plus-receipt snapshots remain
+ * readable. Every successful mutation writes the version-3
+ * entry-plus-receipt-plus-strategy-decision format and preserves existing
+ * administrative retry receipts and bounded strategy identity.
  *
  * The provider persists synchronization identifiers, safe metadata, retry
- * history, retry budgets, immutable workflow timeout evidence, lease state, and
- * sanitized canonical errors. It must not be used for credentials, tokens,
+ * history, retry budgets, immutable workflow timeout evidence, bounded strategy
+ * decision identity, lease state, and sanitized canonical errors. It must not
+ * be used for credentials, tokens,
  * encryption keys, raw exception text, or arbitrary payload bodies.
  */
 public class AppleFileQueueProvider(

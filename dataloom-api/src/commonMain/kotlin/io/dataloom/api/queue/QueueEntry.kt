@@ -7,6 +7,7 @@ import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.api.retry.RetryAttempt
 import io.dataloom.api.retry.RetryBudgetState
 import io.dataloom.api.retry.WorkflowTimeoutState
+import io.dataloom.api.strategy.PersistedStrategyDecision
 import io.dataloom.api.time.DataLoomInstant
 
 /**
@@ -46,6 +47,9 @@ public data class QueueEntry(
 
     /** Immutable accepted workflow start and absolute deadline evidence. */
     public val workflowTimeoutState: WorkflowTimeoutState? = null,
+
+    /** Immutable strategy identity accepted before durable queue admission. */
+    public val strategyDecision: PersistedStrategyDecision? = null,
 ) {
     init {
         require(availableAt.epochMilliseconds >= enqueuedAt.epochMilliseconds) {
@@ -71,4 +75,18 @@ public data class QueueEntry(
             "QueueEntry retryBudgetState requires a non-null retryAttempt."
         }
     }
+
+    /** Bounded diagnostic output that excludes identifiers, metadata, and errors. */
+    override fun toString(): String =
+        "QueueEntry(" +
+            "state=$state, " +
+            "direction=${synchronizationRequest.direction}, " +
+            "mode=${synchronizationRequest.mode}, " +
+            "hasRetryAttempt=${retryAttempt != null}, " +
+            "hasRetryBudgetState=${retryBudgetState != null}, " +
+            "hasLease=${lease != null}, " +
+            "hasLastError=${lastError != null}, " +
+            "metadataEntryCount=${metadata.entries.size}, " +
+            "hasWorkflowTimeoutState=${workflowTimeoutState != null}, " +
+            "hasStrategyDecision=${strategyDecision != null})"
 }

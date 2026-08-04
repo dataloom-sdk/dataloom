@@ -158,8 +158,8 @@ registration order, or platform name.
 
 ## Durable replay
 
-When a plan creates durable work, persist `PersistedStrategyDecision` beside
-the encoded work:
+When a plan creates durable work, DataLoom carries the accepted
+`PersistedStrategyDecision` beside the encoded work:
 
 ```text
 decision ID
@@ -170,17 +170,25 @@ configuration version
 disposition
 ```
 
-Retry, lease recovery, process restart, and platform rescheduling must reuse
-that identity. Re-evaluation requires a separate authorized transition; a
-provider failure or connectivity change cannot silently select another
-strategy.
+Queue-submission preflight rejects a changed, dropped, or invented decision
+before timeout, circuit, or queue-provider policy. In-memory, Android Room, and
+Apple file-backed queues preserve the exact identity through retry, non-retry
+deferral, lease recovery, reopen, and migration. Legacy work remains explicitly
+unplanned (`null`) rather than receiving current configuration.
+
+The next execution gate must reconstruct or load the immutable accepted plan
+from this identity. It must not re-evaluate current policy after retry, restart,
+or platform rescheduling. An authorized migration is required to replace an
+accepted plan.
 
 ## Current integration boundary
 
-The profile contracts, deterministic planner, plan-aware provider resolution,
-direct network-only execution, and direct provider-backed remote-first
-execution are implemented in common Kotlin and shared by native Android, KMP
-Android, and KMP iOS.
+The profile contracts, deterministic planner, fail-closed durable admission,
+plan-aware provider resolution, direct network-only execution, direct provider-
+backed remote-first execution, and bounded strategy-decision queue persistence
+are implemented in common Kotlin. Room and Apple stores preserve the same
+bounded identity; complete native Android, KMP Android, and KMP iOS reference
+qualification remains open.
 
 `StrategyProviderBindings` makes every provider role optional. After policy
 evaluation, `StrategyProviderResolver` resolves only the capabilities in the
@@ -227,8 +235,9 @@ implement `StrategyLocalFallbackProvider`. The fallback contract reports
 availability and freshness only—application repositories still own domain
 reads.
 
-Remote-first durable triggers, cache-first, offline-first, hybrid, and adaptive
-runtime execution, durable decision encoding, retry/circuit rescheduling,
-conflict persistence, and complete strategy event enrichment remain separate
-integration gates. Unsupported plans and triggers are rejected rather than
-silently executed through the legacy pipeline.
+Remote-first durable triggers, offline-first atomic admission/execution,
+cache-first, hybrid, and adaptive runtime execution, immutable accepted-plan
+reconstruction/replay, conflict application, complete strategy event enrichment,
+and full native Android/KMP Android/KMP iOS reference qualification remain
+separate integration gates. Unsupported plans and triggers are rejected rather
+than silently executed through the legacy pipeline.

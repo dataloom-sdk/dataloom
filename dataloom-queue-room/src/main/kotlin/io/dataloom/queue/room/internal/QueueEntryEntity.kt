@@ -10,7 +10,7 @@ import androidx.room.PrimaryKey
  *
  * ## Schema version
  *
- * This entity is part of [DataLoomRoomDatabase] schema version 4.
+ * This entity is part of [DataLoomRoomDatabase] schema version 7.
  *
  * ## State storage
  *
@@ -221,4 +221,32 @@ internal data class QueueEntryEntity(
      */
     @ColumnInfo(name = "entry_metadata_json")
     val entryMetadataJson: String?,
+
+    /** Strategy decision identifier; null for legacy or non-strategy work. */
+    @ColumnInfo(name = "strategy_decision_id")
+    val strategyDecisionId: String?,
+
+    /** Immutable strategy plan identifier. */
+    @ColumnInfo(name = "strategy_plan_id")
+    val strategyPlanId: String?,
+
+    /** Requested built-in strategy enum name. */
+    @ColumnInfo(name = "strategy_requested_strategy")
+    val strategyRequestedStrategy: String?,
+
+    /** Effective profile identifier selected before admission. */
+    @ColumnInfo(name = "strategy_effective_profile_id")
+    val strategyEffectiveProfileId: String?,
+
+    /** Concrete effective built-in strategy enum name. */
+    @ColumnInfo(name = "strategy_effective_strategy")
+    val strategyEffectiveStrategy: String?,
+
+    /** Immutable strategy configuration version. */
+    @ColumnInfo(name = "strategy_configuration_version")
+    val strategyConfigurationVersion: Long?,
+
+    /** Accepted strategy disposition enum name. */
+    @ColumnInfo(name = "strategy_disposition")
+    val strategyDisposition: String?,
 )

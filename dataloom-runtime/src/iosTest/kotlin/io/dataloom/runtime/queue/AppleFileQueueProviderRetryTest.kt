@@ -41,6 +41,13 @@ import io.dataloom.api.retry.RetryAttempt
 import io.dataloom.api.retry.RetryBudgetState
 import io.dataloom.api.retry.WorkflowTimeoutState
 import io.dataloom.api.scheduling.SchedulingDelay
+import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
+import io.dataloom.api.strategy.PersistedStrategyDecision
+import io.dataloom.api.strategy.StrategyConfigurationVersion
+import io.dataloom.api.strategy.StrategyDecisionId
+import io.dataloom.api.strategy.StrategyDisposition
+import io.dataloom.api.strategy.StrategyPlanId
+import io.dataloom.api.strategy.StrategyProfileId
 import io.dataloom.api.time.DataLoomInstant
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Test
@@ -176,6 +183,66 @@ class AppleFileQueueProviderRetryTest {
     }
 
 
+    @Test
+    fun `strategy decision survives restart retry deferral and lease recovery`() = runTest {
+        val directory = uniqueDirectory()
+        val expected = strategyDecision()
+        AppleFileQueueProvider(directory).enqueueSuccess(
+            entry(strategyDecision = expected),
+        )
+
+        val first = AppleFileQueueProvider(directory).acquireEntries(
+            acquiredAt = 1_000L,
+            expiresAt = 2_000L,
+            leaseId = "strategy-lease-1",
+        ).single()
+        assertEquals(expected, first.strategyDecision)
+
+        AppleFileQueueProvider(directory).reschedule(
+            QueueRescheduleRequest(
+                entryId = first.id,
+                leaseId = requireNotNull(first.lease).id,
+                retryAttempt = RetryAttempt(1),
+                availableAt = DataLoomInstant(3_000L),
+                error = testError(),
+            ),
+        ).assertSuccess()
+
+        val retried = AppleFileQueueProvider(directory).acquireEntries(
+            acquiredAt = 3_000L,
+            expiresAt = 4_000L,
+            leaseId = "strategy-lease-2",
+        ).single()
+        assertEquals(expected, retried.strategyDecision)
+
+        AppleFileQueueProvider(directory).defer(
+            QueueDeferralRequest(
+                entryId = retried.id,
+                leaseId = requireNotNull(retried.lease).id,
+                availableAt = DataLoomInstant(5_000L),
+                reason = QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET,
+            ),
+        ).assertSuccess()
+
+        val deferred = AppleFileQueueProvider(directory).acquireEntries(
+            acquiredAt = 5_000L,
+            expiresAt = 5_500L,
+            leaseId = "strategy-lease-3",
+        ).single()
+        assertEquals(expected, deferred.strategyDecision)
+
+        AppleFileQueueProvider(directory).recoverExpiredLeases(
+            ExpiredLeaseRecoveryRequest(DataLoomInstant(5_501L)),
+        ).successValue()
+
+        val recovered = AppleFileQueueProvider(directory).acquireEntries(
+            acquiredAt = 5_501L,
+            expiresAt = 6_000L,
+            leaseId = "strategy-lease-4",
+        ).single()
+        assertEquals(expected, recovered.strategyDecision)
+    }
+
     private suspend fun AppleFileQueueProvider.enqueueSuccess(entry: QueueEntry) {
         enqueue(QueueEnqueueRequest(entry)).assertSuccess()
     }
@@ -221,6 +288,7 @@ class AppleFileQueueProviderRetryTest {
         retryAttempt: RetryAttempt? = null,
         retryBudgetState: RetryBudgetState? = null,
         workflowTimeoutState: WorkflowTimeoutState? = null,
+        strategyDecision: PersistedStrategyDecision? = null,
         lastError: DataLoomError? = null,
         executionMetadata: DataLoomMetadata = DataLoomMetadata.Empty,
         entryMetadata: DataLoomMetadata = DataLoomMetadata.Empty,
@@ -244,6 +312,7 @@ class AppleFileQueueProviderRetryTest {
         metadata = entryMetadata,
         retryBudgetState = retryBudgetState,
         workflowTimeoutState = workflowTimeoutState,
+        strategyDecision = strategyDecision,
     )
 
     private fun executionContext(
@@ -254,6 +323,17 @@ class AppleFileQueueProviderRetryTest {
         traceId = TraceId("trace-1"),
         metadata = metadata,
     )
+
+    private fun strategyDecision(): PersistedStrategyDecision =
+        PersistedStrategyDecision(
+            decisionId = StrategyDecisionId("decision-apple-1"),
+            planId = StrategyPlanId("plan-apple-1"),
+            requestedStrategy = BuiltInSynchronizationStrategy.ADAPTIVE,
+            effectiveProfileId = StrategyProfileId("offline-apple-profile"),
+            effectiveStrategy = BuiltInSynchronizationStrategy.OFFLINE_FIRST,
+            configurationVersion = StrategyConfigurationVersion(14L),
+            disposition = StrategyDisposition.DEFER,
+        )
 
     private fun testError(): DataLoomError = TestQueueError(
         code = ErrorCode("NETWORK_TEMPORARY"),

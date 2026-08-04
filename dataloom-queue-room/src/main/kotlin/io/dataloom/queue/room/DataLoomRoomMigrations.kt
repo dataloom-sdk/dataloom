@@ -127,6 +127,21 @@ public object DataLoomRoomMigrations {
         }
     }
 
+    /** Adds nullable immutable strategy-decision identity to durable queue rows. */
+    public val MIGRATION_6_7: Migration = object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE queue_entries ADD COLUMN strategy_decision_id TEXT")
+            db.execSQL("ALTER TABLE queue_entries ADD COLUMN strategy_plan_id TEXT")
+            db.execSQL("ALTER TABLE queue_entries ADD COLUMN strategy_requested_strategy TEXT")
+            db.execSQL("ALTER TABLE queue_entries ADD COLUMN strategy_effective_profile_id TEXT")
+            db.execSQL("ALTER TABLE queue_entries ADD COLUMN strategy_effective_strategy TEXT")
+            db.execSQL(
+                "ALTER TABLE queue_entries ADD COLUMN strategy_configuration_version INTEGER",
+            )
+            db.execSQL("ALTER TABLE queue_entries ADD COLUMN strategy_disposition TEXT")
+        }
+    }
+
     /** Complete ordered migration set used by [DataLoomDatabaseBuilder]. */
     public val ALL: Array<Migration>
         get() = arrayOf(
@@ -135,5 +150,6 @@ public object DataLoomRoomMigrations {
             MIGRATION_3_4,
             MIGRATION_4_5,
             MIGRATION_5_6,
+            MIGRATION_6_7,
         )
 }

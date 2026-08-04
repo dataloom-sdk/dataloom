@@ -60,16 +60,17 @@ the shared runtime foundation, provider contracts, push/pull/bidirectional
 pipelines, durable queue processing, Android adapters, Apple compilation paths,
 and the versioned six-strategy contract plus deterministic built-in planner.
 Plan-aware provider resolution and direct network-only/remote-first operation
-execution are implemented. Durable decision persistence, the remaining strategy
-runtimes, and complete platform qualification remain required before the
-strategy engine is complete.
+execution are implemented. Bounded strategy-decision identity is preserved by
+the in-memory, Android Room, and Apple durable queue stores. Immutable accepted
+execution-plan replay, the remaining strategy runtimes, and complete platform
+qualification remain required before the strategy engine is complete.
 
 ## Market-readiness dashboard
 
-- **Last reconciled:** 2026-08-03
+- **Last reconciled:** 2026-08-04
 - **Recorded V1 target:** 2026-08-27
 - **Current verdict:** **NO-GO — not production-ready or market-ready**
-- **Accepted engineering/release gates:** **0 of 10** (`#93`–`#102` are open)
+- **Accepted engineering/release gates:** **1 of 10** (`#93` complete; `#94`–`#102` open)
 
 Progress below is acceptance-based, not a percentage of code written. A gate is
 `COMPLETE` only when its issue criteria have executable evidence on the same
@@ -78,16 +79,16 @@ that still have unqualified release behavior.
 
 | Next priority | V1 gate | Status | Finished on `main` | Still pending before the gate is complete |
 |---:|---|---|---|---|
-| 1 | [DL-039 foundations, artifacts, compatibility](https://github.com/dataloom-sdk/dataloom/issues/93) | IN PROGRESS | Public API/provider/runtime boundaries, module rules, JVM and Kotlin/Native ABI baselines, external-consumer compilation, durable state primitives, deterministic clocks/randomness, configuration and policy foundations, canonical envelope/redaction contracts, and a deterministic bounded V1 wire codec/upcast registry | Adopt the shared envelope/redaction/wire boundary across subsystems; complete configuration/policy rollout and rollback; close remaining security, migration, artifact, and compatibility criteria |
-| 2 | [DL-039B six strategy engine](https://github.com/dataloom-sdk/dataloom/issues/102) | IN PROGRESS | Versioned contracts and deterministic planner for all six strategies; direct network-only and remote-first vertical slices | Complete offline-first, cache-first, hybrid, and adaptive runtimes; persist effective decisions; qualify the full connectivity/cache/fallback/retry/conflict/restart matrix without silent strategy changes |
-| 3 | [DL-039A Android/KMP/iOS parity](https://github.com/dataloom-sdk/dataloom/issues/101) | IN PROGRESS | Native Android adapters, Kotlin/Native Apple targets, XCFramework assembly, Swift smoke compilation, and initial Apple file-backed persistence | Add explicit KMP Android variants, production `dataloom-android`/`dataloom-ios` aggregation, iOS lifecycle/connectivity/background/security adapters, staged external consumers, and the complete parity matrix |
-| 4 | [DL-040 retry and circuit breaker](https://github.com/dataloom-sdk/dataloom/issues/94) | QUALIFICATION BLOCKED | FR-RETRY-001–012 implementation mapping; built-in backoff/jitter, limits, hints, six timeout boundaries, durable Room/Apple circuit state, half-open leases, authorized administration, bounded telemetry, and common/platform-store recovery flows | Prove real Android and Apple process termination/relaunch, genuine cross-process probe contention where supported, and the complete AC-FUNC-004 provider flow through native Android, KMP Android, and KMP iOS |
-| 5 | [DL-041 conflict engine](https://github.com/dataloom-sdk/dataloom/issues/95) | IN PROGRESS | Custom detector/resolver contracts and orchestration foundations | Ship deterministic built-in strategies, decision application, durable unresolved/manual state, audit, loop prevention/quarantine, precedence, restart/concurrency proof, and AC-FUNC-002 |
-| 6 | [DL-042 events, observability, health, dashboard](https://github.com/dataloom-sdk/dataloom/issues/96) | IN PROGRESS | Canonical envelope/redaction contracts, deterministic V1 wire codec/upcast registry, in-process event dispatch, bounded retry/circuit metrics, logs, traces, exporter isolation, and redacted health snapshot | Add the durable outbox, ordering, acknowledgement/replay, retention, filtering, SDK-wide envelope adoption/instrumentation, health/read model, and deployable operations dashboard/adaptor |
-| 7 | [DL-043 asset synchronization](https://github.com/dataloom-sdk/dataloom/issues/97) | NOT STARTED | No production asset subsystem accepted | Implement manifest, bounded streaming, upload/download chunking, durable resume, integrity, encryption metadata, quota, cancellation, secure temporary files, cleanup, content policy, and AC-FUNC-005 |
-| 8 | [DL-044 plugin platform](https://github.com/dataloom-sdk/dataloom/issues/98) | NOT STARTED | Provider SPI exists; no V1 plugin lifecycle is accepted | Implement manifests, compatibility, deny-by-default permissions, lifecycle, resource bounds, deterministic ordering, isolation, hot disable, audit, certification kit, and a reference non-provider plugin |
-| 9 | [DL-045 enterprise governance](https://github.com/dataloom-sdk/dataloom/issues/99) | NOT STARTED | Tenant identifiers and limited retry/circuit administration foundations exist | Enforce tenant isolation, RBAC, signed policy packs, tamper-evident/offline audit, residency, support/fleet diagnostics, configuration locks, LTS/catalog governance, and AC-FUNC-010 |
-| 10 | [DL-046 immutable V1 release](https://github.com/dataloom-sdk/dataloom/issues/100) | BLOCKED / NO-GO | Continuous JVM, Android, Apple, ABI, XCFramework, header, Swift-smoke, schema, and migration validation foundations exist | Close #93–#99 and #101–#102; qualify one immutable candidate; verify staged consumers, compatibility, performance, security, SBOM/provenance/signatures/licenses, documentation, legal approval, publication, rollback, and post-publish smoke tests |
+| — | [DL-039 foundations, artifacts, compatibility](https://github.com/dataloom-sdk/dataloom/issues/93) | COMPLETE | Public API/provider/runtime boundaries, module rules, JVM and Kotlin/Native ABI baselines, external-consumer compilation, durable state primitives, deterministic clocks/randomness, configuration and policy foundations, canonical envelope/redaction contracts, and a deterministic bounded V1 wire codec/upcast registry | — |
+| 1 | [DL-039B six strategy engine](https://github.com/dataloom-sdk/dataloom/issues/102) | IN PROGRESS | Versioned contracts and deterministic planner for all six strategies; direct network-only and remote-first vertical slices; fail-closed queue admission and durable strategy-decision identity across in-memory, Room, and Apple queues | Complete offline-first, cache-first, hybrid, and adaptive runtimes; persist/replay the immutable accepted execution plan without current-policy re-evaluation; qualify the full connectivity/cache/fallback/retry/conflict/restart matrix without silent strategy changes |
+| 2 | [DL-039A Android/KMP/iOS parity](https://github.com/dataloom-sdk/dataloom/issues/101) | IN PROGRESS | Native Android adapters, Kotlin/Native Apple targets, XCFramework assembly, Swift smoke compilation, and initial Apple file-backed persistence | Add explicit KMP Android variants, production `dataloom-android`/`dataloom-ios` aggregation, iOS lifecycle/connectivity/background/security adapters, staged external consumers, and the complete parity matrix |
+| 3 | [DL-040 retry and circuit breaker](https://github.com/dataloom-sdk/dataloom/issues/94) | QUALIFICATION BLOCKED | FR-RETRY-001–012 implementation mapping; built-in backoff/jitter, limits, hints, six timeout boundaries, durable Room/Apple circuit state, half-open leases, authorized administration, bounded telemetry, and common/platform-store recovery flows | Prove real Android and Apple process termination/relaunch, genuine cross-process probe contention where supported, and the complete AC-FUNC-004 provider flow through native Android, KMP Android, and KMP iOS |
+| 4 | [DL-041 conflict engine](https://github.com/dataloom-sdk/dataloom/issues/95) | IN PROGRESS | Custom detector/resolver contracts and orchestration foundations | Ship deterministic built-in strategies, decision application, durable unresolved/manual state, audit, loop prevention/quarantine, precedence, restart/concurrency proof, and AC-FUNC-002 |
+| 5 | [DL-042 events, observability, health, dashboard](https://github.com/dataloom-sdk/dataloom/issues/96) | IN PROGRESS | Canonical envelope/redaction contracts, deterministic V1 wire codec/upcast registry, in-process event dispatch, bounded retry/circuit metrics, logs, traces, exporter isolation, and redacted health snapshot | Add the durable outbox, ordering, acknowledgement/replay, retention, filtering, SDK-wide envelope adoption/instrumentation, health/read model, and deployable operations dashboard/adaptor |
+| 6 | [DL-043 asset synchronization](https://github.com/dataloom-sdk/dataloom/issues/97) | NOT STARTED | No production asset subsystem accepted | Implement manifest, bounded streaming, upload/download chunking, durable resume, integrity, encryption metadata, quota, cancellation, secure temporary files, cleanup, content policy, and AC-FUNC-005 |
+| 7 | [DL-044 plugin platform](https://github.com/dataloom-sdk/dataloom/issues/98) | NOT STARTED | Provider SPI exists; no V1 plugin lifecycle is accepted | Implement manifests, compatibility, deny-by-default permissions, lifecycle, resource bounds, deterministic ordering, isolation, hot disable, audit, certification kit, and a reference non-provider plugin |
+| 8 | [DL-045 enterprise governance](https://github.com/dataloom-sdk/dataloom/issues/99) | NOT STARTED | Tenant identifiers and limited retry/circuit administration foundations exist | Enforce tenant isolation, RBAC, signed policy packs, tamper-evident/offline audit, residency, support/fleet diagnostics, configuration locks, LTS/catalog governance, and AC-FUNC-010 |
+| 9 | [DL-046 immutable V1 release](https://github.com/dataloom-sdk/dataloom/issues/100) | BLOCKED / NO-GO | Continuous JVM, Android, Apple, ABI, XCFramework, header, Swift-smoke, schema, and migration validation foundations exist | Close #93–#99 and #101–#102; qualify one immutable candidate; verify staged consumers, compatibility, performance, security, SBOM/provenance/signatures/licenses, documentation, legal approval, publication, rollback, and post-publish smoke tests |
 
 ### Market evidence gates
 
@@ -108,20 +109,21 @@ product evidence is required in addition to the V1 release gates.
 
 ### Immediate execution order
 
-1. Close the shared foundation gaps in #93 so later engines do not create
-   duplicate state, policy, security, or event models.
-2. Deliver one end-to-end strategy/platform vertical slice across native
+Closed foundation gate #93 remains the single shared configuration, policy,
+state, security, compatibility, and event boundary for every remaining engine.
+
+1. Deliver one end-to-end strategy/platform vertical slice across native
    Android, KMP Android, and KMP iOS, then complete all six strategies through
    the same architecture (#102 + #101).
-3. Add the host-controlled process lifecycle and cross-process harness needed
+2. Add the host-controlled process lifecycle and cross-process harness needed
    to close the remaining retry/circuit acceptance criteria in #94.
-4. Complete conflict, durable events/operations, assets, plugins, and enterprise
+3. Complete conflict, durable events/operations, assets, plugins, and enterprise
    governance in dependency order (#95–#99).
-5. Build the three staged-artifact reference apps and publish the benchmark and
+4. Build the three staged-artifact reference apps and publish the benchmark and
    fault-injection evidence.
-6. Run customer validation alongside engineering: interviews, design partners,
+5. Run customer validation alongside engineering: interviews, design partners,
    pilots, then one paid pilot.
-7. Build and qualify one immutable V1 candidate and promote that exact artifact
+6. Build and qualify one immutable V1 candidate and promote that exact artifact
    only after every engineering, security, legal, and market gate passes (#100).
 
 Detailed evidence lives in the

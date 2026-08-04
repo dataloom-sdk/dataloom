@@ -65,6 +65,12 @@ internal class QueueSubmissionPreflight(
             )
         }
 
+        if (entry.strategyDecision != submission.work.strategyDecision) {
+            return ContractViolationError(
+                message = "Encoded strategy decision does not match submitted work.",
+            )
+        }
+
         return null
     }
 

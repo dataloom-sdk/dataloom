@@ -3382,12 +3382,14 @@ final class io.dataloom.runtime.queue/QueueProcessingSummary { // io.dataloom.ru
 }
 
 final class io.dataloom.runtime.queue/QueuedSynchronizationWork { // io.dataloom.runtime.queue/QueuedSynchronizationWork|null[0]
-    constructor <init>(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.provider/SynchronizationProviderBindings) // io.dataloom.runtime.queue/QueuedSynchronizationWork.<init>|<init>(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.provider.SynchronizationProviderBindings){}[0]
+    constructor <init>(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.provider/SynchronizationProviderBindings, io.dataloom.api.strategy/PersistedStrategyDecision? = ...) // io.dataloom.runtime.queue/QueuedSynchronizationWork.<init>|<init>(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.provider.SynchronizationProviderBindings;io.dataloom.api.strategy.PersistedStrategyDecision?){}[0]
 
     final val bindings // io.dataloom.runtime.queue/QueuedSynchronizationWork.bindings|{}bindings[0]
         final fun <get-bindings>(): io.dataloom.api.provider/SynchronizationProviderBindings // io.dataloom.runtime.queue/QueuedSynchronizationWork.bindings.<get-bindings>|<get-bindings>(){}[0]
     final val request // io.dataloom.runtime.queue/QueuedSynchronizationWork.request|{}request[0]
         final fun <get-request>(): io.dataloom.api.model/SynchronizationRequest // io.dataloom.runtime.queue/QueuedSynchronizationWork.request.<get-request>|<get-request>(){}[0]
+    final val strategyDecision // io.dataloom.runtime.queue/QueuedSynchronizationWork.strategyDecision|{}strategyDecision[0]
+        final fun <get-strategyDecision>(): io.dataloom.api.strategy/PersistedStrategyDecision? // io.dataloom.runtime.queue/QueuedSynchronizationWork.strategyDecision.<get-strategyDecision>|<get-strategyDecision>(){}[0]
 
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.queue/QueuedSynchronizationWork.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.runtime.queue/QueuedSynchronizationWork.hashCode|hashCode(){}[0]

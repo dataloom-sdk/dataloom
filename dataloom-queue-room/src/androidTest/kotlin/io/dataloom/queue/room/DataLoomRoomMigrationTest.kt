@@ -11,7 +11,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Verifies non-destructive queue, circuit, and retry-administration schema migrations. */
+/** Verifies every supported non-destructive DataLoom Room schema migration. */
 @RunWith(AndroidJUnit4::class)
 class DataLoomRoomMigrationTest {
 
@@ -276,6 +276,52 @@ class DataLoomRoomMigrationTest {
         openCurrentDatabase(TEST_DATABASE_5_6)
     }
 
+    @Test
+    fun version6MigratesToVersion7WithoutInventingStrategyDecision() {
+        val version6 = migrationTestHelper.createDatabase(TEST_DATABASE_6_7, 6)
+        version6.execSQL(
+            """
+            INSERT INTO queue_entries (
+                entry_id, workflow_id, session_id, direction, mode, priority,
+                exec_execution_id, exec_correlation_id, state,
+                enqueued_at_ms, available_at_ms
+            ) VALUES (
+                'entry-006', 'workflow-006', 'session-006', 'PUSH', 'DELTA', 'NORMAL',
+                'execution-006', 'correlation-006', 'PENDING',
+                6000, 6000
+            )
+            """.trimIndent(),
+        )
+        version6.close()
+
+        val migrated = migrationTestHelper.runMigrationsAndValidate(
+            TEST_DATABASE_6_7,
+            7,
+            true,
+            DataLoomRoomMigrations.MIGRATION_6_7,
+        )
+        val cursor = migrated.query(
+            """
+            SELECT strategy_decision_id, strategy_plan_id,
+                   strategy_requested_strategy, strategy_effective_profile_id,
+                   strategy_effective_strategy, strategy_configuration_version,
+                   strategy_disposition
+            FROM queue_entries WHERE entry_id = 'entry-006'
+            """.trimIndent(),
+        )
+        try {
+            assertTrue(cursor.moveToFirst())
+            for (index in 0 until cursor.columnCount) {
+                assertTrue(cursor.isNull(index))
+            }
+        } finally {
+            cursor.close()
+            migrated.close()
+        }
+
+        openCurrentDatabase(TEST_DATABASE_6_7)
+    }
+
     private fun openCurrentDatabase(name: String) {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val database = Room.databaseBuilder(
@@ -297,5 +343,6 @@ class DataLoomRoomMigrationTest {
         const val TEST_DATABASE_3_4 = "dataloom-room-migration-3-4-test"
         const val TEST_DATABASE_4_5 = "dataloom-room-migration-4-5-test"
         const val TEST_DATABASE_5_6 = "dataloom-room-migration-5-6-test"
+        const val TEST_DATABASE_6_7 = "dataloom-room-migration-6-7-test"
     }
 }

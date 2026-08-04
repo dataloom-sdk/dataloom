@@ -86,7 +86,7 @@ flowchart LR
         resolver[Provider resolver]
         coordinator[Execution coordinator]
         pipelines[Push, pull, bidirectional]
-        retry[Custom retry orchestration]
+        retry[Retry and circuit engine]
         conflict[Custom conflict orchestration]
         events[In-process event dispatch]
     end
@@ -138,19 +138,27 @@ flowchart LR
 - shared request, payload, change, result, progress, and provider contracts;
 - deterministic provider registration, lifecycle, binding, and resolution;
 - outbound push, inbound pull, and bidirectional pipelines;
-- durable queue processing and application-owned queue work encoding;
-- custom retry and conflict contracts plus orchestration foundations;
+- durable queue processing, application-owned work encoding, and bounded
+  strategy-decision identity across in-memory, Room, and Apple stores;
+- versioned contracts and deterministic planning for all six strategies, plus
+  direct network-only and remote-first execution;
+- the standard retry/circuit engine, six timeout boundaries, durable Room/Apple
+  state, authorized administration, and bounded telemetry foundations;
+- custom conflict contracts plus orchestration foundations;
 - in-process lifecycle, progress, retry, conflict, and operational event
   dispatch;
 - Android connectivity, Room queue, and WorkManager adapters; and
-- Kotlin/Native Apple targets plus XCFramework compile validation.
+- Kotlin/Native Apple targets, file-backed queue/retry/circuit state,
+  XCFramework assembly, header audit, and Swift smoke validation.
 
 ### What is not yet complete
 
-- a request-level strategy model, evaluator, and persisted execution plan;
-- complete semantics and qualification for all six strategies;
-- standard exponential backoff, jitter, attempt/time budgets, and durable
-  circuit breaking;
+- complete offline-first, cache-first, hybrid, and adaptive runtime semantics,
+  plus immutable accepted execution-plan reconstruction and replay;
+- complete connectivity/cache/fallback/retry/conflict/restart matrices for all
+  six strategies;
+- real Android and Apple process-termination/relaunch evidence and genuine
+  cross-process circuit-probe contention where supported;
 - generic built-in conflict policies, durable conflict records, and recovery;
 - durable operational events, metrics, tracing exporters, and operational
   read models;
@@ -159,8 +167,8 @@ flowchart LR
 - tenant isolation, administration, policy governance, and audit controls; and
 - complete native Android, KMP Android, and KMP iOS consumer qualification.
 
-The full requirement and evidence matrix is in
-[DL-AUDIT-004](../audits/DL-AUDIT-004-v1-production-readiness.md).
+Use the [audit index](../audits/README.md) for the current conformance record
+and the original expanded-V1 requirement baseline.
 
 ## V1 target execution model
 

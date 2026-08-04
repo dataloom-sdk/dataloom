@@ -38,25 +38,34 @@ import io.dataloom.api.retry.RetryBudgetState
 import io.dataloom.api.retry.RetryFailureSnapshot
 import io.dataloom.api.retry.WorkflowTimeoutState
 import io.dataloom.api.scheduling.SchedulingDelay
+import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
+import io.dataloom.api.strategy.PersistedStrategyDecision
+import io.dataloom.api.strategy.StrategyConfigurationVersion
+import io.dataloom.api.strategy.StrategyDecisionId
+import io.dataloom.api.strategy.StrategyDisposition
+import io.dataloom.api.strategy.StrategyPlanId
+import io.dataloom.api.strategy.StrategyProfileId
 import io.dataloom.api.time.DataLoomInstant
 
 /** Strict, deterministic queue snapshot codec used by the Apple provider. */
 internal object AppleQueueStateFileCodec {
     private const val LEGACY_HEADER: String = "DATALOOM_QUEUE_STATE\t1"
-    private const val CURRENT_HEADER: String = "DATALOOM_QUEUE_STATE\t2"
+    private const val VERSION_TWO_HEADER: String = "DATALOOM_QUEUE_STATE\t2"
+    private const val CURRENT_HEADER: String = "DATALOOM_QUEUE_STATE\t3"
     private const val ENTRY_PREFIX: String = "E"
     private const val RECEIPT_PREFIX: String = "R"
-    private const val ENTRY_FIELD_COUNT: Int = 35
+    private const val LEGACY_ENTRY_FIELD_COUNT: Int = 35
+    private const val CURRENT_ENTRY_FIELD_COUNT: Int = 42
     private const val RECEIPT_FIELD_COUNT: Int = 13
 
     /** Encodes the historical version-1 entry-only format for migration evidence. */
     fun encode(entries: Map<String, QueueEntry>): String = encodeLegacy(entries)
 
-    /** Decodes either supported format and returns only queue entries. */
+    /** Decodes any supported historical or current format and returns queue entries. */
     fun decode(content: String): MutableMap<String, QueueEntry> =
         decodeSnapshot(content).entries
 
-    /** Encodes the current version-2 entry-plus-receipt snapshot. */
+    /** Encodes the current version-3 entry-plus-receipt snapshot. */
     fun encodeSnapshot(snapshot: AppleQueueSnapshot): String {
         validateSnapshotBounds(snapshot)
         val content = buildString {
@@ -70,7 +79,7 @@ internal object AppleQueueStateFileCodec {
                 }
                 append(ENTRY_PREFIX)
                 append('\t')
-                append(encodeEntry(entry))
+                append(encodeEntry(entry, includeStrategyDecision = true))
                 append('\n')
             }
             snapshot.retryAdministrationReceipts.entries.sortedBy { it.key }
@@ -90,7 +99,7 @@ internal object AppleQueueStateFileCodec {
         return content
     }
 
-    /** Decodes version 1 or version 2 and reconstructs the complete snapshot. */
+    /** Decodes versions 1, 2, or 3 and reconstructs the complete snapshot. */
     fun decodeSnapshot(content: String): AppleQueueSnapshot {
         ensureInputBound(content)
         return try {
@@ -98,6 +107,7 @@ internal object AppleQueueStateFileCodec {
             require(lines.isNotEmpty())
             when (lines.first()) {
                 LEGACY_HEADER -> decodeLegacyLines(lines)
+                VERSION_TWO_HEADER -> decodeVersionTwoLines(lines)
                 CURRENT_HEADER -> decodeCurrentLines(lines)
                 else -> error("Unsupported Apple queue snapshot version.")
             }
@@ -125,7 +135,10 @@ internal object AppleQueueStateFileCodec {
                 check(id == entry.id.value) {
                     "Queue snapshot map key does not match the entry identifier."
                 }
-                append(encodeEntry(entry))
+                check(entry.strategyDecision == null) {
+                    "Version-1 queue snapshots cannot encode a strategy decision."
+                }
+                append(encodeEntry(entry, includeStrategyDecision = false))
                 append('\n')
             }
         }
@@ -139,13 +152,22 @@ internal object AppleQueueStateFileCodec {
             if (entries.size >= APPLE_QUEUE_MAX_ENTRY_COUNT) {
                 throw AppleQueueEntryLimitException()
             }
-            val entry = decodeEntry(line)
+            val entry = decodeEntry(line, includeStrategyDecision = false)
             require(entries.put(entry.id.value, entry) == null)
         }
         return AppleQueueSnapshot(entries = entries)
     }
 
-    private fun decodeCurrentLines(lines: List<String>): AppleQueueSnapshot {
+    private fun decodeVersionTwoLines(lines: List<String>): AppleQueueSnapshot =
+        decodePrefixedLines(lines, includeStrategyDecision = false)
+
+    private fun decodeCurrentLines(lines: List<String>): AppleQueueSnapshot =
+        decodePrefixedLines(lines, includeStrategyDecision = true)
+
+    private fun decodePrefixedLines(
+        lines: List<String>,
+        includeStrategyDecision: Boolean,
+    ): AppleQueueSnapshot {
         val snapshot = AppleQueueSnapshot()
         forEachDataLine(lines) { line ->
             val separator = line.indexOf('\t')
@@ -158,7 +180,7 @@ internal object AppleQueueStateFileCodec {
                     if (snapshot.entries.size >= APPLE_QUEUE_MAX_ENTRY_COUNT) {
                         throw AppleQueueEntryLimitException()
                     }
-                    val entry = decodeEntry(payload)
+                    val entry = decodeEntry(payload, includeStrategyDecision)
                     require(snapshot.entries.put(entry.id.value, entry) == null)
                 }
                 RECEIPT_PREFIX -> {
@@ -263,12 +285,15 @@ internal object AppleQueueStateFileCodec {
         )
     }
 
-    private fun encodeEntry(entry: QueueEntry): String {
+    private fun encodeEntry(
+        entry: QueueEntry,
+        includeStrategyDecision: Boolean,
+    ): String {
         val request = entry.synchronizationRequest
         val context = request.context
         val lease = entry.lease
         val error = entry.lastError
-        return listOf(
+        val fields = mutableListOf(
             appleQueueHexEncode(entry.id.value),
             appleQueueHexEncode(request.workflowId.value),
             appleQueueHexEncode(request.sessionId.value),
@@ -304,12 +329,33 @@ internal object AppleQueueStateFileCodec {
             error?.recoverability?.name ?: APPLE_QUEUE_NULL_MARKER,
             appleQueueEncodeNullableString(error?.message),
             appleQueueEncodeMetadata(entry.metadata),
-        ).joinToString("\t")
+        )
+        if (includeStrategyDecision) {
+            val decision = entry.strategyDecision
+            fields += listOf(
+                appleQueueEncodeNullableString(decision?.decisionId?.value),
+                appleQueueEncodeNullableString(decision?.planId?.value),
+                appleQueueEncodeNullableString(decision?.requestedStrategy?.name),
+                appleQueueEncodeNullableString(decision?.effectiveProfileId?.value),
+                appleQueueEncodeNullableString(decision?.effectiveStrategy?.name),
+                appleQueueEncodeNullableLong(decision?.configurationVersion?.value),
+                appleQueueEncodeNullableString(decision?.disposition?.name),
+            )
+        }
+        return fields.joinToString("\t")
     }
 
-    private fun decodeEntry(line: String): QueueEntry {
+    private fun decodeEntry(
+        line: String,
+        includeStrategyDecision: Boolean,
+    ): QueueEntry {
         val fields = line.split('\t')
-        require(fields.size == ENTRY_FIELD_COUNT)
+        val expectedFieldCount = if (includeStrategyDecision) {
+            CURRENT_ENTRY_FIELD_COUNT
+        } else {
+            LEGACY_ENTRY_FIELD_COUNT
+        }
+        require(fields.size == expectedFieldCount)
         val executionContext = ExecutionContext(
             executionId = ExecutionId(appleQueueHexDecode(fields[6])),
             correlationId = CorrelationId(appleQueueHexDecode(fields[7])),
@@ -319,7 +365,8 @@ internal object AppleQueueStateFileCodec {
             userId = appleQueueDecodeNullableString(fields[11])?.let(::UserId),
             localeTag = appleQueueDecodeNullableString(fields[12])?.let(::LocaleTag),
             runtimeVersion = appleQueueDecodeNullableString(fields[13])?.let(::RuntimeVersion),
-            configurationVersion = appleQueueDecodeNullableString(fields[14])?.let(::ConfigurationVersion),
+            configurationVersion = appleQueueDecodeNullableString(fields[14])
+                ?.let(::ConfigurationVersion),
             metadata = appleQueueDecodeMetadata(fields[15]),
         )
         val synchronizationRequest = SynchronizationRequest(
@@ -345,7 +392,8 @@ internal object AppleQueueStateFileCodec {
             )
         }
 
-        val workflowColumns = listOf(fields[23], fields[24]).map { it.appleQueueToNullableLong() }
+        val workflowColumns = listOf(fields[23], fields[24])
+            .map { it.appleQueueToNullableLong() }
         check(workflowColumns.all { it == null } || workflowColumns.all { it != null })
         val workflowTimeoutState = if (workflowColumns.all { it == null }) {
             null
@@ -396,6 +444,44 @@ internal object AppleQueueStateFileCodec {
             )
         }
 
+        val strategyDecision = if (!includeStrategyDecision) {
+            null
+        } else {
+            val strategyColumns: List<Any?> = listOf(
+                appleQueueDecodeNullableString(fields[35]),
+                appleQueueDecodeNullableString(fields[36]),
+                appleQueueDecodeNullableString(fields[37]),
+                appleQueueDecodeNullableString(fields[38]),
+                appleQueueDecodeNullableString(fields[39]),
+                fields[40].appleQueueToNullableLong(),
+                appleQueueDecodeNullableString(fields[41]),
+            )
+            check(strategyColumns.all { it == null } || strategyColumns.all { it != null })
+            if (strategyColumns.all { it == null }) {
+                null
+            } else {
+                PersistedStrategyDecision(
+                    decisionId = StrategyDecisionId(checkNotNull(strategyColumns[0]) as String),
+                    planId = StrategyPlanId(checkNotNull(strategyColumns[1]) as String),
+                    requestedStrategy = BuiltInSynchronizationStrategy.valueOf(
+                        checkNotNull(strategyColumns[2]) as String,
+                    ),
+                    effectiveProfileId = StrategyProfileId(
+                        checkNotNull(strategyColumns[3]) as String,
+                    ),
+                    effectiveStrategy = BuiltInSynchronizationStrategy.valueOf(
+                        checkNotNull(strategyColumns[4]) as String,
+                    ),
+                    configurationVersion = StrategyConfigurationVersion(
+                        checkNotNull(strategyColumns[5]) as Long,
+                    ),
+                    disposition = StrategyDisposition.valueOf(
+                        checkNotNull(strategyColumns[6]) as String,
+                    ),
+                )
+            }
+        }
+
         return QueueEntry(
             id = QueueEntryId(appleQueueHexDecode(fields[0])),
             synchronizationRequest = synchronizationRequest,
@@ -408,6 +494,7 @@ internal object AppleQueueStateFileCodec {
             metadata = appleQueueDecodeMetadata(fields[34]),
             retryBudgetState = retryBudgetState,
             workflowTimeoutState = workflowTimeoutState,
+            strategyDecision = strategyDecision,
         )
     }
 }

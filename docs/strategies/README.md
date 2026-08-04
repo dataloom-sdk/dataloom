@@ -3,7 +3,7 @@
 > [!IMPORTANT]
 > This documentation defines the mandatory V1 product contract. The repository
 > now contains versioned profile, evidence, decision, execution-plan, and
-> durable-decision contracts plus a deterministic planner for all six
+> durable-decision contracts and queue persistence plus a deterministic planner for all six
 > strategies. Plan-aware direct network-only execution and direct
 > provider-backed remote-first execution are implemented. The remaining
 > strategy runtimes, durable recovery, events, and full platform qualification
@@ -20,7 +20,7 @@ All six are required for V1:
 | [Cache-first](./cache-first.md) | Local synchronized state may be used under explicit freshness and refresh rules. | Contract and freshness decision matrix implemented; execution pending |
 | [Network-only](./network-only.md) | Remote execution must succeed without local storage or queue access. | Direct transport-only PUSH, PULL, and BIDIRECTIONAL execution implemented; full event/result qualification pending |
 | [Hybrid](./hybrid.md) | A declared primary source, fallback, return rule, persistence rule, and coherence rule must be composed. | Contract and finite source plan evaluation implemented; execution pending |
-| [Adaptive](./adaptive.md) | A bounded policy must select deterministically from approved concrete strategies. | Deterministic allowlisted selection implemented; durable admission pending |
+| [Adaptive](./adaptive.md) | A bounded policy must select deterministically from approved concrete strategies. | Deterministic allowlisted selection and durable decision identity implemented; immutable plan replay pending |
 
 None of these strategies may be deferred to V2, reduced to application-owned
 replacement code, or considered complete merely because a custom pipeline can
@@ -96,8 +96,9 @@ to its execution foundations:
   decisions, ordered operations, and plan-derived provider capabilities.
 - `BuiltInSynchronizationStrategyEvaluator` evaluates all six profiles without
   provider calls, clock reads, randomness, or exception-derived fallback.
-- `PersistedStrategyDecision` defines the non-sensitive identity durable work
-  must retain across retry, lease recovery, and restart.
+- `PersistedStrategyDecision` defines the bounded non-sensitive identity that
+  in-memory, Android Room, and Apple queue stores preserve across retry,
+  non-retry deferral, lease recovery, reopen, and restart.
 - `StrategyProviderBindings` and `StrategyProviderResolver` resolve only the
   capabilities required by the evaluated plan.
 - `DataLoom.synchronize(StrategySynchronizationRequest)` executes direct

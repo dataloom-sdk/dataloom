@@ -29,7 +29,7 @@ KMP iOS:
 | Understand modules and dependencies | [Module architecture](./architecture/modules.md) |
 | Build and verify a change locally | [Development guide](./development/building.md) |
 | Use the testing toolkit | [Testing guide](./testing/testing-toolkit.md) |
-| Review V1 gaps and release gates | [V1 production-readiness audit](./audits/DL-AUDIT-004-v1-production-readiness.md) |
+| Review V1 gaps and release gates | [Audit index and evidence hierarchy](./audits/README.md) |
 | Understand accepted decisions | [Architecture decision records](./adr/README.md) |
 
 ## Documentation map
