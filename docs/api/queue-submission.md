@@ -439,3 +439,12 @@ introduced.
 - DL-027 — `QueuedSynchronizationWork` and resolver boundary
 - DL-032 — Queue-worker boundary
 - DL-033 — `DataLoom` facade and builder
+
+## Strategy-decision correspondence
+
+When `QueuedSynchronizationWork.strategyDecision` is non-null, the
+application-owned encoder must place the exact same value in
+`QueueEnqueueRequest.entry.strategyDecision`. Submission preflight rejects a
+changed, dropped, or invented decision before timeout, circuit, or queue-provider
+policy executes. This prevents configuration changes or encoder behavior from
+silently changing an already accepted strategy.

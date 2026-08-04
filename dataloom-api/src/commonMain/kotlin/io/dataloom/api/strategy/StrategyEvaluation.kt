@@ -79,4 +79,21 @@ public data class PersistedStrategyDecision(
     public val effectiveStrategy: BuiltInSynchronizationStrategy,
     public val configurationVersion: StrategyConfigurationVersion,
     public val disposition: StrategyDisposition,
-)
+) {
+    init {
+        require(effectiveStrategy != BuiltInSynchronizationStrategy.ADAPTIVE) {
+            "PersistedStrategyDecision effectiveStrategy must be concrete."
+        }
+        require(disposition != StrategyDisposition.REJECT) {
+            "Rejected strategy decisions must not be persisted as durable work."
+        }
+    }
+
+    /** Bounded diagnostic output that excludes all dynamic strategy identifiers. */
+    override fun toString(): String =
+        "PersistedStrategyDecision(" +
+            "requestedStrategy=$requestedStrategy, " +
+            "effectiveStrategy=$effectiveStrategy, " +
+            "configurationVersion=${configurationVersion.value}, " +
+            "disposition=$disposition)"
+}

@@ -2,6 +2,8 @@ package io.dataloom.api.strategy
 
 import kotlin.jvm.JvmInline
 
+private const val MAXIMUM_STRATEGY_IDENTIFIER_LENGTH: Int = 256
+
 /**
  * Stable identifier for a synchronization strategy profile.
  *
@@ -12,6 +14,10 @@ import kotlin.jvm.JvmInline
 public value class StrategyProfileId(public val value: String) {
     init {
         require(value.isNotBlank()) { "StrategyProfileId value must not be blank." }
+        require(value.length <= MAXIMUM_STRATEGY_IDENTIFIER_LENGTH) {
+            "StrategyProfileId value must not exceed " +
+                "$MAXIMUM_STRATEGY_IDENTIFIER_LENGTH characters."
+        }
     }
 
     override fun toString(): String = value
@@ -31,6 +37,10 @@ public value class StrategyConfigurationVersion(public val value: Long) {
 public value class StrategyDecisionId(public val value: String) {
     init {
         require(value.isNotBlank()) { "StrategyDecisionId value must not be blank." }
+        require(value.length <= MAXIMUM_STRATEGY_IDENTIFIER_LENGTH) {
+            "StrategyDecisionId value must not exceed " +
+                "$MAXIMUM_STRATEGY_IDENTIFIER_LENGTH characters."
+        }
     }
 
     override fun toString(): String = value
@@ -41,6 +51,10 @@ public value class StrategyDecisionId(public val value: String) {
 public value class StrategyPlanId(public val value: String) {
     init {
         require(value.isNotBlank()) { "StrategyPlanId value must not be blank." }
+        require(value.length <= MAXIMUM_STRATEGY_IDENTIFIER_LENGTH) {
+            "StrategyPlanId value must not exceed " +
+                "$MAXIMUM_STRATEGY_IDENTIFIER_LENGTH characters."
+        }
     }
 
     override fun toString(): String = value

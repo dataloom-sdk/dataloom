@@ -72,7 +72,7 @@ class AppleFileRetryAdministrationExecutorTest {
         assertIs<RetryAdministrationExecutionResult.Applied>(executor.execute(command))
 
         val content = readSnapshotText(directory)
-        assertTrue(content.startsWith("DATALOOM_QUEUE_STATE\t2\n"))
+        assertTrue(content.startsWith("DATALOOM_QUEUE_STATE\t3\n"))
         val snapshot = AppleQueueStateFileCodec.decodeSnapshot(content)
         val persisted = snapshot.entries.getValue(original.id.value)
         assertEquals(QueueEntryState.RETRY_WAITING, persisted.state)

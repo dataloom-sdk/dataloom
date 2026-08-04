@@ -43,9 +43,9 @@ closes the database lifecycle. Published V1 coordinates are not available yet.
 | Property | Current value |
 |---|---|
 | Default database name | `dataloom-queue.db` |
-| Schema version | `6` |
+| Schema version | `7` |
 | Schema export | Enabled |
-| Committed schema | `dataloom-queue-room/schemas/io.dataloom.queue.room.internal.DataLoomRoomDatabase/6.json` |
+| Committed schema | `dataloom-queue-room/schemas/io.dataloom.queue.room.internal.DataLoomRoomDatabase/7.json` |
 | Tables | `queue_entries`, `circuit_breaker_states`, `retry_administration_states`, `circuit_administration_states` |
 
 Persisted enum-like values use stable names, never ordinals. Changing a
@@ -180,11 +180,14 @@ errors, metadata, and retry-budget evidence remain unchanged.
 `MIGRATION_4_5` adds durable retry-administration command state.
 `MIGRATION_5_6` adds durable circuit-administration command, authorization,
 result, and redacted failure evidence without rewriting queue, circuit, or retry
-administration rows.
+administration rows. `MIGRATION_6_7` appends seven nullable strategy-decision
+columns to `queue_entries`; legacy rows remain null and are never assigned the
+current strategy configuration.
 
 Instrumented migration tests validate every adjacent migration through version
-6, preserve representative queue and circuit rows, verify each new table, and
-reopen the current database through the production migration set.
+7, preserve representative queue and circuit rows, verify each new table and
+strategy column group, and reopen the current database through the production
+migration set.
 
 SDK maintainers must add and test an explicit migration whenever the schema
 changes and keep committed JSON schemas synchronized with generated output. The
@@ -197,8 +200,8 @@ encrypted `SupportSQLiteOpenHelper.Factory`.
 
 ## Security boundary
 
-The current database is not encrypted by DataLoom. Queue requests, metadata,
-sanitized error fields, and bounded retry timing evidence are persisted. Circuit
+The current database is not encrypted by DataLoom. Queue requests, metadata, sanitized error fields, bounded retry timing,
+workflow deadlines, and bounded strategy-decision identity are persisted. Circuit
 rows contain only bounded scope and state-machine evidence; they do not contain
 payload bytes, credentials, tokens, raw headers, exception text, or provider
 instances.
@@ -237,3 +240,11 @@ selection, retry policy, scheduling, or synchronization execution.
 - [Retry policy](../api/retry-policy.md)
 - [Queue boundaries](../architecture/queue-boundaries.md)
 - [WorkManager worker integration](worker-integration.md)
+
+## Schema version 7 strategy decision
+
+Room schema version 7 adds seven nullable columns containing the bounded
+strategy-decision identity. `MIGRATION_6_7` preserves every existing queue,
+retry, circuit, and administration row and leaves the new columns null for
+legacy work. Partially populated decision columns are corrupt durable state and
+fail closed; no default strategy is inferred.

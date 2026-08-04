@@ -502,3 +502,12 @@ Accepted retries may carry `RetryBudgetState`, containing only bounded timing
 evidence. Queue rescheduling persists that state atomically with attempt,
 availability, and error. Constraint deferral and lease recovery preserve it
 without consuming budget. Initial enqueue never accepts retry budget state.
+
+## Durable strategy decision
+
+`QueueEntry.strategyDecision` optionally carries the bounded
+`PersistedStrategyDecision` accepted before durable admission. It stores only
+stable decision, plan, profile, strategy, configuration-version, and disposition
+identity. Queue providers must preserve it across acquisition, retry, non-retry
+deferral, lease recovery, process reconstruction, and migrations. Legacy and
+non-strategy queue entries retain `null` rather than receiving an invented plan.

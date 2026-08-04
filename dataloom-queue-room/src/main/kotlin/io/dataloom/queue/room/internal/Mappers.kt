@@ -31,6 +31,13 @@ import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.api.retry.RetryAttempt
 import io.dataloom.api.retry.RetryBudgetState
 import io.dataloom.api.retry.WorkflowTimeoutState
+import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
+import io.dataloom.api.strategy.PersistedStrategyDecision
+import io.dataloom.api.strategy.StrategyConfigurationVersion
+import io.dataloom.api.strategy.StrategyDecisionId
+import io.dataloom.api.strategy.StrategyDisposition
+import io.dataloom.api.strategy.StrategyPlanId
+import io.dataloom.api.strategy.StrategyProfileId
 import io.dataloom.api.scheduling.SchedulingDelay
 import io.dataloom.api.time.DataLoomInstant
 import org.json.JSONObject
@@ -82,6 +89,13 @@ internal fun QueueEntry.toEntity(): QueueEntryEntity {
         lastErrorRecoverability = lastError?.recoverability?.name,
         lastErrorMessage = lastError?.message,
         entryMetadataJson = metadata.toJsonOrNull(),
+        strategyDecisionId = strategyDecision?.decisionId?.value,
+        strategyPlanId = strategyDecision?.planId?.value,
+        strategyRequestedStrategy = strategyDecision?.requestedStrategy?.name,
+        strategyEffectiveProfileId = strategyDecision?.effectiveProfileId?.value,
+        strategyEffectiveStrategy = strategyDecision?.effectiveStrategy?.name,
+        strategyConfigurationVersion = strategyDecision?.configurationVersion?.value,
+        strategyDisposition = strategyDecision?.disposition?.name,
     )
 }
 
@@ -168,6 +182,40 @@ internal fun QueueEntryEntity.toDomain(): QueueEntry {
         )
     }
 
+    val strategyColumns: List<Any?> = listOf(
+        strategyDecisionId,
+        strategyPlanId,
+        strategyRequestedStrategy,
+        strategyEffectiveProfileId,
+        strategyEffectiveStrategy,
+        strategyConfigurationVersion,
+        strategyDisposition,
+    )
+    check(strategyColumns.all { it == null } || strategyColumns.all { it != null }) {
+        "Persisted strategy-decision columns must be either all null or all non-null."
+    }
+    val strategyDecision = if (strategyColumns.all { it == null }) {
+        null
+    } else {
+        PersistedStrategyDecision(
+            decisionId = StrategyDecisionId(checkNotNull(strategyDecisionId)),
+            planId = StrategyPlanId(checkNotNull(strategyPlanId)),
+            requestedStrategy = BuiltInSynchronizationStrategy.valueOf(
+                checkNotNull(strategyRequestedStrategy),
+            ),
+            effectiveProfileId = StrategyProfileId(
+                checkNotNull(strategyEffectiveProfileId),
+            ),
+            effectiveStrategy = BuiltInSynchronizationStrategy.valueOf(
+                checkNotNull(strategyEffectiveStrategy),
+            ),
+            configurationVersion = StrategyConfigurationVersion(
+                checkNotNull(strategyConfigurationVersion),
+            ),
+            disposition = StrategyDisposition.valueOf(checkNotNull(strategyDisposition)),
+        )
+    }
+
     return QueueEntry(
         id = QueueEntryId(entryId),
         synchronizationRequest = syncRequest,
@@ -180,6 +228,7 @@ internal fun QueueEntryEntity.toDomain(): QueueEntry {
         metadata = entryMeta,
         retryBudgetState = retryBudgetState,
         workflowTimeoutState = workflowTimeoutState,
+        strategyDecision = strategyDecision,
     )
 }
 
