@@ -27,6 +27,13 @@ import io.dataloom.api.queue.QueueLease
 import io.dataloom.api.retry.RetryAttempt
 import io.dataloom.api.retry.RetryOperation
 import io.dataloom.api.retry.WorkflowTimeoutState
+import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
+import io.dataloom.api.strategy.PersistedStrategyDecision
+import io.dataloom.api.strategy.StrategyConfigurationVersion
+import io.dataloom.api.strategy.StrategyDecisionId
+import io.dataloom.api.strategy.StrategyDisposition
+import io.dataloom.api.strategy.StrategyPlanId
+import io.dataloom.api.strategy.StrategyProfileId
 import io.dataloom.api.scheduling.SchedulingDelay
 import io.dataloom.api.synchronization.SynchronizationResult
 import io.dataloom.api.synchronization.SynchronizationSummary
@@ -182,6 +189,65 @@ class ProviderProtectedQueuedSynchronizationExecutionHandlerTest {
     }
 
     @Test
+    fun `changed resolved strategy decision prevents protected execution`() = runTest {
+        val request = request()
+        val facade = RecordingProtectedSynchronization(
+            ProviderProtectedSynchronizationExecutionResult.Executed(
+                ProviderProtectedSynchronizationResult(
+                    synchronizationResult = succeeded(request),
+                    operationEvidence = emptyList(),
+                ),
+            ),
+        )
+        val handler = handler(
+            resolver = resolved(
+                request = request,
+                bindings = bindings(),
+                strategyDecision = strategyDecision(version = 4L),
+            ),
+            facade = facade,
+        )
+
+        val result = handler.execute(
+            entry(
+                request = request,
+                strategyDecision = strategyDecision(version = 3L),
+            ),
+        )
+
+        val outcome = assertIs<QueueEntryExecutionOutcome.Failed>(result.outcome)
+        assertEquals("DL-Q-STRATEGY-DECISION-MISMATCH", outcome.error.code.value)
+        assertEquals(ErrorCategory.CONFIGURATION, outcome.error.category)
+        assertEquals(Recoverability.NON_RECOVERABLE, outcome.error.recoverability)
+        assertEquals(0, facade.calls)
+        assertEquals(null, result.executionResult)
+        assertEquals(emptyList(), result.operationEvidence)
+    }
+
+    @Test
+    fun `matching resolved strategy decision reaches protected execution`() = runTest {
+        val request = request()
+        val decision = strategyDecision(version = 3L)
+        val facade = RecordingProtectedSynchronization(
+            ProviderProtectedSynchronizationExecutionResult.Executed(
+                ProviderProtectedSynchronizationResult(
+                    synchronizationResult = succeeded(request),
+                    operationEvidence = emptyList(),
+                ),
+            ),
+        )
+        val handler = handler(
+            resolver = resolved(request, bindings(), decision),
+            facade = facade,
+        )
+
+        val result = handler.execute(entry(request, decision))
+
+        assertIs<QueueEntryExecutionOutcome.Completed>(result.outcome)
+        assertEquals(1, facade.calls)
+    }
+
+    @Test
     fun `expired persisted workflow deadline prevents protected execution`() = runTest {
         val request = request()
         val facade = RecordingProtectedSynchronization(
@@ -271,9 +337,14 @@ class ProviderProtectedQueuedSynchronizationExecutionHandlerTest {
     private fun resolved(
         request: SynchronizationRequest,
         bindings: SynchronizationProviderBindings,
+        strategyDecision: PersistedStrategyDecision? = null,
     ): QueuedSynchronizationWorkResolver = QueuedSynchronizationWorkResolver {
         QueuedSynchronizationWorkResolution.Resolved(
-            QueuedSynchronizationWork(request, bindings),
+            QueuedSynchronizationWork(
+                request = request,
+                bindings = bindings,
+                strategyDecision = strategyDecision,
+            ),
         )
     }
 
@@ -311,6 +382,18 @@ class ProviderProtectedQueuedSynchronizationExecutionHandlerTest {
     ) : DataLoomClock {
         override fun now(): DataLoomInstant = instant
     }
+
+    private fun strategyDecision(
+        version: Long,
+    ): PersistedStrategyDecision = PersistedStrategyDecision(
+        decisionId = StrategyDecisionId("decision-protected-1"),
+        planId = StrategyPlanId("plan-protected-1"),
+        requestedStrategy = BuiltInSynchronizationStrategy.ADAPTIVE,
+        effectiveProfileId = StrategyProfileId("offline-profile"),
+        effectiveStrategy = BuiltInSynchronizationStrategy.OFFLINE_FIRST,
+        configurationVersion = StrategyConfigurationVersion(version),
+        disposition = StrategyDisposition.DEFER,
+    )
 
     private fun successfulEvidence(): ProviderProtectionOperationEvidence =
         ProviderProtectionOperationEvidence(
@@ -354,7 +437,10 @@ class ProviderProtectedQueuedSynchronizationExecutionHandlerTest {
         ),
     )
 
-    private fun entry(request: SynchronizationRequest): QueueEntry = QueueEntry(
+    private fun entry(
+        request: SynchronizationRequest,
+        strategyDecision: PersistedStrategyDecision? = null,
+    ): QueueEntry = QueueEntry(
         id = QueueEntryId("entry-1"),
         synchronizationRequest = request,
         state = QueueEntryState.LEASED,
@@ -366,6 +452,7 @@ class ProviderProtectedQueuedSynchronizationExecutionHandlerTest {
             acquiredAt = DataLoomInstant(1_500L),
             expiresAt = DataLoomInstant(10_000L),
         ),
+        strategyDecision = strategyDecision,
     )
 
     private data class TestError(

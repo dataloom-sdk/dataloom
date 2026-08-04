@@ -33,19 +33,22 @@ import io.dataloom.runtime.retry.WorkflowTimeoutStateExecutor
  * 2. If [QueuedSynchronizationWorkResolution.Rejected], return
  *    [QueueEntryExecutionOutcome.Failed] with the canonical error and
  *    [QueueFailureDisposition.FAILED].
- * 3. Invoke [executionCoordinator] with the exact [QueuedSynchronizationWork]
+ * 3. Require the resolved work to contain the exact strategy decision stored
+ *    on the durable entry. Mismatch fails before timeout, clock, coordinator,
+ *    provider, or retry activity.
+ * 4. Invoke [executionCoordinator] with the exact [QueuedSynchronizationWork]
  *    request and bindings.
- * 4. If [SynchronizationExecutionResult.Rejected], map the structural
+ * 5. If [SynchronizationExecutionResult.Rejected], map the structural
  *    rejection to [QueueEntryExecutionOutcome.Failed] with
  *    [QueueFailureDisposition.FAILED].
- * 5. If [SynchronizationExecutionResult.Executed]:
+ * 6. If [SynchronizationExecutionResult.Executed]:
  *    - [SynchronizationResult.Succeeded] or [SynchronizationResult.Skipped]
  *      → [QueueEntryExecutionOutcome.Completed] with `result.completedAt`.
  *    - [SynchronizationResult.Cancelled] → [QueueEntryExecutionOutcome.Cancelled]
  *      with the request execution context.
  *    - [SynchronizationResult.Failed] or [SynchronizationResult.PartiallySucceeded]
  *      → invoke [retryEvaluator].
- * 6. Retry evaluation:
+ * 7. Retry evaluation:
  *    - [SynchronizationRetryEvaluation.ShouldRetry] →
  *      [QueueEntryExecutionOutcome.Reschedule] with the exact retry attempt,
  *      the computed availability instant, and the primary canonical error.
@@ -165,8 +168,14 @@ internal class QueuedSynchronizationExecutionHandler(
             )
         }
         val work = (resolution as QueuedSynchronizationWorkResolution.Resolved).work
+        QueuedStrategyDecisionCorrespondence.validate(entry, work)?.let { error ->
+            return QueueEntryExecutionOutcome.Failed(
+                error = error,
+                disposition = QueueFailureDisposition.FAILED,
+            )
+        }
 
-        // Step 3–4: Execute synchronization; map coordinator rejections.
+        // Step 4–5: Execute synchronization; map coordinator rejections.
         val executionResult = when (val timedExecution = executeQueuedWorkflowWithTimeout(
             entry = entry,
             timeoutExecutor = workflowTimeoutExecutor,
@@ -185,7 +194,7 @@ internal class QueuedSynchronizationExecutionHandler(
             return mapCoordinatorRejection(executionResult)
         }
 
-        // Step 5: Map the pipeline result to a queue outcome.
+        // Step 6: Map the pipeline result to a queue outcome.
         val syncResult = (executionResult as SynchronizationExecutionResult.Executed).result
         return mapSynchronizationResult(syncResult, entry)
     }

@@ -31,8 +31,9 @@ import io.dataloom.runtime.retry.WorkflowTimeoutStateExecutor
  * It returns one [ProviderProtectedQueueEntryExecutionResult] for a later queue
  * processor to transition exactly once.
  *
- * Persisted workflow timeout evidence is enforced before protected
- * synchronization. Local resolver rejection and deadline rejection therefore
+ * The resolved strategy decision is compared with durable queue state before
+ * persisted workflow timeout enforcement or protected synchronization. Local
+ * resolver rejection, strategy mismatch, and deadline rejection therefore
  * produce no provider evidence and invoke no protected provider operation.
  */
 public class ProviderProtectedQueuedSynchronizationExecutionHandler(
@@ -59,6 +60,9 @@ public class ProviderProtectedQueuedSynchronizationExecutionHandler(
             return localFailure(entry, resolution.error)
         }
         val work = (resolution as QueuedSynchronizationWorkResolution.Resolved).work
+        QueuedStrategyDecisionCorrespondence.validate(entry, work)?.let { error ->
+            return localFailure(entry, error)
+        }
 
         val protectedExecution = when (val timedExecution = executeQueuedWorkflowWithTimeout(
             entry = entry,
