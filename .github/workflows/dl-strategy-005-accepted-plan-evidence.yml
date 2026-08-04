@@ -1,0 +1,190 @@
+name: DL-039B Persisted Accepted Strategy Plan Execution Evidence
+
+on:
+  push:
+    branches:
+      - agent/dl-strategy-005-accepted-plan-execution
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dl-strategy-005-accepted-plan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualify-and-commit:
+    name: Persist and execute immutable accepted strategy plans
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      DATALOOM_ANDROID_BUILD: "true"
+
+    steps:
+      - name: Checkout evidence branch
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Prepare bounded evidence logs
+        shell: bash
+        run: mkdir -p /tmp/dl-strategy-005-accepted-plan-logs
+
+      - name: Apply persistence and accepted-plan facade patches
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            python3 -m py_compile .github/scripts/dl_strategy_004_persistence.py
+            python3 -m py_compile .github/scripts/dl_strategy_004_persistence_docs.py
+            python3 -m py_compile .github/scripts/dl_strategy_005_facade.py
+            python3 -m py_compile .github/scripts/dl_strategy_005_test_fix.py
+            python3 .github/scripts/dl_strategy_004_persistence.py
+            python3 .github/scripts/dl_strategy_004_persistence_docs.py
+            python3 .github/scripts/dl_strategy_005_facade.py
+            python3 .github/scripts/dl_strategy_005_test_fix.py
+            git diff --check
+          } 2>&1 | tee /tmp/dl-strategy-005-accepted-plan-logs/01-patch.log
+
+      - name: Generate exact ABI and Room schema
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            updateKotlinAbi \
+            :dataloom-queue-room:kspDebugKotlin \
+            --no-parallel \
+            --stacktrace \
+            --console=plain \
+            2>&1 | tee /tmp/dl-strategy-005-accepted-plan-logs/02-generate.log
+          test -f dataloom-queue-room/schemas/io.dataloom.queue.room.internal.DataLoomRoomDatabase/8.json
+
+      - name: Validate common, JVM, Android, Apple, consumers, and XCFramework
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            :build-logic:test \
+            build \
+            :runtime-external-consumer:checkRuntimeExternalConsumer \
+            :runtime-external-consumer:compileKotlinIosArm64 \
+            :runtime-external-consumer:compileKotlinIosSimulatorArm64 \
+            :runtime-external-consumer:compileKotlinIosX64 \
+            :dataloom-runtime:iosSimulatorArm64Test \
+            :dataloom-queue-room:assembleDebugAndroidTest \
+            :dataloom-queue-room:testDebugUnitTest \
+            :dataloom-apple:assembleDataLoomReleaseXCFramework \
+            checkKotlinAbi \
+            --no-parallel \
+            --stacktrace \
+            --warning-mode all \
+            --console=plain \
+            2>&1 | tee /tmp/dl-strategy-005-accepted-plan-logs/03-validate.log
+
+      - name: Verify schema and repository hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            python3 - <<'PY'
+          import json
+          import pathlib
+          import re
+
+          schema = pathlib.Path(
+              "dataloom-queue-room/schemas/"
+              "io.dataloom.queue.room.internal.DataLoomRoomDatabase/8.json"
+          )
+          data = json.loads(schema.read_text())
+          assert data["database"]["version"] == 8
+          identity = data["database"]["identityHash"]
+          assert re.fullmatch(r"[0-9a-f]{32}", identity), identity
+          queue = next(
+              entity for entity in data["database"]["entities"]
+              if entity["tableName"] == "queue_entries"
+          )
+          columns = {field["columnName"] for field in queue["fields"]}
+          assert "strategy_plan_snapshot" in columns
+          print(f"Verified Room schema 8 identity {identity}")
+          PY
+            git diff --check
+            if find . -path '*/build/*' -prune -o -name '*.rej' -print | grep -q .; then
+              echo "Patch reject files were created."
+              exit 1
+            fi
+          } 2>&1 | tee /tmp/dl-strategy-005-accepted-plan-logs/04-verify.log
+
+      - name: Record bounded failure checkpoint
+        if: failure()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .github/evidence
+          {
+            echo "DL-039B persisted accepted-plan execution evidence failed."
+            echo "Source head: ${GITHUB_SHA}"
+            echo
+            echo "Repository status:"
+            git status --short
+            for log in /tmp/dl-strategy-005-accepted-plan-logs/*.log; do
+              if [[ -f "$log" ]]; then
+                echo
+                echo "===== $(basename "$log") compiler diagnostics ====="
+                grep -nE -C 5 \
+                  '(^e: |error:|Unresolved reference|Type mismatch|Cannot access|Compilation error|Compilation failed|FAILED)' \
+                  "$log" | tail -n 500 || true
+                echo
+                echo "===== $(basename "$log") head ====="
+                head -n 120 "$log"
+                echo
+                echo "===== $(basename "$log") tail ====="
+                tail -n 180 "$log"
+              fi
+            done
+          } > .github/evidence/dl-strategy-005-accepted-plan-last-failure.txt
+          git reset
+          git add .github/evidence/dl-strategy-005-accepted-plan-last-failure.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Record accepted-plan execution failure [skip ci]"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Remove one-time helpers and commit qualified tree
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/dl-strategy-004-persistence-evidence.yml
+          rm .github/workflows/dl-strategy-005-accepted-plan-evidence.yml
+          rm .github/scripts/dl_strategy_004_persistence.py
+          rm .github/scripts/dl_strategy_004_persistence_docs.py
+          rm .github/scripts/dl_strategy_005_facade.py
+          rm .github/scripts/dl_strategy_005_test_fix.py
+          rm -rf .github/scripts/__pycache__
+          rm -f .github/evidence/dl-strategy-004-persistence-last-failure.txt
+          rm -f .github/evidence/dl-strategy-005-accepted-plan-last-failure.txt
+          rmdir .github/evidence 2>/dev/null || true
+          git diff --check
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No qualified changes were produced."
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "DL-039B: execute persisted accepted strategy plans"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
