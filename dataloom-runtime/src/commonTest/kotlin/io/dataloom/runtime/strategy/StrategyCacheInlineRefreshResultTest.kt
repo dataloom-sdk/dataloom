@@ -17,24 +17,24 @@ import io.dataloom.api.strategy.StrategyOperation
 import io.dataloom.api.strategy.StrategyRemoteOutcome
 import io.dataloom.api.strategy.StrategyTransportOutput
 import io.dataloom.api.synchronization.SynchronizationResult
+import io.dataloom.api.synchronization.SynchronizationSkipReason
 import io.dataloom.api.synchronization.SynchronizationSummary
 import io.dataloom.api.time.DataLoomInstant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class StrategyCacheInlineRefreshResultTest {
 
     @Test
-    fun completedAcceptsCanonicalSucceededOrSkippedOutput() {
+    fun completedAcceptsSucceededAndNoChangeOutputAndDerivesCompletionTime() {
         val skipped = StrategyCacheInlineRefreshResult.Completed(
-            completedAt = completedAt,
             output = providerBacked(skipped()),
         )
         val succeeded = StrategyCacheInlineRefreshResult.Completed(
-            completedAt = completedAt,
             output = providerBacked(succeeded()),
         )
 
@@ -42,27 +42,33 @@ class StrategyCacheInlineRefreshResultTest {
             StrategyCacheInlineRefreshDisposition.COMPLETED,
             skipped.disposition,
         )
+        assertEquals(completedAt, skipped.completedAt)
+        assertEquals(completedAt, succeeded.completedAt)
         assertTrue(skipped.toString().contains("SKIPPED"))
         assertTrue(succeeded.toString().contains("SUCCEEDED"))
     }
 
     @Test
-    fun completedRejectsPartialFailedAndCancelledOutputs() {
+    fun completedRejectsPolicySkipPartialFailedAndCancelledOutputs() {
         assertFailsWith<IllegalArgumentException> {
             StrategyCacheInlineRefreshResult.Completed(
-                completedAt = completedAt,
+                output = providerBacked(
+                    skipped(SynchronizationSkipReason.POLICY_REJECTED),
+                ),
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            StrategyCacheInlineRefreshResult.Completed(
                 output = providerBacked(partiallySucceeded(TestError())),
             )
         }
         assertFailsWith<IllegalArgumentException> {
             StrategyCacheInlineRefreshResult.Completed(
-                completedAt = completedAt,
                 output = providerBacked(failed(TestError())),
             )
         }
         assertFailsWith<IllegalArgumentException> {
             StrategyCacheInlineRefreshResult.Completed(
-                completedAt = completedAt,
                 output = providerBacked(cancelled()),
             )
         }
@@ -72,7 +78,6 @@ class StrategyCacheInlineRefreshResultTest {
     fun partialOutcomeRequiresCanonicalPartialResultAndUsesBoundedDiagnostics() {
         val error = TestError()
         val result = StrategyCacheInlineRefreshResult.PartiallySucceeded(
-            completedAt = completedAt,
             output = providerBacked(partiallySucceeded(error)),
         )
 
@@ -80,26 +85,25 @@ class StrategyCacheInlineRefreshResultTest {
             StrategyCacheInlineRefreshDisposition.PARTIALLY_SUCCEEDED,
             result.disposition,
         )
+        assertEquals(completedAt, result.completedAt)
         assertTrue(result.toString().contains("errorCount=1"))
         assertFalse(result.toString().contains(error.message))
         assertFailsWith<IllegalArgumentException> {
             StrategyCacheInlineRefreshResult.PartiallySucceeded(
-                completedAt = completedAt,
                 output = providerBacked(skipped()),
             )
         }
     }
 
     @Test
-    fun failedPreservesBoundedPartialEffectEvidenceDefensively() {
+    fun failedDerivesCanonicalErrorAndTimeAndCopiesCompletedOperations() {
         val error = TestError()
         val operations = mutableListOf(StrategyOperation.PULL_REMOTE)
+        val output = providerBacked(failed(error))
         val result = StrategyCacheInlineRefreshResult.Failed(
-            completedAt = completedAt,
-            error = error,
             transportAttempted = true,
             completedOperations = operations,
-            partialOutput = providerBacked(failed(error)),
+            output = output,
             remoteOutcome = StrategyRemoteOutcome.UNAVAILABLE,
         )
         operations += StrategyOperation.PERSIST_REMOTE
@@ -108,6 +112,8 @@ class StrategyCacheInlineRefreshResultTest {
             StrategyCacheInlineRefreshDisposition.FAILED,
             result.disposition,
         )
+        assertEquals(completedAt, result.completedAt)
+        assertSame(error, result.error)
         assertEquals(listOf(StrategyOperation.PULL_REMOTE), result.completedOperations)
         assertTrue(result.transportAttempted)
         assertEquals(StrategyRemoteOutcome.UNAVAILABLE, result.remoteOutcome)
@@ -116,23 +122,32 @@ class StrategyCacheInlineRefreshResultTest {
     }
 
     @Test
-    fun failedRequiresMatchingCanonicalFailedOutput() {
+    fun failedRequiresCanonicalFailureAndConsistentRemoteEvidence() {
         assertFailsWith<IllegalArgumentException> {
             StrategyCacheInlineRefreshResult.Failed(
-                completedAt = completedAt,
-                error = TestError(code = ErrorCode("INLINE_REFRESH_PRIMARY")),
                 transportAttempted = false,
-                partialOutput = providerBacked(
-                    failed(TestError(code = ErrorCode("INLINE_REFRESH_DIFFERENT"))),
-                ),
+                output = providerBacked(skipped()),
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            StrategyCacheInlineRefreshResult.Failed(
+                transportAttempted = false,
+                output = providerBacked(failed(TestError())),
+                remoteOutcome = StrategyRemoteOutcome.UNAVAILABLE,
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            StrategyCacheInlineRefreshResult.Failed(
+                transportAttempted = false,
+                completedOperations = listOf(StrategyOperation.PULL_REMOTE),
+                output = providerBacked(failed(TestError())),
             )
         }
     }
 
     @Test
-    fun cancelledRequiresCanonicalCancellationOutput() {
+    fun cancelledRequiresCanonicalCancellationAndDerivesCompletionTime() {
         val result = StrategyCacheInlineRefreshResult.Cancelled(
-            completedAt = completedAt,
             output = providerBacked(cancelled()),
         )
 
@@ -140,9 +155,9 @@ class StrategyCacheInlineRefreshResultTest {
             StrategyCacheInlineRefreshDisposition.CANCELLED,
             result.disposition,
         )
+        assertEquals(completedAt, result.completedAt)
         assertFailsWith<IllegalArgumentException> {
             StrategyCacheInlineRefreshResult.Cancelled(
-                completedAt = completedAt,
                 output = providerBacked(skipped()),
             )
         }
@@ -160,11 +175,14 @@ class StrategyCacheInlineRefreshResultTest {
             summary = SynchronizationSummary(),
         )
 
-    private fun skipped(): SynchronizationResult.Skipped =
+    private fun skipped(
+        reason: SynchronizationSkipReason = SynchronizationSkipReason.NO_CHANGES,
+    ): SynchronizationResult.Skipped =
         SynchronizationResult.Skipped(
             request = request,
             completedAt = completedAt,
             summary = SynchronizationSummary(),
+            reason = reason,
         )
 
     private fun partiallySucceeded(
