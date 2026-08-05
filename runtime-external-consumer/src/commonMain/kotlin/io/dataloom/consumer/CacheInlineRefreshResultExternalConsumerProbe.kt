@@ -9,6 +9,7 @@ internal fun inspectInlineCacheRefresh(
 ): StrategyCacheInlineRefreshDisposition {
     when (result) {
         is StrategyCacheInlineRefreshResult.Completed -> result.output.result
+        is StrategyCacheInlineRefreshResult.PartiallySucceeded -> result.output.result
         is StrategyCacheInlineRefreshResult.Failed -> {
             result.error.code
             result.transportAttempted
