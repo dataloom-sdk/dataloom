@@ -2605,6 +2605,7 @@ public final class io/dataloom/api/strategy/StrategyProfileId {
 }
 
 public final class io/dataloom/api/strategy/StrategyProviderCapability : java/lang/Enum {
+	public static final field ATOMIC_LOCAL_ADMISSION Lio/dataloom/api/strategy/StrategyProviderCapability;
 	public static final field CONFLICT_STATE Lio/dataloom/api/strategy/StrategyProviderCapability;
 	public static final field CONNECTIVITY Lio/dataloom/api/strategy/StrategyProviderCapability;
 	public static final field EVENT_OUTBOX Lio/dataloom/api/strategy/StrategyProviderCapability;

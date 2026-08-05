@@ -13,6 +13,8 @@ public enum class StrategyProviderCapability {
     RETRY_STATE,
     CONFLICT_STATE,
     EVENT_OUTBOX,
+    /** Storage can atomically admit local intent and its durable continuation. */
+    ATOMIC_LOCAL_ADMISSION,
 }
 
 /** Ordered, side-effecting or observable operations in a strategy plan. */

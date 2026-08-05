@@ -465,6 +465,7 @@ final enum class io.dataloom.api.strategy/StrategyOperation : kotlin/Enum<io.dat
 }
 
 final enum class io.dataloom.api.strategy/StrategyProviderCapability : kotlin/Enum<io.dataloom.api.strategy/StrategyProviderCapability> { // io.dataloom.api.strategy/StrategyProviderCapability|null[0]
+    enum entry ATOMIC_LOCAL_ADMISSION // io.dataloom.api.strategy/StrategyProviderCapability.ATOMIC_LOCAL_ADMISSION|null[0]
     enum entry CONFLICT_STATE // io.dataloom.api.strategy/StrategyProviderCapability.CONFLICT_STATE|null[0]
     enum entry CONNECTIVITY // io.dataloom.api.strategy/StrategyProviderCapability.CONNECTIVITY|null[0]
     enum entry EVENT_OUTBOX // io.dataloom.api.strategy/StrategyProviderCapability.EVENT_OUTBOX|null[0]

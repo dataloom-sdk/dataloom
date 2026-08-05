@@ -17,11 +17,18 @@ The contract accepts no domain payloads, credentials, exception text, or
 platform transaction types. Providers must preserve cancellation and must not
 call remote transport from the admission transaction.
 
+Evaluated plans that combine `ACCEPT_LOCAL` with `ENQUEUE_DURABLE_WORK` now
+declare `ATOMIC_LOCAL_ADMISSION`. Admission requests reject plans that omit
+that capability, and provider resolution fails closed unless the selected
+storage provider implements `StrategyOfflineFirstAdmissionProvider`. Resolution
+does not invoke the provider. Existing persisted V1 plan frames remain
+decodable; the new requirement is enforced at new evaluation and admission.
+
 ## Remaining integration
 
 This is a public contract checkpoint, not a completed offline-first runtime.
-The next implementation must resolve the capability from strategy bindings,
-invoke it before reporting direct or queued acceptance, and provide Android,
-KMP Android, and KMP iOS adapters with crash/restart and transaction-failure
-evidence. Durable strategy events, cache ownership, hybrid coherence, and the
-full platform matrix remain separate #102/#101 gates.
+The next implementation must invoke the resolved boundary before reporting
+direct or queued acceptance and provide Android, KMP Android, and KMP iOS
+adapters with crash/restart and transaction-failure evidence. Durable strategy
+events, cache ownership, hybrid coherence, and the full platform matrix remain
+separate #102/#101 gates.

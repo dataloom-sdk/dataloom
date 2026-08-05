@@ -59,6 +59,21 @@ class StrategyOfflineFirstAdmissionTest {
                 plan = plan(
                     disposition = StrategyDisposition.DEFER,
                     strategy = BuiltInSynchronizationStrategy.OFFLINE_FIRST,
+                    includeAtomicCapability = false,
+                ),
+                trigger = StrategyExecutionTrigger.DIRECT,
+                queueEntryId = QueueEntryId("queue-1"),
+                idempotencyKey = "intent-1",
+            )
+        }
+
+        assertFailsWith<IllegalArgumentException> {
+            StrategyOfflineFirstAdmissionRequest(
+                request = synchronizationRequest(),
+                decisionId = StrategyDecisionId("decision-1"),
+                plan = plan(
+                    disposition = StrategyDisposition.DEFER,
+                    strategy = BuiltInSynchronizationStrategy.OFFLINE_FIRST,
                     includeAdmission = false,
                 ),
                 trigger = StrategyExecutionTrigger.DIRECT,
@@ -99,6 +114,7 @@ class StrategyOfflineFirstAdmissionTest {
         disposition: StrategyDisposition,
         strategy: BuiltInSynchronizationStrategy,
         includeAdmission: Boolean = true,
+        includeAtomicCapability: Boolean = true,
     ): StrategyExecutionPlan = StrategyExecutionPlan(
         id = StrategyPlanId("plan-1"),
         requestedStrategy = strategy,
@@ -116,7 +132,11 @@ class StrategyOfflineFirstAdmissionTest {
         requiredCapabilities = setOf(
             StrategyProviderCapability.STORAGE,
             StrategyProviderCapability.QUEUE,
-        ),
+        ) + if (includeAdmission && includeAtomicCapability) {
+            setOf(StrategyProviderCapability.ATOMIC_LOCAL_ADMISSION)
+        } else {
+            emptySet()
+        },
         dataOrigin = StrategyDataOrigin.NONE,
         consistency = StrategyConsistency.LOCAL_AUTHORITATIVE,
         deferralReason = if (disposition == StrategyDisposition.DEFER) {

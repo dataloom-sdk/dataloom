@@ -10,6 +10,7 @@ import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.api.queue.QueueProvider
 import io.dataloom.api.scheduling.SchedulerProvider
 import io.dataloom.api.storage.StorageProvider
+import io.dataloom.api.strategy.StrategyOfflineFirstAdmissionProvider
 import io.dataloom.api.strategy.StrategyProviderCapability
 import io.dataloom.api.transport.TransportProvider
 
@@ -37,6 +38,18 @@ public class StrategyProviderResolver(
             missing = missing,
             failures = failures,
         )
+        if (
+            StrategyProviderCapability.ATOMIC_LOCAL_ADMISSION in requiredCapabilities &&
+            storage != null &&
+            storage !is StrategyOfflineFirstAdmissionProvider
+        ) {
+            failures += ProviderBindingFailure(
+                requestedId = storage.descriptor.id,
+                expectedType = ProviderType.STORAGE,
+                actualType = storage.descriptor.type,
+                reason = ProviderBindingFailureReason.PROVIDER_CONTRACT_MISMATCH,
+            )
+        }
         val transport = resolveRequiredRole<TransportProvider>(
             capability = StrategyProviderCapability.TRANSPORT,
             requiredCapabilities = requiredCapabilities,

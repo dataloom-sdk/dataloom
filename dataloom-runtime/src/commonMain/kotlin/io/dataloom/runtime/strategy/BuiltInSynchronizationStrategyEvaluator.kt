@@ -763,6 +763,12 @@ public class BuiltInSynchronizationStrategyEvaluator : SynchronizationStrategyEv
                 }
             }
         }
+        if (
+            StrategyOperation.ACCEPT_LOCAL in operations &&
+            StrategyOperation.ENQUEUE_DURABLE_WORK in operations
+        ) {
+            capabilities += StrategyProviderCapability.ATOMIC_LOCAL_ADMISSION
+        }
         return capabilities
     }
 

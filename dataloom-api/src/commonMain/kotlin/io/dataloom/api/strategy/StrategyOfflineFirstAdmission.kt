@@ -39,6 +39,12 @@ public class StrategyOfflineFirstAdmissionRequest(
         require(StrategyOperation.ENQUEUE_DURABLE_WORK in plan.operations) {
             "Offline-first admission requires ENQUEUE_DURABLE_WORK."
         }
+        require(
+            StrategyProviderCapability.ATOMIC_LOCAL_ADMISSION in
+                plan.requiredCapabilities,
+        ) {
+            "Offline-first admission requires ATOMIC_LOCAL_ADMISSION capability."
+        }
         require(plan.durableContinuation != null) {
             "Offline-first admission requires an immutable durable continuation."
         }

@@ -3,9 +3,10 @@
 > [!WARNING]
 > Offline-first is a mandatory built-in V1 strategy. Its versioned profile and
 > deterministic local-admission/deferral/reconciliation plan are implemented.
-> The public atomic local-intent/outbox provider contract is now defined. The
-> runtime and platform adapters still need to invoke and qualify that boundary
-> before the offline-first acceptance guarantee is complete.
+> The public atomic local-intent/outbox provider contract and fail-closed
+> capability resolution are now defined. The runtime and platform adapters
+> still need to invoke and qualify that boundary before the offline-first
+> acceptance guarantee is complete.
 
 [Strategy index](./README.md) · [Remote-first](./remote-first.md) ·
 [Cache-first](./cache-first.md) · [Hybrid](./hybrid.md)
