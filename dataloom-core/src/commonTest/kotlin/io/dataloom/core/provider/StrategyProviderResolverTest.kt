@@ -1,5 +1,6 @@
 package io.dataloom.core.provider
 
+import io.dataloom.api.provider.ProviderBindingFailureReason
 import io.dataloom.api.provider.ProviderDescriptor
 import io.dataloom.api.provider.ProviderHealth
 import io.dataloom.api.provider.ProviderHealthStatus
@@ -10,8 +11,19 @@ import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.provider.ProviderVersion
 import io.dataloom.api.provider.StrategyProviderBindings
+import io.dataloom.api.storage.InboundChangeApplyRequest
+import io.dataloom.api.storage.OutboundChangeReadRequest
+import io.dataloom.api.storage.OutboundChangeReadResult
+import io.dataloom.api.storage.StorageProvider
+import io.dataloom.api.strategy.StrategyOfflineFirstAdmissionProvider
+import io.dataloom.api.strategy.StrategyOfflineFirstAdmissionRequest
+import io.dataloom.api.strategy.StrategyOfflineFirstAdmissionResult
 import io.dataloom.api.strategy.StrategyProviderCapability
 import io.dataloom.api.synchronization.ChangeSetAcknowledgement
+import io.dataloom.api.synchronization.CheckpointReadRequest
+import io.dataloom.api.synchronization.CheckpointWriteRequest
+import io.dataloom.api.synchronization.OutboundChangeAcknowledgementRequest
+import io.dataloom.api.synchronization.SynchronizationCheckpoint
 import io.dataloom.api.transport.PullChangesRequest
 import io.dataloom.api.transport.PullChangesResult
 import io.dataloom.api.transport.PushChangesRequest
@@ -24,6 +36,61 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class StrategyProviderResolverTest {
+    private open class RecordingStorageProvider(
+        id: String = "storage",
+    ) : StorageProvider {
+        override val descriptor: ProviderDescriptor = ProviderDescriptor(
+            id = ProviderId(id),
+            name = ProviderName("Storage"),
+            type = ProviderType.STORAGE,
+            version = ProviderVersion("1.0.0"),
+        )
+
+        override suspend fun initialize(
+            context: ProviderInitializationContext,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun health(): ProviderOperationResult<ProviderHealth> =
+            ProviderOperationResult.Success(ProviderHealth(ProviderHealthStatus.HEALTHY))
+
+        override suspend fun close(): ProviderOperationResult<Unit> =
+            ProviderOperationResult.Success(Unit)
+
+        override suspend fun readOutboundChanges(
+            request: OutboundChangeReadRequest,
+        ): ProviderOperationResult<OutboundChangeReadResult> =
+            error("Provider operations must not run during resolution.")
+
+        override suspend fun applyInboundChanges(
+            request: InboundChangeApplyRequest,
+        ): ProviderOperationResult<Unit> =
+            error("Provider operations must not run during resolution.")
+
+        override suspend fun acknowledgeOutboundChanges(
+            request: OutboundChangeAcknowledgementRequest,
+        ): ProviderOperationResult<Unit> =
+            error("Provider operations must not run during resolution.")
+
+        override suspend fun readCheckpoint(
+            request: CheckpointReadRequest,
+        ): ProviderOperationResult<SynchronizationCheckpoint?> =
+            error("Provider operations must not run during resolution.")
+
+        override suspend fun writeCheckpoint(
+            request: CheckpointWriteRequest,
+        ): ProviderOperationResult<Unit> =
+            error("Provider operations must not run during resolution.")
+    }
+
+    private class AtomicRecordingStorageProvider :
+        RecordingStorageProvider("atomic-storage"),
+        StrategyOfflineFirstAdmissionProvider {
+        override suspend fun admitLocalIntentAndOutbox(
+            request: StrategyOfflineFirstAdmissionRequest,
+        ): ProviderOperationResult<StrategyOfflineFirstAdmissionResult> =
+            error("Provider operations must not run during resolution.")
+    }
+
     private class RecordingTransportProvider : TransportProvider {
         var initializeCalls: Int = 0
         var healthCalls: Int = 0
@@ -129,5 +196,42 @@ class StrategyProviderResolverTest {
         assertEquals(1, failure.bindingFailures.size)
         assertEquals(ProviderType.STORAGE, failure.bindingFailures.single().expectedType)
         assertEquals(ProviderType.TRANSPORT, failure.bindingFailures.single().actualType)
+    }
+
+    @Test
+    fun atomicLocalAdmissionRequiresStorageExtensionContract() {
+        val storage = RecordingStorageProvider()
+        val resolver = StrategyProviderResolver(ProviderRegistry(listOf(storage)))
+
+        val result = resolver.resolve(
+            bindings = StrategyProviderBindings(storageProviderId = storage.descriptor.id),
+            requiredCapabilities = setOf(
+                StrategyProviderCapability.STORAGE,
+                StrategyProviderCapability.ATOMIC_LOCAL_ADMISSION,
+            ),
+        )
+
+        val failure = assertIs<StrategyProviderResolutionResult.Failure>(result)
+        assertEquals(
+            ProviderBindingFailureReason.PROVIDER_CONTRACT_MISMATCH,
+            failure.bindingFailures.single().reason,
+        )
+    }
+
+    @Test
+    fun atomicLocalAdmissionResolvesWithoutInvokingProvider() {
+        val storage = AtomicRecordingStorageProvider()
+        val resolver = StrategyProviderResolver(ProviderRegistry(listOf(storage)))
+
+        val result = resolver.resolve(
+            bindings = StrategyProviderBindings(storageProviderId = storage.descriptor.id),
+            requiredCapabilities = setOf(
+                StrategyProviderCapability.STORAGE,
+                StrategyProviderCapability.ATOMIC_LOCAL_ADMISSION,
+            ),
+        )
+
+        val success = assertIs<StrategyProviderResolutionResult.Success>(result)
+        assertSame(storage, success.providers.storageProvider)
     }
 }

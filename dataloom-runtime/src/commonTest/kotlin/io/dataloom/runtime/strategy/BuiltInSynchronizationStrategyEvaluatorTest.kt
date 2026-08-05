@@ -60,6 +60,7 @@ class BuiltInSynchronizationStrategyEvaluatorTest {
             setOf(
                 StrategyProviderCapability.STORAGE,
                 StrategyProviderCapability.QUEUE,
+                StrategyProviderCapability.ATOMIC_LOCAL_ADMISSION,
             ),
             result.plan.requiredCapabilities,
         )

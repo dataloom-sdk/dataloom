@@ -15,7 +15,7 @@ All six are required for V1:
 
 | Strategy | Choose it when | Current repository |
 |---|---|---|
-| [Offline-first](./offline-first.md) | Eligible local work must be durable before remote availability is required. | Contract and plan evaluation implemented; atomic execution pending |
+| [Offline-first](./offline-first.md) | Eligible local work must be durable before remote availability is required. | Atomic provider contract and fail-closed capability resolution added; runtime invocation and platform execution pending |
 | [Remote-first](./remote-first.md) | The remote path is authoritative and must be attempted before an explicit local fallback. | Direct provider-backed execution and typed pull fallback implemented; durable replay, retry/circuit, conflict persistence, and complete strategy events remain |
 | [Cache-first](./cache-first.md) | Local synchronized state may be used under explicit freshness and refresh rules. | Contract and freshness decision matrix implemented; execution pending |
 | [Network-only](./network-only.md) | Remote execution must succeed without local storage or queue access. | Direct transport-only PUSH, PULL, and BIDIRECTIONAL execution implemented; full event/result qualification pending |

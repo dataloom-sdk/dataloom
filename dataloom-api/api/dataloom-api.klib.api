@@ -465,6 +465,7 @@ final enum class io.dataloom.api.strategy/StrategyOperation : kotlin/Enum<io.dat
 }
 
 final enum class io.dataloom.api.strategy/StrategyProviderCapability : kotlin/Enum<io.dataloom.api.strategy/StrategyProviderCapability> { // io.dataloom.api.strategy/StrategyProviderCapability|null[0]
+    enum entry ATOMIC_LOCAL_ADMISSION // io.dataloom.api.strategy/StrategyProviderCapability.ATOMIC_LOCAL_ADMISSION|null[0]
     enum entry CONFLICT_STATE // io.dataloom.api.strategy/StrategyProviderCapability.CONFLICT_STATE|null[0]
     enum entry CONNECTIVITY // io.dataloom.api.strategy/StrategyProviderCapability.CONNECTIVITY|null[0]
     enum entry EVENT_OUTBOX // io.dataloom.api.strategy/StrategyProviderCapability.EVENT_OUTBOX|null[0]
@@ -741,6 +742,10 @@ abstract interface io.dataloom.api.strategy/ClassifiedStrategyRemoteError : io.d
 
 abstract interface io.dataloom.api.strategy/StrategyLocalFallbackProvider : io.dataloom.api.storage/StorageProvider { // io.dataloom.api.strategy/StrategyLocalFallbackProvider|null[0]
     abstract suspend fun evaluateLocalFallback(io.dataloom.api.strategy/StrategyLocalFallbackRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.strategy/StrategyLocalFallbackResult> // io.dataloom.api.strategy/StrategyLocalFallbackProvider.evaluateLocalFallback|evaluateLocalFallback(io.dataloom.api.strategy.StrategyLocalFallbackRequest){}[0]
+}
+
+abstract interface io.dataloom.api.strategy/StrategyOfflineFirstAdmissionProvider : io.dataloom.api.storage/StorageProvider { // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionProvider|null[0]
+    abstract suspend fun admitLocalIntentAndOutbox(io.dataloom.api.strategy/StrategyOfflineFirstAdmissionRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult> // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionProvider.admitLocalIntentAndOutbox|admitLocalIntentAndOutbox(io.dataloom.api.strategy.StrategyOfflineFirstAdmissionRequest){}[0]
 }
 
 abstract interface io.dataloom.api.strategy/StrategyReconciliationProvider : io.dataloom.api.storage/StorageProvider { // io.dataloom.api.strategy/StrategyReconciliationProvider|null[0]
@@ -1262,6 +1267,40 @@ sealed interface io.dataloom.api.strategy/StrategyLocalFallbackResult { // io.da
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyLocalFallbackResult.Unavailable.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyLocalFallbackResult.Unavailable.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyLocalFallbackResult.Unavailable.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult { // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult|null[0]
+    final class Accepted : io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult { // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.Accepted|null[0]
+        constructor <init>(io.dataloom.api.identifier/QueueEntryId, kotlin/String) // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.Accepted.<init>|<init>(io.dataloom.api.identifier.QueueEntryId;kotlin.String){}[0]
+
+        final val idempotencyKey // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.Accepted.idempotencyKey|{}idempotencyKey[0]
+            final fun <get-idempotencyKey>(): kotlin/String // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.Accepted.idempotencyKey.<get-idempotencyKey>|<get-idempotencyKey>(){}[0]
+        final val queueEntryId // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.Accepted.queueEntryId|{}queueEntryId[0]
+            final fun <get-queueEntryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.Accepted.queueEntryId.<get-queueEntryId>|<get-queueEntryId>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.Accepted.component1|component1(){}[0]
+        final fun component2(): kotlin/String // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.Accepted.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.identifier/QueueEntryId = ..., kotlin/String = ...): io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.Accepted // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.Accepted.copy|copy(io.dataloom.api.identifier.QueueEntryId;kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.Accepted.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.Accepted.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.Accepted.toString|toString(){}[0]
+    }
+
+    final class AlreadyAccepted : io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult { // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.AlreadyAccepted|null[0]
+        constructor <init>(io.dataloom.api.identifier/QueueEntryId, kotlin/String) // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.AlreadyAccepted.<init>|<init>(io.dataloom.api.identifier.QueueEntryId;kotlin.String){}[0]
+
+        final val idempotencyKey // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.AlreadyAccepted.idempotencyKey|{}idempotencyKey[0]
+            final fun <get-idempotencyKey>(): kotlin/String // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.AlreadyAccepted.idempotencyKey.<get-idempotencyKey>|<get-idempotencyKey>(){}[0]
+        final val queueEntryId // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.AlreadyAccepted.queueEntryId|{}queueEntryId[0]
+            final fun <get-queueEntryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.AlreadyAccepted.queueEntryId.<get-queueEntryId>|<get-queueEntryId>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.AlreadyAccepted.component1|component1(){}[0]
+        final fun component2(): kotlin/String // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.AlreadyAccepted.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.identifier/QueueEntryId = ..., kotlin/String = ...): io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.AlreadyAccepted // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.AlreadyAccepted.copy|copy(io.dataloom.api.identifier.QueueEntryId;kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.AlreadyAccepted.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.AlreadyAccepted.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionResult.AlreadyAccepted.toString|toString(){}[0]
     }
 }
 
@@ -3364,6 +3403,25 @@ final class io.dataloom.api.strategy/StrategyLocalFallbackRequest { // io.datalo
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyLocalFallbackRequest.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyLocalFallbackRequest.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyLocalFallbackRequest.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.strategy/StrategyOfflineFirstAdmissionRequest { // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionRequest|null[0]
+    constructor <init>(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.strategy/StrategyDecisionId, io.dataloom.api.strategy/StrategyExecutionPlan, io.dataloom.api.strategy/StrategyExecutionTrigger, io.dataloom.api.identifier/QueueEntryId, kotlin/String) // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionRequest.<init>|<init>(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.strategy.StrategyDecisionId;io.dataloom.api.strategy.StrategyExecutionPlan;io.dataloom.api.strategy.StrategyExecutionTrigger;io.dataloom.api.identifier.QueueEntryId;kotlin.String){}[0]
+
+    final val decisionId // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionRequest.decisionId|{}decisionId[0]
+        final fun <get-decisionId>(): io.dataloom.api.strategy/StrategyDecisionId // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionRequest.decisionId.<get-decisionId>|<get-decisionId>(){}[0]
+    final val idempotencyKey // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionRequest.idempotencyKey|{}idempotencyKey[0]
+        final fun <get-idempotencyKey>(): kotlin/String // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionRequest.idempotencyKey.<get-idempotencyKey>|<get-idempotencyKey>(){}[0]
+    final val plan // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionRequest.plan|{}plan[0]
+        final fun <get-plan>(): io.dataloom.api.strategy/StrategyExecutionPlan // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionRequest.plan.<get-plan>|<get-plan>(){}[0]
+    final val queueEntryId // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionRequest.queueEntryId|{}queueEntryId[0]
+        final fun <get-queueEntryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionRequest.queueEntryId.<get-queueEntryId>|<get-queueEntryId>(){}[0]
+    final val request // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionRequest.request|{}request[0]
+        final fun <get-request>(): io.dataloom.api.model/SynchronizationRequest // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionRequest.request.<get-request>|<get-request>(){}[0]
+    final val trigger // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionRequest.trigger|{}trigger[0]
+        final fun <get-trigger>(): io.dataloom.api.strategy/StrategyExecutionTrigger // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionRequest.trigger.<get-trigger>|<get-trigger>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyOfflineFirstAdmissionRequest.toString|toString(){}[0]
 }
 
 final class io.dataloom.api.strategy/StrategyReconciliationRequest { // io.dataloom.api.strategy/StrategyReconciliationRequest|null[0]
