@@ -63,7 +63,8 @@ Plan-aware provider resolution and direct network-only/remote-first operation
 execution are implemented. Bounded strategy decisions and complete immutable
 accepted plans survive the in-memory, Android Room, and Apple queues. Direct,
 provider-protected, and queued replay execute the frozen continuation without
-current-policy evaluation. Atomic application outbox semantics, complete
+current-policy evaluation. Atomic application outbox semantics now have an
+explicit provider contract; runtime wiring and platform qualification, complete
 cache/hybrid/conflict behavior, durable strategy events, and platform reference
 qualification remain before the strategy engine is complete.
 

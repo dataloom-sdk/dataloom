@@ -3,7 +3,8 @@
 > [!WARNING]
 > Offline-first is a mandatory built-in V1 strategy. Its versioned profile and
 > deterministic local-admission/deferral/reconciliation plan are implemented.
-> The runtime still needs atomic execution of local intent plus durable work
+> The public atomic local-intent/outbox provider contract is now defined. The
+> runtime and platform adapters still need to invoke and qualify that boundary
 > before the offline-first acceptance guarantee is complete.
 
 [Strategy index](./README.md) · [Remote-first](./remote-first.md) ·
@@ -50,8 +51,9 @@ See [Storage Provider](../api/storage-provider.md),
 
 It does **not** yet provide the complete strategy because:
 
-- local domain mutation and durable synchronization intent do not share one
-  standard atomic transaction;
+- local domain mutation and durable synchronization intent do not yet have a
+  platform-qualified atomic transaction; the standard provider boundary is
+  defined, but not wired into execution;
 - queue submission and worker triggering are explicit host actions;
 - direct connectivity rejection does not automatically become durable work;
 - the request and queued entry do not carry an effective strategy/configuration
