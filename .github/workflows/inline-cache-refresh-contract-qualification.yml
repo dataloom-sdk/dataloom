@@ -1,9 +1,11 @@
 name: One-time inline cache refresh contract qualification
 
+# Temporary final ABI generation for the audited PULL-only contract.
 on:
   push:
     branches:
       - agent/dl-strategy-015-inline-cache-refresh-contract
+  workflow_dispatch:
 
 permissions:
   contents: write
