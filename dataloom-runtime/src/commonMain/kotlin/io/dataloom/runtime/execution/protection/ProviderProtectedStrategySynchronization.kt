@@ -3,6 +3,7 @@ package io.dataloom.runtime.execution.protection
 import io.dataloom.api.execution.StrategyProviderSet
 import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.api.provider.StrategyProviderBindings
+import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
 import io.dataloom.api.strategy.PersistedStrategyDecision
 import io.dataloom.api.strategy.StrategyEvaluationResult
 import io.dataloom.api.strategy.StrategyExecutionPlan
@@ -278,8 +279,11 @@ internal class ProviderProtectedStrategyExecutionBoundary(
 private fun requiresLocalFallback(
     evaluation: StrategyEvaluationResult,
 ): Boolean =
-    evaluation.plan.fallbackPlan != null ||
-        StrategyOperation.SERVE_LOCAL in evaluation.plan.operations
+    evaluation.plan.effectiveStrategy != BuiltInSynchronizationStrategy.CACHE_FIRST &&
+        (
+            evaluation.plan.fallbackPlan != null ||
+                StrategyOperation.SERVE_LOCAL in evaluation.plan.operations
+            )
 
 private fun requiresReconciliation(
     evaluation: StrategyEvaluationResult,
@@ -291,6 +295,8 @@ private fun strategyStatus(result: StrategySynchronizationExecutionResult): Stri
         is StrategySynchronizationExecutionResult.Failed -> "FAILED"
         is StrategySynchronizationExecutionResult.FallbackActivated -> "FALLBACK_ACTIVATED"
         is StrategySynchronizationExecutionResult.FallbackUnavailable -> "FALLBACK_UNAVAILABLE"
+        is StrategySynchronizationExecutionResult.CacheServed -> "CACHE_SERVED"
+        is StrategySynchronizationExecutionResult.CacheUnavailable -> "CACHE_UNAVAILABLE"
         is StrategySynchronizationExecutionResult.Cancelled -> "CANCELLED"
         is StrategySynchronizationExecutionResult.Deferred -> "DEFERRED"
         is StrategySynchronizationExecutionResult.Rejected -> "REJECTED"

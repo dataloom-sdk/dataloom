@@ -2,7 +2,10 @@ package io.dataloom.runtime.strategy
 
 import io.dataloom.api.error.DataLoomError
 import io.dataloom.api.provider.ProviderBindingFailure
+import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
+import io.dataloom.api.strategy.StrategyCacheFreshnessEvidence
 import io.dataloom.api.strategy.StrategyCacheState
+import io.dataloom.api.strategy.StrategyDataOrigin
 import io.dataloom.api.strategy.StrategyEvaluationResult
 import io.dataloom.api.strategy.StrategyLocalFallbackResult
 import io.dataloom.api.strategy.StrategyOperation
@@ -22,6 +25,7 @@ public enum class StrategyExecutionRejectionReason {
     PROVIDER_PROTECTION_SCOPE_MISMATCH,
     LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED,
     ATOMIC_LOCAL_ADMISSION_PROVIDER_NOT_CONFIGURED,
+    CACHE_ACCESS_PROVIDER_NOT_CONFIGURED,
     ACCEPTED_PLAN_MISMATCH,
     ACCEPTED_PLAN_CONTINUATION_MISSING,
     RECONCILIATION_PROVIDER_NOT_CONFIGURED,
@@ -32,6 +36,15 @@ public enum class StrategyExecutionRejectionReason {
 public enum class StrategyOfflineFirstAdmissionDisposition {
     ACCEPTED,
     ALREADY_ACCEPTED,
+}
+
+/** Why a cache-first local-serving plan did not expose local state. */
+public enum class StrategyCacheUnavailableReason {
+    /** The provider reported missing, unknown, or otherwise unavailable state. */
+    PROVIDER_REPORTED_UNAVAILABLE,
+
+    /** A cache admitted as fresh became stale before the serving boundary. */
+    FRESHNESS_DOWNGRADED,
 }
 
 /** Observable result of strategy admission and execution. */
@@ -174,6 +187,114 @@ public sealed interface StrategySynchronizationExecutionResult {
         public val primaryError: DataLoomError? = null,
         public val partialOutput: StrategyTransportOutput? = null,
     ) : StrategySynchronizationExecutionResult
+
+    /**
+     * Application-owned synchronized local state is available for cache-first use.
+     *
+     * DataLoom returns only origin and provider-observed freshness metadata. The
+     * application continues to read its domain value through its own repository.
+     */
+    public data class CacheServed(
+        override val evaluation: StrategyEvaluationResult,
+        override val completedAt: DataLoomInstant,
+        public val evaluatedCacheState: StrategyCacheState,
+        public val freshness: StrategyCacheFreshnessEvidence,
+    ) : StrategySynchronizationExecutionResult {
+        init {
+            require(
+                evaluation.plan.effectiveStrategy ==
+                    BuiltInSynchronizationStrategy.CACHE_FIRST &&
+                    StrategyOperation.SERVE_LOCAL in evaluation.plan.operations,
+            ) {
+                "CacheServed requires a cache-first local-serving plan."
+            }
+            require(
+                evaluatedCacheState == StrategyCacheState.FRESH ||
+                    evaluatedCacheState == StrategyCacheState.STALE,
+            ) {
+                "CacheServed requires evaluated FRESH or STALE state."
+            }
+            require(
+                evaluatedCacheState != StrategyCacheState.FRESH ||
+                    freshness.cacheState == StrategyCacheState.FRESH,
+            ) {
+                "A fresh admission must not be served from stale provider evidence."
+            }
+        }
+
+        public val dataOrigin: StrategyDataOrigin = StrategyDataOrigin.LOCAL
+
+        override fun toString(): String =
+            "StrategySynchronizationExecutionResult.CacheServed(" +
+                "decisionId=${evaluation.decisionId}, " +
+                "planId=${evaluation.plan.id}, " +
+                "evaluatedCacheState=$evaluatedCacheState, " +
+                "providerCacheState=${freshness.cacheState}, " +
+                "dataOrigin=$dataOrigin)"
+    }
+
+    /**
+     * A cache-first plan reached the provider boundary but local state was not
+     * exposed. The runtime does not silently switch to remote or another strategy.
+     */
+    public data class CacheUnavailable(
+        override val evaluation: StrategyEvaluationResult,
+        override val completedAt: DataLoomInstant,
+        public val evaluatedCacheState: StrategyCacheState,
+        public val providerCacheState: StrategyCacheState,
+        public val reason: StrategyCacheUnavailableReason,
+        public val providerFreshness: StrategyCacheFreshnessEvidence? = null,
+    ) : StrategySynchronizationExecutionResult {
+        init {
+            require(
+                evaluation.plan.effectiveStrategy ==
+                    BuiltInSynchronizationStrategy.CACHE_FIRST &&
+                    StrategyOperation.SERVE_LOCAL in evaluation.plan.operations,
+            ) {
+                "CacheUnavailable requires a cache-first local-serving plan."
+            }
+            require(
+                evaluatedCacheState == StrategyCacheState.FRESH ||
+                    evaluatedCacheState == StrategyCacheState.STALE,
+            ) {
+                "CacheUnavailable requires evaluated FRESH or STALE state."
+            }
+            when (reason) {
+                StrategyCacheUnavailableReason.PROVIDER_REPORTED_UNAVAILABLE -> {
+                    require(
+                        providerCacheState != StrategyCacheState.FRESH &&
+                            providerCacheState != StrategyCacheState.STALE,
+                    ) {
+                        "Provider-unavailable cache state must not be FRESH or STALE."
+                    }
+                    require(providerFreshness == null) {
+                        "Provider-unavailable cache state must not include freshness."
+                    }
+                }
+                StrategyCacheUnavailableReason.FRESHNESS_DOWNGRADED -> {
+                    require(evaluatedCacheState == StrategyCacheState.FRESH) {
+                        "Freshness downgrade requires an originally FRESH admission."
+                    }
+                    require(providerCacheState == StrategyCacheState.STALE) {
+                        "Freshness downgrade requires provider-observed STALE state."
+                    }
+                    require(providerFreshness?.cacheState == StrategyCacheState.STALE) {
+                        "Freshness downgrade requires stale provider evidence."
+                    }
+                }
+            }
+        }
+
+        public val dataOrigin: StrategyDataOrigin = StrategyDataOrigin.NONE
+
+        override fun toString(): String =
+            "StrategySynchronizationExecutionResult.CacheUnavailable(" +
+                "decisionId=${evaluation.decisionId}, " +
+                "planId=${evaluation.plan.id}, " +
+                "evaluatedCacheState=$evaluatedCacheState, " +
+                "providerCacheState=$providerCacheState, " +
+                "reason=$reason, dataOrigin=$dataOrigin)"
+    }
 
     /** Cancellation remains terminal and is never converted into fallback. */
     public data class Cancelled(

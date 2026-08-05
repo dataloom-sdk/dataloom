@@ -49,6 +49,10 @@ internal class StrategyQueueExecutionOutcomeMapper(
                 evaluateRetry(unresolvedErrors, result.completedAt, entry)
             }
         }
+        is StrategySynchronizationExecutionResult.CacheServed ->
+            QueueEntryExecutionOutcome.Completed(result.completedAt)
+        is StrategySynchronizationExecutionResult.CacheUnavailable ->
+            failed(AcceptedPlanCacheUnavailableError(result.reason.name))
         is StrategySynchronizationExecutionResult.Cancelled ->
             when (val output = result.output) {
                 is StrategyTransportOutput.ProviderBacked -> {
@@ -218,6 +222,18 @@ internal class StrategyQueueExecutionOutcomeMapper(
             error = error,
             disposition = QueueFailureDisposition.FAILED,
         )
+
+    private data class AcceptedPlanCacheUnavailableError(
+        private val reason: String,
+        override val code: ErrorCode =
+            ErrorCode("DL-Q-ACCEPTED-PLAN-CACHE-UNAVAILABLE"),
+        override val category: ErrorCategory = ErrorCategory.STATE,
+        override val severity: ErrorSeverity = ErrorSeverity.ERROR,
+        override val recoverability: Recoverability = Recoverability.NON_RECOVERABLE,
+        override val message: String =
+            "Accepted cache-first plan did not expose local state: $reason.",
+        override val cause: Throwable? = null,
+    ) : DataLoomError
 
     private data class AcceptedPlanFallbackUnavailableError(
         override val code: ErrorCode =

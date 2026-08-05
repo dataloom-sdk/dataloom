@@ -386,10 +386,22 @@ final enum class io.dataloom.runtime.retry/TransportCircuitOperation : kotlin/En
     final fun values(): kotlin/Array<io.dataloom.runtime.retry/TransportCircuitOperation> // io.dataloom.runtime.retry/TransportCircuitOperation.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.runtime.strategy/StrategyCacheUnavailableReason : kotlin/Enum<io.dataloom.runtime.strategy/StrategyCacheUnavailableReason> { // io.dataloom.runtime.strategy/StrategyCacheUnavailableReason|null[0]
+    enum entry FRESHNESS_DOWNGRADED // io.dataloom.runtime.strategy/StrategyCacheUnavailableReason.FRESHNESS_DOWNGRADED|null[0]
+    enum entry PROVIDER_REPORTED_UNAVAILABLE // io.dataloom.runtime.strategy/StrategyCacheUnavailableReason.PROVIDER_REPORTED_UNAVAILABLE|null[0]
+
+    final val entries // io.dataloom.runtime.strategy/StrategyCacheUnavailableReason.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.strategy/StrategyCacheUnavailableReason> // io.dataloom.runtime.strategy/StrategyCacheUnavailableReason.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.strategy/StrategyCacheUnavailableReason // io.dataloom.runtime.strategy/StrategyCacheUnavailableReason.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.strategy/StrategyCacheUnavailableReason> // io.dataloom.runtime.strategy/StrategyCacheUnavailableReason.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.runtime.strategy/StrategyExecutionRejectionReason : kotlin/Enum<io.dataloom.runtime.strategy/StrategyExecutionRejectionReason> { // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason|null[0]
     enum entry ACCEPTED_PLAN_CONTINUATION_MISSING // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.ACCEPTED_PLAN_CONTINUATION_MISSING|null[0]
     enum entry ACCEPTED_PLAN_MISMATCH // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.ACCEPTED_PLAN_MISMATCH|null[0]
     enum entry ATOMIC_LOCAL_ADMISSION_PROVIDER_NOT_CONFIGURED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.ATOMIC_LOCAL_ADMISSION_PROVIDER_NOT_CONFIGURED|null[0]
+    enum entry CACHE_ACCESS_PROVIDER_NOT_CONFIGURED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.CACHE_ACCESS_PROVIDER_NOT_CONFIGURED|null[0]
     enum entry INCOMPATIBLE_INPUT // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT|null[0]
     enum entry INCOMPATIBLE_TRIGGER // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.INCOMPATIBLE_TRIGGER|null[0]
     enum entry LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED|null[0]
@@ -1925,6 +1937,60 @@ sealed interface io.dataloom.runtime.strategy/StrategySynchronizationExecutionRe
         abstract fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
     abstract val evaluation // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.evaluation|{}evaluation[0]
         abstract fun <get-evaluation>(): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.evaluation.<get-evaluation>|<get-evaluation>(){}[0]
+
+    final class CacheServed : io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult { // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheServed|null[0]
+        constructor <init>(io.dataloom.api.strategy/StrategyEvaluationResult, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.strategy/StrategyCacheState, io.dataloom.api.strategy/StrategyCacheFreshnessEvidence) // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheServed.<init>|<init>(io.dataloom.api.strategy.StrategyEvaluationResult;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.strategy.StrategyCacheState;io.dataloom.api.strategy.StrategyCacheFreshnessEvidence){}[0]
+
+        final val completedAt // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheServed.completedAt|{}completedAt[0]
+            final fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheServed.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
+        final val dataOrigin // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheServed.dataOrigin|{}dataOrigin[0]
+            final fun <get-dataOrigin>(): io.dataloom.api.strategy/StrategyDataOrigin // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheServed.dataOrigin.<get-dataOrigin>|<get-dataOrigin>(){}[0]
+        final val evaluatedCacheState // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheServed.evaluatedCacheState|{}evaluatedCacheState[0]
+            final fun <get-evaluatedCacheState>(): io.dataloom.api.strategy/StrategyCacheState // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheServed.evaluatedCacheState.<get-evaluatedCacheState>|<get-evaluatedCacheState>(){}[0]
+        final val evaluation // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheServed.evaluation|{}evaluation[0]
+            final fun <get-evaluation>(): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheServed.evaluation.<get-evaluation>|<get-evaluation>(){}[0]
+        final val freshness // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheServed.freshness|{}freshness[0]
+            final fun <get-freshness>(): io.dataloom.api.strategy/StrategyCacheFreshnessEvidence // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheServed.freshness.<get-freshness>|<get-freshness>(){}[0]
+
+        final fun component1(): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheServed.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheServed.component2|component2(){}[0]
+        final fun component3(): io.dataloom.api.strategy/StrategyCacheState // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheServed.component3|component3(){}[0]
+        final fun component4(): io.dataloom.api.strategy/StrategyCacheFreshnessEvidence // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheServed.component4|component4(){}[0]
+        final fun copy(io.dataloom.api.strategy/StrategyEvaluationResult = ..., io.dataloom.api.time/DataLoomInstant = ..., io.dataloom.api.strategy/StrategyCacheState = ..., io.dataloom.api.strategy/StrategyCacheFreshnessEvidence = ...): io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheServed // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheServed.copy|copy(io.dataloom.api.strategy.StrategyEvaluationResult;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.strategy.StrategyCacheState;io.dataloom.api.strategy.StrategyCacheFreshnessEvidence){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheServed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheServed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheServed.toString|toString(){}[0]
+    }
+
+    final class CacheUnavailable : io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult { // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable|null[0]
+        constructor <init>(io.dataloom.api.strategy/StrategyEvaluationResult, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.strategy/StrategyCacheState, io.dataloom.api.strategy/StrategyCacheState, io.dataloom.runtime.strategy/StrategyCacheUnavailableReason, io.dataloom.api.strategy/StrategyCacheFreshnessEvidence? = ...) // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.<init>|<init>(io.dataloom.api.strategy.StrategyEvaluationResult;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.strategy.StrategyCacheState;io.dataloom.api.strategy.StrategyCacheState;io.dataloom.runtime.strategy.StrategyCacheUnavailableReason;io.dataloom.api.strategy.StrategyCacheFreshnessEvidence?){}[0]
+
+        final val completedAt // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.completedAt|{}completedAt[0]
+            final fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
+        final val dataOrigin // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.dataOrigin|{}dataOrigin[0]
+            final fun <get-dataOrigin>(): io.dataloom.api.strategy/StrategyDataOrigin // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.dataOrigin.<get-dataOrigin>|<get-dataOrigin>(){}[0]
+        final val evaluatedCacheState // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.evaluatedCacheState|{}evaluatedCacheState[0]
+            final fun <get-evaluatedCacheState>(): io.dataloom.api.strategy/StrategyCacheState // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.evaluatedCacheState.<get-evaluatedCacheState>|<get-evaluatedCacheState>(){}[0]
+        final val evaluation // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.evaluation|{}evaluation[0]
+            final fun <get-evaluation>(): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.evaluation.<get-evaluation>|<get-evaluation>(){}[0]
+        final val providerCacheState // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.providerCacheState|{}providerCacheState[0]
+            final fun <get-providerCacheState>(): io.dataloom.api.strategy/StrategyCacheState // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.providerCacheState.<get-providerCacheState>|<get-providerCacheState>(){}[0]
+        final val providerFreshness // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.providerFreshness|{}providerFreshness[0]
+            final fun <get-providerFreshness>(): io.dataloom.api.strategy/StrategyCacheFreshnessEvidence? // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.providerFreshness.<get-providerFreshness>|<get-providerFreshness>(){}[0]
+        final val reason // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.reason|{}reason[0]
+            final fun <get-reason>(): io.dataloom.runtime.strategy/StrategyCacheUnavailableReason // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.reason.<get-reason>|<get-reason>(){}[0]
+
+        final fun component1(): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.component2|component2(){}[0]
+        final fun component3(): io.dataloom.api.strategy/StrategyCacheState // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.component3|component3(){}[0]
+        final fun component4(): io.dataloom.api.strategy/StrategyCacheState // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.component4|component4(){}[0]
+        final fun component5(): io.dataloom.runtime.strategy/StrategyCacheUnavailableReason // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.component5|component5(){}[0]
+        final fun component6(): io.dataloom.api.strategy/StrategyCacheFreshnessEvidence? // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.component6|component6(){}[0]
+        final fun copy(io.dataloom.api.strategy/StrategyEvaluationResult = ..., io.dataloom.api.time/DataLoomInstant = ..., io.dataloom.api.strategy/StrategyCacheState = ..., io.dataloom.api.strategy/StrategyCacheState = ..., io.dataloom.runtime.strategy/StrategyCacheUnavailableReason = ..., io.dataloom.api.strategy/StrategyCacheFreshnessEvidence? = ...): io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.copy|copy(io.dataloom.api.strategy.StrategyEvaluationResult;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.strategy.StrategyCacheState;io.dataloom.api.strategy.StrategyCacheState;io.dataloom.runtime.strategy.StrategyCacheUnavailableReason;io.dataloom.api.strategy.StrategyCacheFreshnessEvidence?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.CacheUnavailable.toString|toString(){}[0]
+    }
 
     final class Cancelled : io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult { // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled|null[0]
         constructor <init>(io.dataloom.api.strategy/StrategyEvaluationResult, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.strategy/StrategyTransportOutput) // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled.<init>|<init>(io.dataloom.api.strategy.StrategyEvaluationResult;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.strategy.StrategyTransportOutput){}[0]
