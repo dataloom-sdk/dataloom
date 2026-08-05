@@ -33,11 +33,12 @@ public sealed interface StrategyCacheInlineRefreshResult {
         public val output: StrategyTransportOutput.ProviderBacked,
     ) : StrategyCacheInlineRefreshResult {
         init {
+            val result = output.result
             require(
-                output.result is SynchronizationResult.Succeeded ||
+                result is SynchronizationResult.Succeeded ||
                     (
-                        output.result is SynchronizationResult.Skipped &&
-                            output.result.reason == SynchronizationSkipReason.NO_CHANGES
+                        result is SynchronizationResult.Skipped &&
+                            result.reason == SynchronizationSkipReason.NO_CHANGES
                         ),
             ) {
                 "Completed inline cache refresh requires succeeded or no-change output."
