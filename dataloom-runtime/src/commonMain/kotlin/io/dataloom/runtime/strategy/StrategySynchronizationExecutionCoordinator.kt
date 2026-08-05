@@ -80,10 +80,13 @@ internal class StrategySynchronizationExecutionCoordinator(
             )
         }
 
+        // Offline-first durable deferral is handled above by its atomic
+        // local-intent/outbox admission boundary. No other strategy currently
+        // commits queue or scheduler work here, so it must not report Deferred.
         when (evaluation.plan.disposition) {
-            StrategyDisposition.DEFER -> return StrategySynchronizationExecutionResult.Deferred(
+            StrategyDisposition.DEFER -> return rejected(
                 evaluation = evaluation,
-                completedAt = clock.now(),
+                reason = StrategyExecutionRejectionReason.UNSUPPORTED_PLAN,
             )
             StrategyDisposition.EXECUTE,
             StrategyDisposition.SERVE_AND_REFRESH,
