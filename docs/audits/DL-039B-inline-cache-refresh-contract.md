@@ -2,9 +2,9 @@
 
 ## Decision
 
-DataLoom now defines a bounded public result contract for a foreground refresh
-attempt that occurs after application-owned cache state has already been
-verified for local use.
+DataLoom now defines a bounded public result contract for a foreground PULL
+refresh attempt that occurs after application-owned cache state has already
+been verified for local use.
 
 The contract is intentionally separate from
 `StrategySynchronizationExecutionResult`. The next runtime slice will compose
@@ -17,10 +17,10 @@ without changing the already frozen cache-only result variants.
 
 | Outcome | Meaning |
 |---|---|
-| `Completed` | The canonical provider-backed refresh reached `Succeeded` or `Skipped(NO_CHANGES)`. |
-| `PartiallySucceeded` | Some refresh work committed but canonical unresolved errors remain visible in the provider-backed partial result. |
+| `Completed` | The canonical provider-backed refresh reached `Succeeded` or `Skipped(NO_CHANGES)` after at least one completed remote pull. |
+| `PartiallySucceeded` | Remote work committed and canonical unresolved errors remain visible together with completed-operation evidence. |
 | `Failed` | Local cache use remains valid, but the inline refresh failed; transport-attempt, completed-operation, canonical output, and typed remote-outcome evidence remain visible. |
-| `Cancelled` | The canonical pipeline returned its explicit cancellation result. |
+| `Cancelled` | The canonical pipeline returned explicit cancellation while preserving any transport and completed-operation evidence observed before cancellation. |
 
 Every result exposes a stable `StrategyCacheInlineRefreshDisposition`:
 `COMPLETED`, `PARTIALLY_SUCCEEDED`, `FAILED`, or `CANCELLED`.
@@ -33,14 +33,18 @@ Every result exposes a stable `StrategyCacheInlineRefreshDisposition`:
   pair one error with a different pipeline failure.
 - `Completed` accepts only `Succeeded` and `Skipped(NO_CHANGES)`. Constraint,
   policy, and duplicate-request skips cannot be mislabeled as refresh success.
+- `Completed` and `PartiallySucceeded` require `PULL_REMOTE` in their completed
+  operation evidence; a foreground refresh cannot report completion without a
+  completed remote pull.
 - `PartiallySucceeded` requires canonical partial output so unresolved errors
   cannot be mislabeled as full completion.
 - A typed remote outcome requires `transportAttempted=true`.
-- Completed `PUSH_REMOTE` or `PULL_REMOTE` operation evidence requires a
-  transport attempt.
-- `Failed.completedOperations` is defensively copied so already completed
-  effects cannot be hidden or mutated after construction.
-- `Cancelled` requires canonical cancelled output.
+- Any completed `PUSH_REMOTE` or `PULL_REMOTE` evidence requires
+  `transportAttempted=true`.
+- Completed-operation lists are defensively copied for every outcome that can
+  carry partial-effect evidence.
+- `Cancelled` requires canonical cancelled output and preserves whether
+  transport was attempted before cancellation.
 
 ## Safety and payload boundary
 
@@ -74,13 +78,16 @@ Kotlin collections.
 Focused common tests cover:
 
 - completed canonical succeeded and no-change output;
+- completed remote-pull evidence and defensive copying;
+- rejection of completion without a completed pull;
 - rejection of policy-skip, partial, failed, and cancelled output from
   `Completed`;
 - completion time derived from canonical output;
-- explicit canonical partial output and bounded partial diagnostics;
+- explicit canonical partial output, completed pull evidence, defensive copy,
+  and bounded partial diagnostics;
 - failure error derived from canonical output;
-- defensive completed-operation evidence;
 - remote-outcome and completed-remote-operation consistency;
+- cancellation transport/effect evidence and consistency;
 - bounded diagnostics that exclude error messages; and
 - canonical cancellation enforcement.
 
@@ -98,8 +105,8 @@ This checkpoint does not invoke refresh. The next bounded slice must:
    plan initially;
 3. verify cache access before any remote call;
 4. reuse the canonical inbound pull pipeline;
-5. preserve cache-serving evidence when refresh partially succeeds, fails, or
-   cancels;
+5. preserve cache-serving and completed-operation evidence when refresh
+   partially succeeds, fails, or cancels;
 6. keep BIDIRECTIONAL, durable refresh, deduplication, scheduling, restart,
    coherence, and events fail-closed until separately implemented.
 
