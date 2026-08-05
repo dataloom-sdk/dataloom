@@ -9,8 +9,16 @@ internal fun inspectInlineCacheRefresh(
 ): StrategyCacheInlineRefreshDisposition {
     result.completedAt
     when (result) {
-        is StrategyCacheInlineRefreshResult.Completed -> result.output.result
-        is StrategyCacheInlineRefreshResult.PartiallySucceeded -> result.output.result
+        is StrategyCacheInlineRefreshResult.Completed -> {
+            result.transportAttempted
+            result.completedOperations
+            result.output.result
+        }
+        is StrategyCacheInlineRefreshResult.PartiallySucceeded -> {
+            result.transportAttempted
+            result.completedOperations
+            result.output.result
+        }
         is StrategyCacheInlineRefreshResult.Failed -> {
             result.error.code
             result.transportAttempted
@@ -18,7 +26,11 @@ internal fun inspectInlineCacheRefresh(
             result.output.result
             result.remoteOutcome
         }
-        is StrategyCacheInlineRefreshResult.Cancelled -> result.output.result
+        is StrategyCacheInlineRefreshResult.Cancelled -> {
+            result.transportAttempted
+            result.completedOperations
+            result.output.result
+        }
     }
     return result.disposition
 }
