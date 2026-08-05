@@ -41,6 +41,15 @@ internal class StrategyQueueExecutionOutcomeMapper(
                 is StrategyTransportOutput.Bidirectional,
                 -> QueueEntryExecutionOutcome.Completed(result.completedAt)
             }
+        is StrategySynchronizationExecutionResult.CacheAvailable ->
+            QueueEntryExecutionOutcome.Completed(result.completedAt)
+        is StrategySynchronizationExecutionResult.CacheUnavailable ->
+            failed(
+                AcceptedPlanCacheUnavailableError(
+                    evaluatedCacheState = result.evaluatedCacheState.name,
+                    observedCacheState = result.observedCacheState.name,
+                ),
+            )
         is StrategySynchronizationExecutionResult.FallbackActivated -> {
             val unresolvedErrors = errorsFrom(result.partialOutput)
             if (unresolvedErrors.isEmpty()) {
@@ -218,6 +227,20 @@ internal class StrategyQueueExecutionOutcomeMapper(
             error = error,
             disposition = QueueFailureDisposition.FAILED,
         )
+
+    private data class AcceptedPlanCacheUnavailableError(
+        private val evaluatedCacheState: String,
+        private val observedCacheState: String,
+        override val code: ErrorCode =
+            ErrorCode("DL-Q-ACCEPTED-PLAN-CACHE-UNAVAILABLE"),
+        override val category: ErrorCategory = ErrorCategory.STATE,
+        override val severity: ErrorSeverity = ErrorSeverity.ERROR,
+        override val recoverability: Recoverability = Recoverability.NON_RECOVERABLE,
+        override val message: String =
+            "Accepted cache-first plan could not serve local state: " +
+                "evaluated=$evaluatedCacheState, observed=$observedCacheState.",
+        override val cause: Throwable? = null,
+    ) : DataLoomError
 
     private data class AcceptedPlanFallbackUnavailableError(
         override val code: ErrorCode =
