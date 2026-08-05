@@ -28,10 +28,14 @@ public sealed interface StrategyCacheInlineRefreshResult {
     public val disposition: StrategyCacheInlineRefreshDisposition
     public val completedAt: DataLoomInstant
 
-    /** The inline refresh reached complete success or a canonical no-change result. */
-    public data class Completed(
+    /** The inline PULL refresh reached success or a canonical no-change result. */
+    public class Completed(
+        completedOperations: List<StrategyOperation>,
         public val output: StrategyTransportOutput.ProviderBacked,
     ) : StrategyCacheInlineRefreshResult {
+        private val completedOperationsSnapshot: List<StrategyOperation> =
+            completedOperations.toList()
+
         init {
             val result = output.result
             require(
@@ -43,6 +47,9 @@ public sealed interface StrategyCacheInlineRefreshResult {
             ) {
                 "Completed inline cache refresh requires succeeded or no-change output."
             }
+            require(StrategyOperation.PULL_REMOTE in completedOperationsSnapshot) {
+                "Completed inline cache refresh requires a completed remote pull."
+            }
         }
 
         override val disposition: StrategyCacheInlineRefreshDisposition =
@@ -51,22 +58,47 @@ public sealed interface StrategyCacheInlineRefreshResult {
         override val completedAt: DataLoomInstant
             get() = output.result.completedAt
 
+        public val transportAttempted: Boolean = true
+
+        public val completedOperations: List<StrategyOperation>
+            get() = completedOperationsSnapshot.toList()
+
+        override fun equals(other: Any?): Boolean =
+            other is Completed &&
+                completedOperationsSnapshot == other.completedOperationsSnapshot &&
+                output == other.output
+
+        override fun hashCode(): Int {
+            var result = completedOperationsSnapshot.hashCode()
+            result = (31 * result) + output.hashCode()
+            return result
+        }
+
         override fun toString(): String =
             "StrategyCacheInlineRefreshResult.Completed(" +
                 "result=${synchronizationStatus(output.result)}, " +
+                "completedOperations=$completedOperationsSnapshot, " +
                 "disposition=$disposition)"
     }
 
     /**
-     * The inline refresh committed some work but retained canonical unresolved
-     * errors. Local cache-serving evidence must remain visible separately.
+     * The inline PULL refresh committed work but retained unresolved errors.
+     * Completed remote effects remain visible so they are not blindly replayed.
      */
-    public data class PartiallySucceeded(
+    public class PartiallySucceeded(
+        completedOperations: List<StrategyOperation>,
         public val output: StrategyTransportOutput.ProviderBacked,
     ) : StrategyCacheInlineRefreshResult {
-        init {
-            require(output.result is SynchronizationResult.PartiallySucceeded) {
+        private val completedOperationsSnapshot: List<StrategyOperation> =
+            completedOperations.toList()
+        private val partialOutput: SynchronizationResult.PartiallySucceeded =
+            requireNotNull(output.result as? SynchronizationResult.PartiallySucceeded) {
                 "Partially succeeded inline cache refresh requires canonical partial output."
+            }
+
+        init {
+            require(StrategyOperation.PULL_REMOTE in completedOperationsSnapshot) {
+                "Partially succeeded inline cache refresh requires a completed remote pull."
             }
         }
 
@@ -74,13 +106,29 @@ public sealed interface StrategyCacheInlineRefreshResult {
             StrategyCacheInlineRefreshDisposition.PARTIALLY_SUCCEEDED
 
         override val completedAt: DataLoomInstant
-            get() = output.result.completedAt
+            get() = partialOutput.completedAt
 
-        override fun toString(): String {
-            val partial = output.result as SynchronizationResult.PartiallySucceeded
-            return "StrategyCacheInlineRefreshResult.PartiallySucceeded(" +
-                "errorCount=${partial.errors.size}, disposition=$disposition)"
+        public val transportAttempted: Boolean = true
+
+        public val completedOperations: List<StrategyOperation>
+            get() = completedOperationsSnapshot.toList()
+
+        override fun equals(other: Any?): Boolean =
+            other is PartiallySucceeded &&
+                completedOperationsSnapshot == other.completedOperationsSnapshot &&
+                output == other.output
+
+        override fun hashCode(): Int {
+            var result = completedOperationsSnapshot.hashCode()
+            result = (31 * result) + output.hashCode()
+            return result
         }
+
+        override fun toString(): String =
+            "StrategyCacheInlineRefreshResult.PartiallySucceeded(" +
+                "errorCount=${partialOutput.errors.size}, " +
+                "completedOperations=$completedOperationsSnapshot, " +
+                "disposition=$disposition)"
     }
 
     /**
@@ -107,14 +155,10 @@ public sealed interface StrategyCacheInlineRefreshResult {
             require(remoteOutcome == null || transportAttempted) {
                 "A classified remote outcome requires a transport attempt."
             }
-            require(
-                transportAttempted || completedOperationsSnapshot.none {
-                    it == StrategyOperation.PUSH_REMOTE ||
-                        it == StrategyOperation.PULL_REMOTE
-                },
-            ) {
-                "Completed remote operations require a transport attempt."
-            }
+            requireTransportEvidence(
+                transportAttempted = transportAttempted,
+                completedOperations = completedOperationsSnapshot,
+            )
         }
 
         override val disposition: StrategyCacheInlineRefreshDisposition =
@@ -153,13 +197,22 @@ public sealed interface StrategyCacheInlineRefreshResult {
     }
 
     /** The pipeline returned its explicit canonical cancellation result. */
-    public data class Cancelled(
+    public class Cancelled(
+        public val transportAttempted: Boolean,
+        completedOperations: List<StrategyOperation> = emptyList(),
         public val output: StrategyTransportOutput.ProviderBacked,
     ) : StrategyCacheInlineRefreshResult {
+        private val completedOperationsSnapshot: List<StrategyOperation> =
+            completedOperations.toList()
+
         init {
             require(output.result is SynchronizationResult.Cancelled) {
                 "Cancelled inline cache refresh requires canonical cancelled output."
             }
+            requireTransportEvidence(
+                transportAttempted = transportAttempted,
+                completedOperations = completedOperationsSnapshot,
+            )
         }
 
         override val disposition: StrategyCacheInlineRefreshDisposition =
@@ -168,8 +221,41 @@ public sealed interface StrategyCacheInlineRefreshResult {
         override val completedAt: DataLoomInstant
             get() = output.result.completedAt
 
+        public val completedOperations: List<StrategyOperation>
+            get() = completedOperationsSnapshot.toList()
+
+        override fun equals(other: Any?): Boolean =
+            other is Cancelled &&
+                transportAttempted == other.transportAttempted &&
+                completedOperationsSnapshot == other.completedOperationsSnapshot &&
+                output == other.output
+
+        override fun hashCode(): Int {
+            var result = transportAttempted.hashCode()
+            result = (31 * result) + completedOperationsSnapshot.hashCode()
+            result = (31 * result) + output.hashCode()
+            return result
+        }
+
         override fun toString(): String =
-            "StrategyCacheInlineRefreshResult.Cancelled(disposition=$disposition)"
+            "StrategyCacheInlineRefreshResult.Cancelled(" +
+                "transportAttempted=$transportAttempted, " +
+                "completedOperations=$completedOperationsSnapshot, " +
+                "disposition=$disposition)"
+    }
+}
+
+private fun requireTransportEvidence(
+    transportAttempted: Boolean,
+    completedOperations: List<StrategyOperation>,
+) {
+    require(
+        transportAttempted || completedOperations.none {
+            it == StrategyOperation.PUSH_REMOTE ||
+                it == StrategyOperation.PULL_REMOTE
+        },
+    ) {
+        "Completed remote operations require a transport attempt."
     }
 }
 
