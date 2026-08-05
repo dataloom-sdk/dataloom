@@ -15,6 +15,8 @@ public enum class StrategyProviderCapability {
     EVENT_OUTBOX,
     /** Storage can atomically admit local intent and its durable continuation. */
     ATOMIC_LOCAL_ADMISSION,
+    /** Storage can verify cache availability and provider-observed freshness. */
+    CACHE_ACCESS,
 }
 
 /** Ordered, side-effecting or observable operations in a strategy plan. */
