@@ -123,13 +123,42 @@ public class DataLoomStrategyReconciliationProtectionSpec(
  * are required. A protected execution is rejected before provider invocation
  * when a resolved required provider has no corresponding protection spec.
  */
-public class DataLoomStrategyProviderProtectionSpec(
-    public val storage: DataLoomStorageProtectionSpec? = null,
-    public val transport: DataLoomTransportProtectionSpec? = null,
-    public val cacheAccess: DataLoomStrategyCacheAccessProtectionSpec? = null,
-    public val localFallback: DataLoomStrategyLocalFallbackProtectionSpec? = null,
-    public val reconciliation: DataLoomStrategyReconciliationProtectionSpec? = null,
+public class DataLoomStrategyProviderProtectionSpec private constructor(
+    public val storage: DataLoomStorageProtectionSpec?,
+    public val transport: DataLoomTransportProtectionSpec?,
+    public val localFallback: DataLoomStrategyLocalFallbackProtectionSpec?,
+    public val reconciliation: DataLoomStrategyReconciliationProtectionSpec?,
+    public val cacheAccess: DataLoomStrategyCacheAccessProtectionSpec?,
 ) {
+    /** Existing source and binary constructor retained unchanged. */
+    public constructor(
+        storage: DataLoomStorageProtectionSpec? = null,
+        transport: DataLoomTransportProtectionSpec? = null,
+        localFallback: DataLoomStrategyLocalFallbackProtectionSpec? = null,
+        reconciliation: DataLoomStrategyReconciliationProtectionSpec? = null,
+    ) : this(
+        storage = storage,
+        transport = transport,
+        localFallback = localFallback,
+        reconciliation = reconciliation,
+        cacheAccess = null,
+    )
+
+    /** Additive constructor for independently protected cache access. */
+    public constructor(
+        cacheAccess: DataLoomStrategyCacheAccessProtectionSpec,
+        storage: DataLoomStorageProtectionSpec? = null,
+        transport: DataLoomTransportProtectionSpec? = null,
+        localFallback: DataLoomStrategyLocalFallbackProtectionSpec? = null,
+        reconciliation: DataLoomStrategyReconciliationProtectionSpec? = null,
+    ) : this(
+        storage = storage,
+        transport = transport,
+        localFallback = localFallback,
+        reconciliation = reconciliation,
+        cacheAccess = cacheAccess,
+    )
+
     init {
         require(
             storage != null ||
