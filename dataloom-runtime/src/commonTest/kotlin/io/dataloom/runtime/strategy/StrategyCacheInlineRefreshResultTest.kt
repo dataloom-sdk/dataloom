@@ -55,10 +55,16 @@ class StrategyCacheInlineRefreshResultTest {
     }
 
     @Test
-    fun completedRejectsMissingPullPolicySkipPartialFailedAndCancelled() {
+    fun completedRejectsInvalidOutcomeOrOperationEvidence() {
         assertFailsWith<IllegalArgumentException> {
             StrategyCacheInlineRefreshResult.Completed(
                 completedOperations = emptyList(),
+                output = providerBacked(succeeded()),
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            StrategyCacheInlineRefreshResult.Completed(
+                completedOperations = listOf(StrategyOperation.PUSH_REMOTE),
                 output = providerBacked(succeeded()),
             )
         }
@@ -112,7 +118,7 @@ class StrategyCacheInlineRefreshResultTest {
     }
 
     @Test
-    fun partialOutcomeRequiresCanonicalPartialAndCompletedPull() {
+    fun partialOutcomeRequiresCanonicalPartialAndExactPullEvidence() {
         assertFailsWith<IllegalArgumentException> {
             StrategyCacheInlineRefreshResult.PartiallySucceeded(
                 completedOperations = listOf(StrategyOperation.PULL_REMOTE),
@@ -122,6 +128,12 @@ class StrategyCacheInlineRefreshResultTest {
         assertFailsWith<IllegalArgumentException> {
             StrategyCacheInlineRefreshResult.PartiallySucceeded(
                 completedOperations = emptyList(),
+                output = providerBacked(partiallySucceeded(TestError())),
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            StrategyCacheInlineRefreshResult.PartiallySucceeded(
+                completedOperations = listOf(StrategyOperation.PUSH_REMOTE),
                 output = providerBacked(partiallySucceeded(TestError())),
             )
         }
@@ -154,7 +166,7 @@ class StrategyCacheInlineRefreshResultTest {
     }
 
     @Test
-    fun failedRequiresCanonicalFailureAndConsistentRemoteEvidence() {
+    fun failedRequiresCanonicalFailureAndConsistentPullEvidence() {
         assertFailsWith<IllegalArgumentException> {
             StrategyCacheInlineRefreshResult.Failed(
                 transportAttempted = false,
@@ -172,6 +184,13 @@ class StrategyCacheInlineRefreshResultTest {
             StrategyCacheInlineRefreshResult.Failed(
                 transportAttempted = false,
                 completedOperations = listOf(StrategyOperation.PULL_REMOTE),
+                output = providerBacked(failed(TestError())),
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            StrategyCacheInlineRefreshResult.Failed(
+                transportAttempted = true,
+                completedOperations = listOf(StrategyOperation.PUSH_REMOTE),
                 output = providerBacked(failed(TestError())),
             )
         }
@@ -197,7 +216,7 @@ class StrategyCacheInlineRefreshResultTest {
     }
 
     @Test
-    fun cancelledRequiresCanonicalCancellationAndConsistentTransportEvidence() {
+    fun cancelledRequiresCanonicalCancellationAndConsistentPullEvidence() {
         assertFailsWith<IllegalArgumentException> {
             StrategyCacheInlineRefreshResult.Cancelled(
                 transportAttempted = false,
@@ -208,6 +227,13 @@ class StrategyCacheInlineRefreshResultTest {
             StrategyCacheInlineRefreshResult.Cancelled(
                 transportAttempted = false,
                 completedOperations = listOf(StrategyOperation.PULL_REMOTE),
+                output = providerBacked(cancelled()),
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            StrategyCacheInlineRefreshResult.Cancelled(
+                transportAttempted = true,
+                completedOperations = listOf(StrategyOperation.PUSH_REMOTE),
                 output = providerBacked(cancelled()),
             )
         }
