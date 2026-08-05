@@ -12,7 +12,7 @@ behavior.
 
 | Audit | Scope | How to use it |
 |---|---|---|
-| [DL-039B inline cache refresh result contract](./DL-039B-inline-cache-refresh-contract.md) | Payload-free completed/failed/cancelled foreground refresh outcomes with partial-effect evidence | Current public contract checkpoint; runtime composition, durable refresh, coherence, events, and complete platform matrices remain under #102/#101 |
+| [DL-039B inline cache refresh result contract](./DL-039B-inline-cache-refresh-contract.md) | Payload-free completed/partial/failed/cancelled foreground refresh outcomes with partial-effect evidence | Current public contract checkpoint; runtime composition, durable refresh, coherence, events, and complete platform matrices remain under #102/#101 |
 | [DL-039B cache-first remote direction matrix](./DL-039B-cache-remote-direction-matrix.md) | Canonical direct PUSH, cache-miss PULL, and cache-miss BIDIRECTIONAL execution with truthful partial-effect evidence | Current bounded storage/transport direction checkpoint; refresh, durable recovery, coherence, events, and complete platform matrices remain under #102/#101 |
 | [DL-039B cache-miss remote PULL](./DL-039B-cache-miss-remote-pull.md) | Canonical remote PULL and checkpoint persistence after an explicit cache miss | Earlier bounded cache-miss checkpoint; use the direction-matrix checkpoint for the broader current direct remote surface |
 | [DL-039B protected cache access](./DL-039B-protected-cache-access.md) | Independently scoped timeout/circuit protection and ordered evidence for direct cache verification | Current protected cache-serving checkpoint; refresh, durable recovery, and platform matrices remain under #102/#101 |
