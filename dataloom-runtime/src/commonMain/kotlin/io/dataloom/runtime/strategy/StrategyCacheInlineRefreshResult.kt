@@ -48,8 +48,8 @@ public sealed interface StrategyCacheInlineRefreshResult {
                 "Completed inline cache refresh requires succeeded or no-change output."
             }
             requirePullRefreshOperations(completedOperationsSnapshot)
-            require(StrategyOperation.PULL_REMOTE in completedOperationsSnapshot) {
-                "Completed inline cache refresh requires a completed remote pull."
+            require(completedOperationsSnapshot == COMPLETED_PULL_EVIDENCE) {
+                "Completed inline cache refresh requires one completed remote pull marker."
             }
         }
 
@@ -99,8 +99,8 @@ public sealed interface StrategyCacheInlineRefreshResult {
 
         init {
             requirePullRefreshOperations(completedOperationsSnapshot)
-            require(StrategyOperation.PULL_REMOTE in completedOperationsSnapshot) {
-                "Partially succeeded inline cache refresh requires a completed remote pull."
+            require(completedOperationsSnapshot == COMPLETED_PULL_EVIDENCE) {
+                "Partially succeeded inline cache refresh requires one completed remote pull marker."
             }
         }
 
@@ -247,6 +247,9 @@ public sealed interface StrategyCacheInlineRefreshResult {
     }
 }
 
+private val COMPLETED_PULL_EVIDENCE: List<StrategyOperation> =
+    listOf(StrategyOperation.PULL_REMOTE)
+
 private fun requireTransportEvidence(
     transportAttempted: Boolean,
     completedOperations: List<StrategyOperation>,
@@ -262,8 +265,10 @@ private fun requireTransportEvidence(
 private fun requirePullRefreshOperations(
     completedOperations: List<StrategyOperation>,
 ) {
-    require(completedOperations.all { it == StrategyOperation.PULL_REMOTE }) {
-        "Inline cache PULL refresh evidence may contain only PULL_REMOTE operations."
+    require(
+        completedOperations.isEmpty() || completedOperations == COMPLETED_PULL_EVIDENCE,
+    ) {
+        "Inline cache PULL refresh evidence must be empty or one PULL_REMOTE marker."
     }
 }
 
