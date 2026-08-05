@@ -28,21 +28,32 @@ import kotlin.test.assertTrue
 class StrategyCacheInlineRefreshResultTest {
 
     @Test
-    fun completedAcceptsCanonicalNonFailureOutput() {
-        val result = StrategyCacheInlineRefreshResult.Completed(
+    fun completedAcceptsCanonicalSucceededOrSkippedOutput() {
+        val skipped = StrategyCacheInlineRefreshResult.Completed(
             completedAt = completedAt,
             output = providerBacked(skipped()),
+        )
+        val succeeded = StrategyCacheInlineRefreshResult.Completed(
+            completedAt = completedAt,
+            output = providerBacked(succeeded()),
         )
 
         assertEquals(
             StrategyCacheInlineRefreshDisposition.COMPLETED,
-            result.disposition,
+            skipped.disposition,
         )
-        assertTrue(result.toString().contains("COMPLETED"))
+        assertTrue(skipped.toString().contains("SKIPPED"))
+        assertTrue(succeeded.toString().contains("SUCCEEDED"))
     }
 
     @Test
-    fun completedRejectsFailedAndCancelledOutputs() {
+    fun completedRejectsPartialFailedAndCancelledOutputs() {
+        assertFailsWith<IllegalArgumentException> {
+            StrategyCacheInlineRefreshResult.Completed(
+                completedAt = completedAt,
+                output = providerBacked(partiallySucceeded(TestError())),
+            )
+        }
         assertFailsWith<IllegalArgumentException> {
             StrategyCacheInlineRefreshResult.Completed(
                 completedAt = completedAt,
@@ -53,6 +64,28 @@ class StrategyCacheInlineRefreshResultTest {
             StrategyCacheInlineRefreshResult.Completed(
                 completedAt = completedAt,
                 output = providerBacked(cancelled()),
+            )
+        }
+    }
+
+    @Test
+    fun partialOutcomeRequiresCanonicalPartialResultAndUsesBoundedDiagnostics() {
+        val error = TestError()
+        val result = StrategyCacheInlineRefreshResult.PartiallySucceeded(
+            completedAt = completedAt,
+            output = providerBacked(partiallySucceeded(error)),
+        )
+
+        assertEquals(
+            StrategyCacheInlineRefreshDisposition.PARTIALLY_SUCCEEDED,
+            result.disposition,
+        )
+        assertTrue(result.toString().contains("errorCount=1"))
+        assertFalse(result.toString().contains(error.message))
+        assertFailsWith<IllegalArgumentException> {
+            StrategyCacheInlineRefreshResult.PartiallySucceeded(
+                completedAt = completedAt,
+                output = providerBacked(skipped()),
             )
         }
     }
@@ -120,11 +153,28 @@ class StrategyCacheInlineRefreshResultTest {
     ): StrategyTransportOutput.ProviderBacked =
         StrategyTransportOutput.ProviderBacked(result)
 
+    private fun succeeded(): SynchronizationResult.Succeeded =
+        SynchronizationResult.Succeeded(
+            request = request,
+            completedAt = completedAt,
+            summary = SynchronizationSummary(),
+        )
+
     private fun skipped(): SynchronizationResult.Skipped =
         SynchronizationResult.Skipped(
             request = request,
             completedAt = completedAt,
             summary = SynchronizationSummary(),
+        )
+
+    private fun partiallySucceeded(
+        error: DataLoomError,
+    ): SynchronizationResult.PartiallySucceeded =
+        SynchronizationResult.PartiallySucceeded(
+            request = request,
+            completedAt = completedAt,
+            summary = SynchronizationSummary(),
+            errors = listOf(error),
         )
 
     private fun failed(error: DataLoomError): SynchronizationResult.Failed =
