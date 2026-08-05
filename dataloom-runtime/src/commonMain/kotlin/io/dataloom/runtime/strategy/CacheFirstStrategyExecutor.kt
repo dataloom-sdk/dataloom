@@ -26,7 +26,7 @@ import io.dataloom.runtime.execution.SynchronizationExecutionContext
 import io.dataloom.runtime.execution.SynchronizationPipelineRegistry
 import io.dataloom.runtime.execution.lifecycle.SynchronizationLifecycleEventEmitter
 
-/** Executes bounded direct cache-first local-serving and remote-miss PULL slices. */
+/** Executes bounded direct cache-first local-serving and remote pipeline slices. */
 internal class CacheFirstStrategyExecutor(
     private val clock: DataLoomClock,
     private val runtimeDependencies: RuntimeDependencies,
@@ -45,8 +45,8 @@ internal class CacheFirstStrategyExecutor(
         return when {
             isSupportedLocalServingPlan(evaluation) ->
                 executeLocalServing(request, evaluation, providers)
-            isSupportedRemoteMissPullPlan(request, evaluation) ->
-                executeRemoteMissPull(request, evaluation, providers)
+            isSupportedRemotePlan(request, evaluation) ->
+                executeRemotePlan(request, evaluation, providers)
             else -> rejected(evaluation, StrategyExecutionRejectionReason.UNSUPPORTED_PLAN)
         }
     }
@@ -111,7 +111,7 @@ internal class CacheFirstStrategyExecutor(
         }
     }
 
-    private suspend fun executeRemoteMissPull(
+    private suspend fun executeRemotePlan(
         request: StrategySynchronizationRequest,
         evaluation: StrategyEvaluationResult,
         providers: StrategyProviderSet,
@@ -120,7 +120,7 @@ internal class CacheFirstStrategyExecutor(
             ?: return rejected(evaluation, StrategyExecutionRejectionReason.UNSUPPORTED_PLAN)
         val transport = providers.transportProvider
             ?: return rejected(evaluation, StrategyExecutionRejectionReason.UNSUPPORTED_PLAN)
-        val pipeline = pipelineRegistry.lookup(SynchronizationDirection.PULL)
+        val pipeline = pipelineRegistry.lookup(request.request.direction)
             ?: return rejected(evaluation, StrategyExecutionRejectionReason.UNSUPPORTED_PLAN)
         val trackingTransport = TrackingTransportProvider(transport)
         val context = SynchronizationExecutionContext(
@@ -140,14 +140,14 @@ internal class CacheFirstStrategyExecutor(
         val result = pipeline.execute(context)
         lifecycleEventEmitter?.emitCompleted(context, result)
 
-        return mapRemoteMissResult(
+        return mapRemotePlanResult(
             evaluation = evaluation,
             trackingTransport = trackingTransport,
             result = result,
         )
     }
 
-    private fun mapRemoteMissResult(
+    private fun mapRemotePlanResult(
         evaluation: StrategyEvaluationResult,
         trackingTransport: TrackingTransportProvider,
         result: SynchronizationResult,
@@ -221,25 +221,48 @@ internal class CacheFirstStrategyExecutor(
             plan.dataOrigin == StrategyDataOrigin.LOCAL
     }
 
-    private fun isSupportedRemoteMissPullPlan(
+    private fun isSupportedRemotePlan(
         request: StrategySynchronizationRequest,
         evaluation: StrategyEvaluationResult,
     ): Boolean {
         val plan = evaluation.plan
-        return request.request.direction == SynchronizationDirection.PULL &&
-            request.evidence.cacheState == StrategyCacheState.MISSING &&
-            plan.effectiveStrategy == BuiltInSynchronizationStrategy.CACHE_FIRST &&
-            plan.disposition == StrategyDisposition.EXECUTE &&
-            plan.operations == listOf(
-                StrategyOperation.READ_CHECKPOINT,
-                StrategyOperation.PULL_REMOTE,
-                StrategyOperation.PERSIST_REMOTE,
-            ) &&
-            plan.requiredCapabilities == setOf(
+        if (
+            plan.effectiveStrategy != BuiltInSynchronizationStrategy.CACHE_FIRST ||
+            plan.disposition != StrategyDisposition.EXECUTE ||
+            plan.requiredCapabilities != setOf(
                 StrategyProviderCapability.STORAGE,
                 StrategyProviderCapability.TRANSPORT,
-            ) &&
-            plan.dataOrigin == StrategyDataOrigin.REMOTE
+            )
+        ) {
+            return false
+        }
+
+        return when (request.request.direction) {
+            SynchronizationDirection.PUSH ->
+                plan.operations == listOf(
+                    StrategyOperation.READ_LOCAL,
+                    StrategyOperation.PUSH_REMOTE,
+                ) &&
+                    plan.dataOrigin == StrategyDataOrigin.LOCAL
+            SynchronizationDirection.PULL ->
+                request.evidence.cacheState == StrategyCacheState.MISSING &&
+                    plan.operations == listOf(
+                        StrategyOperation.READ_CHECKPOINT,
+                        StrategyOperation.PULL_REMOTE,
+                        StrategyOperation.PERSIST_REMOTE,
+                    ) &&
+                    plan.dataOrigin == StrategyDataOrigin.REMOTE
+            SynchronizationDirection.BIDIRECTIONAL ->
+                request.evidence.cacheState == StrategyCacheState.MISSING &&
+                    plan.operations == listOf(
+                        StrategyOperation.READ_LOCAL,
+                        StrategyOperation.PUSH_REMOTE,
+                        StrategyOperation.READ_CHECKPOINT,
+                        StrategyOperation.PULL_REMOTE,
+                        StrategyOperation.PERSIST_REMOTE,
+                    ) &&
+                    plan.dataOrigin == StrategyDataOrigin.MIXED
+        }
     }
 
     private fun failed(

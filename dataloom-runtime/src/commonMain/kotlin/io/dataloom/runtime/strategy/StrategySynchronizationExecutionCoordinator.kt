@@ -208,7 +208,7 @@ internal class StrategySynchronizationExecutionCoordinator(
         evaluation: StrategyEvaluationResult,
     ): Boolean =
         isDirectCacheServingPlan(evaluation) ||
-            isDirectCacheMissRemotePullPlan(request, evaluation)
+            isDirectCacheRemotePlan(request, evaluation)
 
     private fun isDirectCacheServingPlan(
         evaluation: StrategyEvaluationResult,
@@ -223,24 +223,47 @@ internal class StrategySynchronizationExecutionCoordinator(
             plan.dataOrigin == StrategyDataOrigin.LOCAL
     }
 
-    private fun isDirectCacheMissRemotePullPlan(
+    private fun isDirectCacheRemotePlan(
         request: StrategySynchronizationRequest,
         evaluation: StrategyEvaluationResult,
     ): Boolean {
         val plan = evaluation.plan
-        return request.request.direction == SynchronizationDirection.PULL &&
-            request.evidence.cacheState == StrategyCacheState.MISSING &&
-            plan.disposition == StrategyDisposition.EXECUTE &&
-            plan.operations == listOf(
-                StrategyOperation.READ_CHECKPOINT,
-                StrategyOperation.PULL_REMOTE,
-                StrategyOperation.PERSIST_REMOTE,
-            ) &&
-            plan.requiredCapabilities == setOf(
+        if (
+            plan.disposition != StrategyDisposition.EXECUTE ||
+            plan.requiredCapabilities != setOf(
                 StrategyProviderCapability.STORAGE,
                 StrategyProviderCapability.TRANSPORT,
-            ) &&
-            plan.dataOrigin == StrategyDataOrigin.REMOTE
+            )
+        ) {
+            return false
+        }
+
+        return when (request.request.direction) {
+            SynchronizationDirection.PUSH ->
+                plan.operations == listOf(
+                    StrategyOperation.READ_LOCAL,
+                    StrategyOperation.PUSH_REMOTE,
+                ) &&
+                    plan.dataOrigin == StrategyDataOrigin.LOCAL
+            SynchronizationDirection.PULL ->
+                request.evidence.cacheState == StrategyCacheState.MISSING &&
+                    plan.operations == listOf(
+                        StrategyOperation.READ_CHECKPOINT,
+                        StrategyOperation.PULL_REMOTE,
+                        StrategyOperation.PERSIST_REMOTE,
+                    ) &&
+                    plan.dataOrigin == StrategyDataOrigin.REMOTE
+            SynchronizationDirection.BIDIRECTIONAL ->
+                request.evidence.cacheState == StrategyCacheState.MISSING &&
+                    plan.operations == listOf(
+                        StrategyOperation.READ_LOCAL,
+                        StrategyOperation.PUSH_REMOTE,
+                        StrategyOperation.READ_CHECKPOINT,
+                        StrategyOperation.PULL_REMOTE,
+                        StrategyOperation.PERSIST_REMOTE,
+                    ) &&
+                    plan.dataOrigin == StrategyDataOrigin.MIXED
+        }
     }
 
     private suspend fun executeDeferredOfflineFirstAdmission(
