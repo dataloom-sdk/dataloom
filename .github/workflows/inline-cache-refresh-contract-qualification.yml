@@ -2,22 +2,25 @@ name: One-time inline cache refresh contract qualification
 
 # Temporary final ABI generation for the audited PULL-only contract.
 on:
-  push:
+  pull_request:
     branches:
-      - agent/dl-strategy-015-inline-cache-refresh-contract
+      - main
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: inline-cache-refresh-contract-${{ github.ref }}
+  group: inline-cache-refresh-contract-${{ github.event.pull_request.head.ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
   qualify:
     name: Generate ABI and qualify inline refresh contract
-    if: github.actor != 'github-actions[bot]'
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.ref == 'agent/dl-strategy-015-inline-cache-refresh-contract'
     runs-on: macos-15
     timeout-minutes: 45
 
@@ -25,8 +28,9 @@ jobs:
       - name: Checkout immutable branch head
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
+          persist-credentials: true
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -93,4 +97,4 @@ jobs:
             dataloom-runtime/api/dataloom-runtime.api \
             dataloom-runtime/api/dataloom-runtime.klib.api
           git commit -m "DL-039B: update inline refresh effect ABI evidence"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
