@@ -2766,10 +2766,19 @@ public final class io/dataloom/runtime/strategy/BuiltInSynchronizationStrategyEv
 	public fun evaluate (Lio/dataloom/api/strategy/StrategyEvaluationRequest;)Lio/dataloom/api/strategy/StrategyEvaluationResult;
 }
 
+public final class io/dataloom/runtime/strategy/StrategyCacheUnavailableReason : java/lang/Enum {
+	public static final field FRESHNESS_DOWNGRADED Lio/dataloom/runtime/strategy/StrategyCacheUnavailableReason;
+	public static final field PROVIDER_REPORTED_UNAVAILABLE Lio/dataloom/runtime/strategy/StrategyCacheUnavailableReason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/strategy/StrategyCacheUnavailableReason;
+	public static fun values ()[Lio/dataloom/runtime/strategy/StrategyCacheUnavailableReason;
+}
+
 public final class io/dataloom/runtime/strategy/StrategyExecutionRejectionReason : java/lang/Enum {
 	public static final field ACCEPTED_PLAN_CONTINUATION_MISSING Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field ACCEPTED_PLAN_MISMATCH Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field ATOMIC_LOCAL_ADMISSION_PROVIDER_NOT_CONFIGURED Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
+	public static final field CACHE_ACCESS_PROVIDER_NOT_CONFIGURED Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field INCOMPATIBLE_INPUT Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field INCOMPATIBLE_TRIGGER Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
@@ -2796,6 +2805,47 @@ public final class io/dataloom/runtime/strategy/StrategyOfflineFirstAdmissionDis
 public abstract interface class io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult {
 	public abstract fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
 	public abstract fun getEvaluation ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
+}
+
+public final class io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$CacheServed : io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult {
+	public fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/api/strategy/StrategyCacheFreshnessEvidence;)V
+	public final fun component1 ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
+	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component3 ()Lio/dataloom/api/strategy/StrategyCacheState;
+	public final fun component4 ()Lio/dataloom/api/strategy/StrategyCacheFreshnessEvidence;
+	public final fun copy (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/api/strategy/StrategyCacheFreshnessEvidence;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$CacheServed;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$CacheServed;Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/api/strategy/StrategyCacheFreshnessEvidence;ILjava/lang/Object;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$CacheServed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getDataOrigin ()Lio/dataloom/api/strategy/StrategyDataOrigin;
+	public final fun getEvaluatedCacheState ()Lio/dataloom/api/strategy/StrategyCacheState;
+	public fun getEvaluation ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
+	public final fun getFreshness ()Lio/dataloom/api/strategy/StrategyCacheFreshnessEvidence;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$CacheUnavailable : io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult {
+	public fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/runtime/strategy/StrategyCacheUnavailableReason;Lio/dataloom/api/strategy/StrategyCacheFreshnessEvidence;)V
+	public synthetic fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/runtime/strategy/StrategyCacheUnavailableReason;Lio/dataloom/api/strategy/StrategyCacheFreshnessEvidence;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
+	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component3 ()Lio/dataloom/api/strategy/StrategyCacheState;
+	public final fun component4 ()Lio/dataloom/api/strategy/StrategyCacheState;
+	public final fun component5 ()Lio/dataloom/runtime/strategy/StrategyCacheUnavailableReason;
+	public final fun component6 ()Lio/dataloom/api/strategy/StrategyCacheFreshnessEvidence;
+	public final fun copy (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/runtime/strategy/StrategyCacheUnavailableReason;Lio/dataloom/api/strategy/StrategyCacheFreshnessEvidence;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$CacheUnavailable;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$CacheUnavailable;Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/runtime/strategy/StrategyCacheUnavailableReason;Lio/dataloom/api/strategy/StrategyCacheFreshnessEvidence;ILjava/lang/Object;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$CacheUnavailable;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getDataOrigin ()Lio/dataloom/api/strategy/StrategyDataOrigin;
+	public final fun getEvaluatedCacheState ()Lio/dataloom/api/strategy/StrategyCacheState;
+	public fun getEvaluation ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
+	public final fun getProviderCacheState ()Lio/dataloom/api/strategy/StrategyCacheState;
+	public final fun getProviderFreshness ()Lio/dataloom/api/strategy/StrategyCacheFreshnessEvidence;
+	public final fun getReason ()Lio/dataloom/runtime/strategy/StrategyCacheUnavailableReason;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$Cancelled : io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult {
