@@ -649,7 +649,13 @@ public class BuiltInSynchronizationStrategyEvaluator : SynchronizationStrategyEv
     ): StrategyEvaluationResult {
         val capabilities = deriveCapabilities(
             operations + (fallbackPlan?.operations ?: emptyList()),
-        )
+        ).toMutableSet()
+        if (
+            profile is CacheFirstStrategyProfile &&
+            StrategyOperation.SERVE_LOCAL in operations
+        ) {
+            capabilities += StrategyProviderCapability.CACHE_ACCESS
+        }
         val durableContinuation = deriveDurableContinuation(
             request = request,
             profile = profile,
