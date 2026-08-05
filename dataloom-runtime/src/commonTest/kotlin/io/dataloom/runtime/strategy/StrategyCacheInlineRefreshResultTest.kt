@@ -30,13 +30,17 @@ import kotlin.test.assertTrue
 class StrategyCacheInlineRefreshResultTest {
 
     @Test
-    fun completedAcceptsSucceededAndNoChangeOutputAndDerivesCompletionTime() {
+    fun completedAcceptsSucceededAndNoChangeAndPreservesRemoteEffects() {
+        val operations = mutableListOf(StrategyOperation.PULL_REMOTE)
         val skipped = StrategyCacheInlineRefreshResult.Completed(
+            completedOperations = operations,
             output = providerBacked(skipped()),
         )
         val succeeded = StrategyCacheInlineRefreshResult.Completed(
+            completedOperations = listOf(StrategyOperation.PULL_REMOTE),
             output = providerBacked(succeeded()),
         )
+        operations += StrategyOperation.PERSIST_REMOTE
 
         assertEquals(
             StrategyCacheInlineRefreshDisposition.COMPLETED,
@@ -44,14 +48,23 @@ class StrategyCacheInlineRefreshResultTest {
         )
         assertEquals(completedAt, skipped.completedAt)
         assertEquals(completedAt, succeeded.completedAt)
+        assertTrue(skipped.transportAttempted)
+        assertEquals(listOf(StrategyOperation.PULL_REMOTE), skipped.completedOperations)
         assertTrue(skipped.toString().contains("SKIPPED"))
         assertTrue(succeeded.toString().contains("SUCCEEDED"))
     }
 
     @Test
-    fun completedRejectsPolicySkipPartialFailedAndCancelledOutputs() {
+    fun completedRejectsMissingPullPolicySkipPartialFailedAndCancelled() {
         assertFailsWith<IllegalArgumentException> {
             StrategyCacheInlineRefreshResult.Completed(
+                completedOperations = emptyList(),
+                output = providerBacked(succeeded()),
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            StrategyCacheInlineRefreshResult.Completed(
+                completedOperations = listOf(StrategyOperation.PULL_REMOTE),
                 output = providerBacked(
                     skipped(SynchronizationSkipReason.POLICY_REJECTED),
                 ),
@@ -59,38 +72,57 @@ class StrategyCacheInlineRefreshResultTest {
         }
         assertFailsWith<IllegalArgumentException> {
             StrategyCacheInlineRefreshResult.Completed(
+                completedOperations = listOf(StrategyOperation.PULL_REMOTE),
                 output = providerBacked(partiallySucceeded(TestError())),
             )
         }
         assertFailsWith<IllegalArgumentException> {
             StrategyCacheInlineRefreshResult.Completed(
+                completedOperations = listOf(StrategyOperation.PULL_REMOTE),
                 output = providerBacked(failed(TestError())),
             )
         }
         assertFailsWith<IllegalArgumentException> {
             StrategyCacheInlineRefreshResult.Completed(
+                completedOperations = listOf(StrategyOperation.PULL_REMOTE),
                 output = providerBacked(cancelled()),
             )
         }
     }
 
     @Test
-    fun partialOutcomeRequiresCanonicalPartialResultAndUsesBoundedDiagnostics() {
+    fun partialOutcomePreservesRemoteEffectsAndUsesBoundedDiagnostics() {
         val error = TestError()
+        val operations = mutableListOf(StrategyOperation.PULL_REMOTE)
         val result = StrategyCacheInlineRefreshResult.PartiallySucceeded(
+            completedOperations = operations,
             output = providerBacked(partiallySucceeded(error)),
         )
+        operations += StrategyOperation.PERSIST_REMOTE
 
         assertEquals(
             StrategyCacheInlineRefreshDisposition.PARTIALLY_SUCCEEDED,
             result.disposition,
         )
         assertEquals(completedAt, result.completedAt)
+        assertTrue(result.transportAttempted)
+        assertEquals(listOf(StrategyOperation.PULL_REMOTE), result.completedOperations)
         assertTrue(result.toString().contains("errorCount=1"))
         assertFalse(result.toString().contains(error.message))
+    }
+
+    @Test
+    fun partialOutcomeRequiresCanonicalPartialAndCompletedPull() {
         assertFailsWith<IllegalArgumentException> {
             StrategyCacheInlineRefreshResult.PartiallySucceeded(
+                completedOperations = listOf(StrategyOperation.PULL_REMOTE),
                 output = providerBacked(skipped()),
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            StrategyCacheInlineRefreshResult.PartiallySucceeded(
+                completedOperations = emptyList(),
+                output = providerBacked(partiallySucceeded(TestError())),
             )
         }
     }
@@ -146,19 +178,37 @@ class StrategyCacheInlineRefreshResultTest {
     }
 
     @Test
-    fun cancelledRequiresCanonicalCancellationAndDerivesCompletionTime() {
+    fun cancelledPreservesEvidenceAndDerivesCompletionTime() {
+        val operations = mutableListOf(StrategyOperation.PULL_REMOTE)
         val result = StrategyCacheInlineRefreshResult.Cancelled(
+            transportAttempted = true,
+            completedOperations = operations,
             output = providerBacked(cancelled()),
         )
+        operations += StrategyOperation.PERSIST_REMOTE
 
         assertEquals(
             StrategyCacheInlineRefreshDisposition.CANCELLED,
             result.disposition,
         )
         assertEquals(completedAt, result.completedAt)
+        assertTrue(result.transportAttempted)
+        assertEquals(listOf(StrategyOperation.PULL_REMOTE), result.completedOperations)
+    }
+
+    @Test
+    fun cancelledRequiresCanonicalCancellationAndConsistentTransportEvidence() {
         assertFailsWith<IllegalArgumentException> {
             StrategyCacheInlineRefreshResult.Cancelled(
+                transportAttempted = false,
                 output = providerBacked(skipped()),
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            StrategyCacheInlineRefreshResult.Cancelled(
+                transportAttempted = false,
+                completedOperations = listOf(StrategyOperation.PULL_REMOTE),
+                output = providerBacked(cancelled()),
             )
         }
     }
