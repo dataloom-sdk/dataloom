@@ -17,26 +17,35 @@ without changing the already frozen cache-only result variants.
 
 | Outcome | Meaning |
 |---|---|
-| `Completed` | The canonical provider-backed refresh reached `Succeeded` or `Skipped`. |
+| `Completed` | The canonical provider-backed refresh reached `Succeeded` or `Skipped(NO_CHANGES)`. |
 | `PartiallySucceeded` | Some refresh work committed but canonical unresolved errors remain visible in the provider-backed partial result. |
-| `Failed` | Local cache use remains valid, but the inline refresh failed; transport-attempt, completed-operation, partial-output, and typed remote-outcome evidence remain visible. |
+| `Failed` | Local cache use remains valid, but the inline refresh failed; transport-attempt, completed-operation, canonical output, and typed remote-outcome evidence remain visible. |
 | `Cancelled` | The canonical pipeline returned its explicit cancellation result. |
 
 Every result exposes a stable `StrategyCacheInlineRefreshDisposition`:
 `COMPLETED`, `PARTIALLY_SUCCEEDED`, `FAILED`, or `CANCELLED`.
 
+## Canonical evidence invariants
+
+- `completedAt` is derived from the canonical synchronization output. Callers
+  cannot supply a second contradictory terminal time.
+- `Failed.error` is derived from the canonical failed output. Callers cannot
+  pair one error with a different pipeline failure.
+- `Completed` accepts only `Succeeded` and `Skipped(NO_CHANGES)`. Constraint,
+  policy, and duplicate-request skips cannot be mislabeled as refresh success.
+- `PartiallySucceeded` requires canonical partial output so unresolved errors
+  cannot be mislabeled as full completion.
+- A typed remote outcome requires `transportAttempted=true`.
+- Completed `PUSH_REMOTE` or `PULL_REMOTE` operation evidence requires a
+  transport attempt.
+- `Failed.completedOperations` is defensively copied so already completed
+  effects cannot be hidden or mutated after construction.
+- `Cancelled` requires canonical cancelled output.
+
 ## Safety and payload boundary
 
 - Domain values, cache payloads, credentials, headers, checkpoint contents, and
   arbitrary provider metadata are not part of the contract.
-- `Completed` accepts only canonical `Succeeded` or `Skipped` output and rejects
-  partial, failed, and cancelled output.
-- `PartiallySucceeded` requires canonical partial output so unresolved errors
-  cannot be mislabeled as full completion.
-- `Failed` requires a matching canonical failed provider-backed output.
-- `Failed.completedOperations` is defensively copied so already completed remote
-  effects cannot be hidden or mutated after construction.
-- `Cancelled` requires the canonical cancelled provider-backed output.
 - Diagnostic strings expose bounded status, error count, error code,
   transport-attempt, completed-operation, and typed outcome information without
   rendering error messages or provider payloads.
@@ -64,11 +73,14 @@ Kotlin collections.
 
 Focused common tests cover:
 
-- completed canonical succeeded and skipped output;
-- rejection of partial, failed, and cancelled outputs from `Completed`;
+- completed canonical succeeded and no-change output;
+- rejection of policy-skip, partial, failed, and cancelled output from
+  `Completed`;
+- completion time derived from canonical output;
 - explicit canonical partial output and bounded partial diagnostics;
+- failure error derived from canonical output;
 - defensive completed-operation evidence;
-- matching canonical failed-output enforcement;
+- remote-outcome and completed-remote-operation consistency;
 - bounded diagnostics that exclude error messages; and
 - canonical cancellation enforcement.
 
