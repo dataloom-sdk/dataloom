@@ -10,6 +10,7 @@ import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.api.runtime.RuntimeDependencies
 import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
+import io.dataloom.api.strategy.StrategyDataOrigin
 import io.dataloom.api.strategy.StrategyDisposition
 import io.dataloom.api.strategy.StrategyEvaluationResult
 import io.dataloom.api.strategy.StrategyExecutionTrigger
@@ -113,6 +114,20 @@ internal class StrategySynchronizationExecutionCoordinator(
                     )
                 }
             }
+            BuiltInSynchronizationStrategy.CACHE_FIRST -> {
+                if (request.input !is StrategyOperationInput.ProviderBacked) {
+                    return rejected(
+                        evaluation = evaluation,
+                        reason = StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT,
+                    )
+                }
+                if (!isDirectCacheServingPlan(evaluation)) {
+                    return rejected(
+                        evaluation = evaluation,
+                        reason = StrategyExecutionRejectionReason.UNSUPPORTED_PLAN,
+                    )
+                }
+            }
             else -> return rejected(
                 evaluation = evaluation,
                 reason = StrategyExecutionRejectionReason.UNSUPPORTED_PLAN,
@@ -147,35 +162,48 @@ internal class StrategySynchronizationExecutionCoordinator(
             )
         }
 
-        if (
-            evaluation.plan.effectiveStrategy ==
-            BuiltInSynchronizationStrategy.NETWORK_ONLY
-        ) {
-            return NetworkOnlyStrategyExecutor(clock).execute(
-                request = request,
+        return when (evaluation.plan.effectiveStrategy) {
+            BuiltInSynchronizationStrategy.NETWORK_ONLY ->
+                NetworkOnlyStrategyExecutor(clock).execute(
+                    request = request,
+                    evaluation = evaluation,
+                    providers = executionProviders,
+                )
+            BuiltInSynchronizationStrategy.REMOTE_FIRST ->
+                RemoteFirstStrategyExecutor(
+                    clock = clock,
+                    runtimeDependencies = runtimeDependencies,
+                    pipelineRegistry = pipelineRegistry,
+                    lifecycleEventEmitter = lifecycleEventEmitter,
+                ).execute(
+                    request = request,
+                    evaluation = evaluation,
+                    providers = executionProviders,
+                )
+            BuiltInSynchronizationStrategy.CACHE_FIRST ->
+                CacheFirstStrategyExecutor(clock).execute(
+                    request = request,
+                    evaluation = evaluation,
+                    providers = executionProviders,
+                )
+            else -> rejected(
                 evaluation = evaluation,
-                providers = executionProviders,
+                reason = StrategyExecutionRejectionReason.UNSUPPORTED_PLAN,
             )
         }
-        if (
-            evaluation.plan.effectiveStrategy ==
-            BuiltInSynchronizationStrategy.REMOTE_FIRST
-        ) {
-            return RemoteFirstStrategyExecutor(
-                clock = clock,
-                runtimeDependencies = runtimeDependencies,
-                pipelineRegistry = pipelineRegistry,
-                lifecycleEventEmitter = lifecycleEventEmitter,
-            ).execute(
-                request = request,
-                evaluation = evaluation,
-                providers = executionProviders,
-            )
-        }
-        return rejected(
-            evaluation = evaluation,
-            reason = StrategyExecutionRejectionReason.UNSUPPORTED_PLAN,
-        )
+    }
+
+    private fun isDirectCacheServingPlan(
+        evaluation: StrategyEvaluationResult,
+    ): Boolean {
+        val plan = evaluation.plan
+        return plan.disposition == StrategyDisposition.EXECUTE &&
+            plan.operations == listOf(StrategyOperation.SERVE_LOCAL) &&
+            plan.requiredCapabilities == setOf(
+                StrategyProviderCapability.STORAGE,
+                StrategyProviderCapability.CACHE_ACCESS,
+            ) &&
+            plan.dataOrigin == StrategyDataOrigin.LOCAL
     }
 
     private suspend fun executeDeferredOfflineFirstAdmission(
