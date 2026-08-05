@@ -10,6 +10,7 @@ import io.dataloom.api.time.DataLoomInstant
 /** Terminal disposition of one foreground cache-first refresh attempt. */
 public enum class StrategyCacheInlineRefreshDisposition {
     COMPLETED,
+    PARTIALLY_SUCCEEDED,
     FAILED,
     CANCELLED,
 }
@@ -24,17 +25,17 @@ public sealed interface StrategyCacheInlineRefreshResult {
     public val disposition: StrategyCacheInlineRefreshDisposition
     public val completedAt: DataLoomInstant
 
-    /** The inline refresh reached a non-failed, non-cancelled terminal result. */
+    /** The inline refresh reached a complete successful or no-change result. */
     public data class Completed(
         override val completedAt: DataLoomInstant,
         public val output: StrategyTransportOutput.ProviderBacked,
     ) : StrategyCacheInlineRefreshResult {
         init {
             require(
-                output.result !is SynchronizationResult.Failed &&
-                    output.result !is SynchronizationResult.Cancelled,
+                output.result is SynchronizationResult.Succeeded ||
+                    output.result is SynchronizationResult.Skipped,
             ) {
-                "Completed inline cache refresh requires a non-failed, non-cancelled output."
+                "Completed inline cache refresh requires a succeeded or skipped output."
             }
         }
 
@@ -43,8 +44,32 @@ public sealed interface StrategyCacheInlineRefreshResult {
 
         override fun toString(): String =
             "StrategyCacheInlineRefreshResult.Completed(" +
-                "result=${output.result::class.simpleName}, " +
+                "result=${synchronizationStatus(output.result)}, " +
                 "disposition=$disposition)"
+    }
+
+    /**
+     * The inline refresh committed some work but retained canonical unresolved
+     * errors. Local cache-serving evidence must remain visible separately.
+     */
+    public data class PartiallySucceeded(
+        override val completedAt: DataLoomInstant,
+        public val output: StrategyTransportOutput.ProviderBacked,
+    ) : StrategyCacheInlineRefreshResult {
+        init {
+            require(output.result is SynchronizationResult.PartiallySucceeded) {
+                "Partially succeeded inline cache refresh requires canonical partial output."
+            }
+        }
+
+        override val disposition: StrategyCacheInlineRefreshDisposition =
+            StrategyCacheInlineRefreshDisposition.PARTIALLY_SUCCEEDED
+
+        override fun toString(): String {
+            val partial = output.result as SynchronizationResult.PartiallySucceeded
+            return "StrategyCacheInlineRefreshResult.PartiallySucceeded(" +
+                "errorCount=${partial.errors.size}, disposition=$disposition)"
+        }
     }
 
     /**
@@ -121,4 +146,12 @@ public sealed interface StrategyCacheInlineRefreshResult {
         override fun toString(): String =
             "StrategyCacheInlineRefreshResult.Cancelled(disposition=$disposition)"
     }
+}
+
+private fun synchronizationStatus(result: SynchronizationResult): String = when (result) {
+    is SynchronizationResult.Succeeded -> "SUCCEEDED"
+    is SynchronizationResult.PartiallySucceeded -> "PARTIALLY_SUCCEEDED"
+    is SynchronizationResult.Failed -> "FAILED"
+    is SynchronizationResult.Cancelled -> "CANCELLED"
+    is SynchronizationResult.Skipped -> "SKIPPED"
 }
