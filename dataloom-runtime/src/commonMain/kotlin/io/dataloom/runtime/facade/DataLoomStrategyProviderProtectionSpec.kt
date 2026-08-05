@@ -12,6 +12,8 @@ import io.dataloom.runtime.retry.StrategyLocalFallbackCircuitOperation
 import io.dataloom.runtime.retry.StrategyReconciliationCircuitBreakerFailureClassifier
 import io.dataloom.runtime.retry.StrategyReconciliationCircuitOperation
 
+private object StrategyProviderProtectionPrimaryConstructorMarker
+
 /**
  * Explicit independent circuit/timeout protection for cache-first local-state
  * verification.
@@ -129,6 +131,8 @@ public class DataLoomStrategyProviderProtectionSpec private constructor(
     public val localFallback: DataLoomStrategyLocalFallbackProtectionSpec?,
     public val reconciliation: DataLoomStrategyReconciliationProtectionSpec?,
     public val cacheAccess: DataLoomStrategyCacheAccessProtectionSpec?,
+    @Suppress("UNUSED_PARAMETER")
+    marker: StrategyProviderProtectionPrimaryConstructorMarker,
 ) {
     /** Existing source and binary constructor retained unchanged. */
     public constructor(
@@ -137,11 +141,12 @@ public class DataLoomStrategyProviderProtectionSpec private constructor(
         localFallback: DataLoomStrategyLocalFallbackProtectionSpec? = null,
         reconciliation: DataLoomStrategyReconciliationProtectionSpec? = null,
     ) : this(
-        storage = storage,
-        transport = transport,
-        localFallback = localFallback,
-        reconciliation = reconciliation,
-        cacheAccess = null,
+        storage,
+        transport,
+        localFallback,
+        reconciliation,
+        null,
+        StrategyProviderProtectionPrimaryConstructorMarker,
     )
 
     /** Additive constructor for independently protected cache access. */
@@ -152,11 +157,12 @@ public class DataLoomStrategyProviderProtectionSpec private constructor(
         localFallback: DataLoomStrategyLocalFallbackProtectionSpec? = null,
         reconciliation: DataLoomStrategyReconciliationProtectionSpec? = null,
     ) : this(
-        storage = storage,
-        transport = transport,
-        localFallback = localFallback,
-        reconciliation = reconciliation,
-        cacheAccess = cacheAccess,
+        storage,
+        transport,
+        localFallback,
+        reconciliation,
+        cacheAccess,
+        StrategyProviderProtectionPrimaryConstructorMarker,
     )
 
     init {
