@@ -288,6 +288,8 @@ private fun requiresReconciliation(
 private fun strategyStatus(result: StrategySynchronizationExecutionResult): String =
     when (result) {
         is StrategySynchronizationExecutionResult.Executed -> "EXECUTED"
+        is StrategySynchronizationExecutionResult.CacheAvailable -> "CACHE_AVAILABLE"
+        is StrategySynchronizationExecutionResult.CacheUnavailable -> "CACHE_UNAVAILABLE"
         is StrategySynchronizationExecutionResult.Failed -> "FAILED"
         is StrategySynchronizationExecutionResult.FallbackActivated -> "FALLBACK_ACTIVATED"
         is StrategySynchronizationExecutionResult.FallbackUnavailable -> "FALLBACK_UNAVAILABLE"
