@@ -12,7 +12,8 @@ behavior.
 
 | Audit | Scope | How to use it |
 |---|---|---|
-| [DL-039B direct cache serving](./DL-039B-cache-serving-runtime.md) | Provider-observed fresh and allowed-stale cache-first local serving | Current direct cache-serving runtime checkpoint; refresh, protected access, remote miss, recovery, and platform matrices remain under #102/#101 |
+| [DL-039B protected cache access](./DL-039B-protected-cache-access.md) | Independently scoped timeout/circuit protection and ordered evidence for direct cache verification | Current protected cache-serving checkpoint; refresh, remote miss, durable recovery, and platform matrices remain under #102/#101 |
+| [DL-039B direct cache serving](./DL-039B-cache-serving-runtime.md) | Provider-observed fresh and allowed-stale cache-first local serving | Direct cache-serving runtime checkpoint; use with the protected-access checkpoint and #102/#101 |
 | [DL-039B cache-access capability](./DL-039B-cache-access-capability.md) | Deterministic cache-serving capability and fail-closed provider resolution | Cache-first planner/resolution checkpoint; use with the serving runtime checkpoint and #102/#101 |
 | [DL-039B cache-access contract](./DL-039B-cache-access-contract.md) | Payload-free cache verification and exclusive freshness-deadline evidence | Public cache-first contract checkpoint; use with the capability/runtime checkpoints and #102/#101 |
 | [DL-039B deferred offline-first admission](./DL-039B-offline-first-admission-runtime.md) | Atomic provider invocation and durable deferred-admission evidence | Current bounded offline-first checkpoint; use with #102/#101 for its explicit remaining runtime and platform gates |

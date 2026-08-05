@@ -559,6 +559,17 @@ public final class io/dataloom/runtime/facade/DataLoomStorageProtectionSpec {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/runtime/facade/DataLoomStrategyCacheAccessProtectionSpec {
+	public fun <init> (Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;Lio/dataloom/api/circuit/CircuitBreakerStateStore;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;Lio/dataloom/api/circuit/CircuitBreakerStateStore;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCircuitBreakerConfiguration ()Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;
+	public final fun getCircuitBreakerStateStore ()Lio/dataloom/api/circuit/CircuitBreakerStateStore;
+	public final fun getFailureClassifier ()Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;
+	public final fun getProviderTimeout ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun getScope ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/runtime/facade/DataLoomStrategyLocalFallbackProtectionSpec {
 	public fun <init> (Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;Lio/dataloom/api/circuit/CircuitBreakerStateStore;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;)V
 	public synthetic fun <init> (Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;Lio/dataloom/api/circuit/CircuitBreakerStateStore;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -574,6 +585,9 @@ public final class io/dataloom/runtime/facade/DataLoomStrategyProviderProtection
 	public fun <init> ()V
 	public fun <init> (Lio/dataloom/runtime/facade/DataLoomStorageProtectionSpec;Lio/dataloom/runtime/facade/DataLoomTransportProtectionSpec;Lio/dataloom/runtime/facade/DataLoomStrategyLocalFallbackProtectionSpec;Lio/dataloom/runtime/facade/DataLoomStrategyReconciliationProtectionSpec;)V
 	public synthetic fun <init> (Lio/dataloom/runtime/facade/DataLoomStorageProtectionSpec;Lio/dataloom/runtime/facade/DataLoomTransportProtectionSpec;Lio/dataloom/runtime/facade/DataLoomStrategyLocalFallbackProtectionSpec;Lio/dataloom/runtime/facade/DataLoomStrategyReconciliationProtectionSpec;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/dataloom/runtime/facade/DataLoomStrategyCacheAccessProtectionSpec;Lio/dataloom/runtime/facade/DataLoomStorageProtectionSpec;Lio/dataloom/runtime/facade/DataLoomTransportProtectionSpec;Lio/dataloom/runtime/facade/DataLoomStrategyLocalFallbackProtectionSpec;Lio/dataloom/runtime/facade/DataLoomStrategyReconciliationProtectionSpec;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/facade/DataLoomStrategyCacheAccessProtectionSpec;Lio/dataloom/runtime/facade/DataLoomStorageProtectionSpec;Lio/dataloom/runtime/facade/DataLoomTransportProtectionSpec;Lio/dataloom/runtime/facade/DataLoomStrategyLocalFallbackProtectionSpec;Lio/dataloom/runtime/facade/DataLoomStrategyReconciliationProtectionSpec;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCacheAccess ()Lio/dataloom/runtime/facade/DataLoomStrategyCacheAccessProtectionSpec;
 	public final fun getLocalFallback ()Lio/dataloom/runtime/facade/DataLoomStrategyLocalFallbackProtectionSpec;
 	public final fun getReconciliation ()Lio/dataloom/runtime/facade/DataLoomStrategyReconciliationProtectionSpec;
 	public final fun getStorage ()Lio/dataloom/runtime/facade/DataLoomStorageProtectionSpec;
@@ -2530,6 +2544,19 @@ public final class io/dataloom/runtime/retry/StorageCircuitScopes {
 public final class io/dataloom/runtime/retry/StorageProviderTimeoutRuntime {
 	public static final field INSTANCE Lio/dataloom/runtime/retry/StorageProviderTimeoutRuntime;
 	public final fun create (Lio/dataloom/api/storage/StorageProvider;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/scheduling/SchedulingDelay;)Lio/dataloom/api/storage/StorageProvider;
+}
+
+public final class io/dataloom/runtime/retry/StrategyCacheAccessCircuitBreakerFailureClassifier : io/dataloom/runtime/retry/CircuitBreakerFailureClassifier {
+	public static final field INSTANCE Lio/dataloom/runtime/retry/StrategyCacheAccessCircuitBreakerFailureClassifier;
+	public fun classify (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/runtime/retry/CircuitBreakerFailureDisposition;
+}
+
+public final class io/dataloom/runtime/retry/StrategyCacheAccessCircuitOperation : java/lang/Enum {
+	public static final field EVALUATE_CACHE_ACCESS Lio/dataloom/runtime/retry/StrategyCacheAccessCircuitOperation;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getRetryOperation-TGFxZV8 ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/retry/StrategyCacheAccessCircuitOperation;
+	public static fun values ()[Lio/dataloom/runtime/retry/StrategyCacheAccessCircuitOperation;
 }
 
 public final class io/dataloom/runtime/retry/StrategyLocalFallbackCircuitBreakerFailureClassifier : io/dataloom/runtime/retry/CircuitBreakerFailureClassifier {

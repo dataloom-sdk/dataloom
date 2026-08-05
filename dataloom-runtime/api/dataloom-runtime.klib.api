@@ -346,6 +346,18 @@ final enum class io.dataloom.runtime.retry/StorageCircuitOperation : kotlin/Enum
     final fun values(): kotlin/Array<io.dataloom.runtime.retry/StorageCircuitOperation> // io.dataloom.runtime.retry/StorageCircuitOperation.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.runtime.retry/StrategyCacheAccessCircuitOperation : kotlin/Enum<io.dataloom.runtime.retry/StrategyCacheAccessCircuitOperation> { // io.dataloom.runtime.retry/StrategyCacheAccessCircuitOperation|null[0]
+    enum entry EVALUATE_CACHE_ACCESS // io.dataloom.runtime.retry/StrategyCacheAccessCircuitOperation.EVALUATE_CACHE_ACCESS|null[0]
+
+    final val entries // io.dataloom.runtime.retry/StrategyCacheAccessCircuitOperation.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.retry/StrategyCacheAccessCircuitOperation> // io.dataloom.runtime.retry/StrategyCacheAccessCircuitOperation.entries.<get-entries>|<get-entries>#static(){}[0]
+    final val retryOperation // io.dataloom.runtime.retry/StrategyCacheAccessCircuitOperation.retryOperation|{}retryOperation[0]
+        final fun <get-retryOperation>(): io.dataloom.api.retry/RetryOperation // io.dataloom.runtime.retry/StrategyCacheAccessCircuitOperation.retryOperation.<get-retryOperation>|<get-retryOperation>(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.retry/StrategyCacheAccessCircuitOperation // io.dataloom.runtime.retry/StrategyCacheAccessCircuitOperation.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.retry/StrategyCacheAccessCircuitOperation> // io.dataloom.runtime.retry/StrategyCacheAccessCircuitOperation.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.runtime.retry/StrategyLocalFallbackCircuitOperation : kotlin/Enum<io.dataloom.runtime.retry/StrategyLocalFallbackCircuitOperation> { // io.dataloom.runtime.retry/StrategyLocalFallbackCircuitOperation|null[0]
     enum entry EVALUATE_LOCAL_FALLBACK // io.dataloom.runtime.retry/StrategyLocalFallbackCircuitOperation.EVALUATE_LOCAL_FALLBACK|null[0]
 
@@ -2969,6 +2981,23 @@ final class io.dataloom.runtime.facade/DataLoomStorageProtectionSpec { // io.dat
     final fun toString(): kotlin/String // io.dataloom.runtime.facade/DataLoomStorageProtectionSpec.toString|toString(){}[0]
 }
 
+final class io.dataloom.runtime.facade/DataLoomStrategyCacheAccessProtectionSpec { // io.dataloom.runtime.facade/DataLoomStrategyCacheAccessProtectionSpec|null[0]
+    constructor <init>(io.dataloom.runtime.retry/CircuitBreakerConfiguration, io.dataloom.api.circuit/CircuitBreakerStateStore, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.scheduling/SchedulingDelay? = ..., io.dataloom.runtime.retry/CircuitBreakerFailureClassifier = ...) // io.dataloom.runtime.facade/DataLoomStrategyCacheAccessProtectionSpec.<init>|<init>(io.dataloom.runtime.retry.CircuitBreakerConfiguration;io.dataloom.api.circuit.CircuitBreakerStateStore;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.scheduling.SchedulingDelay?;io.dataloom.runtime.retry.CircuitBreakerFailureClassifier){}[0]
+
+    final val circuitBreakerConfiguration // io.dataloom.runtime.facade/DataLoomStrategyCacheAccessProtectionSpec.circuitBreakerConfiguration|{}circuitBreakerConfiguration[0]
+        final fun <get-circuitBreakerConfiguration>(): io.dataloom.runtime.retry/CircuitBreakerConfiguration // io.dataloom.runtime.facade/DataLoomStrategyCacheAccessProtectionSpec.circuitBreakerConfiguration.<get-circuitBreakerConfiguration>|<get-circuitBreakerConfiguration>(){}[0]
+    final val circuitBreakerStateStore // io.dataloom.runtime.facade/DataLoomStrategyCacheAccessProtectionSpec.circuitBreakerStateStore|{}circuitBreakerStateStore[0]
+        final fun <get-circuitBreakerStateStore>(): io.dataloom.api.circuit/CircuitBreakerStateStore // io.dataloom.runtime.facade/DataLoomStrategyCacheAccessProtectionSpec.circuitBreakerStateStore.<get-circuitBreakerStateStore>|<get-circuitBreakerStateStore>(){}[0]
+    final val failureClassifier // io.dataloom.runtime.facade/DataLoomStrategyCacheAccessProtectionSpec.failureClassifier|{}failureClassifier[0]
+        final fun <get-failureClassifier>(): io.dataloom.runtime.retry/CircuitBreakerFailureClassifier // io.dataloom.runtime.facade/DataLoomStrategyCacheAccessProtectionSpec.failureClassifier.<get-failureClassifier>|<get-failureClassifier>(){}[0]
+    final val providerTimeout // io.dataloom.runtime.facade/DataLoomStrategyCacheAccessProtectionSpec.providerTimeout|{}providerTimeout[0]
+        final fun <get-providerTimeout>(): io.dataloom.api.scheduling/SchedulingDelay? // io.dataloom.runtime.facade/DataLoomStrategyCacheAccessProtectionSpec.providerTimeout.<get-providerTimeout>|<get-providerTimeout>(){}[0]
+    final val scope // io.dataloom.runtime.facade/DataLoomStrategyCacheAccessProtectionSpec.scope|{}scope[0]
+        final fun <get-scope>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.facade/DataLoomStrategyCacheAccessProtectionSpec.scope.<get-scope>|<get-scope>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.runtime.facade/DataLoomStrategyCacheAccessProtectionSpec.toString|toString(){}[0]
+}
+
 final class io.dataloom.runtime.facade/DataLoomStrategyLocalFallbackProtectionSpec { // io.dataloom.runtime.facade/DataLoomStrategyLocalFallbackProtectionSpec|null[0]
     constructor <init>(io.dataloom.runtime.retry/CircuitBreakerConfiguration, io.dataloom.api.circuit/CircuitBreakerStateStore, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.scheduling/SchedulingDelay? = ..., io.dataloom.runtime.retry/CircuitBreakerFailureClassifier = ...) // io.dataloom.runtime.facade/DataLoomStrategyLocalFallbackProtectionSpec.<init>|<init>(io.dataloom.runtime.retry.CircuitBreakerConfiguration;io.dataloom.api.circuit.CircuitBreakerStateStore;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.scheduling.SchedulingDelay?;io.dataloom.runtime.retry.CircuitBreakerFailureClassifier){}[0]
 
@@ -2987,8 +3016,12 @@ final class io.dataloom.runtime.facade/DataLoomStrategyLocalFallbackProtectionSp
 }
 
 final class io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec { // io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec|null[0]
+    constructor <init>() // io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec.<init>|<init>(){}[0]
     constructor <init>(io.dataloom.runtime.facade/DataLoomStorageProtectionSpec? = ..., io.dataloom.runtime.facade/DataLoomTransportProtectionSpec? = ..., io.dataloom.runtime.facade/DataLoomStrategyLocalFallbackProtectionSpec? = ..., io.dataloom.runtime.facade/DataLoomStrategyReconciliationProtectionSpec? = ...) // io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec.<init>|<init>(io.dataloom.runtime.facade.DataLoomStorageProtectionSpec?;io.dataloom.runtime.facade.DataLoomTransportProtectionSpec?;io.dataloom.runtime.facade.DataLoomStrategyLocalFallbackProtectionSpec?;io.dataloom.runtime.facade.DataLoomStrategyReconciliationProtectionSpec?){}[0]
+    constructor <init>(io.dataloom.runtime.facade/DataLoomStrategyCacheAccessProtectionSpec, io.dataloom.runtime.facade/DataLoomStorageProtectionSpec? = ..., io.dataloom.runtime.facade/DataLoomTransportProtectionSpec? = ..., io.dataloom.runtime.facade/DataLoomStrategyLocalFallbackProtectionSpec? = ..., io.dataloom.runtime.facade/DataLoomStrategyReconciliationProtectionSpec? = ...) // io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec.<init>|<init>(io.dataloom.runtime.facade.DataLoomStrategyCacheAccessProtectionSpec;io.dataloom.runtime.facade.DataLoomStorageProtectionSpec?;io.dataloom.runtime.facade.DataLoomTransportProtectionSpec?;io.dataloom.runtime.facade.DataLoomStrategyLocalFallbackProtectionSpec?;io.dataloom.runtime.facade.DataLoomStrategyReconciliationProtectionSpec?){}[0]
 
+    final val cacheAccess // io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec.cacheAccess|{}cacheAccess[0]
+        final fun <get-cacheAccess>(): io.dataloom.runtime.facade/DataLoomStrategyCacheAccessProtectionSpec? // io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec.cacheAccess.<get-cacheAccess>|<get-cacheAccess>(){}[0]
     final val localFallback // io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec.localFallback|{}localFallback[0]
         final fun <get-localFallback>(): io.dataloom.runtime.facade/DataLoomStrategyLocalFallbackProtectionSpec? // io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec.localFallback.<get-localFallback>|<get-localFallback>(){}[0]
     final val reconciliation // io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec.reconciliation|{}reconciliation[0]
@@ -4228,6 +4261,10 @@ final object io.dataloom.runtime.retry/StorageCircuitProtectionRuntime { // io.d
 
 final object io.dataloom.runtime.retry/StorageProviderTimeoutRuntime { // io.dataloom.runtime.retry/StorageProviderTimeoutRuntime|null[0]
     final fun create(io.dataloom.api.storage/StorageProvider, io.dataloom.api.time/DataLoomClock, io.dataloom.api.scheduling/SchedulingDelay): io.dataloom.api.storage/StorageProvider // io.dataloom.runtime.retry/StorageProviderTimeoutRuntime.create|create(io.dataloom.api.storage.StorageProvider;io.dataloom.api.time.DataLoomClock;io.dataloom.api.scheduling.SchedulingDelay){}[0]
+}
+
+final object io.dataloom.runtime.retry/StrategyCacheAccessCircuitBreakerFailureClassifier : io.dataloom.runtime.retry/CircuitBreakerFailureClassifier { // io.dataloom.runtime.retry/StrategyCacheAccessCircuitBreakerFailureClassifier|null[0]
+    final fun classify(io.dataloom.api.error/DataLoomError): io.dataloom.runtime.retry/CircuitBreakerFailureDisposition // io.dataloom.runtime.retry/StrategyCacheAccessCircuitBreakerFailureClassifier.classify|classify(io.dataloom.api.error.DataLoomError){}[0]
 }
 
 final object io.dataloom.runtime.retry/StrategyLocalFallbackCircuitBreakerFailureClassifier : io.dataloom.runtime.retry/CircuitBreakerFailureClassifier { // io.dataloom.runtime.retry/StrategyLocalFallbackCircuitBreakerFailureClassifier|null[0]

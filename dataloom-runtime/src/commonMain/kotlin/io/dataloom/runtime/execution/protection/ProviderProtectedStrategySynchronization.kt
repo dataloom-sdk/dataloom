@@ -5,10 +5,12 @@ import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
 import io.dataloom.api.strategy.PersistedStrategyDecision
+import io.dataloom.api.strategy.StrategyCacheAccessProvider
 import io.dataloom.api.strategy.StrategyEvaluationResult
 import io.dataloom.api.strategy.StrategyExecutionPlan
 import io.dataloom.api.strategy.StrategyLocalFallbackProvider
 import io.dataloom.api.strategy.StrategyOperation
+import io.dataloom.api.strategy.StrategyProviderCapability
 import io.dataloom.api.strategy.StrategyReconciliationProvider
 import io.dataloom.api.strategy.StrategySynchronizationRequest
 import io.dataloom.api.time.DataLoomClock
@@ -167,6 +169,32 @@ internal class ProviderProtectedStrategyExecutionBoundary(
                     evidenceCollector = evidenceCollector,
                 )
 
+                val cacheAccessBridge = if (requiresCacheAccess(evaluation)) {
+                    val cacheProvider = provider as? StrategyCacheAccessProvider
+                        ?: return StrategyProviderExecutionPreparation.Rejected(
+                            StrategyExecutionRejectionReason
+                                .PROVIDER_PROTECTION_SCOPE_MISMATCH,
+                        )
+                    val cacheSpec = protectionSpec.cacheAccess
+                        ?: return missingProtection()
+                    ProviderProtectionStrategyCacheAccessBridge(
+                        storageBridge = storageBridge,
+                        delegate = cacheProvider,
+                        providerOperationAdapter = providerOperationAdapter(
+                            configuration = cacheSpec.circuitBreakerConfiguration,
+                            stateStore = cacheSpec.circuitBreakerStateStore,
+                            failureClassifier = cacheSpec.failureClassifier,
+                        ),
+                        scope = cacheSpec.scope,
+                        evidenceCollector = evidenceCollector,
+                        timeoutCoordinator = timeoutCoordinator(
+                            cacheSpec.providerTimeout,
+                        ),
+                    )
+                } else {
+                    null
+                }
+
                 val fallbackBridge = if (
                     requiresLocalFallback(evaluation) &&
                     provider is StrategyLocalFallbackProvider
@@ -216,7 +244,17 @@ internal class ProviderProtectedStrategyExecutionBoundary(
                     null
                 }
 
+                if (
+                    cacheAccessBridge != null &&
+                    (fallbackBridge != null || reconciliationBridge != null)
+                ) {
+                    return StrategyProviderExecutionPreparation.Rejected(
+                        StrategyExecutionRejectionReason.PROVIDER_PROTECTION_SCOPE_MISMATCH,
+                    )
+                }
+
                 when {
+                    cacheAccessBridge != null -> cacheAccessBridge
                     fallbackBridge != null && reconciliationBridge != null ->
                         ProviderProtectionStrategyFallbackAndReconciliationBridge(
                             fallbackBridge = fallbackBridge,
@@ -275,6 +313,11 @@ internal class ProviderProtectedStrategyExecutionBoundary(
             StrategyExecutionRejectionReason.PROVIDER_PROTECTION_NOT_CONFIGURED,
         )
 }
+
+private fun requiresCacheAccess(
+    evaluation: StrategyEvaluationResult,
+): Boolean =
+    StrategyProviderCapability.CACHE_ACCESS in evaluation.plan.requiredCapabilities
 
 private fun requiresLocalFallback(
     evaluation: StrategyEvaluationResult,
