@@ -2251,6 +2251,62 @@ public final class io/dataloom/api/strategy/StaleCachePolicy : java/lang/Enum {
 	public static fun values ()[Lio/dataloom/api/strategy/StaleCachePolicy;
 }
 
+public abstract interface class io/dataloom/api/strategy/StrategyCacheAccessProvider : io/dataloom/api/storage/StorageProvider {
+	public abstract fun evaluateCacheAccess (Lio/dataloom/api/strategy/StrategyCacheAccessRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/api/strategy/StrategyCacheAccessRequest {
+	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLio/dataloom/api/strategy/StrategyCacheState;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAllowStale ()Z
+	public final fun getConfigurationVersion-UL4oDQM ()J
+	public final fun getDecisionId-F9AG820 ()Ljava/lang/String;
+	public final fun getEvaluatedCacheState ()Lio/dataloom/api/strategy/StrategyCacheState;
+	public final fun getPlanId-msoz1rs ()Ljava/lang/String;
+	public final fun getProfileId-csSrl6c ()Ljava/lang/String;
+	public final fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/strategy/StrategyCacheAccessResult {
+}
+
+public final class io/dataloom/api/strategy/StrategyCacheAccessResult$Available : io/dataloom/api/strategy/StrategyCacheAccessResult {
+	public fun <init> (Lio/dataloom/api/strategy/StrategyCacheFreshnessEvidence;)V
+	public final fun component1 ()Lio/dataloom/api/strategy/StrategyCacheFreshnessEvidence;
+	public final fun copy (Lio/dataloom/api/strategy/StrategyCacheFreshnessEvidence;)Lio/dataloom/api/strategy/StrategyCacheAccessResult$Available;
+	public static synthetic fun copy$default (Lio/dataloom/api/strategy/StrategyCacheAccessResult$Available;Lio/dataloom/api/strategy/StrategyCacheFreshnessEvidence;ILjava/lang/Object;)Lio/dataloom/api/strategy/StrategyCacheAccessResult$Available;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFreshness ()Lio/dataloom/api/strategy/StrategyCacheFreshnessEvidence;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/strategy/StrategyCacheAccessResult$Unavailable : io/dataloom/api/strategy/StrategyCacheAccessResult {
+	public fun <init> (Lio/dataloom/api/strategy/StrategyCacheState;)V
+	public final fun component1 ()Lio/dataloom/api/strategy/StrategyCacheState;
+	public final fun copy (Lio/dataloom/api/strategy/StrategyCacheState;)Lio/dataloom/api/strategy/StrategyCacheAccessResult$Unavailable;
+	public static synthetic fun copy$default (Lio/dataloom/api/strategy/StrategyCacheAccessResult$Unavailable;Lio/dataloom/api/strategy/StrategyCacheState;ILjava/lang/Object;)Lio/dataloom/api/strategy/StrategyCacheAccessResult$Unavailable;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCacheState ()Lio/dataloom/api/strategy/StrategyCacheState;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/strategy/StrategyCacheFreshnessEvidence {
+	public fun <init> (Lio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;)V
+	public final fun component1 ()Lio/dataloom/api/strategy/StrategyCacheState;
+	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component3 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy (Lio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/api/strategy/StrategyCacheFreshnessEvidence;
+	public static synthetic fun copy$default (Lio/dataloom/api/strategy/StrategyCacheFreshnessEvidence;Lio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/api/strategy/StrategyCacheFreshnessEvidence;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCacheState ()Lio/dataloom/api/strategy/StrategyCacheState;
+	public final fun getObservedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getValidUntil ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/api/strategy/StrategyCacheState : java/lang/Enum {
 	public static final field FRESH Lio/dataloom/api/strategy/StrategyCacheState;
 	public static final field MISSING Lio/dataloom/api/strategy/StrategyCacheState;

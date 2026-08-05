@@ -12,7 +12,8 @@ behavior.
 
 | Audit | Scope | How to use it |
 |---|---|---|
-| [DL-039B deferred offline-first admission](./DL-039B-offline-first-admission-runtime.md) | Atomic provider invocation and durable deferred-admission evidence | Current bounded strategy checkpoint; use with #102/#101 for its explicit remaining runtime and platform gates |
+| [DL-039B cache-access contract](./DL-039B-cache-access-contract.md) | Payload-free cache verification and exclusive freshness-deadline evidence | Current cache-first contract checkpoint; runtime invocation, refresh ownership, and platform qualification remain under #102/#101 |
+| [DL-039B deferred offline-first admission](./DL-039B-offline-first-admission-runtime.md) | Atomic provider invocation and durable deferred-admission evidence | Current bounded offline-first checkpoint; use with #102/#101 for its explicit remaining runtime and platform gates |
 | [DL-040 current acceptance reconciliation](./DL-040-current-acceptance-reconciliation.md) | Retry/circuit FR-RETRY-001–012 and AC-FUNC-004 reconciliation | Current retry/circuit implementation verdict and remaining process/platform qualification blockers |
 | [DL-AUDIT-005](./DL-AUDIT-005-current-v1-conformance.md) | Current V1 conformance after merged retry/circuit slices | Primary current release-readiness and regression decision record outside later scoped reconciliations |
 | [DL-AUDIT-005 foundation addendum](./DL-AUDIT-005-foundation-and-release-addendum.md) | DL-039 foundation and DL-046 release gates | Historical foundation/release checkpoint; use newer gate status and source where they supersede it |

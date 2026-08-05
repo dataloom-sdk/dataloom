@@ -740,6 +740,10 @@ abstract interface io.dataloom.api.strategy/ClassifiedStrategyRemoteError : io.d
         abstract fun <get-remoteOutcome>(): io.dataloom.api.strategy/StrategyRemoteOutcome // io.dataloom.api.strategy/ClassifiedStrategyRemoteError.remoteOutcome.<get-remoteOutcome>|<get-remoteOutcome>(){}[0]
 }
 
+abstract interface io.dataloom.api.strategy/StrategyCacheAccessProvider : io.dataloom.api.storage/StorageProvider { // io.dataloom.api.strategy/StrategyCacheAccessProvider|null[0]
+    abstract suspend fun evaluateCacheAccess(io.dataloom.api.strategy/StrategyCacheAccessRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.strategy/StrategyCacheAccessResult> // io.dataloom.api.strategy/StrategyCacheAccessProvider.evaluateCacheAccess|evaluateCacheAccess(io.dataloom.api.strategy.StrategyCacheAccessRequest){}[0]
+}
+
 abstract interface io.dataloom.api.strategy/StrategyLocalFallbackProvider : io.dataloom.api.storage/StorageProvider { // io.dataloom.api.strategy/StrategyLocalFallbackProvider|null[0]
     abstract suspend fun evaluateLocalFallback(io.dataloom.api.strategy/StrategyLocalFallbackRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.strategy/StrategyLocalFallbackResult> // io.dataloom.api.strategy/StrategyLocalFallbackProvider.evaluateLocalFallback|evaluateLocalFallback(io.dataloom.api.strategy.StrategyLocalFallbackRequest){}[0]
 }
@@ -1239,6 +1243,34 @@ sealed interface io.dataloom.api.storage/OutboundChangeReadResult { // io.datalo
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.storage/OutboundChangeReadResult.NoChanges.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.api.storage/OutboundChangeReadResult.NoChanges.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.api.storage/OutboundChangeReadResult.NoChanges.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.strategy/StrategyCacheAccessResult { // io.dataloom.api.strategy/StrategyCacheAccessResult|null[0]
+    final class Available : io.dataloom.api.strategy/StrategyCacheAccessResult { // io.dataloom.api.strategy/StrategyCacheAccessResult.Available|null[0]
+        constructor <init>(io.dataloom.api.strategy/StrategyCacheFreshnessEvidence) // io.dataloom.api.strategy/StrategyCacheAccessResult.Available.<init>|<init>(io.dataloom.api.strategy.StrategyCacheFreshnessEvidence){}[0]
+
+        final val freshness // io.dataloom.api.strategy/StrategyCacheAccessResult.Available.freshness|{}freshness[0]
+            final fun <get-freshness>(): io.dataloom.api.strategy/StrategyCacheFreshnessEvidence // io.dataloom.api.strategy/StrategyCacheAccessResult.Available.freshness.<get-freshness>|<get-freshness>(){}[0]
+
+        final fun component1(): io.dataloom.api.strategy/StrategyCacheFreshnessEvidence // io.dataloom.api.strategy/StrategyCacheAccessResult.Available.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.strategy/StrategyCacheFreshnessEvidence = ...): io.dataloom.api.strategy/StrategyCacheAccessResult.Available // io.dataloom.api.strategy/StrategyCacheAccessResult.Available.copy|copy(io.dataloom.api.strategy.StrategyCacheFreshnessEvidence){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyCacheAccessResult.Available.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyCacheAccessResult.Available.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyCacheAccessResult.Available.toString|toString(){}[0]
+    }
+
+    final class Unavailable : io.dataloom.api.strategy/StrategyCacheAccessResult { // io.dataloom.api.strategy/StrategyCacheAccessResult.Unavailable|null[0]
+        constructor <init>(io.dataloom.api.strategy/StrategyCacheState) // io.dataloom.api.strategy/StrategyCacheAccessResult.Unavailable.<init>|<init>(io.dataloom.api.strategy.StrategyCacheState){}[0]
+
+        final val cacheState // io.dataloom.api.strategy/StrategyCacheAccessResult.Unavailable.cacheState|{}cacheState[0]
+            final fun <get-cacheState>(): io.dataloom.api.strategy/StrategyCacheState // io.dataloom.api.strategy/StrategyCacheAccessResult.Unavailable.cacheState.<get-cacheState>|<get-cacheState>(){}[0]
+
+        final fun component1(): io.dataloom.api.strategy/StrategyCacheState // io.dataloom.api.strategy/StrategyCacheAccessResult.Unavailable.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.strategy/StrategyCacheState = ...): io.dataloom.api.strategy/StrategyCacheAccessResult.Unavailable // io.dataloom.api.strategy/StrategyCacheAccessResult.Unavailable.copy|copy(io.dataloom.api.strategy.StrategyCacheState){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyCacheAccessResult.Unavailable.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyCacheAccessResult.Unavailable.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyCacheAccessResult.Unavailable.toString|toString(){}[0]
     }
 }
 
@@ -3262,6 +3294,46 @@ final class io.dataloom.api.strategy/RemoteFirstStrategyProfile : io.dataloom.ap
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/RemoteFirstStrategyProfile.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/RemoteFirstStrategyProfile.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.strategy/RemoteFirstStrategyProfile.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.strategy/StrategyCacheAccessRequest { // io.dataloom.api.strategy/StrategyCacheAccessRequest|null[0]
+    constructor <init>(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.strategy/StrategyDecisionId, io.dataloom.api.strategy/StrategyPlanId, io.dataloom.api.strategy/StrategyProfileId, io.dataloom.api.strategy/StrategyConfigurationVersion, io.dataloom.api.strategy/StrategyCacheState, kotlin/Boolean) // io.dataloom.api.strategy/StrategyCacheAccessRequest.<init>|<init>(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.strategy.StrategyDecisionId;io.dataloom.api.strategy.StrategyPlanId;io.dataloom.api.strategy.StrategyProfileId;io.dataloom.api.strategy.StrategyConfigurationVersion;io.dataloom.api.strategy.StrategyCacheState;kotlin.Boolean){}[0]
+
+    final val allowStale // io.dataloom.api.strategy/StrategyCacheAccessRequest.allowStale|{}allowStale[0]
+        final fun <get-allowStale>(): kotlin/Boolean // io.dataloom.api.strategy/StrategyCacheAccessRequest.allowStale.<get-allowStale>|<get-allowStale>(){}[0]
+    final val configurationVersion // io.dataloom.api.strategy/StrategyCacheAccessRequest.configurationVersion|{}configurationVersion[0]
+        final fun <get-configurationVersion>(): io.dataloom.api.strategy/StrategyConfigurationVersion // io.dataloom.api.strategy/StrategyCacheAccessRequest.configurationVersion.<get-configurationVersion>|<get-configurationVersion>(){}[0]
+    final val decisionId // io.dataloom.api.strategy/StrategyCacheAccessRequest.decisionId|{}decisionId[0]
+        final fun <get-decisionId>(): io.dataloom.api.strategy/StrategyDecisionId // io.dataloom.api.strategy/StrategyCacheAccessRequest.decisionId.<get-decisionId>|<get-decisionId>(){}[0]
+    final val evaluatedCacheState // io.dataloom.api.strategy/StrategyCacheAccessRequest.evaluatedCacheState|{}evaluatedCacheState[0]
+        final fun <get-evaluatedCacheState>(): io.dataloom.api.strategy/StrategyCacheState // io.dataloom.api.strategy/StrategyCacheAccessRequest.evaluatedCacheState.<get-evaluatedCacheState>|<get-evaluatedCacheState>(){}[0]
+    final val planId // io.dataloom.api.strategy/StrategyCacheAccessRequest.planId|{}planId[0]
+        final fun <get-planId>(): io.dataloom.api.strategy/StrategyPlanId // io.dataloom.api.strategy/StrategyCacheAccessRequest.planId.<get-planId>|<get-planId>(){}[0]
+    final val profileId // io.dataloom.api.strategy/StrategyCacheAccessRequest.profileId|{}profileId[0]
+        final fun <get-profileId>(): io.dataloom.api.strategy/StrategyProfileId // io.dataloom.api.strategy/StrategyCacheAccessRequest.profileId.<get-profileId>|<get-profileId>(){}[0]
+    final val request // io.dataloom.api.strategy/StrategyCacheAccessRequest.request|{}request[0]
+        final fun <get-request>(): io.dataloom.api.model/SynchronizationRequest // io.dataloom.api.strategy/StrategyCacheAccessRequest.request.<get-request>|<get-request>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyCacheAccessRequest.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.strategy/StrategyCacheFreshnessEvidence { // io.dataloom.api.strategy/StrategyCacheFreshnessEvidence|null[0]
+    constructor <init>(io.dataloom.api.strategy/StrategyCacheState, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.time/DataLoomInstant) // io.dataloom.api.strategy/StrategyCacheFreshnessEvidence.<init>|<init>(io.dataloom.api.strategy.StrategyCacheState;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.time.DataLoomInstant){}[0]
+
+    final val cacheState // io.dataloom.api.strategy/StrategyCacheFreshnessEvidence.cacheState|{}cacheState[0]
+        final fun <get-cacheState>(): io.dataloom.api.strategy/StrategyCacheState // io.dataloom.api.strategy/StrategyCacheFreshnessEvidence.cacheState.<get-cacheState>|<get-cacheState>(){}[0]
+    final val observedAt // io.dataloom.api.strategy/StrategyCacheFreshnessEvidence.observedAt|{}observedAt[0]
+        final fun <get-observedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.strategy/StrategyCacheFreshnessEvidence.observedAt.<get-observedAt>|<get-observedAt>(){}[0]
+    final val validUntil // io.dataloom.api.strategy/StrategyCacheFreshnessEvidence.validUntil|{}validUntil[0]
+        final fun <get-validUntil>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.strategy/StrategyCacheFreshnessEvidence.validUntil.<get-validUntil>|<get-validUntil>(){}[0]
+
+    final fun component1(): io.dataloom.api.strategy/StrategyCacheState // io.dataloom.api.strategy/StrategyCacheFreshnessEvidence.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.strategy/StrategyCacheFreshnessEvidence.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.strategy/StrategyCacheFreshnessEvidence.component3|component3(){}[0]
+    final fun copy(io.dataloom.api.strategy/StrategyCacheState = ..., io.dataloom.api.time/DataLoomInstant = ..., io.dataloom.api.time/DataLoomInstant = ...): io.dataloom.api.strategy/StrategyCacheFreshnessEvidence // io.dataloom.api.strategy/StrategyCacheFreshnessEvidence.copy|copy(io.dataloom.api.strategy.StrategyCacheState;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.time.DataLoomInstant){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyCacheFreshnessEvidence.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyCacheFreshnessEvidence.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyCacheFreshnessEvidence.toString|toString(){}[0]
 }
 
 final class io.dataloom.api.strategy/StrategyDurableContinuationPlan { // io.dataloom.api.strategy/StrategyDurableContinuationPlan|null[0]
