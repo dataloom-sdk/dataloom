@@ -1,13 +1,11 @@
 package io.dataloom.runtime.strategy
 
 import io.dataloom.api.error.DataLoomError
-import io.dataloom.api.model.SynchronizationDirection
 import io.dataloom.api.provider.ProviderBindingFailure
 import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
 import io.dataloom.api.strategy.StrategyCacheFreshnessEvidence
 import io.dataloom.api.strategy.StrategyCacheState
 import io.dataloom.api.strategy.StrategyDataOrigin
-import io.dataloom.api.strategy.StrategyDisposition
 import io.dataloom.api.strategy.StrategyEvaluationResult
 import io.dataloom.api.strategy.StrategyLocalFallbackResult
 import io.dataloom.api.strategy.StrategyOperation
@@ -232,63 +230,6 @@ public sealed interface StrategySynchronizationExecutionResult {
                 "planId=${evaluation.plan.id}, " +
                 "evaluatedCacheState=$evaluatedCacheState, " +
                 "providerCacheState=${freshness.cacheState}, " +
-                "dataOrigin=$dataOrigin)"
-    }
-
-    /**
-     * Local cache state was exposed and the plan also attempted a bounded
-     * foreground refresh through the canonical inbound pipeline.
-     */
-    public data class CacheServedWithInlineRefresh(
-        override val evaluation: StrategyEvaluationResult,
-        override val completedAt: DataLoomInstant,
-        public val evaluatedCacheState: StrategyCacheState,
-        public val freshness: StrategyCacheFreshnessEvidence,
-        public val refresh: StrategyCacheInlineRefreshResult,
-    ) : StrategySynchronizationExecutionResult {
-        init {
-            val plan = evaluation.plan
-            require(
-                plan.effectiveStrategy == BuiltInSynchronizationStrategy.CACHE_FIRST &&
-                    plan.direction == SynchronizationDirection.PULL &&
-                    plan.disposition == StrategyDisposition.SERVE_AND_REFRESH &&
-                    plan.operations == listOf(
-                        StrategyOperation.SERVE_LOCAL,
-                        StrategyOperation.PULL_REMOTE,
-                        StrategyOperation.PERSIST_REMOTE,
-                    ) &&
-                    plan.requiredCapabilities == setOf(
-                        StrategyProviderCapability.STORAGE,
-                        StrategyProviderCapability.TRANSPORT,
-                        StrategyProviderCapability.CACHE_ACCESS,
-                    ) &&
-                    plan.dataOrigin == StrategyDataOrigin.LOCAL,
-            ) {
-                "CacheServedWithInlineRefresh requires the exact cache-first inline PULL plan."
-            }
-            require(
-                evaluatedCacheState == StrategyCacheState.FRESH ||
-                    evaluatedCacheState == StrategyCacheState.STALE,
-            ) {
-                "CacheServedWithInlineRefresh requires evaluated FRESH or STALE state."
-            }
-            require(
-                evaluatedCacheState != StrategyCacheState.FRESH ||
-                    freshness.cacheState == StrategyCacheState.FRESH,
-            ) {
-                "A fresh admission must not be served from stale provider evidence."
-            }
-        }
-
-        public val dataOrigin: StrategyDataOrigin = StrategyDataOrigin.LOCAL
-
-        override fun toString(): String =
-            "StrategySynchronizationExecutionResult.CacheServedWithInlineRefresh(" +
-                "decisionId=${evaluation.decisionId}, " +
-                "planId=${evaluation.plan.id}, " +
-                "evaluatedCacheState=$evaluatedCacheState, " +
-                "providerCacheState=${freshness.cacheState}, " +
-                "refreshDisposition=${refresh.disposition}, " +
                 "dataOrigin=$dataOrigin)"
     }
 
