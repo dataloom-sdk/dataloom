@@ -25,7 +25,7 @@ behavior.
 | [DL-AUDIT-004](./DL-AUDIT-004-v1-production-readiness.md) | Original expanded-V1 baseline and ordered backlog | Historical baseline; retained for requirement definitions and initial gap evidence |
 | [DL-AUDIT-003](./DL-AUDIT-003-full-audit-dl001-dl036.md) | DL-001 through DL-036 | Implementation and verification history |
 | [DL-009–DL-017 recovery audit](./DL-009-DL-017-recovery-audit.md) | Recovery work for foundational issues | Detailed corrective evidence |
-| [DL-010–DL-017 audit](./DL-010–DL-017-audit.md) | Early implementation checkpoint | Historical gap evidence |
+| [DL-010–DL-017 audit](./DL-010-DL-017-audit.md) | Early implementation checkpoint | Historical gap evidence |
 
 ## Evidence hierarchy
 
