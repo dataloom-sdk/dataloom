@@ -13,29 +13,34 @@ without changing the already frozen cache-only result variants.
 
 ## Public outcomes
 
-`StrategyCacheInlineRefreshResult` has three exhaustive terminal outcomes:
+`StrategyCacheInlineRefreshResult` has four exhaustive terminal outcomes:
 
 | Outcome | Meaning |
 |---|---|
-| `Completed` | The canonical provider-backed refresh reached a non-failed, non-cancelled terminal result. |
+| `Completed` | The canonical provider-backed refresh reached `Succeeded` or `Skipped`. |
+| `PartiallySucceeded` | Some refresh work committed but canonical unresolved errors remain visible in the provider-backed partial result. |
 | `Failed` | Local cache use remains valid, but the inline refresh failed; transport-attempt, completed-operation, partial-output, and typed remote-outcome evidence remain visible. |
 | `Cancelled` | The canonical pipeline returned its explicit cancellation result. |
 
 Every result exposes a stable `StrategyCacheInlineRefreshDisposition`:
-`COMPLETED`, `FAILED`, or `CANCELLED`.
+`COMPLETED`, `PARTIALLY_SUCCEEDED`, `FAILED`, or `CANCELLED`.
 
 ## Safety and payload boundary
 
 - Domain values, cache payloads, credentials, headers, checkpoint contents, and
   arbitrary provider metadata are not part of the contract.
-- `Completed` rejects canonical failed or cancelled outputs.
+- `Completed` accepts only canonical `Succeeded` or `Skipped` output and rejects
+  partial, failed, and cancelled output.
+- `PartiallySucceeded` requires canonical partial output so unresolved errors
+  cannot be mislabeled as full completion.
 - `Failed` requires a matching canonical failed provider-backed output.
 - `Failed.completedOperations` is defensively copied so already completed remote
   effects cannot be hidden or mutated after construction.
 - `Cancelled` requires the canonical cancelled provider-backed output.
-- Diagnostic strings expose bounded status, error code, transport-attempt,
-  completed-operation, and typed outcome information without rendering error
-  messages or provider payloads.
+- Diagnostic strings expose bounded status, error count, error code,
+  transport-attempt, completed-operation, and typed outcome information without
+  rendering error messages or provider payloads.
+- Common code uses an exhaustive status mapping rather than runtime reflection.
 
 ## Why the contract is separate
 
@@ -45,7 +50,8 @@ been admitted for use. The dedicated refresh outcome allows the next execution
 result to report both truths independently:
 
 1. local cache state was available under the admitted freshness policy; and
-2. the subsequent inline refresh completed, failed, or was cancelled.
+2. the subsequent inline refresh completed, partially succeeded, failed, or was
+   cancelled.
 
 ## Dependency boundary
 
@@ -58,8 +64,9 @@ Kotlin collections.
 
 Focused common tests cover:
 
-- completed canonical skipped output;
-- rejection of failed and cancelled outputs from `Completed`;
+- completed canonical succeeded and skipped output;
+- rejection of partial, failed, and cancelled outputs from `Completed`;
+- explicit canonical partial output and bounded partial diagnostics;
 - defensive completed-operation evidence;
 - matching canonical failed-output enforcement;
 - bounded diagnostics that exclude error messages; and
@@ -79,7 +86,8 @@ This checkpoint does not invoke refresh. The next bounded slice must:
    plan initially;
 3. verify cache access before any remote call;
 4. reuse the canonical inbound pull pipeline;
-5. preserve cache-serving evidence when refresh fails or cancels;
+5. preserve cache-serving evidence when refresh partially succeeds, fails, or
+   cancels;
 6. keep BIDIRECTIONAL, durable refresh, deduplication, scheduling, restart,
    coherence, and events fail-closed until separately implemented.
 
