@@ -2,11 +2,12 @@
 
 ## Status
 
-**Partial V1 subsystem.** DataLoom can now execute the currently supported
-built-in network-only and remote-first strategy paths through explicit provider
-timeout and circuit boundaries while preserving the existing immutable strategy
-evaluation and plan. Complete six-strategy behavior and full V1 qualification
-remain open.
+**Partial V1 subsystem.** DataLoom can execute the currently supported built-in
+network-only and remote-first paths plus the bounded direct cache-first
+`EXECUTE + SERVE_LOCAL` path through explicit provider timeout and circuit
+boundaries while preserving the existing immutable strategy evaluation and
+plan. Cache refresh, cache-miss remote execution, complete six-strategy
+behavior, and full V1 qualification remain open.
 
 ## Public assembly
 
@@ -18,6 +19,7 @@ DataLoomBuilder()
         DataLoomStrategyProviderProtectionSpec(
             storage = storageProtection,
             transport = transportProtection,
+            cacheAccess = cacheAccessProtection,
             localFallback = fallbackProtection,
         ),
     )
@@ -40,12 +42,16 @@ immutable effective plan and after capability-aware provider resolution.
 - Network-only resolves and protects transport without resolving or touching
   storage or queue.
 - Remote-first protects the exact resolved transport and storage roles.
+- Cache-first direct local serving protects generic storage assembly and then
+  invokes the dedicated cache-access operation through its own state store,
+  scope, timeout, and classifier. Generic storage protection is not reused as
+  cache policy.
 - Application-owned local fallback uses its own state store, scope, timeout, and
   classifier. Storage protection is not silently reused for fallback policy.
 - Scheduler, connectivity, and queue roles remain the exact resolved provider
   instances until separately reviewed protection boundaries are configured.
 
-A resolved required provider without a matching protection specification is
+A resolved required provider without every matching protection specification is
 rejected before provider invocation. No broad global scope, default state store,
 or in-memory circuit is inferred.
 
@@ -62,6 +68,30 @@ post-execution circuit-recording result, rejection reason, and bounded retry
 instant. It does not include provider return values, local domain payloads,
 credentials, headers, checkpoint contents, exception text, or arbitrary
 metadata.
+
+## Cache-first cache access
+
+When an admitted direct cache-first plan requires `CACHE_ACCESS`, the raw
+storage provider must implement `StrategyCacheAccessProvider`, generic storage
+protection must be configured, and protected strategy configuration must also
+provide `DataLoomStrategyCacheAccessProtectionSpec`.
+
+The stable operation identity is:
+
+```text
+strategy.evaluate-cache-access
+```
+
+Cache verification is invoked at most once after its own circuit permission.
+An optional cooperative provider timeout is applied before cache-access circuit
+classification. The timeout is recorded as a local dependency failure. A typed
+`StrategyCacheAccessResult.Unavailable` remains a successful provider
+invocation and does not open the circuit.
+
+The bridge preserves the payload-free contract: protected evidence contains no
+application value, and `CacheServed` continues to expose only local origin and
+provider-observed freshness. A circuit rejection or timeout never switches the
+plan to remote-first, fallback, refresh, or another strategy.
 
 ## Remote-first local fallback
 
@@ -92,13 +122,17 @@ semantic `Unavailable` remains a normal provider response.
 - Caller cancellation and unexpected programming exceptions propagate.
 - A fresh evidence collector is created per call, so concurrent calls do not
   share mutable operation evidence.
+- Cache-access circuit rejection and timeout preserve `transportAttempted=false`
+  and make no ordinary storage, transport, queue, or scheduler call.
 
 ## Current limits
 
 This slice does not complete:
 
-- offline-first, cache-first, hybrid, or adaptive runtime behavior;
-- protected strategy execution from durable strategy queue records;
+- online offline-first, hybrid, or adaptive runtime behavior;
+- cache-first inline refresh, cache-miss remote execution, durable refresh,
+  deduplication, persistence, conflict-safe coherence, or restart recovery;
+- protected cache-first accepted-plan/durable-queue replay;
 - protocol-specific connection, request, and idle timeout adapters;
 - production KMP iOS circuit/retry/deadline persistence;
 - authorized strategy retry/reclassification or circuit administration;
@@ -118,4 +152,5 @@ provider invocation.
 Plan-bearing protected queue work uses this method directly and returns ordered
 provider/circuit evidence in `ProviderProtectedQueueEntryExecutionResult`.
 Legacy protected synchronization remains unchanged for entries without an
-accepted plan.
+accepted plan. Protected cache-first accepted-plan replay remains a separate
+open boundary; this checkpoint covers the direct cache-only plan only.
