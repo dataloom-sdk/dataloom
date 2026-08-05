@@ -46,8 +46,9 @@ The repository now provides:
 - direct canonical PUSH, cache-miss PULL, and cache-miss BIDIRECTIONAL execution
   through the shared pipelines;
 - immutable origin and partial remote-effect evidence; and
-- `StrategyCacheInlineRefreshResult`, which distinguishes completed, failed,
-  and cancelled foreground refresh attempts without exposing domain payloads.
+- `StrategyCacheInlineRefreshResult`, which distinguishes completed, partially
+  succeeded, failed, and cancelled foreground refresh attempts without exposing
+  domain payloads.
 
 The remaining canonical boundaries include:
 
