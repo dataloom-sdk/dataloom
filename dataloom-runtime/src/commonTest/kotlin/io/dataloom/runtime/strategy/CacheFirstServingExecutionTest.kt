@@ -33,7 +33,6 @@ import io.dataloom.api.runtime.RuntimeIdentifierGenerators
 import io.dataloom.api.storage.InboundChangeApplyRequest
 import io.dataloom.api.storage.OutboundChangeReadRequest
 import io.dataloom.api.storage.OutboundChangeReadResult
-import io.dataloom.api.storage.StorageProvider
 import io.dataloom.api.strategy.AdaptiveStrategyProfile
 import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
 import io.dataloom.api.strategy.CacheFirstStrategyProfile
@@ -362,7 +361,7 @@ class CacheFirstServingExecutionTest {
 
     private class RecordingCacheStorage(
         private val cacheResult: ProviderOperationResult<StrategyCacheAccessResult>,
-    ) : StorageProvider, StrategyCacheAccessProvider {
+    ) : StrategyCacheAccessProvider {
         override val descriptor: ProviderDescriptor = ProviderDescriptor(
             id = ProviderId("cache-storage"),
             name = ProviderName("Cache Storage"),
@@ -376,12 +375,15 @@ class CacheFirstServingExecutionTest {
 
         override suspend fun initialize(
             context: ProviderInitializationContext,
-        ): ProviderOperationResult<Unit> = success(Unit)
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
 
         override suspend fun health(): ProviderOperationResult<ProviderHealth> =
-            success(ProviderHealth(ProviderHealthStatus.HEALTHY))
+            ProviderOperationResult.Success(
+                ProviderHealth(ProviderHealthStatus.HEALTHY),
+            )
 
-        override suspend fun close(): ProviderOperationResult<Unit> = success(Unit)
+        override suspend fun close(): ProviderOperationResult<Unit> =
+            ProviderOperationResult.Success(Unit)
 
         override suspend fun evaluateCacheAccess(
             request: StrategyCacheAccessRequest,
