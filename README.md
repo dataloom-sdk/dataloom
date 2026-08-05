@@ -63,27 +63,30 @@ Plan-aware provider resolution and direct network-only/remote-first operation
 execution are implemented. Bounded strategy decisions and complete immutable
 accepted plans survive the in-memory, Android Room, and Apple queues. Direct,
 provider-protected, and queued replay execute the frozen continuation without
-current-policy evaluation. Atomic application outbox semantics now have an
-explicit provider contract; runtime wiring and platform qualification, complete
-cache/hybrid/conflict behavior, durable strategy events, and platform reference
-qualification remain before the strategy engine is complete.
+current-policy evaluation. Deferred offline-first admission now invokes the
+application-owned atomic local-intent/outbox boundary before reporting durable
+acceptance. Online execution ownership, platform implementations,
+crash/relaunch proof, complete cache/hybrid/conflict behavior, durable strategy
+events, and platform reference qualification remain before the strategy engine
+is complete.
 
 ## Market-readiness dashboard
 
-- **Last reconciled:** 2026-08-04
+- **Last reconciled:** 2026-08-05
 - **Recorded V1 target:** 2026-08-27
 - **Current verdict:** **NO-GO — not production-ready or market-ready**
-- **Accepted engineering/release gates:** **1 of 10** (`#93` complete; `#94`–`#102` open)
+- **V1 engineering/release acceptance completion:** **10%** (`1 of 10` gates accepted; `#93` complete, `#94`–`#102` open)
 
-Progress below is acceptance-based, not a percentage of code written. A gate is
-`COMPLETE` only when its issue criteria have executable evidence on the same
-reviewed commit. `IN PROGRESS` therefore includes substantial implementations
-that still have unqualified release behavior.
+The percentage is acceptance-based: accepted engineering/release gates divided
+by ten. It is not a percentage of code written or an estimate of effort
+remaining. A gate is `COMPLETE` only when its issue criteria have executable
+evidence on the same reviewed commit. `IN PROGRESS` therefore includes
+substantial implementations that still have unqualified release behavior.
 
 | Next priority | V1 gate | Status | Finished on `main` | Still pending before the gate is complete |
 |---:|---|---|---|---|
 | — | [DL-039 foundations, artifacts, compatibility](https://github.com/dataloom-sdk/dataloom/issues/93) | COMPLETE | Public API/provider/runtime boundaries, module rules, JVM and Kotlin/Native ABI baselines, external-consumer compilation, durable state primitives, deterministic clocks/randomness, configuration and policy foundations, canonical envelope/redaction contracts, and a deterministic bounded V1 wire codec/upcast registry | — |
-| 1 | [DL-039B six strategy engine](https://github.com/dataloom-sdk/dataloom/issues/102) | IN PROGRESS | Versioned contracts and deterministic planner for all six strategies; direct network-only and remote-first slices; fail-closed queue admission; Room v8/Apple v4 accepted-plan persistence; exact encoder/resolver correspondence; direct, protected, and queued replay without current-policy evaluation; typed fallback and reconciliation hooks; atomic offline-first provider contract and fail-closed capability resolution | Invoke and qualify atomic offline-first intent/outbox admission, complete cache value/refresh ownership, hybrid coherence/conflict application, durable strategy events/diagnostics, and the full native Android/KMP Android/KMP iOS failure/restart matrix |
+| 1 | [DL-039B six strategy engine](https://github.com/dataloom-sdk/dataloom/issues/102) | IN PROGRESS | Versioned contracts and deterministic planner for all six strategies; direct network-only and remote-first slices; fail-closed queue admission; Room v8/Apple v4 accepted-plan persistence; exact encoder/resolver correspondence; direct, protected, and queued replay without current-policy evaluation; typed fallback and reconciliation hooks; atomic offline-first provider contract, fail-closed capability resolution, and deferred admission invocation | Complete online offline-first execution ownership and platform implementations with crash/relaunch proof; add cache value/freshness access and refresh ownership; complete hybrid coherence/conflict application, durable strategy events/diagnostics, and the full native Android/KMP Android/KMP iOS failure/restart matrix |
 | 2 | [DL-039A Android/KMP/iOS parity](https://github.com/dataloom-sdk/dataloom/issues/101) | IN PROGRESS | Native Android adapters, Kotlin/Native Apple targets, XCFramework assembly, Swift smoke compilation, and initial Apple file-backed persistence | Add explicit KMP Android variants, production `dataloom-android`/`dataloom-ios` aggregation, iOS lifecycle/connectivity/background/security adapters, staged external consumers, and the complete parity matrix |
 | 3 | [DL-040 retry and circuit breaker](https://github.com/dataloom-sdk/dataloom/issues/94) | QUALIFICATION BLOCKED | FR-RETRY-001–012 implementation mapping; built-in backoff/jitter, limits, hints, six timeout boundaries, durable Room/Apple circuit state, half-open leases, authorized administration, bounded telemetry, and common/platform-store recovery flows | Prove real Android and Apple process termination/relaunch, genuine cross-process probe contention where supported, and the complete AC-FUNC-004 provider flow through native Android, KMP Android, and KMP iOS |
 | 4 | [DL-041 conflict engine](https://github.com/dataloom-sdk/dataloom/issues/95) | IN PROGRESS | Custom detector/resolver contracts and orchestration foundations | Ship deterministic built-in strategies, decision application, durable unresolved/manual state, audit, loop prevention/quarantine, precedence, restart/concurrency proof, and AC-FUNC-002 |
