@@ -2,7 +2,7 @@
 
 ## Accepted in this slice
 
-The common runtime now invokes `StrategyCacheAccessProvider` for the bounded
+The common runtime invokes `StrategyCacheAccessProvider` for the bounded
 cache-first plan whose exact operation list is `SERVE_LOCAL`, disposition is
 `EXECUTE`, origin is `LOCAL`, and required capabilities are `STORAGE` plus
 `CACHE_ACCESS`.
@@ -31,6 +31,11 @@ transport call, queue mutation, scheduler call, implicit retry, or current-polic
 re-evaluation. Adaptive selection is supported when it deterministically chooses
 a concrete cache-first profile.
 
+Protected direct cache verification is implemented through the independent
+`strategy.evaluate-cache-access` timeout/circuit boundary documented in
+[DL-039B protected cache access](./DL-039B-protected-cache-access.md). It does not
+reuse generic storage circuit state and adds no third-party dependency.
+
 ## Fail-closed boundary
 
 This slice intentionally supports only cache-only local serving. Plans that
@@ -39,10 +44,11 @@ durable-queue trigger remain rejected before cache-provider invocation. This
 prevents the runtime from reporting refresh or remote work that it has not
 actually owned and committed.
 
-Provider-protected cache access also remains fail-closed. The existing generic
-storage bridge does not pretend to implement the dedicated cache-access
-extension; an independently scoped timeout/circuit bridge is required before
-protected cache serving is accepted.
+The same rule applies to every non-offline-first `DEFER` plan. Only the
+offline-first path has an atomic local-intent/outbox admission boundary. A
+cache-first, remote-first, hybrid, or adaptive-selected direct request therefore
+returns `UNSUPPORTED_PLAN` instead of `Deferred` until its queue or scheduler
+admission has actually committed.
 
 ## Executable evidence
 
@@ -54,23 +60,27 @@ Focused common tests cover:
 - fresh-to-stale drift rejection;
 - provider-reported missing state;
 - provider failure without transport evidence;
-- adaptive selection preserving concrete cache-first execution; and
-- refresh-plan rejection before provider invocation.
+- adaptive selection preserving concrete cache-first execution;
+- refresh-plan rejection before provider invocation;
+- protected cache access, typed unavailability, timeout, and open-circuit
+  behavior;
+- fail-closed non-atomic direct deferral across cache-first, remote-first, and
+  hybrid policies; and
+- rejection of direct cache-serving results at the durable queue mapper.
 
-External-consumer compilation exercises the new terminal result variants and
-freshness/origin metadata. JVM and Kotlin/Native ABI baselines, common tests,
-Android regression, and Apple/XCFramework validation remain mandatory on the
-immutable pull-request head.
+External-consumer compilation exercises the public cache-access and protection
+surfaces plus freshness/origin metadata. JVM and Kotlin/Native ABI baselines,
+common tests, Android regression, and Apple/XCFramework validation remain
+mandatory on each immutable pull-request head.
 
 ## Remaining integration
 
 Issue #102 remains open. The next cache-first work must implement:
 
-1. independently protected cache-access timeout/circuit behavior;
-2. synchronous refresh and cache-miss remote execution;
-3. durable refresh admission, deduplication, scheduling, retry/circuit state,
+1. synchronous refresh and cache-miss remote execution;
+2. durable refresh admission, deduplication, scheduling, retry/circuit state,
    and restart recovery;
-4. remote persistence, freshness/checkpoint update, and conflict-safe coherence;
-5. durable cache decision and refresh events/diagnostics; and
-6. the full PUSH, PULL, BIDIRECTIONAL, FULL, DELTA, failure, cancellation,
+3. remote persistence, freshness/checkpoint update, and conflict-safe coherence;
+4. durable cache decision and refresh events/diagnostics; and
+5. the full PUSH, PULL, BIDIRECTIONAL, FULL, DELTA, failure, cancellation,
    restart, native Android, KMP Android, and KMP iOS matrix under #101.

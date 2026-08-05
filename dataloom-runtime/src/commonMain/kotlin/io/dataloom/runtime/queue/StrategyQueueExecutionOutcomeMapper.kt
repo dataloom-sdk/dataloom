@@ -50,7 +50,7 @@ internal class StrategyQueueExecutionOutcomeMapper(
             }
         }
         is StrategySynchronizationExecutionResult.CacheServed ->
-            QueueEntryExecutionOutcome.Completed(result.completedAt)
+            failed(AcceptedPlanUnexpectedDirectCacheServeError())
         is StrategySynchronizationExecutionResult.CacheUnavailable ->
             failed(AcceptedPlanCacheUnavailableError(result.reason.name))
         is StrategySynchronizationExecutionResult.Cancelled ->
@@ -222,6 +222,17 @@ internal class StrategyQueueExecutionOutcomeMapper(
             error = error,
             disposition = QueueFailureDisposition.FAILED,
         )
+
+    private data class AcceptedPlanUnexpectedDirectCacheServeError(
+        override val code: ErrorCode =
+            ErrorCode("DL-Q-ACCEPTED-PLAN-UNEXPECTED-DIRECT-CACHE-SERVE"),
+        override val category: ErrorCategory = ErrorCategory.STATE,
+        override val severity: ErrorSeverity = ErrorSeverity.ERROR,
+        override val recoverability: Recoverability = Recoverability.NON_RECOVERABLE,
+        override val message: String =
+            "A durable accepted plan unexpectedly returned a direct cache-serving result.",
+        override val cause: Throwable? = null,
+    ) : DataLoomError
 
     private data class AcceptedPlanCacheUnavailableError(
         private val reason: String,
