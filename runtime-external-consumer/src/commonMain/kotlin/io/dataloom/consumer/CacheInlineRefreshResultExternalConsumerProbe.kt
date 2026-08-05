@@ -7,6 +7,7 @@ import io.dataloom.runtime.strategy.StrategyCacheInlineRefreshResult
 internal fun inspectInlineCacheRefresh(
     result: StrategyCacheInlineRefreshResult,
 ): StrategyCacheInlineRefreshDisposition {
+    result.completedAt
     when (result) {
         is StrategyCacheInlineRefreshResult.Completed -> result.output.result
         is StrategyCacheInlineRefreshResult.PartiallySucceeded -> result.output.result
@@ -14,7 +15,7 @@ internal fun inspectInlineCacheRefresh(
             result.error.code
             result.transportAttempted
             result.completedOperations
-            result.partialOutput.result
+            result.output.result
             result.remoteOutcome
         }
         is StrategyCacheInlineRefreshResult.Cancelled -> result.output.result
