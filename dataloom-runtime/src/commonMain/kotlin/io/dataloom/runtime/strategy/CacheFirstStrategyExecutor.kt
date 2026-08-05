@@ -1,7 +1,10 @@
 package io.dataloom.runtime.strategy
 
+import io.dataloom.api.error.DataLoomError
 import io.dataloom.api.execution.StrategyProviderSet
+import io.dataloom.api.model.SynchronizationDirection
 import io.dataloom.api.provider.ProviderOperationResult
+import io.dataloom.api.runtime.RuntimeDependencies
 import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
 import io.dataloom.api.strategy.StrategyCacheAccessProvider
 import io.dataloom.api.strategy.StrategyCacheAccessRequest
@@ -13,12 +16,22 @@ import io.dataloom.api.strategy.StrategyEvaluationResult
 import io.dataloom.api.strategy.StrategyOperation
 import io.dataloom.api.strategy.StrategyOperationInput
 import io.dataloom.api.strategy.StrategyProviderCapability
+import io.dataloom.api.strategy.StrategyRemoteOutcome
 import io.dataloom.api.strategy.StrategySynchronizationRequest
+import io.dataloom.api.strategy.StrategyTransportOutput
+import io.dataloom.api.synchronization.SynchronizationResult
 import io.dataloom.api.time.DataLoomClock
+import io.dataloom.core.provider.ResolvedSynchronizationProviders
+import io.dataloom.runtime.execution.SynchronizationExecutionContext
+import io.dataloom.runtime.execution.SynchronizationPipelineRegistry
+import io.dataloom.runtime.execution.lifecycle.SynchronizationLifecycleEventEmitter
 
-/** Executes the bounded cache-only local-serving slice of cache-first. */
+/** Executes bounded direct cache-first local-serving and remote-miss PULL slices. */
 internal class CacheFirstStrategyExecutor(
     private val clock: DataLoomClock,
+    private val runtimeDependencies: RuntimeDependencies,
+    private val pipelineRegistry: SynchronizationPipelineRegistry,
+    private val lifecycleEventEmitter: SynchronizationLifecycleEventEmitter?,
 ) {
     suspend fun execute(
         request: StrategySynchronizationRequest,
@@ -28,10 +41,21 @@ internal class CacheFirstStrategyExecutor(
         if (request.input !is StrategyOperationInput.ProviderBacked) {
             return rejected(evaluation, StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT)
         }
-        if (!isSupportedLocalServingPlan(evaluation)) {
-            return rejected(evaluation, StrategyExecutionRejectionReason.UNSUPPORTED_PLAN)
-        }
 
+        return when {
+            isSupportedLocalServingPlan(evaluation) ->
+                executeLocalServing(request, evaluation, providers)
+            isSupportedRemoteMissPullPlan(request, evaluation) ->
+                executeRemoteMissPull(request, evaluation, providers)
+            else -> rejected(evaluation, StrategyExecutionRejectionReason.UNSUPPORTED_PLAN)
+        }
+    }
+
+    private suspend fun executeLocalServing(
+        request: StrategySynchronizationRequest,
+        evaluation: StrategyEvaluationResult,
+        providers: StrategyProviderSet,
+    ): StrategySynchronizationExecutionResult {
         val evaluatedCacheState = request.evidence.cacheState
         if (
             evaluatedCacheState != StrategyCacheState.FRESH &&
@@ -87,6 +111,75 @@ internal class CacheFirstStrategyExecutor(
         }
     }
 
+    private suspend fun executeRemoteMissPull(
+        request: StrategySynchronizationRequest,
+        evaluation: StrategyEvaluationResult,
+        providers: StrategyProviderSet,
+    ): StrategySynchronizationExecutionResult {
+        val storage = providers.storageProvider
+            ?: return rejected(evaluation, StrategyExecutionRejectionReason.UNSUPPORTED_PLAN)
+        val transport = providers.transportProvider
+            ?: return rejected(evaluation, StrategyExecutionRejectionReason.UNSUPPORTED_PLAN)
+        val pipeline = pipelineRegistry.lookup(SynchronizationDirection.PULL)
+            ?: return rejected(evaluation, StrategyExecutionRejectionReason.UNSUPPORTED_PLAN)
+        val trackingTransport = TrackingTransportProvider(transport)
+        val context = SynchronizationExecutionContext(
+            request = request.request,
+            providers = ResolvedSynchronizationProviders(
+                storageProvider = storage,
+                transportProvider = trackingTransport,
+                schedulerProvider = providers.schedulerProvider,
+                connectivityProvider = providers.connectivityProvider,
+                queueProvider = providers.queueProvider,
+            ),
+            runtimeDependencies = runtimeDependencies,
+            lifecycleEventEmitter = lifecycleEventEmitter,
+        )
+
+        lifecycleEventEmitter?.emitStarted(context)
+        val result = pipeline.execute(context)
+        lifecycleEventEmitter?.emitCompleted(context, result)
+
+        return mapRemoteMissResult(
+            evaluation = evaluation,
+            trackingTransport = trackingTransport,
+            result = result,
+        )
+    }
+
+    private fun mapRemoteMissResult(
+        evaluation: StrategyEvaluationResult,
+        trackingTransport: TrackingTransportProvider,
+        result: SynchronizationResult,
+    ): StrategySynchronizationExecutionResult = when (result) {
+        is SynchronizationResult.Failed -> {
+            val remoteFailure = trackingTransport.lastFailure
+                ?.takeIf { it == result.error }
+            failed(
+                evaluation = evaluation,
+                error = result.error,
+                transportAttempted = trackingTransport.attempted,
+                completedOperations = trackingTransport.completedOperations,
+                partialOutput = StrategyTransportOutput.ProviderBacked(result),
+                remoteOutcome = remoteFailure?.let(StrategyRemoteOutcomeClassifier::classify),
+            )
+        }
+        is SynchronizationResult.Cancelled ->
+            StrategySynchronizationExecutionResult.Cancelled(
+                evaluation = evaluation,
+                completedAt = clock.now(),
+                output = StrategyTransportOutput.ProviderBacked(result),
+            )
+        is SynchronizationResult.Succeeded,
+        is SynchronizationResult.PartiallySucceeded,
+        is SynchronizationResult.Skipped,
+        -> StrategySynchronizationExecutionResult.Executed(
+            evaluation = evaluation,
+            completedAt = clock.now(),
+            output = StrategyTransportOutput.ProviderBacked(result),
+        )
+    }
+
     private fun available(
         evaluation: StrategyEvaluationResult,
         evaluatedCacheState: StrategyCacheState,
@@ -127,6 +220,45 @@ internal class CacheFirstStrategyExecutor(
             ) &&
             plan.dataOrigin == StrategyDataOrigin.LOCAL
     }
+
+    private fun isSupportedRemoteMissPullPlan(
+        request: StrategySynchronizationRequest,
+        evaluation: StrategyEvaluationResult,
+    ): Boolean {
+        val plan = evaluation.plan
+        return request.request.direction == SynchronizationDirection.PULL &&
+            request.evidence.cacheState == StrategyCacheState.MISSING &&
+            plan.effectiveStrategy == BuiltInSynchronizationStrategy.CACHE_FIRST &&
+            plan.disposition == StrategyDisposition.EXECUTE &&
+            plan.operations == listOf(
+                StrategyOperation.READ_CHECKPOINT,
+                StrategyOperation.PULL_REMOTE,
+                StrategyOperation.PERSIST_REMOTE,
+            ) &&
+            plan.requiredCapabilities == setOf(
+                StrategyProviderCapability.STORAGE,
+                StrategyProviderCapability.TRANSPORT,
+            ) &&
+            plan.dataOrigin == StrategyDataOrigin.REMOTE
+    }
+
+    private fun failed(
+        evaluation: StrategyEvaluationResult,
+        error: DataLoomError,
+        transportAttempted: Boolean,
+        completedOperations: List<StrategyOperation>,
+        partialOutput: StrategyTransportOutput? = null,
+        remoteOutcome: StrategyRemoteOutcome? = null,
+    ): StrategySynchronizationExecutionResult =
+        StrategySynchronizationExecutionResult.Failed(
+            evaluation = evaluation,
+            completedAt = clock.now(),
+            error = error,
+            transportAttempted = transportAttempted,
+            completedOperations = completedOperations,
+            partialOutput = partialOutput,
+            remoteOutcome = remoteOutcome,
+        )
 
     private fun rejected(
         evaluation: StrategyEvaluationResult,
