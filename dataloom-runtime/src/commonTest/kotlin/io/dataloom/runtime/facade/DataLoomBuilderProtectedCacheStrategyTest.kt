@@ -528,8 +528,8 @@ class DataLoomBuilderProtectedCacheStrategyTest {
                 state = CircuitBreakerState(
                     scope = scope,
                     phase = CircuitBreakerPhase.OPEN,
-                    consecutiveFailures = 2,
-                    failureWindowStartedAt = now,
+                    consecutiveFailures = 0,
+                    failureWindowStartedAt = null,
                     openUntil = DataLoomInstant(20_000L),
                     probeGeneration = 0L,
                     probeInFlight = false,
