@@ -70,6 +70,15 @@ class StrategyCacheInlineRefreshResultTest {
         }
         assertFailsWith<IllegalArgumentException> {
             StrategyCacheInlineRefreshResult.Completed(
+                completedOperations = listOf(
+                    StrategyOperation.PULL_REMOTE,
+                    StrategyOperation.PULL_REMOTE,
+                ),
+                output = providerBacked(succeeded()),
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            StrategyCacheInlineRefreshResult.Completed(
                 completedOperations = listOf(StrategyOperation.PULL_REMOTE),
                 output = providerBacked(
                     skipped(SynchronizationSkipReason.POLICY_REJECTED),
@@ -137,6 +146,15 @@ class StrategyCacheInlineRefreshResultTest {
                 output = providerBacked(partiallySucceeded(TestError())),
             )
         }
+        assertFailsWith<IllegalArgumentException> {
+            StrategyCacheInlineRefreshResult.PartiallySucceeded(
+                completedOperations = listOf(
+                    StrategyOperation.PULL_REMOTE,
+                    StrategyOperation.PULL_REMOTE,
+                ),
+                output = providerBacked(partiallySucceeded(TestError())),
+            )
+        }
     }
 
     @Test
@@ -194,6 +212,16 @@ class StrategyCacheInlineRefreshResultTest {
                 output = providerBacked(failed(TestError())),
             )
         }
+        assertFailsWith<IllegalArgumentException> {
+            StrategyCacheInlineRefreshResult.Failed(
+                transportAttempted = true,
+                completedOperations = listOf(
+                    StrategyOperation.PULL_REMOTE,
+                    StrategyOperation.PULL_REMOTE,
+                ),
+                output = providerBacked(failed(TestError())),
+            )
+        }
     }
 
     @Test
@@ -234,6 +262,16 @@ class StrategyCacheInlineRefreshResultTest {
             StrategyCacheInlineRefreshResult.Cancelled(
                 transportAttempted = true,
                 completedOperations = listOf(StrategyOperation.PUSH_REMOTE),
+                output = providerBacked(cancelled()),
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            StrategyCacheInlineRefreshResult.Cancelled(
+                transportAttempted = true,
+                completedOperations = listOf(
+                    StrategyOperation.PULL_REMOTE,
+                    StrategyOperation.PULL_REMOTE,
+                ),
                 output = providerBacked(cancelled()),
             )
         }
