@@ -2,9 +2,11 @@
 
 > [!WARNING]
 > Cache-first is a mandatory built-in V1 strategy. Fresh, stale, missing, and
-> unknown cache decisions plus durable refresh planning are implemented.
-> Storage freshness evidence, plan execution, and refresh persistence remain
-> open.
+> unknown policy decisions, provider-observed local serving, protected cache
+> verification, the direct storage/transport direction matrix, and a public
+> inline-refresh outcome contract are implemented. Inline refresh composition,
+> durable refresh admission/recovery, coherence, events, and complete platform
+> qualification remain open.
 
 [Strategy index](./README.md) · [Remote-first](./remote-first.md) ·
 [Offline-first](./offline-first.md) · [Hybrid](./hybrid.md)
@@ -33,26 +35,33 @@ Direction, transfer mode, and trigger are independent:
 
 ## Current repository
 
-The repository supplies storage contracts, checkpoints, inbound pull/apply,
-queueing, connectivity preflight, and lifecycle events. See
-[Storage Provider](../api/storage-provider.md),
-[Checkpoint Contracts](../api/checkpoint-contracts.md), and
-[Inbound Pull Pipeline](../api/inbound-pull-pipeline.md).
+The repository now provides:
 
-It currently has no canonical contract for:
+- `StrategyCacheAccessProvider`, a payload-free application-owned boundary that
+  verifies cache availability and freshness immediately before local use;
+- provider-observed `FRESH`/`STALE` evidence with observation and exclusive
+  freshness-deadline timestamps;
+- explicit cache-served, cache-unavailable, and freshness-downgrade results;
+- independent timeout/circuit protection for cache verification;
+- direct canonical PUSH, cache-miss PULL, and cache-miss BIDIRECTIONAL execution
+  through the shared pipelines;
+- immutable origin and partial remote-effect evidence; and
+- `StrategyCacheInlineRefreshResult`, which distinguishes completed, failed,
+  and cancelled foreground refresh attempts without exposing domain payloads.
 
-- cache entry presence, observation time, expiry, or age;
-- freshness requirements and maximum acceptable staleness;
-- cache-hit, cache-miss, or stale-use decisions;
-- stale-while-revalidate;
-- a durable background refresh handle;
-- data-origin and freshness result metadata;
-- refresh deduplication and single-flight behavior; or
+The remaining canonical boundaries include:
+
+- composition of local-serving evidence with the inline refresh result;
+- a durable refresh admission identity and handle;
+- refresh deduplication and single-flight behavior;
+- restart-safe queue/scheduler ownership and recovery;
 - invalidation/coherence after push, conflict, tenant change, logout, or
-  configuration update.
+  configuration update; and
+- durable cache-decision and refresh events/read models.
 
-Persisting pulled changes and a checkpoint is therefore not proof of a
-cache-first strategy.
+Persisting pulled changes and a checkpoint alone is not proof of a complete
+cache-first strategy. The local freshness decision, remote branch, refresh
+state, and recovery evidence must remain explicit.
 
 ## V1 required behavior
 
