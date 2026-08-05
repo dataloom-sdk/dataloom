@@ -1322,6 +1322,19 @@ sealed interface io.dataloom.api.strategy/StrategyOperationInput { // io.dataloo
         final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyOperationInput.DirectTransport.toString|toString(){}[0]
     }
 
+    final class OfflineFirstAdmission : io.dataloom.api.strategy/StrategyOperationInput { // io.dataloom.api.strategy/StrategyOperationInput.OfflineFirstAdmission|null[0]
+        constructor <init>(io.dataloom.api.identifier/QueueEntryId, kotlin/String) // io.dataloom.api.strategy/StrategyOperationInput.OfflineFirstAdmission.<init>|<init>(io.dataloom.api.identifier.QueueEntryId;kotlin.String){}[0]
+
+        final val idempotencyKey // io.dataloom.api.strategy/StrategyOperationInput.OfflineFirstAdmission.idempotencyKey|{}idempotencyKey[0]
+            final fun <get-idempotencyKey>(): kotlin/String // io.dataloom.api.strategy/StrategyOperationInput.OfflineFirstAdmission.idempotencyKey.<get-idempotencyKey>|<get-idempotencyKey>(){}[0]
+        final val queueEntryId // io.dataloom.api.strategy/StrategyOperationInput.OfflineFirstAdmission.queueEntryId|{}queueEntryId[0]
+            final fun <get-queueEntryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.api.strategy/StrategyOperationInput.OfflineFirstAdmission.queueEntryId.<get-queueEntryId>|<get-queueEntryId>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyOperationInput.OfflineFirstAdmission.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyOperationInput.OfflineFirstAdmission.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyOperationInput.OfflineFirstAdmission.toString|toString(){}[0]
+    }
+
     final object ProviderBacked : io.dataloom.api.strategy/StrategyOperationInput { // io.dataloom.api.strategy/StrategyOperationInput.ProviderBacked|null[0]
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyOperationInput.ProviderBacked.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyOperationInput.ProviderBacked.hashCode|hashCode(){}[0]

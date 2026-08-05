@@ -389,6 +389,7 @@ final enum class io.dataloom.runtime.retry/TransportCircuitOperation : kotlin/En
 final enum class io.dataloom.runtime.strategy/StrategyExecutionRejectionReason : kotlin/Enum<io.dataloom.runtime.strategy/StrategyExecutionRejectionReason> { // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason|null[0]
     enum entry ACCEPTED_PLAN_CONTINUATION_MISSING // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.ACCEPTED_PLAN_CONTINUATION_MISSING|null[0]
     enum entry ACCEPTED_PLAN_MISMATCH // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.ACCEPTED_PLAN_MISMATCH|null[0]
+    enum entry ATOMIC_LOCAL_ADMISSION_PROVIDER_NOT_CONFIGURED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.ATOMIC_LOCAL_ADMISSION_PROVIDER_NOT_CONFIGURED|null[0]
     enum entry INCOMPATIBLE_INPUT // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT|null[0]
     enum entry INCOMPATIBLE_TRIGGER // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.INCOMPATIBLE_TRIGGER|null[0]
     enum entry LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED|null[0]
@@ -405,6 +406,17 @@ final enum class io.dataloom.runtime.strategy/StrategyExecutionRejectionReason :
 
     final fun valueOf(kotlin/String): io.dataloom.runtime.strategy/StrategyExecutionRejectionReason // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.valueOf|valueOf#static(kotlin.String){}[0]
     final fun values(): kotlin/Array<io.dataloom.runtime.strategy/StrategyExecutionRejectionReason> // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.runtime.strategy/StrategyOfflineFirstAdmissionDisposition : kotlin/Enum<io.dataloom.runtime.strategy/StrategyOfflineFirstAdmissionDisposition> { // io.dataloom.runtime.strategy/StrategyOfflineFirstAdmissionDisposition|null[0]
+    enum entry ACCEPTED // io.dataloom.runtime.strategy/StrategyOfflineFirstAdmissionDisposition.ACCEPTED|null[0]
+    enum entry ALREADY_ACCEPTED // io.dataloom.runtime.strategy/StrategyOfflineFirstAdmissionDisposition.ALREADY_ACCEPTED|null[0]
+
+    final val entries // io.dataloom.runtime.strategy/StrategyOfflineFirstAdmissionDisposition.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.strategy/StrategyOfflineFirstAdmissionDisposition> // io.dataloom.runtime.strategy/StrategyOfflineFirstAdmissionDisposition.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.strategy/StrategyOfflineFirstAdmissionDisposition // io.dataloom.runtime.strategy/StrategyOfflineFirstAdmissionDisposition.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.strategy/StrategyOfflineFirstAdmissionDisposition> // io.dataloom.runtime.strategy/StrategyOfflineFirstAdmissionDisposition.values|values#static(){}[0]
 }
 
 final enum class io.dataloom.runtime.submission/QueueSubmissionFailureStage : kotlin/Enum<io.dataloom.runtime.submission/QueueSubmissionFailureStage> { // io.dataloom.runtime.submission/QueueSubmissionFailureStage|null[0]
@@ -1934,8 +1946,10 @@ sealed interface io.dataloom.runtime.strategy/StrategySynchronizationExecutionRe
     }
 
     final class Deferred : io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult { // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred|null[0]
-        constructor <init>(io.dataloom.api.strategy/StrategyEvaluationResult, io.dataloom.api.time/DataLoomInstant) // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.<init>|<init>(io.dataloom.api.strategy.StrategyEvaluationResult;io.dataloom.api.time.DataLoomInstant){}[0]
+        constructor <init>(io.dataloom.api.strategy/StrategyEvaluationResult, io.dataloom.api.time/DataLoomInstant, io.dataloom.runtime.strategy/StrategyOfflineFirstAdmissionDisposition? = ...) // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.<init>|<init>(io.dataloom.api.strategy.StrategyEvaluationResult;io.dataloom.api.time.DataLoomInstant;io.dataloom.runtime.strategy.StrategyOfflineFirstAdmissionDisposition?){}[0]
 
+        final val admissionDisposition // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.admissionDisposition|{}admissionDisposition[0]
+            final fun <get-admissionDisposition>(): io.dataloom.runtime.strategy/StrategyOfflineFirstAdmissionDisposition? // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.admissionDisposition.<get-admissionDisposition>|<get-admissionDisposition>(){}[0]
         final val completedAt // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.completedAt|{}completedAt[0]
             final fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
         final val evaluation // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.evaluation|{}evaluation[0]
@@ -1943,7 +1957,8 @@ sealed interface io.dataloom.runtime.strategy/StrategySynchronizationExecutionRe
 
         final fun component1(): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.component1|component1(){}[0]
         final fun component2(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.component2|component2(){}[0]
-        final fun copy(io.dataloom.api.strategy/StrategyEvaluationResult = ..., io.dataloom.api.time/DataLoomInstant = ...): io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.copy|copy(io.dataloom.api.strategy.StrategyEvaluationResult;io.dataloom.api.time.DataLoomInstant){}[0]
+        final fun component3(): io.dataloom.runtime.strategy/StrategyOfflineFirstAdmissionDisposition? // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.component3|component3(){}[0]
+        final fun copy(io.dataloom.api.strategy/StrategyEvaluationResult = ..., io.dataloom.api.time/DataLoomInstant = ..., io.dataloom.runtime.strategy/StrategyOfflineFirstAdmissionDisposition? = ...): io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.copy|copy(io.dataloom.api.strategy.StrategyEvaluationResult;io.dataloom.api.time.DataLoomInstant;io.dataloom.runtime.strategy.StrategyOfflineFirstAdmissionDisposition?){}[0]
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Deferred.toString|toString(){}[0]

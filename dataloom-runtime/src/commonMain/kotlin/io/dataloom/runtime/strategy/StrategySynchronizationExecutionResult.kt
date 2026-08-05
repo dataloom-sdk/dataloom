@@ -21,10 +21,17 @@ public enum class StrategyExecutionRejectionReason {
     PROVIDER_PROTECTION_NOT_CONFIGURED,
     PROVIDER_PROTECTION_SCOPE_MISMATCH,
     LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED,
+    ATOMIC_LOCAL_ADMISSION_PROVIDER_NOT_CONFIGURED,
     ACCEPTED_PLAN_MISMATCH,
     ACCEPTED_PLAN_CONTINUATION_MISSING,
     RECONCILIATION_PROVIDER_NOT_CONFIGURED,
     UNSUPPORTED_PLAN,
+}
+
+/** Idempotent outcome reported by the atomic offline-first admission boundary. */
+public enum class StrategyOfflineFirstAdmissionDisposition {
+    ACCEPTED,
+    ALREADY_ACCEPTED,
 }
 
 /** Observable result of strategy admission and execution. */
@@ -175,10 +182,16 @@ public sealed interface StrategySynchronizationExecutionResult {
         public val output: StrategyTransportOutput,
     ) : StrategySynchronizationExecutionResult
 
-    /** Strategy admitted durable work instead of running transport directly. */
+    /**
+     * Strategy admitted durable work instead of running transport directly.
+     *
+     * [admissionDisposition] is non-null only after the atomic offline-first
+     * provider boundary confirms the durable local-intent/outbox transaction.
+     */
     public data class Deferred(
         override val evaluation: StrategyEvaluationResult,
         override val completedAt: DataLoomInstant,
+        public val admissionDisposition: StrategyOfflineFirstAdmissionDisposition? = null,
     ) : StrategySynchronizationExecutionResult
 
     /** Execution was rejected before a provider operation. */
