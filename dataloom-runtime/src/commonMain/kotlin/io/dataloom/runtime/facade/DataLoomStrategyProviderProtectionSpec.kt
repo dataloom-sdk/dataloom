@@ -5,10 +5,48 @@ import io.dataloom.api.circuit.CircuitBreakerStateStore
 import io.dataloom.api.scheduling.SchedulingDelay
 import io.dataloom.runtime.retry.CircuitBreakerConfiguration
 import io.dataloom.runtime.retry.CircuitBreakerFailureClassifier
+import io.dataloom.runtime.retry.StrategyCacheAccessCircuitBreakerFailureClassifier
+import io.dataloom.runtime.retry.StrategyCacheAccessCircuitOperation
 import io.dataloom.runtime.retry.StrategyLocalFallbackCircuitBreakerFailureClassifier
 import io.dataloom.runtime.retry.StrategyLocalFallbackCircuitOperation
 import io.dataloom.runtime.retry.StrategyReconciliationCircuitBreakerFailureClassifier
 import io.dataloom.runtime.retry.StrategyReconciliationCircuitOperation
+
+/**
+ * Explicit independent circuit/timeout protection for cache-first local-state
+ * verification.
+ *
+ * The state store and scope are not inferred from generic storage protection.
+ * The operation-bearing scope, when present, must identify exactly
+ * `strategy.evaluate-cache-access`.
+ */
+public class DataLoomStrategyCacheAccessProtectionSpec(
+    public val circuitBreakerConfiguration: CircuitBreakerConfiguration,
+    public val circuitBreakerStateStore: CircuitBreakerStateStore,
+    public val scope: CircuitBreakerScope,
+    public val providerTimeout: SchedulingDelay? = null,
+    public val failureClassifier: CircuitBreakerFailureClassifier =
+        StrategyCacheAccessCircuitBreakerFailureClassifier,
+) {
+    init {
+        require(
+            scope.operation == null ||
+                scope.operation ==
+                StrategyCacheAccessCircuitOperation.EVALUATE_CACHE_ACCESS.retryOperation,
+        ) {
+            "Strategy cache-access scope operation must be " +
+                "'${StrategyCacheAccessCircuitOperation.EVALUATE_CACHE_ACCESS.retryOperation.value}'."
+        }
+    }
+
+    /** Bounded diagnostics that exclude the state store and classifier. */
+    override fun toString(): String =
+        "DataLoomStrategyCacheAccessProtectionSpec(" +
+            "providerTimeoutConfigured=${providerTimeout != null}, " +
+            "providerScoped=${scope.providerId != null}, " +
+            "operationScoped=${scope.operation != null}" +
+            ")"
+}
 
 /**
  * Explicit protection specification for application-owned remote-first local
@@ -88,6 +126,7 @@ public class DataLoomStrategyReconciliationProtectionSpec(
 public class DataLoomStrategyProviderProtectionSpec(
     public val storage: DataLoomStorageProtectionSpec? = null,
     public val transport: DataLoomTransportProtectionSpec? = null,
+    public val cacheAccess: DataLoomStrategyCacheAccessProtectionSpec? = null,
     public val localFallback: DataLoomStrategyLocalFallbackProtectionSpec? = null,
     public val reconciliation: DataLoomStrategyReconciliationProtectionSpec? = null,
 ) {
@@ -95,6 +134,7 @@ public class DataLoomStrategyProviderProtectionSpec(
         require(
             storage != null ||
                 transport != null ||
+                cacheAccess != null ||
                 localFallback != null ||
                 reconciliation != null,
         ) {
@@ -107,6 +147,7 @@ public class DataLoomStrategyProviderProtectionSpec(
         "DataLoomStrategyProviderProtectionSpec(" +
             "storageConfigured=${storage != null}, " +
             "transportConfigured=${transport != null}, " +
+            "cacheAccessConfigured=${cacheAccess != null}, " +
             "localFallbackConfigured=${localFallback != null}, " +
             "reconciliationConfigured=${reconciliation != null}" +
             ")"
