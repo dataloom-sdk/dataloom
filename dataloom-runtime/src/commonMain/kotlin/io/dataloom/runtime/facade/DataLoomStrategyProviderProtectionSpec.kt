@@ -134,6 +134,16 @@ public class DataLoomStrategyProviderProtectionSpec private constructor(
     @Suppress("UNUSED_PARAMETER")
     marker: StrategyProviderProtectionPrimaryConstructorMarker,
 ) {
+    /** Historical no-argument constructor retained with its fail-fast behavior. */
+    public constructor() : this(
+        null,
+        null,
+        null,
+        null,
+        null,
+        StrategyProviderProtectionPrimaryConstructorMarker,
+    )
+
     /** Existing source and binary constructor retained unchanged. */
     public constructor(
         storage: DataLoomStorageProtectionSpec? = null,
