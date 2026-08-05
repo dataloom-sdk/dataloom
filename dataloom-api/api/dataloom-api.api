@@ -2569,6 +2569,15 @@ public final class io/dataloom/api/strategy/StrategyOperationInput$DirectTranspo
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/api/strategy/StrategyOperationInput$OfflineFirstAdmission : io/dataloom/api/strategy/StrategyOperationInput {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getIdempotencyKey ()Ljava/lang/String;
+	public final fun getQueueEntryId-ARA1dI0 ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/api/strategy/StrategyOperationInput$ProviderBacked : io/dataloom/api/strategy/StrategyOperationInput {
 	public static final field INSTANCE Lio/dataloom/api/strategy/StrategyOperationInput$ProviderBacked;
 	public fun equals (Ljava/lang/Object;)Z

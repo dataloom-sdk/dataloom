@@ -2,6 +2,7 @@ package io.dataloom.api.strategy
 
 import io.dataloom.api.change.ChangeSet
 import io.dataloom.api.identifier.EntityType
+import io.dataloom.api.identifier.QueueEntryId
 import io.dataloom.api.model.SynchronizationDirection
 import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.api.synchronization.ChangeSetAcknowledgement
@@ -27,6 +28,41 @@ public sealed interface StrategyOperationInput {
      * evaluated plan.
      */
     public data object ProviderBacked : StrategyOperationInput
+
+    /**
+     * Caller-owned identity for one atomic offline-first admission.
+     *
+     * The selected [StrategyOfflineFirstAdmissionProvider] commits the
+     * application-owned local intent and its durable continuation under this
+     * stable identity. The idempotency key is intentionally excluded from
+     * diagnostic output.
+     */
+    public class OfflineFirstAdmission(
+        public val queueEntryId: QueueEntryId,
+        idempotencyKey: String,
+    ) : StrategyOperationInput {
+        private val idempotencyKeySnapshot: String = idempotencyKey
+
+        init {
+            require(idempotencyKeySnapshot.isNotBlank()) {
+                "Offline-first admission idempotencyKey must not be blank."
+            }
+        }
+
+        public val idempotencyKey: String
+            get() = idempotencyKeySnapshot
+
+        override fun equals(other: Any?): Boolean =
+            other is OfflineFirstAdmission &&
+                queueEntryId == other.queueEntryId &&
+                idempotencyKeySnapshot == other.idempotencyKeySnapshot
+
+        override fun hashCode(): Int =
+            (31 * queueEntryId.hashCode()) + idempotencyKeySnapshot.hashCode()
+
+        override fun toString(): String =
+            "StrategyOperationInput.OfflineFirstAdmission(identityConfigured=true)"
+    }
 
     /**
      * Caller-owned input for a direct transport operation.
@@ -92,17 +128,25 @@ public data class StrategySynchronizationRequest(
     public val input: StrategyOperationInput = StrategyOperationInput.ProviderBacked,
 ) {
     init {
-        if (input is StrategyOperationInput.DirectTransport) {
-            when (request.direction) {
-                SynchronizationDirection.PUSH,
-                SynchronizationDirection.BIDIRECTIONAL,
-                -> require(input.outboundChangeSet != null) {
-                    "Direct transport PUSH and BIDIRECTIONAL requests require outboundChangeSet."
-                }
-                SynchronizationDirection.PULL -> require(input.outboundChangeSet == null) {
-                    "Direct transport PULL requests must not define outboundChangeSet."
+        when (input) {
+            is StrategyOperationInput.DirectTransport -> {
+                when (request.direction) {
+                    SynchronizationDirection.PUSH,
+                    SynchronizationDirection.BIDIRECTIONAL,
+                    -> require(input.outboundChangeSet != null) {
+                        "Direct transport PUSH and BIDIRECTIONAL requests require outboundChangeSet."
+                    }
+                    SynchronizationDirection.PULL -> require(input.outboundChangeSet == null) {
+                        "Direct transport PULL requests must not define outboundChangeSet."
+                    }
                 }
             }
+            is StrategyOperationInput.OfflineFirstAdmission -> {
+                require(profile.strategy == BuiltInSynchronizationStrategy.OFFLINE_FIRST) {
+                    "OfflineFirstAdmission input requires an OFFLINE_FIRST profile."
+                }
+            }
+            StrategyOperationInput.ProviderBacked -> Unit
         }
     }
 
