@@ -70,11 +70,13 @@ provider boundary and reports provider-observed freshness, explicit
 unavailability, and fresh-to-stale drift without returning domain payloads or
 silently changing strategy. Direct cache verification can use an independent
 provider timeout and circuit boundary without adding a third-party dependency.
-Non-offline direct deferrals fail closed until their queue or scheduler admission
-is implemented. Refresh ownership, remote cache-miss execution, platform
-implementations, crash/relaunch proof, hybrid/conflict behavior, durable
-strategy events, and platform reference qualification remain before the
-strategy engine is complete.
+An explicit cache miss can execute the canonical remote PULL pipeline and
+persist its checkpoint while retaining `CACHE_FIRST` as the immutable effective
+strategy. Non-offline direct deferrals fail closed until their queue or
+scheduler admission is implemented. Refresh ownership, cache-miss
+PUSH/BIDIRECTIONAL execution, platform implementations, crash/relaunch proof,
+hybrid/conflict behavior, durable strategy events, and platform reference
+qualification remain before the strategy engine is complete.
 
 ## Market-readiness dashboard
 
@@ -92,7 +94,7 @@ substantial implementations that still have unqualified release behavior.
 | Next priority | V1 gate | Status | Finished on `main` | Still pending before the gate is complete |
 |---:|---|---|---|---|
 | — | [DL-039 foundations, artifacts, compatibility](https://github.com/dataloom-sdk/dataloom/issues/93) | COMPLETE | Public API/provider/runtime boundaries, module rules, JVM and Kotlin/Native ABI baselines, external-consumer compilation, durable state primitives, deterministic clocks/randomness, configuration and policy foundations, canonical envelope/redaction contracts, and a deterministic bounded V1 wire codec/upcast registry | — |
-| 1 | [DL-039B six strategy engine](https://github.com/dataloom-sdk/dataloom/issues/102) | IN PROGRESS | Versioned contracts and deterministic planner for all six strategies; direct network-only and remote-first slices; fail-closed queue admission; Room v8/Apple v4 accepted-plan persistence; exact encoder/resolver correspondence; direct, protected, and queued replay without current-policy evaluation; typed fallback and reconciliation hooks; atomic offline-first admission; cache-access contract and capability resolution; provider-verified fresh/allowed-stale direct local serving; independently protected direct cache verification; explicit freshness-drift outcomes; and fail-closed non-atomic direct deferrals | Complete online offline-first execution ownership and platform implementations with crash/relaunch proof; add refresh ownership, cache-miss remote execution, durable recovery, hybrid coherence/conflict application, durable strategy events/diagnostics, and the full native Android/KMP Android/KMP iOS failure/restart matrix |
+| 1 | [DL-039B six strategy engine](https://github.com/dataloom-sdk/dataloom/issues/102) | IN PROGRESS | Versioned contracts and deterministic planner for all six strategies; direct network-only and remote-first slices; fail-closed queue admission; Room v8/Apple v4 accepted-plan persistence; exact encoder/resolver correspondence; direct, protected, and queued replay without current-policy evaluation; typed fallback and reconciliation hooks; atomic offline-first admission; cache-access contract and capability resolution; provider-verified fresh/allowed-stale direct local serving; independently protected direct cache verification; cache-miss remote PULL with canonical checkpoint persistence; explicit freshness-drift outcomes; and fail-closed non-atomic direct deferrals | Complete online offline-first execution ownership and platform implementations with crash/relaunch proof; add refresh ownership, cache-miss PUSH/BIDIRECTIONAL execution, durable recovery, hybrid coherence/conflict application, durable strategy events/diagnostics, and the full native Android/KMP Android/KMP iOS failure/restart matrix |
 | 2 | [DL-039A Android/KMP/iOS parity](https://github.com/dataloom-sdk/dataloom/issues/101) | IN PROGRESS | Native Android adapters, Kotlin/Native Apple targets, XCFramework assembly, Swift smoke compilation, and initial Apple file-backed persistence | Add explicit KMP Android variants, production `dataloom-android`/`dataloom-ios` aggregation, iOS lifecycle/connectivity/background/security adapters, staged external consumers, and the complete parity matrix |
 | 3 | [DL-040 retry and circuit breaker](https://github.com/dataloom-sdk/dataloom/issues/94) | QUALIFICATION BLOCKED | FR-RETRY-001–012 implementation mapping; built-in backoff/jitter, limits, hints, six timeout boundaries, durable Room/Apple circuit state, half-open leases, authorized administration, bounded telemetry, and common/platform-store recovery flows | Prove real Android and Apple process termination/relaunch, genuine cross-process probe contention where supported, and the complete AC-FUNC-004 provider flow through native Android, KMP Android, and KMP iOS |
 | 4 | [DL-041 conflict engine](https://github.com/dataloom-sdk/dataloom/issues/95) | IN PROGRESS | Custom detector/resolver contracts and orchestration foundations | Ship deterministic built-in strategies, decision application, durable unresolved/manual state, audit, loop prevention/quarantine, precedence, restart/concurrency proof, and AC-FUNC-002 |

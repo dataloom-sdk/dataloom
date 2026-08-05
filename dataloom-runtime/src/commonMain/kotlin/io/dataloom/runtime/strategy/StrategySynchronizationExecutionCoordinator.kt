@@ -5,11 +5,13 @@ import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
+import io.dataloom.api.model.SynchronizationDirection
 import io.dataloom.api.provider.ProviderLifecycleCoordinatorState
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.api.runtime.RuntimeDependencies
 import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
+import io.dataloom.api.strategy.StrategyCacheState
 import io.dataloom.api.strategy.StrategyDataOrigin
 import io.dataloom.api.strategy.StrategyDisposition
 import io.dataloom.api.strategy.StrategyEvaluationResult
@@ -124,7 +126,7 @@ internal class StrategySynchronizationExecutionCoordinator(
                         reason = StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT,
                     )
                 }
-                if (!isDirectCacheServingPlan(evaluation)) {
+                if (!isSupportedDirectCacheFirstPlan(request, evaluation)) {
                     return rejected(
                         evaluation = evaluation,
                         reason = StrategyExecutionRejectionReason.UNSUPPORTED_PLAN,
@@ -184,7 +186,12 @@ internal class StrategySynchronizationExecutionCoordinator(
                     providers = executionProviders,
                 )
             BuiltInSynchronizationStrategy.CACHE_FIRST ->
-                CacheFirstStrategyExecutor(clock).execute(
+                CacheFirstStrategyExecutor(
+                    clock = clock,
+                    runtimeDependencies = runtimeDependencies,
+                    pipelineRegistry = pipelineRegistry,
+                    lifecycleEventEmitter = lifecycleEventEmitter,
+                ).execute(
                     request = request,
                     evaluation = evaluation,
                     providers = executionProviders,
@@ -195,6 +202,13 @@ internal class StrategySynchronizationExecutionCoordinator(
             )
         }
     }
+
+    private fun isSupportedDirectCacheFirstPlan(
+        request: StrategySynchronizationRequest,
+        evaluation: StrategyEvaluationResult,
+    ): Boolean =
+        isDirectCacheServingPlan(evaluation) ||
+            isDirectCacheMissRemotePullPlan(request, evaluation)
 
     private fun isDirectCacheServingPlan(
         evaluation: StrategyEvaluationResult,
@@ -207,6 +221,26 @@ internal class StrategySynchronizationExecutionCoordinator(
                 StrategyProviderCapability.CACHE_ACCESS,
             ) &&
             plan.dataOrigin == StrategyDataOrigin.LOCAL
+    }
+
+    private fun isDirectCacheMissRemotePullPlan(
+        request: StrategySynchronizationRequest,
+        evaluation: StrategyEvaluationResult,
+    ): Boolean {
+        val plan = evaluation.plan
+        return request.request.direction == SynchronizationDirection.PULL &&
+            request.evidence.cacheState == StrategyCacheState.MISSING &&
+            plan.disposition == StrategyDisposition.EXECUTE &&
+            plan.operations == listOf(
+                StrategyOperation.READ_CHECKPOINT,
+                StrategyOperation.PULL_REMOTE,
+                StrategyOperation.PERSIST_REMOTE,
+            ) &&
+            plan.requiredCapabilities == setOf(
+                StrategyProviderCapability.STORAGE,
+                StrategyProviderCapability.TRANSPORT,
+            ) &&
+            plan.dataOrigin == StrategyDataOrigin.REMOTE
     }
 
     private suspend fun executeDeferredOfflineFirstAdmission(
