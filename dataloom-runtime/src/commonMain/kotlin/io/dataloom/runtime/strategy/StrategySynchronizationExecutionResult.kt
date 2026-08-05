@@ -2,6 +2,7 @@ package io.dataloom.runtime.strategy
 
 import io.dataloom.api.error.DataLoomError
 import io.dataloom.api.provider.ProviderBindingFailure
+import io.dataloom.api.strategy.StrategyCacheFreshnessEvidence
 import io.dataloom.api.strategy.StrategyCacheState
 import io.dataloom.api.strategy.StrategyEvaluationResult
 import io.dataloom.api.strategy.StrategyLocalFallbackResult
@@ -44,6 +45,33 @@ public sealed interface StrategySynchronizationExecutionResult {
         override val completedAt: DataLoomInstant,
         public val output: StrategyTransportOutput,
     ) : StrategySynchronizationExecutionResult
+
+    /** Application-owned cache is verified as available for local serving. */
+    public data class CacheAvailable(
+        override val evaluation: StrategyEvaluationResult,
+        override val completedAt: DataLoomInstant,
+        public val freshness: StrategyCacheFreshnessEvidence,
+    ) : StrategySynchronizationExecutionResult
+
+    /** Cache state cannot be served under the admitted cache-first plan. */
+    public data class CacheUnavailable(
+        override val evaluation: StrategyEvaluationResult,
+        override val completedAt: DataLoomInstant,
+        public val evaluatedCacheState: StrategyCacheState,
+        public val observedCacheState: StrategyCacheState,
+    ) : StrategySynchronizationExecutionResult {
+        init {
+            require(
+                evaluatedCacheState == StrategyCacheState.FRESH ||
+                    evaluatedCacheState == StrategyCacheState.STALE,
+            ) {
+                "Cache unavailability requires evaluated FRESH or STALE state."
+            }
+            require(observedCacheState != StrategyCacheState.FRESH) {
+                "Provider-observed FRESH cache must be represented as available."
+            }
+        }
+    }
 
     public class Failed(
         override val evaluation: StrategyEvaluationResult,

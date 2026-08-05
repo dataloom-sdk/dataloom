@@ -79,6 +79,17 @@ internal class StrategySynchronizationExecutionCoordinator(
             )
         }
 
+        if (
+            evaluation.plan.effectiveStrategy ==
+            BuiltInSynchronizationStrategy.CACHE_FIRST &&
+            evaluation.plan.disposition == StrategyDisposition.DEFER
+        ) {
+            return rejected(
+                evaluation = evaluation,
+                reason = StrategyExecutionRejectionReason.UNSUPPORTED_PLAN,
+            )
+        }
+
         when (evaluation.plan.disposition) {
             StrategyDisposition.DEFER -> return StrategySynchronizationExecutionResult.Deferred(
                 evaluation = evaluation,
@@ -110,6 +121,25 @@ internal class StrategySynchronizationExecutionCoordinator(
                     return rejected(
                         evaluation = evaluation,
                         reason = StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT,
+                    )
+                }
+            }
+            BuiltInSynchronizationStrategy.CACHE_FIRST -> {
+                if (request.input !is StrategyOperationInput.ProviderBacked) {
+                    return rejected(
+                        evaluation = evaluation,
+                        reason = StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT,
+                    )
+                }
+                if (
+                    evaluation.plan.disposition != StrategyDisposition.EXECUTE ||
+                    evaluation.plan.operations != listOf(StrategyOperation.SERVE_LOCAL) ||
+                    StrategyProviderCapability.CACHE_ACCESS !in
+                    evaluation.plan.requiredCapabilities
+                ) {
+                    return rejected(
+                        evaluation = evaluation,
+                        reason = StrategyExecutionRejectionReason.UNSUPPORTED_PLAN,
                     )
                 }
             }
@@ -167,6 +197,16 @@ internal class StrategySynchronizationExecutionCoordinator(
                 pipelineRegistry = pipelineRegistry,
                 lifecycleEventEmitter = lifecycleEventEmitter,
             ).execute(
+                request = request,
+                evaluation = evaluation,
+                providers = executionProviders,
+            )
+        }
+        if (
+            evaluation.plan.effectiveStrategy ==
+            BuiltInSynchronizationStrategy.CACHE_FIRST
+        ) {
+            return CacheFirstStrategyExecutor(clock).execute(
                 request = request,
                 evaluation = evaluation,
                 providers = executionProviders,

@@ -12,8 +12,9 @@ behavior.
 
 | Audit | Scope | How to use it |
 |---|---|---|
-| [DL-039B cache-access capability](./DL-039B-cache-access-capability.md) | Deterministic cache-serving capability and fail-closed provider resolution | Current cache-first planner/resolution checkpoint; runtime invocation, refresh ownership, and platform qualification remain under #102/#101 |
-| [DL-039B cache-access contract](./DL-039B-cache-access-contract.md) | Payload-free cache verification and exclusive freshness-deadline evidence | Public cache-first contract checkpoint; use with the capability checkpoint and #102/#101 |
+| [DL-039B direct cache-local execution](./DL-039B-cache-local-execution.md) | Provider-verified fresh/stale local availability without refresh side effects | Current bounded cache-first runtime checkpoint; refresh, cache-miss remote execution, protection, and platform qualification remain under #102/#101 |
+| [DL-039B cache-access capability](./DL-039B-cache-access-capability.md) | Deterministic cache-serving capability and fail-closed provider resolution | Cache-first planner/resolution checkpoint; use with the runtime checkpoint and #102/#101 |
+| [DL-039B cache-access contract](./DL-039B-cache-access-contract.md) | Payload-free cache verification and exclusive freshness-deadline evidence | Public cache-first contract checkpoint; use with the capability/runtime checkpoints and #102/#101 |
 | [DL-039B deferred offline-first admission](./DL-039B-offline-first-admission-runtime.md) | Atomic provider invocation and durable deferred-admission evidence | Current bounded offline-first checkpoint; use with #102/#101 for its explicit remaining runtime and platform gates |
 | [DL-040 current acceptance reconciliation](./DL-040-current-acceptance-reconciliation.md) | Retry/circuit FR-RETRY-001–012 and AC-FUNC-004 reconciliation | Current retry/circuit implementation verdict and remaining process/platform qualification blockers |
 | [DL-AUDIT-005](./DL-AUDIT-005-current-v1-conformance.md) | Current V1 conformance after merged retry/circuit slices | Primary current release-readiness and regression decision record outside later scoped reconciliations |
