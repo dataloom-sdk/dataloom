@@ -32,67 +32,112 @@ jobs:
           set -euo pipefail
           python3 <<'PY'
           from pathlib import Path
+          import re
 
-          def replace_exact(path: str, old: str, new: str, expected: int = 1) -> None:
+          def regex_replace(
+              path: str,
+              pattern: str,
+              replacement: str,
+              expected: int = 1,
+          ) -> None:
               file = Path(path)
               text = file.read_text()
-              count = text.count(old)
+              updated, count = re.subn(pattern, replacement, text)
               if count != expected:
                   raise SystemExit(
-                      f"{path}: expected {expected} occurrence(s), found {count}"
+                      f"{path}: expected {expected} audited replacement(s), found {count}"
                   )
-              file.write_text(text.replace(old, new))
+              file.write_text(updated)
 
-          replace_exact(
-              "dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/BuiltInSynchronizationStrategyEvaluator.kt",
-              """        } else {
-              listOf(StrategyOperation.PULL_REMOTE, StrategyOperation.PERSIST_REMOTE)
-          }
-          """,
-              """        } else {
-              listOf(
-                  StrategyOperation.READ_CHECKPOINT,
-                  StrategyOperation.PULL_REMOTE,
-                  StrategyOperation.PERSIST_REMOTE,
-              )
-          }
-          """,
+          evaluator = (
+              "dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/"
+              "BuiltInSynchronizationStrategyEvaluator.kt"
+          )
+          regex_replace(
+              evaluator,
+              r"        \} else \{\n            listOf\(StrategyOperation\.PULL_REMOTE, StrategyOperation\.PERSIST_REMOTE\)\n        \}",
+              "        } else {\n"
+              "            listOf(\n"
+              "                StrategyOperation.READ_CHECKPOINT,\n"
+              "                StrategyOperation.PULL_REMOTE,\n"
+              "                StrategyOperation.PERSIST_REMOTE,\n"
+              "            )\n"
+              "        }",
           )
 
-          inline_plan_old = """                StrategyOperation.SERVE_LOCAL,
-                  StrategyOperation.PULL_REMOTE,
-                  StrategyOperation.PERSIST_REMOTE,
-          """
-          inline_plan_new = """                StrategyOperation.SERVE_LOCAL,
-                  StrategyOperation.READ_CHECKPOINT,
-                  StrategyOperation.PULL_REMOTE,
-                  StrategyOperation.PERSIST_REMOTE,
-          """
+          inline_plan_pattern = (
+              r"                StrategyOperation\.SERVE_LOCAL,\n"
+              r"                StrategyOperation\.PULL_REMOTE,\n"
+              r"                StrategyOperation\.PERSIST_REMOTE,"
+          )
+          inline_plan_replacement = (
+              "                StrategyOperation.SERVE_LOCAL,\n"
+              "                StrategyOperation.READ_CHECKPOINT,\n"
+              "                StrategyOperation.PULL_REMOTE,\n"
+              "                StrategyOperation.PERSIST_REMOTE,"
+          )
           for path in (
               "dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/CacheFirstStrategyExecutor.kt",
               "dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/StrategySynchronizationExecutionCoordinator.kt",
               "dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/StrategyCacheServedWithInlineRefreshResult.kt",
               "dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/queue/StrategyQueueInlineRefreshSafetyTest.kt",
           ):
-              replace_exact(path, inline_plan_old, inline_plan_new)
+              regex_replace(path, inline_plan_pattern, inline_plan_replacement)
 
           for path in (
               "docs/api/provider-protected-strategy-execution.md",
               "docs/audits/DL-039B-inline-cache-refresh-runtime.md",
               "docs/strategies/cache-first.md",
           ):
-              replace_exact(
+              regex_replace(
                   path,
-                  "SERVE_LOCAL → PULL_REMOTE → PERSIST_REMOTE",
+                  re.escape("SERVE_LOCAL → PULL_REMOTE → PERSIST_REMOTE"),
                   "SERVE_LOCAL → READ_CHECKPOINT → PULL_REMOTE → PERSIST_REMOTE",
               )
 
-          replace_exact(
-              "dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/strategy/CacheFirstInlineRefreshExecutionTest.kt",
-              """        assertEquals(StrategyDisposition.SERVE_AND_REFRESH, served.evaluation.plan.disposition)
-              assertEquals(listOf(StrategyOperation.PULL_REMOTE), refresh.completedOperations)
-          """,
-              """        assertEquals(StrategyDisposition.SERVE_AND_REFRESH, served.evaluation.plan.disposition)
+          runtime_test = (
+              "dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/strategy/"
+              "CacheFirstInlineRefreshExecutionTest.kt"
+          )
+          regex_replace(
+              runtime_test,
+              r"        assertEquals\(StrategyDisposition\.SERVE_AND_REFRESH, served\.evaluation\.plan\.disposition\)\n"
+              r"        assertEquals\(listOf\(StrategyOperation\.PULL_REMOTE\), refresh\.completedOperations\)",
+              "        assertEquals(StrategyDisposition.SERVE_AND_REFRESH, served.evaluation.plan.disposition)\n"
+              "        assertEquals(\n"
+              "            listOf(\n"
+              "                StrategyOperation.SERVE_LOCAL,\n"
+              "                StrategyOperation.READ_CHECKPOINT,\n"
+              "                StrategyOperation.PULL_REMOTE,\n"
+              "                StrategyOperation.PERSIST_REMOTE,\n"
+              "            ),\n"
+              "            served.evaluation.plan.operations,\n"
+              "        )\n"
+              "        assertEquals(listOf(StrategyOperation.PULL_REMOTE), refresh.completedOperations)",
+          )
+
+          evaluator_test = (
+              "dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/strategy/"
+              "BuiltInSynchronizationStrategyEvaluatorTest.kt"
+          )
+          anchor = "    @Test\n    fun cacheFirstRejectPolicyNeverServesStaleState() {"
+          addition = """    @Test
+          fun nonDurableCacheRefreshDeclaresCheckpointBeforeTransport() {
+              val result = evaluate(
+                  profile = CacheFirstStrategyProfile(
+                      id = StrategyProfileId("cache-inline-refresh-plan"),
+                      configurationVersion = version(),
+                      refreshOnFreshHit = true,
+                      requireDurableRefresh = false,
+                  ),
+                  direction = SynchronizationDirection.PULL,
+                  evidence = evidence(
+                      connectivity = StrategyConnectivity.AVAILABLE,
+                      cacheState = StrategyCacheState.FRESH,
+                  ),
+              )
+
+              assertEquals(StrategyDisposition.SERVE_AND_REFRESH, result.plan.disposition)
               assertEquals(
                   listOf(
                       StrategyOperation.SERVE_LOCAL,
@@ -100,56 +145,23 @@ jobs:
                       StrategyOperation.PULL_REMOTE,
                       StrategyOperation.PERSIST_REMOTE,
                   ),
-                  served.evaluation.plan.operations,
+                  result.plan.operations,
               )
-              assertEquals(listOf(StrategyOperation.PULL_REMOTE), refresh.completedOperations)
-          """,
-          )
+              assertEquals(
+                  setOf(
+                      StrategyProviderCapability.STORAGE,
+                      StrategyProviderCapability.CACHE_ACCESS,
+                      StrategyProviderCapability.TRANSPORT,
+                  ),
+                  result.plan.requiredCapabilities,
+              )
+          }
 
-          evaluator_test_anchor = """    @Test
-              fun cacheFirstRejectPolicyNeverServesStaleState() {
-          """
-          evaluator_test = """    @Test
-              fun nonDurableCacheRefreshDeclaresCheckpointBeforeTransport() {
-                  val result = evaluate(
-                      profile = CacheFirstStrategyProfile(
-                          id = StrategyProfileId(\"cache-inline-refresh-plan\"),
-                          configurationVersion = version(),
-                          refreshOnFreshHit = true,
-                          requireDurableRefresh = false,
-                      ),
-                      direction = SynchronizationDirection.PULL,
-                      evidence = evidence(
-                          connectivity = StrategyConnectivity.AVAILABLE,
-                          cacheState = StrategyCacheState.FRESH,
-                      ),
-                  )
-
-                  assertEquals(StrategyDisposition.SERVE_AND_REFRESH, result.plan.disposition)
-                  assertEquals(
-                      listOf(
-                          StrategyOperation.SERVE_LOCAL,
-                          StrategyOperation.READ_CHECKPOINT,
-                          StrategyOperation.PULL_REMOTE,
-                          StrategyOperation.PERSIST_REMOTE,
-                      ),
-                      result.plan.operations,
-                  )
-                  assertEquals(
-                      setOf(
-                          StrategyProviderCapability.STORAGE,
-                          StrategyProviderCapability.CACHE_ACCESS,
-                          StrategyProviderCapability.TRANSPORT,
-                      ),
-                      result.plan.requiredCapabilities,
-                  )
-              }
-
-          """ + evaluator_test_anchor
-          replace_exact(
-              "dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/strategy/BuiltInSynchronizationStrategyEvaluatorTest.kt",
-              evaluator_test_anchor,
+          """ + anchor
+          regex_replace(
               evaluator_test,
+              re.escape(anchor),
+              addition,
           )
 
           workflow = Path(
@@ -161,6 +173,12 @@ jobs:
           git diff --check
           if git grep -n "SERVE_LOCAL → PULL_REMOTE → PERSIST_REMOTE" -- '*.md'; then
             echo "Undeclared-checkpoint documentation remains."
+            exit 1
+          fi
+          if git grep -n -A2 "StrategyOperation.SERVE_LOCAL," -- \
+              dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/CacheFirstStrategyExecutor.kt \
+              | grep -q "StrategyOperation.PULL_REMOTE"; then
+            echo "Inline-refresh execution still permits an undeclared direct pull."
             exit 1
           fi
 
