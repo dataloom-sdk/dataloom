@@ -6,25 +6,26 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: dl-strategy-018-pr-${{ github.event.pull_request.number }}
+  group: dl-strategy-018-qualification-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
   qualify:
-    name: Apply and qualify durable cache refresh admission
-    if: github.actor != 'github-actions[bot]'
+    name: Qualify durable cache refresh admission
+    if: github.head_ref == 'agent/dl-strategy-018-durable-cache-refresh-admission'
     runs-on: macos-15
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     steps:
-      - name: Checkout PR branch
+      - name: Checkout candidate branch
         uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -40,22 +41,19 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
-      - name: Apply reviewed durable-refresh patch
+      - name: Apply reviewed durable-refresh candidate
         shell: bash
         run: |
           set -euo pipefail
-          git apply --3way --recount tools/agent/dl-strategy-018.patch
-          if git ls-files -u | grep -q .; then
-            echo "Three-way application produced unresolved paths:"
-            git diff --name-only --diff-filter=U
-            exit 1
-          fi
+          git apply --recount --check tools/agent/dl-strategy-018.patch
+          git apply --recount tools/agent/dl-strategy-018.patch
           rm tools/agent/dl-strategy-018.patch
-          rm -f .github/workflows/dl-strategy-018-apply.yml
 
-          # Keep dataloom-testing dependency-neutral. These deterministic test
-          # providers complete synchronously, so standard Kotlin continuations
-          # are sufficient and no kotlinx-coroutines-test dependency is added.
+          git checkout origin/main -- \
+            .github/workflows/pr-validation.yml \
+            .github/workflows/android-validation.yml \
+            .github/workflows/apple-validation.yml
+
           python3 <<'PY'
           from pathlib import Path
 
@@ -73,8 +71,8 @@ jobs:
               "import kotlin.coroutines.EmptyCoroutineContext\n"
               "import kotlin.coroutines.startCoroutine\n",
           )
-          test_count = text.count("= runTest {")
-          if test_count == 0:
+          count = text.count("= runTest {")
+          if count == 0:
               raise SystemExit("Expected durable-refresh runTest usages")
           text = text.replace("= runTest {", "= runSuspend {")
 
@@ -100,8 +98,7 @@ jobs:
               "    }\n"
               "\n"
           )
-          text = text.replace(marker, helper + marker)
-          path.write_text(text)
+          path.write_text(text.replace(marker, helper + marker))
           PY
 
           git diff --check
@@ -115,7 +112,7 @@ jobs:
           --stacktrace
           --console=plain
 
-      - name: Run shared native and external-consumer qualification
+      - name: Run shared, Native, and external-consumer qualification
         run: >-
           ./gradlew
           :build-logic:test
@@ -126,36 +123,65 @@ jobs:
           :runtime-external-consumer:compileKotlinIosArm64
           :runtime-external-consumer:compileKotlinIosSimulatorArm64
           :runtime-external-consumer:compileKotlinIosX64
+          :dataloom-apple:assembleDataLoomReleaseXCFramework
           --configuration-cache
           --stacktrace
           --console=plain
 
-      - name: Restore permanent validation workflow
-        shell: bash
-        run: |
-          set -euo pipefail
-          git checkout origin/main -- .github/workflows/pr-validation.yml
+      - name: Run Android static qualification
+        env:
+          DATALOOM_ANDROID_BUILD: "true"
+        run: >-
+          ./gradlew
+          projects
+          :dataloom-connectivity-android:assembleDebug
+          :dataloom-connectivity-android:testDebugUnitTest
+          :dataloom-scheduler-workmanager:assembleDebug
+          :dataloom-scheduler-workmanager:testDebugUnitTest
+          :dataloom-queue-room:kspDebugKotlin
+          :dataloom-queue-room:assembleDebug
+          :dataloom-queue-room:assembleDebugAndroidTest
+          :dataloom-queue-room:testDebugUnitTest
+          :runtime-external-consumer:checkRuntimeExternalConsumer
+          --configuration-cache
+          --stacktrace
+          --console=plain
+          --max-workers=1
 
-      - name: Verify candidate tree
+      - name: Assemble qualified candidate artifact
         shell: bash
         run: |
           set -euo pipefail
           git diff --check
-          test ! -e tools/agent/dl-strategy-018.patch
-          test ! -e .github/workflows/dl-strategy-018-apply.yml
-          if git diff --name-only origin/main...HEAD -- \
-              build.gradle build.gradle.kts settings.gradle settings.gradle.kts \
-              gradle/libs.versions.toml | grep -q .; then
+
+          git diff --name-only --diff-filter=ACMRT origin/main -- > candidate-files.txt
+          if [[ ! -s candidate-files.txt ]]; then
+            echo "No candidate files were produced."
+            exit 1
+          fi
+          if grep -E '^\.github/workflows/|^tools/agent/' candidate-files.txt; then
+            echo "Temporary qualification files leaked into the candidate."
+            exit 1
+          fi
+          if grep -E '(^|/)(build\.gradle(\.kts)?|settings\.gradle(\.kts)?|libs\.versions\.toml)$' \
+              candidate-files.txt; then
             echo "Dependency or build configuration changed unexpectedly."
             exit 1
           fi
 
-      - name: Commit qualified durable-refresh implementation
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "DL-039B: admit durable cache refresh work"
-          git push origin "HEAD:${GITHUB_HEAD_REF}"
+          mkdir -p candidate
+          while IFS= read -r file; do
+            mkdir -p "candidate/$(dirname "$file")"
+            cp "$file" "candidate/$file"
+          done < candidate-files.txt
+          cp candidate-files.txt candidate/CANDIDATE_FILES.txt
+          git diff --stat origin/main > candidate/DIFFSTAT.txt
+          git diff --binary origin/main > candidate/CANDIDATE.patch
+
+      - name: Upload qualified candidate
+        uses: actions/upload-artifact@v7
+        with:
+          name: dl-strategy-018-qualified-candidate
+          path: candidate
+          if-no-files-found: error
+          retention-days: 3
