@@ -1,0 +1,98 @@
+name: One-time durable cache refresh admission qualification
+
+on:
+  push:
+    branches:
+      - agent/dl-strategy-018-durable-cache-refresh-admission
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dl-strategy-018-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualify:
+    name: Apply, generate ABI, and qualify durable cache refresh admission
+    if: github.actor != 'github-actions[bot]'
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout branch head
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Apply reviewed durable-refresh patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git apply --check tools/agent/dl-strategy-018.patch
+          git apply tools/agent/dl-strategy-018.patch
+          rm tools/agent/dl-strategy-018.patch
+          rm .github/workflows/dl-strategy-018-apply.yml
+          git diff --check
+
+      - name: Generate authoritative public ABI baselines
+        run: >-
+          ./gradlew
+          :dataloom-api:updateKotlinAbi
+          :dataloom-runtime:updateKotlinAbi
+          --configuration-cache
+          --stacktrace
+          --console=plain
+
+      - name: Run shared native and external-consumer qualification
+        run: >-
+          ./gradlew
+          :build-logic:test
+          build
+          :dataloom-runtime:iosSimulatorArm64Test
+          :runtime-external-consumer:checkRuntimeExternalConsumer
+          :runtime-external-consumer:compileKotlinIosArm64
+          :runtime-external-consumer:compileKotlinIosSimulatorArm64
+          :runtime-external-consumer:compileKotlinIosX64
+          --configuration-cache
+          --stacktrace
+          --console=plain
+
+      - name: Verify candidate tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          if git status --porcelain --untracked-files=all | grep -E '^.. \.github/workflows/dl-strategy-018-apply\.yml$'; then
+            echo "Temporary qualification workflow was not removed."
+            exit 1
+          fi
+          if git status --porcelain --untracked-files=all | grep -E '^.. tools/agent/dl-strategy-018\.patch$'; then
+            echo "Temporary patch helper was not removed."
+            exit 1
+          fi
+
+      - name: Commit qualified durable-refresh implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "DL-039B: admit durable cache refresh work"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
