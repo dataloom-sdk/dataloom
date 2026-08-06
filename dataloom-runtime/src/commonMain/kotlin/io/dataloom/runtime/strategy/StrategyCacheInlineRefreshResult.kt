@@ -1,6 +1,7 @@
 package io.dataloom.runtime.strategy
 
 import io.dataloom.api.error.DataLoomError
+import io.dataloom.api.model.SynchronizationDirection
 import io.dataloom.api.strategy.StrategyOperation
 import io.dataloom.api.strategy.StrategyRemoteOutcome
 import io.dataloom.api.strategy.StrategyTransportOutput
@@ -38,6 +39,7 @@ public sealed interface StrategyCacheInlineRefreshResult {
 
         init {
             val result = output.result
+            requirePullRefreshResult(result)
             require(
                 result is SynchronizationResult.Succeeded ||
                     (
@@ -98,6 +100,7 @@ public sealed interface StrategyCacheInlineRefreshResult {
             }
 
         init {
+            requirePullRefreshResult(partialOutput)
             requirePullRefreshOperations(completedOperationsSnapshot)
             require(completedOperationsSnapshot == COMPLETED_PULL_EVIDENCE) {
                 "Partially succeeded inline cache refresh requires one completed remote pull marker."
@@ -154,6 +157,7 @@ public sealed interface StrategyCacheInlineRefreshResult {
             }
 
         init {
+            requirePullRefreshResult(failedOutput)
             require(remoteOutcome == null || transportAttempted) {
                 "A classified remote outcome requires a transport attempt."
             }
@@ -208,9 +212,11 @@ public sealed interface StrategyCacheInlineRefreshResult {
             completedOperations.toList()
 
         init {
-            require(output.result is SynchronizationResult.Cancelled) {
+            val cancelledOutput = output.result
+            require(cancelledOutput is SynchronizationResult.Cancelled) {
                 "Cancelled inline cache refresh requires canonical cancelled output."
             }
+            requirePullRefreshResult(cancelledOutput)
             requireTransportEvidence(
                 transportAttempted = transportAttempted,
                 completedOperations = completedOperationsSnapshot,
@@ -249,6 +255,12 @@ public sealed interface StrategyCacheInlineRefreshResult {
 
 private val COMPLETED_PULL_EVIDENCE: List<StrategyOperation> =
     listOf(StrategyOperation.PULL_REMOTE)
+
+private fun requirePullRefreshResult(result: SynchronizationResult) {
+    require(result.request.direction == SynchronizationDirection.PULL) {
+        "Inline cache refresh requires a canonical PULL synchronization result."
+    }
+}
 
 private fun requireTransportEvidence(
     transportAttempted: Boolean,
