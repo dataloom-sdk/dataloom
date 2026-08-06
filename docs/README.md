@@ -28,6 +28,7 @@ KMP iOS:
 | Explore current public contracts | [API reference](./api/README.md) |
 | Understand modules and dependencies | [Module architecture](./architecture/modules.md) |
 | Build and verify a change locally | [Development guide](./development/building.md) |
+| Coordinate parallel V1 agent execution | [Parallel AI-agent operating model](./development/v1-parallel-agent-operating-model.md) |
 | Use the testing toolkit | [Testing guide](./testing/testing-toolkit.md) |
 | Review V1 gaps and release gates | [Audit index and evidence hierarchy](./audits/README.md) |
 | Understand accepted decisions | [Architecture decision records](./adr/README.md) |
@@ -116,6 +117,7 @@ The [architecture hub](./architecture/README.md) connects the system views:
 ## Build, test, and contribute
 
 - [Local development and validation](./development/building.md)
+- [V1 parallel AI-agent operating model](./development/v1-parallel-agent-operating-model.md)
 - [Testing toolkit](./testing/testing-toolkit.md)
 - [Contributing](../CONTRIBUTING.md)
 - [Security policy](../SECURITY.md)
