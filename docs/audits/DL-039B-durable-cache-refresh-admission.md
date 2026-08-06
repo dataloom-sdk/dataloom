@@ -22,7 +22,8 @@ This checkpoint applies to direct strategy execution. Protected strategy
 execution fails closed before provider invocation because queue and scheduler
 protection are not yet independently configured by
 `DataLoomStrategyProviderProtectionSpec`. The rejection is
-`PROVIDER_PROTECTION_NOT_CONFIGURED` and contains no provider-operation evidence.
+`PROVIDER_PROTECTION_NOT_CONFIGURED`, contains no provider-operation evidence,
+and performs no cache, queue, scheduler, transport, or circuit-store access.
 
 ## Side-effect order and outcomes
 
