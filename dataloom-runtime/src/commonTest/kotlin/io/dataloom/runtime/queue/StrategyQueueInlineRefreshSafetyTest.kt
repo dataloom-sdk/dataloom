@@ -100,6 +100,7 @@ class StrategyQueueInlineRefreshSafetyTest {
             disposition = StrategyDisposition.SERVE_AND_REFRESH,
             operations = listOf(
                 StrategyOperation.SERVE_LOCAL,
+                StrategyOperation.READ_CHECKPOINT,
                 StrategyOperation.PULL_REMOTE,
                 StrategyOperation.PERSIST_REMOTE,
             ),

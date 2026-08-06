@@ -10,7 +10,7 @@ strategy       CACHE_FIRST
 cache state    FRESH or policy-allowed STALE
 direction      PULL
 disposition    SERVE_AND_REFRESH
-operations     SERVE_LOCAL → PULL_REMOTE → PERSIST_REMOTE
+operations     SERVE_LOCAL → READ_CHECKPOINT → PULL_REMOTE → PERSIST_REMOTE
 capabilities   STORAGE + CACHE_ACCESS + TRANSPORT
 origin         LOCAL
 continuation   none

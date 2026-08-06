@@ -114,6 +114,15 @@ class CacheFirstInlineRefreshExecutionTest {
         assertEquals(StrategyDataOrigin.LOCAL, served.dataOrigin)
         assertEquals(StrategyCacheState.FRESH, served.freshness.cacheState)
         assertEquals(StrategyDisposition.SERVE_AND_REFRESH, served.evaluation.plan.disposition)
+        assertEquals(
+            listOf(
+                StrategyOperation.SERVE_LOCAL,
+                StrategyOperation.READ_CHECKPOINT,
+                StrategyOperation.PULL_REMOTE,
+                StrategyOperation.PERSIST_REMOTE,
+            ),
+            served.evaluation.plan.operations,
+        )
         assertEquals(listOf(StrategyOperation.PULL_REMOTE), refresh.completedOperations)
         assertEquals(listOf("cache", "checkpoint", "pull"), calls)
     }

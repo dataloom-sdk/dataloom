@@ -847,7 +847,11 @@ public class BuiltInSynchronizationStrategyEvaluator : SynchronizationStrategyEv
                 StrategyOperation.SCHEDULE_REFRESH,
             )
         } else {
-            listOf(StrategyOperation.PULL_REMOTE, StrategyOperation.PERSIST_REMOTE)
+            listOf(
+                StrategyOperation.READ_CHECKPOINT,
+                StrategyOperation.PULL_REMOTE,
+                StrategyOperation.PERSIST_REMOTE,
+            )
         }
 
     private fun localOrigin(direction: SynchronizationDirection): StrategyDataOrigin =

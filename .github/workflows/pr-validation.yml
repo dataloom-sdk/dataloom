@@ -4,185 +4,50 @@ on:
   pull_request:
     branches:
       - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: pr-validation-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  correct-inline-refresh-plan:
-    name: Correct audited inline-refresh plan correspondence
-    if: >-
-      github.head_ref == 'agent/dl-strategy-016-inline-cache-refresh-runtime' &&
-      github.actor != 'github-actions[bot]'
+  validate:
+    name: Validate build and tests
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
 
     steps:
-      - name: Checkout PR branch
+      - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.head_ref }}
-          fetch-depth: 0
+          persist-credentials: false
 
-      - name: Apply audited correction
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 <<'PY'
-          from pathlib import Path
-          import re
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
 
-          def replace(
-              path: str,
-              pattern: str,
-              replacement: str,
-              expected: int = 1,
-          ) -> None:
-              file = Path(path)
-              text = file.read_text()
-              updated, count = re.subn(pattern, replacement, text)
-              if count != expected:
-                  raise SystemExit(
-                      f"{path}: expected {expected} replacement(s), found {count}"
-                  )
-              file.write_text(updated)
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
 
-          evaluator = (
-              "dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/"
-              "BuiltInSynchronizationStrategyEvaluator.kt"
-          )
-          replace(
-              evaluator,
-              r"        \} else \{\n            listOf\(StrategyOperation\.PULL_REMOTE, StrategyOperation\.PERSIST_REMOTE\)\n        \}",
-              "        } else {\n"
-              "            listOf(\n"
-              "                StrategyOperation.READ_CHECKPOINT,\n"
-              "                StrategyOperation.PULL_REMOTE,\n"
-              "                StrategyOperation.PERSIST_REMOTE,\n"
-              "            )\n"
-              "        }",
-          )
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
 
-          old_plan = (
-              r"(?m)^(?P<indent>[ \t]+)StrategyOperation\.SERVE_LOCAL,\n"
-              r"(?P=indent)StrategyOperation\.PULL_REMOTE,\n"
-              r"(?P=indent)StrategyOperation\.PERSIST_REMOTE,"
-          )
-          new_plan = (
-              r"\g<indent>StrategyOperation.SERVE_LOCAL," "\n"
-              r"\g<indent>StrategyOperation.READ_CHECKPOINT," "\n"
-              r"\g<indent>StrategyOperation.PULL_REMOTE," "\n"
-              r"\g<indent>StrategyOperation.PERSIST_REMOTE,"
-          )
-          for path in (
-              "dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/CacheFirstStrategyExecutor.kt",
-              "dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/StrategySynchronizationExecutionCoordinator.kt",
-              "dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/StrategyCacheServedWithInlineRefreshResult.kt",
-              "dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/queue/StrategyQueueInlineRefreshSafetyTest.kt",
-          ):
-              replace(path, old_plan, new_plan)
-
-          for path in (
-              "docs/api/provider-protected-strategy-execution.md",
-              "docs/audits/DL-039B-inline-cache-refresh-runtime.md",
-              "docs/strategies/cache-first.md",
-          ):
-              replace(
-                  path,
-                  re.escape("SERVE_LOCAL → PULL_REMOTE → PERSIST_REMOTE"),
-                  "SERVE_LOCAL → READ_CHECKPOINT → PULL_REMOTE → PERSIST_REMOTE",
-              )
-
-          runtime_test = (
-              "dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/strategy/"
-              "CacheFirstInlineRefreshExecutionTest.kt"
-          )
-          replace(
-              runtime_test,
-              r"        assertEquals\(StrategyDisposition\.SERVE_AND_REFRESH, served\.evaluation\.plan\.disposition\)\n"
-              r"        assertEquals\(listOf\(StrategyOperation\.PULL_REMOTE\), refresh\.completedOperations\)",
-              "        assertEquals(StrategyDisposition.SERVE_AND_REFRESH, served.evaluation.plan.disposition)\n"
-              "        assertEquals(\n"
-              "            listOf(\n"
-              "                StrategyOperation.SERVE_LOCAL,\n"
-              "                StrategyOperation.READ_CHECKPOINT,\n"
-              "                StrategyOperation.PULL_REMOTE,\n"
-              "                StrategyOperation.PERSIST_REMOTE,\n"
-              "            ),\n"
-              "            served.evaluation.plan.operations,\n"
-              "        )\n"
-              "        assertEquals(listOf(StrategyOperation.PULL_REMOTE), refresh.completedOperations)",
-          )
-
-          evaluator_test = (
-              "dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/strategy/"
-              "BuiltInSynchronizationStrategyEvaluatorTest.kt"
-          )
-          anchor = "    @Test\n    fun cacheFirstRejectPolicyNeverServesStaleState() {"
-          addition = (
-              "    @Test\n"
-              "    fun nonDurableCacheRefreshDeclaresCheckpointBeforeTransport() {\n"
-              "        val result = evaluate(\n"
-              "            profile = CacheFirstStrategyProfile(\n"
-              "                id = StrategyProfileId(\"cache-inline-refresh-plan\"),\n"
-              "                configurationVersion = version(),\n"
-              "                refreshOnFreshHit = true,\n"
-              "                requireDurableRefresh = false,\n"
-              "            ),\n"
-              "            direction = SynchronizationDirection.PULL,\n"
-              "            evidence = evidence(\n"
-              "                connectivity = StrategyConnectivity.AVAILABLE,\n"
-              "                cacheState = StrategyCacheState.FRESH,\n"
-              "            ),\n"
-              "        )\n\n"
-              "        assertEquals(StrategyDisposition.SERVE_AND_REFRESH, result.plan.disposition)\n"
-              "        assertEquals(\n"
-              "            listOf(\n"
-              "                StrategyOperation.SERVE_LOCAL,\n"
-              "                StrategyOperation.READ_CHECKPOINT,\n"
-              "                StrategyOperation.PULL_REMOTE,\n"
-              "                StrategyOperation.PERSIST_REMOTE,\n"
-              "            ),\n"
-              "            result.plan.operations,\n"
-              "        )\n"
-              "        assertEquals(\n"
-              "            setOf(\n"
-              "                StrategyProviderCapability.STORAGE,\n"
-              "                StrategyProviderCapability.CACHE_ACCESS,\n"
-              "                StrategyProviderCapability.TRANSPORT,\n"
-              "            ),\n"
-              "            result.plan.requiredCapabilities,\n"
-              "        )\n"
-              "    }\n\n"
-              + anchor
-          )
-          replace(evaluator_test, re.escape(anchor), addition)
-
-          Path(
-              ".github/workflows/inline-refresh-plan-correspondence-fix.yml"
-          ).unlink(missing_ok=True)
-          PY
-
-          git fetch origin main
-          git show origin/main:.github/workflows/pr-validation.yml \
-            > .github/workflows/pr-validation.yml
-
-          git diff --check
-          if git grep -n "SERVE_LOCAL → PULL_REMOTE → PERSIST_REMOTE" -- '*.md'; then
-            echo "Undeclared checkpoint operation remains in documentation."
-            exit 1
-          fi
-
-      - name: Commit corrected plan and restored workflow
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "DL-039B: declare checkpoint read before inline refresh"
-          git push origin "HEAD:${GITHUB_HEAD_REF}"
+      - name: Validate build, tests, ABI, and external consumer
+        run: >-
+          ./gradlew
+          :build-logic:test
+          build
+          :runtime-external-consumer:checkRuntimeExternalConsumer
+          --configuration-cache
+          --stacktrace
+          --console=plain

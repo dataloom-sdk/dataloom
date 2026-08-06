@@ -96,7 +96,7 @@ The exact non-durable inline-refresh plan is:
 
 ```text
 CACHE_FIRST + PULL + SERVE_AND_REFRESH
-SERVE_LOCAL → PULL_REMOTE → PERSIST_REMOTE
+SERVE_LOCAL → READ_CHECKPOINT → PULL_REMOTE → PERSIST_REMOTE
 ```
 
 For a no-change refresh, ordered protection evidence is:

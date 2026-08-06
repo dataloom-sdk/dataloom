@@ -57,7 +57,7 @@ The supported inline-refresh plan is deliberately exact:
 
 ```text
 CACHE_FIRST + PULL + SERVE_AND_REFRESH
-SERVE_LOCAL → PULL_REMOTE → PERSIST_REMOTE
+SERVE_LOCAL → READ_CHECKPOINT → PULL_REMOTE → PERSIST_REMOTE
 STORAGE + CACHE_ACCESS + TRANSPORT
 no durable continuation
 ```
