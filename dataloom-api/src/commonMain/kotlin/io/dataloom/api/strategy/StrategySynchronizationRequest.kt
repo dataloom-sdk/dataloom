@@ -3,6 +3,7 @@ package io.dataloom.api.strategy
 import io.dataloom.api.change.ChangeSet
 import io.dataloom.api.identifier.EntityType
 import io.dataloom.api.identifier.QueueEntryId
+import io.dataloom.api.identifier.ScheduleId
 import io.dataloom.api.model.SynchronizationDirection
 import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.api.synchronization.ChangeSetAcknowledgement
@@ -62,6 +63,33 @@ public sealed interface StrategyOperationInput {
 
         override fun toString(): String =
             "StrategyOperationInput.OfflineFirstAdmission(identityConfigured=true)"
+    }
+
+    /**
+     * Caller-owned stable identities for one durable cache-first refresh.
+     *
+     * The runtime first verifies application-owned cache state, then atomically
+     * admits the immutable accepted strategy plan under [queueEntryId], and only
+     * after durable admission requests a queue-worker wake-up under [scheduleId].
+     * The scheduler always uses `KEEP` semantics and carries no domain payload.
+     */
+    public class CacheFirstDurableRefresh(
+        public val queueEntryId: QueueEntryId,
+        public val scheduleId: ScheduleId,
+    ) : StrategyOperationInput {
+
+        override fun equals(other: Any?): Boolean =
+            other is CacheFirstDurableRefresh &&
+                queueEntryId == other.queueEntryId &&
+                scheduleId == other.scheduleId
+
+        override fun hashCode(): Int =
+            (31 * queueEntryId.hashCode()) + scheduleId.hashCode()
+
+        /** Bounded diagnostics that exclude queue and schedule identity values. */
+        override fun toString(): String =
+            "StrategyOperationInput.CacheFirstDurableRefresh(" +
+                "identitiesConfigured=true)"
     }
 
     /**
@@ -144,6 +172,17 @@ public data class StrategySynchronizationRequest(
             is StrategyOperationInput.OfflineFirstAdmission -> {
                 require(profile.strategy == BuiltInSynchronizationStrategy.OFFLINE_FIRST) {
                     "OfflineFirstAdmission input requires an OFFLINE_FIRST profile."
+                }
+            }
+            is StrategyOperationInput.CacheFirstDurableRefresh -> {
+                require(
+                    profile.strategy == BuiltInSynchronizationStrategy.CACHE_FIRST ||
+                        profile.strategy == BuiltInSynchronizationStrategy.ADAPTIVE,
+                ) {
+                    "CacheFirstDurableRefresh input requires CACHE_FIRST or ADAPTIVE policy."
+                }
+                require(request.direction == SynchronizationDirection.PULL) {
+                    "CacheFirstDurableRefresh input currently supports PULL only."
                 }
             }
             StrategyOperationInput.ProviderBacked -> Unit

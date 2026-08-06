@@ -2663,6 +2663,15 @@ public final class io/dataloom/api/strategy/StrategyOperation : java/lang/Enum {
 public abstract interface class io/dataloom/api/strategy/StrategyOperationInput {
 }
 
+public final class io/dataloom/api/strategy/StrategyOperationInput$CacheFirstDurableRefresh : io/dataloom/api/strategy/StrategyOperationInput {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getQueueEntryId-ARA1dI0 ()Ljava/lang/String;
+	public final fun getScheduleId-Rq7uEjc ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/api/strategy/StrategyOperationInput$DirectTransport : io/dataloom/api/strategy/StrategyOperationInput {
 	public fun <init> ()V
 	public fun <init> (Lio/dataloom/api/change/ChangeSet;Ljava/util/Set;Ljava/lang/Integer;Lio/dataloom/api/synchronization/SynchronizationCheckpoint;)V

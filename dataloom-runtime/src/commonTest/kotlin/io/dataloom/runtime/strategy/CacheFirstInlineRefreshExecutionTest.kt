@@ -364,7 +364,7 @@ class CacheFirstInlineRefreshExecutionTest {
     }
 
     @Test
-    fun adaptiveWorksWhileDurableAndBidirectionalRemainRejected() = runTest {
+    fun adaptiveWorksWhileDurableInputAndBidirectionalValidationRemainExplicit() = runTest {
         val storage = TestStorage(cacheResult = available(freshEvidence()))
         val transport = TestTransport(
             pullResults = mutableListOf(
@@ -406,7 +406,7 @@ class CacheFirstInlineRefreshExecutionTest {
             bindings = fixture.bindings,
         )
         assertEquals(
-            StrategyExecutionRejectionReason.UNSUPPORTED_PLAN,
+            StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT,
             assertIs<StrategySynchronizationExecutionResult.Rejected>(durableResult).reason,
         )
         assertEquals(
