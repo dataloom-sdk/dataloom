@@ -3,10 +3,10 @@
 > [!WARNING]
 > Cache-first is a mandatory built-in V1 strategy. Fresh, stale, missing, and
 > unknown policy decisions, provider-observed local serving, protected cache
-> verification, the direct storage/transport direction matrix, and a public
-> inline-refresh outcome contract are implemented. Inline refresh composition,
-> durable refresh admission/recovery, coherence, events, and complete platform
-> qualification remain open.
+> verification, the direct storage/transport direction matrix, and exact
+> non-durable foreground PULL refresh composition are implemented as bounded
+> slices. Durable refresh admission/recovery, accepted-plan refresh replay,
+> coherence, events, and complete platform qualification remain open.
 
 [Strategy index](./README.md) · [Remote-first](./remote-first.md) ·
 [Offline-first](./offline-first.md) · [Hybrid](./hybrid.md)
@@ -45,17 +45,36 @@ The repository now provides:
 - independent timeout/circuit protection for cache verification;
 - direct canonical PUSH, cache-miss PULL, and cache-miss BIDIRECTIONAL execution
   through the shared pipelines;
-- immutable origin and partial remote-effect evidence; and
+- immutable origin and partial remote-effect evidence;
 - `StrategyCacheInlineRefreshResult`, which distinguishes completed, partially
   succeeded, failed, and cancelled foreground refresh attempts without exposing
-  domain payloads.
+  domain payloads; and
+- `StrategyCacheServedWithInlineRefreshResult`, which composes provider-verified
+  local freshness with one exact non-durable PULL refresh while preserving both
+  truths independently.
+
+The supported inline-refresh plan is deliberately exact:
+
+```text
+CACHE_FIRST + PULL + SERVE_AND_REFRESH
+SERVE_LOCAL → PULL_REMOTE → PERSIST_REMOTE
+STORAGE + CACHE_ACCESS + TRANSPORT
+no durable continuation
+```
+
+Cache verification occurs before checkpoint read or transport. The canonical
+inbound pipeline owns checkpoint read, paged pull, apply, and checkpoint advance.
+Each successful page contributes one `PULL_REMOTE` marker. Refresh failure or
+cancellation does not erase the local freshness evidence that was already
+admitted for use.
 
 The remaining canonical boundaries include:
 
-- composition of local-serving evidence with the inline refresh result;
 - a durable refresh admission identity and handle;
 - refresh deduplication and single-flight behavior;
 - restart-safe queue/scheduler ownership and recovery;
+- accepted-plan and durable-queue refresh replay without policy reselection;
+- BIDIRECTIONAL inline refresh and reconciliation;
 - invalidation/coherence after push, conflict, tenant change, logout, or
   configuration update; and
 - durable cache-decision and refresh events/read models.
@@ -129,13 +148,26 @@ The plan resolves transport only when a remote branch can execute. A fresh
 cache-only completion must not call transport, queue, or scheduler unless the
 profile explicitly requests refresh.
 
-## Guarantees
+## Current bounded guarantees
 
-- Local state is never called fresh without recorded freshness evidence.
-- Stale state is used only within the configured maximum staleness and
-  consistency rule.
-- A cache miss is distinguishable from a provider failure and from stale data.
-- Returned origin and freshness are observable.
+- Local state is not called fresh from caller assertion alone; the application
+  provider rechecks it at the serving boundary.
+- A fresh-to-stale change is reported as `FRESHNESS_DOWNGRADED` before remote
+  refresh begins.
+- A semantic cache miss is distinguishable from provider failure.
+- Fresh or policy-allowed stale origin and provider freshness remain observable.
+- The exact non-durable PULL refresh distinguishes full completion, partial
+  completion, failure, and explicit cancellation.
+- A checkpoint failure before transport reports no transport attempt.
+- A transport failure may expose its typed remote outcome.
+- Apply/checkpoint failure after successful remote pulls preserves every
+  completed-pull marker.
+- Durable and BIDIRECTIONAL refresh plans remain rejected before provider work.
+
+These bounded guarantees do not yet satisfy the complete V1 cache-first gate.
+
+## V1 guarantees still required
+
 - A refresh described as scheduled or pending has been durably accepted when
   durability is promised.
 - Equivalent concurrent refreshes are deduplicated or safely coalesced.
@@ -232,6 +264,7 @@ profile is rejected or explicitly degraded before promising that refresh.
 ## Related documentation
 
 - [Strategy decision guide](./README.md)
+- [Inline refresh runtime checkpoint](../audits/DL-039B-inline-cache-refresh-runtime.md)
 - [ADR-0002 V1 architecture](../adr/ADR-0002-v1-artifact-and-foundation-architecture.md)
 - [Storage Boundaries](../architecture/storage-boundaries.md)
 - [Inbound Pull Flow](../architecture/inbound-pull-flow.md)
