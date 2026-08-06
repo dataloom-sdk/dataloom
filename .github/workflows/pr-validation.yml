@@ -15,7 +15,7 @@ concurrency:
 jobs:
   qualify:
     name: Qualify durable cache refresh admission
-    if: github.head_ref == 'agent/dl-strategy-018-durable-cache-refresh-admission'
+    if: github.head_ref == 'agent/dl-strategy-018-durable-cache-refresh-admission-v2'
     runs-on: macos-15
     timeout-minutes: 60
 
@@ -46,8 +46,10 @@ jobs:
         run: |
           set -euo pipefail
           python3 tools/agent/dl-strategy-018-prepare.py
+          python3 tools/agent/dl-strategy-018-test-reconcile.py
           rm tools/agent/dl-strategy-018.patch
           rm tools/agent/dl-strategy-018-prepare.py
+          rm tools/agent/dl-strategy-018-test-reconcile.py
 
           # Candidate artifacts must contain the permanent validation workflows,
           # never the branch-only qualification controls.
