@@ -1,28 +1,30 @@
-name: One-time inline refresh ABI export
+name: One-time inline refresh ABI commit
 
 on:
-  pull_request:
+  push:
     branches:
-      - main
+      - agent/dl-strategy-016-inline-cache-refresh-runtime
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
-  group: inline-refresh-abi-export-${{ github.ref }}
+  group: inline-refresh-abi-commit-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  export:
-    name: Generate inline refresh ABI artifact
+  commit-abi:
+    name: Generate and commit authoritative inline refresh ABI
+    if: github.actor != 'github-actions[bot]'
     runs-on: macos-15
     timeout-minutes: 20
 
     steps:
-      - name: Checkout pull request head
+      - name: Checkout branch head
         uses: actions/checkout@v6
         with:
-          persist-credentials: false
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -46,12 +48,31 @@ jobs:
           --stacktrace
           --console=plain
 
-      - name: Upload generated ABI files
-        uses: actions/upload-artifact@v7
-        with:
-          name: inline-refresh-runtime-abi-${{ github.run_id }}
-          path: |
-            dataloom-runtime/api/dataloom-runtime.api
+      - name: Verify only runtime ABI baselines changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          changed="$(git status --porcelain --untracked-files=all | awk '{print $2}')"
+          if [[ -z "$changed" ]]; then
+            echo "Expected runtime ABI baselines to change, but the working tree is clean."
+            exit 1
+          fi
+          unexpected="$(printf '%s\n' "$changed" | grep -vE '^dataloom-runtime/api/dataloom-runtime(\.klib)?\.api$' || true)"
+          if [[ -n "$unexpected" ]]; then
+            echo "Unexpected files changed during ABI generation:"
+            printf '%s\n' "$unexpected"
+            exit 1
+          fi
+
+      - name: Commit authoritative ABI baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            dataloom-runtime/api/dataloom-runtime.api \
             dataloom-runtime/api/dataloom-runtime.klib.api
-          if-no-files-found: error
-          retention-days: 1
+          git commit -m "DL-039B: update inline refresh runtime ABI evidence"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
