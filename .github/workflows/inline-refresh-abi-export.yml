@@ -1,0 +1,57 @@
+name: One-time inline refresh ABI export
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: inline-refresh-abi-export-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  export:
+    name: Generate inline refresh ABI artifact
+    runs-on: macos-15
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout pull request head
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Generate authoritative runtime ABI
+        run: >-
+          ./gradlew
+          :dataloom-runtime:updateKotlinAbi
+          --configuration-cache
+          --stacktrace
+          --console=plain
+
+      - name: Upload generated ABI files
+        uses: actions/upload-artifact@v7
+        with:
+          name: inline-refresh-runtime-abi-${{ github.run_id }}
+          path: |
+            dataloom-runtime/api/dataloom-runtime.api
+            dataloom-runtime/api/dataloom-runtime.klib.api
+          if-no-files-found: error
+          retention-days: 1
