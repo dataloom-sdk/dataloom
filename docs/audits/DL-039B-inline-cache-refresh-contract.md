@@ -17,33 +17,38 @@ without changing the already frozen cache-only result variants.
 
 | Outcome | Meaning |
 |---|---|
-| `Completed` | The canonical provider-backed refresh reached `Succeeded` or `Skipped(NO_CHANGES)` after one completed remote-pull marker. |
-| `PartiallySucceeded` | Remote work committed and canonical unresolved errors remain visible together with the completed-pull marker. |
-| `Failed` | Local cache use remains valid, but the inline refresh failed; transport-attempt, bounded completed-pull, canonical output, and typed remote-outcome evidence remain visible. |
-| `Cancelled` | The canonical pipeline returned explicit cancellation while preserving whether transport was attempted and whether a pull completed before cancellation. |
+| `Completed` | The canonical provider-backed refresh reached `Succeeded` or `Skipped(NO_CHANGES)` after one or more successful remote pulls. |
+| `PartiallySucceeded` | Remote work committed and canonical unresolved errors remain visible together with every completed-pull marker. |
+| `Failed` | Local cache use remains valid, but the inline refresh failed; transport-attempt, completed-pull, canonical output, and typed remote-outcome evidence remain visible. |
+| `Cancelled` | The canonical pipeline returned explicit cancellation while preserving whether transport was attempted and how many pulls completed before cancellation. |
 
 Every result exposes a stable `StrategyCacheInlineRefreshDisposition`:
 `COMPLETED`, `PARTIALLY_SUCCEEDED`, `FAILED`, or `CANCELLED`.
 
 ## Canonical evidence invariants
 
+- Every canonical synchronization result must have direction `PULL`; PUSH and
+  BIDIRECTIONAL results are rejected by this PULL-only contract.
 - `completedAt` is derived from the canonical synchronization output. Callers
   cannot supply a second contradictory terminal time.
 - `Failed.error` is derived from the canonical failed output. Callers cannot
   pair one error with a different pipeline failure.
 - `Completed` accepts only `Succeeded` and `Skipped(NO_CHANGES)`. Constraint,
   policy, and duplicate-request skips cannot be mislabeled as refresh success.
-- `Completed` and `PartiallySucceeded` require exactly one `PULL_REMOTE` marker;
-  a foreground refresh cannot report completion without a completed pull.
-- Failed and cancelled outcomes may carry no completed operation or exactly one
-  `PULL_REMOTE` marker.
-- Duplicate pull markers, push markers, persistence markers, and every other
-  operation are rejected. The public evidence is therefore bounded to at most
-  one operation identity rather than growing with batch count.
+- `Completed` and `PartiallySucceeded` require one or more `PULL_REMOTE`
+  markers; a foreground refresh cannot report completion without a completed
+  pull.
+- Failed and cancelled outcomes may carry zero or more completed
+  `PULL_REMOTE` markers. Empty evidence is valid when the first pull fails or
+  cancellation happens before a pull completes.
+- Repeated `PULL_REMOTE` markers represent successful paged pulls. They are
+  bounded by the canonical inbound pipeline's configured maximum batches per
+  execution. Push markers, persistence markers, and every other operation are
+  rejected.
 - `PartiallySucceeded` requires canonical partial output so unresolved errors
   cannot be mislabeled as full completion.
 - A typed remote outcome requires `transportAttempted=true`.
-- A completed-pull marker requires `transportAttempted=true`.
+- Any completed-pull marker requires `transportAttempted=true`.
 - Completed-operation inputs are defensively copied for every outcome that can
   carry partial-effect evidence.
 - `Cancelled` requires canonical cancelled output and preserves whether
@@ -81,24 +86,26 @@ Kotlin collections.
 Focused common tests cover:
 
 - completed canonical succeeded and no-change output;
-- completed remote-pull evidence and defensive copying;
+- single- and multi-batch completed remote-pull evidence plus defensive copying;
 - rejection of completion without a completed pull;
-- rejection of duplicate pull and non-pull operation evidence;
+- rejection of non-pull operation evidence;
+- rejection of PUSH/BIDIRECTIONAL canonical results;
 - rejection of policy-skip, partial, failed, and cancelled output from
   `Completed`;
 - completion time derived from canonical output;
-- explicit canonical partial output, completed-pull evidence, defensive copy,
-  and bounded partial diagnostics;
+- explicit canonical partial output, multi-batch completed-pull evidence,
+  defensive copy, and bounded partial diagnostics;
 - failure error derived from canonical output;
+- first-pull and after-progress failure evidence;
 - remote-outcome and completed-pull consistency;
-- cancellation transport/effect evidence and consistency;
+- cancellation before and after completed pulls;
 - bounded diagnostics that exclude error messages; and
 - canonical cancellation enforcement.
 
 The external-consumer fixture compiles all public outcome branches and fields.
-JVM and Kotlin/Native ABI baselines must be generated and reviewed on macOS,
-then the temporary generation workflow must be removed before the permanent
-shared, Android, and Apple matrix runs.
+Authoritative JVM and Kotlin/Native ABI baselines are committed. The temporary
+write-enabled generation workflow was removed before the final permanent shared,
+Android, and Apple validation matrix.
 
 ## Remaining integration
 
