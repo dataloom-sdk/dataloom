@@ -132,13 +132,13 @@ class StrategyQueueInlineRefreshSafetyTest {
 
     private companion object {
         val request = SynchronizationRequest(
-            WorkflowId("inline-refresh-queue-workflow"),
-            SynchronizationSessionId("inline-refresh-queue-session"),
-            SynchronizationDirection.PULL,
-            SynchronizationMode.DELTA,
-            ExecutionContext(
-                ExecutionId("inline-refresh-queue-execution"),
-                CorrelationId("inline-refresh-queue-correlation"),
+            workflowId = WorkflowId("inline-refresh-queue-workflow"),
+            sessionId = SynchronizationSessionId("inline-refresh-queue-session"),
+            direction = SynchronizationDirection.PULL,
+            mode = SynchronizationMode.DELTA,
+            context = ExecutionContext(
+                executionId = ExecutionId("inline-refresh-queue-execution"),
+                correlationId = CorrelationId("inline-refresh-queue-correlation"),
             ),
         )
     }
