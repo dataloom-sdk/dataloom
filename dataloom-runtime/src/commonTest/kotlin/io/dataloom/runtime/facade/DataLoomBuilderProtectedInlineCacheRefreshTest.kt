@@ -250,13 +250,13 @@ class DataLoomBuilderProtectedInlineCacheRefreshTest {
     private companion object {
         fun request() = StrategySynchronizationRequest(
             request = SynchronizationRequest(
-                WorkflowId("protected-inline-workflow"),
-                SynchronizationSessionId("protected-inline-session"),
-                SynchronizationDirection.PULL,
-                SynchronizationMode.DELTA,
-                ExecutionContext(
-                    ExecutionId("protected-inline-execution"),
-                    CorrelationId("protected-inline-correlation"),
+                workflowId = WorkflowId("protected-inline-workflow"),
+                sessionId = SynchronizationSessionId("protected-inline-session"),
+                direction = SynchronizationDirection.PULL,
+                mode = SynchronizationMode.DELTA,
+                context = ExecutionContext(
+                    executionId = ExecutionId("protected-inline-execution"),
+                    correlationId = CorrelationId("protected-inline-correlation"),
                 ),
             ),
             decisionId = StrategyDecisionId("protected-inline-decision"),
