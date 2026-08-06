@@ -27,6 +27,9 @@ import io.dataloom.api.queue.QueueDeferralRequest
 import io.dataloom.api.queue.QueueEntry
 import io.dataloom.api.queue.QueueEntryState
 import io.dataloom.api.queue.QueueEnqueueRequest
+import io.dataloom.api.queue.QueueIdempotentAdmissionProvider
+import io.dataloom.api.queue.QueueIdempotentAdmissionResult
+import io.dataloom.api.queue.hasSameQueueAdmissionIdentityAs
 import io.dataloom.api.queue.QueueFailureDisposition
 import io.dataloom.api.queue.QueueFailureRequest
 import io.dataloom.api.queue.QueueLease
@@ -49,7 +52,7 @@ import io.dataloom.testing.provider.TestProviderLifecycleController
 public class InMemoryQueueProvider(
     override val descriptor: ProviderDescriptor = defaultDescriptor(),
     private val lifecycleController: TestProviderLifecycleController = TestProviderLifecycleController(),
-) : QueueProvider {
+) : QueueIdempotentAdmissionProvider {
     private val entries: LinkedHashMap<QueueEntryId, QueueEntry> = LinkedHashMap()
     private val recordedEnqueueRequests: MutableList<QueueEnqueueRequest> = mutableListOf()
     private val recordedAcquireRequests: MutableList<QueueAcquireRequest> = mutableListOf()
@@ -103,6 +106,31 @@ public class InMemoryQueueProvider(
     override suspend fun health(): ProviderOperationResult<ProviderHealth> = lifecycleController.health()
 
     override suspend fun close(): ProviderOperationResult<Unit> = lifecycleController.close()
+
+    override suspend fun admit(
+        request: QueueEnqueueRequest,
+    ): ProviderOperationResult<QueueIdempotentAdmissionResult> {
+        val candidate = request.entry.copy(lastError = null)
+        val current = entries[candidate.id]
+        if (current != null) {
+            val result = if (current.hasSameQueueAdmissionIdentityAs(candidate)) {
+                QueueIdempotentAdmissionResult.AlreadyAccepted(
+                    queueEntryId = current.id,
+                    currentState = current.state,
+                )
+            } else {
+                QueueIdempotentAdmissionResult.IdentityConflict(
+                    queueEntryId = current.id,
+                    currentState = current.state,
+                )
+            }
+            return ProviderOperationResult.Success(result)
+        }
+        entries[candidate.id] = candidate
+        return ProviderOperationResult.Success(
+            QueueIdempotentAdmissionResult.Accepted(candidate.id),
+        )
+    }
 
     override suspend fun enqueue(
         request: QueueEnqueueRequest,

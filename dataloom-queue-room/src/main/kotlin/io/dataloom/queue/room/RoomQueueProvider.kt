@@ -20,6 +20,8 @@ import io.dataloom.api.queue.QueueCompletionRequest
 import io.dataloom.api.queue.QueueDeferralRequest
 import io.dataloom.api.queue.QueueEnqueueRequest
 import io.dataloom.api.queue.QueueFailureDisposition
+import io.dataloom.api.queue.QueueIdempotentAdmissionProvider
+import io.dataloom.api.queue.QueueIdempotentAdmissionResult
 import io.dataloom.api.queue.QueueFailureRequest
 import io.dataloom.api.queue.QueueLease
 import io.dataloom.api.queue.QueueRescheduleRequest
@@ -77,7 +79,7 @@ import kotlinx.coroutines.withContext
  */
 public class RoomQueueProvider(
     private val database: DataLoomRoomDatabase,
-) : QueueProvider {
+) : QueueIdempotentAdmissionProvider {
     private val dao: QueueEntryDao by lazy { database.queueEntryDao() }
 
     override val descriptor: ProviderDescriptor = ProviderDescriptor(
@@ -96,6 +98,14 @@ public class RoomQueueProvider(
 
     override suspend fun close(): ProviderOperationResult<Unit> =
         ProviderOperationResult.Success(Unit)
+
+    /** Atomically creates or reconciles one stable durable identity. */
+    override suspend fun admit(
+        request: QueueEnqueueRequest,
+    ): ProviderOperationResult<QueueIdempotentAdmissionResult> =
+        executeDatabaseOperation {
+            ProviderOperationResult.Success(dao.admitEntry(request.entry))
+        }
 
     /** Persists one new queue entry. */
     override suspend fun enqueue(

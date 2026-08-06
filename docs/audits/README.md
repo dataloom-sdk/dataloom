@@ -12,7 +12,8 @@ behavior.
 
 | Audit | Scope | How to use it |
 |---|---|---|
-| [DL-039B inline cache refresh runtime](./DL-039B-inline-cache-refresh-runtime.md) | Exact non-durable cache-first PULL local-serving plus canonical inline refresh composition | Candidate runtime checkpoint; ABI and permanent shared/Android/Apple qualification remain required before acceptance on `main` |
+| [DL-039B idempotent queue admission](./DL-039B-idempotent-queue-admission.md) | Atomic first/already/conflict durable identity across in-memory, Room, and Apple queue providers | Current prerequisite for durable refresh admission; runtime scheduling and recovery remain under #102/#101 |
+| [DL-039B inline cache refresh runtime](./DL-039B-inline-cache-refresh-runtime.md) | Exact non-durable cache-first PULL local-serving plus canonical inline refresh composition | Accepted foreground runtime checkpoint; durable admission/recovery and complete platform matrices remain under #102/#101 |
 | [DL-AUDIT-006](./DL-AUDIT-006-current-implementation-reconciliation.md) | Current gate, strategy, durable-plan, platform, documentation, and dependency reconciliation at `main` commit `94e921f` | Primary current implementation/readiness decision record; use scoped later checkpoints for work merged after this baseline |
 | [DL-039B inline cache refresh result contract](./DL-039B-inline-cache-refresh-contract.md) | Payload-free completed/partial/failed/cancelled foreground refresh outcomes with partial-effect evidence | Accepted public contract checkpoint; use with the runtime candidate and #102/#101 |
 | [DL-039B cache-first remote direction matrix](./DL-039B-cache-remote-direction-matrix.md) | Canonical direct PUSH, cache-miss PULL, and cache-miss BIDIRECTIONAL execution with truthful partial-effect evidence | Current bounded storage/transport direction checkpoint; refresh, durable recovery, coherence, events, and complete platform matrices remain under #102/#101 |

@@ -1302,6 +1302,57 @@ public final class io/dataloom/api/queue/QueueFailureRequest {
 	public fun toString ()Ljava/lang/String;
 }
 
+public abstract interface class io/dataloom/api/queue/QueueIdempotentAdmissionProvider : io/dataloom/api/queue/QueueProvider {
+	public abstract fun admit (Lio/dataloom/api/queue/QueueEnqueueRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/api/queue/QueueIdempotentAdmissionProviderKt {
+	public static final fun hasSameQueueAdmissionIdentityAs (Lio/dataloom/api/queue/QueueEntry;Lio/dataloom/api/queue/QueueEntry;)Z
+}
+
+public abstract interface class io/dataloom/api/queue/QueueIdempotentAdmissionResult {
+	public abstract fun getCurrentState ()Lio/dataloom/api/queue/QueueEntryState;
+	public abstract fun getQueueEntryId-ARA1dI0 ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/queue/QueueIdempotentAdmissionResult$Accepted : io/dataloom/api/queue/QueueIdempotentAdmissionResult {
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-ARA1dI0 ()Ljava/lang/String;
+	public final fun copy-qzbRinM (Ljava/lang/String;)Lio/dataloom/api/queue/QueueIdempotentAdmissionResult$Accepted;
+	public static synthetic fun copy-qzbRinM$default (Lio/dataloom/api/queue/QueueIdempotentAdmissionResult$Accepted;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/queue/QueueIdempotentAdmissionResult$Accepted;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCurrentState ()Lio/dataloom/api/queue/QueueEntryState;
+	public fun getQueueEntryId-ARA1dI0 ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/queue/QueueIdempotentAdmissionResult$AlreadyAccepted : io/dataloom/api/queue/QueueIdempotentAdmissionResult {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/queue/QueueEntryState;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-ARA1dI0 ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/queue/QueueEntryState;
+	public final fun copy-y925jYc (Ljava/lang/String;Lio/dataloom/api/queue/QueueEntryState;)Lio/dataloom/api/queue/QueueIdempotentAdmissionResult$AlreadyAccepted;
+	public static synthetic fun copy-y925jYc$default (Lio/dataloom/api/queue/QueueIdempotentAdmissionResult$AlreadyAccepted;Ljava/lang/String;Lio/dataloom/api/queue/QueueEntryState;ILjava/lang/Object;)Lio/dataloom/api/queue/QueueIdempotentAdmissionResult$AlreadyAccepted;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCurrentState ()Lio/dataloom/api/queue/QueueEntryState;
+	public fun getQueueEntryId-ARA1dI0 ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/queue/QueueIdempotentAdmissionResult$IdentityConflict : io/dataloom/api/queue/QueueIdempotentAdmissionResult {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/queue/QueueEntryState;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-ARA1dI0 ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/queue/QueueEntryState;
+	public final fun copy-y925jYc (Ljava/lang/String;Lio/dataloom/api/queue/QueueEntryState;)Lio/dataloom/api/queue/QueueIdempotentAdmissionResult$IdentityConflict;
+	public static synthetic fun copy-y925jYc$default (Lio/dataloom/api/queue/QueueIdempotentAdmissionResult$IdentityConflict;Ljava/lang/String;Lio/dataloom/api/queue/QueueEntryState;ILjava/lang/Object;)Lio/dataloom/api/queue/QueueIdempotentAdmissionResult$IdentityConflict;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCurrentState ()Lio/dataloom/api/queue/QueueEntryState;
+	public fun getQueueEntryId-ARA1dI0 ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/api/queue/QueueLease {
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-__BVD4c ()Ljava/lang/String;

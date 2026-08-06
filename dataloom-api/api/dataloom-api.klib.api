@@ -683,6 +683,10 @@ abstract interface io.dataloom.api.observation/SynchronizationObserver { // io.d
     abstract fun onEvent(io.dataloom.api.synchronization/SynchronizationEvent) // io.dataloom.api.observation/SynchronizationObserver.onEvent|onEvent(io.dataloom.api.synchronization.SynchronizationEvent){}[0]
 }
 
+abstract interface io.dataloom.api.queue/QueueIdempotentAdmissionProvider : io.dataloom.api.queue/QueueProvider { // io.dataloom.api.queue/QueueIdempotentAdmissionProvider|null[0]
+    abstract suspend fun admit(io.dataloom.api.queue/QueueEnqueueRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.queue/QueueIdempotentAdmissionResult> // io.dataloom.api.queue/QueueIdempotentAdmissionProvider.admit|admit(io.dataloom.api.queue.QueueEnqueueRequest){}[0]
+}
+
 abstract interface io.dataloom.api.queue/QueueProvider : io.dataloom.api.provider/DataLoomProvider { // io.dataloom.api.queue/QueueProvider|null[0]
     abstract val descriptor // io.dataloom.api.queue/QueueProvider.descriptor|{}descriptor[0]
         abstract fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.api.queue/QueueProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
@@ -1075,6 +1079,60 @@ sealed interface io.dataloom.api.queue/QueueAcquireResult { // io.dataloom.api.q
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.queue/QueueAcquireResult.NoEntries.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.api.queue/QueueAcquireResult.NoEntries.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.api.queue/QueueAcquireResult.NoEntries.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.queue/QueueIdempotentAdmissionResult { // io.dataloom.api.queue/QueueIdempotentAdmissionResult|null[0]
+    abstract val currentState // io.dataloom.api.queue/QueueIdempotentAdmissionResult.currentState|{}currentState[0]
+        abstract fun <get-currentState>(): io.dataloom.api.queue/QueueEntryState // io.dataloom.api.queue/QueueIdempotentAdmissionResult.currentState.<get-currentState>|<get-currentState>(){}[0]
+    abstract val queueEntryId // io.dataloom.api.queue/QueueIdempotentAdmissionResult.queueEntryId|{}queueEntryId[0]
+        abstract fun <get-queueEntryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.api.queue/QueueIdempotentAdmissionResult.queueEntryId.<get-queueEntryId>|<get-queueEntryId>(){}[0]
+
+    final class Accepted : io.dataloom.api.queue/QueueIdempotentAdmissionResult { // io.dataloom.api.queue/QueueIdempotentAdmissionResult.Accepted|null[0]
+        constructor <init>(io.dataloom.api.identifier/QueueEntryId) // io.dataloom.api.queue/QueueIdempotentAdmissionResult.Accepted.<init>|<init>(io.dataloom.api.identifier.QueueEntryId){}[0]
+
+        final val currentState // io.dataloom.api.queue/QueueIdempotentAdmissionResult.Accepted.currentState|{}currentState[0]
+            final fun <get-currentState>(): io.dataloom.api.queue/QueueEntryState // io.dataloom.api.queue/QueueIdempotentAdmissionResult.Accepted.currentState.<get-currentState>|<get-currentState>(){}[0]
+        final val queueEntryId // io.dataloom.api.queue/QueueIdempotentAdmissionResult.Accepted.queueEntryId|{}queueEntryId[0]
+            final fun <get-queueEntryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.api.queue/QueueIdempotentAdmissionResult.Accepted.queueEntryId.<get-queueEntryId>|<get-queueEntryId>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.api.queue/QueueIdempotentAdmissionResult.Accepted.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.identifier/QueueEntryId = ...): io.dataloom.api.queue/QueueIdempotentAdmissionResult.Accepted // io.dataloom.api.queue/QueueIdempotentAdmissionResult.Accepted.copy|copy(io.dataloom.api.identifier.QueueEntryId){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.queue/QueueIdempotentAdmissionResult.Accepted.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.queue/QueueIdempotentAdmissionResult.Accepted.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.queue/QueueIdempotentAdmissionResult.Accepted.toString|toString(){}[0]
+    }
+
+    final class AlreadyAccepted : io.dataloom.api.queue/QueueIdempotentAdmissionResult { // io.dataloom.api.queue/QueueIdempotentAdmissionResult.AlreadyAccepted|null[0]
+        constructor <init>(io.dataloom.api.identifier/QueueEntryId, io.dataloom.api.queue/QueueEntryState) // io.dataloom.api.queue/QueueIdempotentAdmissionResult.AlreadyAccepted.<init>|<init>(io.dataloom.api.identifier.QueueEntryId;io.dataloom.api.queue.QueueEntryState){}[0]
+
+        final val currentState // io.dataloom.api.queue/QueueIdempotentAdmissionResult.AlreadyAccepted.currentState|{}currentState[0]
+            final fun <get-currentState>(): io.dataloom.api.queue/QueueEntryState // io.dataloom.api.queue/QueueIdempotentAdmissionResult.AlreadyAccepted.currentState.<get-currentState>|<get-currentState>(){}[0]
+        final val queueEntryId // io.dataloom.api.queue/QueueIdempotentAdmissionResult.AlreadyAccepted.queueEntryId|{}queueEntryId[0]
+            final fun <get-queueEntryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.api.queue/QueueIdempotentAdmissionResult.AlreadyAccepted.queueEntryId.<get-queueEntryId>|<get-queueEntryId>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.api.queue/QueueIdempotentAdmissionResult.AlreadyAccepted.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.queue/QueueEntryState // io.dataloom.api.queue/QueueIdempotentAdmissionResult.AlreadyAccepted.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.identifier/QueueEntryId = ..., io.dataloom.api.queue/QueueEntryState = ...): io.dataloom.api.queue/QueueIdempotentAdmissionResult.AlreadyAccepted // io.dataloom.api.queue/QueueIdempotentAdmissionResult.AlreadyAccepted.copy|copy(io.dataloom.api.identifier.QueueEntryId;io.dataloom.api.queue.QueueEntryState){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.queue/QueueIdempotentAdmissionResult.AlreadyAccepted.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.queue/QueueIdempotentAdmissionResult.AlreadyAccepted.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.queue/QueueIdempotentAdmissionResult.AlreadyAccepted.toString|toString(){}[0]
+    }
+
+    final class IdentityConflict : io.dataloom.api.queue/QueueIdempotentAdmissionResult { // io.dataloom.api.queue/QueueIdempotentAdmissionResult.IdentityConflict|null[0]
+        constructor <init>(io.dataloom.api.identifier/QueueEntryId, io.dataloom.api.queue/QueueEntryState) // io.dataloom.api.queue/QueueIdempotentAdmissionResult.IdentityConflict.<init>|<init>(io.dataloom.api.identifier.QueueEntryId;io.dataloom.api.queue.QueueEntryState){}[0]
+
+        final val currentState // io.dataloom.api.queue/QueueIdempotentAdmissionResult.IdentityConflict.currentState|{}currentState[0]
+            final fun <get-currentState>(): io.dataloom.api.queue/QueueEntryState // io.dataloom.api.queue/QueueIdempotentAdmissionResult.IdentityConflict.currentState.<get-currentState>|<get-currentState>(){}[0]
+        final val queueEntryId // io.dataloom.api.queue/QueueIdempotentAdmissionResult.IdentityConflict.queueEntryId|{}queueEntryId[0]
+            final fun <get-queueEntryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.api.queue/QueueIdempotentAdmissionResult.IdentityConflict.queueEntryId.<get-queueEntryId>|<get-queueEntryId>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.api.queue/QueueIdempotentAdmissionResult.IdentityConflict.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.queue/QueueEntryState // io.dataloom.api.queue/QueueIdempotentAdmissionResult.IdentityConflict.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.identifier/QueueEntryId = ..., io.dataloom.api.queue/QueueEntryState = ...): io.dataloom.api.queue/QueueIdempotentAdmissionResult.IdentityConflict // io.dataloom.api.queue/QueueIdempotentAdmissionResult.IdentityConflict.copy|copy(io.dataloom.api.identifier.QueueEntryId;io.dataloom.api.queue.QueueEntryState){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.queue/QueueIdempotentAdmissionResult.IdentityConflict.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.queue/QueueIdempotentAdmissionResult.IdentityConflict.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.queue/QueueIdempotentAdmissionResult.IdentityConflict.toString|toString(){}[0]
     }
 }
 
@@ -4039,4 +4097,5 @@ final object io.dataloom.api.strategy/StrategyExecutionPlanCodec { // io.dataloo
     final fun encode(io.dataloom.api.strategy/StrategyExecutionPlan): kotlin/String // io.dataloom.api.strategy/StrategyExecutionPlanCodec.encode|encode(io.dataloom.api.strategy.StrategyExecutionPlan){}[0]
 }
 
+final fun (io.dataloom.api.queue/QueueEntry).io.dataloom.api.queue/hasSameQueueAdmissionIdentityAs(io.dataloom.api.queue/QueueEntry): kotlin/Boolean // io.dataloom.api.queue/hasSameQueueAdmissionIdentityAs|hasSameQueueAdmissionIdentityAs@io.dataloom.api.queue.QueueEntry(io.dataloom.api.queue.QueueEntry){}[0]
 final fun (io.dataloom.api.strategy/PersistedStrategyDecision).io.dataloom.api.strategy/correspondsTo(io.dataloom.api.strategy/StrategyExecutionPlan): kotlin/Boolean // io.dataloom.api.strategy/correspondsTo|correspondsTo@io.dataloom.api.strategy.PersistedStrategyDecision(io.dataloom.api.strategy.StrategyExecutionPlan){}[0]

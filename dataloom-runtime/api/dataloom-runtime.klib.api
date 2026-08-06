@@ -3483,13 +3483,14 @@ final class io.dataloom.runtime.operational/OperationalEnvelopeUpcasterRegistry 
     final fun upcast(io.dataloom.api.operational/OperationalEventEnvelope, io.dataloom.api.operational/OperationalSchemaVersion): io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult // io.dataloom.runtime.operational/OperationalEnvelopeUpcasterRegistry.upcast|upcast(io.dataloom.api.operational.OperationalEventEnvelope;io.dataloom.api.operational.OperationalSchemaVersion){}[0]
 }
 
-final class io.dataloom.runtime.queue/AppleFileQueueProvider : io.dataloom.api.queue/QueueProvider { // io.dataloom.runtime.queue/AppleFileQueueProvider|null[0]
+final class io.dataloom.runtime.queue/AppleFileQueueProvider : io.dataloom.api.queue/QueueIdempotentAdmissionProvider { // io.dataloom.runtime.queue/AppleFileQueueProvider|null[0]
     constructor <init>(kotlin/String, kotlin/String = ...) // io.dataloom.runtime.queue/AppleFileQueueProvider.<init>|<init>(kotlin.String;kotlin.String){}[0]
 
     final val descriptor // io.dataloom.runtime.queue/AppleFileQueueProvider.descriptor|{}descriptor[0]
         final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.runtime.queue/AppleFileQueueProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
 
     final suspend fun acquire(io.dataloom.api.queue/QueueAcquireRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.queue/QueueAcquireResult> // io.dataloom.runtime.queue/AppleFileQueueProvider.acquire|acquire(io.dataloom.api.queue.QueueAcquireRequest){}[0]
+    final suspend fun admit(io.dataloom.api.queue/QueueEnqueueRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.queue/QueueIdempotentAdmissionResult> // io.dataloom.runtime.queue/AppleFileQueueProvider.admit|admit(io.dataloom.api.queue.QueueEnqueueRequest){}[0]
     final suspend fun cancel(io.dataloom.api.queue/QueueCancellationRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.queue/AppleFileQueueProvider.cancel|cancel(io.dataloom.api.queue.QueueCancellationRequest){}[0]
     final suspend fun close(): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.queue/AppleFileQueueProvider.close|close(){}[0]
     final suspend fun complete(io.dataloom.api.queue/QueueCompletionRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.queue/AppleFileQueueProvider.complete|complete(io.dataloom.api.queue.QueueCompletionRequest){}[0]

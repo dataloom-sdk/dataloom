@@ -2,10 +2,10 @@
 
 [API reference index](./README.md)
 
-> **Status:** Available SPI with a Room implementation and in-memory test
-> provider. Constraint deferral and expired-lease recovery preserve retry
-> attempt history; complete retry/circuit state and V1 persistence
-> qualification remain open.
+> **Status:** Available SPI with in-memory, Android Room, and Apple file-backed
+> implementations. An additive idempotent admission capability provides typed
+> first/already/conflict reconciliation without changing ordinary enqueue.
+> Complete strategy recovery and platform qualification remain open.
 
 This document describes the `QueueProvider` interface introduced in DL-015.
 
@@ -74,7 +74,17 @@ public interface QueueProvider : DataLoomProvider {
     suspend fun cancel(request: QueueCancellationRequest): ProviderOperationResult<Unit>
     suspend fun recoverExpiredLeases(request: ExpiredLeaseRecoveryRequest): ProviderOperationResult<ExpiredLeaseRecoveryResult>
 }
+
+public interface QueueIdempotentAdmissionProvider : QueueProvider {
+    suspend fun admit(
+        request: QueueEnqueueRequest,
+    ): ProviderOperationResult<QueueIdempotentAdmissionResult>
+}
 ```
+
+`QueueIdempotentAdmissionProvider` is additive. Existing providers and
+callers retain create-only `enqueue` behavior unless they explicitly select
+the idempotent admission SPI.
 
 ---
 
@@ -126,6 +136,31 @@ Persists a new queue entry in durable storage.
 - `ProviderOperationResult.Failure` carries a canonical `DataLoomError`.
 
 ---
+
+### `admit` — additive idempotent capability
+
+```kotlin
+suspend fun admit(
+    request: QueueEnqueueRequest,
+): ProviderOperationResult<QueueIdempotentAdmissionResult>
+```
+
+`admit` is available only through `QueueIdempotentAdmissionProvider`.
+Under one provider-owned atomic boundary it returns:
+
+- `Accepted` when the stable ID was absent and the entry was persisted;
+- `AlreadyAccepted` with the current durable state when the same immutable
+  admission identity already exists; or
+- `IdentityConflict` when the same ID belongs to different immutable work.
+
+Immutable identity includes the synchronization request, entry metadata,
+workflow timeout, strategy decision, and accepted plan. Lifecycle state,
+timestamps, retry state, lease, and last error are excluded because they
+legitimately change after admission.
+
+Providers do not parse duplicate errors, replace existing work, call a
+scheduler, or expose the existing entry. Ordinary I/O, corruption, capacity,
+and indeterminate outcomes remain canonical provider failures.
 
 ### `acquire`
 

@@ -107,7 +107,7 @@ final class io.dataloom.testing.provider/TestProviderLifecycleController { // io
     final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.provider/TestProviderLifecycleController.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
 }
 
-final class io.dataloom.testing.queue/InMemoryQueueProvider : io.dataloom.api.queue/QueueProvider { // io.dataloom.testing.queue/InMemoryQueueProvider|null[0]
+final class io.dataloom.testing.queue/InMemoryQueueProvider : io.dataloom.api.queue/QueueIdempotentAdmissionProvider { // io.dataloom.testing.queue/InMemoryQueueProvider|null[0]
     constructor <init>(io.dataloom.api.provider/ProviderDescriptor = ..., io.dataloom.testing.provider/TestProviderLifecycleController = ...) // io.dataloom.testing.queue/InMemoryQueueProvider.<init>|<init>(io.dataloom.api.provider.ProviderDescriptor;io.dataloom.testing.provider.TestProviderLifecycleController){}[0]
 
     final val acquireRequests // io.dataloom.testing.queue/InMemoryQueueProvider.acquireRequests|{}acquireRequests[0]
@@ -136,6 +136,7 @@ final class io.dataloom.testing.queue/InMemoryQueueProvider : io.dataloom.api.qu
     final fun snapshotEntryIds(): kotlin.collections/List<io.dataloom.api.identifier/QueueEntryId> // io.dataloom.testing.queue/InMemoryQueueProvider.snapshotEntryIds|snapshotEntryIds(){}[0]
     final fun snapshotStates(): kotlin.collections/Map<io.dataloom.api.identifier/QueueEntryId, io.dataloom.api.queue/QueueEntryState> // io.dataloom.testing.queue/InMemoryQueueProvider.snapshotStates|snapshotStates(){}[0]
     final suspend fun acquire(io.dataloom.api.queue/QueueAcquireRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.queue/QueueAcquireResult> // io.dataloom.testing.queue/InMemoryQueueProvider.acquire|acquire(io.dataloom.api.queue.QueueAcquireRequest){}[0]
+    final suspend fun admit(io.dataloom.api.queue/QueueEnqueueRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.queue/QueueIdempotentAdmissionResult> // io.dataloom.testing.queue/InMemoryQueueProvider.admit|admit(io.dataloom.api.queue.QueueEnqueueRequest){}[0]
     final suspend fun cancel(io.dataloom.api.queue/QueueCancellationRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.queue/InMemoryQueueProvider.cancel|cancel(io.dataloom.api.queue.QueueCancellationRequest){}[0]
     final suspend fun close(): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.queue/InMemoryQueueProvider.close|close(){}[0]
     final suspend fun complete(io.dataloom.api.queue/QueueCompletionRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.queue/InMemoryQueueProvider.complete|complete(io.dataloom.api.queue.QueueCompletionRequest){}[0]
