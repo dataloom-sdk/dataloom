@@ -208,6 +208,7 @@ internal class StrategySynchronizationExecutionCoordinator(
         evaluation: StrategyEvaluationResult,
     ): Boolean =
         isDirectCacheServingPlan(evaluation) ||
+            isDirectInlineCacheRefreshPlan(request, evaluation) ||
             isDirectCacheRemotePlan(request, evaluation)
 
     private fun isDirectCacheServingPlan(
@@ -221,6 +222,32 @@ internal class StrategySynchronizationExecutionCoordinator(
                 StrategyProviderCapability.CACHE_ACCESS,
             ) &&
             plan.dataOrigin == StrategyDataOrigin.LOCAL
+    }
+
+    private fun isDirectInlineCacheRefreshPlan(
+        request: StrategySynchronizationRequest,
+        evaluation: StrategyEvaluationResult,
+    ): Boolean {
+        val plan = evaluation.plan
+        return request.request.direction == SynchronizationDirection.PULL &&
+            (
+                request.evidence.cacheState == StrategyCacheState.FRESH ||
+                    request.evidence.cacheState == StrategyCacheState.STALE
+                ) &&
+            plan.disposition == StrategyDisposition.SERVE_AND_REFRESH &&
+            plan.operations == listOf(
+                StrategyOperation.SERVE_LOCAL,
+                StrategyOperation.PULL_REMOTE,
+                StrategyOperation.PERSIST_REMOTE,
+            ) &&
+            plan.requiredCapabilities == setOf(
+                StrategyProviderCapability.STORAGE,
+                StrategyProviderCapability.CACHE_ACCESS,
+                StrategyProviderCapability.TRANSPORT,
+            ) &&
+            plan.dataOrigin == StrategyDataOrigin.LOCAL &&
+            plan.durableContinuation == null &&
+            plan.fallbackPlan == null
     }
 
     private fun isDirectCacheRemotePlan(
