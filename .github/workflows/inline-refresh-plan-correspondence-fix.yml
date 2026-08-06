@@ -1,0 +1,175 @@
+name: One-time inline-refresh plan correspondence fix
+
+on:
+  push:
+    branches:
+      - agent/dl-strategy-016-inline-cache-refresh-runtime
+
+permissions:
+  contents: write
+
+concurrency:
+  group: inline-refresh-plan-correspondence-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fix:
+    name: Declare checkpoint read in inline refresh plan
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Apply audited plan-correspondence correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+
+          def replace_exact(path: str, old: str, new: str, expected: int = 1) -> None:
+              file = Path(path)
+              text = file.read_text()
+              count = text.count(old)
+              if count != expected:
+                  raise SystemExit(
+                      f"{path}: expected {expected} occurrence(s), found {count}"
+                  )
+              file.write_text(text.replace(old, new))
+
+          replace_exact(
+              "dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/BuiltInSynchronizationStrategyEvaluator.kt",
+              """        } else {
+              listOf(StrategyOperation.PULL_REMOTE, StrategyOperation.PERSIST_REMOTE)
+          }
+          """,
+              """        } else {
+              listOf(
+                  StrategyOperation.READ_CHECKPOINT,
+                  StrategyOperation.PULL_REMOTE,
+                  StrategyOperation.PERSIST_REMOTE,
+              )
+          }
+          """,
+          )
+
+          inline_plan_old = """                StrategyOperation.SERVE_LOCAL,
+                  StrategyOperation.PULL_REMOTE,
+                  StrategyOperation.PERSIST_REMOTE,
+          """
+          inline_plan_new = """                StrategyOperation.SERVE_LOCAL,
+                  StrategyOperation.READ_CHECKPOINT,
+                  StrategyOperation.PULL_REMOTE,
+                  StrategyOperation.PERSIST_REMOTE,
+          """
+          for path in (
+              "dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/CacheFirstStrategyExecutor.kt",
+              "dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/StrategySynchronizationExecutionCoordinator.kt",
+              "dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/StrategyCacheServedWithInlineRefreshResult.kt",
+              "dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/queue/StrategyQueueInlineRefreshSafetyTest.kt",
+          ):
+              replace_exact(path, inline_plan_old, inline_plan_new)
+
+          for path in (
+              "docs/api/provider-protected-strategy-execution.md",
+              "docs/audits/DL-039B-inline-cache-refresh-runtime.md",
+              "docs/strategies/cache-first.md",
+          ):
+              replace_exact(
+                  path,
+                  "SERVE_LOCAL → PULL_REMOTE → PERSIST_REMOTE",
+                  "SERVE_LOCAL → READ_CHECKPOINT → PULL_REMOTE → PERSIST_REMOTE",
+              )
+
+          replace_exact(
+              "dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/strategy/CacheFirstInlineRefreshExecutionTest.kt",
+              """        assertEquals(StrategyDisposition.SERVE_AND_REFRESH, served.evaluation.plan.disposition)
+              assertEquals(listOf(StrategyOperation.PULL_REMOTE), refresh.completedOperations)
+          """,
+              """        assertEquals(StrategyDisposition.SERVE_AND_REFRESH, served.evaluation.plan.disposition)
+              assertEquals(
+                  listOf(
+                      StrategyOperation.SERVE_LOCAL,
+                      StrategyOperation.READ_CHECKPOINT,
+                      StrategyOperation.PULL_REMOTE,
+                      StrategyOperation.PERSIST_REMOTE,
+                  ),
+                  served.evaluation.plan.operations,
+              )
+              assertEquals(listOf(StrategyOperation.PULL_REMOTE), refresh.completedOperations)
+          """,
+          )
+
+          evaluator_test_anchor = """    @Test
+              fun cacheFirstRejectPolicyNeverServesStaleState() {
+          """
+          evaluator_test = """    @Test
+              fun nonDurableCacheRefreshDeclaresCheckpointBeforeTransport() {
+                  val result = evaluate(
+                      profile = CacheFirstStrategyProfile(
+                          id = StrategyProfileId(\"cache-inline-refresh-plan\"),
+                          configurationVersion = version(),
+                          refreshOnFreshHit = true,
+                          requireDurableRefresh = false,
+                      ),
+                      direction = SynchronizationDirection.PULL,
+                      evidence = evidence(
+                          connectivity = StrategyConnectivity.AVAILABLE,
+                          cacheState = StrategyCacheState.FRESH,
+                      ),
+                  )
+
+                  assertEquals(StrategyDisposition.SERVE_AND_REFRESH, result.plan.disposition)
+                  assertEquals(
+                      listOf(
+                          StrategyOperation.SERVE_LOCAL,
+                          StrategyOperation.READ_CHECKPOINT,
+                          StrategyOperation.PULL_REMOTE,
+                          StrategyOperation.PERSIST_REMOTE,
+                      ),
+                      result.plan.operations,
+                  )
+                  assertEquals(
+                      setOf(
+                          StrategyProviderCapability.STORAGE,
+                          StrategyProviderCapability.CACHE_ACCESS,
+                          StrategyProviderCapability.TRANSPORT,
+                      ),
+                      result.plan.requiredCapabilities,
+                  )
+              }
+
+          """ + evaluator_test_anchor
+          replace_exact(
+              "dataloom-runtime/src/commonTest/kotlin/io/dataloom/runtime/strategy/BuiltInSynchronizationStrategyEvaluatorTest.kt",
+              evaluator_test_anchor,
+              evaluator_test,
+          )
+
+          workflow = Path(
+              ".github/workflows/inline-refresh-plan-correspondence-fix.yml"
+          )
+          workflow.unlink()
+          PY
+
+          git diff --check
+          if git grep -n "SERVE_LOCAL → PULL_REMOTE → PERSIST_REMOTE" -- '*.md'; then
+            echo "Undeclared-checkpoint documentation remains."
+            exit 1
+          fi
+
+      - name: Commit correction and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "DL-039B: declare checkpoint read before inline refresh"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
