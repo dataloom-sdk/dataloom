@@ -26,7 +26,7 @@ concurrency:
 jobs:
   apple-validate:
     name: Validate Apple targets, XCFramework, and Swift smoke test
-    if: github.event_name != 'pull_request' || github.head_ref != 'agent/dl-strategy-018-durable-cache-refresh-admission'
+    if: github.event_name != 'pull_request' || github.head_ref != 'agent/dl-strategy-018-durable-cache-refresh-admission-v2'
     runs-on: macos-15
     timeout-minutes: 60
 
@@ -72,15 +72,12 @@ jobs:
           echo "=== Framework slices ==="
           ls -la "$XCFW/"
           echo ""
-          # Physical device slice: iosArm64
           echo "=== Physical device slice (iosArm64) ==="
           ls "$XCFW/ios-arm64/DataLoom.framework/" || {
             echo "ERROR: Physical device slice not found at ios-arm64/DataLoom.framework/"
             exit 1
           }
           echo ""
-          # Simulator slice: Kotlin/Native merges iosSimulatorArm64 and iosX64
-          # into a single fat slice under ios-arm64_x86_64-simulator
           echo "=== Simulator slice (iosSimulatorArm64 + iosX64 merged) ==="
           SIMULATOR_SLICE="$XCFW/ios-arm64_x86_64-simulator/DataLoom.framework/"
           if [ -d "$SIMULATOR_SLICE" ]; then
@@ -130,9 +127,6 @@ jobs:
 
           echo "Verified ${#headers[@]} matching DataLoom headers with no core/testing leaks."
 
-      # ---------------------------------------------------------------
-      # Swift smoke test
-      # ---------------------------------------------------------------
       - name: Copy XCFramework into smoke-test location
         run: |
           mkdir -p apple-smoke/DataLoom.xcframework
