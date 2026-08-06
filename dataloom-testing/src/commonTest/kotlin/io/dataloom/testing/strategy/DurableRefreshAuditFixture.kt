@@ -63,7 +63,7 @@ internal data class DurableRefreshAuditFixture(
 )
 
 internal fun durableRefreshAuditFixture(
-    protected: Boolean = false,
+    useProtection: Boolean = false,
     queueAdmission: suspend (
         QueueEnqueueRequest,
         InMemoryQueueProvider,
@@ -92,7 +92,7 @@ internal fun durableRefreshAuditFixture(
         .runtimeDependencies(durableRefreshRuntimeDependencies())
         .providers(storage, transport, queue, scheduler)
         .defaultStrategyProviderBindings(bindings)
-    if (protected) {
+    if (useProtection) {
         builder.strategyProviderProtectionConfiguration(
             DataLoomStrategyProviderProtectionSpec(
                 storage = DataLoomStorageProtectionSpec(
