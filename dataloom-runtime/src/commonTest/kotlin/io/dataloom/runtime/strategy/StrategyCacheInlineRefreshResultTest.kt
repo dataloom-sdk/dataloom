@@ -30,8 +30,11 @@ import kotlin.test.assertTrue
 class StrategyCacheInlineRefreshResultTest {
 
     @Test
-    fun completedAcceptsSucceededAndNoChangeAndPreservesRemoteEffects() {
-        val operations = mutableListOf(StrategyOperation.PULL_REMOTE)
+    fun completedAcceptsSucceededNoChangeAndMultiBatchEvidence() {
+        val operations = mutableListOf(
+            StrategyOperation.PULL_REMOTE,
+            StrategyOperation.PULL_REMOTE,
+        )
         val skipped = StrategyCacheInlineRefreshResult.Completed(
             completedOperations = operations,
             output = providerBacked(skipped()),
@@ -49,7 +52,13 @@ class StrategyCacheInlineRefreshResultTest {
         assertEquals(completedAt, skipped.completedAt)
         assertEquals(completedAt, succeeded.completedAt)
         assertTrue(skipped.transportAttempted)
-        assertEquals(listOf(StrategyOperation.PULL_REMOTE), skipped.completedOperations)
+        assertEquals(
+            listOf(
+                StrategyOperation.PULL_REMOTE,
+                StrategyOperation.PULL_REMOTE,
+            ),
+            skipped.completedOperations,
+        )
         assertTrue(skipped.toString().contains("SKIPPED"))
         assertTrue(succeeded.toString().contains("SUCCEEDED"))
     }
@@ -72,7 +81,7 @@ class StrategyCacheInlineRefreshResultTest {
             StrategyCacheInlineRefreshResult.Completed(
                 completedOperations = listOf(
                     StrategyOperation.PULL_REMOTE,
-                    StrategyOperation.PULL_REMOTE,
+                    StrategyOperation.PERSIST_REMOTE,
                 ),
                 output = providerBacked(succeeded()),
             )
@@ -106,9 +115,12 @@ class StrategyCacheInlineRefreshResultTest {
     }
 
     @Test
-    fun partialOutcomePreservesRemoteEffectsAndUsesBoundedDiagnostics() {
+    fun partialOutcomeAcceptsMultiBatchEvidenceAndUsesBoundedDiagnostics() {
         val error = TestError()
-        val operations = mutableListOf(StrategyOperation.PULL_REMOTE)
+        val operations = mutableListOf(
+            StrategyOperation.PULL_REMOTE,
+            StrategyOperation.PULL_REMOTE,
+        )
         val result = StrategyCacheInlineRefreshResult.PartiallySucceeded(
             completedOperations = operations,
             output = providerBacked(partiallySucceeded(error)),
@@ -121,13 +133,19 @@ class StrategyCacheInlineRefreshResultTest {
         )
         assertEquals(completedAt, result.completedAt)
         assertTrue(result.transportAttempted)
-        assertEquals(listOf(StrategyOperation.PULL_REMOTE), result.completedOperations)
+        assertEquals(
+            listOf(
+                StrategyOperation.PULL_REMOTE,
+                StrategyOperation.PULL_REMOTE,
+            ),
+            result.completedOperations,
+        )
         assertTrue(result.toString().contains("errorCount=1"))
         assertFalse(result.toString().contains(error.message))
     }
 
     @Test
-    fun partialOutcomeRequiresCanonicalPartialAndExactPullEvidence() {
+    fun partialOutcomeRequiresCanonicalPartialAndPullOnlyEvidence() {
         assertFailsWith<IllegalArgumentException> {
             StrategyCacheInlineRefreshResult.PartiallySucceeded(
                 completedOperations = listOf(StrategyOperation.PULL_REMOTE),
@@ -150,7 +168,7 @@ class StrategyCacheInlineRefreshResultTest {
             StrategyCacheInlineRefreshResult.PartiallySucceeded(
                 completedOperations = listOf(
                     StrategyOperation.PULL_REMOTE,
-                    StrategyOperation.PULL_REMOTE,
+                    StrategyOperation.PERSIST_REMOTE,
                 ),
                 output = providerBacked(partiallySucceeded(TestError())),
             )
@@ -158,14 +176,23 @@ class StrategyCacheInlineRefreshResultTest {
     }
 
     @Test
-    fun failedDerivesCanonicalErrorAndTimeAndCopiesCompletedOperations() {
+    fun failedDerivesCanonicalEvidenceAndAcceptsMultiBatchProgress() {
         val error = TestError()
-        val operations = mutableListOf(StrategyOperation.PULL_REMOTE)
+        val operations = mutableListOf(
+            StrategyOperation.PULL_REMOTE,
+            StrategyOperation.PULL_REMOTE,
+        )
         val output = providerBacked(failed(error))
         val result = StrategyCacheInlineRefreshResult.Failed(
             transportAttempted = true,
             completedOperations = operations,
             output = output,
+            remoteOutcome = StrategyRemoteOutcome.UNAVAILABLE,
+        )
+        val firstPullFailure = StrategyCacheInlineRefreshResult.Failed(
+            transportAttempted = true,
+            completedOperations = emptyList(),
+            output = providerBacked(failed(error)),
             remoteOutcome = StrategyRemoteOutcome.UNAVAILABLE,
         )
         operations += StrategyOperation.PERSIST_REMOTE
@@ -176,8 +203,14 @@ class StrategyCacheInlineRefreshResultTest {
         )
         assertEquals(completedAt, result.completedAt)
         assertSame(error, result.error)
-        assertEquals(listOf(StrategyOperation.PULL_REMOTE), result.completedOperations)
-        assertTrue(result.transportAttempted)
+        assertEquals(
+            listOf(
+                StrategyOperation.PULL_REMOTE,
+                StrategyOperation.PULL_REMOTE,
+            ),
+            result.completedOperations,
+        )
+        assertTrue(firstPullFailure.completedOperations.isEmpty())
         assertEquals(StrategyRemoteOutcome.UNAVAILABLE, result.remoteOutcome)
         assertTrue(result.toString().contains(error.code.value))
         assertFalse(result.toString().contains(error.message))
@@ -217,7 +250,7 @@ class StrategyCacheInlineRefreshResultTest {
                 transportAttempted = true,
                 completedOperations = listOf(
                     StrategyOperation.PULL_REMOTE,
-                    StrategyOperation.PULL_REMOTE,
+                    StrategyOperation.PERSIST_REMOTE,
                 ),
                 output = providerBacked(failed(TestError())),
             )
@@ -225,11 +258,19 @@ class StrategyCacheInlineRefreshResultTest {
     }
 
     @Test
-    fun cancelledPreservesEvidenceAndDerivesCompletionTime() {
-        val operations = mutableListOf(StrategyOperation.PULL_REMOTE)
+    fun cancelledAcceptsMultiBatchEvidenceAndFirstPullCancellation() {
+        val operations = mutableListOf(
+            StrategyOperation.PULL_REMOTE,
+            StrategyOperation.PULL_REMOTE,
+        )
         val result = StrategyCacheInlineRefreshResult.Cancelled(
             transportAttempted = true,
             completedOperations = operations,
+            output = providerBacked(cancelled()),
+        )
+        val firstPullCancellation = StrategyCacheInlineRefreshResult.Cancelled(
+            transportAttempted = true,
+            completedOperations = emptyList(),
             output = providerBacked(cancelled()),
         )
         operations += StrategyOperation.PERSIST_REMOTE
@@ -240,7 +281,14 @@ class StrategyCacheInlineRefreshResultTest {
         )
         assertEquals(completedAt, result.completedAt)
         assertTrue(result.transportAttempted)
-        assertEquals(listOf(StrategyOperation.PULL_REMOTE), result.completedOperations)
+        assertEquals(
+            listOf(
+                StrategyOperation.PULL_REMOTE,
+                StrategyOperation.PULL_REMOTE,
+            ),
+            result.completedOperations,
+        )
+        assertTrue(firstPullCancellation.completedOperations.isEmpty())
     }
 
     @Test
@@ -270,7 +318,7 @@ class StrategyCacheInlineRefreshResultTest {
                 transportAttempted = true,
                 completedOperations = listOf(
                     StrategyOperation.PULL_REMOTE,
-                    StrategyOperation.PULL_REMOTE,
+                    StrategyOperation.PERSIST_REMOTE,
                 ),
                 output = providerBacked(cancelled()),
             )
