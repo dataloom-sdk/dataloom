@@ -45,8 +45,9 @@ Every agent must preserve these decisions:
 
 ## Team topology
 
-Start with twelve active roles. Add the plugin and enterprise builders only
-when their dependencies are stable.
+Start with twelve active roles: `Lead-01`, `Lead-02`, `Audit-01`, `Audit-02`,
+and `Build-01` through `Build-08`. Add `Build-09`, `Build-10`, and
+`Release-Audit` when their dependencies and release-evidence work are ready.
 
 | Role ID | Role | Primary responsibility | May write production code | May merge |
 |---|---|---|---:|---:|
