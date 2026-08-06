@@ -18,6 +18,11 @@ application-owned cache state, persists the complete accepted plan through
 The scheduler request is a queue-worker wake-up with `KEEP` semantics and no
 application payload.
 
+This checkpoint applies to direct strategy execution. Protected strategy
+execution fails closed before provider invocation because queue and scheduler
+protection are not yet independently configured by
+`DataLoomStrategyProviderProtectionSpec`.
+
 ## Side-effect order and outcomes
 
 The exact order is:
@@ -70,6 +75,9 @@ later remote refresh therefore remain separate, auditable truths.
 - Non-durable inline refresh remains a separate exact plan.
 - The queue provider must implement `QueueIdempotentAdmissionProvider`.
 - Missing or generic queue providers are rejected before cache invocation.
+- Protected durable refresh is rejected before cache, queue, scheduler, or
+  transport invocation until independent queue and scheduler strategy
+  protection specifications and adapters exist.
 - Queue or schedule identity mismatch becomes a canonical provider failure.
 - Queue conflict never invokes the scheduler.
 - Existing leased, retry-waiting, or terminal work never creates another queue
@@ -94,10 +102,18 @@ The common integration matrix covers:
 - cache → queue → scheduler ordering;
 - first admission and scheduler acceptance;
 - scheduler failure followed by same-identity reconciliation;
+- scheduler cancellation after queue admission, with cancellation propagation
+  and the durable entry retained;
+- queue-provider failure returning `QueueFailed` without scheduler invocation;
+- queue-provider identity mismatch returning the canonical identity failure
+  without scheduler invocation;
+- scheduler receipt identity mismatch returning `ScheduleFailed` while the
+  admitted queue entry remains durable;
 - one durable entry across caller retries;
 - leased and completed duplicate handling without another schedule;
 - same-ID different-work conflict;
 - rejection of a plain non-idempotent queue provider before cache access;
+- protected durable refresh rejection before every provider side effect;
 - cache unavailability before queue or scheduler work;
 - exact strategy decision and complete plan persistence; and
 - frozen accepted-plan replay through the canonical inbound PULL pipeline
@@ -115,10 +131,12 @@ Remaining work includes:
 1. platform process-termination/relaunch proof for admitted refresh work;
 2. scheduler callback and queue-worker reference integration on native Android,
    KMP Android, and KMP iOS;
-3. BIDIRECTIONAL refresh and conflict-safe coherence;
-4. durable refresh events, read models, cancellation, and administration;
-5. online offline-first execution and platform admission implementations;
-6. complete hybrid and adaptive runtime matrices; and
-7. all release, security, performance, and reference-application gates.
+3. independent queue and scheduler protection for protected durable strategy
+   execution;
+4. BIDIRECTIONAL refresh and conflict-safe coherence;
+5. durable refresh events, read models, cancellation, and administration;
+6. online offline-first execution and platform admission implementations;
+7. complete hybrid and adaptive runtime matrices; and
+8. all release, security, performance, and reference-application gates.
 
 Issues #102 and #101 remain open. The V1 dashboard remains 10% and NO-GO.

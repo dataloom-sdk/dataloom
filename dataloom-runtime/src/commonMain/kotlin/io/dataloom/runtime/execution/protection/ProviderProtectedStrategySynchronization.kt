@@ -135,6 +135,9 @@ internal class ProviderProtectedStrategyExecutionBoundary(
         evaluation: StrategyEvaluationResult,
         providers: StrategyProviderSet,
     ): StrategyProviderExecutionPreparation {
+        if (requiresQueueOrSchedulerProtection(evaluation)) {
+            return missingProtection()
+        }
         return try {
             val transportProvider = providers.transportProvider?.let { provider ->
                 val spec = protectionSpec.transport
@@ -315,6 +318,12 @@ internal class ProviderProtectedStrategyExecutionBoundary(
             StrategyExecutionRejectionReason.PROVIDER_PROTECTION_NOT_CONFIGURED,
         )
 }
+
+private fun requiresQueueOrSchedulerProtection(
+    evaluation: StrategyEvaluationResult,
+): Boolean =
+    StrategyProviderCapability.QUEUE in evaluation.plan.requiredCapabilities ||
+        StrategyProviderCapability.SCHEDULER in evaluation.plan.requiredCapabilities
 
 private fun requiresCacheAccess(
     evaluation: StrategyEvaluationResult,
