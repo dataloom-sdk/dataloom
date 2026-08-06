@@ -22,6 +22,16 @@ PULL pipeline. The application continues to read its domain value from its own
 repository; DataLoom returns freshness, origin, and refresh-operation evidence
 only.
 
+## Audit correction
+
+Implementation review found that the canonical inbound pipeline reads the
+stored checkpoint before its first remote pull. The original candidate plan did
+not declare that read even though execution performed it. The evaluator, exact
+runtime guards, queue-safety fixture, execution tests, and documentation now
+include `READ_CHECKPOINT` between `SERVE_LOCAL` and `PULL_REMOTE`. This restores
+one-to-one correspondence between the immutable accepted plan and every
+provider operation performed by the inline refresh path.
+
 ## Candidate result
 
 `StrategyCacheServedWithInlineRefreshResult` reports both independent facts:
@@ -104,6 +114,7 @@ approved coroutine support, and the canonical shared inbound pipeline.
 
 Focused common tests cover:
 
+- immutable-plan declaration of checkpoint read before transport;
 - cache verification before checkpoint and transport;
 - fresh and policy-allowed stale serving;
 - provider unavailability and fresh-to-stale drift;
