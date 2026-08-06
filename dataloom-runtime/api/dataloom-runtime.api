@@ -2793,6 +2793,73 @@ public final class io/dataloom/runtime/strategy/BuiltInSynchronizationStrategyEv
 	public fun evaluate (Lio/dataloom/api/strategy/StrategyEvaluationRequest;)Lio/dataloom/api/strategy/StrategyEvaluationResult;
 }
 
+public final class io/dataloom/runtime/strategy/StrategyCacheInlineRefreshDisposition : java/lang/Enum {
+	public static final field CANCELLED Lio/dataloom/runtime/strategy/StrategyCacheInlineRefreshDisposition;
+	public static final field COMPLETED Lio/dataloom/runtime/strategy/StrategyCacheInlineRefreshDisposition;
+	public static final field FAILED Lio/dataloom/runtime/strategy/StrategyCacheInlineRefreshDisposition;
+	public static final field PARTIALLY_SUCCEEDED Lio/dataloom/runtime/strategy/StrategyCacheInlineRefreshDisposition;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/strategy/StrategyCacheInlineRefreshDisposition;
+	public static fun values ()[Lio/dataloom/runtime/strategy/StrategyCacheInlineRefreshDisposition;
+}
+
+public abstract interface class io/dataloom/runtime/strategy/StrategyCacheInlineRefreshResult {
+	public abstract fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public abstract fun getDisposition ()Lio/dataloom/runtime/strategy/StrategyCacheInlineRefreshDisposition;
+}
+
+public final class io/dataloom/runtime/strategy/StrategyCacheInlineRefreshResult$Cancelled : io/dataloom/runtime/strategy/StrategyCacheInlineRefreshResult {
+	public fun <init> (ZLjava/util/List;Lio/dataloom/api/strategy/StrategyTransportOutput$ProviderBacked;)V
+	public synthetic fun <init> (ZLjava/util/List;Lio/dataloom/api/strategy/StrategyTransportOutput$ProviderBacked;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getCompletedOperations ()Ljava/util/List;
+	public fun getDisposition ()Lio/dataloom/runtime/strategy/StrategyCacheInlineRefreshDisposition;
+	public final fun getOutput ()Lio/dataloom/api/strategy/StrategyTransportOutput$ProviderBacked;
+	public final fun getTransportAttempted ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/strategy/StrategyCacheInlineRefreshResult$Completed : io/dataloom/runtime/strategy/StrategyCacheInlineRefreshResult {
+	public fun <init> (Ljava/util/List;Lio/dataloom/api/strategy/StrategyTransportOutput$ProviderBacked;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getCompletedOperations ()Ljava/util/List;
+	public fun getDisposition ()Lio/dataloom/runtime/strategy/StrategyCacheInlineRefreshDisposition;
+	public final fun getOutput ()Lio/dataloom/api/strategy/StrategyTransportOutput$ProviderBacked;
+	public final fun getTransportAttempted ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/strategy/StrategyCacheInlineRefreshResult$Failed : io/dataloom/runtime/strategy/StrategyCacheInlineRefreshResult {
+	public fun <init> (ZLjava/util/List;Lio/dataloom/api/strategy/StrategyTransportOutput$ProviderBacked;Lio/dataloom/api/strategy/StrategyRemoteOutcome;)V
+	public synthetic fun <init> (ZLjava/util/List;Lio/dataloom/api/strategy/StrategyTransportOutput$ProviderBacked;Lio/dataloom/api/strategy/StrategyRemoteOutcome;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getCompletedOperations ()Ljava/util/List;
+	public fun getDisposition ()Lio/dataloom/runtime/strategy/StrategyCacheInlineRefreshDisposition;
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public final fun getOutput ()Lio/dataloom/api/strategy/StrategyTransportOutput$ProviderBacked;
+	public final fun getRemoteOutcome ()Lio/dataloom/api/strategy/StrategyRemoteOutcome;
+	public final fun getTransportAttempted ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/strategy/StrategyCacheInlineRefreshResult$PartiallySucceeded : io/dataloom/runtime/strategy/StrategyCacheInlineRefreshResult {
+	public fun <init> (Ljava/util/List;Lio/dataloom/api/strategy/StrategyTransportOutput$ProviderBacked;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getCompletedOperations ()Ljava/util/List;
+	public fun getDisposition ()Lio/dataloom/runtime/strategy/StrategyCacheInlineRefreshDisposition;
+	public final fun getOutput ()Lio/dataloom/api/strategy/StrategyTransportOutput$ProviderBacked;
+	public final fun getTransportAttempted ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/runtime/strategy/StrategyCacheUnavailableReason : java/lang/Enum {
 	public static final field FRESHNESS_DOWNGRADED Lio/dataloom/runtime/strategy/StrategyCacheUnavailableReason;
 	public static final field PROVIDER_REPORTED_UNAVAILABLE Lio/dataloom/runtime/strategy/StrategyCacheUnavailableReason;

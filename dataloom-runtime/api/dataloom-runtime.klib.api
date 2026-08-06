@@ -398,6 +398,19 @@ final enum class io.dataloom.runtime.retry/TransportCircuitOperation : kotlin/En
     final fun values(): kotlin/Array<io.dataloom.runtime.retry/TransportCircuitOperation> // io.dataloom.runtime.retry/TransportCircuitOperation.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition : kotlin/Enum<io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition> { // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition|null[0]
+    enum entry CANCELLED // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition.CANCELLED|null[0]
+    enum entry COMPLETED // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition.COMPLETED|null[0]
+    enum entry FAILED // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition.FAILED|null[0]
+    enum entry PARTIALLY_SUCCEEDED // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition.PARTIALLY_SUCCEEDED|null[0]
+
+    final val entries // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition> // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition> // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.runtime.strategy/StrategyCacheUnavailableReason : kotlin/Enum<io.dataloom.runtime.strategy/StrategyCacheUnavailableReason> { // io.dataloom.runtime.strategy/StrategyCacheUnavailableReason|null[0]
     enum entry FRESHNESS_DOWNGRADED // io.dataloom.runtime.strategy/StrategyCacheUnavailableReason.FRESHNESS_DOWNGRADED|null[0]
     enum entry PROVIDER_REPORTED_UNAVAILABLE // io.dataloom.runtime.strategy/StrategyCacheUnavailableReason.PROVIDER_REPORTED_UNAVAILABLE|null[0]
@@ -1941,6 +1954,93 @@ sealed interface io.dataloom.runtime.retry/SynchronizationRetryEvaluation { // i
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.NotRequired.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.NotRequired.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.NotRequired.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult { // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult|null[0]
+    abstract val completedAt // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.completedAt|{}completedAt[0]
+        abstract fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
+    abstract val disposition // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.disposition|{}disposition[0]
+        abstract fun <get-disposition>(): io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.disposition.<get-disposition>|<get-disposition>(){}[0]
+
+    final class Cancelled : io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult { // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Cancelled|null[0]
+        constructor <init>(kotlin/Boolean, kotlin.collections/List<io.dataloom.api.strategy/StrategyOperation> = ..., io.dataloom.api.strategy/StrategyTransportOutput.ProviderBacked) // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Cancelled.<init>|<init>(kotlin.Boolean;kotlin.collections.List<io.dataloom.api.strategy.StrategyOperation>;io.dataloom.api.strategy.StrategyTransportOutput.ProviderBacked){}[0]
+
+        final val completedAt // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Cancelled.completedAt|{}completedAt[0]
+            final fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Cancelled.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
+        final val completedOperations // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Cancelled.completedOperations|{}completedOperations[0]
+            final fun <get-completedOperations>(): kotlin.collections/List<io.dataloom.api.strategy/StrategyOperation> // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Cancelled.completedOperations.<get-completedOperations>|<get-completedOperations>(){}[0]
+        final val disposition // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Cancelled.disposition|{}disposition[0]
+            final fun <get-disposition>(): io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Cancelled.disposition.<get-disposition>|<get-disposition>(){}[0]
+        final val output // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Cancelled.output|{}output[0]
+            final fun <get-output>(): io.dataloom.api.strategy/StrategyTransportOutput.ProviderBacked // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Cancelled.output.<get-output>|<get-output>(){}[0]
+        final val transportAttempted // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Cancelled.transportAttempted|{}transportAttempted[0]
+            final fun <get-transportAttempted>(): kotlin/Boolean // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Cancelled.transportAttempted.<get-transportAttempted>|<get-transportAttempted>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Cancelled.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Cancelled.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Cancelled.toString|toString(){}[0]
+    }
+
+    final class Completed : io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult { // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Completed|null[0]
+        constructor <init>(kotlin.collections/List<io.dataloom.api.strategy/StrategyOperation>, io.dataloom.api.strategy/StrategyTransportOutput.ProviderBacked) // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Completed.<init>|<init>(kotlin.collections.List<io.dataloom.api.strategy.StrategyOperation>;io.dataloom.api.strategy.StrategyTransportOutput.ProviderBacked){}[0]
+
+        final val completedAt // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Completed.completedAt|{}completedAt[0]
+            final fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Completed.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
+        final val completedOperations // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Completed.completedOperations|{}completedOperations[0]
+            final fun <get-completedOperations>(): kotlin.collections/List<io.dataloom.api.strategy/StrategyOperation> // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Completed.completedOperations.<get-completedOperations>|<get-completedOperations>(){}[0]
+        final val disposition // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Completed.disposition|{}disposition[0]
+            final fun <get-disposition>(): io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Completed.disposition.<get-disposition>|<get-disposition>(){}[0]
+        final val output // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Completed.output|{}output[0]
+            final fun <get-output>(): io.dataloom.api.strategy/StrategyTransportOutput.ProviderBacked // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Completed.output.<get-output>|<get-output>(){}[0]
+        final val transportAttempted // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Completed.transportAttempted|{}transportAttempted[0]
+            final fun <get-transportAttempted>(): kotlin/Boolean // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Completed.transportAttempted.<get-transportAttempted>|<get-transportAttempted>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Completed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Completed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Completed.toString|toString(){}[0]
+    }
+
+    final class Failed : io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult { // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Failed|null[0]
+        constructor <init>(kotlin/Boolean, kotlin.collections/List<io.dataloom.api.strategy/StrategyOperation> = ..., io.dataloom.api.strategy/StrategyTransportOutput.ProviderBacked, io.dataloom.api.strategy/StrategyRemoteOutcome? = ...) // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Failed.<init>|<init>(kotlin.Boolean;kotlin.collections.List<io.dataloom.api.strategy.StrategyOperation>;io.dataloom.api.strategy.StrategyTransportOutput.ProviderBacked;io.dataloom.api.strategy.StrategyRemoteOutcome?){}[0]
+
+        final val completedAt // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Failed.completedAt|{}completedAt[0]
+            final fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Failed.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
+        final val completedOperations // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Failed.completedOperations|{}completedOperations[0]
+            final fun <get-completedOperations>(): kotlin.collections/List<io.dataloom.api.strategy/StrategyOperation> // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Failed.completedOperations.<get-completedOperations>|<get-completedOperations>(){}[0]
+        final val disposition // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Failed.disposition|{}disposition[0]
+            final fun <get-disposition>(): io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Failed.disposition.<get-disposition>|<get-disposition>(){}[0]
+        final val error // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Failed.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Failed.error.<get-error>|<get-error>(){}[0]
+        final val output // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Failed.output|{}output[0]
+            final fun <get-output>(): io.dataloom.api.strategy/StrategyTransportOutput.ProviderBacked // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Failed.output.<get-output>|<get-output>(){}[0]
+        final val remoteOutcome // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Failed.remoteOutcome|{}remoteOutcome[0]
+            final fun <get-remoteOutcome>(): io.dataloom.api.strategy/StrategyRemoteOutcome? // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Failed.remoteOutcome.<get-remoteOutcome>|<get-remoteOutcome>(){}[0]
+        final val transportAttempted // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Failed.transportAttempted|{}transportAttempted[0]
+            final fun <get-transportAttempted>(): kotlin/Boolean // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Failed.transportAttempted.<get-transportAttempted>|<get-transportAttempted>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Failed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Failed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.Failed.toString|toString(){}[0]
+    }
+
+    final class PartiallySucceeded : io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult { // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.PartiallySucceeded|null[0]
+        constructor <init>(kotlin.collections/List<io.dataloom.api.strategy/StrategyOperation>, io.dataloom.api.strategy/StrategyTransportOutput.ProviderBacked) // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.PartiallySucceeded.<init>|<init>(kotlin.collections.List<io.dataloom.api.strategy.StrategyOperation>;io.dataloom.api.strategy.StrategyTransportOutput.ProviderBacked){}[0]
+
+        final val completedAt // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.PartiallySucceeded.completedAt|{}completedAt[0]
+            final fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.PartiallySucceeded.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
+        final val completedOperations // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.PartiallySucceeded.completedOperations|{}completedOperations[0]
+            final fun <get-completedOperations>(): kotlin.collections/List<io.dataloom.api.strategy/StrategyOperation> // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.PartiallySucceeded.completedOperations.<get-completedOperations>|<get-completedOperations>(){}[0]
+        final val disposition // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.PartiallySucceeded.disposition|{}disposition[0]
+            final fun <get-disposition>(): io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.PartiallySucceeded.disposition.<get-disposition>|<get-disposition>(){}[0]
+        final val output // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.PartiallySucceeded.output|{}output[0]
+            final fun <get-output>(): io.dataloom.api.strategy/StrategyTransportOutput.ProviderBacked // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.PartiallySucceeded.output.<get-output>|<get-output>(){}[0]
+        final val transportAttempted // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.PartiallySucceeded.transportAttempted|{}transportAttempted[0]
+            final fun <get-transportAttempted>(): kotlin/Boolean // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.PartiallySucceeded.transportAttempted.<get-transportAttempted>|<get-transportAttempted>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.PartiallySucceeded.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.PartiallySucceeded.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult.PartiallySucceeded.toString|toString(){}[0]
     }
 }
 
