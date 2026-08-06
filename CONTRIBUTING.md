@@ -64,6 +64,23 @@ Preserve these product decisions:
 - cancellation, retry history, conflict state, and durable transitions must be
   explicit and testable.
 
+## Parallel AI-assisted work
+
+Parallel AI-assisted V1 development follows the
+[V1 parallel AI-agent operating model](./docs/development/v1-parallel-agent-operating-model.md).
+The required default is parallel implementation with serialized, independently
+audited integration.
+
+Each agent must have one approved issue, one isolated branch/worktree, one
+bounded deliverable, and at most one open pull request. Builders do not approve
+or merge their own work. Shared contracts, workflows, public ABI baselines,
+release metadata, and high-conflict documentation are owned by the technical
+integration lead unless an explicit assignment states otherwise.
+
+GitHub Actions must validate final source already present in the pull request.
+A workflow must not apply patches, construct implementation source, weaken
+checks, or hide generated behavior that reviewers cannot inspect in the diff.
+
 ## Validate locally first
 
 Use the Gradle Wrapper and the narrowest tasks that cover the change. See
