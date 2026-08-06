@@ -23,7 +23,7 @@ class CacheFirstDurableRefreshAuditCoverageTest {
     @Test
     fun protectedDurableRefreshFailsClosedBeforeEveryProviderSideEffect() =
         runDurableRefreshAudit {
-            val fixture = durableRefreshAuditFixture(protected = true)
+            val fixture = durableRefreshAuditFixture(useProtection = true)
             assertIs<ProviderLifecycleResult.InitializeSuccess>(fixture.dataLoom.initialize())
 
             val result = requireNotNull(fixture.dataLoom.protectedStrategySynchronization)
