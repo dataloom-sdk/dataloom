@@ -79,11 +79,12 @@ public final class io/dataloom/testing/provider/TestProviderLifecycleController 
 	public final fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
-public final class io/dataloom/testing/queue/InMemoryQueueProvider : io/dataloom/api/queue/QueueProvider {
+public final class io/dataloom/testing/queue/InMemoryQueueProvider : io/dataloom/api/queue/QueueIdempotentAdmissionProvider {
 	public fun <init> ()V
 	public fun <init> (Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/testing/provider/TestProviderLifecycleController;)V
 	public synthetic fun <init> (Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/testing/provider/TestProviderLifecycleController;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun acquire (Lio/dataloom/api/queue/QueueAcquireRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun admit (Lio/dataloom/api/queue/QueueEnqueueRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun cancel (Lio/dataloom/api/queue/QueueCancellationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun clearRecordings ()V
 	public fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

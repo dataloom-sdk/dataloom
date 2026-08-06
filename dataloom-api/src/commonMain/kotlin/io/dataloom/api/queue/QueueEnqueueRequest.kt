@@ -1,15 +1,17 @@
 package io.dataloom.api.queue
 
 /**
- * Immutable request to enqueue a new [QueueEntry] in the durable
- * synchronization queue.
+ * Immutable request to persist one initially pending [QueueEntry].
  *
  * Construction does not persist the entry. Persistence is the responsibility
- * of the [QueueProvider] that receives this request.
+ * of the queue provider that receives this request.
  *
- * Duplicate-entry handling belongs to the provider implementation. A provider
- * must return a canonical error rather than silently replacing an existing
- * entry unless explicit policy permits replacement.
+ * [QueueProvider.enqueue] retains the historical create-only behavior and must
+ * return a canonical failure for an existing ID. Applications and runtimes
+ * that need first-or-existing reconciliation must explicitly require
+ * [QueueIdempotentAdmissionProvider] and call
+ * [QueueIdempotentAdmissionProvider.admit]. Duplicate semantics must never be
+ * inferred by parsing an enqueue error code or message.
  *
  * The supplied entry must be PENDING and must not contain a lease, retry
  * attempt, or retry-budget state. Budget state starts only after a genuine

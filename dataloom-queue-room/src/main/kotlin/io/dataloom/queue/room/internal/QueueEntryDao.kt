@@ -6,6 +6,8 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import io.dataloom.api.queue.QueueEntry
+import io.dataloom.api.queue.QueueIdempotentAdmissionResult
+import io.dataloom.api.queue.hasSameQueueAdmissionIdentityAs
 
 /** Room DAO for bounded, lease-aware durable queue persistence. */
 @Dao
@@ -13,6 +15,42 @@ internal abstract class QueueEntryDao {
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     abstract suspend fun insert(entity: QueueEntryEntity)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    protected abstract suspend fun insertIfAbsent(entity: QueueEntryEntity): Long
+
+    @Query(
+        """
+        SELECT * FROM queue_entries
+        WHERE entry_id = :entryId
+        LIMIT 1
+        """,
+    )
+    protected abstract suspend fun selectById(entryId: String): QueueEntryEntity?
+
+    /** Creates or reconciles one immutable queue identity in one transaction. */
+    @Transaction
+    open suspend fun admitEntry(entry: QueueEntry): QueueIdempotentAdmissionResult {
+        val candidate = entry.copy(lastError = null)
+        val insertedRowId = insertIfAbsent(candidate.toEntity())
+        if (insertedRowId != -1L) {
+            return QueueIdempotentAdmissionResult.Accepted(candidate.id)
+        }
+        val current = checkNotNull(selectById(candidate.id.value)) {
+            "Conflicting queue row disappeared during idempotent admission."
+        }.toDomain()
+        return if (current.hasSameQueueAdmissionIdentityAs(candidate)) {
+            QueueIdempotentAdmissionResult.AlreadyAccepted(
+                queueEntryId = current.id,
+                currentState = current.state,
+            )
+        } else {
+            QueueIdempotentAdmissionResult.IdentityConflict(
+                queueEntryId = current.id,
+                currentState = current.state,
+            )
+        }
+    }
 
     @Query(
         """

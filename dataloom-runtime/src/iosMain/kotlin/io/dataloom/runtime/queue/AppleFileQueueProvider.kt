@@ -22,6 +22,9 @@ import io.dataloom.api.queue.QueueEnqueueRequest
 import io.dataloom.api.queue.QueueEntry
 import io.dataloom.api.queue.QueueEntryState
 import io.dataloom.api.queue.QueueFailureDisposition
+import io.dataloom.api.queue.QueueIdempotentAdmissionProvider
+import io.dataloom.api.queue.QueueIdempotentAdmissionResult
+import io.dataloom.api.queue.hasSameQueueAdmissionIdentityAs
 import io.dataloom.api.queue.QueueFailureRequest
 import io.dataloom.api.queue.QueueLease
 import io.dataloom.api.queue.QueueProvider
@@ -74,7 +77,7 @@ import platform.posix.flock
 public class AppleFileQueueProvider(
     directoryPath: String,
     fileName: String = DEFAULT_FILE_NAME,
-) : QueueProvider {
+) : QueueIdempotentAdmissionProvider {
     private val normalizedDirectoryPath: String = appleQueueValidateDirectoryPath(directoryPath)
     private val validatedFileName: String = appleQueueValidateFileName(fileName)
     private val dataFilePath: String = "$normalizedDirectoryPath/$validatedFileName"
@@ -97,6 +100,40 @@ public class AppleFileQueueProvider(
 
     override suspend fun close(): ProviderOperationResult<Unit> =
         ProviderOperationResult.Success(Unit)
+
+    override suspend fun admit(
+        request: QueueEnqueueRequest,
+    ): ProviderOperationResult<QueueIdempotentAdmissionResult> = appleQueueExecute {
+        appleQueueWithExclusiveLock {
+            val snapshot = appleQueueReadSnapshot()
+            val entries = snapshot.entries
+            val candidate = request.entry.copy(lastError = null)
+            val current = entries[candidate.id.value]
+            if (current != null) {
+                val result = if (current.hasSameQueueAdmissionIdentityAs(candidate)) {
+                    QueueIdempotentAdmissionResult.AlreadyAccepted(
+                        queueEntryId = current.id,
+                        currentState = current.state,
+                    )
+                } else {
+                    QueueIdempotentAdmissionResult.IdentityConflict(
+                        queueEntryId = current.id,
+                        currentState = current.state,
+                    )
+                }
+                return@appleQueueWithExclusiveLock ProviderOperationResult.Success(result)
+            }
+            if (entries.size >= APPLE_QUEUE_MAX_ENTRY_COUNT) {
+                throw AppleQueueEntryLimitException()
+            }
+            entries[candidate.id.value] = candidate
+            currentCoroutineContext().ensureActive()
+            appleQueueWriteSnapshot(snapshot)
+            ProviderOperationResult.Success(
+                QueueIdempotentAdmissionResult.Accepted(candidate.id),
+            )
+        }
+    }
 
     override suspend fun enqueue(
         request: QueueEnqueueRequest,
