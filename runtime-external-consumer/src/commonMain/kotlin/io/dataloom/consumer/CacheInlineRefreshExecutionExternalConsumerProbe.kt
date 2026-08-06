@@ -40,5 +40,5 @@ internal fun inspectCacheInlineRefreshExecution(
         }
         result.refresh.disposition.name
     }
-    else -> result::class.simpleName ?: "UNKNOWN"
+    else -> "OTHER"
 }
