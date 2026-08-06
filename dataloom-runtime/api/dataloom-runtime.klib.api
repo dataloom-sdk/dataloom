@@ -4245,6 +4245,25 @@ final class io.dataloom.runtime.strategy/BuiltInSynchronizationStrategyEvaluator
     final fun evaluate(io.dataloom.api.strategy/StrategyEvaluationRequest): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/BuiltInSynchronizationStrategyEvaluator.evaluate|evaluate(io.dataloom.api.strategy.StrategyEvaluationRequest){}[0]
 }
 
+final class io.dataloom.runtime.strategy/StrategyCacheServedWithInlineRefreshResult : io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult { // io.dataloom.runtime.strategy/StrategyCacheServedWithInlineRefreshResult|null[0]
+    final val completedAt // io.dataloom.runtime.strategy/StrategyCacheServedWithInlineRefreshResult.completedAt|{}completedAt[0]
+        final fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategyCacheServedWithInlineRefreshResult.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
+    final val dataOrigin // io.dataloom.runtime.strategy/StrategyCacheServedWithInlineRefreshResult.dataOrigin|{}dataOrigin[0]
+        final fun <get-dataOrigin>(): io.dataloom.api.strategy/StrategyDataOrigin // io.dataloom.runtime.strategy/StrategyCacheServedWithInlineRefreshResult.dataOrigin.<get-dataOrigin>|<get-dataOrigin>(){}[0]
+    final val evaluatedCacheState // io.dataloom.runtime.strategy/StrategyCacheServedWithInlineRefreshResult.evaluatedCacheState|{}evaluatedCacheState[0]
+        final fun <get-evaluatedCacheState>(): io.dataloom.api.strategy/StrategyCacheState // io.dataloom.runtime.strategy/StrategyCacheServedWithInlineRefreshResult.evaluatedCacheState.<get-evaluatedCacheState>|<get-evaluatedCacheState>(){}[0]
+    final val evaluation // io.dataloom.runtime.strategy/StrategyCacheServedWithInlineRefreshResult.evaluation|{}evaluation[0]
+        final fun <get-evaluation>(): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/StrategyCacheServedWithInlineRefreshResult.evaluation.<get-evaluation>|<get-evaluation>(){}[0]
+    final val freshness // io.dataloom.runtime.strategy/StrategyCacheServedWithInlineRefreshResult.freshness|{}freshness[0]
+        final fun <get-freshness>(): io.dataloom.api.strategy/StrategyCacheFreshnessEvidence // io.dataloom.runtime.strategy/StrategyCacheServedWithInlineRefreshResult.freshness.<get-freshness>|<get-freshness>(){}[0]
+    final val refresh // io.dataloom.runtime.strategy/StrategyCacheServedWithInlineRefreshResult.refresh|{}refresh[0]
+        final fun <get-refresh>(): io.dataloom.runtime.strategy/StrategyCacheInlineRefreshResult // io.dataloom.runtime.strategy/StrategyCacheServedWithInlineRefreshResult.refresh.<get-refresh>|<get-refresh>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.strategy/StrategyCacheServedWithInlineRefreshResult.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.strategy/StrategyCacheServedWithInlineRefreshResult.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.strategy/StrategyCacheServedWithInlineRefreshResult.toString|toString(){}[0]
+}
+
 final class io.dataloom.runtime.submission/CircuitBreakerQueueSubmission { // io.dataloom.runtime.submission/CircuitBreakerQueueSubmission|null[0]
     constructor <init>(io.dataloom.runtime.submission/QueuedSynchronizationWorkEncoder, io.dataloom.runtime.retry/CircuitBreakerQueueOperationAdapter, io.dataloom.api.circuit/CircuitBreakerScope) // io.dataloom.runtime.submission/CircuitBreakerQueueSubmission.<init>|<init>(io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder;io.dataloom.runtime.retry.CircuitBreakerQueueOperationAdapter;io.dataloom.api.circuit.CircuitBreakerScope){}[0]
 
