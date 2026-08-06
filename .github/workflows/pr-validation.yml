@@ -9,8 +9,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: dl-strategy-018-qualification-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: dl-strategy-018-qualification-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
+  cancel-in-progress: false
 
 jobs:
   qualify:
