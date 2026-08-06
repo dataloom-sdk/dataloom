@@ -15,6 +15,7 @@ import io.dataloom.api.synchronization.SynchronizationSummary
 import io.dataloom.api.time.DataLoomInstant
 import io.dataloom.runtime.retry.SynchronizationRetryEvaluation
 import io.dataloom.runtime.retry.SynchronizationRetryEvaluator
+import io.dataloom.runtime.strategy.StrategyCacheServedWithInlineRefreshResult
 import io.dataloom.runtime.strategy.StrategySynchronizationExecutionResult
 
 /** Maps accepted-strategy execution into one exact durable queue transition. */
@@ -49,8 +50,9 @@ internal class StrategyQueueExecutionOutcomeMapper(
                 evaluateRetry(unresolvedErrors, result.completedAt, entry)
             }
         }
-        is StrategySynchronizationExecutionResult.CacheServed ->
-            failed(AcceptedPlanUnexpectedDirectCacheServeError())
+        is StrategySynchronizationExecutionResult.CacheServed,
+        is StrategyCacheServedWithInlineRefreshResult,
+        -> failed(AcceptedPlanUnexpectedDirectCacheServeError())
         is StrategySynchronizationExecutionResult.CacheUnavailable ->
             failed(AcceptedPlanCacheUnavailableError(result.reason.name))
         is StrategySynchronizationExecutionResult.Cancelled ->

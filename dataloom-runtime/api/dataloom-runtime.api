@@ -2860,6 +2860,18 @@ public final class io/dataloom/runtime/strategy/StrategyCacheInlineRefreshResult
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/runtime/strategy/StrategyCacheServedWithInlineRefreshResult : io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult {
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getDataOrigin ()Lio/dataloom/api/strategy/StrategyDataOrigin;
+	public final fun getEvaluatedCacheState ()Lio/dataloom/api/strategy/StrategyCacheState;
+	public fun getEvaluation ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
+	public final fun getFreshness ()Lio/dataloom/api/strategy/StrategyCacheFreshnessEvidence;
+	public final fun getRefresh ()Lio/dataloom/runtime/strategy/StrategyCacheInlineRefreshResult;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/runtime/strategy/StrategyCacheUnavailableReason : java/lang/Enum {
 	public static final field FRESHNESS_DOWNGRADED Lio/dataloom/runtime/strategy/StrategyCacheUnavailableReason;
 	public static final field PROVIDER_REPORTED_UNAVAILABLE Lio/dataloom/runtime/strategy/StrategyCacheUnavailableReason;

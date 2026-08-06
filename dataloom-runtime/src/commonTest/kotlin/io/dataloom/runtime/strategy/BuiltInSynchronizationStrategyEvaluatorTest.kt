@@ -246,6 +246,42 @@ class BuiltInSynchronizationStrategyEvaluatorTest {
     }
 
     @Test
+    fun nonDurableCacheRefreshDeclaresCheckpointBeforeTransport() {
+        val result = evaluate(
+            profile = CacheFirstStrategyProfile(
+                id = StrategyProfileId("cache-inline-refresh-plan"),
+                configurationVersion = version(),
+                refreshOnFreshHit = true,
+                requireDurableRefresh = false,
+            ),
+            direction = SynchronizationDirection.PULL,
+            evidence = evidence(
+                connectivity = StrategyConnectivity.AVAILABLE,
+                cacheState = StrategyCacheState.FRESH,
+            ),
+        )
+
+        assertEquals(StrategyDisposition.SERVE_AND_REFRESH, result.plan.disposition)
+        assertEquals(
+            listOf(
+                StrategyOperation.SERVE_LOCAL,
+                StrategyOperation.READ_CHECKPOINT,
+                StrategyOperation.PULL_REMOTE,
+                StrategyOperation.PERSIST_REMOTE,
+            ),
+            result.plan.operations,
+        )
+        assertEquals(
+            setOf(
+                StrategyProviderCapability.STORAGE,
+                StrategyProviderCapability.CACHE_ACCESS,
+                StrategyProviderCapability.TRANSPORT,
+            ),
+            result.plan.requiredCapabilities,
+        )
+    }
+
+    @Test
     fun cacheFirstRejectPolicyNeverServesStaleState() {
         val result = evaluate(
             profile = CacheFirstStrategyProfile(

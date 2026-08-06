@@ -9,6 +9,7 @@ import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
 import io.dataloom.api.strategy.StrategyCacheAccessProvider
 import io.dataloom.api.strategy.StrategyCacheAccessRequest
 import io.dataloom.api.strategy.StrategyCacheAccessResult
+import io.dataloom.api.strategy.StrategyCacheFreshnessEvidence
 import io.dataloom.api.strategy.StrategyCacheState
 import io.dataloom.api.strategy.StrategyDataOrigin
 import io.dataloom.api.strategy.StrategyDisposition
@@ -20,13 +21,15 @@ import io.dataloom.api.strategy.StrategyRemoteOutcome
 import io.dataloom.api.strategy.StrategySynchronizationRequest
 import io.dataloom.api.strategy.StrategyTransportOutput
 import io.dataloom.api.synchronization.SynchronizationResult
+import io.dataloom.api.synchronization.SynchronizationSkipReason
 import io.dataloom.api.time.DataLoomClock
 import io.dataloom.core.provider.ResolvedSynchronizationProviders
 import io.dataloom.runtime.execution.SynchronizationExecutionContext
+import io.dataloom.runtime.execution.SynchronizationPipeline
 import io.dataloom.runtime.execution.SynchronizationPipelineRegistry
 import io.dataloom.runtime.execution.lifecycle.SynchronizationLifecycleEventEmitter
 
-/** Executes bounded direct cache-first local-serving and remote pipeline slices. */
+/** Executes bounded direct cache-first local, inline-refresh, and remote slices. */
 internal class CacheFirstStrategyExecutor(
     private val clock: DataLoomClock,
     private val runtimeDependencies: RuntimeDependencies,
@@ -45,6 +48,8 @@ internal class CacheFirstStrategyExecutor(
         return when {
             isSupportedLocalServingPlan(evaluation) ->
                 executeLocalServing(request, evaluation, providers)
+            isSupportedInlineRefreshPlan(request, evaluation) ->
+                executeInlineRefresh(request, evaluation, providers)
             isSupportedRemotePlan(request, evaluation) ->
                 executeRemotePlan(request, evaluation, providers)
             else -> rejected(evaluation, StrategyExecutionRejectionReason.UNSUPPORTED_PLAN)
@@ -55,19 +60,71 @@ internal class CacheFirstStrategyExecutor(
         request: StrategySynchronizationRequest,
         evaluation: StrategyEvaluationResult,
         providers: StrategyProviderSet,
+    ): StrategySynchronizationExecutionResult =
+        when (val access = evaluateCacheAccess(request, evaluation, providers)) {
+            is CacheAccessBoundaryResult.Terminal -> access.result
+            is CacheAccessBoundaryResult.Available ->
+                StrategySynchronizationExecutionResult.CacheServed(
+                    evaluation = evaluation,
+                    completedAt = clock.now(),
+                    evaluatedCacheState = access.evaluatedCacheState,
+                    freshness = access.freshness,
+                )
+        }
+
+    private suspend fun executeInlineRefresh(
+        request: StrategySynchronizationRequest,
+        evaluation: StrategyEvaluationResult,
+        providers: StrategyProviderSet,
     ): StrategySynchronizationExecutionResult {
+        val storage = providers.storageProvider
+            ?: return rejected(evaluation, StrategyExecutionRejectionReason.UNSUPPORTED_PLAN)
+        val transport = providers.transportProvider
+            ?: return rejected(evaluation, StrategyExecutionRejectionReason.UNSUPPORTED_PLAN)
+        val pipeline = pipelineRegistry.lookup(SynchronizationDirection.PULL)
+            ?: return rejected(evaluation, StrategyExecutionRejectionReason.UNSUPPORTED_PLAN)
+
+        return when (val access = evaluateCacheAccess(request, evaluation, providers)) {
+            is CacheAccessBoundaryResult.Terminal -> access.result
+            is CacheAccessBoundaryResult.Available -> {
+                val refresh = executeInlinePullRefresh(
+                    request = request,
+                    storage = storage,
+                    transport = transport,
+                    providers = providers,
+                    pipeline = pipeline,
+                )
+                StrategyCacheServedWithInlineRefreshResult(
+                    evaluation = evaluation,
+                    evaluatedCacheState = access.evaluatedCacheState,
+                    freshness = access.freshness,
+                    refresh = refresh,
+                )
+            }
+        }
+    }
+
+    private suspend fun evaluateCacheAccess(
+        request: StrategySynchronizationRequest,
+        evaluation: StrategyEvaluationResult,
+        providers: StrategyProviderSet,
+    ): CacheAccessBoundaryResult {
         val evaluatedCacheState = request.evidence.cacheState
         if (
             evaluatedCacheState != StrategyCacheState.FRESH &&
             evaluatedCacheState != StrategyCacheState.STALE
         ) {
-            return rejected(evaluation, StrategyExecutionRejectionReason.UNSUPPORTED_PLAN)
+            return CacheAccessBoundaryResult.Terminal(
+                rejected(evaluation, StrategyExecutionRejectionReason.UNSUPPORTED_PLAN),
+            )
         }
 
         val cacheProvider = providers.storageProvider as? StrategyCacheAccessProvider
-            ?: return rejected(
-                evaluation,
-                StrategyExecutionRejectionReason.CACHE_ACCESS_PROVIDER_NOT_CONFIGURED,
+            ?: return CacheAccessBoundaryResult.Terminal(
+                rejected(
+                    evaluation,
+                    StrategyExecutionRejectionReason.CACHE_ACCESS_PROVIDER_NOT_CONFIGURED,
+                ),
             )
 
         val accessRequest = try {
@@ -81,33 +138,123 @@ internal class CacheFirstStrategyExecutor(
                 allowStale = evaluatedCacheState == StrategyCacheState.STALE,
             )
         } catch (_: IllegalArgumentException) {
-            return rejected(evaluation, StrategyExecutionRejectionReason.UNSUPPORTED_PLAN)
+            return CacheAccessBoundaryResult.Terminal(
+                rejected(evaluation, StrategyExecutionRejectionReason.UNSUPPORTED_PLAN),
+            )
         }
 
         return when (val result = cacheProvider.evaluateCacheAccess(accessRequest)) {
             is ProviderOperationResult.Failure ->
-                StrategySynchronizationExecutionResult.Failed(
-                    evaluation = evaluation,
-                    completedAt = clock.now(),
-                    error = result.error,
-                    transportAttempted = false,
-                )
-            is ProviderOperationResult.Success -> when (val access = result.value) {
-                is StrategyCacheAccessResult.Available ->
-                    available(
-                        evaluation = evaluation,
-                        evaluatedCacheState = evaluatedCacheState,
-                        access = access,
-                    )
-                is StrategyCacheAccessResult.Unavailable ->
-                    StrategySynchronizationExecutionResult.CacheUnavailable(
+                CacheAccessBoundaryResult.Terminal(
+                    StrategySynchronizationExecutionResult.Failed(
                         evaluation = evaluation,
                         completedAt = clock.now(),
-                        evaluatedCacheState = evaluatedCacheState,
-                        providerCacheState = access.cacheState,
-                        reason = StrategyCacheUnavailableReason.PROVIDER_REPORTED_UNAVAILABLE,
+                        error = result.error,
+                        transportAttempted = false,
+                    ),
+                )
+            is ProviderOperationResult.Success -> when (val access = result.value) {
+                is StrategyCacheAccessResult.Available -> {
+                    val freshness = access.freshness
+                    if (
+                        evaluatedCacheState == StrategyCacheState.FRESH &&
+                        freshness.cacheState == StrategyCacheState.STALE
+                    ) {
+                        CacheAccessBoundaryResult.Terminal(
+                            StrategySynchronizationExecutionResult.CacheUnavailable(
+                                evaluation = evaluation,
+                                completedAt = clock.now(),
+                                evaluatedCacheState = evaluatedCacheState,
+                                providerCacheState = freshness.cacheState,
+                                reason = StrategyCacheUnavailableReason.FRESHNESS_DOWNGRADED,
+                                providerFreshness = freshness,
+                            ),
+                        )
+                    } else {
+                        CacheAccessBoundaryResult.Available(
+                            evaluatedCacheState = evaluatedCacheState,
+                            freshness = freshness,
+                        )
+                    }
+                }
+                is StrategyCacheAccessResult.Unavailable ->
+                    CacheAccessBoundaryResult.Terminal(
+                        StrategySynchronizationExecutionResult.CacheUnavailable(
+                            evaluation = evaluation,
+                            completedAt = clock.now(),
+                            evaluatedCacheState = evaluatedCacheState,
+                            providerCacheState = access.cacheState,
+                            reason = StrategyCacheUnavailableReason.PROVIDER_REPORTED_UNAVAILABLE,
+                        ),
                     )
             }
+        }
+    }
+
+    private suspend fun executeInlinePullRefresh(
+        request: StrategySynchronizationRequest,
+        storage: io.dataloom.api.storage.StorageProvider,
+        transport: io.dataloom.api.transport.TransportProvider,
+        providers: StrategyProviderSet,
+        pipeline: SynchronizationPipeline,
+    ): StrategyCacheInlineRefreshResult {
+        val trackingTransport = TrackingTransportProvider(transport)
+        val context = SynchronizationExecutionContext(
+            request = request.request,
+            providers = ResolvedSynchronizationProviders(
+                storageProvider = storage,
+                transportProvider = trackingTransport,
+                schedulerProvider = providers.schedulerProvider,
+                connectivityProvider = providers.connectivityProvider,
+                queueProvider = providers.queueProvider,
+            ),
+            runtimeDependencies = runtimeDependencies,
+            lifecycleEventEmitter = lifecycleEventEmitter,
+        )
+
+        lifecycleEventEmitter?.emitStarted(context)
+        val result = pipeline.execute(context)
+        lifecycleEventEmitter?.emitCompleted(context, result)
+        val output = StrategyTransportOutput.ProviderBacked(result)
+
+        return when (result) {
+            is SynchronizationResult.Succeeded ->
+                StrategyCacheInlineRefreshResult.Completed(
+                    completedOperations = trackingTransport.completedOperations,
+                    output = output,
+                )
+            is SynchronizationResult.Skipped -> {
+                check(result.reason == SynchronizationSkipReason.NO_CHANGES) {
+                    "Canonical cache-first inline refresh returned an unsupported skip reason."
+                }
+                StrategyCacheInlineRefreshResult.Completed(
+                    completedOperations = trackingTransport.completedOperations,
+                    output = output,
+                )
+            }
+            is SynchronizationResult.PartiallySucceeded ->
+                StrategyCacheInlineRefreshResult.PartiallySucceeded(
+                    completedOperations = trackingTransport.completedOperations,
+                    output = output,
+                )
+            is SynchronizationResult.Failed -> {
+                val remoteFailure = trackingTransport.lastFailure
+                    ?.takeIf { it == result.error }
+                StrategyCacheInlineRefreshResult.Failed(
+                    transportAttempted = trackingTransport.attempted,
+                    completedOperations = trackingTransport.completedOperations,
+                    output = output,
+                    remoteOutcome = remoteFailure?.let(
+                        StrategyRemoteOutcomeClassifier::classify,
+                    ),
+                )
+            }
+            is SynchronizationResult.Cancelled ->
+                StrategyCacheInlineRefreshResult.Cancelled(
+                    transportAttempted = trackingTransport.attempted,
+                    completedOperations = trackingTransport.completedOperations,
+                    output = output,
+                )
         }
     }
 
@@ -180,33 +327,6 @@ internal class CacheFirstStrategyExecutor(
         )
     }
 
-    private fun available(
-        evaluation: StrategyEvaluationResult,
-        evaluatedCacheState: StrategyCacheState,
-        access: StrategyCacheAccessResult.Available,
-    ): StrategySynchronizationExecutionResult {
-        val freshness = access.freshness
-        if (
-            evaluatedCacheState == StrategyCacheState.FRESH &&
-            freshness.cacheState == StrategyCacheState.STALE
-        ) {
-            return StrategySynchronizationExecutionResult.CacheUnavailable(
-                evaluation = evaluation,
-                completedAt = clock.now(),
-                evaluatedCacheState = evaluatedCacheState,
-                providerCacheState = freshness.cacheState,
-                reason = StrategyCacheUnavailableReason.FRESHNESS_DOWNGRADED,
-                providerFreshness = freshness,
-            )
-        }
-        return StrategySynchronizationExecutionResult.CacheServed(
-            evaluation = evaluation,
-            completedAt = clock.now(),
-            evaluatedCacheState = evaluatedCacheState,
-            freshness = freshness,
-        )
-    }
-
     private fun isSupportedLocalServingPlan(
         evaluation: StrategyEvaluationResult,
     ): Boolean {
@@ -219,6 +339,34 @@ internal class CacheFirstStrategyExecutor(
                 StrategyProviderCapability.CACHE_ACCESS,
             ) &&
             plan.dataOrigin == StrategyDataOrigin.LOCAL
+    }
+
+    private fun isSupportedInlineRefreshPlan(
+        request: StrategySynchronizationRequest,
+        evaluation: StrategyEvaluationResult,
+    ): Boolean {
+        val plan = evaluation.plan
+        return request.request.direction == SynchronizationDirection.PULL &&
+            (
+                request.evidence.cacheState == StrategyCacheState.FRESH ||
+                    request.evidence.cacheState == StrategyCacheState.STALE
+                ) &&
+            plan.effectiveStrategy == BuiltInSynchronizationStrategy.CACHE_FIRST &&
+            plan.disposition == StrategyDisposition.SERVE_AND_REFRESH &&
+            plan.operations == listOf(
+                StrategyOperation.SERVE_LOCAL,
+                StrategyOperation.READ_CHECKPOINT,
+                StrategyOperation.PULL_REMOTE,
+                StrategyOperation.PERSIST_REMOTE,
+            ) &&
+            plan.requiredCapabilities == setOf(
+                StrategyProviderCapability.STORAGE,
+                StrategyProviderCapability.CACHE_ACCESS,
+                StrategyProviderCapability.TRANSPORT,
+            ) &&
+            plan.dataOrigin == StrategyDataOrigin.LOCAL &&
+            plan.durableContinuation == null &&
+            plan.fallbackPlan == null
     }
 
     private fun isSupportedRemotePlan(
@@ -292,4 +440,15 @@ internal class CacheFirstStrategyExecutor(
             completedAt = clock.now(),
             reason = reason,
         )
+}
+
+private sealed interface CacheAccessBoundaryResult {
+    data class Available(
+        val evaluatedCacheState: StrategyCacheState,
+        val freshness: StrategyCacheFreshnessEvidence,
+    ) : CacheAccessBoundaryResult
+
+    data class Terminal(
+        val result: StrategySynchronizationExecutionResult,
+    ) : CacheAccessBoundaryResult
 }
