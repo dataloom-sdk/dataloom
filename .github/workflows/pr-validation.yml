@@ -44,8 +44,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git apply --check tools/agent/dl-strategy-018.patch
-          git apply tools/agent/dl-strategy-018.patch
+          git apply --recount --check tools/agent/dl-strategy-018.patch
+          git apply --recount tools/agent/dl-strategy-018.patch
           rm tools/agent/dl-strategy-018.patch
           rm -f .github/workflows/dl-strategy-018-apply.yml
 
