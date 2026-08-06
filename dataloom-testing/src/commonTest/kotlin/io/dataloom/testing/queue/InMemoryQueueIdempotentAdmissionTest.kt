@@ -45,6 +45,7 @@ class InMemoryQueueIdempotentAdmissionTest {
         val already = assertIs<QueueIdempotentAdmissionResult.AlreadyAccepted>(duplicate)
         assertEquals(QueueEntryState.PENDING, already.currentState)
         assertEquals(1, provider.entryCount)
+        assertEquals(0, provider.enqueueRequests.size)
     }
 
     @Test
@@ -59,6 +60,7 @@ class InMemoryQueueIdempotentAdmissionTest {
         val typed = assertIs<QueueIdempotentAdmissionResult.IdentityConflict>(conflict)
         assertEquals(QueueEntryState.PENDING, typed.currentState)
         assertEquals(1, provider.entryCount)
+        assertEquals(0, provider.enqueueRequests.size)
     }
 
     @Test
@@ -91,6 +93,7 @@ class InMemoryQueueIdempotentAdmissionTest {
         val already = assertIs<QueueIdempotentAdmissionResult.AlreadyAccepted>(duplicate)
         assertEquals(QueueEntryState.COMPLETED, already.currentState)
         assertEquals(1, provider.entryCount)
+        assertEquals(0, provider.enqueueRequests.size)
     }
 
     private fun entry(
