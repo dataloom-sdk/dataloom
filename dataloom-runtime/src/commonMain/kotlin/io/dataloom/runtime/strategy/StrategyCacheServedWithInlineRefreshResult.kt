@@ -18,9 +18,11 @@ import io.dataloom.api.time.DataLoomInstant
  * DataLoom exposes no application domain value. [freshness] records the state
  * admitted for local use before refresh, while [refresh] independently records
  * whether the canonical inbound refresh completed, partially succeeded,
- * failed, or was explicitly cancelled.
+ * failed, or was explicitly cancelled. Construction is runtime-owned; external
+ * consumers inspect the immutable result but cannot forge unrelated plan and
+ * refresh evidence.
  */
-public class StrategyCacheServedWithInlineRefreshResult(
+public class StrategyCacheServedWithInlineRefreshResult internal constructor(
     override val evaluation: StrategyEvaluationResult,
     public val evaluatedCacheState: StrategyCacheState,
     public val freshness: StrategyCacheFreshnessEvidence,
