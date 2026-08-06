@@ -1,0 +1,1694 @@
+diff --git a/dataloom-api/src/commonMain/kotlin/io/dataloom/api/strategy/StrategySynchronizationRequest.kt b/dataloom-api/src/commonMain/kotlin/io/dataloom/api/strategy/StrategySynchronizationRequest.kt
+index 3fbe46d..0000000 100644
+--- a/dataloom-api/src/commonMain/kotlin/io/dataloom/api/strategy/StrategySynchronizationRequest.kt
++++ b/dataloom-api/src/commonMain/kotlin/io/dataloom/api/strategy/StrategySynchronizationRequest.kt
+@@ -2,9 +2,10 @@ package io.dataloom.api.strategy
+ 
+ import io.dataloom.api.change.ChangeSet
+ import io.dataloom.api.identifier.EntityType
+ import io.dataloom.api.identifier.QueueEntryId
++import io.dataloom.api.identifier.ScheduleId
+ import io.dataloom.api.model.SynchronizationDirection
+ import io.dataloom.api.model.SynchronizationRequest
+ import io.dataloom.api.synchronization.ChangeSetAcknowledgement
+ import io.dataloom.api.synchronization.SynchronizationCheckpoint
+ import io.dataloom.api.synchronization.SynchronizationResult
+@@ -67,6 +68,33 @@ public sealed interface StrategyOperationInput {
+             "StrategyOperationInput.OfflineFirstAdmission(identityConfigured=true)"
+     }
+ 
++    /**
++     * Caller-owned stable identities for one durable cache-first refresh.
++     *
++     * The runtime first verifies application-owned cache state, then atomically
++     * admits the immutable accepted strategy plan under [queueEntryId], and only
++     * after durable admission requests a queue-worker wake-up under [scheduleId].
++     * The scheduler always uses `KEEP` semantics and carries no domain payload.
++     */
++    public class CacheFirstDurableRefresh(
++        public val queueEntryId: QueueEntryId,
++        public val scheduleId: ScheduleId,
++    ) : StrategyOperationInput {
++
++        override fun equals(other: Any?): Boolean =
++            other is CacheFirstDurableRefresh &&
++                queueEntryId == other.queueEntryId &&
++                scheduleId == other.scheduleId
++
++        override fun hashCode(): Int =
++            (31 * queueEntryId.hashCode()) + scheduleId.hashCode()
++
++        /** Bounded diagnostics that exclude queue and schedule identity values. */
++        override fun toString(): String =
++            "StrategyOperationInput.CacheFirstDurableRefresh(" +
++                "identitiesConfigured=true)"
++    }
++
+     /**
+      * Caller-owned input for a direct transport operation.
+      *
+@@ -154,6 +181,17 @@ public data class StrategySynchronizationRequest(
+                     "OfflineFirstAdmission input requires an OFFLINE_FIRST profile."
+                 }
+             }
++            is StrategyOperationInput.CacheFirstDurableRefresh -> {
++                require(
++                    profile.strategy == BuiltInSynchronizationStrategy.CACHE_FIRST ||
++                        profile.strategy == BuiltInSynchronizationStrategy.ADAPTIVE,
++                ) {
++                    "CacheFirstDurableRefresh input requires CACHE_FIRST or ADAPTIVE policy."
++                }
++                require(request.direction == SynchronizationDirection.PULL) {
++                    "CacheFirstDurableRefresh input currently supports PULL only."
++                }
++            }
+             StrategyOperationInput.ProviderBacked -> Unit
+         }
+     }
+diff --git a/dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult.kt b/dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult.kt
+index c9e6669..0000000 100644
+--- a/dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult.kt
++++ b/dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult.kt
+@@ -23,6 +23,7 @@ public enum class StrategyExecutionRejectionReason {
+     LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED,
+     ATOMIC_LOCAL_ADMISSION_PROVIDER_NOT_CONFIGURED,
+     CACHE_ACCESS_PROVIDER_NOT_CONFIGURED,
++    IDEMPOTENT_QUEUE_ADMISSION_PROVIDER_NOT_CONFIGURED,
+     ACCEPTED_PLAN_MISMATCH,
+     ACCEPTED_PLAN_CONTINUATION_MISSING,
+     RECONCILIATION_PROVIDER_NOT_CONFIGURED,
+diff --git a/dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/StrategyCacheServedWithDurableRefreshResult.kt b/dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/StrategyCacheServedWithDurableRefreshResult.kt
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/StrategyCacheServedWithDurableRefreshResult.kt
+@@ -0,0 +1,288 @@
++package io.dataloom.runtime.strategy
++
++import io.dataloom.api.error.DataLoomError
++import io.dataloom.api.identifier.QueueEntryId
++import io.dataloom.api.identifier.ScheduleId
++import io.dataloom.api.model.SynchronizationDirection
++import io.dataloom.api.queue.QueueEntryState
++import io.dataloom.api.scheduling.ScheduleReceipt
++import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
++import io.dataloom.api.strategy.StrategyCacheFreshnessEvidence
++import io.dataloom.api.strategy.StrategyCacheState
++import io.dataloom.api.strategy.StrategyDataOrigin
++import io.dataloom.api.strategy.StrategyDisposition
++import io.dataloom.api.strategy.StrategyEvaluationResult
++import io.dataloom.api.strategy.StrategyOperation
++import io.dataloom.api.strategy.StrategyProviderCapability
++import io.dataloom.api.time.DataLoomInstant
++
++/** Whether durable queue admission was new or reconciled with existing work. */
++public enum class StrategyCacheDurableQueueAdmissionDisposition {
++    ACCEPTED,
++    ALREADY_ACCEPTED,
++}
++
++/** Terminal caller-visible disposition of durable cache-refresh admission. */
++public enum class StrategyCacheDurableRefreshDisposition {
++    SCHEDULED,
++    ALREADY_IN_PROGRESS,
++    ALREADY_TERMINAL,
++    IDENTITY_CONFLICT,
++    QUEUE_FAILED,
++    SCHEDULE_FAILED,
++}
++
++/**
++ * Payload-free result of admitting and scheduling one durable cache refresh.
++ *
++ * Queue admission always precedes scheduler invocation. Therefore
++ * [ScheduleFailed] still means the immutable queue entry is durably present and
++ * can be reconciled by retrying the same stable identities.
++ */
++public sealed interface StrategyCacheDurableRefreshResult {
++    public val queueEntryId: QueueEntryId
++    public val scheduleId: ScheduleId
++    public val completedAt: DataLoomInstant
++    public val disposition: StrategyCacheDurableRefreshDisposition
++
++    /** Queue work is durable and the platform scheduler accepted its wake-up. */
++    public data class Scheduled(
++        override val queueEntryId: QueueEntryId,
++        override val scheduleId: ScheduleId,
++        public val queueAdmissionDisposition:
++            StrategyCacheDurableQueueAdmissionDisposition,
++        public val queueState: QueueEntryState,
++        public val receipt: ScheduleReceipt,
++        override val completedAt: DataLoomInstant,
++    ) : StrategyCacheDurableRefreshResult {
++        init {
++            require(queueState == QueueEntryState.PENDING) {
++                "A newly scheduled durable refresh must be PENDING."
++            }
++            require(receipt.id == scheduleId) {
++                "Durable refresh schedule receipt must preserve schedule identity."
++            }
++        }
++
++        override val disposition: StrategyCacheDurableRefreshDisposition =
++            StrategyCacheDurableRefreshDisposition.SCHEDULED
++
++        override fun toString(): String =
++            "StrategyCacheDurableRefreshResult.Scheduled(" +
++                "queueAdmissionDisposition=$queueAdmissionDisposition, " +
++                "queueState=$queueState, disposition=$disposition)"
++    }
++
++    /**
++     * Existing work is leased or waiting under retry ownership.
++     *
++     * The initial refresh scheduler is not invoked again.
++     */
++    public data class AlreadyInProgress(
++        override val queueEntryId: QueueEntryId,
++        override val scheduleId: ScheduleId,
++        public val queueState: QueueEntryState,
++        override val completedAt: DataLoomInstant,
++    ) : StrategyCacheDurableRefreshResult {
++        init {
++            require(
++                queueState == QueueEntryState.LEASED ||
++                    queueState == QueueEntryState.RETRY_WAITING,
++            ) {
++                "In-progress durable refresh must be LEASED or RETRY_WAITING."
++            }
++        }
++
++        override val disposition: StrategyCacheDurableRefreshDisposition =
++            StrategyCacheDurableRefreshDisposition.ALREADY_IN_PROGRESS
++
++        override fun toString(): String =
++            "StrategyCacheDurableRefreshResult.AlreadyInProgress(" +
++                "queueState=$queueState, disposition=$disposition)"
++    }
++
++    /** Existing work has reached a retained terminal queue state. */
++    public data class AlreadyTerminal(
++        override val queueEntryId: QueueEntryId,
++        override val scheduleId: ScheduleId,
++        public val queueState: QueueEntryState,
++        override val completedAt: DataLoomInstant,
++    ) : StrategyCacheDurableRefreshResult {
++        init {
++            require(
++                queueState == QueueEntryState.COMPLETED ||
++                    queueState == QueueEntryState.FAILED ||
++                    queueState == QueueEntryState.CANCELLED ||
++                    queueState == QueueEntryState.DEAD_LETTER,
++            ) {
++                "Terminal durable refresh requires a terminal queue state."
++            }
++        }
++
++        override val disposition: StrategyCacheDurableRefreshDisposition =
++            StrategyCacheDurableRefreshDisposition.ALREADY_TERMINAL
++
++        override fun toString(): String =
++            "StrategyCacheDurableRefreshResult.AlreadyTerminal(" +
++                "queueState=$queueState, disposition=$disposition)"
++    }
++
++    /** The queue ID already belongs to different immutable work. */
++    public data class IdentityConflict(
++        override val queueEntryId: QueueEntryId,
++        override val scheduleId: ScheduleId,
++        public val currentState: QueueEntryState,
++        override val completedAt: DataLoomInstant,
++    ) : StrategyCacheDurableRefreshResult {
++        override val disposition: StrategyCacheDurableRefreshDisposition =
++            StrategyCacheDurableRefreshDisposition.IDENTITY_CONFLICT
++
++        override fun toString(): String =
++            "StrategyCacheDurableRefreshResult.IdentityConflict(" +
++                "currentState=$currentState, disposition=$disposition)"
++    }
++
++    /** Queue admission could not determine or persist a durable outcome. */
++    public data class QueueFailed(
++        override val queueEntryId: QueueEntryId,
++        override val scheduleId: ScheduleId,
++        public val error: DataLoomError,
++        override val completedAt: DataLoomInstant,
++    ) : StrategyCacheDurableRefreshResult {
++        override val disposition: StrategyCacheDurableRefreshDisposition =
++            StrategyCacheDurableRefreshDisposition.QUEUE_FAILED
++
++        override fun toString(): String =
++            "StrategyCacheDurableRefreshResult.QueueFailed(" +
++                "errorCode=${error.code}, disposition=$disposition)"
++    }
++
++    /**
++     * Queue admission succeeded but scheduler acceptance failed.
++     *
++     * The durable entry is intentionally not deleted or reset.
++     */
++    public data class ScheduleFailed(
++        override val queueEntryId: QueueEntryId,
++        override val scheduleId: ScheduleId,
++        public val queueAdmissionDisposition:
++            StrategyCacheDurableQueueAdmissionDisposition,
++        public val queueState: QueueEntryState,
++        public val error: DataLoomError,
++        override val completedAt: DataLoomInstant,
++    ) : StrategyCacheDurableRefreshResult {
++        init {
++            require(queueState == QueueEntryState.PENDING) {
++                "A failed initial schedule must preserve PENDING queue work."
++            }
++        }
++
++        override val disposition: StrategyCacheDurableRefreshDisposition =
++            StrategyCacheDurableRefreshDisposition.SCHEDULE_FAILED
++
++        override fun toString(): String =
++            "StrategyCacheDurableRefreshResult.ScheduleFailed(" +
++                "queueAdmissionDisposition=$queueAdmissionDisposition, " +
++                "queueState=$queueState, errorCode=${error.code}, " +
++                "disposition=$disposition)"
++    }
++}
++
++/**
++ * Provider-verified local cache use plus durable refresh admission evidence.
++ *
++ * DataLoom exposes no application domain value. The local cache truth remains
++ * independent from queue or scheduler failure, and the accepted continuation
++ * is replayed later without current-policy evaluation.
++ */
++public class StrategyCacheServedWithDurableRefreshResult internal constructor(
++    override val evaluation: StrategyEvaluationResult,
++    public val evaluatedCacheState: StrategyCacheState,
++    public val freshness: StrategyCacheFreshnessEvidence,
++    public val refresh: StrategyCacheDurableRefreshResult,
++) : StrategySynchronizationExecutionResult {
++    init {
++        val plan = evaluation.plan
++        val continuation = requireNotNull(plan.durableContinuation) {
++            "Durable cache refresh requires an immutable continuation."
++        }
++        require(
++            plan.effectiveStrategy == BuiltInSynchronizationStrategy.CACHE_FIRST &&
++                plan.direction == SynchronizationDirection.PULL &&
++                plan.disposition == StrategyDisposition.SERVE_AND_REFRESH &&
++                plan.operations == listOf(
++                    StrategyOperation.SERVE_LOCAL,
++                    StrategyOperation.ENQUEUE_DURABLE_WORK,
++                    StrategyOperation.SCHEDULE_REFRESH,
++                ) &&
++                plan.requiredCapabilities == setOf(
++                    StrategyProviderCapability.STORAGE,
++                    StrategyProviderCapability.CACHE_ACCESS,
++                    StrategyProviderCapability.QUEUE,
++                    StrategyProviderCapability.SCHEDULER,
++                ) &&
++                plan.dataOrigin == StrategyDataOrigin.LOCAL &&
++                plan.fallbackPlan == null,
++        ) {
++            "Durable cache refresh result requires the exact cache-first PULL admission plan."
++        }
++        require(
++            continuation.operations == listOf(
++                StrategyOperation.READ_CHECKPOINT,
++                StrategyOperation.PULL_REMOTE,
++                StrategyOperation.PERSIST_REMOTE,
++            ) &&
++                continuation.requiredCapabilities == setOf(
++                    StrategyProviderCapability.STORAGE,
++                    StrategyProviderCapability.TRANSPORT,
++                ) &&
++                continuation.dataOrigin == StrategyDataOrigin.REMOTE &&
++                continuation.consistency == plan.consistency &&
++                continuation.evaluatedCacheState == evaluatedCacheState &&
++                continuation.fallbackPlan == null,
++        ) {
++            "Durable cache refresh continuation must be the exact canonical PULL replay."
++        }
++        require(
++            evaluatedCacheState == StrategyCacheState.FRESH ||
++                evaluatedCacheState == StrategyCacheState.STALE,
++        ) {
++            "Durable cache refresh requires evaluated FRESH or STALE state."
++        }
++        require(
++            evaluatedCacheState != StrategyCacheState.FRESH ||
++                freshness.cacheState == StrategyCacheState.FRESH,
++        ) {
++            "A fresh admission must not be served from stale provider evidence."
++        }
++    }
++
++    override val completedAt: DataLoomInstant
++        get() = refresh.completedAt
++
++    public val dataOrigin: StrategyDataOrigin = StrategyDataOrigin.LOCAL
++
++    override fun equals(other: Any?): Boolean =
++        other is StrategyCacheServedWithDurableRefreshResult &&
++            evaluation == other.evaluation &&
++            evaluatedCacheState == other.evaluatedCacheState &&
++            freshness == other.freshness &&
++            refresh == other.refresh
++
++    override fun hashCode(): Int {
++        var result = evaluation.hashCode()
++        result = (31 * result) + evaluatedCacheState.hashCode()
++        result = (31 * result) + freshness.hashCode()
++        result = (31 * result) + refresh.hashCode()
++        return result
++    }
++
++    override fun toString(): String =
++        "StrategyCacheServedWithDurableRefreshResult(" +
++            "decisionId=${evaluation.decisionId}, " +
++            "planId=${evaluation.plan.id}, " +
++            "evaluatedCacheState=$evaluatedCacheState, " +
++            "providerCacheState=${freshness.cacheState}, " +
++            "refreshDisposition=${refresh.disposition}, " +
++            "dataOrigin=$dataOrigin)"
++}
+diff --git a/dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/StrategySynchronizationExecutionCoordinator.kt b/dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/StrategySynchronizationExecutionCoordinator.kt
+index 7fec578..0000000 100644
+--- a/dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/StrategySynchronizationExecutionCoordinator.kt
++++ b/dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/StrategySynchronizationExecutionCoordinator.kt
+@@ -77,9 +77,9 @@ internal class StrategySynchronizationExecutionCoordinator(
+             )
+         }
+ 
+-        // Offline-first durable deferral is handled above by its atomic
+-        // local-intent/outbox admission boundary. No other strategy currently
+-        // commits queue or scheduler work here, so it must not report Deferred.
++        // Offline-first durable deferral is handled above by its atomic local
++        // intent/outbox boundary. Cache-first durable refresh is admitted below
++        // as SERVE_AND_REFRESH; unsupported non-offline DEFER plans still fail closed.
+         when (evaluation.plan.disposition) {
+             StrategyDisposition.DEFER -> return rejected(
+                 evaluation = evaluation,
+@@ -117,12 +117,23 @@ internal class StrategySynchronizationExecutionCoordinator(
+                 }
+             }
+             BuiltInSynchronizationStrategy.CACHE_FIRST -> {
+-                if (request.input !is StrategyOperationInput.ProviderBacked) {
++                val durableRefresh =
++                    isDirectDurableCacheRefreshPlan(request, evaluation)
++                if (
++                    durableRefresh &&
++                    request.input !is StrategyOperationInput.CacheFirstDurableRefresh
++                ) {
+                     return rejected(
+                         evaluation = evaluation,
+                         reason = StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT,
+                     )
+                 }
++                if (!durableRefresh && request.input !is StrategyOperationInput.ProviderBacked) {
++                    return rejected(
++                        evaluation = evaluation,
++                        reason = StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT,
++                    )
++                }
+                 if (!isSupportedDirectCacheFirstPlan(request, evaluation)) {
+                     return rejected(
+                         evaluation = evaluation,
+@@ -207,6 +214,7 @@ internal class StrategySynchronizationExecutionCoordinator(
+     ): Boolean =
+         isDirectCacheServingPlan(evaluation) ||
+             isDirectInlineCacheRefreshPlan(request, evaluation) ||
++            isDirectDurableCacheRefreshPlan(request, evaluation) ||
+             isDirectCacheRemotePlan(request, evaluation)
+ 
+     private fun isDirectCacheServingPlan(
+@@ -254,6 +262,46 @@ internal class StrategySynchronizationExecutionCoordinator(
+             plan.fallbackPlan == null
+     }
+ 
++    private fun isDirectDurableCacheRefreshPlan(
++        request: StrategySynchronizationRequest,
++        evaluation: StrategyEvaluationResult,
++    ): Boolean {
++        val plan = evaluation.plan
++        val continuation = plan.durableContinuation ?: return false
++        return request.request.direction == SynchronizationDirection.PULL &&
++            (
++                request.evidence.cacheState == StrategyCacheState.FRESH ||
++                    request.evidence.cacheState == StrategyCacheState.STALE
++                ) &&
++            plan.disposition == StrategyDisposition.SERVE_AND_REFRESH &&
++            plan.operations == listOf(
++                StrategyOperation.SERVE_LOCAL,
++                StrategyOperation.ENQUEUE_DURABLE_WORK,
++                StrategyOperation.SCHEDULE_REFRESH,
++            ) &&
++            plan.requiredCapabilities == setOf(
++                StrategyProviderCapability.STORAGE,
++                StrategyProviderCapability.CACHE_ACCESS,
++                StrategyProviderCapability.QUEUE,
++                StrategyProviderCapability.SCHEDULER,
++            ) &&
++            plan.dataOrigin == StrategyDataOrigin.LOCAL &&
++            plan.fallbackPlan == null &&
++            continuation.operations == listOf(
++                StrategyOperation.READ_CHECKPOINT,
++                StrategyOperation.PULL_REMOTE,
++                StrategyOperation.PERSIST_REMOTE,
++            ) &&
++            continuation.requiredCapabilities == setOf(
++                StrategyProviderCapability.STORAGE,
++                StrategyProviderCapability.TRANSPORT,
++            ) &&
++            continuation.dataOrigin == StrategyDataOrigin.REMOTE &&
++            continuation.consistency == plan.consistency &&
++            continuation.evaluatedCacheState == request.evidence.cacheState &&
++            continuation.fallbackPlan == null
++    }
++
+     private fun isDirectCacheRemotePlan(
+         request: StrategySynchronizationRequest,
+         evaluation: StrategyEvaluationResult,
+diff --git a/dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/CacheFirstStrategyExecutor.kt b/dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/CacheFirstStrategyExecutor.kt
+index d69e8cf..0000000 100644
+--- a/dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/CacheFirstStrategyExecutor.kt
++++ b/dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/CacheFirstStrategyExecutor.kt
+@@ -1,8 +1,23 @@
+ package io.dataloom.runtime.strategy
+ 
++import io.dataloom.api.connectivity.ConnectivityRequirement
++import io.dataloom.api.context.DataLoomMetadata
+ import io.dataloom.api.error.DataLoomError
++import io.dataloom.api.error.ErrorCategory
++import io.dataloom.api.error.ErrorCode
++import io.dataloom.api.error.ErrorSeverity
++import io.dataloom.api.error.Recoverability
+ import io.dataloom.api.execution.StrategyProviderSet
+ import io.dataloom.api.model.SynchronizationDirection
+ import io.dataloom.api.provider.ProviderOperationResult
++import io.dataloom.api.queue.QueueEnqueueRequest
++import io.dataloom.api.queue.QueueEntry
++import io.dataloom.api.queue.QueueEntryState
++import io.dataloom.api.queue.QueueIdempotentAdmissionProvider
++import io.dataloom.api.queue.QueueIdempotentAdmissionResult
+ import io.dataloom.api.runtime.RuntimeDependencies
++import io.dataloom.api.scheduling.ExistingSchedulePolicy
++import io.dataloom.api.scheduling.ScheduleConstraints
++import io.dataloom.api.scheduling.ScheduleRequest
++import io.dataloom.api.scheduling.SchedulerProvider
+ import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
+@@ -35,18 +58,222 @@ internal class CacheFirstStrategyExecutor(
+         evaluation: StrategyEvaluationResult,
+         providers: StrategyProviderSet,
+     ): StrategySynchronizationExecutionResult {
+-        if (request.input !is StrategyOperationInput.ProviderBacked) {
++        val durableRefresh = isSupportedDurableRefreshPlan(request, evaluation)
++        if (
++            durableRefresh &&
++            request.input !is StrategyOperationInput.CacheFirstDurableRefresh
++        ) {
++            return rejected(evaluation, StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT)
++        }
++        if (!durableRefresh && request.input !is StrategyOperationInput.ProviderBacked) {
+             return rejected(evaluation, StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT)
+         }
+ 
+         return when {
+             isSupportedLocalServingPlan(evaluation) ->
+                 executeLocalServing(request, evaluation, providers)
+             isSupportedInlineRefreshPlan(request, evaluation) ->
+                 executeInlineRefresh(request, evaluation, providers)
++            durableRefresh ->
++                executeDurableRefresh(request, evaluation, providers)
+             isSupportedRemotePlan(request, evaluation) ->
+                 executeRemotePlan(request, evaluation, providers)
+             else -> rejected(evaluation, StrategyExecutionRejectionReason.UNSUPPORTED_PLAN)
+         }
+     }
+ 
++    private suspend fun executeDurableRefresh(
++        request: StrategySynchronizationRequest,
++        evaluation: StrategyEvaluationResult,
++        providers: StrategyProviderSet,
++    ): StrategySynchronizationExecutionResult {
++        val input = request.input as? StrategyOperationInput.CacheFirstDurableRefresh
++            ?: return rejected(evaluation, StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT)
++        val queueProvider = providers.queueProvider as? QueueIdempotentAdmissionProvider
++            ?: return rejected(
++                evaluation,
++                StrategyExecutionRejectionReason
++                    .IDEMPOTENT_QUEUE_ADMISSION_PROVIDER_NOT_CONFIGURED,
++            )
++        val schedulerProvider = providers.schedulerProvider
++            ?: return rejected(evaluation, StrategyExecutionRejectionReason.UNSUPPORTED_PLAN)
++        val queueAdmission = when (val admission = StrategyQueueAdmissionEvaluator.evaluate(evaluation)) {
++            is StrategyQueueAdmissionResult.Admitted -> admission
++            is StrategyQueueAdmissionResult.Rejected ->
++                return rejected(evaluation, StrategyExecutionRejectionReason.UNSUPPORTED_PLAN)
++        }
++
++        return when (val access = evaluateCacheAccess(request, evaluation, providers)) {
++            is CacheAccessBoundaryResult.Terminal -> access.result
++            is CacheAccessBoundaryResult.Available -> {
++                val refresh = admitAndScheduleDurableRefresh(
++                    request = request,
++                    evaluation = evaluation,
++                    input = input,
++                    queueProvider = queueProvider,
++                    schedulerProvider = schedulerProvider,
++                    persistedDecision = queueAdmission.persistedDecision,
++                )
++                StrategyCacheServedWithDurableRefreshResult(
++                    evaluation = evaluation,
++                    evaluatedCacheState = access.evaluatedCacheState,
++                    freshness = access.freshness,
++                    refresh = refresh,
++                )
++            }
++        }
++    }
++
++    private suspend fun admitAndScheduleDurableRefresh(
++        request: StrategySynchronizationRequest,
++        evaluation: StrategyEvaluationResult,
++        input: StrategyOperationInput.CacheFirstDurableRefresh,
++        queueProvider: QueueIdempotentAdmissionProvider,
++        schedulerProvider: SchedulerProvider,
++        persistedDecision: io.dataloom.api.strategy.PersistedStrategyDecision,
++    ): StrategyCacheDurableRefreshResult {
++        val admittedAt = clock.now()
++        val entry = try {
++            QueueEntry(
++                id = input.queueEntryId,
++                synchronizationRequest = request.request,
++                state = QueueEntryState.PENDING,
++                enqueuedAt = admittedAt,
++                availableAt = admittedAt,
++                metadata = durableRefreshMetadata(input.scheduleId),
++                strategyDecision = persistedDecision,
++                strategyPlan = evaluation.plan,
++            )
++        } catch (_: IllegalArgumentException) {
++            return StrategyCacheDurableRefreshResult.QueueFailed(
++                queueEntryId = input.queueEntryId,
++                scheduleId = input.scheduleId,
++                error = DurableRefreshAdmissionConstructionError,
++                completedAt = clock.now(),
++            )
++        }
++
++        return when (val result = queueProvider.admit(QueueEnqueueRequest(entry))) {
++            is ProviderOperationResult.Failure ->
++                StrategyCacheDurableRefreshResult.QueueFailed(
++                    queueEntryId = input.queueEntryId,
++                    scheduleId = input.scheduleId,
++                    error = result.error,
++                    completedAt = clock.now(),
++                )
++            is ProviderOperationResult.Success ->
++                mapDurableQueueAdmission(
++                    input = input,
++                    schedulerProvider = schedulerProvider,
++                    admission = result.value,
++                )
++        }
++    }
++
++    private suspend fun mapDurableQueueAdmission(
++        input: StrategyOperationInput.CacheFirstDurableRefresh,
++        schedulerProvider: SchedulerProvider,
++        admission: QueueIdempotentAdmissionResult,
++    ): StrategyCacheDurableRefreshResult {
++        if (admission.queueEntryId != input.queueEntryId) {
++            return StrategyCacheDurableRefreshResult.QueueFailed(
++                queueEntryId = input.queueEntryId,
++                scheduleId = input.scheduleId,
++                error = DurableRefreshQueueIdentityMismatchError,
++                completedAt = clock.now(),
++            )
++        }
++        return when (admission) {
++            is QueueIdempotentAdmissionResult.Accepted ->
++                scheduleDurableRefresh(
++                    input = input,
++                    schedulerProvider = schedulerProvider,
++                    queueDisposition =
++                        StrategyCacheDurableQueueAdmissionDisposition.ACCEPTED,
++                    queueState = admission.currentState,
++                )
++            is QueueIdempotentAdmissionResult.AlreadyAccepted ->
++                when (admission.currentState) {
++                    QueueEntryState.PENDING ->
++                        scheduleDurableRefresh(
++                            input = input,
++                            schedulerProvider = schedulerProvider,
++                            queueDisposition =
++                                StrategyCacheDurableQueueAdmissionDisposition
++                                    .ALREADY_ACCEPTED,
++                            queueState = admission.currentState,
++                        )
++                    QueueEntryState.LEASED,
++                    QueueEntryState.RETRY_WAITING,
++                    -> StrategyCacheDurableRefreshResult.AlreadyInProgress(
++                        queueEntryId = input.queueEntryId,
++                        scheduleId = input.scheduleId,
++                        queueState = admission.currentState,
++                        completedAt = clock.now(),
++                    )
++                    QueueEntryState.COMPLETED,
++                    QueueEntryState.FAILED,
++                    QueueEntryState.CANCELLED,
++                    QueueEntryState.DEAD_LETTER,
++                    -> StrategyCacheDurableRefreshResult.AlreadyTerminal(
++                        queueEntryId = input.queueEntryId,
++                        scheduleId = input.scheduleId,
++                        queueState = admission.currentState,
++                        completedAt = clock.now(),
++                    )
++                }
++            is QueueIdempotentAdmissionResult.IdentityConflict ->
++                StrategyCacheDurableRefreshResult.IdentityConflict(
++                    queueEntryId = input.queueEntryId,
++                    scheduleId = input.scheduleId,
++                    currentState = admission.currentState,
++                    completedAt = clock.now(),
++                )
++        }
++    }
++
++    private suspend fun scheduleDurableRefresh(
++        input: StrategyOperationInput.CacheFirstDurableRefresh,
++        schedulerProvider: SchedulerProvider,
++        queueDisposition: StrategyCacheDurableQueueAdmissionDisposition,
++        queueState: QueueEntryState,
++    ): StrategyCacheDurableRefreshResult {
++        val request = ScheduleRequest(
++            id = input.scheduleId,
++            synchronizationRequest = null,
++            constraints = ScheduleConstraints(
++                connectivity = ConnectivityRequirement.AVAILABLE,
++            ),
++            existingPolicy = ExistingSchedulePolicy.KEEP,
++        )
++        return when (val result = schedulerProvider.schedule(request)) {
++            is ProviderOperationResult.Failure ->
++                StrategyCacheDurableRefreshResult.ScheduleFailed(
++                    queueEntryId = input.queueEntryId,
++                    scheduleId = input.scheduleId,
++                    queueAdmissionDisposition = queueDisposition,
++                    queueState = queueState,
++                    error = result.error,
++                    completedAt = clock.now(),
++                )
++            is ProviderOperationResult.Success -> {
++                if (result.value.id != input.scheduleId) {
++                    StrategyCacheDurableRefreshResult.ScheduleFailed(
++                        queueEntryId = input.queueEntryId,
++                        scheduleId = input.scheduleId,
++                        queueAdmissionDisposition = queueDisposition,
++                        queueState = queueState,
++                        error = DurableRefreshScheduleIdentityMismatchError,
++                        completedAt = clock.now(),
++                    )
++                } else {
++                    StrategyCacheDurableRefreshResult.Scheduled(
++                        queueEntryId = input.queueEntryId,
++                        scheduleId = input.scheduleId,
++                        queueAdmissionDisposition = queueDisposition,
++                        queueState = queueState,
++                        receipt = result.value,
++                        completedAt = clock.now(),
++                    )
++                }
++            }
++        }
++    }
++
+@@ -349,3 +384,44 @@ internal class CacheFirstStrategyExecutor(
+             plan.fallbackPlan == null
+     }
+ 
++    private fun isSupportedDurableRefreshPlan(
++        request: StrategySynchronizationRequest,
++        evaluation: StrategyEvaluationResult,
++    ): Boolean {
++        val plan = evaluation.plan
++        val continuation = plan.durableContinuation ?: return false
++        return request.request.direction == SynchronizationDirection.PULL &&
++            (
++                request.evidence.cacheState == StrategyCacheState.FRESH ||
++                    request.evidence.cacheState == StrategyCacheState.STALE
++                ) &&
++            plan.effectiveStrategy == BuiltInSynchronizationStrategy.CACHE_FIRST &&
++            plan.disposition == StrategyDisposition.SERVE_AND_REFRESH &&
++            plan.operations == listOf(
++                StrategyOperation.SERVE_LOCAL,
++                StrategyOperation.ENQUEUE_DURABLE_WORK,
++                StrategyOperation.SCHEDULE_REFRESH,
++            ) &&
++            plan.requiredCapabilities == setOf(
++                StrategyProviderCapability.STORAGE,
++                StrategyProviderCapability.CACHE_ACCESS,
++                StrategyProviderCapability.QUEUE,
++                StrategyProviderCapability.SCHEDULER,
++            ) &&
++            plan.dataOrigin == StrategyDataOrigin.LOCAL &&
++            plan.fallbackPlan == null &&
++            continuation.operations == listOf(
++                StrategyOperation.READ_CHECKPOINT,
++                StrategyOperation.PULL_REMOTE,
++                StrategyOperation.PERSIST_REMOTE,
++            ) &&
++            continuation.requiredCapabilities == setOf(
++                StrategyProviderCapability.STORAGE,
++                StrategyProviderCapability.TRANSPORT,
++            ) &&
++            continuation.dataOrigin == StrategyDataOrigin.REMOTE &&
++            continuation.consistency == plan.consistency &&
++            continuation.evaluatedCacheState == request.evidence.cacheState &&
++            continuation.fallbackPlan == null
++    }
++
+@@ -465,3 +553,45 @@ private sealed interface CacheAccessBoundaryResult {
+         val result: StrategySynchronizationExecutionResult,
+     ) : CacheAccessBoundaryResult
+ }
++
++private fun durableRefreshMetadata(
++    scheduleId: io.dataloom.api.identifier.ScheduleId,
++): DataLoomMetadata = DataLoomMetadata.of(
++    mapOf(DURABLE_REFRESH_SCHEDULE_ID_METADATA_KEY to scheduleId.value),
++)
++
++private const val DURABLE_REFRESH_SCHEDULE_ID_METADATA_KEY: String =
++    "dataloom-schedule-id"
++
++private object DurableRefreshAdmissionConstructionError : DataLoomError {
++    override val code: ErrorCode =
++        ErrorCode("STRATEGY_DURABLE_REFRESH_ADMISSION_CONSTRUCTION_FAILED")
++    override val category: ErrorCategory = ErrorCategory.STATE
++    override val severity: ErrorSeverity = ErrorSeverity.ERROR
++    override val recoverability: Recoverability = Recoverability.NON_RECOVERABLE
++    override val message: String =
++        "Durable cache refresh work could not be represented by the accepted queue model."
++    override val cause: Throwable? = null
++}
++
++private object DurableRefreshQueueIdentityMismatchError : DataLoomError {
++    override val code: ErrorCode =
++        ErrorCode("STRATEGY_DURABLE_REFRESH_QUEUE_IDENTITY_MISMATCH")
++    override val category: ErrorCategory = ErrorCategory.PROVIDER
++    override val severity: ErrorSeverity = ErrorSeverity.ERROR
++    override val recoverability: Recoverability = Recoverability.NON_RECOVERABLE
++    override val message: String =
++        "Queue provider returned a different durable refresh identity."
++    override val cause: Throwable? = null
++}
++
++private object DurableRefreshScheduleIdentityMismatchError : DataLoomError {
++    override val code: ErrorCode =
++        ErrorCode("STRATEGY_DURABLE_REFRESH_SCHEDULE_IDENTITY_MISMATCH")
++    override val category: ErrorCategory = ErrorCategory.PROVIDER
++    override val severity: ErrorSeverity = ErrorSeverity.ERROR
++    override val recoverability: Recoverability = Recoverability.NON_RECOVERABLE
++    override val message: String =
++        "Scheduler provider returned a different durable refresh identity."
++    override val cause: Throwable? = null
++}
+diff --git a/dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/execution/protection/ProviderProtectedStrategySynchronization.kt b/dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/execution/protection/ProviderProtectedStrategySynchronization.kt
+index c9ec2fe..0000000 100644
+--- a/dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/execution/protection/ProviderProtectedStrategySynchronization.kt
++++ b/dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/execution/protection/ProviderProtectedStrategySynchronization.kt
+@@ -28,3 +28,4 @@ import io.dataloom.runtime.retry.TransportCircuitProtectionRuntime
+ import io.dataloom.runtime.strategy.AcceptedStrategyPlanExecutionCoordinator
++import io.dataloom.runtime.strategy.StrategyCacheServedWithDurableRefreshResult
+ import io.dataloom.runtime.strategy.StrategyCacheServedWithInlineRefreshResult
+ import io.dataloom.runtime.strategy.StrategyExecutionRejectionReason
+@@ -327,4 +328,6 @@ private fun strategyStatus(result: StrategySynchronizationExecutionResult): Str
+         is StrategySynchronizationExecutionResult.FallbackUnavailable -> "FALLBACK_UNAVAILABLE"
+         is StrategySynchronizationExecutionResult.CacheServed -> "CACHE_SERVED"
+         is StrategyCacheServedWithInlineRefreshResult -> "CACHE_SERVED_INLINE_REFRESH"
++        is StrategyCacheServedWithDurableRefreshResult ->
++            "CACHE_SERVED_DURABLE_REFRESH"
+         is StrategySynchronizationExecutionResult.CacheUnavailable -> "CACHE_UNAVAILABLE"
+diff --git a/dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/queue/StrategyQueueExecutionOutcomeMapper.kt b/dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/queue/StrategyQueueExecutionOutcomeMapper.kt
+index 2aaa9ba..0000000 100644
+--- a/dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/queue/StrategyQueueExecutionOutcomeMapper.kt
++++ b/dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/queue/StrategyQueueExecutionOutcomeMapper.kt
+@@ -15,3 +15,4 @@ import io.dataloom.runtime.retry.SynchronizationRetryEvaluation
+ import io.dataloom.runtime.retry.SynchronizationRetryEvaluator
++import io.dataloom.runtime.strategy.StrategyCacheServedWithDurableRefreshResult
+ import io.dataloom.runtime.strategy.StrategyCacheServedWithInlineRefreshResult
+ import io.dataloom.runtime.strategy.StrategySynchronizationExecutionResult
+@@ -48,4 +49,5 @@ internal class StrategyQueueExecutionOutcomeMapper(
+         }
+         is StrategySynchronizationExecutionResult.CacheServed,
+         is StrategyCacheServedWithInlineRefreshResult,
++        is StrategyCacheServedWithDurableRefreshResult,
+         -> failed(AcceptedPlanUnexpectedDirectCacheServeError())
+diff --git a/dataloom-testing/src/commonTest/kotlin/io/dataloom/testing/strategy/CacheFirstDurableRefreshAdmissionIntegrationTest.kt b/dataloom-testing/src/commonTest/kotlin/io/dataloom/testing/strategy/CacheFirstDurableRefreshAdmissionIntegrationTest.kt
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/dataloom-testing/src/commonTest/kotlin/io/dataloom/testing/strategy/CacheFirstDurableRefreshAdmissionIntegrationTest.kt
+@@ -0,0 +1,563 @@
++package io.dataloom.testing.strategy
++
++import io.dataloom.api.connectivity.ConnectivityRequirement
++import io.dataloom.api.context.ExecutionContext
++import io.dataloom.api.error.DataLoomError
++import io.dataloom.api.error.ErrorCategory
++import io.dataloom.api.error.ErrorCode
++import io.dataloom.api.error.ErrorSeverity
++import io.dataloom.api.error.Recoverability
++import io.dataloom.api.identifier.ConflictId
++import io.dataloom.api.identifier.CorrelationId
++import io.dataloom.api.identifier.ExecutionId
++import io.dataloom.api.identifier.IdentifierGenerator
++import io.dataloom.api.identifier.QueueConsumerId
++import io.dataloom.api.identifier.QueueEntryId
++import io.dataloom.api.identifier.QueueLeaseId
++import io.dataloom.api.identifier.ScheduleId
++import io.dataloom.api.identifier.SynchronizationEventId
++import io.dataloom.api.identifier.SynchronizationSessionId
++import io.dataloom.api.identifier.WorkflowId
++import io.dataloom.api.model.SynchronizationDirection
++import io.dataloom.api.model.SynchronizationMode
++import io.dataloom.api.model.SynchronizationRequest
++import io.dataloom.api.provider.ProviderDescriptor
++import io.dataloom.api.provider.ProviderHealth
++import io.dataloom.api.provider.ProviderHealthStatus
++import io.dataloom.api.provider.ProviderId
++import io.dataloom.api.provider.ProviderInitializationContext
++import io.dataloom.api.provider.ProviderLifecycleResult
++import io.dataloom.api.provider.ProviderName
++import io.dataloom.api.provider.ProviderOperationResult
++import io.dataloom.api.provider.ProviderType
++import io.dataloom.api.provider.ProviderVersion
++import io.dataloom.api.provider.StrategyProviderBindings
++import io.dataloom.api.queue.QueueAcquireRequest
++import io.dataloom.api.queue.QueueAcquireResult
++import io.dataloom.api.queue.QueueCompletionRequest
++import io.dataloom.api.queue.QueueEnqueueRequest
++import io.dataloom.api.queue.QueueEntryState
++import io.dataloom.api.queue.QueueIdempotentAdmissionProvider
++import io.dataloom.api.queue.QueueIdempotentAdmissionResult
++import io.dataloom.api.queue.QueueProvider
++import io.dataloom.api.runtime.RuntimeDependencies
++import io.dataloom.api.runtime.RuntimeIdentifierGenerators
++import io.dataloom.api.scheduling.ExistingSchedulePolicy
++import io.dataloom.api.scheduling.ScheduleCancellationRequest
++import io.dataloom.api.scheduling.ScheduleReceipt
++import io.dataloom.api.scheduling.ScheduleRequest
++import io.dataloom.api.scheduling.SchedulerProvider
++import io.dataloom.api.storage.InboundChangeApplyRequest
++import io.dataloom.api.storage.OutboundChangeReadRequest
++import io.dataloom.api.storage.OutboundChangeReadResult
++import io.dataloom.api.strategy.CacheFirstStrategyProfile
++import io.dataloom.api.strategy.StrategyCacheAccessProvider
++import io.dataloom.api.strategy.StrategyCacheAccessRequest
++import io.dataloom.api.strategy.StrategyCacheAccessResult
++import io.dataloom.api.strategy.StrategyCacheFreshnessEvidence
++import io.dataloom.api.strategy.StrategyCacheState
++import io.dataloom.api.strategy.StrategyConfigurationVersion
++import io.dataloom.api.strategy.StrategyConnectivity
++import io.dataloom.api.strategy.StrategyDecisionId
++import io.dataloom.api.strategy.StrategyOperationInput
++import io.dataloom.api.strategy.StrategyPlanId
++import io.dataloom.api.strategy.StrategyProfileId
++import io.dataloom.api.strategy.StrategyProviderHealth
++import io.dataloom.api.strategy.StrategyRuntimeEvidence
++import io.dataloom.api.strategy.StrategySynchronizationRequest
++import io.dataloom.api.strategy.StrategyTransportOutput
++import io.dataloom.api.strategy.correspondsTo
++import io.dataloom.api.synchronization.ChangeSetAcknowledgement
++import io.dataloom.api.synchronization.CheckpointReadRequest
++import io.dataloom.api.synchronization.CheckpointWriteRequest
++import io.dataloom.api.synchronization.OutboundChangeAcknowledgementRequest
++import io.dataloom.api.synchronization.SynchronizationCheckpoint
++import io.dataloom.api.synchronization.SynchronizationResult
++import io.dataloom.api.time.DataLoomClock
++import io.dataloom.api.time.DataLoomInstant
++import io.dataloom.api.transport.PullChangesRequest
++import io.dataloom.api.transport.PullChangesResult
++import io.dataloom.api.transport.PushChangesRequest
++import io.dataloom.api.transport.TransportProvider
++import io.dataloom.runtime.facade.DataLoom
++import io.dataloom.runtime.facade.DataLoomBuilder
++import io.dataloom.runtime.strategy.StrategyCacheDurableQueueAdmissionDisposition
++import io.dataloom.runtime.strategy.StrategyCacheDurableRefreshResult
++import io.dataloom.runtime.strategy.StrategyCacheServedWithDurableRefreshResult
++import io.dataloom.runtime.strategy.StrategyExecutionRejectionReason
++import io.dataloom.runtime.strategy.StrategySynchronizationExecutionResult
++import io.dataloom.testing.queue.InMemoryQueueProvider
++import kotlin.test.Test
++import kotlin.test.assertEquals
++import kotlin.test.assertIs
++import kotlin.test.assertNotNull
++import kotlin.test.assertTrue
++import kotlinx.coroutines.test.runTest
++
++class CacheFirstDurableRefreshAdmissionIntegrationTest {
++
++    @Test
++    fun durableRefreshAdmitsBeforeScheduleAndReplaysFrozenContinuation() = runTest {
++        val calls = mutableListOf<String>()
++        val storage = RecordingStorage(calls = calls)
++        val transport = RecordingTransport()
++        val queue = RecordingQueue(calls)
++        val scheduler = RecordingScheduler(calls = calls)
++        val fixture = fixture(storage, transport, queue, scheduler)
++        assertIs<ProviderLifecycleResult.InitializeSuccess>(fixture.dataLoom.initialize())
++
++        val result = fixture.dataLoom.synchronize(request())
++
++        val served = assertIs<StrategyCacheServedWithDurableRefreshResult>(result)
++        val scheduled = assertIs<StrategyCacheDurableRefreshResult.Scheduled>(served.refresh)
++        assertEquals(
++            StrategyCacheDurableQueueAdmissionDisposition.ACCEPTED,
++            scheduled.queueAdmissionDisposition,
++        )
++        assertEquals(listOf("cache", "queue", "schedule"), calls)
++        assertEquals(1, queue.delegate.entryCount)
++        val scheduleRequest = scheduler.requests.single()
++        assertEquals(null, scheduleRequest.synchronizationRequest)
++        assertEquals(
++            ConnectivityRequirement.AVAILABLE,
++            scheduleRequest.constraints.connectivity,
++        )
++        assertEquals(ExistingSchedulePolicy.KEEP, scheduleRequest.existingPolicy)
++
++        val acquired = assertIs<QueueAcquireResult.Entries>(
++            queue.acquire(acquireRequest()).successValue(),
++        )
++        val entry = acquired.entries.single()
++        val plan = assertNotNull(entry.strategyPlan)
++        val decision = assertNotNull(entry.strategyDecision)
++        assertEquals(served.evaluation.plan, plan)
++        assertTrue(decision.correspondsTo(plan))
++
++        val replay = fixture.dataLoom.synchronizeAcceptedPlan(
++            request = entry.synchronizationRequest,
++            decision = decision,
++            plan = plan,
++            bindings = fixture.bindings,
++        )
++
++        val executed = assertIs<StrategySynchronizationExecutionResult.Executed>(replay)
++        val output = assertIs<StrategyTransportOutput.ProviderBacked>(executed.output)
++        assertIs<SynchronizationResult.Skipped>(output.result)
++        assertEquals(1, storage.cacheCalls)
++        assertEquals(1, storage.checkpointCalls)
++        assertEquals(1, transport.pullCalls)
++    }
++
++    @Test
++    fun schedulerFailurePreservesQueueAndRetryReconcilesSameIdentity() = runTest {
++        val calls = mutableListOf<String>()
++        val failure = TestError(ErrorCode("SCHEDULER_UNAVAILABLE"))
++        val storage = RecordingStorage(calls = calls)
++        val transport = RecordingTransport()
++        val queue = RecordingQueue(calls)
++        val scheduler = RecordingScheduler(
++            calls = calls,
++            results = mutableListOf(
++                ProviderOperationResult.Failure(failure),
++                ProviderOperationResult.Success(
++                    ScheduleReceipt(ScheduleId("durable-refresh-schedule")),
++                ),
++            ),
++        )
++        val fixture = fixture(storage, transport, queue, scheduler)
++        assertIs<ProviderLifecycleResult.InitializeSuccess>(fixture.dataLoom.initialize())
++
++        val first = assertIs<StrategyCacheServedWithDurableRefreshResult>(
++            fixture.dataLoom.synchronize(request()),
++        )
++        val firstFailure = assertIs<StrategyCacheDurableRefreshResult.ScheduleFailed>(
++            first.refresh,
++        )
++        assertEquals(
++            StrategyCacheDurableQueueAdmissionDisposition.ACCEPTED,
++            firstFailure.queueAdmissionDisposition,
++        )
++
++        val second = assertIs<StrategyCacheServedWithDurableRefreshResult>(
++            fixture.dataLoom.synchronize(request()),
++        )
++        val scheduled = assertIs<StrategyCacheDurableRefreshResult.Scheduled>(second.refresh)
++        assertEquals(
++            StrategyCacheDurableQueueAdmissionDisposition.ALREADY_ACCEPTED,
++            scheduled.queueAdmissionDisposition,
++        )
++        assertEquals(1, queue.delegate.entryCount)
++        assertEquals(
++            listOf("cache", "queue", "schedule", "cache", "queue", "schedule"),
++            calls,
++        )
++    }
++
++    @Test
++    fun leasedAndCompletedDuplicatesDoNotScheduleAgain() = runTest {
++        val storage = RecordingStorage()
++        val transport = RecordingTransport()
++        val queue = RecordingQueue()
++        val scheduler = RecordingScheduler()
++        val fixture = fixture(storage, transport, queue, scheduler)
++        assertIs<ProviderLifecycleResult.InitializeSuccess>(fixture.dataLoom.initialize())
++        assertIs<StrategyCacheServedWithDurableRefreshResult>(
++            fixture.dataLoom.synchronize(request()),
++        )
++
++        val acquired = assertIs<QueueAcquireResult.Entries>(
++            queue.acquire(acquireRequest()).successValue(),
++        )
++        val leased = assertIs<StrategyCacheServedWithDurableRefreshResult>(
++            fixture.dataLoom.synchronize(request()),
++        )
++        val inProgress =
++            assertIs<StrategyCacheDurableRefreshResult.AlreadyInProgress>(leased.refresh)
++        assertEquals(QueueEntryState.LEASED, inProgress.queueState)
++        assertEquals(1, scheduler.requests.size)
++
++        queue.complete(
++            QueueCompletionRequest(
++                entryId = acquired.entries.single().id,
++                leaseId = acquired.lease.id,
++                completedAt = DataLoomInstant(1_500L),
++            ),
++        ).successValue()
++        val completed = assertIs<StrategyCacheServedWithDurableRefreshResult>(
++            fixture.dataLoom.synchronize(request()),
++        )
++        val terminal =
++            assertIs<StrategyCacheDurableRefreshResult.AlreadyTerminal>(completed.refresh)
++        assertEquals(QueueEntryState.COMPLETED, terminal.queueState)
++        assertEquals(1, scheduler.requests.size)
++    }
++
++    @Test
++    fun changedScheduleIdentityReturnsConflictWithoutScheduling() = runTest {
++        val storage = RecordingStorage()
++        val transport = RecordingTransport()
++        val queue = RecordingQueue()
++        val scheduler = RecordingScheduler()
++        val fixture = fixture(storage, transport, queue, scheduler)
++        assertIs<ProviderLifecycleResult.InitializeSuccess>(fixture.dataLoom.initialize())
++        fixture.dataLoom.synchronize(request())
++
++        val second = assertIs<StrategyCacheServedWithDurableRefreshResult>(
++            fixture.dataLoom.synchronize(
++                request(schedule = "different-durable-refresh-schedule"),
++            ),
++        )
++
++        assertIs<StrategyCacheDurableRefreshResult.IdentityConflict>(second.refresh)
++        assertEquals(1, queue.delegate.entryCount)
++        assertEquals(1, scheduler.requests.size)
++    }
++
++    @Test
++    fun plainQueueProviderIsRejectedBeforeCacheOrSchedulerInvocation() = runTest {
++        val storage = RecordingStorage()
++        val transport = RecordingTransport()
++        val queue = PlainQueueProvider(InMemoryQueueProvider())
++        val scheduler = RecordingScheduler()
++        val fixture = fixture(storage, transport, queue, scheduler)
++        assertIs<ProviderLifecycleResult.InitializeSuccess>(fixture.dataLoom.initialize())
++
++        val result = fixture.dataLoom.synchronize(request())
++
++        val rejected = assertIs<StrategySynchronizationExecutionResult.Rejected>(result)
++        assertEquals(
++            StrategyExecutionRejectionReason
++                .IDEMPOTENT_QUEUE_ADMISSION_PROVIDER_NOT_CONFIGURED,
++            rejected.reason,
++        )
++        assertEquals(0, storage.cacheCalls)
++        assertTrue(scheduler.requests.isEmpty())
++    }
++
++    @Test
++    fun unavailableCacheStopsBeforeQueueAndScheduler() = runTest {
++        val storage = RecordingStorage(
++            cacheResult = ProviderOperationResult.Success(
++                StrategyCacheAccessResult.Unavailable(StrategyCacheState.MISSING),
++            ),
++        )
++        val transport = RecordingTransport()
++        val queue = RecordingQueue()
++        val scheduler = RecordingScheduler()
++        val fixture = fixture(storage, transport, queue, scheduler)
++        assertIs<ProviderLifecycleResult.InitializeSuccess>(fixture.dataLoom.initialize())
++
++        val result = fixture.dataLoom.synchronize(request())
++
++        assertIs<StrategySynchronizationExecutionResult.CacheUnavailable>(result)
++        assertEquals(0, queue.admitCalls)
++        assertTrue(scheduler.requests.isEmpty())
++    }
++
++    private fun fixture(
++        storage: RecordingStorage,
++        transport: RecordingTransport,
++        queue: QueueProvider,
++        scheduler: RecordingScheduler,
++    ): Fixture {
++        val bindings = StrategyProviderBindings(
++            storageProviderId = storage.descriptor.id,
++            transportProviderId = transport.descriptor.id,
++            schedulerProviderId = scheduler.descriptor.id,
++            queueProviderId = queue.descriptor.id,
++        )
++        val dataLoom = DataLoomBuilder()
++            .runtimeDependencies(runtimeDependencies())
++            .providers(storage, transport, queue, scheduler)
++            .defaultStrategyProviderBindings(bindings)
++            .build()
++        return Fixture(dataLoom, bindings)
++    }
++
++    private fun request(
++        workflow: String = "durable-refresh-workflow",
++        schedule: String = "durable-refresh-schedule",
++    ): StrategySynchronizationRequest = StrategySynchronizationRequest(
++        request = SynchronizationRequest(
++            workflowId = WorkflowId(workflow),
++            sessionId = SynchronizationSessionId("durable-refresh-session"),
++            direction = SynchronizationDirection.PULL,
++            mode = SynchronizationMode.DELTA,
++            context = ExecutionContext(
++                executionId = ExecutionId("durable-refresh-execution"),
++                correlationId = CorrelationId("durable-refresh-correlation"),
++            ),
++        ),
++        decisionId = StrategyDecisionId("durable-refresh-decision"),
++        planId = StrategyPlanId("durable-refresh-plan"),
++        profile = CacheFirstStrategyProfile(
++            id = StrategyProfileId("durable-refresh-profile"),
++            configurationVersion = StrategyConfigurationVersion(1),
++            refreshOnFreshHit = true,
++            requireDurableRefresh = true,
++        ),
++        evidence = StrategyRuntimeEvidence(
++            connectivity = StrategyConnectivity.AVAILABLE,
++            cacheState = StrategyCacheState.FRESH,
++            storageHealth = StrategyProviderHealth.HEALTHY,
++            transportHealth = StrategyProviderHealth.HEALTHY,
++        ),
++        input = StrategyOperationInput.CacheFirstDurableRefresh(
++            queueEntryId = QueueEntryId("durable-refresh-entry"),
++            scheduleId = ScheduleId(schedule),
++        ),
++    )
++
++    private fun acquireRequest(): QueueAcquireRequest = QueueAcquireRequest(
++        consumerId = QueueConsumerId("durable-refresh-consumer"),
++        leaseId = QueueLeaseId("durable-refresh-lease"),
++        acquiredAt = DataLoomInstant(1_000L),
++        leaseExpiresAt = DataLoomInstant(2_000L),
++        maxEntries = 1,
++    )
++
++    private fun runtimeDependencies(): RuntimeDependencies = RuntimeDependencies(
++        clock = FixedClock(DataLoomInstant(1_000L)),
++        identifiers = RuntimeIdentifierGenerators(
++            synchronizationEventIds = fixed(SynchronizationEventId("event")),
++            queueEntryIds = fixed(QueueEntryId("generated-entry")),
++            queueLeaseIds = fixed(QueueLeaseId("generated-lease")),
++            conflictIds = fixed(ConflictId("conflict")),
++        ),
++    )
++
++    private data class Fixture(
++        val dataLoom: DataLoom,
++        val bindings: StrategyProviderBindings,
++    )
++
++    private class RecordingQueue(
++        private val calls: MutableList<String> = mutableListOf(),
++        val delegate: InMemoryQueueProvider = InMemoryQueueProvider(),
++    ) : QueueIdempotentAdmissionProvider by delegate {
++        var admitCalls: Int = 0
++            private set
++
++        override suspend fun admit(
++            request: QueueEnqueueRequest,
++        ): ProviderOperationResult<QueueIdempotentAdmissionResult> {
++            admitCalls++
++            calls += "queue"
++            return delegate.admit(request)
++        }
++    }
++
++    private class PlainQueueProvider(
++        delegate: QueueProvider,
++    ) : QueueProvider by delegate
++
++    private class RecordingScheduler(
++        private val calls: MutableList<String> = mutableListOf(),
++        private val results: MutableList<ProviderOperationResult<ScheduleReceipt>> =
++            mutableListOf(),
++    ) : SchedulerProvider {
++        override val descriptor: ProviderDescriptor =
++            descriptor("durable-refresh-scheduler", ProviderType.SCHEDULER)
++
++        val requests: MutableList<ScheduleRequest> = mutableListOf()
++
++        override suspend fun initialize(
++            context: ProviderInitializationContext,
++        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
++
++        override suspend fun health(): ProviderOperationResult<ProviderHealth> =
++            ProviderOperationResult.Success(
++                ProviderHealth(ProviderHealthStatus.HEALTHY),
++            )
++
++        override suspend fun close(): ProviderOperationResult<Unit> =
++            ProviderOperationResult.Success(Unit)
++
++        override suspend fun schedule(
++            request: ScheduleRequest,
++        ): ProviderOperationResult<ScheduleReceipt> {
++            calls += "schedule"
++            requests += request
++            return if (results.isEmpty()) {
++                ProviderOperationResult.Success(ScheduleReceipt(request.id))
++            } else {
++                results.removeAt(0)
++            }
++        }
++
++        override suspend fun cancel(
++            request: ScheduleCancellationRequest,
++        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
++    }
++
++    private class RecordingStorage(
++        private val calls: MutableList<String> = mutableListOf(),
++        private val cacheResult: ProviderOperationResult<StrategyCacheAccessResult> =
++            ProviderOperationResult.Success(
++                StrategyCacheAccessResult.Available(
++                    StrategyCacheFreshnessEvidence(
++                        cacheState = StrategyCacheState.FRESH,
++                        observedAt = DataLoomInstant(1_000L),
++                        validUntil = DataLoomInstant(2_000L),
++                    ),
++                ),
++            ),
++    ) : StrategyCacheAccessProvider {
++        override val descriptor: ProviderDescriptor =
++            descriptor("durable-refresh-storage", ProviderType.STORAGE)
++
++        var cacheCalls: Int = 0
++            private set
++        var checkpointCalls: Int = 0
++            private set
++
++        override suspend fun initialize(
++            context: ProviderInitializationContext,
++        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
++
++        override suspend fun health(): ProviderOperationResult<ProviderHealth> =
++            ProviderOperationResult.Success(
++                ProviderHealth(ProviderHealthStatus.HEALTHY),
++            )
++
++        override suspend fun close(): ProviderOperationResult<Unit> =
++            ProviderOperationResult.Success(Unit)
++
++        override suspend fun evaluateCacheAccess(
++            request: StrategyCacheAccessRequest,
++        ): ProviderOperationResult<StrategyCacheAccessResult> {
++            calls += "cache"
++            cacheCalls++
++            return cacheResult
++        }
++
++        override suspend fun readOutboundChanges(
++            request: OutboundChangeReadRequest,
++        ): ProviderOperationResult<OutboundChangeReadResult> =
++            ProviderOperationResult.Success(OutboundChangeReadResult.NoChanges)
++
++        override suspend fun applyInboundChanges(
++            request: InboundChangeApplyRequest,
++        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
++
++        override suspend fun acknowledgeOutboundChanges(
++            request: OutboundChangeAcknowledgementRequest,
++        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
++
++        override suspend fun readCheckpoint(
++            request: CheckpointReadRequest,
++        ): ProviderOperationResult<SynchronizationCheckpoint?> {
++            checkpointCalls++
++            return ProviderOperationResult.Success(null)
++        }
++
++        override suspend fun writeCheckpoint(
++            request: CheckpointWriteRequest,
++        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
++    }
++
++    private class RecordingTransport : TransportProvider {
++        override val descriptor: ProviderDescriptor =
++            descriptor("durable-refresh-transport", ProviderType.TRANSPORT)
++
++        var pullCalls: Int = 0
++            private set
++
++        override suspend fun initialize(
++            context: ProviderInitializationContext,
++        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
++
++        override suspend fun health(): ProviderOperationResult<ProviderHealth> =
++            ProviderOperationResult.Success(
++                ProviderHealth(ProviderHealthStatus.HEALTHY),
++            )
++
++        override suspend fun close(): ProviderOperationResult<Unit> =
++            ProviderOperationResult.Success(Unit)
++
++        override suspend fun pushChanges(
++            request: PushChangesRequest,
++        ): ProviderOperationResult<ChangeSetAcknowledgement> =
++            error("Durable cache PULL replay must not push.")
++
++        override suspend fun pullChanges(
++            request: PullChangesRequest,
++        ): ProviderOperationResult<PullChangesResult> {
++            pullCalls++
++            return ProviderOperationResult.Success(PullChangesResult.NoChanges())
++        }
++    }
++
++    private class FixedClock(
++        private val instant: DataLoomInstant,
++    ) : DataLoomClock {
++        override fun now(): DataLoomInstant = instant
++    }
++
++    private data class TestError(
++        override val code: ErrorCode,
++        override val category: ErrorCategory = ErrorCategory.PROVIDER,
++        override val severity: ErrorSeverity = ErrorSeverity.ERROR,
++        override val recoverability: Recoverability = Recoverability.RECOVERABLE,
++        override val message: String = "Durable refresh test error.",
++        override val cause: Throwable? = null,
++    ) : DataLoomError
++
++    private companion object {
++        fun descriptor(id: String, type: ProviderType): ProviderDescriptor =
++            ProviderDescriptor(
++                id = ProviderId(id),
++                name = ProviderName(id),
++                type = type,
++                version = ProviderVersion("1.0.0"),
++            )
++
++        fun <T> fixed(value: T): IdentifierGenerator<T> =
++            object : IdentifierGenerator<T> {
++                override fun generate(): T = value
++            }
++
++        fun <T> ProviderOperationResult<T>.successValue(): T =
++            assertIs<ProviderOperationResult.Success<T>>(this).value
++    }
++}
+diff --git a/runtime-external-consumer/src/commonMain/kotlin/io/dataloom/consumer/CacheDurableRefreshExternalConsumerProbe.kt b/runtime-external-consumer/src/commonMain/kotlin/io/dataloom/consumer/CacheDurableRefreshExternalConsumerProbe.kt
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/runtime-external-consumer/src/commonMain/kotlin/io/dataloom/consumer/CacheDurableRefreshExternalConsumerProbe.kt
+@@ -0,0 +1,50 @@
++package io.dataloom.consumer
++
++import io.dataloom.api.identifier.QueueEntryId
++import io.dataloom.api.identifier.ScheduleId
++import io.dataloom.api.strategy.StrategyOperationInput
++import io.dataloom.runtime.strategy.StrategyCacheDurableRefreshResult
++import io.dataloom.runtime.strategy.StrategyCacheServedWithDurableRefreshResult
++import io.dataloom.runtime.strategy.StrategySynchronizationExecutionResult
++
++/** Compile-only construction of caller-owned durable refresh identities. */
++internal fun durableCacheRefreshInput(): StrategyOperationInput =
++    StrategyOperationInput.CacheFirstDurableRefresh(
++        queueEntryId = QueueEntryId("consumer-durable-refresh-entry"),
++        scheduleId = ScheduleId("consumer-durable-refresh-schedule"),
++    )
++
++/** Compile-only inspection of every public durable refresh result branch. */
++internal fun inspectDurableCacheRefresh(
++    result: StrategySynchronizationExecutionResult,
++): String = when (result) {
++    is StrategyCacheServedWithDurableRefreshResult -> {
++        result.evaluation.plan.id
++        result.completedAt
++        result.evaluatedCacheState
++        result.freshness.cacheState
++        result.dataOrigin
++        when (val refresh = result.refresh) {
++            is StrategyCacheDurableRefreshResult.Scheduled -> {
++                refresh.queueAdmissionDisposition
++                refresh.queueState
++                refresh.receipt.id
++            }
++            is StrategyCacheDurableRefreshResult.AlreadyInProgress ->
++                refresh.queueState
++            is StrategyCacheDurableRefreshResult.AlreadyTerminal ->
++                refresh.queueState
++            is StrategyCacheDurableRefreshResult.IdentityConflict ->
++                refresh.currentState
++            is StrategyCacheDurableRefreshResult.QueueFailed ->
++                refresh.error.code
++            is StrategyCacheDurableRefreshResult.ScheduleFailed -> {
++                refresh.queueAdmissionDisposition
++                refresh.queueState
++                refresh.error.code
++            }
++        }
++        result.refresh.disposition.name
++    }
++    else -> result::class.simpleName ?: "UNKNOWN"
++}
+diff --git a/docs/audits/DL-039B-durable-cache-refresh-admission.md b/docs/audits/DL-039B-durable-cache-refresh-admission.md
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/docs/audits/DL-039B-durable-cache-refresh-admission.md
+@@ -0,0 +1,124 @@
++# DL-039B durable cache refresh admission checkpoint
++
++## Candidate decision
++
++DataLoom now owns one exact durable cache-first refresh admission slice:
++
++```text
++CACHE_FIRST + PULL + SERVE_AND_REFRESH
++SERVE_LOCAL → ENQUEUE_DURABLE_WORK → SCHEDULE_REFRESH
++STORAGE + CACHE_ACCESS + QUEUE + SCHEDULER
++continuation: READ_CHECKPOINT → PULL_REMOTE → PERSIST_REMOTE
++```
++
++The caller supplies stable queue and schedule identities through
++`StrategyOperationInput.CacheFirstDurableRefresh`. The runtime verifies
++application-owned cache state, persists the complete accepted plan through
++`QueueIdempotentAdmissionProvider`, and only then invokes `SchedulerProvider`.
++The scheduler request is a queue-worker wake-up with `KEEP` semantics and no
++application payload.
++
++## Side-effect order and outcomes
++
++The exact order is:
++
++```text
++cache verification
++    ↓
++idempotent queue admission
++    ↓
++scheduler acceptance
++```
++
++The payload-free result distinguishes:
++
++- newly or previously accepted `PENDING` work that was scheduled;
++- existing `LEASED` or `RETRY_WAITING` work, which is not scheduled again;
++- existing terminal work, which is not silently replayed;
++- same-ID different-work conflict;
++- queue admission failure; and
++- scheduler failure after durable queue acceptance.
++
++Scheduler failure never deletes or resets the queue entry. Retrying the same
++request reconciles the existing queue identity and may attempt scheduling again.
++Provider cancellation continues to propagate normally; if cancellation happens
++after queue commit, the durable entry remains available for the same
++first-or-existing reconciliation.
++
++## Frozen replay
++
++The admitted `QueueEntry` stores:
++
++- the exact synchronization request;
++- the persisted strategy decision;
++- the complete original strategy plan; and
++- its immutable durable continuation.
++
++Existing accepted-plan queue routing later executes only:
++
++```text
++READ_CHECKPOINT → PULL_REMOTE → PERSIST_REMOTE
++```
++
++It does not evaluate current cache state, connectivity evidence, profile
++configuration, or adaptive policy again. The initial cache verification and
++later remote refresh therefore remain separate, auditable truths.
++
++## Fail-closed boundaries
++
++- PULL is the only admitted direction in this slice.
++- Non-durable inline refresh remains a separate exact plan.
++- The queue provider must implement `QueueIdempotentAdmissionProvider`.
++- Missing or generic queue providers are rejected before cache invocation.
++- Queue or schedule identity mismatch becomes a canonical provider failure.
++- Queue conflict never invokes the scheduler.
++- Existing leased, retry-waiting, or terminal work never creates another queue
++  record.
++- BIDIRECTIONAL durable refresh, delayed refresh, cancellation administration,
++  conflict-safe coherence, and durable refresh events remain outside this slice.
++
++## Dependency and product boundary
++
++No Gradle dependency, repository, plugin, third-party SDK, hosted service,
++database wrapper, networking wrapper, analytics integration, or vendor coupling
++is added. The runtime uses only existing DataLoom contracts, the idempotent
++queue SPI, platform-neutral scheduler SPI, and accepted-plan replay.
++
++Application domain values, repositories, credentials, backend contracts, and
++business authorization remain application-owned.
++
++## Executable evidence
++
++The common integration matrix covers:
++
++- cache → queue → scheduler ordering;
++- first admission and scheduler acceptance;
++- scheduler failure followed by same-identity reconciliation;
++- one durable entry across caller retries;
++- leased and completed duplicate handling without another schedule;
++- same-ID different-work conflict;
++- rejection of a plain non-idempotent queue provider before cache access;
++- cache unavailability before queue or scheduler work;
++- exact strategy decision and complete plan persistence; and
++- frozen accepted-plan replay through the canonical inbound PULL pipeline
++  without a second cache-policy evaluation.
++
++Authoritative JVM/Kotlin-Native ABI, shared tests, external-consumer compilation,
++Android managed-device/Room validation, and Apple XCFramework/header/Swift
++qualification remain required on one immutable reviewed head before merge.
++
++## Remaining V1 work
++
++This checkpoint does not complete cache-first or the six-strategy engine.
++Remaining work includes:
++
++1. platform process-termination/relaunch proof for admitted refresh work;
++2. scheduler callback and queue-worker reference integration on native Android,
++   KMP Android, and KMP iOS;
++3. BIDIRECTIONAL refresh and conflict-safe coherence;
++4. durable refresh events, read models, cancellation, and administration;
++5. online offline-first execution and platform admission implementations;
++6. complete hybrid and adaptive runtime matrices; and
++7. all release, security, performance, and reference-application gates.
++
++Issues #102 and #101 remain open. The V1 dashboard remains 10% and NO-GO.
+diff --git a/docs/audits/README.md b/docs/audits/README.md
+index e38b2d6..0000000 100644
+--- a/docs/audits/README.md
++++ b/docs/audits/README.md
+@@ -11,4 +11,5 @@ behavior.
+ 
+ | Audit | Scope | How to use it |
+ |---|---|---|
++| [DL-039B durable cache refresh admission](./DL-039B-durable-cache-refresh-admission.md) | Cache-first local serving plus queue-before-scheduler durable continuation admission and frozen replay | Candidate bounded runtime checkpoint; process relaunch, platform callbacks, coherence, events, and complete matrices remain under #102/#101 |
+ | [DL-039B idempotent queue admission](./DL-039B-idempotent-queue-admission.md) | Atomic first/already/conflict durable identity across in-memory, Room, and Apple queue providers | Current prerequisite for durable refresh admission; runtime scheduling and recovery remain under #102/#101 |
+diff --git a/docs/strategies/cache-first.md b/docs/strategies/cache-first.md
+index a6e8302..0000000 100644
+--- a/docs/strategies/cache-first.md
++++ b/docs/strategies/cache-first.md
+@@ -3,7 +3,7 @@
+ > [!WARNING]
+ > Cache-first is a mandatory built-in V1 strategy. Fresh, stale, missing, and
+ > unknown policy decisions, provider-observed local serving, protected cache
+-> verification, the direct storage/transport direction matrix, and exact
+-> non-durable foreground PULL refresh composition are implemented as bounded
+-> slices. Durable refresh admission/recovery, accepted-plan refresh replay,
+-> coherence, events, and complete platform qualification remain open.
++> verification, the direct storage/transport direction matrix, exact
++> non-durable foreground PULL refresh, and bounded durable PULL admission are
++> implemented as slices. Process-relaunch qualification, platform callbacks,
++> coherence, events, and complete platform qualification remain open.
+@@ -46,3 +46,6 @@ The repository now provides:
+ - `StrategyCacheServedWithInlineRefreshResult`, which composes provider-verified
+   local freshness with one exact non-durable PULL refresh while preserving both
+-  truths independently.
++  truths independently;
++- typed idempotent queue admission across in-memory, Room, and Apple providers;
++  and
++- queue-before-scheduler durable PULL refresh admission with frozen-plan replay.
+@@ -68,9 +71,23 @@ cancellation does not erase the local freshness evidence that was already
+ admitted for use.
+ 
+-The remaining canonical boundaries include:
++The supported durable-admission plan is also exact:
++
++```text
++CACHE_FIRST + PULL + SERVE_AND_REFRESH
++SERVE_LOCAL → ENQUEUE_DURABLE_WORK → SCHEDULE_REFRESH
++STORAGE + CACHE_ACCESS + QUEUE + SCHEDULER
++continuation: READ_CHECKPOINT → PULL_REMOTE → PERSIST_REMOTE
++```
++
++The runtime requires caller-owned queue and schedule identities, verifies cache
++first, admits the complete immutable plan atomically, and invokes the scheduler
++only after queue success. A scheduler failure leaves the queue record intact.
++Same-identity retries reconcile current queue state; a conflicting identity
++never schedules. Accepted-plan replay executes the frozen continuation without
++re-running cache or adaptive policy.
++
++The remaining canonical boundaries include:
+ 
+-- a durable refresh admission identity and handle;
+-- refresh deduplication and single-flight behavior;
+ - restart-safe queue/scheduler ownership and recovery;
+-- accepted-plan and durable-queue refresh replay without policy reselection;
++- concrete platform callback/reference-app integration;
+ - BIDIRECTIONAL inline refresh and reconciliation;
+diff --git a/README.md b/README.md
+index 0a75d2a..0000000 100644
+--- a/README.md
++++ b/README.md
+@@ -75,10 +75,12 @@ foreground PULL refresh now verifies cache first, runs the canonical inbound
+ pipeline, and reports local freshness together with completed, partially
+ succeeded, failed, or cancelled refresh evidence. Queue providers now expose
+ typed atomic first/already/conflict admission across in-memory, Room, and
+-Apple persistence without changing ordinary enqueue. Non-offline direct
+-deferrals still fail closed until the strategy runtime owns queue and
+-scheduler admission. Durable refresh recovery, accepted-plan refresh replay,
+-BIDIRECTIONAL inline refresh,
+-platform implementations, crash/relaunch proof, hybrid/conflict behavior,
+-durable strategy events, and platform reference qualification remain before
+-the strategy engine is complete.
++Apple persistence without changing ordinary enqueue. Exact durable cache-first
++PULL admission now verifies cache, commits immutable accepted work, and then
++requests a `KEEP` queue-worker schedule; retries reconcile pending, in-progress,
++terminal, conflicting, and scheduler-failure states without deleting durable
++work. Accepted-plan replay executes the frozen remote continuation without
++current cache-policy selection. Process-relaunch proof, concrete platform
++callbacks, BIDIRECTIONAL refresh, hybrid/conflict behavior, durable strategy
++events, and platform reference qualification remain before the strategy engine
++is complete.
+@@ -104,4 +106,4 @@ substantial implementations that still have unqualified release behavior.
+ | Next priority | V1 gate | Status | Finished on `main` | Still pending before the gate is complete |
+ |---:|---|---|---|---|
+ | — | [DL-039 foundations, artifacts, compatibility](https://github.com/dataloom-sdk/dataloom/issues/93) | COMPLETE | Public API/provider/runtime boundaries, module rules, JVM and Kotlin/Native ABI baselines, external-consumer compilation, durable state primitives, deterministic clocks/randomness, configuration and policy foundations, canonical envelope/redaction contracts, and a deterministic bounded V1 wire codec/upcast registry | — |
+-| 1 | [DL-039B six strategy engine](https://github.com/dataloom-sdk/dataloom/issues/102) | IN PROGRESS | Versioned contracts and deterministic planner for all six strategies; direct network-only and remote-first slices; fail-closed queue admission; Room v8/Apple v4 accepted-plan persistence; exact encoder/resolver correspondence; direct, protected, and queued replay without current-policy evaluation; typed fallback and reconciliation hooks; atomic offline-first admission; cache-access contract and capability resolution; provider-verified fresh/allowed-stale direct local serving; independently protected direct cache verification; canonical direct cache-first PUSH, cache-miss PULL, and cache-miss BIDIRECTIONAL execution; exact non-durable PULL inline refresh composition with local freshness plus completed/partial/failed/cancelled evidence; typed idempotent queue admission across in-memory, Room, and Apple providers; explicit freshness-drift and partial-effect outcomes; and fail-closed non-atomic direct deferrals | Complete online offline-first execution ownership and platform implementations with crash/relaunch proof; compose durable refresh queue/scheduler admission and recovery from the idempotent foundation, add accepted-plan refresh replay, BIDIRECTIONAL inline refresh, hybrid coherence/conflict application, durable strategy events/diagnostics, and the full native Android/KMP Android/KMP iOS failure/restart matrix |
++| 1 | [DL-039B six strategy engine](https://github.com/dataloom-sdk/dataloom/issues/102) | IN PROGRESS | Versioned contracts and deterministic planner for all six strategies; direct network-only and remote-first slices; fail-closed queue admission; Room v8/Apple v4 accepted-plan persistence; exact encoder/resolver correspondence; direct, protected, and queued replay without current-policy evaluation; typed fallback and reconciliation hooks; atomic offline-first admission; cache-access contract and capability resolution; provider-verified fresh/allowed-stale direct local serving; independently protected direct cache verification; canonical direct cache-first PUSH, cache-miss PULL, and cache-miss BIDIRECTIONAL execution; exact non-durable PULL inline refresh composition; typed idempotent queue admission across in-memory, Room, and Apple providers; queue-before-scheduler durable PULL refresh admission with typed duplicate/terminal/conflict/failure evidence and frozen-plan replay; explicit freshness-drift and partial-effect outcomes; and fail-closed unsupported plan shapes | Complete online offline-first execution ownership and platform implementations with crash/relaunch proof; qualify durable refresh process relaunch and platform callbacks, add BIDIRECTIONAL refresh, hybrid coherence/conflict application, durable strategy events/diagnostics, and the full native Android/KMP Android/KMP iOS failure/restart matrix |
