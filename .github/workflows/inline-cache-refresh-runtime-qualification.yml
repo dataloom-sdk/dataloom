@@ -1,0 +1,92 @@
+name: One-time inline cache refresh runtime qualification
+
+on:
+  push:
+    branches:
+      - agent/dl-strategy-016-inline-cache-refresh-runtime
+
+permissions:
+  contents: write
+
+concurrency:
+  group: inline-cache-refresh-runtime-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualify:
+    name: Generate ABI and qualify inline cache refresh runtime
+    if: github.actor != 'github-actions[bot]'
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout branch head
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Generate authoritative runtime ABI
+        run: >-
+          ./gradlew
+          :dataloom-runtime:updateKotlinAbi
+          --configuration-cache
+          --stacktrace
+          --console=plain
+
+      - name: Run shared native and external-consumer qualification
+        run: >-
+          ./gradlew
+          :build-logic:test
+          build
+          :dataloom-runtime:iosSimulatorArm64Test
+          :runtime-external-consumer:checkRuntimeExternalConsumer
+          :runtime-external-consumer:compileKotlinIosArm64
+          :runtime-external-consumer:compileKotlinIosSimulatorArm64
+          :runtime-external-consumer:compileKotlinIosX64
+          --configuration-cache
+          --stacktrace
+          --console=plain
+
+      - name: Verify only runtime ABI baselines changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          changed="$(git status --porcelain --untracked-files=all | awk '{print $2}')"
+          if [[ -z "$changed" ]]; then
+            echo "Expected runtime ABI baselines to change, but the working tree is clean."
+            exit 1
+          fi
+          unexpected="$(printf '%s\n' "$changed" | grep -vE '^dataloom-runtime/api/dataloom-runtime(\.klib)?\.api$' || true)"
+          if [[ -n "$unexpected" ]]; then
+            echo "Unexpected files changed during ABI generation:"
+            printf '%s\n' "$unexpected"
+            exit 1
+          fi
+
+      - name: Commit authoritative ABI baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            dataloom-runtime/api/dataloom-runtime.api \
+            dataloom-runtime/api/dataloom-runtime.klib.api
+          git commit -m "DL-039B: update inline refresh runtime ABI evidence"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
