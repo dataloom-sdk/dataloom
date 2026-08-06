@@ -44,9 +44,10 @@ exposes no existing request, metadata, strategy identity, payload, or error.
 ### In-memory testing provider
 
 The deterministic testing provider performs first-or-existing evaluation against
-its existing insertion-ordered map. It records admission calls separately from
-ordinary enqueue calls. As documented for this testing provider, callers still
-serialize mutable access externally.
+its existing insertion-ordered map. Idempotent admission deliberately does not
+populate the historical ordinary-enqueue request log, preventing tests from
+mistaking `admit` for `enqueue`. As documented for this testing provider,
+callers still serialize mutable access externally.
 
 ### Android Room
 
@@ -103,15 +104,18 @@ The candidate test matrix covers:
 - first admission and repeated same admission;
 - same-ID different-work conflict;
 - current state after leasing or completion;
+- separation from ordinary enqueue-call evidence;
 - Android concurrent transactions producing one accepted result;
 - Apple cross-instance contention producing one accepted result;
 - Apple restart through a new provider instance;
 - bounded result diagnostics that do not render queue IDs; and
 - external-consumer compilation of the additive SPI.
 
-JVM and Kotlin/Native ABI baselines plus the permanent shared, Android managed
--device, Room schema, Apple target, XCFramework, header, and Swift-smoke matrix
-must pass on one immutable reviewed head before merge.
+The candidate implementation and authoritative JVM/Kotlin-Native ABI baselines
+passed the one-time shared, Apple simulator, and external-consumer qualification.
+The permanent shared, Android managed-device, Room schema, Apple target,
+XCFramework, header, and Swift-smoke workflows must still pass on this exact
+human-authored reviewed head before merge.
 
 ## Remaining durable refresh work
 
