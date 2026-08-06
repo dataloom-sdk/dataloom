@@ -78,24 +78,25 @@ jobs:
           marker = "    private companion object {\n"
           if text.count(marker) != 1:
               raise SystemExit("Expected one companion-object insertion point")
-          helper = """    /** Runs the deterministic, immediately completing suspend test body. */
-              private fun <T> runSuspend(block: suspend () -> T): T {
-                  var outcome: Result<T>? = null
-                  block.startCoroutine(
-                      object : Continuation<T> {
-                          override val context = EmptyCoroutineContext
-
-                          override fun resumeWith(result: Result<T>) {
-                              outcome = result
-                          }
-                      },
-                  )
-                  return requireNotNull(outcome) {
-                      \"Durable refresh test operation did not complete synchronously.\"
-                  }.getOrThrow()
-              }
-
-          """
+          helper = (
+              "    /** Runs the deterministic, immediately completing suspend test body. */\n"
+              "    private fun <T> runSuspend(block: suspend () -> T): T {\n"
+              "        var outcome: Result<T>? = null\n"
+              "        block.startCoroutine(\n"
+              "            object : Continuation<T> {\n"
+              "                override val context = EmptyCoroutineContext\n"
+              "\n"
+              "                override fun resumeWith(result: Result<T>) {\n"
+              "                    outcome = result\n"
+              "                }\n"
+              "            },\n"
+              "        )\n"
+              "        return requireNotNull(outcome) {\n"
+              "            \"Durable refresh test operation did not complete synchronously.\"\n"
+              "        }.getOrThrow()\n"
+              "    }\n"
+              "\n"
+          )
           text = text.replace(marker, helper + marker)
           path.write_text(text)
           PY
