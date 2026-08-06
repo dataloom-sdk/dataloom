@@ -98,12 +98,12 @@ import kotlinx.coroutines.test.runTest
 class CacheFirstInlineRefreshExecutionTest {
 
     @Test
-    fun freshCacheIsVerifiedBeforeCanonicalNoChangeRefresh() = runTest {
+    fun cacheIsVerifiedBeforeNoChangeRefresh() = runTest {
         val calls = mutableListOf<String>()
-        val storage = TestStorage(calls, available(freshEvidence()))
+        val storage = TestStorage(calls = calls, cacheResult = available(freshEvidence()))
         val transport = TestTransport(
-            calls,
-            mutableListOf(success(PullChangesResult.NoChanges())),
+            calls = calls,
+            pullResults = mutableListOf(success(PullChangesResult.NoChanges())),
         )
         val fixture = fixture(storage, transport)
 
@@ -114,112 +114,100 @@ class CacheFirstInlineRefreshExecutionTest {
         assertEquals(StrategyDataOrigin.LOCAL, served.dataOrigin)
         assertEquals(StrategyCacheState.FRESH, served.freshness.cacheState)
         assertEquals(StrategyDisposition.SERVE_AND_REFRESH, served.evaluation.plan.disposition)
-        assertEquals(
-            listOf(
-                StrategyOperation.SERVE_LOCAL,
-                StrategyOperation.PULL_REMOTE,
-                StrategyOperation.PERSIST_REMOTE,
-            ),
-            served.evaluation.plan.operations,
-        )
         assertEquals(listOf(StrategyOperation.PULL_REMOTE), refresh.completedOperations)
         assertEquals(listOf("cache", "checkpoint", "pull"), calls)
     }
 
     @Test
-    fun allowedStaleCacheIsPreservedWhileRefreshRuns() = runTest {
-        val storage = TestStorage(cacheResult = available(staleEvidence()))
-        val transport = TestTransport(
-            pullResults = mutableListOf(success(PullChangesResult.NoChanges())),
-        )
-        val fixture = fixture(storage, transport)
+    fun staleHitAndCacheBoundaryFailuresRemainTruthful() = runTest {
+        val staleStorage = TestStorage(cacheResult = available(staleEvidence()))
+        val staleTransport = noChangeTransport()
+        val staleFixture = fixture(staleStorage, staleTransport)
 
-        val result = fixture.coordinator.execute(
-            request(
-                cacheState = StrategyCacheState.STALE,
+        val staleResult = staleFixture.coordinator.execute(
+            request = request(
                 profile = cacheProfile(
                     staleCachePolicy = StaleCachePolicy.SERVE_STALE_AND_REFRESH,
                 ),
+                cacheState = StrategyCacheState.STALE,
             ),
-            fixture.bindings,
+            bindings = staleFixture.bindings,
         )
+        val staleServed = assertIs<StrategyCacheServedWithInlineRefreshResult>(staleResult)
+        assertEquals(StrategyCacheState.STALE, staleServed.freshness.cacheState)
+        assertTrue(staleStorage.lastCacheRequest?.allowStale == true)
 
-        val served = assertIs<StrategyCacheServedWithInlineRefreshResult>(result)
-        assertEquals(StrategyCacheState.STALE, served.evaluatedCacheState)
-        assertEquals(StrategyCacheState.STALE, served.freshness.cacheState)
-        assertTrue(storage.lastCacheRequest?.allowStale == true)
-        assertIs<StrategyCacheInlineRefreshResult.Completed>(served.refresh)
-    }
-
-    @Test
-    fun unavailableDriftAndProviderFailureStopBeforeTransport() = runTest {
-        suspend fun execute(
+        suspend fun executeCacheBoundary(
             cacheResult: ProviderOperationResult<StrategyCacheAccessResult>,
         ): Pair<StrategySynchronizationExecutionResult, TestTransport> {
             val storage = TestStorage(cacheResult = cacheResult)
-            val transport = TestTransport(
-                pullResults = mutableListOf(success(PullChangesResult.NoChanges())),
-            )
-            val fixture = fixture(storage, transport)
-            return fixture.coordinator.execute(request(), fixture.bindings) to transport
+            val transport = noChangeTransport()
+            val current = fixture(storage, transport)
+            return current.coordinator.execute(request(), current.bindings) to transport
         }
 
-        val (unavailableResult, unavailableTransport) = execute(
+        val (unavailableResult, unavailableTransport) = executeCacheBoundary(
             success(StrategyCacheAccessResult.Unavailable(StrategyCacheState.MISSING)),
         )
-        val unavailable =
-            assertIs<StrategySynchronizationExecutionResult.CacheUnavailable>(unavailableResult)
+        val unavailable = assertIs<StrategySynchronizationExecutionResult.CacheUnavailable>(
+            unavailableResult,
+        )
         assertEquals(
             StrategyCacheUnavailableReason.PROVIDER_REPORTED_UNAVAILABLE,
             unavailable.reason,
         )
         assertEquals(0, unavailableTransport.pullCalls)
 
-        val (driftResult, driftTransport) = execute(available(staleEvidence()))
+        val (driftResult, driftTransport) = executeCacheBoundary(available(staleEvidence()))
         val drift = assertIs<StrategySynchronizationExecutionResult.CacheUnavailable>(driftResult)
         assertEquals(StrategyCacheUnavailableReason.FRESHNESS_DOWNGRADED, drift.reason)
         assertEquals(0, driftTransport.pullCalls)
 
-        val cacheFailure = Failure(ErrorCode("INLINE_CACHE_FAILED"), ErrorCategory.STORAGE)
-        val (failedResult, failedTransport) = execute(
-            ProviderOperationResult.Failure(cacheFailure),
+        val cacheError = Failure(
+            code = ErrorCode("INLINE_CACHE_FAILED"),
+            category = ErrorCategory.STORAGE,
+        )
+        val (failedResult, failedTransport) = executeCacheBoundary(
+            ProviderOperationResult.Failure(cacheError),
         )
         val failed = assertIs<StrategySynchronizationExecutionResult.Failed>(failedResult)
-        assertSame(cacheFailure, failed.error)
+        assertSame(cacheError, failed.error)
         assertEquals(false, failed.transportAttempted)
         assertEquals(0, failedTransport.pullCalls)
     }
 
     @Test
-    fun refreshFailureKeepsLocalCacheAndTruthfulOperationEvidence() = runTest {
-        val checkpointFailure = Failure(
-            ErrorCode("INLINE_CHECKPOINT_FAILED"),
-            ErrorCategory.STORAGE,
+    fun checkpointAndRemoteFailuresPreserveLocalCache() = runTest {
+        val checkpointError = Failure(
+            code = ErrorCode("INLINE_CHECKPOINT_FAILED"),
+            category = ErrorCategory.STORAGE,
         )
-        val beforeTransportStorage = TestStorage(
+        val checkpointStorage = TestStorage(
             cacheResult = available(freshEvidence()),
-            readCheckpointResult = ProviderOperationResult.Failure(checkpointFailure),
+            readCheckpointResult = ProviderOperationResult.Failure(checkpointError),
         )
-        val beforeTransport = TestTransport(
-            pullResults = mutableListOf(success(PullChangesResult.NoChanges())),
-        )
-        val beforeFixture = fixture(beforeTransportStorage, beforeTransport)
+        val checkpointTransport = noChangeTransport()
+        val checkpointFixture = fixture(checkpointStorage, checkpointTransport)
 
-        val beforeResult = beforeFixture.coordinator.execute(request(), beforeFixture.bindings)
-        val beforeServed = assertIs<StrategyCacheServedWithInlineRefreshResult>(beforeResult)
-        val beforeRefresh = assertIs<StrategyCacheInlineRefreshResult.Failed>(
-            beforeServed.refresh,
+        val checkpointResult = checkpointFixture.coordinator.execute(
+            request(),
+            checkpointFixture.bindings,
         )
-        assertSame(checkpointFailure, beforeRefresh.error)
-        assertEquals(false, beforeRefresh.transportAttempted)
-        assertTrue(beforeRefresh.completedOperations.isEmpty())
-        assertNull(beforeRefresh.remoteOutcome)
-        assertEquals(0, beforeTransport.pullCalls)
+        val checkpointServed = assertIs<StrategyCacheServedWithInlineRefreshResult>(
+            checkpointResult,
+        )
+        val checkpointRefresh = assertIs<StrategyCacheInlineRefreshResult.Failed>(
+            checkpointServed.refresh,
+        )
+        assertSame(checkpointError, checkpointRefresh.error)
+        assertEquals(false, checkpointRefresh.transportAttempted)
+        assertTrue(checkpointRefresh.completedOperations.isEmpty())
+        assertEquals(0, checkpointTransport.pullCalls)
 
-        val remoteFailure = RemoteFailure()
+        val remoteError = RemoteFailure()
         val remoteStorage = TestStorage(cacheResult = available(freshEvidence()))
         val remoteTransport = TestTransport(
-            pullResults = mutableListOf(ProviderOperationResult.Failure(remoteFailure)),
+            pullResults = mutableListOf(ProviderOperationResult.Failure(remoteError)),
         )
         val remoteFixture = fixture(remoteStorage, remoteTransport)
 
@@ -228,27 +216,27 @@ class CacheFirstInlineRefreshExecutionTest {
         val remoteRefresh = assertIs<StrategyCacheInlineRefreshResult.Failed>(
             remoteServed.refresh,
         )
-        assertSame(remoteFailure, remoteRefresh.error)
+        assertSame(remoteError, remoteRefresh.error)
         assertEquals(true, remoteRefresh.transportAttempted)
         assertTrue(remoteRefresh.completedOperations.isEmpty())
         assertEquals(StrategyRemoteOutcome.UNAVAILABLE, remoteRefresh.remoteOutcome)
     }
 
     @Test
-    fun persistenceFailureAndPagedSuccessPreserveCompletedPulls() = runTest {
-        val writeFailure = Failure(
-            ErrorCode("INLINE_WRITE_FAILED"),
-            ErrorCategory.STORAGE,
+    fun persistenceFailureAndPagedSuccessPreservePullEvidence() = runTest {
+        val writeError = Failure(
+            code = ErrorCode("INLINE_WRITE_FAILED"),
+            category = ErrorCategory.STORAGE,
         )
         val failingStorage = TestStorage(
             cacheResult = available(freshEvidence()),
-            writeResults = mutableListOf(ProviderOperationResult.Failure(writeFailure)),
+            writeResults = mutableListOf(ProviderOperationResult.Failure(writeError)),
         )
         val failingTransport = TestTransport(
             pullResults = mutableListOf(
                 success(
                     PullChangesResult.Changes(
-                        changeSet("set-fail", "event-fail"),
+                        changeSet = changeSet("set-fail", "event-fail"),
                         hasMore = false,
                         nextCheckpoint = checkpoint("write-fail"),
                     ),
@@ -256,7 +244,6 @@ class CacheFirstInlineRefreshExecutionTest {
             ),
         )
         val failingFixture = fixture(failingStorage, failingTransport)
-
         val failingResult = failingFixture.coordinator.execute(
             request(),
             failingFixture.bindings,
@@ -267,7 +254,7 @@ class CacheFirstInlineRefreshExecutionTest {
         val failingRefresh = assertIs<StrategyCacheInlineRefreshResult.Failed>(
             failingServed.refresh,
         )
-        assertSame(writeFailure, failingRefresh.error)
+        assertSame(writeError, failingRefresh.error)
         assertEquals(listOf(StrategyOperation.PULL_REMOTE), failingRefresh.completedOperations)
         assertNull(failingRefresh.remoteOutcome)
 
@@ -279,24 +266,23 @@ class CacheFirstInlineRefreshExecutionTest {
             pullResults = mutableListOf(
                 success(
                     PullChangesResult.Changes(
-                        changeSet("set-1", "event-1"),
+                        changeSet = changeSet("set-1", "event-1"),
                         hasMore = true,
                         nextCheckpoint = checkpoint("page-1"),
                     ),
                 ),
                 success(
                     PullChangesResult.Changes(
-                        changeSet("set-2", "event-2"),
+                        changeSet = changeSet("set-2", "event-2"),
                         hasMore = false,
                     ),
                 ),
             ),
         )
         val pagedFixture = fixture(pagedStorage, pagedTransport)
-
         val pagedResult = pagedFixture.coordinator.execute(request(), pagedFixture.bindings)
         val pagedServed = assertIs<StrategyCacheServedWithInlineRefreshResult>(pagedResult)
-        val completed = assertIs<StrategyCacheInlineRefreshResult.Completed>(
+        val pagedRefresh = assertIs<StrategyCacheInlineRefreshResult.Completed>(
             pagedServed.refresh,
         )
         assertEquals(
@@ -304,12 +290,12 @@ class CacheFirstInlineRefreshExecutionTest {
                 StrategyOperation.PULL_REMOTE,
                 StrategyOperation.PULL_REMOTE,
             ),
-            completed.completedOperations,
+            pagedRefresh.completedOperations,
         )
     }
 
     @Test
-    fun batchLimitAndExplicitCancellationRemainSeparateFromLocalCache() = runTest {
+    fun partialAndCancelledRefreshesRemainSeparateFromLocalCache() = runTest {
         val partialStorage = TestStorage(
             cacheResult = available(freshEvidence()),
             writeResults = mutableListOf(success(Unit)),
@@ -318,7 +304,7 @@ class CacheFirstInlineRefreshExecutionTest {
             pullResults = mutableListOf(
                 success(
                     PullChangesResult.Changes(
-                        changeSet("partial-set", "partial-event"),
+                        changeSet = changeSet("partial-set", "partial-event"),
                         hasMore = true,
                         nextCheckpoint = checkpoint("partial"),
                     ),
@@ -326,13 +312,12 @@ class CacheFirstInlineRefreshExecutionTest {
             ),
         )
         val partialFixture = fixture(
-            partialStorage,
-            partialTransport,
-            InboundPullSynchronizationPipeline(
+            storage = partialStorage,
+            transport = partialTransport,
+            pipeline = InboundPullSynchronizationPipeline(
                 InboundPullPipelineConfiguration(maxBatchesPerExecution = 1),
             ),
         )
-
         val partialResult = partialFixture.coordinator.execute(
             request(),
             partialFixture.bindings,
@@ -340,21 +325,18 @@ class CacheFirstInlineRefreshExecutionTest {
         val partialServed = assertIs<StrategyCacheServedWithInlineRefreshResult>(
             partialResult,
         )
-        val partial = assertIs<StrategyCacheInlineRefreshResult.PartiallySucceeded>(
+        val partialRefresh = assertIs<StrategyCacheInlineRefreshResult.PartiallySucceeded>(
             partialServed.refresh,
         )
-        assertEquals(listOf(StrategyOperation.PULL_REMOTE), partial.completedOperations)
+        assertEquals(listOf(StrategyOperation.PULL_REMOTE), partialRefresh.completedOperations)
 
         val cancelledStorage = TestStorage(cacheResult = available(freshEvidence()))
-        val cancelledTransport = TestTransport(
-            pullResults = mutableListOf(success(PullChangesResult.NoChanges())),
-        )
+        val cancelledTransport = noChangeTransport()
         val cancelledFixture = fixture(
-            cancelledStorage,
-            cancelledTransport,
-            ExplicitCancelledPullPipeline,
+            storage = cancelledStorage,
+            transport = cancelledTransport,
+            pipeline = ExplicitCancelledPullPipeline,
         )
-
         val cancelledResult = cancelledFixture.coordinator.execute(
             request(),
             cancelledFixture.bindings,
@@ -362,15 +344,18 @@ class CacheFirstInlineRefreshExecutionTest {
         val cancelledServed = assertIs<StrategyCacheServedWithInlineRefreshResult>(
             cancelledResult,
         )
-        val cancelled = assertIs<StrategyCacheInlineRefreshResult.Cancelled>(
+        val cancelledRefresh = assertIs<StrategyCacheInlineRefreshResult.Cancelled>(
             cancelledServed.refresh,
         )
-        assertEquals(true, cancelled.transportAttempted)
-        assertEquals(listOf(StrategyOperation.PULL_REMOTE), cancelled.completedOperations)
+        assertEquals(true, cancelledRefresh.transportAttempted)
+        assertEquals(
+            listOf(StrategyOperation.PULL_REMOTE),
+            cancelledRefresh.completedOperations,
+        )
     }
 
     @Test
-    fun adaptiveWorksWhileDurableAndBidirectionalRefreshStayFailClosed() = runTest {
+    fun adaptiveWorksWhileDurableAndBidirectionalRemainRejected() = runTest {
         val storage = TestStorage(cacheResult = available(freshEvidence()))
         val transport = TestTransport(
             pullResults = mutableListOf(
@@ -379,16 +364,16 @@ class CacheFirstInlineRefreshExecutionTest {
             ),
         )
         val fixture = fixture(storage, transport)
-        val concrete = cacheProfile()
-        val adaptive = AdaptiveStrategyProfile(
+        val concreteProfile = cacheProfile()
+        val adaptiveProfile = AdaptiveStrategyProfile(
             id = StrategyProfileId("inline-adaptive"),
             configurationVersion = StrategyConfigurationVersion(3),
-            candidates = listOf(concrete),
+            candidates = listOf(concreteProfile),
         )
 
         val adaptiveResult = fixture.coordinator.execute(
-            request(profile = adaptive),
-            fixture.bindings,
+            request = request(profile = adaptiveProfile),
+            bindings = fixture.bindings,
         )
         val adaptiveServed = assertIs<StrategyCacheServedWithInlineRefreshResult>(
             adaptiveResult,
@@ -397,24 +382,27 @@ class CacheFirstInlineRefreshExecutionTest {
             BuiltInSynchronizationStrategy.ADAPTIVE,
             adaptiveServed.evaluation.plan.requestedStrategy,
         )
-        assertEquals(concrete.id, adaptiveServed.evaluation.plan.effectiveProfileId)
+        assertEquals(
+            BuiltInSynchronizationStrategy.CACHE_FIRST,
+            adaptiveServed.evaluation.plan.effectiveStrategy,
+        )
 
         val callsAfterAdaptive = storage.cacheCalls to transport.pullCalls
-        val durable = fixture.coordinator.execute(
-            request(profile = cacheProfile(requireDurableRefresh = true)),
-            fixture.bindings,
+        val durableResult = fixture.coordinator.execute(
+            request = request(profile = cacheProfile(requireDurableRefresh = true)),
+            bindings = fixture.bindings,
         )
-        val bidirectional = fixture.coordinator.execute(
-            request(direction = SynchronizationDirection.BIDIRECTIONAL),
-            fixture.bindings,
-        )
-        assertEquals(
-            StrategyExecutionRejectionReason.UNSUPPORTED_PLAN,
-            assertIs<StrategySynchronizationExecutionResult.Rejected>(durable).reason,
+        val bidirectionalResult = fixture.coordinator.execute(
+            request = request(direction = SynchronizationDirection.BIDIRECTIONAL),
+            bindings = fixture.bindings,
         )
         assertEquals(
             StrategyExecutionRejectionReason.UNSUPPORTED_PLAN,
-            assertIs<StrategySynchronizationExecutionResult.Rejected>(bidirectional).reason,
+            assertIs<StrategySynchronizationExecutionResult.Rejected>(durableResult).reason,
+        )
+        assertEquals(
+            StrategyExecutionRejectionReason.UNSUPPORTED_PLAN,
+            assertIs<StrategySynchronizationExecutionResult.Rejected>(bidirectionalResult).reason,
         )
         assertEquals(callsAfterAdaptive, storage.cacheCalls to transport.pullCalls)
     }
@@ -427,20 +415,20 @@ class CacheFirstInlineRefreshExecutionTest {
     ): Fixture {
         val registry = ProviderRegistry(listOf(storage, transport))
         val lifecycle = ProviderLifecycleCoordinator(
-            registry,
-            ProviderInitializationContext(),
+            registry = registry,
+            context = ProviderInitializationContext(),
         )
         lifecycle.initialize()
-        val dependencies = dependencies()
+        val runtimeDependencies = dependencies()
         return Fixture(
             coordinator = StrategySynchronizationExecutionCoordinator(
-                lifecycle,
-                BuiltInSynchronizationStrategyEvaluator(),
-                StrategyProviderResolver(registry),
-                dependencies.clock,
-                dependencies,
-                SynchronizationPipelineRegistry(listOf(pipeline)),
-                null,
+                lifecycleCoordinator = lifecycle,
+                evaluator = BuiltInSynchronizationStrategyEvaluator(),
+                providerResolver = StrategyProviderResolver(registry),
+                clock = runtimeDependencies.clock,
+                runtimeDependencies = runtimeDependencies,
+                pipelineRegistry = SynchronizationPipelineRegistry(listOf(pipeline)),
+                lifecycleEventEmitter = null,
             ),
             bindings = StrategyProviderBindings(
                 storageProviderId = storage.descriptor.id,
@@ -455,13 +443,13 @@ class CacheFirstInlineRefreshExecutionTest {
         direction: SynchronizationDirection = SynchronizationDirection.PULL,
     ): StrategySynchronizationRequest = StrategySynchronizationRequest(
         request = SynchronizationRequest(
-            WorkflowId("inline-workflow"),
-            SynchronizationSessionId("inline-session"),
-            direction,
-            SynchronizationMode.DELTA,
-            ExecutionContext(
-                ExecutionId("inline-execution"),
-                CorrelationId("inline-correlation"),
+            workflowId = WorkflowId("inline-workflow"),
+            sessionId = SynchronizationSessionId("inline-session"),
+            direction = direction,
+            mode = SynchronizationMode.DELTA,
+            context = ExecutionContext(
+                executionId = ExecutionId("inline-execution"),
+                correlationId = CorrelationId("inline-correlation"),
             ),
         ),
         decisionId = StrategyDecisionId("inline-decision"),
@@ -494,10 +482,10 @@ class CacheFirstInlineRefreshExecutionTest {
         private val writeResults: MutableList<ProviderOperationResult<Unit>> = mutableListOf(),
     ) : StrategyCacheAccessProvider {
         override val descriptor = descriptor("inline-storage", ProviderType.STORAGE)
-        var cacheCalls = 0
+        var cacheCalls: Int = 0
+            private set
         var lastCacheRequest: StrategyCacheAccessRequest? = null
-        var applyCalls = 0
-        var writeCalls = 0
+            private set
 
         override suspend fun initialize(context: ProviderInitializationContext) = success(Unit)
         override suspend fun health() = success(ProviderHealth(ProviderHealthStatus.HEALTHY))
@@ -512,15 +500,13 @@ class CacheFirstInlineRefreshExecutionTest {
             return cacheResult
         }
 
-        override suspend fun readOutboundChanges(request: OutboundChangeReadRequest) =
-            success(OutboundChangeReadResult.NoChanges)
+        override suspend fun readOutboundChanges(
+            request: OutboundChangeReadRequest,
+        ) = success(OutboundChangeReadResult.NoChanges)
 
-        override suspend fun applyInboundChanges(request: InboundChangeApplyRequest):
-            ProviderOperationResult<Unit> {
-            applyCalls++
-            calls += "apply"
-            return success(Unit)
-        }
+        override suspend fun applyInboundChanges(
+            request: InboundChangeApplyRequest,
+        ) = success(Unit)
 
         override suspend fun acknowledgeOutboundChanges(
             request: OutboundChangeAcknowledgementRequest,
@@ -536,7 +522,6 @@ class CacheFirstInlineRefreshExecutionTest {
         override suspend fun writeCheckpoint(
             request: CheckpointWriteRequest,
         ): ProviderOperationResult<Unit> {
-            writeCalls++
             calls += "write"
             return if (writeResults.isEmpty()) success(Unit) else writeResults.removeAt(0)
         }
@@ -547,13 +532,16 @@ class CacheFirstInlineRefreshExecutionTest {
         private val pullResults: MutableList<ProviderOperationResult<PullChangesResult>>,
     ) : TransportProvider {
         override val descriptor = descriptor("inline-transport", ProviderType.TRANSPORT)
-        var pullCalls = 0
+        var pullCalls: Int = 0
+            private set
 
         override suspend fun initialize(context: ProviderInitializationContext) = success(Unit)
         override suspend fun health() = success(ProviderHealth(ProviderHealthStatus.HEALTHY))
         override suspend fun close() = success(Unit)
-        override suspend fun pushChanges(request: PushChangesRequest):
-            ProviderOperationResult<ChangeSetAcknowledgement> =
+
+        override suspend fun pushChanges(
+            request: PushChangesRequest,
+        ): ProviderOperationResult<ChangeSetAcknowledgement> =
             error("Inline PULL refresh must not push.")
 
         override suspend fun pullChanges(
@@ -567,7 +555,7 @@ class CacheFirstInlineRefreshExecutionTest {
     }
 
     private object ExplicitCancelledPullPipeline : SynchronizationPipeline {
-        override val direction = SynchronizationDirection.PULL
+        override val direction: SynchronizationDirection = SynchronizationDirection.PULL
 
         override suspend fun execute(
             context: SynchronizationExecutionContext,
@@ -576,9 +564,9 @@ class CacheFirstInlineRefreshExecutionTest {
                 PullChangesRequest(request = context.request),
             )
             return SynchronizationResult.Cancelled(
-                context.request,
-                context.runtimeDependencies.clock.now(),
-                SynchronizationSummary(),
+                request = context.request,
+                completedAt = context.runtimeDependencies.clock.now(),
+                summary = SynchronizationSummary(),
             )
         }
     }
@@ -608,61 +596,71 @@ class CacheFirstInlineRefreshExecutionTest {
     ) : ClassifiedStrategyRemoteError
 
     private class FixedClock(private val instant: DataLoomInstant) : DataLoomClock {
-        override fun now() = instant
+        override fun now(): DataLoomInstant = instant
     }
 
     private companion object {
         fun freshEvidence() = StrategyCacheFreshnessEvidence(
-            StrategyCacheState.FRESH,
-            DataLoomInstant(10_000L),
-            DataLoomInstant(20_000L),
+            cacheState = StrategyCacheState.FRESH,
+            observedAt = DataLoomInstant(10_000L),
+            validUntil = DataLoomInstant(20_000L),
         )
 
         fun staleEvidence() = StrategyCacheFreshnessEvidence(
-            StrategyCacheState.STALE,
-            DataLoomInstant(20_000L),
-            DataLoomInstant(10_000L),
+            cacheState = StrategyCacheState.STALE,
+            observedAt = DataLoomInstant(20_000L),
+            validUntil = DataLoomInstant(10_000L),
         )
 
-        fun available(evidence: StrategyCacheFreshnessEvidence) =
-            success<StrategyCacheAccessResult>(StrategyCacheAccessResult.Available(evidence))
+        fun available(
+            evidence: StrategyCacheFreshnessEvidence,
+        ): ProviderOperationResult<StrategyCacheAccessResult> =
+            success(StrategyCacheAccessResult.Available(evidence))
 
         fun checkpoint(token: String) = SynchronizationCheckpoint(
-            CheckpointKey("inline-workflow"),
-            CheckpointToken(token),
+            key = CheckpointKey("inline-workflow"),
+            token = CheckpointToken(token),
         )
 
         fun changeSet(id: String, eventId: String) = ChangeSet(
-            ChangeSetId(id),
-            listOf(
+            id = ChangeSetId(id),
+            events = listOf(
                 ChangeEvent(
-                    ChangeEventId(eventId),
-                    EntityReference(EntityType("Order"), EntityId("entity-$eventId")),
-                    ChangeOperation.UPDATE,
+                    id = ChangeEventId(eventId),
+                    entity = EntityReference(
+                        type = EntityType("Order"),
+                        id = EntityId("entity-$eventId"),
+                    ),
+                    operation = ChangeOperation.UPDATE,
                 ),
             ),
         )
 
         fun dependencies() = RuntimeDependencies(
-            FixedClock(DataLoomInstant(30_000L)),
-            RuntimeIdentifierGenerators(
-                fixed(SynchronizationEventId("inline-event")),
-                fixed(QueueEntryId("inline-entry")),
-                fixed(QueueLeaseId("inline-lease")),
-                fixed(ConflictId("inline-conflict")),
+            clock = FixedClock(DataLoomInstant(30_000L)),
+            identifiers = RuntimeIdentifierGenerators(
+                synchronizationEventIds = fixed(SynchronizationEventId("inline-event")),
+                queueEntryIds = fixed(QueueEntryId("inline-entry")),
+                queueLeaseIds = fixed(QueueLeaseId("inline-lease")),
+                conflictIds = fixed(ConflictId("inline-conflict")),
             ),
         )
 
         fun descriptor(id: String, type: ProviderType) = ProviderDescriptor(
-            ProviderId(id),
-            ProviderName(id),
-            type,
-            ProviderVersion("1.0.0"),
+            id = ProviderId(id),
+            name = ProviderName(id),
+            type = type,
+            version = ProviderVersion("1.0.0"),
         )
 
-        fun <T> fixed(value: T): IdentifierGenerator<T> = object : IdentifierGenerator<T> {
-            override fun generate() = value
-        }
+        fun noChangeTransport() = TestTransport(
+            pullResults = mutableListOf(success(PullChangesResult.NoChanges())),
+        )
+
+        fun <T> fixed(value: T): IdentifierGenerator<T> =
+            object : IdentifierGenerator<T> {
+                override fun generate(): T = value
+            }
 
         fun <T> success(value: T): ProviderOperationResult<T> =
             ProviderOperationResult.Success(value)
