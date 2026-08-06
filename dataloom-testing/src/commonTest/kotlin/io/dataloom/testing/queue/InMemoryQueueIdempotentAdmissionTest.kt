@@ -20,15 +20,17 @@ import io.dataloom.api.queue.QueueEntry
 import io.dataloom.api.queue.QueueEntryState
 import io.dataloom.api.queue.QueueIdempotentAdmissionResult
 import io.dataloom.api.time.DataLoomInstant
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.coroutines.startCoroutine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
-import kotlinx.coroutines.test.runTest
 
 class InMemoryQueueIdempotentAdmissionTest {
 
     @Test
-    fun `first admission accepts and same identity returns current state`() = runTest {
+    fun `first admission accepts and same identity returns current state`() = runSuspend {
         val provider = InMemoryQueueProvider()
         val original = entry()
 
@@ -46,7 +48,7 @@ class InMemoryQueueIdempotentAdmissionTest {
     }
 
     @Test
-    fun `same id with different immutable request fails closed`() = runTest {
+    fun `same id with different immutable request fails closed`() = runSuspend {
         val provider = InMemoryQueueProvider()
         provider.admit(QueueEnqueueRequest(entry())).successValue()
 
@@ -60,7 +62,7 @@ class InMemoryQueueIdempotentAdmissionTest {
     }
 
     @Test
-    fun `reconciliation after completion reports completed without creating work`() = runTest {
+    fun `reconciliation after completion reports completed without creating work`() = runSuspend {
         val provider = InMemoryQueueProvider()
         provider.admit(QueueEnqueueRequest(entry())).successValue()
         val acquired = assertIs<QueueAcquireResult.Entries>(
@@ -114,4 +116,24 @@ class InMemoryQueueIdempotentAdmissionTest {
 
     private fun <T> ProviderOperationResult<T>.successValue(): T =
         assertIs<ProviderOperationResult.Success<T>>(this).value
+
+    /**
+     * Executes the immediately completing suspend operations used by this
+     * deterministic in-memory provider without adding a coroutine-test runtime.
+     */
+    private fun <T> runSuspend(block: suspend () -> T): T {
+        var outcome: Result<T>? = null
+        block.startCoroutine(
+            object : Continuation<T> {
+                override val context = EmptyCoroutineContext
+
+                override fun resumeWith(result: Result<T>) {
+                    outcome = result
+                }
+            },
+        )
+        return requireNotNull(outcome) {
+            "In-memory queue operation did not complete synchronously."
+        }.getOrThrow()
+    }
 }
