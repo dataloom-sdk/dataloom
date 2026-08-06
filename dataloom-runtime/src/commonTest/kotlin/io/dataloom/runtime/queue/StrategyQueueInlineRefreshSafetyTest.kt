@@ -33,6 +33,7 @@ import io.dataloom.api.strategy.StrategyProfileId
 import io.dataloom.api.strategy.StrategyProviderCapability
 import io.dataloom.api.strategy.StrategyTransportOutput
 import io.dataloom.api.synchronization.SynchronizationResult
+import io.dataloom.api.synchronization.SynchronizationSkipReason
 import io.dataloom.api.synchronization.SynchronizationSummary
 import io.dataloom.api.time.DataLoomClock
 import io.dataloom.api.time.DataLoomInstant
@@ -63,6 +64,7 @@ class StrategyQueueInlineRefreshSafetyTest {
                             request = request,
                             completedAt = DataLoomInstant(3_000L),
                             summary = SynchronizationSummary(),
+                            reason = SynchronizationSkipReason.NO_CHANGES,
                         ),
                     ),
                 ),
