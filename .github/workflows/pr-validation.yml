@@ -68,15 +68,15 @@ jobs:
           )
 
           old_plan = (
-              r"                StrategyOperation\.SERVE_LOCAL,\n"
-              r"                StrategyOperation\.PULL_REMOTE,\n"
-              r"                StrategyOperation\.PERSIST_REMOTE,"
+              r"(?m)^(?P<indent>[ \t]+)StrategyOperation\.SERVE_LOCAL,\n"
+              r"(?P=indent)StrategyOperation\.PULL_REMOTE,\n"
+              r"(?P=indent)StrategyOperation\.PERSIST_REMOTE,"
           )
           new_plan = (
-              "                StrategyOperation.SERVE_LOCAL,\n"
-              "                StrategyOperation.READ_CHECKPOINT,\n"
-              "                StrategyOperation.PULL_REMOTE,\n"
-              "                StrategyOperation.PERSIST_REMOTE,"
+              r"\g<indent>StrategyOperation.SERVE_LOCAL," "\n"
+              r"\g<indent>StrategyOperation.READ_CHECKPOINT," "\n"
+              r"\g<indent>StrategyOperation.PULL_REMOTE," "\n"
+              r"\g<indent>StrategyOperation.PERSIST_REMOTE,"
           )
           for path in (
               "dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/strategy/CacheFirstStrategyExecutor.kt",
@@ -123,43 +123,43 @@ jobs:
               "BuiltInSynchronizationStrategyEvaluatorTest.kt"
           )
           anchor = "    @Test\n    fun cacheFirstRejectPolicyNeverServesStaleState() {"
-          addition = """    @Test
-          fun nonDurableCacheRefreshDeclaresCheckpointBeforeTransport() {
-              val result = evaluate(
-                  profile = CacheFirstStrategyProfile(
-                      id = StrategyProfileId("cache-inline-refresh-plan"),
-                      configurationVersion = version(),
-                      refreshOnFreshHit = true,
-                      requireDurableRefresh = false,
-                  ),
-                  direction = SynchronizationDirection.PULL,
-                  evidence = evidence(
-                      connectivity = StrategyConnectivity.AVAILABLE,
-                      cacheState = StrategyCacheState.FRESH,
-                  ),
-              )
-
-              assertEquals(StrategyDisposition.SERVE_AND_REFRESH, result.plan.disposition)
-              assertEquals(
-                  listOf(
-                      StrategyOperation.SERVE_LOCAL,
-                      StrategyOperation.READ_CHECKPOINT,
-                      StrategyOperation.PULL_REMOTE,
-                      StrategyOperation.PERSIST_REMOTE,
-                  ),
-                  result.plan.operations,
-              )
-              assertEquals(
-                  setOf(
-                      StrategyProviderCapability.STORAGE,
-                      StrategyProviderCapability.CACHE_ACCESS,
-                      StrategyProviderCapability.TRANSPORT,
-                  ),
-                  result.plan.requiredCapabilities,
-              )
-          }
-
-          """ + anchor
+          addition = (
+              "    @Test\n"
+              "    fun nonDurableCacheRefreshDeclaresCheckpointBeforeTransport() {\n"
+              "        val result = evaluate(\n"
+              "            profile = CacheFirstStrategyProfile(\n"
+              "                id = StrategyProfileId(\"cache-inline-refresh-plan\"),\n"
+              "                configurationVersion = version(),\n"
+              "                refreshOnFreshHit = true,\n"
+              "                requireDurableRefresh = false,\n"
+              "            ),\n"
+              "            direction = SynchronizationDirection.PULL,\n"
+              "            evidence = evidence(\n"
+              "                connectivity = StrategyConnectivity.AVAILABLE,\n"
+              "                cacheState = StrategyCacheState.FRESH,\n"
+              "            ),\n"
+              "        )\n\n"
+              "        assertEquals(StrategyDisposition.SERVE_AND_REFRESH, result.plan.disposition)\n"
+              "        assertEquals(\n"
+              "            listOf(\n"
+              "                StrategyOperation.SERVE_LOCAL,\n"
+              "                StrategyOperation.READ_CHECKPOINT,\n"
+              "                StrategyOperation.PULL_REMOTE,\n"
+              "                StrategyOperation.PERSIST_REMOTE,\n"
+              "            ),\n"
+              "            result.plan.operations,\n"
+              "        )\n"
+              "        assertEquals(\n"
+              "            setOf(\n"
+              "                StrategyProviderCapability.STORAGE,\n"
+              "                StrategyProviderCapability.CACHE_ACCESS,\n"
+              "                StrategyProviderCapability.TRANSPORT,\n"
+              "            ),\n"
+              "            result.plan.requiredCapabilities,\n"
+              "        )\n"
+              "    }\n\n"
+              + anchor
+          )
           replace(evaluator_test, re.escape(anchor), addition)
 
           Path(
