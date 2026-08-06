@@ -48,6 +48,7 @@ import io.dataloom.api.strategy.StrategyDataOrigin
 import io.dataloom.api.strategy.StrategyDecisionId
 import io.dataloom.api.strategy.StrategyPlanId
 import io.dataloom.api.strategy.StrategyProfileId
+import io.dataloom.api.strategy.StrategyProviderCapability
 import io.dataloom.api.strategy.StrategyProviderHealth
 import io.dataloom.api.strategy.StrategyRuntimeEvidence
 import io.dataloom.api.strategy.StrategySynchronizationRequest
@@ -232,7 +233,7 @@ class CacheFirstServingExecutionTest {
     }
 
     @Test
-    fun refreshPlanIsRejectedBeforeProviderInvocation() = runTest {
+    fun refreshPlanWithoutTransportFailsBeforeCacheInvocation() = runTest {
         val storage = RecordingCacheStorage(
             success(StrategyCacheAccessResult.Available(freshEvidence())),
         )
@@ -248,7 +249,14 @@ class CacheFirstServingExecutionTest {
         )
 
         val rejected = assertIs<StrategySynchronizationExecutionResult.Rejected>(result)
-        assertEquals(StrategyExecutionRejectionReason.UNSUPPORTED_PLAN, rejected.reason)
+        assertEquals(
+            StrategyExecutionRejectionReason.PROVIDER_RESOLUTION_FAILED,
+            rejected.reason,
+        )
+        assertEquals(
+            setOf(StrategyProviderCapability.TRANSPORT),
+            rejected.missingCapabilities,
+        )
         assertEquals(0, storage.cacheAccessCalls)
         assertEquals(0, storage.storageOperationCalls)
     }
