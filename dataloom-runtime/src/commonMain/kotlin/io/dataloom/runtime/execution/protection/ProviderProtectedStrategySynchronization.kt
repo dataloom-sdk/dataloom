@@ -25,6 +25,7 @@ import io.dataloom.runtime.retry.RetryTimeoutCoordinator
 import io.dataloom.runtime.retry.StorageCircuitProtectionRuntime
 import io.dataloom.runtime.retry.TransportCircuitProtectionRuntime
 import io.dataloom.runtime.strategy.AcceptedStrategyPlanExecutionCoordinator
+import io.dataloom.runtime.strategy.StrategyCacheServedWithInlineRefreshResult
 import io.dataloom.runtime.strategy.StrategyExecutionRejectionReason
 import io.dataloom.runtime.strategy.StrategyProviderExecutionBoundary
 import io.dataloom.runtime.strategy.StrategyProviderExecutionPreparation
@@ -339,6 +340,7 @@ private fun strategyStatus(result: StrategySynchronizationExecutionResult): Stri
         is StrategySynchronizationExecutionResult.FallbackActivated -> "FALLBACK_ACTIVATED"
         is StrategySynchronizationExecutionResult.FallbackUnavailable -> "FALLBACK_UNAVAILABLE"
         is StrategySynchronizationExecutionResult.CacheServed -> "CACHE_SERVED"
+        is StrategyCacheServedWithInlineRefreshResult -> "CACHE_SERVED_INLINE_REFRESH"
         is StrategySynchronizationExecutionResult.CacheUnavailable -> "CACHE_UNAVAILABLE"
         is StrategySynchronizationExecutionResult.Cancelled -> "CANCELLED"
         is StrategySynchronizationExecutionResult.Deferred -> "DEFERRED"
