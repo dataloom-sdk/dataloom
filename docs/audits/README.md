@@ -12,6 +12,7 @@ behavior.
 
 | Audit | Scope | How to use it |
 |---|---|---|
+| [DL-039B durable cache refresh admission](./DL-039B-durable-cache-refresh-admission.md) | Cache-first local serving plus queue-before-scheduler durable continuation admission and frozen replay | Candidate bounded runtime checkpoint; process relaunch, platform callbacks, coherence, events, and complete matrices remain under #102/#101 |
 | [DL-039B idempotent queue admission](./DL-039B-idempotent-queue-admission.md) | Atomic first/already/conflict durable identity across in-memory, Room, and Apple queue providers | Current prerequisite for durable refresh admission; runtime scheduling and recovery remain under #102/#101 |
 | [DL-039B inline cache refresh runtime](./DL-039B-inline-cache-refresh-runtime.md) | Exact non-durable cache-first PULL local-serving plus canonical inline refresh composition | Accepted foreground runtime checkpoint; durable admission/recovery and complete platform matrices remain under #102/#101 |
 | [DL-AUDIT-006](./DL-AUDIT-006-current-implementation-reconciliation.md) | Current gate, strategy, durable-plan, platform, documentation, and dependency reconciliation at `main` commit `94e921f` | Primary current implementation/readiness decision record; use scoped later checkpoints for work merged after this baseline |

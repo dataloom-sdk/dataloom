@@ -25,6 +25,7 @@ import io.dataloom.runtime.retry.RetryTimeoutCoordinator
 import io.dataloom.runtime.retry.StorageCircuitProtectionRuntime
 import io.dataloom.runtime.retry.TransportCircuitProtectionRuntime
 import io.dataloom.runtime.strategy.AcceptedStrategyPlanExecutionCoordinator
+import io.dataloom.runtime.strategy.StrategyCacheServedWithDurableRefreshResult
 import io.dataloom.runtime.strategy.StrategyCacheServedWithInlineRefreshResult
 import io.dataloom.runtime.strategy.StrategyExecutionRejectionReason
 import io.dataloom.runtime.strategy.StrategyProviderExecutionBoundary
@@ -134,6 +135,9 @@ internal class ProviderProtectedStrategyExecutionBoundary(
         evaluation: StrategyEvaluationResult,
         providers: StrategyProviderSet,
     ): StrategyProviderExecutionPreparation {
+        if (requiresQueueOrSchedulerProtection(evaluation)) {
+            return missingProtection()
+        }
         return try {
             val transportProvider = providers.transportProvider?.let { provider ->
                 val spec = protectionSpec.transport
@@ -315,6 +319,12 @@ internal class ProviderProtectedStrategyExecutionBoundary(
         )
 }
 
+private fun requiresQueueOrSchedulerProtection(
+    evaluation: StrategyEvaluationResult,
+): Boolean =
+    StrategyProviderCapability.QUEUE in evaluation.plan.requiredCapabilities ||
+        StrategyProviderCapability.SCHEDULER in evaluation.plan.requiredCapabilities
+
 private fun requiresCacheAccess(
     evaluation: StrategyEvaluationResult,
 ): Boolean =
@@ -341,6 +351,8 @@ private fun strategyStatus(result: StrategySynchronizationExecutionResult): Stri
         is StrategySynchronizationExecutionResult.FallbackUnavailable -> "FALLBACK_UNAVAILABLE"
         is StrategySynchronizationExecutionResult.CacheServed -> "CACHE_SERVED"
         is StrategyCacheServedWithInlineRefreshResult -> "CACHE_SERVED_INLINE_REFRESH"
+        is StrategyCacheServedWithDurableRefreshResult ->
+            "CACHE_SERVED_DURABLE_REFRESH"
         is StrategySynchronizationExecutionResult.CacheUnavailable -> "CACHE_UNAVAILABLE"
         is StrategySynchronizationExecutionResult.Cancelled -> "CANCELLED"
         is StrategySynchronizationExecutionResult.Deferred -> "DEFERRED"

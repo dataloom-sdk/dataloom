@@ -398,6 +398,32 @@ final enum class io.dataloom.runtime.retry/TransportCircuitOperation : kotlin/En
     final fun values(): kotlin/Array<io.dataloom.runtime.retry/TransportCircuitOperation> // io.dataloom.runtime.retry/TransportCircuitOperation.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.runtime.strategy/StrategyCacheDurableQueueAdmissionDisposition : kotlin/Enum<io.dataloom.runtime.strategy/StrategyCacheDurableQueueAdmissionDisposition> { // io.dataloom.runtime.strategy/StrategyCacheDurableQueueAdmissionDisposition|null[0]
+    enum entry ACCEPTED // io.dataloom.runtime.strategy/StrategyCacheDurableQueueAdmissionDisposition.ACCEPTED|null[0]
+    enum entry ALREADY_ACCEPTED // io.dataloom.runtime.strategy/StrategyCacheDurableQueueAdmissionDisposition.ALREADY_ACCEPTED|null[0]
+
+    final val entries // io.dataloom.runtime.strategy/StrategyCacheDurableQueueAdmissionDisposition.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.strategy/StrategyCacheDurableQueueAdmissionDisposition> // io.dataloom.runtime.strategy/StrategyCacheDurableQueueAdmissionDisposition.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.strategy/StrategyCacheDurableQueueAdmissionDisposition // io.dataloom.runtime.strategy/StrategyCacheDurableQueueAdmissionDisposition.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.strategy/StrategyCacheDurableQueueAdmissionDisposition> // io.dataloom.runtime.strategy/StrategyCacheDurableQueueAdmissionDisposition.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.runtime.strategy/StrategyCacheDurableRefreshDisposition : kotlin/Enum<io.dataloom.runtime.strategy/StrategyCacheDurableRefreshDisposition> { // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshDisposition|null[0]
+    enum entry ALREADY_IN_PROGRESS // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshDisposition.ALREADY_IN_PROGRESS|null[0]
+    enum entry ALREADY_TERMINAL // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshDisposition.ALREADY_TERMINAL|null[0]
+    enum entry IDENTITY_CONFLICT // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshDisposition.IDENTITY_CONFLICT|null[0]
+    enum entry QUEUE_FAILED // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshDisposition.QUEUE_FAILED|null[0]
+    enum entry SCHEDULED // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshDisposition.SCHEDULED|null[0]
+    enum entry SCHEDULE_FAILED // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshDisposition.SCHEDULE_FAILED|null[0]
+
+    final val entries // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshDisposition.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.strategy/StrategyCacheDurableRefreshDisposition> // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshDisposition.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.strategy/StrategyCacheDurableRefreshDisposition // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshDisposition.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.strategy/StrategyCacheDurableRefreshDisposition> // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshDisposition.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition : kotlin/Enum<io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition> { // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition|null[0]
     enum entry CANCELLED // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition.CANCELLED|null[0]
     enum entry COMPLETED // io.dataloom.runtime.strategy/StrategyCacheInlineRefreshDisposition.COMPLETED|null[0]
@@ -427,6 +453,7 @@ final enum class io.dataloom.runtime.strategy/StrategyExecutionRejectionReason :
     enum entry ACCEPTED_PLAN_MISMATCH // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.ACCEPTED_PLAN_MISMATCH|null[0]
     enum entry ATOMIC_LOCAL_ADMISSION_PROVIDER_NOT_CONFIGURED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.ATOMIC_LOCAL_ADMISSION_PROVIDER_NOT_CONFIGURED|null[0]
     enum entry CACHE_ACCESS_PROVIDER_NOT_CONFIGURED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.CACHE_ACCESS_PROVIDER_NOT_CONFIGURED|null[0]
+    enum entry IDEMPOTENT_QUEUE_ADMISSION_PROVIDER_NOT_CONFIGURED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.IDEMPOTENT_QUEUE_ADMISSION_PROVIDER_NOT_CONFIGURED|null[0]
     enum entry INCOMPATIBLE_INPUT // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT|null[0]
     enum entry INCOMPATIBLE_TRIGGER // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.INCOMPATIBLE_TRIGGER|null[0]
     enum entry LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED|null[0]
@@ -1954,6 +1981,173 @@ sealed interface io.dataloom.runtime.retry/SynchronizationRetryEvaluation { // i
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.NotRequired.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.NotRequired.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.runtime.retry/SynchronizationRetryEvaluation.NotRequired.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult { // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult|null[0]
+    abstract val completedAt // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.completedAt|{}completedAt[0]
+        abstract fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
+    abstract val disposition // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.disposition|{}disposition[0]
+        abstract fun <get-disposition>(): io.dataloom.runtime.strategy/StrategyCacheDurableRefreshDisposition // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.disposition.<get-disposition>|<get-disposition>(){}[0]
+    abstract val queueEntryId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.queueEntryId|{}queueEntryId[0]
+        abstract fun <get-queueEntryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.queueEntryId.<get-queueEntryId>|<get-queueEntryId>(){}[0]
+    abstract val scheduleId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.scheduleId|{}scheduleId[0]
+        abstract fun <get-scheduleId>(): io.dataloom.api.identifier/ScheduleId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.scheduleId.<get-scheduleId>|<get-scheduleId>(){}[0]
+
+    final class AlreadyInProgress : io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult { // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyInProgress|null[0]
+        constructor <init>(io.dataloom.api.identifier/QueueEntryId, io.dataloom.api.identifier/ScheduleId, io.dataloom.api.queue/QueueEntryState, io.dataloom.api.time/DataLoomInstant) // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyInProgress.<init>|<init>(io.dataloom.api.identifier.QueueEntryId;io.dataloom.api.identifier.ScheduleId;io.dataloom.api.queue.QueueEntryState;io.dataloom.api.time.DataLoomInstant){}[0]
+
+        final val completedAt // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyInProgress.completedAt|{}completedAt[0]
+            final fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyInProgress.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
+        final val disposition // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyInProgress.disposition|{}disposition[0]
+            final fun <get-disposition>(): io.dataloom.runtime.strategy/StrategyCacheDurableRefreshDisposition // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyInProgress.disposition.<get-disposition>|<get-disposition>(){}[0]
+        final val queueEntryId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyInProgress.queueEntryId|{}queueEntryId[0]
+            final fun <get-queueEntryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyInProgress.queueEntryId.<get-queueEntryId>|<get-queueEntryId>(){}[0]
+        final val queueState // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyInProgress.queueState|{}queueState[0]
+            final fun <get-queueState>(): io.dataloom.api.queue/QueueEntryState // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyInProgress.queueState.<get-queueState>|<get-queueState>(){}[0]
+        final val scheduleId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyInProgress.scheduleId|{}scheduleId[0]
+            final fun <get-scheduleId>(): io.dataloom.api.identifier/ScheduleId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyInProgress.scheduleId.<get-scheduleId>|<get-scheduleId>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyInProgress.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.identifier/ScheduleId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyInProgress.component2|component2(){}[0]
+        final fun component3(): io.dataloom.api.queue/QueueEntryState // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyInProgress.component3|component3(){}[0]
+        final fun component4(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyInProgress.component4|component4(){}[0]
+        final fun copy(io.dataloom.api.identifier/QueueEntryId = ..., io.dataloom.api.identifier/ScheduleId = ..., io.dataloom.api.queue/QueueEntryState = ..., io.dataloom.api.time/DataLoomInstant = ...): io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyInProgress // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyInProgress.copy|copy(io.dataloom.api.identifier.QueueEntryId;io.dataloom.api.identifier.ScheduleId;io.dataloom.api.queue.QueueEntryState;io.dataloom.api.time.DataLoomInstant){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyInProgress.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyInProgress.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyInProgress.toString|toString(){}[0]
+    }
+
+    final class AlreadyTerminal : io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult { // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyTerminal|null[0]
+        constructor <init>(io.dataloom.api.identifier/QueueEntryId, io.dataloom.api.identifier/ScheduleId, io.dataloom.api.queue/QueueEntryState, io.dataloom.api.time/DataLoomInstant) // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyTerminal.<init>|<init>(io.dataloom.api.identifier.QueueEntryId;io.dataloom.api.identifier.ScheduleId;io.dataloom.api.queue.QueueEntryState;io.dataloom.api.time.DataLoomInstant){}[0]
+
+        final val completedAt // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyTerminal.completedAt|{}completedAt[0]
+            final fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyTerminal.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
+        final val disposition // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyTerminal.disposition|{}disposition[0]
+            final fun <get-disposition>(): io.dataloom.runtime.strategy/StrategyCacheDurableRefreshDisposition // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyTerminal.disposition.<get-disposition>|<get-disposition>(){}[0]
+        final val queueEntryId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyTerminal.queueEntryId|{}queueEntryId[0]
+            final fun <get-queueEntryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyTerminal.queueEntryId.<get-queueEntryId>|<get-queueEntryId>(){}[0]
+        final val queueState // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyTerminal.queueState|{}queueState[0]
+            final fun <get-queueState>(): io.dataloom.api.queue/QueueEntryState // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyTerminal.queueState.<get-queueState>|<get-queueState>(){}[0]
+        final val scheduleId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyTerminal.scheduleId|{}scheduleId[0]
+            final fun <get-scheduleId>(): io.dataloom.api.identifier/ScheduleId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyTerminal.scheduleId.<get-scheduleId>|<get-scheduleId>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyTerminal.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.identifier/ScheduleId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyTerminal.component2|component2(){}[0]
+        final fun component3(): io.dataloom.api.queue/QueueEntryState // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyTerminal.component3|component3(){}[0]
+        final fun component4(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyTerminal.component4|component4(){}[0]
+        final fun copy(io.dataloom.api.identifier/QueueEntryId = ..., io.dataloom.api.identifier/ScheduleId = ..., io.dataloom.api.queue/QueueEntryState = ..., io.dataloom.api.time/DataLoomInstant = ...): io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyTerminal // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyTerminal.copy|copy(io.dataloom.api.identifier.QueueEntryId;io.dataloom.api.identifier.ScheduleId;io.dataloom.api.queue.QueueEntryState;io.dataloom.api.time.DataLoomInstant){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyTerminal.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyTerminal.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.AlreadyTerminal.toString|toString(){}[0]
+    }
+
+    final class IdentityConflict : io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult { // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.IdentityConflict|null[0]
+        constructor <init>(io.dataloom.api.identifier/QueueEntryId, io.dataloom.api.identifier/ScheduleId, io.dataloom.api.queue/QueueEntryState, io.dataloom.api.time/DataLoomInstant) // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.IdentityConflict.<init>|<init>(io.dataloom.api.identifier.QueueEntryId;io.dataloom.api.identifier.ScheduleId;io.dataloom.api.queue.QueueEntryState;io.dataloom.api.time.DataLoomInstant){}[0]
+
+        final val completedAt // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.IdentityConflict.completedAt|{}completedAt[0]
+            final fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.IdentityConflict.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
+        final val currentState // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.IdentityConflict.currentState|{}currentState[0]
+            final fun <get-currentState>(): io.dataloom.api.queue/QueueEntryState // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.IdentityConflict.currentState.<get-currentState>|<get-currentState>(){}[0]
+        final val disposition // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.IdentityConflict.disposition|{}disposition[0]
+            final fun <get-disposition>(): io.dataloom.runtime.strategy/StrategyCacheDurableRefreshDisposition // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.IdentityConflict.disposition.<get-disposition>|<get-disposition>(){}[0]
+        final val queueEntryId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.IdentityConflict.queueEntryId|{}queueEntryId[0]
+            final fun <get-queueEntryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.IdentityConflict.queueEntryId.<get-queueEntryId>|<get-queueEntryId>(){}[0]
+        final val scheduleId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.IdentityConflict.scheduleId|{}scheduleId[0]
+            final fun <get-scheduleId>(): io.dataloom.api.identifier/ScheduleId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.IdentityConflict.scheduleId.<get-scheduleId>|<get-scheduleId>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.IdentityConflict.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.identifier/ScheduleId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.IdentityConflict.component2|component2(){}[0]
+        final fun component3(): io.dataloom.api.queue/QueueEntryState // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.IdentityConflict.component3|component3(){}[0]
+        final fun component4(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.IdentityConflict.component4|component4(){}[0]
+        final fun copy(io.dataloom.api.identifier/QueueEntryId = ..., io.dataloom.api.identifier/ScheduleId = ..., io.dataloom.api.queue/QueueEntryState = ..., io.dataloom.api.time/DataLoomInstant = ...): io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.IdentityConflict // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.IdentityConflict.copy|copy(io.dataloom.api.identifier.QueueEntryId;io.dataloom.api.identifier.ScheduleId;io.dataloom.api.queue.QueueEntryState;io.dataloom.api.time.DataLoomInstant){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.IdentityConflict.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.IdentityConflict.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.IdentityConflict.toString|toString(){}[0]
+    }
+
+    final class QueueFailed : io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult { // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.QueueFailed|null[0]
+        constructor <init>(io.dataloom.api.identifier/QueueEntryId, io.dataloom.api.identifier/ScheduleId, io.dataloom.api.error/DataLoomError, io.dataloom.api.time/DataLoomInstant) // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.QueueFailed.<init>|<init>(io.dataloom.api.identifier.QueueEntryId;io.dataloom.api.identifier.ScheduleId;io.dataloom.api.error.DataLoomError;io.dataloom.api.time.DataLoomInstant){}[0]
+
+        final val completedAt // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.QueueFailed.completedAt|{}completedAt[0]
+            final fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.QueueFailed.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
+        final val disposition // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.QueueFailed.disposition|{}disposition[0]
+            final fun <get-disposition>(): io.dataloom.runtime.strategy/StrategyCacheDurableRefreshDisposition // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.QueueFailed.disposition.<get-disposition>|<get-disposition>(){}[0]
+        final val error // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.QueueFailed.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.QueueFailed.error.<get-error>|<get-error>(){}[0]
+        final val queueEntryId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.QueueFailed.queueEntryId|{}queueEntryId[0]
+            final fun <get-queueEntryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.QueueFailed.queueEntryId.<get-queueEntryId>|<get-queueEntryId>(){}[0]
+        final val scheduleId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.QueueFailed.scheduleId|{}scheduleId[0]
+            final fun <get-scheduleId>(): io.dataloom.api.identifier/ScheduleId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.QueueFailed.scheduleId.<get-scheduleId>|<get-scheduleId>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.QueueFailed.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.identifier/ScheduleId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.QueueFailed.component2|component2(){}[0]
+        final fun component3(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.QueueFailed.component3|component3(){}[0]
+        final fun component4(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.QueueFailed.component4|component4(){}[0]
+        final fun copy(io.dataloom.api.identifier/QueueEntryId = ..., io.dataloom.api.identifier/ScheduleId = ..., io.dataloom.api.error/DataLoomError = ..., io.dataloom.api.time/DataLoomInstant = ...): io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.QueueFailed // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.QueueFailed.copy|copy(io.dataloom.api.identifier.QueueEntryId;io.dataloom.api.identifier.ScheduleId;io.dataloom.api.error.DataLoomError;io.dataloom.api.time.DataLoomInstant){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.QueueFailed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.QueueFailed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.QueueFailed.toString|toString(){}[0]
+    }
+
+    final class ScheduleFailed : io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult { // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed|null[0]
+        constructor <init>(io.dataloom.api.identifier/QueueEntryId, io.dataloom.api.identifier/ScheduleId, io.dataloom.runtime.strategy/StrategyCacheDurableQueueAdmissionDisposition, io.dataloom.api.queue/QueueEntryState, io.dataloom.api.error/DataLoomError, io.dataloom.api.time/DataLoomInstant) // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.<init>|<init>(io.dataloom.api.identifier.QueueEntryId;io.dataloom.api.identifier.ScheduleId;io.dataloom.runtime.strategy.StrategyCacheDurableQueueAdmissionDisposition;io.dataloom.api.queue.QueueEntryState;io.dataloom.api.error.DataLoomError;io.dataloom.api.time.DataLoomInstant){}[0]
+
+        final val completedAt // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.completedAt|{}completedAt[0]
+            final fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
+        final val disposition // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.disposition|{}disposition[0]
+            final fun <get-disposition>(): io.dataloom.runtime.strategy/StrategyCacheDurableRefreshDisposition // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.disposition.<get-disposition>|<get-disposition>(){}[0]
+        final val error // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.error.<get-error>|<get-error>(){}[0]
+        final val queueAdmissionDisposition // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.queueAdmissionDisposition|{}queueAdmissionDisposition[0]
+            final fun <get-queueAdmissionDisposition>(): io.dataloom.runtime.strategy/StrategyCacheDurableQueueAdmissionDisposition // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.queueAdmissionDisposition.<get-queueAdmissionDisposition>|<get-queueAdmissionDisposition>(){}[0]
+        final val queueEntryId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.queueEntryId|{}queueEntryId[0]
+            final fun <get-queueEntryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.queueEntryId.<get-queueEntryId>|<get-queueEntryId>(){}[0]
+        final val queueState // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.queueState|{}queueState[0]
+            final fun <get-queueState>(): io.dataloom.api.queue/QueueEntryState // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.queueState.<get-queueState>|<get-queueState>(){}[0]
+        final val scheduleId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.scheduleId|{}scheduleId[0]
+            final fun <get-scheduleId>(): io.dataloom.api.identifier/ScheduleId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.scheduleId.<get-scheduleId>|<get-scheduleId>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.identifier/ScheduleId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.component2|component2(){}[0]
+        final fun component3(): io.dataloom.runtime.strategy/StrategyCacheDurableQueueAdmissionDisposition // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.component3|component3(){}[0]
+        final fun component4(): io.dataloom.api.queue/QueueEntryState // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.component4|component4(){}[0]
+        final fun component5(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.component5|component5(){}[0]
+        final fun component6(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.component6|component6(){}[0]
+        final fun copy(io.dataloom.api.identifier/QueueEntryId = ..., io.dataloom.api.identifier/ScheduleId = ..., io.dataloom.runtime.strategy/StrategyCacheDurableQueueAdmissionDisposition = ..., io.dataloom.api.queue/QueueEntryState = ..., io.dataloom.api.error/DataLoomError = ..., io.dataloom.api.time/DataLoomInstant = ...): io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.copy|copy(io.dataloom.api.identifier.QueueEntryId;io.dataloom.api.identifier.ScheduleId;io.dataloom.runtime.strategy.StrategyCacheDurableQueueAdmissionDisposition;io.dataloom.api.queue.QueueEntryState;io.dataloom.api.error.DataLoomError;io.dataloom.api.time.DataLoomInstant){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.ScheduleFailed.toString|toString(){}[0]
+    }
+
+    final class Scheduled : io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult { // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled|null[0]
+        constructor <init>(io.dataloom.api.identifier/QueueEntryId, io.dataloom.api.identifier/ScheduleId, io.dataloom.runtime.strategy/StrategyCacheDurableQueueAdmissionDisposition, io.dataloom.api.queue/QueueEntryState, io.dataloom.api.scheduling/ScheduleReceipt, io.dataloom.api.time/DataLoomInstant) // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.<init>|<init>(io.dataloom.api.identifier.QueueEntryId;io.dataloom.api.identifier.ScheduleId;io.dataloom.runtime.strategy.StrategyCacheDurableQueueAdmissionDisposition;io.dataloom.api.queue.QueueEntryState;io.dataloom.api.scheduling.ScheduleReceipt;io.dataloom.api.time.DataLoomInstant){}[0]
+
+        final val completedAt // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.completedAt|{}completedAt[0]
+            final fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
+        final val disposition // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.disposition|{}disposition[0]
+            final fun <get-disposition>(): io.dataloom.runtime.strategy/StrategyCacheDurableRefreshDisposition // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.disposition.<get-disposition>|<get-disposition>(){}[0]
+        final val queueAdmissionDisposition // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.queueAdmissionDisposition|{}queueAdmissionDisposition[0]
+            final fun <get-queueAdmissionDisposition>(): io.dataloom.runtime.strategy/StrategyCacheDurableQueueAdmissionDisposition // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.queueAdmissionDisposition.<get-queueAdmissionDisposition>|<get-queueAdmissionDisposition>(){}[0]
+        final val queueEntryId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.queueEntryId|{}queueEntryId[0]
+            final fun <get-queueEntryId>(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.queueEntryId.<get-queueEntryId>|<get-queueEntryId>(){}[0]
+        final val queueState // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.queueState|{}queueState[0]
+            final fun <get-queueState>(): io.dataloom.api.queue/QueueEntryState // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.queueState.<get-queueState>|<get-queueState>(){}[0]
+        final val receipt // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.receipt|{}receipt[0]
+            final fun <get-receipt>(): io.dataloom.api.scheduling/ScheduleReceipt // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.receipt.<get-receipt>|<get-receipt>(){}[0]
+        final val scheduleId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.scheduleId|{}scheduleId[0]
+            final fun <get-scheduleId>(): io.dataloom.api.identifier/ScheduleId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.scheduleId.<get-scheduleId>|<get-scheduleId>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/QueueEntryId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.identifier/ScheduleId // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.component2|component2(){}[0]
+        final fun component3(): io.dataloom.runtime.strategy/StrategyCacheDurableQueueAdmissionDisposition // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.component3|component3(){}[0]
+        final fun component4(): io.dataloom.api.queue/QueueEntryState // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.component4|component4(){}[0]
+        final fun component5(): io.dataloom.api.scheduling/ScheduleReceipt // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.component5|component5(){}[0]
+        final fun component6(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.component6|component6(){}[0]
+        final fun copy(io.dataloom.api.identifier/QueueEntryId = ..., io.dataloom.api.identifier/ScheduleId = ..., io.dataloom.runtime.strategy/StrategyCacheDurableQueueAdmissionDisposition = ..., io.dataloom.api.queue/QueueEntryState = ..., io.dataloom.api.scheduling/ScheduleReceipt = ..., io.dataloom.api.time/DataLoomInstant = ...): io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.copy|copy(io.dataloom.api.identifier.QueueEntryId;io.dataloom.api.identifier.ScheduleId;io.dataloom.runtime.strategy.StrategyCacheDurableQueueAdmissionDisposition;io.dataloom.api.queue.QueueEntryState;io.dataloom.api.scheduling.ScheduleReceipt;io.dataloom.api.time.DataLoomInstant){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult.Scheduled.toString|toString(){}[0]
     }
 }
 
@@ -4244,6 +4438,25 @@ final class io.dataloom.runtime.strategy/BuiltInSynchronizationStrategyEvaluator
     constructor <init>() // io.dataloom.runtime.strategy/BuiltInSynchronizationStrategyEvaluator.<init>|<init>(){}[0]
 
     final fun evaluate(io.dataloom.api.strategy/StrategyEvaluationRequest): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/BuiltInSynchronizationStrategyEvaluator.evaluate|evaluate(io.dataloom.api.strategy.StrategyEvaluationRequest){}[0]
+}
+
+final class io.dataloom.runtime.strategy/StrategyCacheServedWithDurableRefreshResult : io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult { // io.dataloom.runtime.strategy/StrategyCacheServedWithDurableRefreshResult|null[0]
+    final val completedAt // io.dataloom.runtime.strategy/StrategyCacheServedWithDurableRefreshResult.completedAt|{}completedAt[0]
+        final fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategyCacheServedWithDurableRefreshResult.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
+    final val dataOrigin // io.dataloom.runtime.strategy/StrategyCacheServedWithDurableRefreshResult.dataOrigin|{}dataOrigin[0]
+        final fun <get-dataOrigin>(): io.dataloom.api.strategy/StrategyDataOrigin // io.dataloom.runtime.strategy/StrategyCacheServedWithDurableRefreshResult.dataOrigin.<get-dataOrigin>|<get-dataOrigin>(){}[0]
+    final val evaluatedCacheState // io.dataloom.runtime.strategy/StrategyCacheServedWithDurableRefreshResult.evaluatedCacheState|{}evaluatedCacheState[0]
+        final fun <get-evaluatedCacheState>(): io.dataloom.api.strategy/StrategyCacheState // io.dataloom.runtime.strategy/StrategyCacheServedWithDurableRefreshResult.evaluatedCacheState.<get-evaluatedCacheState>|<get-evaluatedCacheState>(){}[0]
+    final val evaluation // io.dataloom.runtime.strategy/StrategyCacheServedWithDurableRefreshResult.evaluation|{}evaluation[0]
+        final fun <get-evaluation>(): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/StrategyCacheServedWithDurableRefreshResult.evaluation.<get-evaluation>|<get-evaluation>(){}[0]
+    final val freshness // io.dataloom.runtime.strategy/StrategyCacheServedWithDurableRefreshResult.freshness|{}freshness[0]
+        final fun <get-freshness>(): io.dataloom.api.strategy/StrategyCacheFreshnessEvidence // io.dataloom.runtime.strategy/StrategyCacheServedWithDurableRefreshResult.freshness.<get-freshness>|<get-freshness>(){}[0]
+    final val refresh // io.dataloom.runtime.strategy/StrategyCacheServedWithDurableRefreshResult.refresh|{}refresh[0]
+        final fun <get-refresh>(): io.dataloom.runtime.strategy/StrategyCacheDurableRefreshResult // io.dataloom.runtime.strategy/StrategyCacheServedWithDurableRefreshResult.refresh.<get-refresh>|<get-refresh>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.strategy/StrategyCacheServedWithDurableRefreshResult.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.strategy/StrategyCacheServedWithDurableRefreshResult.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.strategy/StrategyCacheServedWithDurableRefreshResult.toString|toString(){}[0]
 }
 
 final class io.dataloom.runtime.strategy/StrategyCacheServedWithInlineRefreshResult : io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult { // io.dataloom.runtime.strategy/StrategyCacheServedWithInlineRefreshResult|null[0]

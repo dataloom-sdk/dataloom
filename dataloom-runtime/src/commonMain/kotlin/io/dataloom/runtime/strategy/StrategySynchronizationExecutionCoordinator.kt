@@ -82,9 +82,9 @@ internal class StrategySynchronizationExecutionCoordinator(
             )
         }
 
-        // Offline-first durable deferral is handled above by its atomic
-        // local-intent/outbox admission boundary. No other strategy currently
-        // commits queue or scheduler work here, so it must not report Deferred.
+        // Offline-first durable deferral is handled above by its atomic local
+        // intent/outbox boundary. Cache-first durable refresh is admitted below
+        // as SERVE_AND_REFRESH; unsupported non-offline DEFER plans still fail closed.
         when (evaluation.plan.disposition) {
             StrategyDisposition.DEFER -> return rejected(
                 evaluation = evaluation,
@@ -120,7 +120,18 @@ internal class StrategySynchronizationExecutionCoordinator(
                 }
             }
             BuiltInSynchronizationStrategy.CACHE_FIRST -> {
-                if (request.input !is StrategyOperationInput.ProviderBacked) {
+                val durableRefresh =
+                    isDirectDurableCacheRefreshPlan(request, evaluation)
+                if (
+                    durableRefresh &&
+                    request.input !is StrategyOperationInput.CacheFirstDurableRefresh
+                ) {
+                    return rejected(
+                        evaluation = evaluation,
+                        reason = StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT,
+                    )
+                }
+                if (!durableRefresh && request.input !is StrategyOperationInput.ProviderBacked) {
                     return rejected(
                         evaluation = evaluation,
                         reason = StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT,
@@ -209,6 +220,7 @@ internal class StrategySynchronizationExecutionCoordinator(
     ): Boolean =
         isDirectCacheServingPlan(evaluation) ||
             isDirectInlineCacheRefreshPlan(request, evaluation) ||
+            isDirectDurableCacheRefreshPlan(request, evaluation) ||
             isDirectCacheRemotePlan(request, evaluation)
 
     private fun isDirectCacheServingPlan(
@@ -249,6 +261,46 @@ internal class StrategySynchronizationExecutionCoordinator(
             plan.dataOrigin == StrategyDataOrigin.LOCAL &&
             plan.durableContinuation == null &&
             plan.fallbackPlan == null
+    }
+
+    private fun isDirectDurableCacheRefreshPlan(
+        request: StrategySynchronizationRequest,
+        evaluation: StrategyEvaluationResult,
+    ): Boolean {
+        val plan = evaluation.plan
+        val continuation = plan.durableContinuation ?: return false
+        return request.request.direction == SynchronizationDirection.PULL &&
+            (
+                request.evidence.cacheState == StrategyCacheState.FRESH ||
+                    request.evidence.cacheState == StrategyCacheState.STALE
+                ) &&
+            plan.disposition == StrategyDisposition.SERVE_AND_REFRESH &&
+            plan.operations == listOf(
+                StrategyOperation.SERVE_LOCAL,
+                StrategyOperation.ENQUEUE_DURABLE_WORK,
+                StrategyOperation.SCHEDULE_REFRESH,
+            ) &&
+            plan.requiredCapabilities == setOf(
+                StrategyProviderCapability.STORAGE,
+                StrategyProviderCapability.CACHE_ACCESS,
+                StrategyProviderCapability.QUEUE,
+                StrategyProviderCapability.SCHEDULER,
+            ) &&
+            plan.dataOrigin == StrategyDataOrigin.LOCAL &&
+            plan.fallbackPlan == null &&
+            continuation.operations == listOf(
+                StrategyOperation.READ_CHECKPOINT,
+                StrategyOperation.PULL_REMOTE,
+                StrategyOperation.PERSIST_REMOTE,
+            ) &&
+            continuation.requiredCapabilities == setOf(
+                StrategyProviderCapability.STORAGE,
+                StrategyProviderCapability.TRANSPORT,
+            ) &&
+            continuation.dataOrigin == StrategyDataOrigin.REMOTE &&
+            continuation.consistency == plan.consistency &&
+            continuation.evaluatedCacheState == request.evidence.cacheState &&
+            continuation.fallbackPlan == null
     }
 
     private fun isDirectCacheRemotePlan(

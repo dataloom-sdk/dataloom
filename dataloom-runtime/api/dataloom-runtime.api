@@ -2793,6 +2793,149 @@ public final class io/dataloom/runtime/strategy/BuiltInSynchronizationStrategyEv
 	public fun evaluate (Lio/dataloom/api/strategy/StrategyEvaluationRequest;)Lio/dataloom/api/strategy/StrategyEvaluationResult;
 }
 
+public final class io/dataloom/runtime/strategy/StrategyCacheDurableQueueAdmissionDisposition : java/lang/Enum {
+	public static final field ACCEPTED Lio/dataloom/runtime/strategy/StrategyCacheDurableQueueAdmissionDisposition;
+	public static final field ALREADY_ACCEPTED Lio/dataloom/runtime/strategy/StrategyCacheDurableQueueAdmissionDisposition;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/strategy/StrategyCacheDurableQueueAdmissionDisposition;
+	public static fun values ()[Lio/dataloom/runtime/strategy/StrategyCacheDurableQueueAdmissionDisposition;
+}
+
+public final class io/dataloom/runtime/strategy/StrategyCacheDurableRefreshDisposition : java/lang/Enum {
+	public static final field ALREADY_IN_PROGRESS Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshDisposition;
+	public static final field ALREADY_TERMINAL Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshDisposition;
+	public static final field IDENTITY_CONFLICT Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshDisposition;
+	public static final field QUEUE_FAILED Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshDisposition;
+	public static final field SCHEDULED Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshDisposition;
+	public static final field SCHEDULE_FAILED Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshDisposition;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshDisposition;
+	public static fun values ()[Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshDisposition;
+}
+
+public abstract interface class io/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult {
+	public abstract fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public abstract fun getDisposition ()Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshDisposition;
+	public abstract fun getQueueEntryId-ARA1dI0 ()Ljava/lang/String;
+	public abstract fun getScheduleId-Rq7uEjc ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$AlreadyInProgress : io/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/time/DataLoomInstant;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-ARA1dI0 ()Ljava/lang/String;
+	public final fun component2-Rq7uEjc ()Ljava/lang/String;
+	public final fun component3 ()Lio/dataloom/api/queue/QueueEntryState;
+	public final fun component4 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy-j7BlSVc (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$AlreadyInProgress;
+	public static synthetic fun copy-j7BlSVc$default (Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$AlreadyInProgress;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$AlreadyInProgress;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun getDisposition ()Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshDisposition;
+	public fun getQueueEntryId-ARA1dI0 ()Ljava/lang/String;
+	public final fun getQueueState ()Lio/dataloom/api/queue/QueueEntryState;
+	public fun getScheduleId-Rq7uEjc ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$AlreadyTerminal : io/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/time/DataLoomInstant;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-ARA1dI0 ()Ljava/lang/String;
+	public final fun component2-Rq7uEjc ()Ljava/lang/String;
+	public final fun component3 ()Lio/dataloom/api/queue/QueueEntryState;
+	public final fun component4 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy-j7BlSVc (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$AlreadyTerminal;
+	public static synthetic fun copy-j7BlSVc$default (Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$AlreadyTerminal;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$AlreadyTerminal;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun getDisposition ()Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshDisposition;
+	public fun getQueueEntryId-ARA1dI0 ()Ljava/lang/String;
+	public final fun getQueueState ()Lio/dataloom/api/queue/QueueEntryState;
+	public fun getScheduleId-Rq7uEjc ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$IdentityConflict : io/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/time/DataLoomInstant;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-ARA1dI0 ()Ljava/lang/String;
+	public final fun component2-Rq7uEjc ()Ljava/lang/String;
+	public final fun component3 ()Lio/dataloom/api/queue/QueueEntryState;
+	public final fun component4 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy-j7BlSVc (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$IdentityConflict;
+	public static synthetic fun copy-j7BlSVc$default (Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$IdentityConflict;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$IdentityConflict;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getCurrentState ()Lio/dataloom/api/queue/QueueEntryState;
+	public fun getDisposition ()Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshDisposition;
+	public fun getQueueEntryId-ARA1dI0 ()Ljava/lang/String;
+	public fun getScheduleId-Rq7uEjc ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$QueueFailed : io/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/time/DataLoomInstant;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-ARA1dI0 ()Ljava/lang/String;
+	public final fun component2-Rq7uEjc ()Ljava/lang/String;
+	public final fun component3 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun component4 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy-j7BlSVc (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$QueueFailed;
+	public static synthetic fun copy-j7BlSVc$default (Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$QueueFailed;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$QueueFailed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun getDisposition ()Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshDisposition;
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun getQueueEntryId-ARA1dI0 ()Ljava/lang/String;
+	public fun getScheduleId-Rq7uEjc ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$ScheduleFailed : io/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/runtime/strategy/StrategyCacheDurableQueueAdmissionDisposition;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/time/DataLoomInstant;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-ARA1dI0 ()Ljava/lang/String;
+	public final fun component2-Rq7uEjc ()Ljava/lang/String;
+	public final fun component3 ()Lio/dataloom/runtime/strategy/StrategyCacheDurableQueueAdmissionDisposition;
+	public final fun component4 ()Lio/dataloom/api/queue/QueueEntryState;
+	public final fun component5 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun component6 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy-pMcqT8M (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/runtime/strategy/StrategyCacheDurableQueueAdmissionDisposition;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$ScheduleFailed;
+	public static synthetic fun copy-pMcqT8M$default (Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$ScheduleFailed;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/runtime/strategy/StrategyCacheDurableQueueAdmissionDisposition;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$ScheduleFailed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun getDisposition ()Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshDisposition;
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public final fun getQueueAdmissionDisposition ()Lio/dataloom/runtime/strategy/StrategyCacheDurableQueueAdmissionDisposition;
+	public fun getQueueEntryId-ARA1dI0 ()Ljava/lang/String;
+	public final fun getQueueState ()Lio/dataloom/api/queue/QueueEntryState;
+	public fun getScheduleId-Rq7uEjc ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$Scheduled : io/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/runtime/strategy/StrategyCacheDurableQueueAdmissionDisposition;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/scheduling/ScheduleReceipt;Lio/dataloom/api/time/DataLoomInstant;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-ARA1dI0 ()Ljava/lang/String;
+	public final fun component2-Rq7uEjc ()Ljava/lang/String;
+	public final fun component3 ()Lio/dataloom/runtime/strategy/StrategyCacheDurableQueueAdmissionDisposition;
+	public final fun component4 ()Lio/dataloom/api/queue/QueueEntryState;
+	public final fun component5 ()Lio/dataloom/api/scheduling/ScheduleReceipt;
+	public final fun component6 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy-pMcqT8M (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/runtime/strategy/StrategyCacheDurableQueueAdmissionDisposition;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/scheduling/ScheduleReceipt;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$Scheduled;
+	public static synthetic fun copy-pMcqT8M$default (Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$Scheduled;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/runtime/strategy/StrategyCacheDurableQueueAdmissionDisposition;Lio/dataloom/api/queue/QueueEntryState;Lio/dataloom/api/scheduling/ScheduleReceipt;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult$Scheduled;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun getDisposition ()Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshDisposition;
+	public final fun getQueueAdmissionDisposition ()Lio/dataloom/runtime/strategy/StrategyCacheDurableQueueAdmissionDisposition;
+	public fun getQueueEntryId-ARA1dI0 ()Ljava/lang/String;
+	public final fun getQueueState ()Lio/dataloom/api/queue/QueueEntryState;
+	public final fun getReceipt ()Lio/dataloom/api/scheduling/ScheduleReceipt;
+	public fun getScheduleId-Rq7uEjc ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/runtime/strategy/StrategyCacheInlineRefreshDisposition : java/lang/Enum {
 	public static final field CANCELLED Lio/dataloom/runtime/strategy/StrategyCacheInlineRefreshDisposition;
 	public static final field COMPLETED Lio/dataloom/runtime/strategy/StrategyCacheInlineRefreshDisposition;
@@ -2860,6 +3003,18 @@ public final class io/dataloom/runtime/strategy/StrategyCacheInlineRefreshResult
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/runtime/strategy/StrategyCacheServedWithDurableRefreshResult : io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult {
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getDataOrigin ()Lio/dataloom/api/strategy/StrategyDataOrigin;
+	public final fun getEvaluatedCacheState ()Lio/dataloom/api/strategy/StrategyCacheState;
+	public fun getEvaluation ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
+	public final fun getFreshness ()Lio/dataloom/api/strategy/StrategyCacheFreshnessEvidence;
+	public final fun getRefresh ()Lio/dataloom/runtime/strategy/StrategyCacheDurableRefreshResult;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/runtime/strategy/StrategyCacheServedWithInlineRefreshResult : io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult {
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
@@ -2885,6 +3040,7 @@ public final class io/dataloom/runtime/strategy/StrategyExecutionRejectionReason
 	public static final field ACCEPTED_PLAN_MISMATCH Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field ATOMIC_LOCAL_ADMISSION_PROVIDER_NOT_CONFIGURED Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field CACHE_ACCESS_PROVIDER_NOT_CONFIGURED Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
+	public static final field IDEMPOTENT_QUEUE_ADMISSION_PROVIDER_NOT_CONFIGURED Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field INCOMPATIBLE_INPUT Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field INCOMPATIBLE_TRIGGER Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
