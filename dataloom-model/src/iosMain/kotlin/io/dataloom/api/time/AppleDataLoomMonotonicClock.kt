@@ -3,6 +3,7 @@
 package io.dataloom.api.time
 
 import kotlinx.cinterop.alloc
+import kotlinx.cinterop.convert
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import platform.posix.CLOCK_MONOTONIC
@@ -31,7 +32,7 @@ public class AppleDataLoomMonotonicClock : DataLoomMonotonicClock {
     override fun mark(): DataLoomMonotonicReading {
         val nanoseconds = memScoped {
             val ts = alloc<timespec>()
-            clock_gettime(CLOCK_MONOTONIC, ts.ptr)
+            clock_gettime(CLOCK_MONOTONIC.convert(), ts.ptr)
             ts.tv_sec.toLong() * 1_000_000_000L + ts.tv_nsec.toLong()
         }
         return DataLoomMonotonicReading(nanoseconds = nanoseconds)

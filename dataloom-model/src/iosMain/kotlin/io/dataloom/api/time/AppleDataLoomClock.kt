@@ -3,6 +3,7 @@
 package io.dataloom.api.time
 
 import kotlinx.cinterop.alloc
+import kotlinx.cinterop.convert
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import platform.posix.CLOCK_REALTIME
@@ -28,7 +29,7 @@ public class AppleDataLoomClock : DataLoomClock {
     override fun now(): DataLoomInstant {
         val epochMilliseconds = memScoped {
             val ts = alloc<timespec>()
-            clock_gettime(CLOCK_REALTIME, ts.ptr)
+            clock_gettime(CLOCK_REALTIME.convert(), ts.ptr)
             // timespec.tv_sec is whole seconds since the Unix epoch;
             // tv_nsec is the sub-second remainder in nanoseconds.
             // DataLoomInstant rejects a negative result rather than silently
