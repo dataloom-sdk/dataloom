@@ -32,6 +32,11 @@ Application Repository
 Room / SQLDelight / DataStore / custom storage
 ```
 
+Reference implementations are optional and interchangeable. Applications can
+choose the SQLDelight reference provider, the Room reference provider where
+applicable, or a custom implementation. Do not bind both SQLDelight and Room
+providers to the same `StorageProvider` role in one runtime configuration.
+
 **Package:** `io.dataloom.api.storage`
 
 ---
