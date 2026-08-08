@@ -256,6 +256,7 @@ validation order, read [building DataLoom](./docs/development/building.md).
 
 Start with the [documentation hub](./docs/README.md).
 
+- [Getting started quickstart](./docs/getting-started.md)
 - [System overview](./docs/architecture/system-overview.md)
 - [Six-strategy guide](./docs/strategies/README.md)
 - [API reference](./docs/api/README.md)

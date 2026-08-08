@@ -21,6 +21,7 @@ KMP iOS:
 
 | Goal | Recommended entry point |
 |---|---|
+| Get a first sync running from the current source checkout | [Getting started quickstart](./getting-started.md) |
 | Understand the product and its boundaries | [System overview](./architecture/system-overview.md) |
 | Choose a synchronization strategy | [Strategy guide](./strategies/README.md) |
 | Integrate an Android application | [Android guide](./android/README.md) |

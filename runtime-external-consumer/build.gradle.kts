@@ -12,6 +12,7 @@ kotlin {
                 implementation(project(":dataloom-provider-api"))
                 implementation(project(":dataloom-api"))
                 implementation(project(":dataloom-runtime"))
+                implementation(project(":dataloom-testing"))
             }
         }
     }
