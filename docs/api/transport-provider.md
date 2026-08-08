@@ -2,18 +2,20 @@
 
 [API reference index](./README.md)
 
-> **Status:** Available remote-transport adapter contract. Authentication,
-> server hints, streaming assets, and complete V1 policy remain separate work.
+> **Status:** Available remote-transport adapter contract with one optional
+> reference Ktor implementation in
+> [`dataloom-transport-ktor`](./ktor-transport-provider.md). Authentication,
+> streaming assets, and complete V1 policy remain separate work.
 
 `dataloom-api` defines a platform-independent transport-provider SPI for moving
 synchronization changes between DataLoom runtime coordination and
 application-controlled remote integrations.
 
-This issue introduces contract surfaces only. It does **not** implement
-Retrofit, Ktor, GraphQL, Apollo, gRPC, WebSocket, MQTT, HTTP,
-authentication, serialization, encryption, compression, retries,
-synchronization execution, runtime orchestration, or concrete
-transport providers.
+`dataloom-api` defines the transport SPI only. Concrete integrations remain
+separate optional modules so the shared runtime does not take a mandatory
+network-client dependency. The current repository includes one optional
+reference implementation documented in
+[`Ktor transport provider`](./ktor-transport-provider.md).
 
 ## API changes introduced by DL-011
 
