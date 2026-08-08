@@ -58,6 +58,12 @@ public class KtorTransportProvider private constructor(
     private val httpClient: HttpClient,
     private val closeHttpClientOnClose: Boolean,
 ) : TransportProvider {
+    init {
+        require(descriptor.type == ProviderType.TRANSPORT) {
+            "KtorTransportProvider descriptor.type must be TRANSPORT."
+        }
+    }
+
     /**
      * Creates a provider backed by an internally managed Ktor client.
      */
@@ -70,26 +76,20 @@ public class KtorTransportProvider private constructor(
         descriptor = descriptor,
         httpClient = createHttpClient(httpConfiguration),
         closeHttpClientOnClose = true,
-    ) {
-        require(descriptor.type == ProviderType.TRANSPORT) {
-            "KtorTransportProvider descriptor.type must be TRANSPORT."
-        }
-    }
+    )
 
-    internal constructor(
-        codec: KtorTransportCodec,
-        descriptor: ProviderDescriptor,
-        httpClient: HttpClient,
-        closeHttpClientOnClose: Boolean,
-    ) : this(
-        codec = codec,
-        descriptor = descriptor,
-        httpClient = httpClient,
-        closeHttpClientOnClose = closeHttpClientOnClose,
-    ) {
-        require(descriptor.type == ProviderType.TRANSPORT) {
-            "KtorTransportProvider descriptor.type must be TRANSPORT."
-        }
+    internal companion object {
+        internal fun createForTesting(
+            codec: KtorTransportCodec,
+            descriptor: ProviderDescriptor,
+            httpClient: HttpClient,
+            closeHttpClientOnClose: Boolean,
+        ): KtorTransportProvider = KtorTransportProvider(
+                codec = codec,
+                descriptor = descriptor,
+                httpClient = httpClient,
+                closeHttpClientOnClose = closeHttpClientOnClose,
+            )
     }
 
     override suspend fun initialize(
@@ -167,7 +167,8 @@ public class KtorTransportProvider private constructor(
     private suspend fun executeHttpRequest(
         request: KtorTransportHttpRequest,
     ): KtorTransportHttpResponse {
-        val response: HttpResponse = httpClient.request(request.url) {
+        val response: HttpResponse = httpClient.request {
+            url(request.url)
             applyRequest(request)
         }
         val body: ByteArray = response.body()
@@ -181,7 +182,6 @@ public class KtorTransportProvider private constructor(
 
     private fun HttpRequestBuilder.applyRequest(request: KtorTransportHttpRequest) {
         method = request.method.toKtorHttpMethod()
-        url(request.url)
         request.headers.forEach { (name, values) ->
             values.forEach { value ->
                 headers.append(name, value)

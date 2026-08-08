@@ -172,7 +172,7 @@ flowchart TD
     api --> testing
     core --> testing
     runtime --> testing
-    api --> ktor
+    ktor --> api
     api --> connectivity
     api --> room
     model --> room

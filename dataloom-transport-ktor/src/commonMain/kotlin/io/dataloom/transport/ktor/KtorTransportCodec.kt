@@ -31,7 +31,7 @@ public interface KtorTransportCodec {
     ): ChangeSetAcknowledgement
 
     /**
-     * Encodes an inbound pull request into an HTTP request.
+     * Encodes an outbound pull request into an HTTP request.
      */
     public suspend fun encodePullRequest(request: PullChangesRequest): KtorTransportHttpRequest
 

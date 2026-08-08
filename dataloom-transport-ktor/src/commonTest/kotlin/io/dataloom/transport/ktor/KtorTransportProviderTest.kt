@@ -35,13 +35,12 @@ import io.dataloom.api.transport.PushChangesRequest
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
-import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -106,19 +105,8 @@ class KtorTransportProviderTest {
 
     @Test
     fun `timeout failure is classified canonically`() = runTest {
-        val provider: KtorTransportProvider = providerWithEngine(
-            configureClient = {
-                install(HttpTimeout) {
-                    requestTimeoutMillis = 1L
-                }
-            },
-        ) {
-            delay(100L)
-            respond(
-                content = "accepted:event-1",
-                status = HttpStatusCode.OK,
-                headers = headersOf(HttpHeaders.ContentType, ContentType.Text.Plain.toString()),
-            )
+        val provider: KtorTransportProvider = providerWithEngine { request ->
+            throw HttpRequestTimeoutException(request)
         }
 
         val result: ProviderOperationResult<ChangeSetAcknowledgement> = provider.pushChanges(
@@ -160,6 +148,113 @@ class KtorTransportProviderTest {
     }
 
     @Test
+    fun `other http status mappings remain canonical`() = runTest {
+        val cases: List<HttpFailureCase> = listOf(
+            HttpFailureCase(
+                status = HttpStatusCode.Unauthorized,
+                category = ErrorCategory.AUTHENTICATION,
+                remoteOutcome = StrategyRemoteOutcome.AUTHENTICATION_FAILURE,
+            ),
+            HttpFailureCase(
+                status = HttpStatusCode.Forbidden,
+                category = ErrorCategory.AUTHORIZATION,
+                remoteOutcome = StrategyRemoteOutcome.AUTHORIZATION_FAILURE,
+            ),
+            HttpFailureCase(
+                status = HttpStatusCode.Conflict,
+                category = ErrorCategory.CONFLICT,
+                remoteOutcome = StrategyRemoteOutcome.CONFLICT,
+            ),
+            HttpFailureCase(
+                status = HttpStatusCode.BadRequest,
+                category = ErrorCategory.VALIDATION,
+                remoteOutcome = StrategyRemoteOutcome.VALIDATION_FAILURE,
+            ),
+            HttpFailureCase(
+                status = HttpStatusCode.BadGateway,
+                category = ErrorCategory.NETWORK,
+                remoteOutcome = StrategyRemoteOutcome.UNAVAILABLE,
+            ),
+            HttpFailureCase(
+                status = HttpStatusCode.InternalServerError,
+                category = ErrorCategory.NETWORK,
+                remoteOutcome = StrategyRemoteOutcome.SERVER_FAILURE,
+            ),
+        )
+
+        cases.forEach { testCase ->
+            val provider: KtorTransportProvider = providerWithEngine { _ ->
+                respond(
+                    content = "error",
+                    status = testCase.status,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Text.Plain.toString()),
+                )
+            }
+
+            val result: ProviderOperationResult<ChangeSetAcknowledgement> = provider.pushChanges(
+                PushChangesRequest(
+                    request = sampleSynchronizationRequest(direction = SynchronizationDirection.PUSH),
+                    changeSet = sampleChangeSet(changeSetId = "change-set-1", eventId = "event-1"),
+                ),
+            )
+
+            val failure = assertIs<ProviderOperationResult.Failure>(result)
+            val error = assertIs<ClassifiedStrategyRemoteError>(failure.error)
+            assertEquals(testCase.category, error.category)
+            assertEquals(testCase.remoteOutcome, error.remoteOutcome)
+        }
+    }
+
+    @Test
+    fun `encode failures return canonical serialization errors`() = runTest {
+        val provider: KtorTransportProvider = providerWithCodec(
+            codec = object : KtorTransportCodec by TestCodec {
+                override suspend fun encodePushRequest(request: PushChangesRequest): KtorTransportHttpRequest {
+                    throw IllegalStateException("encode failed")
+                }
+            },
+        ) { _ ->
+            respond(content = "unused", status = HttpStatusCode.OK)
+        }
+
+        val result: ProviderOperationResult<ChangeSetAcknowledgement> = provider.pushChanges(
+            PushChangesRequest(
+                request = sampleSynchronizationRequest(direction = SynchronizationDirection.PUSH),
+                changeSet = sampleChangeSet(changeSetId = "change-set-1", eventId = "event-1"),
+            ),
+        )
+
+        val failure = assertIs<ProviderOperationResult.Failure>(result)
+        assertEquals(ErrorCategory.SERIALIZATION, failure.error.category)
+    }
+
+    @Test
+    fun `decode failures return canonical serialization errors`() = runTest {
+        val provider: KtorTransportProvider = providerWithCodec(
+            codec = object : KtorTransportCodec by TestCodec {
+                override suspend fun decodePushResponse(
+                    request: PushChangesRequest,
+                    response: KtorTransportHttpResponse,
+                ): ChangeSetAcknowledgement {
+                    throw IllegalStateException("decode failed")
+                }
+            },
+        ) { _ ->
+            respond(content = "accepted:event-1", status = HttpStatusCode.OK)
+        }
+
+        val result: ProviderOperationResult<ChangeSetAcknowledgement> = provider.pushChanges(
+            PushChangesRequest(
+                request = sampleSynchronizationRequest(direction = SynchronizationDirection.PUSH),
+                changeSet = sampleChangeSet(changeSetId = "change-set-1", eventId = "event-1"),
+            ),
+        )
+
+        val failure = assertIs<ProviderOperationResult.Failure>(result)
+        assertEquals(ErrorCategory.SERIALIZATION, failure.error.category)
+    }
+
+    @Test
     fun `request and response diagnostics redact header values`() {
         val request: KtorTransportHttpRequest = KtorTransportHttpRequest(
             method = KtorTransportHttpMethod.POST,
@@ -184,6 +279,16 @@ class KtorTransportProviderTest {
     private fun providerWithEngine(
         configureClient: HttpClientConfigBuilder = {},
         handler: suspend MockRequestHandleScope.(io.ktor.client.request.HttpRequestData) -> io.ktor.client.engine.mock.HttpResponseData,
+    ): KtorTransportProvider = providerWithCodec(
+        codec = TestCodec,
+        configureClient = configureClient,
+        handler = handler,
+    )
+
+    private fun providerWithCodec(
+        codec: KtorTransportCodec,
+        configureClient: HttpClientConfigBuilder = {},
+        handler: suspend MockRequestHandleScope.(io.ktor.client.request.HttpRequestData) -> io.ktor.client.engine.mock.HttpResponseData,
     ): KtorTransportProvider {
         val client = HttpClient(MockEngine) {
             engine {
@@ -191,8 +296,8 @@ class KtorTransportProviderTest {
             }
             configureClient()
         }
-        return KtorTransportProvider(
-            codec = TestCodec,
+        return KtorTransportProvider.createForTesting(
+            codec = codec,
             descriptor = defaultTransportDescriptor(),
             httpClient = client,
             closeHttpClientOnClose = true,
@@ -310,6 +415,12 @@ private fun defaultTransportDescriptor() = io.dataloom.api.provider.ProviderDesc
     name = io.dataloom.api.provider.ProviderName("KtorTransportProviderTest"),
     type = io.dataloom.api.provider.ProviderType.TRANSPORT,
     version = io.dataloom.api.provider.ProviderVersion("1.0.0"),
+)
+
+private data class HttpFailureCase(
+    val status: HttpStatusCode,
+    val category: ErrorCategory,
+    val remoteOutcome: StrategyRemoteOutcome,
 )
 
 private typealias HttpClientConfigBuilder = io.ktor.client.HttpClientConfig<io.ktor.client.engine.mock.MockEngineConfig>.() -> Unit
