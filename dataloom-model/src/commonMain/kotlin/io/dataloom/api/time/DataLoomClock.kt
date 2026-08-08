@@ -20,7 +20,8 @@ package io.dataloom.api.time
  *
  * The clock is not guaranteed to be monotonic. Implementations may observe
  * clock skew, adjustments, or non-monotonic behavior depending on the
- * underlying platform or test configuration.
+ * underlying platform or test configuration. Use [DataLoomMonotonicClock] to
+ * measure elapsed time instead.
  *
  * ## Injection
  *
@@ -53,17 +54,13 @@ package io.dataloom.api.time
  * Expired-lease recovery time
  * ```
  *
- * ## Deferred implementations
+ * ## Production implementations
  *
- * Production system-clock implementations are deferred. Options under
- * consideration for future issues include:
- *
- * ```
- * Android/JVM system clock
- * Kotlin Multiplatform clock
- * Apple clock
- * Application-supplied clock
- * ```
+ * [SystemDataLoomClock] backs the JVM target (which also currently serves
+ * native Android, since Android adapters consume this module's JVM target
+ * directly). [AppleDataLoomClock] backs the `iosArm64`, `iosSimulatorArm64`,
+ * and `iosX64` targets. An application may also supply its own
+ * implementation.
  *
  * Test utilities in `dataloom-testing` provide [DataLoomClock] implementations
  * for deterministic testing.
