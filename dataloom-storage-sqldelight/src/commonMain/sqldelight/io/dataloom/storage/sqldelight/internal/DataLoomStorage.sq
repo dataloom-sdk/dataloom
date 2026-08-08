@@ -1,0 +1,132 @@
+CREATE TABLE outbound_changes (
+    sequence INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    event_id TEXT NOT NULL UNIQUE,
+    change_set_id TEXT NOT NULL,
+    change_set_metadata TEXT NOT NULL,
+    entity_type TEXT NOT NULL,
+    entity_id TEXT NOT NULL,
+    entity_version TEXT,
+    operation TEXT NOT NULL,
+    payload_content_type TEXT,
+    payload_bytes BLOB,
+    event_metadata TEXT NOT NULL,
+    state TEXT NOT NULL
+);
+
+CREATE TABLE inbound_changes_applied (
+    sequence INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    event_id TEXT NOT NULL UNIQUE,
+    change_set_id TEXT NOT NULL,
+    change_set_metadata TEXT NOT NULL,
+    entity_type TEXT NOT NULL,
+    entity_id TEXT NOT NULL,
+    entity_version TEXT,
+    operation TEXT NOT NULL,
+    payload_content_type TEXT,
+    payload_bytes BLOB,
+    event_metadata TEXT NOT NULL
+);
+
+CREATE TABLE checkpoints (
+    checkpoint_key TEXT NOT NULL PRIMARY KEY,
+    checkpoint_token TEXT NOT NULL,
+    checkpoint_metadata TEXT NOT NULL
+);
+
+selectEligibleOutboundChanges:
+SELECT
+    sequence,
+    event_id,
+    change_set_id,
+    change_set_metadata,
+    entity_type,
+    entity_id,
+    entity_version,
+    operation,
+    payload_content_type,
+    payload_bytes,
+    event_metadata,
+    state
+FROM outbound_changes
+WHERE state != 'REJECTED'
+ORDER BY sequence ASC;
+
+insertOrReplaceOutboundChange:
+INSERT INTO outbound_changes(
+    event_id,
+    change_set_id,
+    change_set_metadata,
+    entity_type,
+    entity_id,
+    entity_version,
+    operation,
+    payload_content_type,
+    payload_bytes,
+    event_metadata,
+    state
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(event_id) DO UPDATE SET
+    change_set_id = excluded.change_set_id,
+    change_set_metadata = excluded.change_set_metadata,
+    entity_type = excluded.entity_type,
+    entity_id = excluded.entity_id,
+    entity_version = excluded.entity_version,
+    operation = excluded.operation,
+    payload_content_type = excluded.payload_content_type,
+    payload_bytes = excluded.payload_bytes,
+    event_metadata = excluded.event_metadata,
+    state = excluded.state;
+
+deleteOutboundByEventId:
+DELETE FROM outbound_changes
+WHERE event_id = ?;
+
+updateOutboundStateByEventId:
+UPDATE outbound_changes
+SET state = ?
+WHERE event_id = ?;
+
+insertOrReplaceInboundAppliedChange:
+INSERT INTO inbound_changes_applied(
+    event_id,
+    change_set_id,
+    change_set_metadata,
+    entity_type,
+    entity_id,
+    entity_version,
+    operation,
+    payload_content_type,
+    payload_bytes,
+    event_metadata
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(event_id) DO UPDATE SET
+    change_set_id = excluded.change_set_id,
+    change_set_metadata = excluded.change_set_metadata,
+    entity_type = excluded.entity_type,
+    entity_id = excluded.entity_id,
+    entity_version = excluded.entity_version,
+    operation = excluded.operation,
+    payload_content_type = excluded.payload_content_type,
+    payload_bytes = excluded.payload_bytes,
+    event_metadata = excluded.event_metadata;
+
+selectCheckpointByKey:
+SELECT
+    checkpoint_key,
+    checkpoint_token,
+    checkpoint_metadata
+FROM checkpoints
+WHERE checkpoint_key = ?;
+
+upsertCheckpoint:
+INSERT INTO checkpoints(
+    checkpoint_key,
+    checkpoint_token,
+    checkpoint_metadata
+)
+VALUES (?, ?, ?)
+ON CONFLICT(checkpoint_key) DO UPDATE SET
+    checkpoint_token = excluded.checkpoint_token,
+    checkpoint_metadata = excluded.checkpoint_metadata;

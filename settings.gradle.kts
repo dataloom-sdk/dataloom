@@ -46,6 +46,7 @@ include(
     ":dataloom-model",
     ":dataloom-provider-api",
     ":dataloom-api",
+    ":dataloom-storage-sqldelight",
     ":dataloom-core",
     ":dataloom-runtime",
     ":dataloom-testing",
