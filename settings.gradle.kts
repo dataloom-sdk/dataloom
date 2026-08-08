@@ -50,6 +50,7 @@ include(
     ":dataloom-runtime",
     ":dataloom-testing",
     ":runtime-external-consumer",
+    ":dataloom-storage-file",
 )
 
 // Android implementation modules.
