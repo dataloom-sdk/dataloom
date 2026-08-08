@@ -495,3 +495,26 @@ public final class io/dataloom/api/time/DataLoomInstant {
 	public fun toString ()Ljava/lang/String;
 }
 
+public abstract interface class io/dataloom/api/time/DataLoomMonotonicClock {
+	public abstract fun mark ()Lio/dataloom/api/time/DataLoomMonotonicReading;
+}
+
+public final class io/dataloom/api/time/DataLoomMonotonicReading {
+	public fun <init> (J)V
+	public final fun elapsedNanosecondsSince (Lio/dataloom/api/time/DataLoomMonotonicReading;)J
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getNanoseconds ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/time/SystemDataLoomClock : io/dataloom/api/time/DataLoomClock {
+	public fun <init> ()V
+	public fun now ()Lio/dataloom/api/time/DataLoomInstant;
+}
+
+public final class io/dataloom/api/time/SystemDataLoomMonotonicClock : io/dataloom/api/time/DataLoomMonotonicClock {
+	public fun <init> ()V
+	public fun mark ()Lio/dataloom/api/time/DataLoomMonotonicReading;
+}
+
