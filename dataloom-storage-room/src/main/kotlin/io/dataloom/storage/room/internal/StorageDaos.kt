@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import io.dataloom.api.change.ChangeSet
+import io.dataloom.api.context.DataLoomMetadata
 import io.dataloom.api.synchronization.ChangeSetAcknowledgement
 
 @Dao
@@ -148,6 +149,19 @@ internal abstract class OutboundChangeDao {
 
     @Query(
         """
+        SELECT COUNT(*)
+        FROM outbound_change_events
+        WHERE change_set_id = :changeSetId
+          AND event_id IN (:eventIds)
+        """,
+    )
+    protected abstract suspend fun countAcknowledgementTargets(
+        changeSetId: String,
+        eventIds: List<String>,
+    ): Int
+
+    @Query(
+        """
         UPDATE outbound_change_events
         SET acknowledgement_status = :status,
             ack_error_code = :errorCode,
@@ -255,6 +269,10 @@ internal abstract class OutboundChangeDao {
     internal open suspend fun recordAcknowledgement(
         acknowledgement: ChangeSetAcknowledgement,
     ): Boolean {
+        val eventIds = acknowledgement.events.map { it.eventId.value }
+        if (countAcknowledgementTargets(acknowledgement.changeSetId.value, eventIds) != eventIds.size) {
+            return false
+        }
         for (event in acknowledgement.events) {
             val affectedRows = updateAcknowledgement(
                 changeSetId = acknowledgement.changeSetId.value,
@@ -268,7 +286,9 @@ internal abstract class OutboundChangeDao {
                 metadataJson = event.metadata.toJsonOrNull(),
             )
             if (affectedRows != 1) {
-                return false
+                throw CorruptStorageStateException(
+                    "Outbound acknowledgement verification failed during update.",
+                )
             }
         }
         return true
@@ -373,6 +393,7 @@ internal interface StorageCheckpointDao {
 }
 
 private fun InboundChangeSetEntity.contentEquals(other: InboundChangeSetEntity): Boolean =
+    // storageSequence is intentionally excluded because Room assigns it on write.
     changeSetId == other.changeSetId &&
         metadataJson.toMetadataOrEmpty() == other.metadataJson.toMetadataOrEmpty()
 
@@ -398,5 +419,4 @@ private fun ByteArray?.contentEqualsNullable(other: ByteArray?): Boolean =
         contentEquals(other)
     }
 
-private fun String?.toMetadataOrEmpty() = this?.toMetadata()
-    ?: io.dataloom.api.context.DataLoomMetadata.Empty
+private fun String?.toMetadataOrEmpty() = this?.toMetadata() ?: DataLoomMetadata.Empty
