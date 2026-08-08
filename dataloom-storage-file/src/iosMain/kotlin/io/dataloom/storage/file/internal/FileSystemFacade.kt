@@ -9,6 +9,7 @@ import kotlinx.cinterop.usePinned
 import platform.posix.EEXIST
 import platform.posix.EINTR
 import platform.posix.ENOENT
+import platform.posix.F_OK
 import platform.posix.O_CREAT
 import platform.posix.O_EXCL
 import platform.posix.O_RDONLY
@@ -17,6 +18,7 @@ import platform.posix.O_WRONLY
 import platform.posix.S_IRWXU
 import platform.posix.S_IRUSR
 import platform.posix.S_IWUSR
+import platform.posix.access
 import platform.posix.closedir
 import platform.posix.errno
 import platform.posix.fsync
@@ -113,7 +115,11 @@ internal actual class FileSystemFacade actual constructor(actual val baseDir: St
     actual fun moveFileAtomically(fromRelative: String, toRelative: String) {
         val src = "$baseDir/$fromRelative"
         val dst = "$baseDir/$toRelative"
-        if (rename(src, dst) != 0 && errno != ENOENT) {
+        if (rename(src, dst) != 0) {
+            // Only treat ENOENT as a no-op when the *source* is absent.
+            // If the destination parent directory is missing (also ENOENT) we must
+            // still throw so the caller does not incorrectly assume the move succeeded.
+            if (errno == ENOENT && access(src, F_OK) != 0) return
             throw FileStorageIoException("Move failed.")
         }
     }

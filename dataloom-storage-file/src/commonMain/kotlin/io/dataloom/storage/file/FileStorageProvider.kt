@@ -167,11 +167,16 @@ public class FileStorageProvider(
             val entityFilter = request.entityTypes
             val events = mutableListOf<ChangeEvent>()
             val orphanedIds = mutableListOf<String>()
+            val maxEvents = request.maxEvents
 
             // Read events in index order, applying maxEvents and entity-type filters.
+            // firstChangeSetId reflects the changeSetId of the first event that is
+            // actually included in the returned batch (post entity-filter).
             var firstChangeSetId: String? = null
 
-            for (eventId in allIds) {
+            val iter = allIds.listIterator()
+            while (iter.hasNext()) {
+                val eventId = iter.next()
                 val relativePath = "${DIR_OUTBOUND}/${eventId}${EXT_EVENT}"
                 val text = fs.readTextFile(relativePath)
                 if (text == null) {
@@ -185,22 +190,25 @@ public class FileStorageProvider(
                     continue
                 }
 
-                if (firstChangeSetId == null) {
-                    firstChangeSetId = csId
-                }
-
                 if (entityFilter.isNotEmpty() && event.entity.type !in entityFilter) continue
 
-                val maxEvents = request.maxEvents
+                events += event
+                if (firstChangeSetId == null) firstChangeSetId = csId
+
                 if (maxEvents != null && events.size >= maxEvents) {
-                    // We've filled the batch — hasMore is true.
+                    // Batch is full. hasMore is true when there are remaining index entries.
+                    // Callers must tolerate hasMore=true followed by NoChanges (e.g. remaining
+                    // entries are all filtered by entityTypes on the next call).
+                    val hasMore = iter.hasNext()
+                    if (orphanedIds.isNotEmpty()) {
+                        val orphanedSet = orphanedIds.toSet()
+                        writeIndex(allIds.filter { it !in orphanedSet })
+                    }
                     val cs = buildChangeSet(events, firstChangeSetId!!)
                     return@withLock ProviderOperationResult.Success(
-                        OutboundChangeReadResult.Changes(changeSet = cs, hasMore = true),
+                        OutboundChangeReadResult.Changes(changeSet = cs, hasMore = hasMore),
                     )
                 }
-
-                events += event
             }
 
             if (orphanedIds.isNotEmpty()) {

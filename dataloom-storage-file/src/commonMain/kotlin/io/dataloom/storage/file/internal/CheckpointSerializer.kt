@@ -42,6 +42,8 @@ internal object CheckpointSerializer {
         appendLine("$KEY_KEY=${checkpoint.key.value}")
         appendLine("$KEY_TOKEN=${checkpoint.token.value}")
         for ((k, v) in checkpoint.metadata.entries) {
+            requireNoLineBreaks(k, "checkpoint metadata key")
+            requireNoLineBreaks(v, "checkpoint metadata value")
             appendLine("$META_PREFIX$k=$v")
         }
     }
@@ -78,5 +80,11 @@ internal object CheckpointSerializer {
             token = CheckpointToken(tokenValue),
             metadata = metadata,
         )
+    }
+
+    private fun requireNoLineBreaks(value: String, fieldDescription: String) {
+        require(value.none { it == '\n' || it == '\r' }) {
+            "FileStorageProvider: $fieldDescription must not contain line-break characters."
+        }
     }
 }

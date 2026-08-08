@@ -70,6 +70,8 @@ internal object EventSerializer {
             appendLine("$KEY_PAYLOAD_BASE64=")
         }
         for ((k, v) in event.metadata.entries) {
+            requireNoLineBreaks(k, "metadata key")
+            requireNoLineBreaks(v, "metadata value")
             appendLine("$META_PREFIX$k=$v")
         }
     }
@@ -135,5 +137,11 @@ internal object EventSerializer {
             metadata = metadata,
         )
         return changeSetId to event
+    }
+
+    private fun requireNoLineBreaks(value: String, fieldDescription: String) {
+        require(value.none { it == '\n' || it == '\r' }) {
+            "FileStorageProvider: $fieldDescription must not contain line-break characters."
+        }
     }
 }
