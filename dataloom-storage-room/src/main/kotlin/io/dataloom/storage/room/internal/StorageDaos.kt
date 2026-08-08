@@ -325,13 +325,14 @@ internal abstract class InboundChangeDao {
         val reloadedEntity = findStoredChangeSet(changeSet.id.value)
             ?: throw CorruptStorageStateException("Stored inbound change set could not be reloaded.")
         val reloadedEvents = findStoredEvents(changeSet.id.value)
-        return if (reloadedEntity.contentEquals(storedEntity) &&
-            reloadedEvents.contentEquals(storedEvents)
+        if (!reloadedEntity.contentEquals(storedEntity) ||
+            !reloadedEvents.contentEquals(storedEvents)
         ) {
-            InboundApplyDisposition.STORED
-        } else {
-            InboundApplyDisposition.CONFLICT
+            throw CorruptStorageStateException(
+                "Stored inbound change set changed during write verification.",
+            )
         }
+        return InboundApplyDisposition.STORED
     }
 
     @Query(

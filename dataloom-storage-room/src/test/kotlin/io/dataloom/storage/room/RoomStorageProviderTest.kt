@@ -171,9 +171,7 @@ class RoomStorageProviderTest {
     @Test
     fun `cancellation propagates instead of becoming a provider failure`() {
         val expected = CancellationException("cancelled")
-        runBlocking {
-            whenever(outboundChangeDao.readNextBatch(any(), any())).thenThrow(expected)
-        }
+        wheneverBlocking { outboundChangeDao.readNextBatch(any(), any()) }.thenThrow(expected)
 
         val actual = assertFailsWith<CancellationException> {
             runBlocking {
@@ -228,3 +226,5 @@ class RoomStorageProviderTest {
         operation = ChangeOperation.UPDATE,
     )
 }
+
+private fun <T> wheneverBlocking(block: suspend () -> T) = runBlocking { whenever(block()) }
