@@ -2,314 +2,215 @@
 
 **Synchronize once. Scale everywhere.**
 
-DataLoom is an Android-first, Jetpack-style synchronization SDK for native
-Android and Kotlin Multiplatform applications targeting Android and iOS. Its
-main purpose is to provide one deterministic engine with six built-in
-synchronization strategies:
+DataLoom is an Android-first, Kotlin Multiplatform synchronization SDK for
+native Android and KMP applications targeting Android and iOS. Its frozen V1
+product scope contains six built-in strategies:
 
-| Strategy | Intent |
+| Strategy | Product intent |
 |---|---|
-| Offline-first | Commit local intent durably, then synchronize |
-| Remote-first | Prefer the remote authority with explicit safe fallback |
-| Cache-first | Serve a valid cache and refresh by policy |
-| Network-only | Use the remote source with no storage or queue side effects |
-| Hybrid | Compose explicit local, remote, cache, and reconciliation rules |
-| Adaptive | Select an allowed concrete strategy from recorded evidence |
+| Offline-first | Commit eligible local intent durably, then reconcile |
+| Remote-first | Attempt the remote authority first with explicit typed fallback |
+| Cache-first | Serve application-owned synchronized state under explicit freshness and refresh rules |
+| Network-only | Use transport only, with zero storage or queue side effects |
+| Hybrid | Compose explicit primary, fallback, persistence, and coherence rules |
+| Adaptive | Deterministically select and freeze one approved concrete strategy |
 
-All six are mandatory V1 capabilities. Strategy is independent from transfer
-direction (`PUSH`, `PULL`, `BIDIRECTIONAL`), transfer mode (`FULL`, `DELTA`),
-and trigger.
+Strategy is independent from transfer direction (`PUSH`, `PULL`,
+`BIDIRECTIONAL`), transfer mode (`FULL`, `DELTA`), and execution trigger.
 
 > [!WARNING]
-> DataLoom is in active pre-V1 development and is not production-ready.
-> Current foundations are substantial, but the six-strategy engine and several
-> mandatory V1 systems are incomplete. No release should be represented as V1
-> until the documented release gates have evidence.
+> DataLoom is in active pre-V1 development. The current source tree contains
+> substantial buildable foundations and several correct bounded runtime slices,
+> but **no complete V1 release gate is currently accepted**. Do not present the
+> repository or its artifacts as production-ready V1.
 
-## Product at a glance
+## End-to-end V1 audit status
 
-```mermaid
-flowchart LR
-    app[Application]
-    request[/Synchronization request/]
-    strategy{V1 strategy policy}
-    plan[Deterministic plan]
-    runtime[Shared runtime]
-    local[(Local data)]
-    remote[(Remote service)]
-    durable[(Queue and recovery)]
-    signals[Events and observability]
+- **Last reconciled:** 2026-08-08
+- **Audited `main`:** `ab3450c6889cf9fecc706ba1ac3e8476d25b1829`
+- **Recorded target:** 2026-08-27
+- **Current verdict:** **NO-GO**
+- **Formal V1 gate completion:** **0%** (`0 of 10` gates accepted)
+- **Fully qualified strategies:** `0 of 6`
+- **Staged reference applications:** `0 of 3`
+- **Immutable release candidate:** none
 
-    app --> request
-    request --> strategy
-    strategy --> plan
-    plan --> runtime
-    runtime --> local
-    runtime --> remote
-    runtime --> durable
-    runtime --> signals
-    signals --> app
+The gate score is acceptance-based, not a percentage of code written. A gate is
+accepted only when every requirement has production source, executable tests,
+mandatory platform evidence, durability/restart evidence where applicable,
+security and compatibility evidence, truthful documentation, and one reviewed
+immutable commit.
 
-    style strategy fill:#FFECBD,stroke:#FFC943
-    style runtime fill:#C2E5FF,stroke:#3DADFF
-    style durable fill:#DCCCFF,stroke:#874FFF
-```
+The 2026-08-08 audit reopened gates
+[#93](https://github.com/dataloom-sdk/dataloom/issues/93) and
+[#101](https://github.com/dataloom-sdk/dataloom/issues/101), which had been
+closed before their own acceptance criteria were satisfied.
 
-The diagram is the approved V1 product model. The current repository implements
-the shared runtime foundation, provider contracts, push/pull/bidirectional
-pipelines, durable queue processing, Android adapters, Apple compilation paths,
-and the versioned six-strategy contract plus deterministic built-in planner.
-Plan-aware provider resolution and direct network-only/remote-first operation
-execution are implemented. Bounded strategy decisions and complete immutable
-accepted plans survive the in-memory, Android Room, and Apple queues. Direct,
-provider-protected, and queued replay execute the frozen continuation without
-current-policy evaluation. Deferred offline-first admission invokes the
-application-owned atomic local-intent/outbox boundary before reporting durable
-acceptance. Cache-first local serving verifies application-owned state at the
-provider boundary and reports provider-observed freshness, explicit
-unavailability, and fresh-to-stale drift without returning domain payloads or
-silently changing strategy. Direct cache verification can use an independent
-provider timeout and circuit boundary without adding a third-party dependency.
-The direct cache-first storage/transport matrix reuses the canonical PUSH,
-cache-miss PULL, and cache-miss BIDIRECTIONAL pipelines while preserving local,
-remote, or mixed origin and completed-operation evidence. Exact non-durable
-foreground PULL refresh now verifies cache first, runs the canonical inbound
-pipeline, and reports local freshness together with completed, partially
-succeeded, failed, or cancelled refresh evidence. Queue providers now expose
-typed atomic first/already/conflict admission across in-memory, Room, and
-Apple persistence without changing ordinary enqueue. Non-offline direct
-deferrals still fail closed until the strategy runtime owns queue and
-scheduler admission. Durable refresh recovery, accepted-plan refresh replay,
-BIDIRECTIONAL inline refresh,
-platform implementations, crash/relaunch proof, hybrid/conflict behavior,
-durable strategy events, and platform reference qualification remain before
-the strategy engine is complete.
+## V1 release-gate dashboard
 
-## Market-readiness dashboard
-
-- **Last reconciled:** 2026-08-06
-- **Recorded V1 target:** 2026-08-27
-- **Current verdict:** **NO-GO — not production-ready or market-ready**
-- **V1 engineering/release acceptance completion:** **10%** (`1 of 10` gates accepted; `#93` complete, `#94`–`#102` open)
-
-The percentage is acceptance-based: accepted engineering/release gates divided
-by ten. It is not a percentage of code written or an estimate of effort
-remaining. A gate is `COMPLETE` only when its issue criteria have executable
-evidence on the same reviewed commit. `IN PROGRESS` therefore includes
-substantial implementations that still have unqualified release behavior.
-
-| Next priority | V1 gate | Status | Finished on `main` | Still pending before the gate is complete |
+| Priority | Gate | Current verdict | What is implemented | What still blocks acceptance |
 |---:|---|---|---|---|
-| — | [DL-039 foundations, artifacts, compatibility](https://github.com/dataloom-sdk/dataloom/issues/93) | COMPLETE | Public API/provider/runtime boundaries, module rules, JVM and Kotlin/Native ABI baselines, external-consumer compilation, durable state primitives, deterministic clocks/randomness, configuration and policy foundations, canonical envelope/redaction contracts, and a deterministic bounded V1 wire codec/upcast registry | — |
-| 1 | [DL-039B six strategy engine](https://github.com/dataloom-sdk/dataloom/issues/102) | IN PROGRESS | Versioned contracts and deterministic planner for all six strategies; direct network-only and remote-first slices; fail-closed queue admission; Room v8/Apple v4 accepted-plan persistence; exact encoder/resolver correspondence; direct, protected, and queued replay without current-policy evaluation; typed fallback and reconciliation hooks; atomic offline-first admission; cache-access contract and capability resolution; provider-verified fresh/allowed-stale direct local serving; independently protected direct cache verification; canonical direct cache-first PUSH, cache-miss PULL, and cache-miss BIDIRECTIONAL execution; exact non-durable PULL inline refresh composition with local freshness plus completed/partial/failed/cancelled evidence; typed idempotent queue admission across in-memory, Room, and Apple providers; explicit freshness-drift and partial-effect outcomes; and fail-closed non-atomic direct deferrals | Complete online offline-first execution ownership and platform implementations with crash/relaunch proof; compose durable refresh queue/scheduler admission and recovery from the idempotent foundation, add accepted-plan refresh replay, BIDIRECTIONAL inline refresh, hybrid coherence/conflict application, durable strategy events/diagnostics, and the full native Android/KMP Android/KMP iOS failure/restart matrix |
-| 2 | [DL-039A Android/KMP/iOS parity](https://github.com/dataloom-sdk/dataloom/issues/101) | IN PROGRESS | Native Android adapters, Kotlin/Native Apple targets, XCFramework assembly, Swift smoke compilation, and initial Apple file-backed persistence | Add explicit KMP Android variants, production `dataloom-android`/`dataloom-ios` aggregation, iOS lifecycle/connectivity/background/security adapters, staged external consumers, and the complete parity matrix |
-| 3 | [DL-040 retry and circuit breaker](https://github.com/dataloom-sdk/dataloom/issues/94) | QUALIFICATION BLOCKED | FR-RETRY-001–012 implementation mapping; built-in backoff/jitter, limits, hints, six timeout boundaries, durable Room/Apple circuit state, half-open leases, authorized administration, bounded telemetry, and common/platform-store recovery flows | Prove real Android and Apple process termination/relaunch, genuine cross-process probe contention where supported, and the complete AC-FUNC-004 provider flow through native Android, KMP Android, and KMP iOS |
-| 4 | [DL-041 conflict engine](https://github.com/dataloom-sdk/dataloom/issues/95) | IN PROGRESS | Custom detector/resolver contracts and orchestration foundations | Ship deterministic built-in strategies, decision application, durable unresolved/manual state, audit, loop prevention/quarantine, precedence, restart/concurrency proof, and AC-FUNC-002 |
-| 5 | [DL-042 events, observability, health, dashboard](https://github.com/dataloom-sdk/dataloom/issues/96) | IN PROGRESS | Canonical envelope/redaction contracts, deterministic V1 wire codec/upcast registry, in-process event dispatch, bounded retry/circuit metrics, logs, traces, exporter isolation, and redacted health snapshot | Add the durable outbox, ordering, acknowledgement/replay, retention, filtering, SDK-wide envelope adoption/instrumentation, health/read model, and deployable operations dashboard/adaptor |
-| 6 | [DL-043 asset synchronization](https://github.com/dataloom-sdk/dataloom/issues/97) | NOT STARTED | No production asset subsystem accepted | Implement manifest, bounded streaming, upload/download chunking, durable resume, integrity, encryption metadata, quota, cancellation, secure temporary files, cleanup, content policy, and AC-FUNC-005 |
-| 7 | [DL-044 plugin platform](https://github.com/dataloom-sdk/dataloom/issues/98) | NOT STARTED | Provider SPI exists; no V1 plugin lifecycle is accepted | Implement manifests, compatibility, deny-by-default permissions, lifecycle, resource bounds, deterministic ordering, isolation, hot disable, audit, certification kit, and a reference non-provider plugin |
-| 8 | [DL-045 enterprise governance](https://github.com/dataloom-sdk/dataloom/issues/99) | NOT STARTED | Tenant identifiers and limited retry/circuit administration foundations exist | Enforce tenant isolation, RBAC, signed policy packs, tamper-evident/offline audit, residency, support/fleet diagnostics, configuration locks, LTS/catalog governance, and AC-FUNC-010 |
-| 9 | [DL-046 immutable V1 release](https://github.com/dataloom-sdk/dataloom/issues/100) | BLOCKED / NO-GO | Continuous JVM, Android, Apple, ABI, XCFramework, header, Swift-smoke, schema, and migration validation foundations exist | Close #93–#99 and #101–#102; qualify one immutable candidate; verify staged consumers, compatibility, performance, security, SBOM/provenance/signatures/licenses, documentation, legal approval, publication, rollback, and post-publish smoke tests |
+| 1 | [#93 Foundations, artifacts, compatibility](https://github.com/dataloom-sdk/dataloom/issues/93) | **PARTIAL / REOPENED** | Public/provider/runtime boundaries, current module dependency rules, JVM and Kotlin/Native ABI baselines, source-build external-consumer compilation, durable queue/retry/circuit primitives, canonical operational envelope, centralized redaction, deterministic wire codec and upcasting | Approved published artifact graph and BOM; immutable configuration snapshots, precedence, rollout and rollback; shared policy engine; complete cross-subsystem durable state; monotonic time; secure-random/key/signature/integrity boundaries; explicit KMP Android variant; production Android/iOS/JVM aggregates; staged consumers; publication and supply-chain foundations |
+| 2 | [#96 Events, observability, operations](https://github.com/dataloom-sdk/dataloom/issues/96) | **PARTIAL** | Canonical envelope/redaction/wire/upcast; synchronous in-process observer delivery; bounded retry/circuit telemetry and health foundations | Durable event store/outbox, sequence ordering, acknowledgement/replay, retention, filtering, back-pressure, platform persistence, SDK-wide instrumentation, operations read model and deployable reference adaptor |
+| 3 | [#94 Retry and circuit breaker](https://github.com/dataloom-sdk/dataloom/issues/94) | **IMPLEMENTED / QUALIFICATION BLOCKED** | Central failure protection, standard backoff and deterministic jitter, retry budgets, hints, separated timeouts, durable circuit state, half-open probe leases, Room/Apple state, administration and bounded telemetry | Real Android and Apple process termination/relaunch, true cross-process probe contention where supported, and complete AC-FUNC-004 through native Android, explicit KMP Android and KMP iOS staged consumers |
+| 4 | [#101 Platform parity](https://github.com/dataloom-sdk/dataloom/issues/101) | **PARTIAL / REOPENED** | Native Android connectivity/Room/WorkManager foundations; Apple targets and file-backed queue/retry/circuit stores; XCFramework/header/Swift compile checks | Explicit KMP Android variants, `dataloom-android`, production `dataloom-ios`, iOS lifecycle/connectivity/BGTask/security/files, real process relaunch, staged native Android/KMP Android/KMP iOS consumers, and complete parity matrices |
+| 5 | [#102 Six-strategy engine](https://github.com/dataloom-sdk/dataloom/issues/102) | **PARTIAL** | Versioned profiles and deterministic planner for all six; direct network-only and remote-first; deferred offline-first atomic admission; direct cache serving, remote matrix, inline PULL refresh and durable refresh admission; persisted accepted plans and supported frozen-plan replay | Online offline-first ownership; hybrid executor; remaining adaptive paths; BIDIRECTIONAL refresh; conflict/event/coherence integration; process-loss recovery; complete direction/mode/trigger/failure/restart/platform matrices |
+| 6 | [#95 Conflict engine](https://github.com/dataloom-sdk/dataloom/issues/95) | **PARTIAL** | Application-supplied detector/resolver contracts, registries and one-cycle orchestration | Built-in client/server/LWW/timestamp/reject/manual policies, deterministic precedence, atomic decision application, durable unresolved state, audit, retry delegation, convergence limits, quarantine, restart/concurrency/platform proof |
+| 7 | [#97 Asset synchronization](https://github.com/dataloom-sdk/dataloom/issues/97) | **MISSING** | No accepted production subsystem | Complete manifest, bounded streaming, chunk upload/download, durable resume, integrity, encryption metadata, quota, cancellation, secure temporary files, cleanup, policy hooks and platform evidence |
+| 8 | [#98 Plugin platform](https://github.com/dataloom-sdk/dataloom/issues/98) | **MISSING** | Provider SPI only; it is not the V1 plugin platform | Manifest, compatibility, deny-by-default permissions, lifecycle, deterministic ordering, resource bounds, isolation, hot disable, audit, certification kit and reference non-provider plugin |
+| 9 | [#99 Enterprise governance](https://github.com/dataloom-sdk/dataloom/issues/99) | **MISSING** | Tenant identifiers and limited retry/circuit administration foundations | Enforced tenant isolation, RBAC, signed policy packs, tamper-evident/offline audit, residency, fleet diagnostics, support bundles, configuration locks, LTS/catalog governance and platform proof |
+| 10 | [#100 Immutable V1 release](https://github.com/dataloom-sdk/dataloom/issues/100) | **BLOCKED / NO-GO** | Continuous shared, Android and Apple validation for current modules; ABI, Room schema, XCFramework and header checks | All other gates; staged publication; BOM/POM/module metadata; license; checksums/signatures; SBOM/provenance; vulnerability/license evidence; benchmarks; security/legal approvals; rollback rehearsal; exact-candidate promotion and post-publish smoke |
 
-### Market evidence gates
+## Strategy implementation status
 
-Engineering completion alone does not make DataLoom market-ready. The following
-product evidence is required in addition to the V1 release gates.
+| Strategy | Current executable behavior | V1 verdict |
+|---|---|---|
+| Offline-first | Atomic deferred local-intent/outbox admission and frozen durable continuation persistence | **Partial:** online immediate ownership, process recovery and complete platform matrix missing |
+| Remote-first | Direct provider-backed PUSH, PULL and BIDIRECTIONAL plus typed configured PULL fallback | **Partial:** durable defer/restart, complete retry/conflict/event and platform matrices missing |
+| Cache-first | Provider-verified fresh/stale serving, cache miss, direct remote directions, inline PULL refresh and queue-before-scheduler durable admission | **Partial:** callback/relaunch recovery, independent protected queue/scheduler adapters, BIDIRECTIONAL refresh, coherence/conflict/events and platform matrices missing |
+| Network-only | Direct transport-only PUSH, PULL and BIDIRECTIONAL with no storage/queue calls | **Partial:** complete result/event/retry/failure/platform qualification missing |
+| Hybrid | Versioned profile and deterministic finite plan evaluation | **Missing runtime:** no production direct hybrid executor or coherence/reconciliation engine |
+| Adaptive | Deterministic bounded selection and persistence of a concrete selected plan | **Partial:** execution is limited to currently supported concrete paths; full re-evaluation and platform matrices missing |
 
-| Market gate | Required target | Evidence accepted in repository | Remaining |
-|---|---:|---:|---|
-| Fully qualified built-in strategies | 6 | 0 of 6 | All six must pass their complete runtime, restart, failure, and platform matrices; planner-only or partial vertical slices do not count |
-| Reference applications | 3 | 0 of 3 | Native Android, KMP Android, and KMP iOS reference consumers using staged/published-style artifacts |
-| No-loss/no-duplication fault proof | Required | Partial | Complete crash, restart, duplicate, concurrency, cancellation, scheduler-failure, migration, and network-partition evidence across mandatory paths |
-| Performance/resource benchmarks | Required | None accepted | Publish reproducible latency, throughput, memory, storage, battery/background, large-queue, and large-asset results with limits |
-| Customer/problem interviews | 20 | 0 evidenced | Conduct and record twenty qualified interviews with findings and decision changes |
-| Design partners | 5 | 0 evidenced | Secure five partners actively validating integration and product fit |
-| Production pilots | 3 | 0 evidenced | Complete three monitored pilots with acceptance, reliability, and support evidence |
-| Paid pilot | 1 | 0 evidenced | Convert at least one pilot to a paid engagement |
-| Legal/publication approval | Required | Not accepted | Finalize license, namespace, signing/key custody, compliance evidence, support terms, and publication authority |
+## What is correctly implemented today
 
-### Immediate execution order
+The following are real, useful, reviewed foundations on `main`:
 
-Closed foundation gate #93 remains the single shared configuration, policy,
-state, security, compatibility, and event boundary for every remaining engine.
+- immutable identifiers, requests, results, errors, provider contracts and lifecycle;
+- storage, transport, connectivity, scheduler and queue SPIs;
+- outbound PUSH, inbound PULL and BIDIRECTIONAL pipelines;
+- durable queue entries, leases, retry budgets, workflow deadlines and accepted plans;
+- in-memory, Android Room and Apple file-backed queue/circuit foundations;
+- queue processing, lease recovery and accepted-plan replay for supported plans;
+- standard retry strategies, deterministic jitter, budgets, hints, timeouts,
+  durable circuit breaker, probe lease and administration foundations;
+- Android connectivity, WorkManager scheduling and Room persistence adapters;
+- Apple Kotlin/Native targets, file-backed queue/retry/circuit stores and
+  XCFramework assembly;
+- canonical operational envelope, centralized redaction, deterministic bounded
+  wire format and schema upcasting;
+- JVM and Kotlin/Native ABI baselines, external source-build consumer
+  compilation, Android assembly/lint/schema/device validation, Apple target,
+  XCFramework, header and Swift compile validation;
+- audited cache-first durable admission merged through PR #203.
 
-1. Deliver one end-to-end strategy/platform vertical slice across native
-   Android, KMP Android, and KMP iOS, then complete all six strategies through
-   the same architecture (#102 + #101).
-2. Add the host-controlled process lifecycle and cross-process harness needed
-   to close the remaining retry/circuit acceptance criteria in #94.
-3. Complete conflict, durable events/operations, assets, plugins, and enterprise
-   governance in dependency order (#95–#99).
-4. Build the three staged-artifact reference apps and publish the benchmark and
-   fault-injection evidence.
-5. Run customer validation alongside engineering: interviews, design partners,
-   pilots, then one paid pilot.
-6. Build and qualify one immutable V1 candidate and promote that exact artifact
-   only after every engineering, security, legal, and market gate passes (#100).
+A green build proves these present modules compile and pass their current tests.
+It does **not** prove absent V1 modules, staged consumers, production platform
+lifecycle paths, market evidence, or publication controls.
 
-Detailed evidence lives in the
-[current implementation reconciliation](./docs/audits/DL-AUDIT-006-current-implementation-reconciliation.md),
-the
-[inline cache refresh runtime checkpoint](./docs/audits/DL-039B-inline-cache-refresh-runtime.md),
-the
-[current DL-040 retry/circuit reconciliation](./docs/audits/DL-040-current-acceptance-reconciliation.md),
-and the historical
-[V1 production-readiness audit](./docs/audits/DL-AUDIT-004-v1-production-readiness.md).
+## Platform status
 
-## Supported V1 consumer paths
+| Consumer path | Current evidence | V1 status |
+|---|---|---|
+| Native Android | ConnectivityManager, Room and WorkManager source-build adapters; managed-device Room tests | **Partial:** no complete external staged app or full process/recovery matrix |
+| KMP Android | Shared JVM variant only | **Missing mandatory evidence:** no explicit Android KMP variant or staged KMP Android app |
+| KMP iOS | Apple producer targets, file stores and library-level consumer probes | **Partial:** no production `dataloom-ios`, BGTask/lifecycle/connectivity/security aggregation or executable staged KMP iOS app |
+| Native Swift/XCFramework | Device/simulator slices, header audit and selected-symbol compile smoke | Optional distribution baseline only; not KMP iOS parity |
 
-| Consumer | V1 status |
-|---|---|
-| Native Android application | Mandatory |
-| KMP application targeting Android | Mandatory |
-| KMP application targeting iOS | Mandatory |
-| Native Swift application through an XCFramework | Optional distribution path |
+## Current repository modules
 
-A native Android application remains Android-only. iOS becomes part of the
-same product codebase when the application itself is Kotlin Multiplatform and
-declares an iOS target. See
-[platform strategy](./docs/architecture/platform-strategy.md).
+- `dataloom-model`
+- `dataloom-provider-api`
+- `dataloom-api`
+- `dataloom-core`
+- `dataloom-runtime`
+- `dataloom-testing`
+- `runtime-external-consumer`
+- conditional Android modules:
+  `dataloom-connectivity-android`, `dataloom-scheduler-workmanager`,
+  `dataloom-queue-room`
+- macOS/cross-compilation Apple assembly: `dataloom-apple`
 
-## Repository modules
+The accepted V1 architecture also requires consumer/publication boundaries that
+do not yet exist, including the BOM, configuration API, plugin API, assets,
+Android/iOS/JVM platform aggregates and benchmark module.
 
-```mermaid
-flowchart TD
-    model[dataloom-model]
-    api[dataloom-api]
-    core[dataloom-core]
-    runtime[dataloom-runtime]
-    testing[dataloom-testing]
-    connectivity[dataloom-connectivity-android]
-    room[dataloom-queue-room]
-    work[dataloom-scheduler-workmanager]
-    apple[dataloom-apple]
+## Validation
 
-    model --> api
-    model --> core
-    api --> core
-    model --> runtime
-    api --> runtime
-    core --> runtime
-    model --> testing
-    api --> testing
-    core --> testing
-    runtime --> testing
-    api --> connectivity
-    api --> room
-    model --> room
-    api --> work
-    runtime --> work
-    model --> apple
-    api --> apple
-    core --> apple
-    runtime --> apple
-
-    style model fill:#DCCCFF,stroke:#874FFF
-    style api fill:#C2E5FF,stroke:#3DADFF
-    style runtime fill:#C6FAF6,stroke:#5AD8CC
-```
-
-| Module | Responsibility |
-|---|---|
-| `dataloom-model` | Dependency-root models; currently owns clock primitives |
-| `dataloom-api` | Public contracts, requests, results, and provider interfaces |
-| `dataloom-core` | Provider lifecycle, registry, resolution, and shared runtime dependencies |
-| `dataloom-runtime` | Facade, pipelines, queue, retry, conflict, and event orchestration |
-| `dataloom-testing` | Deterministic clocks, in-memory providers, scripts, and recorders |
-| `dataloom-connectivity-android` | Android `ConnectivityProvider` |
-| `dataloom-queue-room` | Room-backed durable `QueueProvider` |
-| `dataloom-scheduler-workmanager` | WorkManager scheduler and worker bridge |
-| `dataloom-apple` | macOS-only Apple/XCFramework umbrella |
-
-The exact dependency and publication rules are in
-[module architecture](./docs/architecture/modules.md) and
-[ADR-0002](./docs/adr/ADR-0002-v1-artifact-and-foundation-architecture.md).
-
-## Toolchain
-
-| Tool | Version |
-|---|---|
-| JDK | 17 or newer |
-| Gradle Wrapper | 9.5.0 |
-| Kotlin | 2.4.10 |
-| JVM bytecode target | 17 |
-| Shared targets | JVM, `iosArm64`, `iosSimulatorArm64`, `iosX64` |
-
-An explicit KMP Android target and complete KMP consumer qualification remain
-V1 gates.
-
-## Build the current shared foundation
-
-Use the checked-in Gradle Wrapper:
+Shared:
 
 ```bash
-./gradlew build
+./gradlew \
+  :build-logic:test \
+  build \
+  :runtime-external-consumer:checkRuntimeExternalConsumer \
+  --configuration-cache \
+  --stacktrace \
+  --console=plain
 ```
 
-On Windows:
-
-```powershell
-.\gradlew.bat build
-```
-
-Android modules are included only when `DATALOOM_ANDROID_BUILD=true` and require
-an Android SDK plus access to Google Maven:
+Android:
 
 ```bash
 DATALOOM_ANDROID_BUILD=true ./gradlew \
-  :dataloom-connectivity-android:build \
-  :dataloom-queue-room:build \
-  :dataloom-scheduler-workmanager:build
+  :dataloom-connectivity-android:assembleDebug \
+  :dataloom-connectivity-android:assembleRelease \
+  :dataloom-connectivity-android:testDebugUnitTest \
+  :dataloom-connectivity-android:lintDebug \
+  :dataloom-scheduler-workmanager:assembleDebug \
+  :dataloom-scheduler-workmanager:assembleRelease \
+  :dataloom-scheduler-workmanager:testDebugUnitTest \
+  :dataloom-scheduler-workmanager:lintDebug \
+  :dataloom-queue-room:assembleDebug \
+  :dataloom-queue-room:assembleRelease \
+  :dataloom-queue-room:testDebugUnitTest \
+  :dataloom-queue-room:lintDebug
 ```
 
-Apple compilation, simulator tests, and XCFramework assembly require macOS and
-Xcode:
+Apple validation requires macOS/Xcode and includes shared tests, all iOS target
+consumer compilation, XCFramework assembly, exported-header auditing and Swift
+compile smoke.
 
-```bash
-./gradlew :dataloom-apple:assembleDataLoomReleaseXCFramework
-```
+## Dependency boundary
 
-Output:
-`dataloom-apple/build/XCFrameworks/release/DataLoom.xcframework`
+DataLoom must remain provider-neutral and application-domain-neutral.
+Applications own repositories, UI state, server contracts, authentication,
+credentials, authorization inputs and business truth.
 
-For host requirements, offline-cache limitations, and the lowest-cost local
-validation order, read [building DataLoom](./docs/development/building.md).
+No recent accepted change added a production vendor SDK, SaaS, networking
+wrapper, database wrapper or analytics integration. Current production code
+uses Kotlin/coroutines and official Android/AndroidX platform components.
+
+The repository is not literally dependency-free: Android tests currently use
+`org.mockito.kotlin:mockito-kotlin`. Under a strict “no third-party dependency
+at all” policy, that test-only dependency must be removed/replaced or explicitly
+approved. It is not packaged into the runtime SDK.
+
+## Immediate execution order
+
+1. Complete #93 foundations: configuration/policy/time/security and final
+   artifact/publication boundaries.
+2. Rebuild and merge the #96 durable event/outbox foundation from complete
+   committed source.
+3. Add the #94 provider-neutral process-loss/cross-process qualification kit.
+4. Rebase and qualify the salvageable #192 Android process/relaunch work.
+5. Implement #193 production KMP iOS lifecycle/connectivity/BGTask/relaunch.
+6. Complete #102 online offline-first, hybrid, adaptive and remaining cache
+   matrices.
+7. Implement #95 built-in durable conflict engine.
+8. Build #197 staged native Android, KMP Android and KMP iOS consumers.
+9. Implement #97 assets, #98 plugins and #99 enterprise governance.
+10. Qualify and promote one immutable candidate through #100.
+
+Only one production PR should be active until first-pass CI reliability is
+consistently high. CI confirms complete committed source; it must not construct
+or debug missing implementation files.
 
 ## Documentation
 
-Start with the [documentation hub](./docs/README.md).
-
-- [System overview](./docs/architecture/system-overview.md)
+- [End-to-end V1 release audit](./docs/audits/DL-AUDIT-007-end-to-end-v1-release.md)
+- [Live V1 requirements/evidence matrix](./docs/audits/V1-REQUIREMENTS-EVIDENCE-MATRIX.md)
+- [Audit index](./docs/audits/README.md)
+- [System architecture](./docs/architecture/README.md)
 - [Six-strategy guide](./docs/strategies/README.md)
-- [API reference](./docs/api/README.md)
-- [Architecture](./docs/architecture/README.md)
 - [Android integration](./docs/android/README.md)
-- [KMP iOS and Apple integration](./docs/apple/README.md)
-- [Testing](./docs/testing/testing-toolkit.md)
-- [Development](./docs/development/building.md)
-- [ADRs](./docs/adr/README.md)
-- [Audits](./docs/audits/README.md)
+- [Apple/KMP iOS integration](./docs/apple/README.md)
+- [Local build guide](./docs/development/building.md)
+- [Security policy](./SECURITY.md)
 
-## Product boundary
+## License and publication
 
-DataLoom owns synchronization policy, deterministic orchestration, transfer
-coordination, durable recovery, and operational signals. Applications retain
-their domain repositories, UI state, server contracts, authentication
-credentials, and domain-specific business truth.
-
-Payloads remain opaque to the shared engine. Generic conflict utilities can be
-built in, but DataLoom must not silently invent business merge rules.
-
-## Contributing and security
-
-Before changing code, read [CONTRIBUTING.md](./CONTRIBUTING.md). Public API,
-durable schema, module-boundary, platform, and strategy changes require
-corresponding documentation and validation evidence.
-
-Report vulnerabilities privately as described in
-[SECURITY.md](./SECURITY.md). Never place credentials, tokens, personal data,
-or customer payloads in commits, examples, issues, logs, or test fixtures.
-
-## License
-
-License status: **to be finalized before V1 publication**.
+License status is **not finalized** and no production V1 artifacts are
+published. Namespace authority, signing/key custody, SBOM, provenance,
+vulnerability/license evidence, support policy and legal approval remain
+release blockers.
