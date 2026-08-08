@@ -394,6 +394,8 @@ internal interface StorageCheckpointDao {
 
 private fun InboundChangeSetEntity.contentEquals(other: InboundChangeSetEntity): Boolean =
     // storageSequence is intentionally excluded because Room assigns it on write.
+    // This helper must compare every persisted non-generated change-set field.
+    // If new durable columns are added later, extend this comparison explicitly.
     changeSetId == other.changeSetId &&
         metadataJson.toMetadataOrEmpty() == other.metadataJson.toMetadataOrEmpty()
 
