@@ -76,7 +76,8 @@ import kotlinx.coroutines.flow.first
  *
  * **Restriction**: change-set IDs, event IDs, entity types, entity IDs, entity versions,
  * operation names, and content-type strings must not contain the `|` character or newline
- * characters. Payload bytes are encoded as Base64 and are not subject to this restriction.
+ * characters. Payload bytes are encoded as lowercase hexadecimal and are not subject to
+ * this restriction.
  *
  * ## Outbound capacity limit
  *

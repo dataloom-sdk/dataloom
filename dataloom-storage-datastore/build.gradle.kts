@@ -49,6 +49,9 @@ android {
 
 dependencies {
     api(project(":dataloom-api"))
+    // api rather than implementation because DataStore<Preferences> appears in the public
+    // constructor of DataStoreStorageProvider. Consumers must provide a DataStore instance
+    // and therefore require this type at compile time.
     api(libs.datastore.preferences)
     implementation(libs.kotlinx.coroutines.android)
 
