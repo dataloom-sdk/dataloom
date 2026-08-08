@@ -1,3 +1,5 @@
+@file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
+
 package io.dataloom.api.time
 
 import platform.Foundation.NSDate
