@@ -158,6 +158,7 @@ flowchart TD
     testing[dataloom-testing]
     connectivity[dataloom-connectivity-android]
     room[dataloom-queue-room]
+    storageRoom[dataloom-storage-room]
     work[dataloom-scheduler-workmanager]
     apple[dataloom-apple]
 
@@ -173,6 +174,8 @@ flowchart TD
     runtime --> testing
     api --> connectivity
     api --> room
+    api --> storageRoom
+    model --> storageRoom
     model --> room
     api --> work
     runtime --> work
@@ -195,6 +198,7 @@ flowchart TD
 | `dataloom-testing` | Deterministic clocks, in-memory providers, scripts, and recorders |
 | `dataloom-connectivity-android` | Android `ConnectivityProvider` |
 | `dataloom-queue-room` | Room-backed durable `QueueProvider` |
+| `dataloom-storage-room` | Room-backed reference `StorageProvider` |
 | `dataloom-scheduler-workmanager` | WorkManager scheduler and worker bridge |
 | `dataloom-apple` | macOS-only Apple/XCFramework umbrella |
 

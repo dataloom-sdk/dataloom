@@ -59,6 +59,7 @@ jobs:
         run: |
           ./gradlew \
             :dataloom-queue-room:kspDebugKotlin \
+            :dataloom-storage-room:kspDebugKotlin \
             --configuration-cache \
             --stacktrace \
             --console=plain \
@@ -84,6 +85,11 @@ jobs:
             :dataloom-queue-room:assembleDebugAndroidTest \
             :dataloom-queue-room:testDebugUnitTest \
             :dataloom-queue-room:lintDebug \
+            :dataloom-storage-room:assembleDebug \
+            :dataloom-storage-room:assembleRelease \
+            :dataloom-storage-room:assembleDebugAndroidTest \
+            :dataloom-storage-room:testDebugUnitTest \
+            :dataloom-storage-room:lintDebug \
             :runtime-external-consumer:checkRuntimeExternalConsumer \
             build \
             --continue \
@@ -96,13 +102,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          generated_database="dataloom-queue-room/build/generated/ksp/debug/kotlin/io/dataloom/queue/room/internal/DataLoomRoomDatabase_Impl.kt"
-          schema_directory="dataloom-queue-room/schemas/io.dataloom.queue.room.internal.DataLoomRoomDatabase"
-          if [[ ! -f "$generated_database" ]]; then
-            echo "Missing KSP-generated Room database implementation."
-            exit 1
-          fi
-          python3 - "$generated_database" "$schema_directory" <<'PY'
+          verify_schema() {
+            local generated_database="$1"
+            local schema_directory="$2"
+            local schema_git_path="$3"
+            if [[ ! -f "$generated_database" ]]; then
+              echo "Missing KSP-generated Room database implementation: $generated_database"
+              exit 1
+            fi
+            python3 - "$generated_database" "$schema_directory" <<'PY'
           import json
           import pathlib
           import re
@@ -134,12 +142,21 @@ jobs:
               )
           print(f"Verified Room schema version {schema_version} identity hash: {schema_hash}")
           PY
-          git status --porcelain --untracked-files=all -- dataloom-queue-room/schemas \
+            git status --porcelain --untracked-files=all -- "$schema_git_path" \
             2>&1 | tee android-ci-logs/room-schema.log
-          if [[ -s android-ci-logs/room-schema.log ]]; then
-            echo "Room schema changed during validation or contains uncommitted files."
-            exit 1
-          fi
+            if [[ -s android-ci-logs/room-schema.log ]]; then
+              echo "Room schema changed during validation or contains uncommitted files."
+              exit 1
+            fi
+          }
+          verify_schema \
+            "dataloom-queue-room/build/generated/ksp/debug/kotlin/io/dataloom/queue/room/internal/DataLoomRoomDatabase_Impl.kt" \
+            "dataloom-queue-room/schemas/io.dataloom.queue.room.internal.DataLoomRoomDatabase" \
+            "dataloom-queue-room/schemas"
+          verify_schema \
+            "dataloom-storage-room/build/generated/ksp/debug/kotlin/io/dataloom/storage/room/internal/DataLoomStorageRoomDatabase_Impl.kt" \
+            "dataloom-storage-room/schemas/io.dataloom.storage.room.internal.DataLoomStorageRoomDatabase" \
+            "dataloom-storage-room/schemas"
 
       - name: Enable KVM for managed device
         shell: bash
@@ -155,6 +172,7 @@ jobs:
           set -o pipefail
           ./gradlew \
             :dataloom-queue-room:pixel2Api35DebugAndroidTest \
+            :dataloom-storage-room:pixel2Api35DebugAndroidTest \
             --configuration-cache \
             --stacktrace \
             --console=plain 2>&1 | tee android-ci-logs/room-managed-device.log
