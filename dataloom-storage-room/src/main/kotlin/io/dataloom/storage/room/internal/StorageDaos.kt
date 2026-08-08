@@ -255,7 +255,7 @@ internal abstract class OutboundChangeDao {
     internal open suspend fun recordAcknowledgement(
         acknowledgement: ChangeSetAcknowledgement,
     ): Boolean {
-        acknowledgement.events.forEach { event ->
+        for (event in acknowledgement.events) {
             val affectedRows = updateAcknowledgement(
                 changeSetId = acknowledgement.changeSetId.value,
                 eventId = event.eventId.value,
