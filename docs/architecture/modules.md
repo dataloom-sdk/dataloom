@@ -21,7 +21,7 @@ the current repository.
 
 ## Module Overview
 
-DataLoom is currently organized into six shared library modules, three
+DataLoom is currently organized into six shared library modules, four
 Android integration modules, a macOS-only Apple distribution module, and one
 build-infrastructure included build.
 
@@ -35,6 +35,7 @@ flowchart TD
     testing[dataloom-testing]
     connectivity[dataloom-connectivity-android]
     room[dataloom-queue-room]
+    storageRoom[dataloom-storage-room]
     work[dataloom-scheduler-workmanager]
     apple[dataloom-apple]
 
@@ -56,6 +57,8 @@ flowchart TD
     api --> connectivity
     model --> room
     api --> room
+    model --> storageRoom
+    api --> storageRoom
     api --> work
     runtime --> work
     model --> apple
@@ -84,6 +87,7 @@ Apple distribution boundary.
 | `dataloom-connectivity-android` | Android library | Android `ConnectivityProvider` |
 | `dataloom-scheduler-workmanager` | Android library | WorkManager scheduler and worker bridge |
 | `dataloom-queue-room` | Android library | Room-backed durable `QueueProvider` |
+| `dataloom-storage-room` | Android library | Room-backed reference `StorageProvider` |
 | `dataloom-apple` | KMP distribution module | Static `DataLoom` XCFramework assembly |
 | `build-logic` | Build infrastructure | Gradle convention plugins (not a published library) |
 
