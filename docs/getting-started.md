@@ -48,6 +48,7 @@ implementation(project(":dataloom-provider-api"))
 implementation(project(":dataloom-api"))
 implementation(project(":dataloom-runtime"))
 implementation(project(":dataloom-testing")) // evaluation or tests only
+implementation(libs.kotlinx.coroutines.core)
 ```
 
 > [!IMPORTANT]
@@ -87,6 +88,8 @@ import io.dataloom.testing.identifier.ConstantIdentifierGenerator
 import io.dataloom.testing.storage.InMemoryStorageProvider
 import io.dataloom.testing.time.FixedDataLoomClock
 import io.dataloom.testing.transport.ScriptedTransportProvider
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 
 suspend fun runGettingStartedSync(): String {
     val storageProvider = InMemoryStorageProvider()
@@ -110,22 +113,26 @@ suspend fun runGettingStartedSync(): String {
         return "Initialization did not complete: $initializeResult"
     }
 
-    return try {
-        when (val execution = dataLoom.synchronize(gettingStartedRequest())) {
-            is SynchronizationExecutionResult.Executed -> when (val result = execution.result) {
-                is SynchronizationResult.Succeeded -> "Synchronization completed: ${result.summary}"
-                is SynchronizationResult.PartiallySucceeded ->
-                    "Synchronization partially succeeded with ${result.errors.size} error(s)"
-                is SynchronizationResult.Failed -> "Synchronization failed: ${result.error.code}"
-                is SynchronizationResult.Cancelled -> "Synchronization cancelled at ${result.completedAt}"
-                is SynchronizationResult.Skipped -> "Synchronization skipped: ${result.reason}"
-            }
-
-            is SynchronizationExecutionResult.Rejected ->
-                "Synchronization rejected: ${execution.reason}"
-        }
+    val execution = try {
+        dataLoom.synchronize(gettingStartedRequest())
     } finally {
-        dataLoom.shutdown()
+        withContext(NonCancellable) {
+            dataLoom.shutdown()
+        }
+    }
+
+    return when (execution) {
+        is SynchronizationExecutionResult.Executed -> when (val result = execution.result) {
+            is SynchronizationResult.Succeeded -> "Synchronization completed: ${result.summary}"
+            is SynchronizationResult.PartiallySucceeded ->
+                "Synchronization partially succeeded with ${result.errors.size} error(s)"
+            is SynchronizationResult.Failed -> "Synchronization failed: ${result.error.code}"
+            is SynchronizationResult.Cancelled -> "Synchronization cancelled at ${result.completedAt}"
+            is SynchronizationResult.Skipped -> "Synchronization skipped: ${result.reason}"
+        }
+
+        is SynchronizationExecutionResult.Rejected ->
+            "Synchronization rejected: ${execution.reason}"
     }
 }
 
@@ -153,16 +160,16 @@ private fun gettingStartedRequest(): SynchronizationRequest = SynchronizationReq
 
 What this sample proves today:
 
-1. you can register providers and explicit bindings;
-2. you can build `DataLoom` through `DataLoomBuilder`;
-3. you can initialize the facade, execute one direct synchronization call, and
-   read the typed result; and
-4. you can do that from public API surface only.
+1. You can register providers and explicit bindings.
+2. You can build `DataLoom` through `DataLoomBuilder`.
+3. You can initialize the facade, execute one direct synchronization call, and
+   read the typed result.
+4. You can do that from public API surface only.
 
 What it does **not** prove:
 
-- full offline-first, remote-first, cache-first, hybrid, or adaptive runtime
-  qualification;
+- full offline-first, remote-first, cache-first, network-only, hybrid, or
+  adaptive runtime qualification;
 - release-ready Android or iOS app wiring;
 - durable queue/retry/circuit behavior; or
 - production storage/transport semantics.

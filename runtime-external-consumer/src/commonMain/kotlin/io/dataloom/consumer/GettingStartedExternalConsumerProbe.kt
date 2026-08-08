@@ -26,6 +26,8 @@ import io.dataloom.testing.identifier.ConstantIdentifierGenerator
 import io.dataloom.testing.storage.InMemoryStorageProvider
 import io.dataloom.testing.time.FixedDataLoomClock
 import io.dataloom.testing.transport.ScriptedTransportProvider
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 
 /** Compile-only probe matching the getting-started walkthrough. */
 public suspend fun gettingStartedExternalConsumerProbe(): String {
@@ -50,22 +52,26 @@ public suspend fun gettingStartedExternalConsumerProbe(): String {
         return "Initialization did not complete: $initializeResult"
     }
 
-    return try {
-        when (val execution = dataLoom.synchronize(gettingStartedRequest())) {
-            is SynchronizationExecutionResult.Executed -> when (val result = execution.result) {
-                is SynchronizationResult.Succeeded -> "Synchronization completed: ${result.summary}"
-                is SynchronizationResult.PartiallySucceeded ->
-                    "Synchronization partially succeeded with ${result.errors.size} error(s)"
-                is SynchronizationResult.Failed -> "Synchronization failed: ${result.error.code}"
-                is SynchronizationResult.Cancelled -> "Synchronization cancelled at ${result.completedAt}"
-                is SynchronizationResult.Skipped -> "Synchronization skipped: ${result.reason}"
-            }
-
-            is SynchronizationExecutionResult.Rejected ->
-                "Synchronization rejected: ${execution.reason}"
-        }
+    val execution = try {
+        dataLoom.synchronize(gettingStartedRequest())
     } finally {
-        dataLoom.shutdown()
+        withContext(NonCancellable) {
+            dataLoom.shutdown()
+        }
+    }
+
+    return when (execution) {
+        is SynchronizationExecutionResult.Executed -> when (val result = execution.result) {
+            is SynchronizationResult.Succeeded -> "Synchronization completed: ${result.summary}"
+            is SynchronizationResult.PartiallySucceeded ->
+                "Synchronization partially succeeded with ${result.errors.size} error(s)"
+            is SynchronizationResult.Failed -> "Synchronization failed: ${result.error.code}"
+            is SynchronizationResult.Cancelled -> "Synchronization cancelled at ${result.completedAt}"
+            is SynchronizationResult.Skipped -> "Synchronization skipped: ${result.reason}"
+        }
+
+        is SynchronizationExecutionResult.Rejected ->
+            "Synchronization rejected: ${execution.reason}"
     }
 }
 
