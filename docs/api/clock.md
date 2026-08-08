@@ -148,8 +148,8 @@ val elapsedNanos = monotonicClock.mark().elapsedNanosecondsSince(started)
 |---|---|---|---|
 | `SystemDataLoomClock` | `DataLoomClock` | JVM (also serves native Android today; see below) | `System.currentTimeMillis()` |
 | `SystemDataLoomMonotonicClock` | `DataLoomMonotonicClock` | JVM (also serves native Android today) | `System.nanoTime()`, normalized to a non-negative process-relative origin |
-| `AppleDataLoomClock` | `DataLoomClock` | `iosArm64`, `iosSimulatorArm64`, `iosX64` | `NSDate().timeIntervalSince1970` |
-| `AppleDataLoomMonotonicClock` | `DataLoomMonotonicClock` | `iosArm64`, `iosSimulatorArm64`, `iosX64` | `NSProcessInfo.processInfo.systemUptime` |
+| `AppleDataLoomClock` | `DataLoomClock` | `iosArm64`, `iosSimulatorArm64`, `iosX64` | `clock_gettime(CLOCK_REALTIME, ...)` |
+| `AppleDataLoomMonotonicClock` | `DataLoomMonotonicClock` | `iosArm64`, `iosSimulatorArm64`, `iosX64` | `clock_gettime(CLOCK_MONOTONIC, ...)` |
 
 All four live in `dataloom-model`, alongside the contracts they implement, and
 have no mutable state — safe to share a single instance across threads and
