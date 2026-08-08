@@ -21,7 +21,7 @@ the current repository.
 
 ## Module Overview
 
-DataLoom is currently organized into six shared library modules, three
+DataLoom is currently organized into seven shared library modules, three
 Android integration modules, a macOS-only Apple distribution module, and one
 build-infrastructure included build.
 
@@ -33,6 +33,7 @@ flowchart TD
     core[dataloom-core]
     runtime[dataloom-runtime]
     testing[dataloom-testing]
+    ktor[dataloom-transport-ktor]
     connectivity[dataloom-connectivity-android]
     room[dataloom-queue-room]
     work[dataloom-scheduler-workmanager]
@@ -53,6 +54,7 @@ flowchart TD
     api --> testing
     core --> testing
     runtime --> testing
+    ktor --> api
     api --> connectivity
     model --> room
     api --> room
@@ -81,13 +83,14 @@ Apple distribution boundary.
 | `dataloom-core` | Library module | Internal platform-independent foundation |
 | `dataloom-runtime` | Library module | Synchronization runtime and engine coordination |
 | `dataloom-testing` | Library module | Testing utilities, fakes, and controlled providers |
+| `dataloom-transport-ktor` | Library module | Optional Ktor-backed reference `TransportProvider` |
 | `dataloom-connectivity-android` | Android library | Android `ConnectivityProvider` |
 | `dataloom-scheduler-workmanager` | Android library | WorkManager scheduler and worker bridge |
 | `dataloom-queue-room` | Android library | Room-backed durable `QueueProvider` |
 | `dataloom-apple` | KMP distribution module | Static `DataLoom` XCFramework assembly |
 | `build-logic` | Build infrastructure | Gradle convention plugins (not a published library) |
 
-The six shared modules use Kotlin Multiplatform with JVM and host-gated Apple
+The seven shared modules use Kotlin Multiplatform with JVM and host-gated Apple
 targets. Android-specific functionality is isolated in dedicated Android
 libraries. None of these projects is a published V1 artifact yet.
 
@@ -214,7 +217,7 @@ Current convention plugins:
   sets, reproducible archive output, Kotlin ABI baselines, and public
   dependency-boundary checks.
 
-Committed JVM and Kotlin/Native ABI baselines cover all six shared modules;
+Committed JVM and Kotlin/Native ABI baselines cover all seven shared modules;
 the Apple umbrella has its own KLib baseline. `dataloom-runtime` exposes no
 `dataloom-core` or `dataloom-testing` type in either baseline, and a build task
 rejects either namespace if it appears later. Apple validation also compiles
@@ -253,6 +256,9 @@ dataloom-testing
 ├── depends on dataloom-api
 ├── depends on dataloom-core
 └── depends on dataloom-runtime
+
+dataloom-transport-ktor
+└── depends on dataloom-api
 
 dataloom-connectivity-android
 └── depends on dataloom-api

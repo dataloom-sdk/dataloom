@@ -49,6 +49,7 @@ include(
     ":dataloom-core",
     ":dataloom-runtime",
     ":dataloom-testing",
+    ":dataloom-transport-ktor",
     ":runtime-external-consumer",
 )
 
