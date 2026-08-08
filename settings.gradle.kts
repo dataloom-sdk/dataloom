@@ -75,6 +75,7 @@ if (isAndroidBuildEnabled) {
         ":dataloom-connectivity-android",
         ":dataloom-scheduler-workmanager",
         ":dataloom-queue-room",
+        ":dataloom-storage-datastore",
     )
 }
 
