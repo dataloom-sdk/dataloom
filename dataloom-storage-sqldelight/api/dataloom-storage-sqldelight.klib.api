@@ -1,0 +1,166 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <dataloom:dataloom-storage-sqldelight>
+abstract interface io.dataloom.storage.sqldelight.internal/DataLoomStorageDatabase : app.cash.sqldelight/Transacter { // io.dataloom.storage.sqldelight.internal/DataLoomStorageDatabase|null[0]
+    abstract val dataLoomStorageQueries // io.dataloom.storage.sqldelight.internal/DataLoomStorageDatabase.dataLoomStorageQueries|{}dataLoomStorageQueries[0]
+        abstract fun <get-dataLoomStorageQueries>(): io.dataloom.storage.sqldelight.internal/DataLoomStorageQueries // io.dataloom.storage.sqldelight.internal/DataLoomStorageDatabase.dataLoomStorageQueries.<get-dataLoomStorageQueries>|<get-dataLoomStorageQueries>(){}[0]
+
+    final object Companion { // io.dataloom.storage.sqldelight.internal/DataLoomStorageDatabase.Companion|null[0]
+        final val Schema // io.dataloom.storage.sqldelight.internal/DataLoomStorageDatabase.Companion.Schema|{}Schema[0]
+            final fun <get-Schema>(): app.cash.sqldelight.db/SqlSchema<app.cash.sqldelight.db/QueryResult.Value<kotlin/Unit>> // io.dataloom.storage.sqldelight.internal/DataLoomStorageDatabase.Companion.Schema.<get-Schema>|<get-Schema>(){}[0]
+
+        final fun invoke(app.cash.sqldelight.db/SqlDriver): io.dataloom.storage.sqldelight.internal/DataLoomStorageDatabase // io.dataloom.storage.sqldelight.internal/DataLoomStorageDatabase.Companion.invoke|invoke(app.cash.sqldelight.db.SqlDriver){}[0]
+    }
+}
+
+final class io.dataloom.storage.sqldelight.internal/Checkpoints { // io.dataloom.storage.sqldelight.internal/Checkpoints|null[0]
+    constructor <init>(kotlin/String, kotlin/String, kotlin/String) // io.dataloom.storage.sqldelight.internal/Checkpoints.<init>|<init>(kotlin.String;kotlin.String;kotlin.String){}[0]
+
+    final val checkpoint_key // io.dataloom.storage.sqldelight.internal/Checkpoints.checkpoint_key|{}checkpoint_key[0]
+        final fun <get-checkpoint_key>(): kotlin/String // io.dataloom.storage.sqldelight.internal/Checkpoints.checkpoint_key.<get-checkpoint_key>|<get-checkpoint_key>(){}[0]
+    final val checkpoint_metadata // io.dataloom.storage.sqldelight.internal/Checkpoints.checkpoint_metadata|{}checkpoint_metadata[0]
+        final fun <get-checkpoint_metadata>(): kotlin/String // io.dataloom.storage.sqldelight.internal/Checkpoints.checkpoint_metadata.<get-checkpoint_metadata>|<get-checkpoint_metadata>(){}[0]
+    final val checkpoint_token // io.dataloom.storage.sqldelight.internal/Checkpoints.checkpoint_token|{}checkpoint_token[0]
+        final fun <get-checkpoint_token>(): kotlin/String // io.dataloom.storage.sqldelight.internal/Checkpoints.checkpoint_token.<get-checkpoint_token>|<get-checkpoint_token>(){}[0]
+
+    final fun component1(): kotlin/String // io.dataloom.storage.sqldelight.internal/Checkpoints.component1|component1(){}[0]
+    final fun component2(): kotlin/String // io.dataloom.storage.sqldelight.internal/Checkpoints.component2|component2(){}[0]
+    final fun component3(): kotlin/String // io.dataloom.storage.sqldelight.internal/Checkpoints.component3|component3(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/String = ..., kotlin/String = ...): io.dataloom.storage.sqldelight.internal/Checkpoints // io.dataloom.storage.sqldelight.internal/Checkpoints.copy|copy(kotlin.String;kotlin.String;kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.storage.sqldelight.internal/Checkpoints.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.storage.sqldelight.internal/Checkpoints.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.storage.sqldelight.internal/Checkpoints.toString|toString(){}[0]
+}
+
+final class io.dataloom.storage.sqldelight.internal/DataLoomStorageQueries : app.cash.sqldelight/TransacterImpl { // io.dataloom.storage.sqldelight.internal/DataLoomStorageQueries|null[0]
+    constructor <init>(app.cash.sqldelight.db/SqlDriver) // io.dataloom.storage.sqldelight.internal/DataLoomStorageQueries.<init>|<init>(app.cash.sqldelight.db.SqlDriver){}[0]
+
+    final fun <#A1: kotlin/Any> selectCheckpointByKey(kotlin/String, kotlin/Function3<kotlin/String, kotlin/String, kotlin/String, #A1>): app.cash.sqldelight/Query<#A1> // io.dataloom.storage.sqldelight.internal/DataLoomStorageQueries.selectCheckpointByKey|selectCheckpointByKey(kotlin.String;kotlin.Function3<kotlin.String,kotlin.String,kotlin.String,0:0>){0§<kotlin.Any>}[0]
+    final fun <#A1: kotlin/Any> selectEligibleOutboundChanges(kotlin/Function12<kotlin/Long, kotlin/String, kotlin/String, kotlin/String, kotlin/String, kotlin/String, kotlin/String?, kotlin/String, kotlin/String?, kotlin/ByteArray?, kotlin/String, kotlin/String, #A1>): app.cash.sqldelight/Query<#A1> // io.dataloom.storage.sqldelight.internal/DataLoomStorageQueries.selectEligibleOutboundChanges|selectEligibleOutboundChanges(kotlin.Function12<kotlin.Long,kotlin.String,kotlin.String,kotlin.String,kotlin.String,kotlin.String,kotlin.String?,kotlin.String,kotlin.String?,kotlin.ByteArray?,kotlin.String,kotlin.String,0:0>){0§<kotlin.Any>}[0]
+    final fun deleteOutboundByEventId(kotlin/String): app.cash.sqldelight.db/QueryResult<kotlin/Long> // io.dataloom.storage.sqldelight.internal/DataLoomStorageQueries.deleteOutboundByEventId|deleteOutboundByEventId(kotlin.String){}[0]
+    final fun insertOrReplaceInboundAppliedChange(kotlin/String, kotlin/String, kotlin/String, kotlin/String, kotlin/String, kotlin/String?, kotlin/String, kotlin/String?, kotlin/ByteArray?, kotlin/String): app.cash.sqldelight.db/QueryResult<kotlin/Long> // io.dataloom.storage.sqldelight.internal/DataLoomStorageQueries.insertOrReplaceInboundAppliedChange|insertOrReplaceInboundAppliedChange(kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String?;kotlin.String;kotlin.String?;kotlin.ByteArray?;kotlin.String){}[0]
+    final fun insertOrReplaceOutboundChange(kotlin/String, kotlin/String, kotlin/String, kotlin/String, kotlin/String, kotlin/String?, kotlin/String, kotlin/String?, kotlin/ByteArray?, kotlin/String, kotlin/String): app.cash.sqldelight.db/QueryResult<kotlin/Long> // io.dataloom.storage.sqldelight.internal/DataLoomStorageQueries.insertOrReplaceOutboundChange|insertOrReplaceOutboundChange(kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String?;kotlin.String;kotlin.String?;kotlin.ByteArray?;kotlin.String;kotlin.String){}[0]
+    final fun selectCheckpointByKey(kotlin/String): app.cash.sqldelight/Query<io.dataloom.storage.sqldelight.internal/Checkpoints> // io.dataloom.storage.sqldelight.internal/DataLoomStorageQueries.selectCheckpointByKey|selectCheckpointByKey(kotlin.String){}[0]
+    final fun selectEligibleOutboundChanges(): app.cash.sqldelight/Query<io.dataloom.storage.sqldelight.internal/Outbound_changes> // io.dataloom.storage.sqldelight.internal/DataLoomStorageQueries.selectEligibleOutboundChanges|selectEligibleOutboundChanges(){}[0]
+    final fun updateOutboundStateByEventId(kotlin/String, kotlin/String): app.cash.sqldelight.db/QueryResult<kotlin/Long> // io.dataloom.storage.sqldelight.internal/DataLoomStorageQueries.updateOutboundStateByEventId|updateOutboundStateByEventId(kotlin.String;kotlin.String){}[0]
+    final fun upsertCheckpoint(kotlin/String, kotlin/String, kotlin/String): app.cash.sqldelight.db/QueryResult<kotlin/Long> // io.dataloom.storage.sqldelight.internal/DataLoomStorageQueries.upsertCheckpoint|upsertCheckpoint(kotlin.String;kotlin.String;kotlin.String){}[0]
+}
+
+final class io.dataloom.storage.sqldelight.internal/Inbound_changes_applied { // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied|null[0]
+    constructor <init>(kotlin/Long, kotlin/String, kotlin/String, kotlin/String, kotlin/String, kotlin/String, kotlin/String?, kotlin/String, kotlin/String?, kotlin/ByteArray?, kotlin/String) // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.<init>|<init>(kotlin.Long;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String?;kotlin.String;kotlin.String?;kotlin.ByteArray?;kotlin.String){}[0]
+
+    final val change_set_id // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.change_set_id|{}change_set_id[0]
+        final fun <get-change_set_id>(): kotlin/String // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.change_set_id.<get-change_set_id>|<get-change_set_id>(){}[0]
+    final val change_set_metadata // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.change_set_metadata|{}change_set_metadata[0]
+        final fun <get-change_set_metadata>(): kotlin/String // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.change_set_metadata.<get-change_set_metadata>|<get-change_set_metadata>(){}[0]
+    final val entity_id // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.entity_id|{}entity_id[0]
+        final fun <get-entity_id>(): kotlin/String // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.entity_id.<get-entity_id>|<get-entity_id>(){}[0]
+    final val entity_type // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.entity_type|{}entity_type[0]
+        final fun <get-entity_type>(): kotlin/String // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.entity_type.<get-entity_type>|<get-entity_type>(){}[0]
+    final val entity_version // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.entity_version|{}entity_version[0]
+        final fun <get-entity_version>(): kotlin/String? // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.entity_version.<get-entity_version>|<get-entity_version>(){}[0]
+    final val event_id // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.event_id|{}event_id[0]
+        final fun <get-event_id>(): kotlin/String // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.event_id.<get-event_id>|<get-event_id>(){}[0]
+    final val event_metadata // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.event_metadata|{}event_metadata[0]
+        final fun <get-event_metadata>(): kotlin/String // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.event_metadata.<get-event_metadata>|<get-event_metadata>(){}[0]
+    final val operation // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.operation|{}operation[0]
+        final fun <get-operation>(): kotlin/String // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.operation.<get-operation>|<get-operation>(){}[0]
+    final val payload_bytes // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.payload_bytes|{}payload_bytes[0]
+        final fun <get-payload_bytes>(): kotlin/ByteArray? // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.payload_bytes.<get-payload_bytes>|<get-payload_bytes>(){}[0]
+    final val payload_content_type // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.payload_content_type|{}payload_content_type[0]
+        final fun <get-payload_content_type>(): kotlin/String? // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.payload_content_type.<get-payload_content_type>|<get-payload_content_type>(){}[0]
+    final val sequence // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.sequence|{}sequence[0]
+        final fun <get-sequence>(): kotlin/Long // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.sequence.<get-sequence>|<get-sequence>(){}[0]
+
+    final fun component1(): kotlin/Long // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.component1|component1(){}[0]
+    final fun component10(): kotlin/ByteArray? // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.component10|component10(){}[0]
+    final fun component11(): kotlin/String // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.component11|component11(){}[0]
+    final fun component2(): kotlin/String // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.component2|component2(){}[0]
+    final fun component3(): kotlin/String // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.component3|component3(){}[0]
+    final fun component4(): kotlin/String // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.component4|component4(){}[0]
+    final fun component5(): kotlin/String // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.component5|component5(){}[0]
+    final fun component6(): kotlin/String // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.component6|component6(){}[0]
+    final fun component7(): kotlin/String? // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.component7|component7(){}[0]
+    final fun component8(): kotlin/String // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.component8|component8(){}[0]
+    final fun component9(): kotlin/String? // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.component9|component9(){}[0]
+    final fun copy(kotlin/Long = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String? = ..., kotlin/String = ..., kotlin/String? = ..., kotlin/ByteArray? = ..., kotlin/String = ...): io.dataloom.storage.sqldelight.internal/Inbound_changes_applied // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.copy|copy(kotlin.Long;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String?;kotlin.String;kotlin.String?;kotlin.ByteArray?;kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.storage.sqldelight.internal/Inbound_changes_applied.toString|toString(){}[0]
+}
+
+final class io.dataloom.storage.sqldelight.internal/Outbound_changes { // io.dataloom.storage.sqldelight.internal/Outbound_changes|null[0]
+    constructor <init>(kotlin/Long, kotlin/String, kotlin/String, kotlin/String, kotlin/String, kotlin/String, kotlin/String?, kotlin/String, kotlin/String?, kotlin/ByteArray?, kotlin/String, kotlin/String) // io.dataloom.storage.sqldelight.internal/Outbound_changes.<init>|<init>(kotlin.Long;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String?;kotlin.String;kotlin.String?;kotlin.ByteArray?;kotlin.String;kotlin.String){}[0]
+
+    final val change_set_id // io.dataloom.storage.sqldelight.internal/Outbound_changes.change_set_id|{}change_set_id[0]
+        final fun <get-change_set_id>(): kotlin/String // io.dataloom.storage.sqldelight.internal/Outbound_changes.change_set_id.<get-change_set_id>|<get-change_set_id>(){}[0]
+    final val change_set_metadata // io.dataloom.storage.sqldelight.internal/Outbound_changes.change_set_metadata|{}change_set_metadata[0]
+        final fun <get-change_set_metadata>(): kotlin/String // io.dataloom.storage.sqldelight.internal/Outbound_changes.change_set_metadata.<get-change_set_metadata>|<get-change_set_metadata>(){}[0]
+    final val entity_id // io.dataloom.storage.sqldelight.internal/Outbound_changes.entity_id|{}entity_id[0]
+        final fun <get-entity_id>(): kotlin/String // io.dataloom.storage.sqldelight.internal/Outbound_changes.entity_id.<get-entity_id>|<get-entity_id>(){}[0]
+    final val entity_type // io.dataloom.storage.sqldelight.internal/Outbound_changes.entity_type|{}entity_type[0]
+        final fun <get-entity_type>(): kotlin/String // io.dataloom.storage.sqldelight.internal/Outbound_changes.entity_type.<get-entity_type>|<get-entity_type>(){}[0]
+    final val entity_version // io.dataloom.storage.sqldelight.internal/Outbound_changes.entity_version|{}entity_version[0]
+        final fun <get-entity_version>(): kotlin/String? // io.dataloom.storage.sqldelight.internal/Outbound_changes.entity_version.<get-entity_version>|<get-entity_version>(){}[0]
+    final val event_id // io.dataloom.storage.sqldelight.internal/Outbound_changes.event_id|{}event_id[0]
+        final fun <get-event_id>(): kotlin/String // io.dataloom.storage.sqldelight.internal/Outbound_changes.event_id.<get-event_id>|<get-event_id>(){}[0]
+    final val event_metadata // io.dataloom.storage.sqldelight.internal/Outbound_changes.event_metadata|{}event_metadata[0]
+        final fun <get-event_metadata>(): kotlin/String // io.dataloom.storage.sqldelight.internal/Outbound_changes.event_metadata.<get-event_metadata>|<get-event_metadata>(){}[0]
+    final val operation // io.dataloom.storage.sqldelight.internal/Outbound_changes.operation|{}operation[0]
+        final fun <get-operation>(): kotlin/String // io.dataloom.storage.sqldelight.internal/Outbound_changes.operation.<get-operation>|<get-operation>(){}[0]
+    final val payload_bytes // io.dataloom.storage.sqldelight.internal/Outbound_changes.payload_bytes|{}payload_bytes[0]
+        final fun <get-payload_bytes>(): kotlin/ByteArray? // io.dataloom.storage.sqldelight.internal/Outbound_changes.payload_bytes.<get-payload_bytes>|<get-payload_bytes>(){}[0]
+    final val payload_content_type // io.dataloom.storage.sqldelight.internal/Outbound_changes.payload_content_type|{}payload_content_type[0]
+        final fun <get-payload_content_type>(): kotlin/String? // io.dataloom.storage.sqldelight.internal/Outbound_changes.payload_content_type.<get-payload_content_type>|<get-payload_content_type>(){}[0]
+    final val sequence // io.dataloom.storage.sqldelight.internal/Outbound_changes.sequence|{}sequence[0]
+        final fun <get-sequence>(): kotlin/Long // io.dataloom.storage.sqldelight.internal/Outbound_changes.sequence.<get-sequence>|<get-sequence>(){}[0]
+    final val state // io.dataloom.storage.sqldelight.internal/Outbound_changes.state|{}state[0]
+        final fun <get-state>(): kotlin/String // io.dataloom.storage.sqldelight.internal/Outbound_changes.state.<get-state>|<get-state>(){}[0]
+
+    final fun component1(): kotlin/Long // io.dataloom.storage.sqldelight.internal/Outbound_changes.component1|component1(){}[0]
+    final fun component10(): kotlin/ByteArray? // io.dataloom.storage.sqldelight.internal/Outbound_changes.component10|component10(){}[0]
+    final fun component11(): kotlin/String // io.dataloom.storage.sqldelight.internal/Outbound_changes.component11|component11(){}[0]
+    final fun component12(): kotlin/String // io.dataloom.storage.sqldelight.internal/Outbound_changes.component12|component12(){}[0]
+    final fun component2(): kotlin/String // io.dataloom.storage.sqldelight.internal/Outbound_changes.component2|component2(){}[0]
+    final fun component3(): kotlin/String // io.dataloom.storage.sqldelight.internal/Outbound_changes.component3|component3(){}[0]
+    final fun component4(): kotlin/String // io.dataloom.storage.sqldelight.internal/Outbound_changes.component4|component4(){}[0]
+    final fun component5(): kotlin/String // io.dataloom.storage.sqldelight.internal/Outbound_changes.component5|component5(){}[0]
+    final fun component6(): kotlin/String // io.dataloom.storage.sqldelight.internal/Outbound_changes.component6|component6(){}[0]
+    final fun component7(): kotlin/String? // io.dataloom.storage.sqldelight.internal/Outbound_changes.component7|component7(){}[0]
+    final fun component8(): kotlin/String // io.dataloom.storage.sqldelight.internal/Outbound_changes.component8|component8(){}[0]
+    final fun component9(): kotlin/String? // io.dataloom.storage.sqldelight.internal/Outbound_changes.component9|component9(){}[0]
+    final fun copy(kotlin/Long = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String? = ..., kotlin/String = ..., kotlin/String? = ..., kotlin/ByteArray? = ..., kotlin/String = ..., kotlin/String = ...): io.dataloom.storage.sqldelight.internal/Outbound_changes // io.dataloom.storage.sqldelight.internal/Outbound_changes.copy|copy(kotlin.Long;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String?;kotlin.String;kotlin.String?;kotlin.ByteArray?;kotlin.String;kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.storage.sqldelight.internal/Outbound_changes.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.storage.sqldelight.internal/Outbound_changes.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.storage.sqldelight.internal/Outbound_changes.toString|toString(){}[0]
+}
+
+final class io.dataloom.storage.sqldelight/SqlDelightStorageDatabase { // io.dataloom.storage.sqldelight/SqlDelightStorageDatabase|null[0]
+    final object Companion { // io.dataloom.storage.sqldelight/SqlDelightStorageDatabase.Companion|null[0]
+        final fun fromDriver(app.cash.sqldelight.db/SqlDriver): io.dataloom.storage.sqldelight/SqlDelightStorageDatabase // io.dataloom.storage.sqldelight/SqlDelightStorageDatabase.Companion.fromDriver|fromDriver(app.cash.sqldelight.db.SqlDriver){}[0]
+    }
+}
+
+final class io.dataloom.storage.sqldelight/SqlDelightStorageProvider : io.dataloom.api.storage/StorageProvider { // io.dataloom.storage.sqldelight/SqlDelightStorageProvider|null[0]
+    constructor <init>(io.dataloom.storage.sqldelight/SqlDelightStorageDatabase, io.dataloom.api.provider/ProviderDescriptor = ...) // io.dataloom.storage.sqldelight/SqlDelightStorageProvider.<init>|<init>(io.dataloom.storage.sqldelight.SqlDelightStorageDatabase;io.dataloom.api.provider.ProviderDescriptor){}[0]
+
+    final val descriptor // io.dataloom.storage.sqldelight/SqlDelightStorageProvider.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.storage.sqldelight/SqlDelightStorageProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    final suspend fun acknowledgeOutboundChanges(io.dataloom.api.synchronization/OutboundChangeAcknowledgementRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.storage.sqldelight/SqlDelightStorageProvider.acknowledgeOutboundChanges|acknowledgeOutboundChanges(io.dataloom.api.synchronization.OutboundChangeAcknowledgementRequest){}[0]
+    final suspend fun applyInboundChanges(io.dataloom.api.storage/InboundChangeApplyRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.storage.sqldelight/SqlDelightStorageProvider.applyInboundChanges|applyInboundChanges(io.dataloom.api.storage.InboundChangeApplyRequest){}[0]
+    final suspend fun close(): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.storage.sqldelight/SqlDelightStorageProvider.close|close(){}[0]
+    final suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.storage.sqldelight/SqlDelightStorageProvider.health|health(){}[0]
+    final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.storage.sqldelight/SqlDelightStorageProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
+    final suspend fun persistOutboundChanges(io.dataloom.api.change/ChangeSet): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.storage.sqldelight/SqlDelightStorageProvider.persistOutboundChanges|persistOutboundChanges(io.dataloom.api.change.ChangeSet){}[0]
+    final suspend fun readCheckpoint(io.dataloom.api.synchronization/CheckpointReadRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.synchronization/SynchronizationCheckpoint?> // io.dataloom.storage.sqldelight/SqlDelightStorageProvider.readCheckpoint|readCheckpoint(io.dataloom.api.synchronization.CheckpointReadRequest){}[0]
+    final suspend fun readOutboundChanges(io.dataloom.api.storage/OutboundChangeReadRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.storage/OutboundChangeReadResult> // io.dataloom.storage.sqldelight/SqlDelightStorageProvider.readOutboundChanges|readOutboundChanges(io.dataloom.api.storage.OutboundChangeReadRequest){}[0]
+    final suspend fun writeCheckpoint(io.dataloom.api.synchronization/CheckpointWriteRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.storage.sqldelight/SqlDelightStorageProvider.writeCheckpoint|writeCheckpoint(io.dataloom.api.synchronization.CheckpointWriteRequest){}[0]
+}
+
+final fun io.dataloom.storage.sqldelight/createIosSqlDelightStorageDatabase(kotlin/String = ...): io.dataloom.storage.sqldelight/SqlDelightStorageDatabase // io.dataloom.storage.sqldelight/createIosSqlDelightStorageDatabase|createIosSqlDelightStorageDatabase(kotlin.String){}[0]

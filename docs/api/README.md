@@ -84,6 +84,7 @@ complete V1 strategy, asset, plugin, governance, or observability engine.
 | [Provider registry](./provider-registry.md) | Available foundation | Immutable registration and deterministic lookup. |
 | [Provider bindings](./provider-bindings.md) | Available foundation | Explicit role-to-provider selection and structural resolution. |
 | [Storage provider](./storage-provider.md) | Available contract | Application-owned change storage adapter. |
+| [SQLDelight storage provider](./sqldelight-storage-provider.md) | Available reference implementation | Optional KMP SQLDelight-backed `StorageProvider` for Android/JVM and host-gated iOS. |
 | [Transport provider](./transport-provider.md) | Available contract | Remote push and pull adapter. |
 | [Ktor transport provider](./ktor-transport-provider.md) | Available reference module | Optional KMP `TransportProvider` backed by Ktor HTTP client. |
 | [Scheduler provider](./scheduler-provider.md) | Available contract | Platform scheduling adapter. |

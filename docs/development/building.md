@@ -61,6 +61,7 @@ Run all shared module test tasks explicitly:
     :dataloom-model:allTests \
     :dataloom-provider-api:allTests \
     :dataloom-api:allTests \
+    :dataloom-storage-sqldelight:allTests \
     :dataloom-core:allTests \
     :dataloom-runtime:allTests \
     :dataloom-testing:allTests \
@@ -161,6 +162,7 @@ Run Apple commands on macOS:
     :dataloom-model:iosSimulatorArm64Test \
     :dataloom-provider-api:iosSimulatorArm64Test \
     :dataloom-api:iosSimulatorArm64Test \
+    :dataloom-storage-sqldelight:iosSimulatorArm64Test \
     :dataloom-core:iosSimulatorArm64Test \
     :dataloom-runtime:iosSimulatorArm64Test \
     :dataloom-testing:iosSimulatorArm64Test

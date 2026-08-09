@@ -51,6 +51,7 @@ include(
     ":dataloom-model",
     ":dataloom-provider-api",
     ":dataloom-api",
+    ":dataloom-storage-sqldelight",
     ":dataloom-core",
     ":dataloom-runtime",
     ":dataloom-testing",
@@ -69,13 +70,17 @@ include(
 // when the DATALOOM_ANDROID_BUILD environment variable is set to "true".
 //
 // On CI the android-validation job sets DATALOOM_ANDROID_BUILD=true and
-// builds the four modules independently.
+// builds the six modules independently.
 //
 // Modules are independently consumable:
 //   - dataloom-connectivity-android — Android ConnectivityProvider
 //   - dataloom-scheduler-workmanager — WorkManager SchedulerProvider and worker bridge
 //   - dataloom-queue-room — Room QueueProvider
 //   - dataloom-storage-room — Room StorageProvider
+//   - dataloom-storage-sqldelight-android — Android AndroidSqliteDriver wiring
+//     for dataloom-storage-sqldelight (JVM + iOS module, always included above;
+//     split out because AGP 9.0+ does not allow com.android.library in the
+//     same module as org.jetbrains.kotlin.multiplatform)
 //
 // See docs/android/README.md for integration guidance.
 val isAndroidBuildEnabled: Boolean =
@@ -88,6 +93,7 @@ if (isAndroidBuildEnabled) {
         ":dataloom-queue-room",
         ":dataloom-storage-room",
         ":dataloom-storage-datastore",
+        ":dataloom-storage-sqldelight-android",
     )
 }
 

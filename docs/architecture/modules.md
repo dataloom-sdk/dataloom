@@ -21,10 +21,11 @@ the current repository.
 
 ## Module Overview
 
-DataLoom is currently organized into six shared library modules, two optional
-reference modules (`dataloom-transport-ktor` and `dataloom-transport-graphql`),
-four Android integration modules, a macOS-only Apple distribution module, and
-one build-infrastructure included build.
+DataLoom is currently organized into six shared library modules, three optional
+reference modules (`dataloom-transport-ktor`, `dataloom-transport-graphql`, and
+`dataloom-storage-sqldelight`), five Android integration modules, a
+macOS-only Apple distribution module, and one build-infrastructure included
+build.
 
 ```mermaid
 flowchart TD
@@ -33,11 +34,13 @@ flowchart TD
     api[dataloom-api]
     core[dataloom-core]
     runtime[dataloom-runtime]
+    sqldelight[dataloom-storage-sqldelight]
     testing[dataloom-testing]
     ktor[dataloom-transport-ktor]
     connectivity[dataloom-connectivity-android]
     room[dataloom-queue-room]
     storageRoom[dataloom-storage-room]
+    sqldelightAndroid[dataloom-storage-sqldelight-android]
     work[dataloom-scheduler-workmanager]
     apple[dataloom-apple]
 
@@ -60,8 +63,11 @@ flowchart TD
     api --> connectivity
     model --> room
     api --> room
+    model --> sqldelight
+    api --> sqldelight
     model --> storageRoom
     api --> storageRoom
+    sqldelight --> sqldelightAndroid
     api --> work
     runtime --> work
     model --> apple
@@ -89,14 +95,16 @@ Apple distribution boundary.
 | `dataloom-testing` | Library module | Testing utilities, fakes, and controlled providers |
 | `dataloom-transport-ktor` | Optional reference module | Ktor-backed reference `TransportProvider`; depends only on `dataloom-api` and Ktor client |
 | `dataloom-transport-graphql` | Optional reference module | Apollo Kotlin–backed reference `TransportProvider`; depends only on `dataloom-api` and Apollo runtime |
+| `dataloom-storage-sqldelight` | Optional reference module | SQLDelight-backed reference `StorageProvider` (JVM + iOS) |
 | `dataloom-connectivity-android` | Android library | Android `ConnectivityProvider` |
 | `dataloom-scheduler-workmanager` | Android library | WorkManager scheduler and worker bridge |
 | `dataloom-queue-room` | Android library | Room-backed durable `QueueProvider` |
 | `dataloom-storage-room` | Android library | Room-backed reference `StorageProvider` |
+| `dataloom-storage-sqldelight-android` | Android library | `AndroidSqliteDriver` wiring for `dataloom-storage-sqldelight` |
 | `dataloom-apple` | KMP distribution module | Static `DataLoom` XCFramework assembly |
 | `build-logic` | Build infrastructure | Gradle convention plugins (not a published library) |
 
-The six shared modules and both optional reference modules use Kotlin
+The six shared modules and all three optional reference modules use Kotlin
 Multiplatform with JVM and host-gated Apple targets. Android-specific
 functionality is isolated in dedicated Android libraries. None of these
 projects is a published V1 artifact yet.
@@ -225,7 +233,7 @@ Current convention plugins:
   dependency-boundary checks.
 
 Committed JVM and Kotlin/Native ABI baselines cover all six shared modules and
-both optional reference modules; the Apple umbrella has its own KLib
+all three optional reference modules; the Apple umbrella has its own KLib
 baseline. `dataloom-runtime` exposes no
 `dataloom-core` or `dataloom-testing` type in either baseline, and a build task
 rejects either namespace if it appears later. Apple validation also compiles
@@ -246,6 +254,10 @@ dataloom-provider-api
 dataloom-api
 ├── depends on dataloom-model
 └── depends on dataloom-provider-api
+
+dataloom-storage-sqldelight
+├── depends on dataloom-model
+└── depends on dataloom-api
 
 dataloom-core
 ├── depends on dataloom-model
