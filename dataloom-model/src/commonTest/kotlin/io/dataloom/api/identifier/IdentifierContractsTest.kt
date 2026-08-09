@@ -248,6 +248,26 @@ class IdentifierContractsTest {
         )
     }
 
+    @Test
+    fun `policy check id satisfies canonical identifier behavior`() {
+        assertIdentifierBehavior(
+            create = ::PolicyCheckId,
+            extract = PolicyCheckId::value,
+            valid = "residency-region-allowlist",
+            different = "plugin-signature-required",
+        )
+    }
+
+    @Test
+    fun `policy set id satisfies canonical identifier behavior`() {
+        assertIdentifierBehavior(
+            create = ::PolicySetId,
+            extract = PolicySetId::value,
+            valid = "retry-reclassification-v1",
+            different = "plugin-permission-defaults",
+        )
+    }
+
     private fun <T> assertIdentifierBehavior(
         create: (String) -> T,
         extract: (T) -> String,

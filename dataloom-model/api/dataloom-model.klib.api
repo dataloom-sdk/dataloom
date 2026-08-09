@@ -407,6 +407,28 @@ final value class io.dataloom.api.identifier/LocaleTag { // io.dataloom.api.iden
     final fun toString(): kotlin/String // io.dataloom.api.identifier/LocaleTag.toString|toString(){}[0]
 }
 
+final value class io.dataloom.api.identifier/PolicyCheckId { // io.dataloom.api.identifier/PolicyCheckId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/PolicyCheckId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/PolicyCheckId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/PolicyCheckId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/PolicyCheckId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/PolicyCheckId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/PolicyCheckId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.identifier/PolicySetId { // io.dataloom.api.identifier/PolicySetId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/PolicySetId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/PolicySetId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/PolicySetId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/PolicySetId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/PolicySetId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/PolicySetId.toString|toString(){}[0]
+}
+
 final value class io.dataloom.api.identifier/QueueConsumerId { // io.dataloom.api.identifier/QueueConsumerId|null[0]
     constructor <init>(kotlin/String) // io.dataloom.api.identifier/QueueConsumerId.<init>|<init>(kotlin.String){}[0]
 
