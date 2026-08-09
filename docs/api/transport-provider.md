@@ -13,9 +13,11 @@ application-controlled remote integrations.
 
 `dataloom-api` defines the transport SPI only. Concrete integrations remain
 separate optional modules so the shared runtime does not take a mandatory
-network-client dependency. The current repository includes one optional
-reference implementation documented in
-[`Ktor transport provider`](./ktor-transport-provider.md).
+network-client dependency. The current repository includes optional reference
+implementations for Ktor (documented in
+[`Ktor transport provider`](./ktor-transport-provider.md)), JVM/Android
+Retrofit, and gRPC, with GraphQL in progress — every protocol integration is
+an equally-valid, independently consumable module outside `dataloom-api`.
 
 ## API changes introduced by DL-011
 
