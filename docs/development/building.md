@@ -64,7 +64,14 @@ Run all shared module test tasks explicitly:
     :dataloom-storage-sqldelight:allTests \
     :dataloom-core:allTests \
     :dataloom-runtime:allTests \
-    :dataloom-testing:allTests
+    :dataloom-testing:allTests \
+    :dataloom-transport-ktor:allTests
+```
+
+Build only the optional Ktor reference transport module:
+
+```bash
+./gradlew :dataloom-transport-ktor:build
 ```
 
 Inspect the runtime classpath:

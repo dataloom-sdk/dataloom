@@ -21,9 +21,11 @@ the current repository.
 
 ## Module Overview
 
-DataLoom is currently organized into seven shared library modules, five
-Android integration modules, a macOS-only Apple distribution module, and one
-build-infrastructure included build.
+DataLoom is currently organized into six shared library modules, three optional
+reference modules (`dataloom-transport-ktor`, `dataloom-transport-graphql`, and
+`dataloom-storage-sqldelight`), five Android integration modules, a
+macOS-only Apple distribution module, and one build-infrastructure included
+build.
 
 ```mermaid
 flowchart TD
@@ -34,6 +36,7 @@ flowchart TD
     runtime[dataloom-runtime]
     sqldelight[dataloom-storage-sqldelight]
     testing[dataloom-testing]
+    ktor[dataloom-transport-ktor]
     connectivity[dataloom-connectivity-android]
     room[dataloom-queue-room]
     storageRoom[dataloom-storage-room]
@@ -56,6 +59,7 @@ flowchart TD
     api --> testing
     core --> testing
     runtime --> testing
+    ktor --> api
     api --> connectivity
     model --> room
     api --> room
@@ -86,11 +90,12 @@ Apple distribution boundary.
 | `dataloom-model` | Library module | Dependency-root canonical models; first slice contains clock primitives |
 | `dataloom-provider-api` | Library module | Minimal provider lifecycle, descriptor, binding, and registry contracts |
 | `dataloom-api` | Library module | Current public contracts, models, and error types |
-| `dataloom-storage-sqldelight` | Library module | Optional SQLDelight-backed reference `StorageProvider` |
 | `dataloom-core` | Library module | Internal platform-independent foundation |
 | `dataloom-runtime` | Library module | Synchronization runtime and engine coordination |
 | `dataloom-testing` | Library module | Testing utilities, fakes, and controlled providers |
+| `dataloom-transport-ktor` | Optional reference module | Ktor-backed reference `TransportProvider`; depends only on `dataloom-api` and Ktor client |
 | `dataloom-transport-graphql` | Optional reference module | Apollo Kotlin–backed reference `TransportProvider`; depends only on `dataloom-api` and Apollo runtime |
+| `dataloom-storage-sqldelight` | Optional reference module | SQLDelight-backed reference `StorageProvider` (JVM + iOS) |
 | `dataloom-connectivity-android` | Android library | Android `ConnectivityProvider` |
 | `dataloom-scheduler-workmanager` | Android library | WorkManager scheduler and worker bridge |
 | `dataloom-queue-room` | Android library | Room-backed durable `QueueProvider` |
@@ -99,9 +104,10 @@ Apple distribution boundary.
 | `dataloom-apple` | KMP distribution module | Static `DataLoom` XCFramework assembly |
 | `build-logic` | Build infrastructure | Gradle convention plugins (not a published library) |
 
-The seven shared modules use Kotlin Multiplatform with JVM and host-gated Apple
-targets. Android-specific functionality is isolated in dedicated Android
-libraries. None of these projects is a published V1 artifact yet.
+The six shared modules and all three optional reference modules use Kotlin
+Multiplatform with JVM and host-gated Apple targets. Android-specific
+functionality is isolated in dedicated Android libraries. None of these
+projects is a published V1 artifact yet.
 
 ---
 
@@ -226,8 +232,9 @@ Current convention plugins:
   sets, reproducible archive output, Kotlin ABI baselines, and public
   dependency-boundary checks.
 
-Committed JVM and Kotlin/Native ABI baselines cover all seven shared modules;
-the Apple umbrella has its own KLib baseline. `dataloom-runtime` exposes no
+Committed JVM and Kotlin/Native ABI baselines cover all six shared modules and
+all three optional reference modules; the Apple umbrella has its own KLib
+baseline. `dataloom-runtime` exposes no
 `dataloom-core` or `dataloom-testing` type in either baseline, and a build task
 rejects either namespace if it appears later. Apple validation also compiles
 the external KMP consumer for all three iOS targets and audits generated
@@ -269,6 +276,9 @@ dataloom-testing
 ├── depends on dataloom-api
 ├── depends on dataloom-core
 └── depends on dataloom-runtime
+
+dataloom-transport-ktor
+└── depends on dataloom-api
 
 dataloom-connectivity-android
 └── depends on dataloom-api
