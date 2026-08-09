@@ -120,6 +120,7 @@ simulator XCFramework slices.
 | `dataloom-core` | Internal provider registry, binding/resolution, and lifecycle implementation |
 | `dataloom-runtime` | Facade, synchronization pipelines, queue/worker coordination, connectivity preflight, retry/conflict orchestration, and observer dispatch |
 | `dataloom-testing` | Fake providers, controlled clocks/identifiers, failure helpers, fixtures, and deterministic test support |
+| `dataloom-transport-ktor` | Optional KMP reference `TransportProvider` backed by the Ktor HTTP client |
 
 These are implementation facts, not the approved V1 artifact ownership model.
 `dataloom-api` is not yet a frozen publication surface, no full plugin API

@@ -206,6 +206,7 @@ flowchart TD
     core[dataloom-core]
     runtime[dataloom-runtime]
     testing[dataloom-testing]
+    ktor[dataloom-transport-ktor]
     connectivity[dataloom-connectivity-android]
     room[dataloom-queue-room]
     storageRoom[dataloom-storage-room]
@@ -222,6 +223,7 @@ flowchart TD
     api --> testing
     core --> testing
     runtime --> testing
+    ktor --> api
     api --> connectivity
     api --> room
     api --> storageRoom
@@ -246,6 +248,7 @@ flowchart TD
 | `dataloom-core` | Provider lifecycle, registry, resolution, and shared runtime dependencies |
 | `dataloom-runtime` | Facade, pipelines, queue, retry, conflict, and event orchestration |
 | `dataloom-testing` | Deterministic clocks, in-memory providers, scripts, and recorders |
+| `dataloom-transport-ktor` | Optional Ktor-backed reference `TransportProvider` |
 | `dataloom-connectivity-android` | Android `ConnectivityProvider` |
 | `dataloom-queue-room` | Room-backed durable `QueueProvider` |
 | `dataloom-storage-room` | Room-backed reference `StorageProvider` |

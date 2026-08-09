@@ -85,6 +85,7 @@ complete V1 strategy, asset, plugin, governance, or observability engine.
 | [Provider bindings](./provider-bindings.md) | Available foundation | Explicit role-to-provider selection and structural resolution. |
 | [Storage provider](./storage-provider.md) | Available contract | Application-owned change storage adapter. |
 | [Transport provider](./transport-provider.md) | Available contract | Remote push and pull adapter. |
+| [Ktor transport provider](./ktor-transport-provider.md) | Available reference module | Optional KMP `TransportProvider` backed by Ktor HTTP client. |
 | [Scheduler provider](./scheduler-provider.md) | Available contract | Platform scheduling adapter. |
 | [Connectivity provider](./connectivity-provider.md) | Available contract | Platform connectivity snapshot adapter. |
 

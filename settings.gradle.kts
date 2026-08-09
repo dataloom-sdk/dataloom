@@ -54,6 +54,7 @@ include(
     ":dataloom-core",
     ":dataloom-runtime",
     ":dataloom-testing",
+    ":dataloom-transport-ktor",
     ":dataloom-transport-graphql",
     ":dataloom-transport-retrofit",
     ":dataloom-transport-grpc",

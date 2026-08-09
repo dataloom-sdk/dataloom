@@ -107,9 +107,10 @@ synchronization operations only.
 
 ## Ktor and KMP guidance
 
-A future `dataloom-ktor` artifact may provide Kotlin Multiplatform-compatible
-transport integration. The shared SPI remains KMP-safe by avoiding Ktor client
-APIs or any platform-specific transport client type.
+The optional `dataloom-transport-ktor` module now provides one reference
+Kotlin Multiplatform-compatible transport implementation. The shared SPI
+remains KMP-safe by avoiding Ktor client APIs or any platform-specific
+transport client type in `dataloom-api`.
 
 ## Authentication boundary
 

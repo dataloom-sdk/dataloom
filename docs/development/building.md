@@ -11,7 +11,7 @@
 [Apple guide](../apple/README.md) ·
 [Testing toolkit](../testing/testing-toolkit.md)
 
-The default project graph contains six shared KMP modules. Android projects
+The default project graph contains seven shared KMP modules. Android projects
 are opt-in through `DATALOOM_ANDROID_BUILD=true`; Apple targets and
 `dataloom-apple` are available only on macOS.
 
@@ -63,7 +63,14 @@ Run all shared module test tasks explicitly:
     :dataloom-api:allTests \
     :dataloom-core:allTests \
     :dataloom-runtime:allTests \
-    :dataloom-testing:allTests
+    :dataloom-testing:allTests \
+    :dataloom-transport-ktor:allTests
+```
+
+Build only the optional Ktor reference transport module:
+
+```bash
+./gradlew :dataloom-transport-ktor:build
 ```
 
 Inspect the runtime classpath:
