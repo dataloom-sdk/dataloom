@@ -94,6 +94,9 @@ between gate flips.
 
 | Date | What landed | Gate/track |
 |---|---|---|
+| 2026-08-09 | Reference GraphQL `TransportProvider` (Apollo Kotlin, Android + iOS) (`#224`) | Adoption readiness |
+| 2026-08-09 | Reference Room-backed `StorageProvider` for opaque outbound/inbound change sets and checkpoints (`#212`) | Adoption readiness |
+| 2026-08-09 | Reference Retrofit/OkHttp `TransportProvider` (Android/JVM) (`#227`) | Adoption readiness |
 | 2026-08-09 | Reference file-backed `StorageProvider` — zero database dependency, Android + iOS (`#219`) | Adoption readiness |
 | 2026-08-09 | Reference gRPC-backed `TransportProvider` (grpc-kotlin, Android/JVM) (`#225`) | Adoption readiness |
 | 2026-08-09 | `DataLoomSecureRandom` cryptographic randomness boundary for JVM/Android/iOS (`#230`) | `#93` foundations |
@@ -127,17 +130,17 @@ equally-valid choice — none is preferred or required.
 
 | Provider | Technology | Platforms | Status |
 |---|---|---|---|
-| Storage | Room | Android/JVM | [#209](https://github.com/dataloom-sdk/dataloom/issues/209) → [PR #212](https://github.com/dataloom-sdk/dataloom/pull/212) — CI failing, root cause not yet isolated |
-| Storage | SQLDelight | Android + iOS | [#215](https://github.com/dataloom-sdk/dataloom/issues/215) → [PR #216](https://github.com/dataloom-sdk/dataloom/pull/216) — fix pushed 2026-08-09, CI re-running |
+| Storage | Room | Android/JVM | ✅ Merged ([#209](https://github.com/dataloom-sdk/dataloom/issues/209) → [PR #212](https://github.com/dataloom-sdk/dataloom/pull/212)) |
+| Storage | SQLDelight | Android + iOS | [#215](https://github.com/dataloom-sdk/dataloom/issues/215) → [PR #216](https://github.com/dataloom-sdk/dataloom/pull/216) — JVM/Apple green; Android blocked on an AGP 9 + Kotlin Multiplatform plugin incompatibility (needs a plugin migration or module split, tracked on the PR) |
 | Storage | Plain files (zero dependency) | Android + iOS | ✅ Merged ([#217](https://github.com/dataloom-sdk/dataloom/issues/217) → [PR #219](https://github.com/dataloom-sdk/dataloom/pull/219)) |
 | Storage | DataStore (small key-value/cache-first data) | Android | ✅ Merged ([#218](https://github.com/dataloom-sdk/dataloom/issues/218) → [PR #220](https://github.com/dataloom-sdk/dataloom/pull/220)) |
 | Transport | Ktor | Android + iOS + JVM | [#210](https://github.com/dataloom-sdk/dataloom/issues/210) → [PR #213](https://github.com/dataloom-sdk/dataloom/pull/213) — fix pushed 2026-08-09, CI re-running |
-| Transport | Retrofit/OkHttp | Android/JVM | [#226](https://github.com/dataloom-sdk/dataloom/issues/226) → [PR #227](https://github.com/dataloom-sdk/dataloom/pull/227) — CI failing, fix pending |
-| Transport | GraphQL (Apollo Kotlin) | Android + iOS | [#222](https://github.com/dataloom-sdk/dataloom/issues/222) → [PR #224](https://github.com/dataloom-sdk/dataloom/pull/224) — CI failing, fix pending |
+| Transport | Retrofit/OkHttp | Android/JVM | ✅ Merged ([#226](https://github.com/dataloom-sdk/dataloom/issues/226) → [PR #227](https://github.com/dataloom-sdk/dataloom/pull/227)) |
+| Transport | GraphQL (Apollo Kotlin) | Android + iOS | ✅ Merged ([#222](https://github.com/dataloom-sdk/dataloom/issues/222) → [PR #224](https://github.com/dataloom-sdk/dataloom/pull/224)) |
 | Transport | gRPC | Android/JVM (iOS not yet supported by the ecosystem) | ✅ Merged ([#223](https://github.com/dataloom-sdk/dataloom/issues/223) → [PR #225](https://github.com/dataloom-sdk/dataloom/pull/225)) |
 | Docs | Getting-started quickstart | — | ✅ Merged ([#211](https://github.com/dataloom-sdk/dataloom/issues/211) → [PR #214](https://github.com/dataloom-sdk/dataloom/pull/214)) |
 
-**4 of 9 merged, 2 fixed and re-running CI, 2 blocked on CI fixes with feedback already posted, 1 root cause not yet isolated.**
+**8 of 9 merged. Ktor (`#213`) has a fix pushed and CI re-running. SQLDelight (`#216`) is JVM/Apple-green but blocked on an AGP 9 + Kotlin Multiplatform plugin incompatibility, documented on the PR.**
 
 ### Market evidence gates
 
