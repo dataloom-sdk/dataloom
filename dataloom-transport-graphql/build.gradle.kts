@@ -22,7 +22,7 @@ kotlin {
         commonMain {
             dependencies {
                 api(project(":dataloom-api"))
-                api(libs.apollo.runtime)
+                implementation(libs.apollo.runtime)
             }
         }
         commonTest {

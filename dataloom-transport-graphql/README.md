@@ -228,13 +228,13 @@ val transport = MyGraphQLTransportProvider(apolloClient = client)
 
 ## Error mapping
 
-| Failure                     | `ErrorCode`                           | `Recoverability`   |
-|-----------------------------|---------------------------------------|--------------------|
-| Network / IO failure        | `GRAPHQL_TRANSPORT_NETWORK_FAILURE`   | `RECOVERABLE`      |
-| HTTP 5xx or 429             | `GRAPHQL_TRANSPORT_HTTP_ERROR`        | `RECOVERABLE`      |
-| HTTP 4xx (except 429)       | `GRAPHQL_TRANSPORT_HTTP_ERROR`        | `NON_RECOVERABLE`  |
-| GraphQL `errors[]` response | `GRAPHQL_TRANSPORT_GRAPHQL_ERROR_RESPONSE` | `UNKNOWN`      |
-| Null data (no error)        | `GRAPHQL_TRANSPORT_NULL_DATA`         | `NON_RECOVERABLE`  |
+| Failure                     | `ErrorCode`                           | `ErrorCategory`  | `Recoverability`   |
+|-----------------------------|---------------------------------------|------------------|--------------------|
+| Network / IO failure        | `GRAPHQL_TRANSPORT_NETWORK_FAILURE`   | `NETWORK`        | `RECOVERABLE`      |
+| HTTP 5xx or 429             | `GRAPHQL_TRANSPORT_HTTP_ERROR`        | `NETWORK`        | `RECOVERABLE`      |
+| HTTP 4xx (except 429)       | `GRAPHQL_TRANSPORT_HTTP_ERROR`        | `NETWORK`        | `NON_RECOVERABLE`  |
+| GraphQL `errors[]` response | `GRAPHQL_TRANSPORT_GRAPHQL_ERROR_RESPONSE` | `PROVIDER`   | `UNKNOWN`          |
+| Null data (no error)        | `GRAPHQL_TRANSPORT_NULL_DATA`         | `NETWORK`        | `NON_RECOVERABLE`  |
 
 Raw Apollo exceptions and GraphQL response bodies are never surfaced through
 the public API.  `CancellationException` is always re-thrown so that

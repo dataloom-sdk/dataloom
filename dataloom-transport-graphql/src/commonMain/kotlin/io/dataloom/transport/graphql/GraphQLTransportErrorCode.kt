@@ -34,9 +34,11 @@ public object GraphQLTransportErrorCode {
      * array, indicating a GraphQL-level failure (resolver error, validation
      * error, or application-level business rule rejection).
      *
-     * Recoverability depends on the semantic content of the GraphQL error;
-     * this provider conservatively classifies it as
-     * [io.dataloom.api.error.Recoverability.UNKNOWN].
+     * This is classified under [io.dataloom.api.error.ErrorCategory.PROVIDER]
+     * because the failure originates from the application's GraphQL provider
+     * (server), not from the network transport itself. Recoverability depends
+     * on the semantic content of the GraphQL error; this provider conservatively
+     * classifies it as [io.dataloom.api.error.Recoverability.UNKNOWN].
      */
     public val GRAPHQL_ERROR_RESPONSE: ErrorCode =
         ErrorCode("GRAPHQL_TRANSPORT_GRAPHQL_ERROR_RESPONSE")

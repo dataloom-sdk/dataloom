@@ -302,7 +302,7 @@ class ApolloGraphQLTransportProviderTest {
     fun `pullChanges failure with GraphQL error produces GRAPHQL_ERROR_RESPONSE code`() = runTest {
         val graphqlError = GraphQLTransportError(
             code = GraphQLTransportErrorCode.GRAPHQL_ERROR_RESPONSE,
-            category = ErrorCategory.NETWORK,
+            category = ErrorCategory.PROVIDER,
             severity = io.dataloom.api.error.ErrorSeverity.ERROR,
             recoverability = Recoverability.UNKNOWN,
             message = "GraphQL error response: resolver error",
@@ -399,7 +399,7 @@ class ApolloGraphQLTransportProviderTest {
         val error = ApolloErrorMapper.fromGraphQLErrors(errors)
 
         assertEquals(GraphQLTransportErrorCode.GRAPHQL_ERROR_RESPONSE, error.code)
-        assertEquals(ErrorCategory.NETWORK, error.category)
+        assertEquals(ErrorCategory.PROVIDER, error.category)
         assertEquals(Recoverability.UNKNOWN, error.recoverability)
     }
 

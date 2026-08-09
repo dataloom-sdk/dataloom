@@ -72,9 +72,12 @@ internal object ApolloErrorMapper {
      * Maps a non-empty list of GraphQL response-level [Error] values to a
      * [GraphQLTransportError].
      *
-     * Only the message of the first error is included in the diagnostic
-     * summary. Full error details are not forwarded to prevent accidental
-     * leakage of sensitive server-side context.
+     * The error is classified as [io.dataloom.api.error.ErrorCategory.PROVIDER]
+     * because the failure originates from the application's GraphQL provider
+     * (server) rather than the network transport layer. Only the message of the
+     * first error is included in the diagnostic summary. Full error details are
+     * not forwarded to prevent accidental leakage of sensitive server-side
+     * context.
      *
      * @param errors non-empty list of GraphQL errors from the response.
      */
@@ -88,7 +91,7 @@ internal object ApolloErrorMapper {
         }
         return GraphQLTransportError(
             code = GraphQLTransportErrorCode.GRAPHQL_ERROR_RESPONSE,
-            category = ErrorCategory.NETWORK,
+            category = ErrorCategory.PROVIDER,
             severity = ErrorSeverity.ERROR,
             recoverability = Recoverability.UNKNOWN,
             message = summary,
