@@ -483,6 +483,15 @@ public final class io/dataloom/api/identifier/WorkflowId {
 	public final synthetic fun unbox-impl ()Ljava/lang/String;
 }
 
+public abstract interface class io/dataloom/api/random/DataLoomSecureRandom {
+	public abstract fun nextBytes (I)[B
+}
+
+public final class io/dataloom/api/random/SystemDataLoomSecureRandom : io/dataloom/api/random/DataLoomSecureRandom {
+	public fun <init> ()V
+	public fun nextBytes (I)[B
+}
+
 public abstract interface class io/dataloom/api/time/DataLoomClock {
 	public abstract fun now ()Lio/dataloom/api/time/DataLoomInstant;
 }
