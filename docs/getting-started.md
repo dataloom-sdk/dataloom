@@ -182,7 +182,8 @@ What it does **not** prove:
       than replacing it.
 - [ ] A [`TransportProvider`](./api/transport-provider.md) for your server
       protocol and authentication handoff. Keep HTTP/Ktor/GraphQL details behind
-      this boundary.
+      this boundary. For JVM/Android Retrofit stacks, the in-tree reference
+      module is [`dataloom-transport-retrofit`](./android/retrofit-transport-provider.md).
 - [ ] Optionally, a [`QueueProvider`](./api/queue-provider.md) when you need
       durable queued work. The current in-tree Android adapter is
       [`dataloom-queue-room`](./android/room-queue-provider.md).
@@ -194,8 +195,10 @@ What it does **not** prove:
       [`dataloom-connectivity-android`](./android/connectivity-provider.md).
 
 **Current note:** the repository does **not** yet contain a reference Room
-`StorageProvider` or Ktor `TransportProvider`. Those remain future integration
-modules; until they exist, use your own adapters behind the public SPI.
+`StorageProvider` or the Ktor/GraphQL/gRPC transport reference modules. The
+Retrofit reference is available for JVM/Android only. For the remaining
+transport technologies, continue to use your own adapters behind the public
+SPI until those sibling references land.
 
 ## Existing Android app: add DataLoom incrementally
 
