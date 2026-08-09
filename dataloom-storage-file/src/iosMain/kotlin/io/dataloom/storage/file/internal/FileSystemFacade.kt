@@ -4,6 +4,7 @@ package io.dataloom.storage.file.internal
 
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.convert
+import kotlinx.cinterop.pointed
 import kotlinx.cinterop.toKString
 import kotlinx.cinterop.usePinned
 import platform.posix.EEXIST
