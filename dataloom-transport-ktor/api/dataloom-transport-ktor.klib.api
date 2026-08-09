@@ -1,0 +1,102 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <dataloom:dataloom-transport-ktor>
+final enum class io.dataloom.transport.ktor/KtorTransportHttpMethod : kotlin/Enum<io.dataloom.transport.ktor/KtorTransportHttpMethod> { // io.dataloom.transport.ktor/KtorTransportHttpMethod|null[0]
+    enum entry DELETE // io.dataloom.transport.ktor/KtorTransportHttpMethod.DELETE|null[0]
+    enum entry GET // io.dataloom.transport.ktor/KtorTransportHttpMethod.GET|null[0]
+    enum entry HEAD // io.dataloom.transport.ktor/KtorTransportHttpMethod.HEAD|null[0]
+    enum entry PATCH // io.dataloom.transport.ktor/KtorTransportHttpMethod.PATCH|null[0]
+    enum entry POST // io.dataloom.transport.ktor/KtorTransportHttpMethod.POST|null[0]
+    enum entry PUT // io.dataloom.transport.ktor/KtorTransportHttpMethod.PUT|null[0]
+
+    final val entries // io.dataloom.transport.ktor/KtorTransportHttpMethod.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.transport.ktor/KtorTransportHttpMethod> // io.dataloom.transport.ktor/KtorTransportHttpMethod.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.transport.ktor/KtorTransportHttpMethod // io.dataloom.transport.ktor/KtorTransportHttpMethod.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.transport.ktor/KtorTransportHttpMethod> // io.dataloom.transport.ktor/KtorTransportHttpMethod.values|values#static(){}[0]
+}
+
+abstract interface io.dataloom.transport.ktor/KtorTransportCodec { // io.dataloom.transport.ktor/KtorTransportCodec|null[0]
+    abstract suspend fun decodePullResponse(io.dataloom.api.transport/PullChangesRequest, io.dataloom.transport.ktor/KtorTransportHttpResponse): io.dataloom.api.transport/PullChangesResult // io.dataloom.transport.ktor/KtorTransportCodec.decodePullResponse|decodePullResponse(io.dataloom.api.transport.PullChangesRequest;io.dataloom.transport.ktor.KtorTransportHttpResponse){}[0]
+    abstract suspend fun decodePushResponse(io.dataloom.api.transport/PushChangesRequest, io.dataloom.transport.ktor/KtorTransportHttpResponse): io.dataloom.api.synchronization/ChangeSetAcknowledgement // io.dataloom.transport.ktor/KtorTransportCodec.decodePushResponse|decodePushResponse(io.dataloom.api.transport.PushChangesRequest;io.dataloom.transport.ktor.KtorTransportHttpResponse){}[0]
+    abstract suspend fun encodePullRequest(io.dataloom.api.transport/PullChangesRequest): io.dataloom.transport.ktor/KtorTransportHttpRequest // io.dataloom.transport.ktor/KtorTransportCodec.encodePullRequest|encodePullRequest(io.dataloom.api.transport.PullChangesRequest){}[0]
+    abstract suspend fun encodePushRequest(io.dataloom.api.transport/PushChangesRequest): io.dataloom.transport.ktor/KtorTransportHttpRequest // io.dataloom.transport.ktor/KtorTransportCodec.encodePushRequest|encodePushRequest(io.dataloom.api.transport.PushChangesRequest){}[0]
+}
+
+final class io.dataloom.transport.ktor/KtorTransportHttpConfiguration { // io.dataloom.transport.ktor/KtorTransportHttpConfiguration|null[0]
+    constructor <init>(kotlin/Long? = ..., kotlin/Long? = ..., kotlin/Long? = ..., kotlin/Boolean = ...) // io.dataloom.transport.ktor/KtorTransportHttpConfiguration.<init>|<init>(kotlin.Long?;kotlin.Long?;kotlin.Long?;kotlin.Boolean){}[0]
+
+    final val connectTimeoutMillis // io.dataloom.transport.ktor/KtorTransportHttpConfiguration.connectTimeoutMillis|{}connectTimeoutMillis[0]
+        final fun <get-connectTimeoutMillis>(): kotlin/Long? // io.dataloom.transport.ktor/KtorTransportHttpConfiguration.connectTimeoutMillis.<get-connectTimeoutMillis>|<get-connectTimeoutMillis>(){}[0]
+    final val followRedirects // io.dataloom.transport.ktor/KtorTransportHttpConfiguration.followRedirects|{}followRedirects[0]
+        final fun <get-followRedirects>(): kotlin/Boolean // io.dataloom.transport.ktor/KtorTransportHttpConfiguration.followRedirects.<get-followRedirects>|<get-followRedirects>(){}[0]
+    final val requestTimeoutMillis // io.dataloom.transport.ktor/KtorTransportHttpConfiguration.requestTimeoutMillis|{}requestTimeoutMillis[0]
+        final fun <get-requestTimeoutMillis>(): kotlin/Long? // io.dataloom.transport.ktor/KtorTransportHttpConfiguration.requestTimeoutMillis.<get-requestTimeoutMillis>|<get-requestTimeoutMillis>(){}[0]
+    final val socketTimeoutMillis // io.dataloom.transport.ktor/KtorTransportHttpConfiguration.socketTimeoutMillis|{}socketTimeoutMillis[0]
+        final fun <get-socketTimeoutMillis>(): kotlin/Long? // io.dataloom.transport.ktor/KtorTransportHttpConfiguration.socketTimeoutMillis.<get-socketTimeoutMillis>|<get-socketTimeoutMillis>(){}[0]
+
+    final fun component1(): kotlin/Long? // io.dataloom.transport.ktor/KtorTransportHttpConfiguration.component1|component1(){}[0]
+    final fun component2(): kotlin/Long? // io.dataloom.transport.ktor/KtorTransportHttpConfiguration.component2|component2(){}[0]
+    final fun component3(): kotlin/Long? // io.dataloom.transport.ktor/KtorTransportHttpConfiguration.component3|component3(){}[0]
+    final fun component4(): kotlin/Boolean // io.dataloom.transport.ktor/KtorTransportHttpConfiguration.component4|component4(){}[0]
+    final fun copy(kotlin/Long? = ..., kotlin/Long? = ..., kotlin/Long? = ..., kotlin/Boolean = ...): io.dataloom.transport.ktor/KtorTransportHttpConfiguration // io.dataloom.transport.ktor/KtorTransportHttpConfiguration.copy|copy(kotlin.Long?;kotlin.Long?;kotlin.Long?;kotlin.Boolean){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.transport.ktor/KtorTransportHttpConfiguration.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.transport.ktor/KtorTransportHttpConfiguration.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.transport.ktor/KtorTransportHttpConfiguration.toString|toString(){}[0]
+}
+
+final class io.dataloom.transport.ktor/KtorTransportHttpRequest { // io.dataloom.transport.ktor/KtorTransportHttpRequest|null[0]
+    constructor <init>(io.dataloom.transport.ktor/KtorTransportHttpMethod, kotlin/String, kotlin.collections/Map<kotlin/String, kotlin.collections/List<kotlin/String>> = ..., kotlin/ByteArray? = ..., kotlin/String? = ...) // io.dataloom.transport.ktor/KtorTransportHttpRequest.<init>|<init>(io.dataloom.transport.ktor.KtorTransportHttpMethod;kotlin.String;kotlin.collections.Map<kotlin.String,kotlin.collections.List<kotlin.String>>;kotlin.ByteArray?;kotlin.String?){}[0]
+
+    final val bodySize // io.dataloom.transport.ktor/KtorTransportHttpRequest.bodySize|{}bodySize[0]
+        final fun <get-bodySize>(): kotlin/Int // io.dataloom.transport.ktor/KtorTransportHttpRequest.bodySize.<get-bodySize>|<get-bodySize>(){}[0]
+    final val contentType // io.dataloom.transport.ktor/KtorTransportHttpRequest.contentType|{}contentType[0]
+        final fun <get-contentType>(): kotlin/String? // io.dataloom.transport.ktor/KtorTransportHttpRequest.contentType.<get-contentType>|<get-contentType>(){}[0]
+    final val headers // io.dataloom.transport.ktor/KtorTransportHttpRequest.headers|{}headers[0]
+        final fun <get-headers>(): kotlin.collections/Map<kotlin/String, kotlin.collections/List<kotlin/String>> // io.dataloom.transport.ktor/KtorTransportHttpRequest.headers.<get-headers>|<get-headers>(){}[0]
+    final val method // io.dataloom.transport.ktor/KtorTransportHttpRequest.method|{}method[0]
+        final fun <get-method>(): io.dataloom.transport.ktor/KtorTransportHttpMethod // io.dataloom.transport.ktor/KtorTransportHttpRequest.method.<get-method>|<get-method>(){}[0]
+    final val url // io.dataloom.transport.ktor/KtorTransportHttpRequest.url|{}url[0]
+        final fun <get-url>(): kotlin/String // io.dataloom.transport.ktor/KtorTransportHttpRequest.url.<get-url>|<get-url>(){}[0]
+
+    final fun copyBody(): kotlin/ByteArray? // io.dataloom.transport.ktor/KtorTransportHttpRequest.copyBody|copyBody(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.transport.ktor/KtorTransportHttpRequest.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.transport.ktor/KtorTransportHttpRequest.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.transport.ktor/KtorTransportHttpRequest.toString|toString(){}[0]
+}
+
+final class io.dataloom.transport.ktor/KtorTransportHttpResponse { // io.dataloom.transport.ktor/KtorTransportHttpResponse|null[0]
+    constructor <init>(kotlin/Int, kotlin.collections/Map<kotlin/String, kotlin.collections/List<kotlin/String>> = ..., kotlin/ByteArray = ..., kotlin/String? = ...) // io.dataloom.transport.ktor/KtorTransportHttpResponse.<init>|<init>(kotlin.Int;kotlin.collections.Map<kotlin.String,kotlin.collections.List<kotlin.String>>;kotlin.ByteArray;kotlin.String?){}[0]
+
+    final val bodySize // io.dataloom.transport.ktor/KtorTransportHttpResponse.bodySize|{}bodySize[0]
+        final fun <get-bodySize>(): kotlin/Int // io.dataloom.transport.ktor/KtorTransportHttpResponse.bodySize.<get-bodySize>|<get-bodySize>(){}[0]
+    final val contentType // io.dataloom.transport.ktor/KtorTransportHttpResponse.contentType|{}contentType[0]
+        final fun <get-contentType>(): kotlin/String? // io.dataloom.transport.ktor/KtorTransportHttpResponse.contentType.<get-contentType>|<get-contentType>(){}[0]
+    final val headers // io.dataloom.transport.ktor/KtorTransportHttpResponse.headers|{}headers[0]
+        final fun <get-headers>(): kotlin.collections/Map<kotlin/String, kotlin.collections/List<kotlin/String>> // io.dataloom.transport.ktor/KtorTransportHttpResponse.headers.<get-headers>|<get-headers>(){}[0]
+    final val statusCode // io.dataloom.transport.ktor/KtorTransportHttpResponse.statusCode|{}statusCode[0]
+        final fun <get-statusCode>(): kotlin/Int // io.dataloom.transport.ktor/KtorTransportHttpResponse.statusCode.<get-statusCode>|<get-statusCode>(){}[0]
+
+    final fun copyBody(): kotlin/ByteArray // io.dataloom.transport.ktor/KtorTransportHttpResponse.copyBody|copyBody(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.transport.ktor/KtorTransportHttpResponse.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.transport.ktor/KtorTransportHttpResponse.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.transport.ktor/KtorTransportHttpResponse.toString|toString(){}[0]
+}
+
+final class io.dataloom.transport.ktor/KtorTransportProvider : io.dataloom.api.transport/TransportProvider { // io.dataloom.transport.ktor/KtorTransportProvider|null[0]
+    constructor <init>(io.dataloom.transport.ktor/KtorTransportCodec, io.dataloom.api.provider/ProviderDescriptor = ..., io.dataloom.transport.ktor/KtorTransportHttpConfiguration = ...) // io.dataloom.transport.ktor/KtorTransportProvider.<init>|<init>(io.dataloom.transport.ktor.KtorTransportCodec;io.dataloom.api.provider.ProviderDescriptor;io.dataloom.transport.ktor.KtorTransportHttpConfiguration){}[0]
+
+    final val descriptor // io.dataloom.transport.ktor/KtorTransportProvider.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.transport.ktor/KtorTransportProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    final suspend fun close(): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.transport.ktor/KtorTransportProvider.close|close(){}[0]
+    final suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.transport.ktor/KtorTransportProvider.health|health(){}[0]
+    final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.transport.ktor/KtorTransportProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
+    final suspend fun pullChanges(io.dataloom.api.transport/PullChangesRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.transport/PullChangesResult> // io.dataloom.transport.ktor/KtorTransportProvider.pullChanges|pullChanges(io.dataloom.api.transport.PullChangesRequest){}[0]
+    final suspend fun pushChanges(io.dataloom.api.transport/PushChangesRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.synchronization/ChangeSetAcknowledgement> // io.dataloom.transport.ktor/KtorTransportProvider.pushChanges|pushChanges(io.dataloom.api.transport.PushChangesRequest){}[0]
+}
