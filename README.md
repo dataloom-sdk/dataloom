@@ -69,7 +69,7 @@ qualification remain before the strategy engine is complete.
 
 ## Market-readiness dashboard
 
-- **Last reconciled:** 2026-08-09
+- **Last reconciled:** 2026-08-10
 - **Recorded V1 target:** 2026-08-27
 - **Current verdict:** **NO-GO — not production-ready or market-ready**
 - **Accepted engineering/release gates:** **0 of 10** (`#93`–`#102` all open)
@@ -95,6 +95,7 @@ between gate flips.
 
 | Date | What landed | Gate/track |
 |---|---|---|
+| 2026-08-10 | Direct unit test coverage for `NetworkOnlyStrategyExecutor` — PUSH/PULL/BIDIRECTIONAL, all three acknowledgement-validation failure modes (`#241`); first hardening slice of the `#101`/`#102` pivot, closing a previously-undocumented zero-coverage gap on the network-only executor | `#102` hardening |
 | 2026-08-09 | Deterministic policy foundation primitives — `PolicyEvaluator`, `PolicySet`, `PolicyCheckOutcome` (allow/deny/require-user-action/defer), time-bounded fail-closed evaluation (`#239`) | `#93` foundations |
 | 2026-08-09 | Versioned configuration snapshot/precedence/rollback primitives — `DataLoomConfigurationResolver`, `ConfigurationSnapshot`, `DataLoomConfigurationHistory` (`#236`) | `#93` foundations |
 | 2026-08-09 | Integrity and key-reference security primitives — `DataLoomDigestCalculator` (SHA-256/512), `DataLoomHmacCalculator` (HMAC, the "signature" stand-in), and `KeyReference` — for JVM, Android, and iOS (`#234`) | `#93` foundations |
