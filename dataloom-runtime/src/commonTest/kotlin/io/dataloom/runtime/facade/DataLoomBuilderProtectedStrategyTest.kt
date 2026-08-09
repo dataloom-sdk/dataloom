@@ -1,5 +1,8 @@
 package io.dataloom.runtime.facade
 
+import io.dataloom.api.change.ChangeEvent
+import io.dataloom.api.change.ChangeSet
+import io.dataloom.api.change.EntityReference
 import io.dataloom.api.circuit.CircuitBreakerCompareAndSetRequest
 import io.dataloom.api.circuit.CircuitBreakerCompareAndSetResult
 import io.dataloom.api.circuit.CircuitBreakerLoadResult
@@ -14,8 +17,12 @@ import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
+import io.dataloom.api.identifier.ChangeEventId
+import io.dataloom.api.identifier.ChangeSetId
 import io.dataloom.api.identifier.ConflictId
 import io.dataloom.api.identifier.CorrelationId
+import io.dataloom.api.identifier.EntityId
+import io.dataloom.api.identifier.EntityType
 import io.dataloom.api.identifier.ExecutionId
 import io.dataloom.api.identifier.IdentifierGenerator
 import io.dataloom.api.identifier.QueueEntryId
@@ -23,6 +30,7 @@ import io.dataloom.api.identifier.QueueLeaseId
 import io.dataloom.api.identifier.SynchronizationEventId
 import io.dataloom.api.identifier.SynchronizationSessionId
 import io.dataloom.api.identifier.WorkflowId
+import io.dataloom.api.model.ChangeOperation
 import io.dataloom.api.model.SynchronizationDirection
 import io.dataloom.api.model.SynchronizationMode
 import io.dataloom.api.model.SynchronizationRequest
@@ -61,6 +69,8 @@ import io.dataloom.api.strategy.StrategyRemoteOutcome
 import io.dataloom.api.strategy.StrategyRuntimeEvidence
 import io.dataloom.api.strategy.StrategySynchronizationRequest
 import io.dataloom.api.strategy.StrategyTransportOutput
+import io.dataloom.api.synchronization.ChangeAcknowledgementStatus
+import io.dataloom.api.synchronization.ChangeEventAcknowledgement
 import io.dataloom.api.synchronization.ChangeSetAcknowledgement
 import io.dataloom.api.synchronization.CheckpointReadRequest
 import io.dataloom.api.synchronization.CheckpointWriteRequest
@@ -174,6 +184,161 @@ class DataLoomBuilderProtectedStrategyTest {
         assertEquals(0, storageStore.loadCalls)
         assertTrue(transportStore.loadCalls >= 1)
     }
+
+    @Test
+    fun `network only push protects transport without resolving storage`() = runTest {
+        val storage = RecordingFallbackStorageProvider()
+        val transport = RecordingTransportProvider(
+            pushResult = ProviderOperationResult.Success(
+                acknowledgementFor(changeSet, ChangeAcknowledgementStatus.ACCEPTED),
+            ),
+        )
+        val storageStore = RecordingCircuitStore()
+        val transportStore = RecordingCircuitStore()
+        val dataLoom = builder(
+            storage = storage,
+            transport = transport,
+            bindings = bindings(storage, transport),
+        ).strategyProviderProtectionConfiguration(
+            DataLoomStrategyProviderProtectionSpec(
+                storage = storageSpec(storage, storageStore),
+                transport = transportSpec(transport, transportStore),
+            ),
+        ).build()
+        assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
+
+        val protected = requireNotNull(dataLoom.protectedStrategySynchronization)
+        val result = protected.synchronize(networkOnlyPushRequest())
+        val executed = assertIs<StrategySynchronizationExecutionResult.Executed>(
+            result.strategyResult,
+        )
+
+        assertIs<StrategyTransportOutput.Pushed>(executed.output)
+        assertEquals(1, result.operationEvidence.size)
+        assertEquals(
+            TransportCircuitOperation.PUSH_CHANGES.retryOperation,
+            result.operationEvidence.single().operation,
+        )
+        assertEquals(
+            ProviderProtectionInvocation.SUCCEEDED,
+            result.operationEvidence.single().invocation,
+        )
+        assertEquals(1, transport.pushCalls)
+        assertEquals(0, transport.pullCalls)
+        assertEquals(0, storage.totalSynchronizationCalls)
+        assertEquals(0, storage.fallbackCalls)
+        assertEquals(0, storageStore.loadCalls)
+        assertTrue(transportStore.loadCalls >= 1)
+    }
+
+    @Test
+    fun `network only bidirectional protects transport for both operations`() = runTest {
+        val storage = RecordingFallbackStorageProvider()
+        val transport = RecordingTransportProvider(
+            pushResult = ProviderOperationResult.Success(
+                acknowledgementFor(changeSet, ChangeAcknowledgementStatus.ACCEPTED),
+            ),
+            pullResult = ProviderOperationResult.Success(PullChangesResult.NoChanges()),
+        )
+        val storageStore = RecordingCircuitStore()
+        val transportStore = RecordingCircuitStore()
+        val dataLoom = builder(
+            storage = storage,
+            transport = transport,
+            bindings = bindings(storage, transport),
+        ).strategyProviderProtectionConfiguration(
+            DataLoomStrategyProviderProtectionSpec(
+                storage = storageSpec(storage, storageStore),
+                transport = transportSpec(transport, transportStore),
+            ),
+        ).build()
+        assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
+
+        val protected = requireNotNull(dataLoom.protectedStrategySynchronization)
+        val result = protected.synchronize(networkOnlyBidirectionalRequest())
+        val executed = assertIs<StrategySynchronizationExecutionResult.Executed>(
+            result.strategyResult,
+        )
+
+        assertIs<StrategyTransportOutput.Bidirectional>(executed.output)
+        assertEquals(2, result.operationEvidence.size)
+        assertEquals(
+            TransportCircuitOperation.PUSH_CHANGES.retryOperation,
+            result.operationEvidence[0].operation,
+        )
+        assertEquals(
+            TransportCircuitOperation.PULL_CHANGES.retryOperation,
+            result.operationEvidence[1].operation,
+        )
+        assertEquals(
+            ProviderProtectionInvocation.SUCCEEDED,
+            result.operationEvidence[0].invocation,
+        )
+        assertEquals(
+            ProviderProtectionInvocation.SUCCEEDED,
+            result.operationEvidence[1].invocation,
+        )
+        assertEquals(1, transport.pushCalls)
+        assertEquals(1, transport.pullCalls)
+        assertEquals(0, storage.totalSynchronizationCalls)
+        assertEquals(0, storageStore.loadCalls)
+    }
+
+    @Test
+    fun `network only bidirectional preserves push evidence when pull fails after successful push`() =
+        runTest {
+            val storage = RecordingFallbackStorageProvider()
+            val transport = RecordingTransportProvider(
+                pushResult = ProviderOperationResult.Success(
+                    acknowledgementFor(changeSet, ChangeAcknowledgementStatus.ACCEPTED),
+                ),
+                pullResult = ProviderOperationResult.Failure(
+                    RemoteFailure(StrategyRemoteOutcome.UNAVAILABLE),
+                ),
+            )
+            val storageStore = RecordingCircuitStore()
+            val transportStore = RecordingCircuitStore()
+            val dataLoom = builder(
+                storage = storage,
+                transport = transport,
+                bindings = bindings(storage, transport),
+            ).strategyProviderProtectionConfiguration(
+                DataLoomStrategyProviderProtectionSpec(
+                    storage = storageSpec(storage, storageStore),
+                    transport = transportSpec(transport, transportStore),
+                ),
+            ).build()
+            assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
+
+            val protected = requireNotNull(dataLoom.protectedStrategySynchronization)
+            val result = protected.synchronize(networkOnlyBidirectionalRequest())
+            val failed = assertIs<StrategySynchronizationExecutionResult.Failed>(
+                result.strategyResult,
+            )
+
+            val partial = assertIs<StrategyTransportOutput.Pushed>(failed.partialOutput)
+            assertEquals(changeSet.id, partial.acknowledgement.changeSetId)
+            assertEquals(2, result.operationEvidence.size)
+            assertEquals(
+                TransportCircuitOperation.PUSH_CHANGES.retryOperation,
+                result.operationEvidence[0].operation,
+            )
+            assertEquals(
+                ProviderProtectionInvocation.SUCCEEDED,
+                result.operationEvidence[0].invocation,
+            )
+            assertEquals(
+                TransportCircuitOperation.PULL_CHANGES.retryOperation,
+                result.operationEvidence[1].operation,
+            )
+            assertEquals(
+                ProviderProtectionInvocation.CIRCUIT_FAILURE,
+                result.operationEvidence[1].invocation,
+            )
+            assertEquals(1, transport.pushCalls)
+            assertEquals(1, transport.pullCalls)
+            assertEquals(0, storage.totalSynchronizationCalls)
+        }
 
     @Test
     fun `missing transport protection rejects network only before provider invocation`() = runTest {
@@ -445,10 +610,14 @@ class DataLoomBuilderProtectedStrategyTest {
     private class RecordingTransportProvider(
         private val pullResult: ProviderOperationResult<PullChangesResult> =
             ProviderOperationResult.Success(PullChangesResult.NoChanges()),
+        private val pushResult: ProviderOperationResult<ChangeSetAcknowledgement> =
+            ProviderOperationResult.Failure(error("PUSH_UNUSED")),
     ) : TransportProvider {
         var initializeCalls: Int = 0
             private set
         var pullCalls: Int = 0
+            private set
+        var pushCalls: Int = 0
             private set
 
         override val descriptor: ProviderDescriptor = ProviderDescriptor(
@@ -475,8 +644,10 @@ class DataLoomBuilderProtectedStrategyTest {
 
         override suspend fun pushChanges(
             request: PushChangesRequest,
-        ): ProviderOperationResult<ChangeSetAcknowledgement> =
-            ProviderOperationResult.Failure(error("PUSH_UNUSED"))
+        ): ProviderOperationResult<ChangeSetAcknowledgement> {
+            pushCalls++
+            return pushResult
+        }
 
         override suspend fun pullChanges(
             request: PullChangesRequest,
@@ -648,6 +819,28 @@ class DataLoomBuilderProtectedStrategyTest {
                 openDuration = SchedulingDelay(10_000L),
             )
 
+        val changeSet: ChangeSet = ChangeSet(
+            id = ChangeSetId("protected-network-only-change-set"),
+            events = listOf(
+                ChangeEvent(
+                    id = ChangeEventId("protected-network-only-event-1"),
+                    entity = EntityReference(
+                        type = EntityType("protected-strategy-entity"),
+                        id = EntityId("protected-strategy-entity-1"),
+                    ),
+                    operation = ChangeOperation.CREATE,
+                ),
+            ),
+        )
+
+        fun acknowledgementFor(
+            changeSet: ChangeSet,
+            status: ChangeAcknowledgementStatus,
+        ): ChangeSetAcknowledgement = ChangeSetAcknowledgement(
+            changeSetId = changeSet.id,
+            events = changeSet.events.map { ChangeEventAcknowledgement(it.id, status) },
+        )
+
         fun networkOnlyPullRequest(): StrategySynchronizationRequest =
             StrategySynchronizationRequest(
                 request = synchronizationRequest(
@@ -665,6 +858,44 @@ class DataLoomBuilderProtectedStrategyTest {
                     transportHealth = StrategyProviderHealth.HEALTHY,
                 ),
                 input = StrategyOperationInput.DirectTransport(),
+            )
+
+        fun networkOnlyPushRequest(): StrategySynchronizationRequest =
+            StrategySynchronizationRequest(
+                request = synchronizationRequest(
+                    suffix = "network-only-push",
+                    direction = SynchronizationDirection.PUSH,
+                ),
+                decisionId = StrategyDecisionId("protected-network-only-push-decision"),
+                planId = StrategyPlanId("protected-network-only-push-plan"),
+                profile = NetworkOnlyStrategyProfile(
+                    id = StrategyProfileId("protected-network-only-push-profile"),
+                    configurationVersion = StrategyConfigurationVersion(1L),
+                ),
+                evidence = StrategyRuntimeEvidence(
+                    connectivity = StrategyConnectivity.AVAILABLE,
+                    transportHealth = StrategyProviderHealth.HEALTHY,
+                ),
+                input = StrategyOperationInput.DirectTransport(outboundChangeSet = changeSet),
+            )
+
+        fun networkOnlyBidirectionalRequest(): StrategySynchronizationRequest =
+            StrategySynchronizationRequest(
+                request = synchronizationRequest(
+                    suffix = "network-only-bidirectional",
+                    direction = SynchronizationDirection.BIDIRECTIONAL,
+                ),
+                decisionId = StrategyDecisionId("protected-network-only-bidirectional-decision"),
+                planId = StrategyPlanId("protected-network-only-bidirectional-plan"),
+                profile = NetworkOnlyStrategyProfile(
+                    id = StrategyProfileId("protected-network-only-bidirectional-profile"),
+                    configurationVersion = StrategyConfigurationVersion(1L),
+                ),
+                evidence = StrategyRuntimeEvidence(
+                    connectivity = StrategyConnectivity.AVAILABLE,
+                    transportHealth = StrategyProviderHealth.HEALTHY,
+                ),
+                input = StrategyOperationInput.DirectTransport(outboundChangeSet = changeSet),
             )
 
         fun remoteFirstFallbackRequest(): StrategySynchronizationRequest =
