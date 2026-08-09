@@ -113,16 +113,26 @@ public fun interface RetrofitTransportErrorMapper {
 private object DefaultRetrofitTransportErrorMapper {
     fun map(throwable: Throwable): DataLoomError {
         return when (throwable) {
-            is SocketTimeoutException,
             is InterruptedIOException,
-            -> error(
-                code = "RETROFIT_TIMEOUT",
-                category = ErrorCategory.NETWORK,
-                severity = ErrorSeverity.ERROR,
-                recoverability = Recoverability.RECOVERABLE,
-                message = "Transport request timed out.",
-                cause = throwable,
-            )
+            -> if (throwable is SocketTimeoutException) {
+                error(
+                    code = "RETROFIT_TIMEOUT",
+                    category = ErrorCategory.NETWORK,
+                    severity = ErrorSeverity.ERROR,
+                    recoverability = Recoverability.RECOVERABLE,
+                    message = "Transport request timed out.",
+                    cause = throwable,
+                )
+            } else {
+                error(
+                    code = "RETROFIT_NETWORK_IO",
+                    category = ErrorCategory.NETWORK,
+                    severity = ErrorSeverity.ERROR,
+                    recoverability = Recoverability.RECOVERABLE,
+                    message = "Transport network I/O was interrupted.",
+                    cause = throwable,
+                )
+            }
 
             is HttpException -> mapHttpException(throwable)
             is IOException -> error(
@@ -166,9 +176,17 @@ private object DefaultRetrofitTransportErrorMapper {
                 cause = httpException,
             )
 
+            409 -> error(
+                code = "RETROFIT_HTTP_409",
+                category = ErrorCategory.CONFLICT,
+                severity = ErrorSeverity.ERROR,
+                recoverability = Recoverability.RECOVERABLE,
+                message = "Transport HTTP request conflicted with remote state (409).",
+                cause = httpException,
+            )
+
             400,
             404,
-            409,
             422,
             -> error(
                 code = "RETROFIT_HTTP_${statusCode}",

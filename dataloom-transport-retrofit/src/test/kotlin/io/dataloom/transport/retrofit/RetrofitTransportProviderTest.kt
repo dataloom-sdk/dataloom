@@ -4,6 +4,8 @@ import io.dataloom.api.change.ChangeEvent
 import io.dataloom.api.change.ChangeSet
 import io.dataloom.api.change.EntityReference
 import io.dataloom.api.context.ExecutionContext
+import io.dataloom.api.error.ErrorCategory
+import io.dataloom.api.error.Recoverability
 import io.dataloom.api.identifier.ChangeEventId
 import io.dataloom.api.identifier.ChangeSetId
 import io.dataloom.api.identifier.CheckpointKey
@@ -19,11 +21,11 @@ import io.dataloom.api.model.SynchronizationDirection
 import io.dataloom.api.model.SynchronizationMode
 import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.api.provider.ProviderDescriptor
+import io.dataloom.api.provider.ProviderId
 import io.dataloom.api.provider.ProviderName
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.provider.ProviderVersion
-import io.dataloom.api.provider.ProviderId
 import io.dataloom.api.synchronization.ChangeAcknowledgementStatus
 import io.dataloom.api.synchronization.ChangeEventAcknowledgement
 import io.dataloom.api.synchronization.ChangeSetAcknowledgement
@@ -31,6 +33,7 @@ import io.dataloom.api.synchronization.SynchronizationCheckpoint
 import io.dataloom.api.transport.PullChangesRequest
 import io.dataloom.api.transport.PullChangesResult
 import io.dataloom.api.transport.PushChangesRequest
+import java.io.InterruptedIOException
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -98,7 +101,7 @@ class RetrofitTransportProviderTest {
 
             val failure = assertIs<ProviderOperationResult.Failure>(result)
             assertEquals("RETROFIT_TIMEOUT", failure.error.code.value)
-            assertEquals(io.dataloom.api.error.ErrorCategory.NETWORK, failure.error.category)
+            assertEquals(ErrorCategory.NETWORK, failure.error.category)
         }
     }
 
@@ -112,7 +115,90 @@ class RetrofitTransportProviderTest {
 
             val failure = assertIs<ProviderOperationResult.Failure>(result)
             assertEquals("RETROFIT_HTTP_401", failure.error.code.value)
-            assertEquals(io.dataloom.api.error.ErrorCategory.AUTHENTICATION, failure.error.category)
+            assertEquals(ErrorCategory.AUTHENTICATION, failure.error.category)
+        }
+    }
+
+    @Test
+    fun `http 403 responses map to authorization failures`() = runTest {
+        assertPullFailure(
+            statusCode = 403,
+            expectedCode = "RETROFIT_HTTP_403",
+            expectedCategory = ErrorCategory.AUTHORIZATION,
+            expectedRecoverability = Recoverability.NON_RECOVERABLE,
+        )
+    }
+
+    @Test
+    fun `http 409 responses map to conflict failures`() = runTest {
+        assertPullFailure(
+            statusCode = 409,
+            expectedCode = "RETROFIT_HTTP_409",
+            expectedCategory = ErrorCategory.CONFLICT,
+            expectedRecoverability = Recoverability.RECOVERABLE,
+        )
+    }
+
+    @Test
+    fun `http 5xx responses map to retryable network failures`() = runTest {
+        assertPullFailure(
+            statusCode = 503,
+            expectedCode = "RETROFIT_HTTP_503",
+            expectedCategory = ErrorCategory.NETWORK,
+            expectedRecoverability = Recoverability.RECOVERABLE,
+        )
+    }
+
+    @Test
+    fun `unexpected http status responses map to provider failures`() = runTest {
+        assertPullFailure(
+            statusCode = 418,
+            expectedCode = "RETROFIT_HTTP_418",
+            expectedCategory = ErrorCategory.PROVIDER,
+            expectedRecoverability = Recoverability.UNKNOWN,
+        )
+    }
+
+    @Test
+    fun `non-timeout interrupted io maps to network io failure`() = runTest {
+        val provider = RetrofitTransportProvider<RequestBody, ResponseBody, RequestBody, ResponseBody>(
+            descriptor = ProviderDescriptor(
+                id = ProviderId("provider.transport.retrofit.interrupted"),
+                name = ProviderName("Retrofit Interrupted IO Test Provider"),
+                type = ProviderType.TRANSPORT,
+                version = ProviderVersion("1.0.0"),
+            ),
+            pushRequestMapper = { "push".toRequestBody("text/plain".toMediaType()) },
+            pullRequestMapper = { "pull".toRequestBody("text/plain".toMediaType()) },
+            pushCall = { throw InterruptedIOException("call interrupted") },
+            pullCall = { throw UnsupportedOperationException("not used") },
+            pushResponseMapper = { _, response -> error("unreachable: $response") },
+            pullResponseMapper = { _, _ -> PullChangesResult.NoChanges() },
+        )
+
+        val result = provider.pushChanges(pushRequest())
+
+        val failure = assertIs<ProviderOperationResult.Failure>(result)
+        assertEquals("RETROFIT_NETWORK_IO", failure.error.code.value)
+        assertEquals(ErrorCategory.NETWORK, failure.error.category)
+    }
+
+    private suspend fun assertPullFailure(
+        statusCode: Int,
+        expectedCode: String,
+        expectedCategory: ErrorCategory,
+        expectedRecoverability: Recoverability,
+    ) {
+        MockWebServer().use { server ->
+            server.enqueue(MockResponse().setResponseCode(statusCode).setBody("failure"))
+            val provider = createProvider(server)
+
+            val result = provider.pullChanges(pullRequest())
+
+            val failure = assertIs<ProviderOperationResult.Failure>(result)
+            assertEquals(expectedCode, failure.error.code.value)
+            assertEquals(expectedCategory, failure.error.category)
+            assertEquals(expectedRecoverability, failure.error.recoverability)
         }
     }
 

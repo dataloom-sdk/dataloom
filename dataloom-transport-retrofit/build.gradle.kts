@@ -9,7 +9,7 @@ kotlin {
 
 dependencies {
     api(project(":dataloom-api"))
-    api(libs.retrofit.core)
+    implementation(libs.retrofit.core)
 
     testImplementation(kotlin("test-junit"))
     testImplementation(libs.kotlinx.coroutines.test)
