@@ -42,9 +42,11 @@ import java.util.concurrent.CancellationException
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import org.mockito.kotlin.wheneverBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -165,13 +167,19 @@ class RoomStorageProviderTest {
             ),
         )
 
-        assertIs<ProviderOperationResult.Success<Unit>>(result)
+        val success = assertIs<ProviderOperationResult.Success<Unit>>(result)
+        assertEquals(Unit, success.value)
     }
 
     @Test
     fun `cancellation propagates instead of becoming a provider failure`() {
         val expected = CancellationException("cancelled")
-        wheneverBlocking { outboundChangeDao.readNextBatch(any(), any()) }.thenThrow(expected)
+        // maxEvents is Int? and request() leaves it null; mockito-kotlin's any()
+        // does not match null arguments (unlike plain Mockito any()), so the
+        // second matcher must be anyOrNull() or this stub silently never
+        // matches the real call and Mockito falls back to its unstubbed
+        // default (null), masking the cancellation as a normal empty read.
+        wheneverBlocking { outboundChangeDao.readNextBatch(any(), anyOrNull()) }.thenThrow(expected)
 
         val actual = assertFailsWith<CancellationException> {
             runBlocking {
@@ -226,5 +234,3 @@ class RoomStorageProviderTest {
         operation = ChangeOperation.UPDATE,
     )
 }
-
-private fun <T> wheneverBlocking(block: suspend () -> T) = runBlocking { whenever(block()) }
