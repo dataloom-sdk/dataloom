@@ -84,6 +84,7 @@ Apple distribution boundary.
 | `dataloom-core` | Library module | Internal platform-independent foundation |
 | `dataloom-runtime` | Library module | Synchronization runtime and engine coordination |
 | `dataloom-testing` | Library module | Testing utilities, fakes, and controlled providers |
+| `dataloom-transport-graphql` | Optional reference module | Apollo Kotlin–backed reference `TransportProvider`; depends only on `dataloom-api` and Apollo runtime |
 | `dataloom-connectivity-android` | Android library | Android `ConnectivityProvider` |
 | `dataloom-scheduler-workmanager` | Android library | WorkManager scheduler and worker bridge |
 | `dataloom-queue-room` | Android library | Room-backed durable `QueueProvider` |
