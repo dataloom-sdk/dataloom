@@ -285,13 +285,13 @@ public class SqlDelightStorageProvider(
 
         private fun String.escapeMetadataComponent(): String =
             replace(ESCAPE, "$ESCAPE$ESCAPE")
-                .replace(METADATA_ENTRY_SEPARATOR, "$ESCAPEu001F")
-                .replace(METADATA_KEY_VALUE_SEPARATOR, "$ESCAPEu001E")
+                .replace(METADATA_ENTRY_SEPARATOR, "$ESCAPE\u001F")
+                .replace(METADATA_KEY_VALUE_SEPARATOR, "$ESCAPE\u001E")
 
         private fun String.unescapeMetadataComponent(): String =
             replace("$ESCAPE$ESCAPE", ESCAPE)
-                .replace("$ESCAPEu001F", METADATA_ENTRY_SEPARATOR)
-                .replace("$ESCAPEu001E", METADATA_KEY_VALUE_SEPARATOR)
+                .replace("$ESCAPE\u001F", METADATA_ENTRY_SEPARATOR)
+                .replace("$ESCAPE\u001E", METADATA_KEY_VALUE_SEPARATOR)
 
         private fun defaultDescriptor(): ProviderDescriptor = ProviderDescriptor(
             id = ProviderId("storage.sqldelight.reference"),

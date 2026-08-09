@@ -1,0 +1,124 @@
+public final class io/dataloom/storage/sqldelight/JvmSqlDelightStorageDatabaseFactoryKt {
+	public static final fun createJvmSqlDelightStorageDatabase ()Lio/dataloom/storage/sqldelight/SqlDelightStorageDatabase;
+}
+
+public final class io/dataloom/storage/sqldelight/SqlDelightStorageDatabase {
+}
+
+public final class io/dataloom/storage/sqldelight/SqlDelightStorageProvider : io/dataloom/api/storage/StorageProvider {
+	public fun <init> (Lio/dataloom/storage/sqldelight/SqlDelightStorageDatabase;Lio/dataloom/api/provider/ProviderDescriptor;)V
+	public synthetic fun <init> (Lio/dataloom/storage/sqldelight/SqlDelightStorageDatabase;Lio/dataloom/api/provider/ProviderDescriptor;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun acknowledgeOutboundChanges (Lio/dataloom/api/synchronization/OutboundChangeAcknowledgementRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun applyInboundChanges (Lio/dataloom/api/storage/InboundChangeApplyRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun persistOutboundChanges (Lio/dataloom/api/change/ChangeSet;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun readCheckpoint (Lio/dataloom/api/synchronization/CheckpointReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun readOutboundChanges (Lio/dataloom/api/storage/OutboundChangeReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun writeCheckpoint (Lio/dataloom/api/synchronization/CheckpointWriteRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/storage/sqldelight/internal/Checkpoints {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/dataloom/storage/sqldelight/internal/Checkpoints;
+	public static synthetic fun copy$default (Lio/dataloom/storage/sqldelight/internal/Checkpoints;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/storage/sqldelight/internal/Checkpoints;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCheckpoint_key ()Ljava/lang/String;
+	public final fun getCheckpoint_metadata ()Ljava/lang/String;
+	public final fun getCheckpoint_token ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/storage/sqldelight/internal/DataLoomStorageDatabase : app/cash/sqldelight/Transacter {
+	public static final field Companion Lio/dataloom/storage/sqldelight/internal/DataLoomStorageDatabase$Companion;
+	public abstract fun getDataLoomStorageQueries ()Lio/dataloom/storage/sqldelight/internal/DataLoomStorageQueries;
+}
+
+public final class io/dataloom/storage/sqldelight/internal/DataLoomStorageDatabase$Companion {
+	public final fun getSchema ()Lapp/cash/sqldelight/db/SqlSchema;
+	public final fun invoke (Lapp/cash/sqldelight/db/SqlDriver;)Lio/dataloom/storage/sqldelight/internal/DataLoomStorageDatabase;
+}
+
+public final class io/dataloom/storage/sqldelight/internal/DataLoomStorageQueries : app/cash/sqldelight/TransacterImpl {
+	public fun <init> (Lapp/cash/sqldelight/db/SqlDriver;)V
+	public final fun deleteOutboundByEventId (Ljava/lang/String;)Lapp/cash/sqldelight/db/QueryResult;
+	public final fun insertOrReplaceInboundAppliedChange (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[BLjava/lang/String;)Lapp/cash/sqldelight/db/QueryResult;
+	public final fun insertOrReplaceOutboundChange (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[BLjava/lang/String;Ljava/lang/String;)Lapp/cash/sqldelight/db/QueryResult;
+	public final fun selectCheckpointByKey (Ljava/lang/String;)Lapp/cash/sqldelight/Query;
+	public final fun selectCheckpointByKey (Ljava/lang/String;Lkotlin/jvm/functions/Function3;)Lapp/cash/sqldelight/Query;
+	public final fun selectEligibleOutboundChanges ()Lapp/cash/sqldelight/Query;
+	public final fun selectEligibleOutboundChanges (Lkotlin/jvm/functions/Function12;)Lapp/cash/sqldelight/Query;
+	public final fun updateOutboundStateByEventId (Ljava/lang/String;Ljava/lang/String;)Lapp/cash/sqldelight/db/QueryResult;
+	public final fun upsertCheckpoint (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lapp/cash/sqldelight/db/QueryResult;
+}
+
+public final class io/dataloom/storage/sqldelight/internal/Inbound_changes_applied {
+	public fun <init> (JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[BLjava/lang/String;)V
+	public final fun component1 ()J
+	public final fun component10 ()[B
+	public final fun component11 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Ljava/lang/String;
+	public final fun component9 ()Ljava/lang/String;
+	public final fun copy (JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[BLjava/lang/String;)Lio/dataloom/storage/sqldelight/internal/Inbound_changes_applied;
+	public static synthetic fun copy$default (Lio/dataloom/storage/sqldelight/internal/Inbound_changes_applied;JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[BLjava/lang/String;ILjava/lang/Object;)Lio/dataloom/storage/sqldelight/internal/Inbound_changes_applied;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChange_set_id ()Ljava/lang/String;
+	public final fun getChange_set_metadata ()Ljava/lang/String;
+	public final fun getEntity_id ()Ljava/lang/String;
+	public final fun getEntity_type ()Ljava/lang/String;
+	public final fun getEntity_version ()Ljava/lang/String;
+	public final fun getEvent_id ()Ljava/lang/String;
+	public final fun getEvent_metadata ()Ljava/lang/String;
+	public final fun getOperation ()Ljava/lang/String;
+	public final fun getPayload_bytes ()[B
+	public final fun getPayload_content_type ()Ljava/lang/String;
+	public final fun getSequence ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/storage/sqldelight/internal/Outbound_changes {
+	public fun <init> (JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[BLjava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()J
+	public final fun component10 ()[B
+	public final fun component11 ()Ljava/lang/String;
+	public final fun component12 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Ljava/lang/String;
+	public final fun component9 ()Ljava/lang/String;
+	public final fun copy (JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[BLjava/lang/String;Ljava/lang/String;)Lio/dataloom/storage/sqldelight/internal/Outbound_changes;
+	public static synthetic fun copy$default (Lio/dataloom/storage/sqldelight/internal/Outbound_changes;JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[BLjava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/storage/sqldelight/internal/Outbound_changes;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChange_set_id ()Ljava/lang/String;
+	public final fun getChange_set_metadata ()Ljava/lang/String;
+	public final fun getEntity_id ()Ljava/lang/String;
+	public final fun getEntity_type ()Ljava/lang/String;
+	public final fun getEntity_version ()Ljava/lang/String;
+	public final fun getEvent_id ()Ljava/lang/String;
+	public final fun getEvent_metadata ()Ljava/lang/String;
+	public final fun getOperation ()Ljava/lang/String;
+	public final fun getPayload_bytes ()[B
+	public final fun getPayload_content_type ()Ljava/lang/String;
+	public final fun getSequence ()J
+	public final fun getState ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
