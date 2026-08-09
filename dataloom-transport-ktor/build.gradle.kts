@@ -2,7 +2,7 @@ plugins {
     id("io.dataloom.kotlin.multiplatform-library")
 }
 
-private const val ktorVersion: String = "2.3.12"
+private val ktorVersion: String = "2.3.12"
 
 kotlin {
     explicitApi()

@@ -278,7 +278,7 @@ class KtorTransportProviderTest {
 
     private fun providerWithEngine(
         configureClient: HttpClientConfigBuilder = {},
-        handler: suspend MockRequestHandleScope.(io.ktor.client.request.HttpRequestData) -> io.ktor.client.engine.mock.HttpResponseData,
+        handler: suspend MockRequestHandleScope.(io.ktor.client.request.HttpRequestData) -> io.ktor.client.request.HttpResponseData,
     ): KtorTransportProvider = providerWithCodec(
         codec = TestCodec,
         configureClient = configureClient,
@@ -288,7 +288,7 @@ class KtorTransportProviderTest {
     private fun providerWithCodec(
         codec: KtorTransportCodec,
         configureClient: HttpClientConfigBuilder = {},
-        handler: suspend MockRequestHandleScope.(io.ktor.client.request.HttpRequestData) -> io.ktor.client.engine.mock.HttpResponseData,
+        handler: suspend MockRequestHandleScope.(io.ktor.client.request.HttpRequestData) -> io.ktor.client.request.HttpResponseData,
     ): KtorTransportProvider {
         val client = HttpClient(MockEngine) {
             engine {
