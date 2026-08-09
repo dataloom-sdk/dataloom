@@ -66,6 +66,28 @@ final enum class io.dataloom.api.error/RetryDelayHintSource : kotlin/Enum<io.dat
     final fun values(): kotlin/Array<io.dataloom.api.error/RetryDelayHintSource> // io.dataloom.api.error/RetryDelayHintSource.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.api.security/DigestAlgorithm : kotlin/Enum<io.dataloom.api.security/DigestAlgorithm> { // io.dataloom.api.security/DigestAlgorithm|null[0]
+    enum entry SHA_256 // io.dataloom.api.security/DigestAlgorithm.SHA_256|null[0]
+    enum entry SHA_512 // io.dataloom.api.security/DigestAlgorithm.SHA_512|null[0]
+
+    final val entries // io.dataloom.api.security/DigestAlgorithm.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.security/DigestAlgorithm> // io.dataloom.api.security/DigestAlgorithm.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.security/DigestAlgorithm // io.dataloom.api.security/DigestAlgorithm.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.security/DigestAlgorithm> // io.dataloom.api.security/DigestAlgorithm.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.api.security/HmacAlgorithm : kotlin/Enum<io.dataloom.api.security/HmacAlgorithm> { // io.dataloom.api.security/HmacAlgorithm|null[0]
+    enum entry HMAC_SHA_256 // io.dataloom.api.security/HmacAlgorithm.HMAC_SHA_256|null[0]
+    enum entry HMAC_SHA_512 // io.dataloom.api.security/HmacAlgorithm.HMAC_SHA_512|null[0]
+
+    final val entries // io.dataloom.api.security/HmacAlgorithm.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.security/HmacAlgorithm> // io.dataloom.api.security/HmacAlgorithm.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.security/HmacAlgorithm // io.dataloom.api.security/HmacAlgorithm.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.security/HmacAlgorithm> // io.dataloom.api.security/HmacAlgorithm.values|values#static(){}[0]
+}
+
 abstract interface <#A: kotlin/Any?> io.dataloom.api.identifier/IdentifierGenerator { // io.dataloom.api.identifier/IdentifierGenerator|null[0]
     abstract fun generate(): #A // io.dataloom.api.identifier/IdentifierGenerator.generate|generate(){}[0]
 }
@@ -92,6 +114,15 @@ abstract interface io.dataloom.api.error/RetryDelayHintCarrier { // io.dataloom.
 
 abstract interface io.dataloom.api.random/DataLoomSecureRandom { // io.dataloom.api.random/DataLoomSecureRandom|null[0]
     abstract fun nextBytes(kotlin/Int): kotlin/ByteArray // io.dataloom.api.random/DataLoomSecureRandom.nextBytes|nextBytes(kotlin.Int){}[0]
+}
+
+abstract interface io.dataloom.api.security/DataLoomDigestCalculator { // io.dataloom.api.security/DataLoomDigestCalculator|null[0]
+    abstract fun digest(io.dataloom.api.security/DigestAlgorithm, kotlin/ByteArray): io.dataloom.api.security/DataLoomDigest // io.dataloom.api.security/DataLoomDigestCalculator.digest|digest(io.dataloom.api.security.DigestAlgorithm;kotlin.ByteArray){}[0]
+}
+
+abstract interface io.dataloom.api.security/DataLoomHmacCalculator { // io.dataloom.api.security/DataLoomHmacCalculator|null[0]
+    abstract fun hmac(io.dataloom.api.security/HmacAlgorithm, kotlin/ByteArray, kotlin/ByteArray): io.dataloom.api.security/DataLoomMac // io.dataloom.api.security/DataLoomHmacCalculator.hmac|hmac(io.dataloom.api.security.HmacAlgorithm;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    abstract fun verify(kotlin/ByteArray, kotlin/ByteArray, io.dataloom.api.security/DataLoomMac): kotlin/Boolean // io.dataloom.api.security/DataLoomHmacCalculator.verify|verify(kotlin.ByteArray;kotlin.ByteArray;io.dataloom.api.security.DataLoomMac){}[0]
 }
 
 abstract interface io.dataloom.api.time/DataLoomClock { // io.dataloom.api.time/DataLoomClock|null[0]
@@ -140,6 +171,51 @@ final class io.dataloom.api.random/AppleDataLoomSecureRandom : io.dataloom.api.r
     constructor <init>() // io.dataloom.api.random/AppleDataLoomSecureRandom.<init>|<init>(){}[0]
 
     final fun nextBytes(kotlin/Int): kotlin/ByteArray // io.dataloom.api.random/AppleDataLoomSecureRandom.nextBytes|nextBytes(kotlin.Int){}[0]
+}
+
+final class io.dataloom.api.security/AppleDataLoomDigestCalculator : io.dataloom.api.security/DataLoomDigestCalculator { // io.dataloom.api.security/AppleDataLoomDigestCalculator|null[0]
+    constructor <init>() // io.dataloom.api.security/AppleDataLoomDigestCalculator.<init>|<init>(){}[0]
+
+    final fun digest(io.dataloom.api.security/DigestAlgorithm, kotlin/ByteArray): io.dataloom.api.security/DataLoomDigest // io.dataloom.api.security/AppleDataLoomDigestCalculator.digest|digest(io.dataloom.api.security.DigestAlgorithm;kotlin.ByteArray){}[0]
+}
+
+final class io.dataloom.api.security/AppleDataLoomHmacCalculator : io.dataloom.api.security/DataLoomHmacCalculator { // io.dataloom.api.security/AppleDataLoomHmacCalculator|null[0]
+    constructor <init>() // io.dataloom.api.security/AppleDataLoomHmacCalculator.<init>|<init>(){}[0]
+
+    final fun hmac(io.dataloom.api.security/HmacAlgorithm, kotlin/ByteArray, kotlin/ByteArray): io.dataloom.api.security/DataLoomMac // io.dataloom.api.security/AppleDataLoomHmacCalculator.hmac|hmac(io.dataloom.api.security.HmacAlgorithm;kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun verify(kotlin/ByteArray, kotlin/ByteArray, io.dataloom.api.security/DataLoomMac): kotlin/Boolean // io.dataloom.api.security/AppleDataLoomHmacCalculator.verify|verify(kotlin.ByteArray;kotlin.ByteArray;io.dataloom.api.security.DataLoomMac){}[0]
+}
+
+final class io.dataloom.api.security/DataLoomDigest { // io.dataloom.api.security/DataLoomDigest|null[0]
+    constructor <init>(io.dataloom.api.security/DigestAlgorithm, kotlin/ByteArray) // io.dataloom.api.security/DataLoomDigest.<init>|<init>(io.dataloom.api.security.DigestAlgorithm;kotlin.ByteArray){}[0]
+
+    final val algorithm // io.dataloom.api.security/DataLoomDigest.algorithm|{}algorithm[0]
+        final fun <get-algorithm>(): io.dataloom.api.security/DigestAlgorithm // io.dataloom.api.security/DataLoomDigest.algorithm.<get-algorithm>|<get-algorithm>(){}[0]
+    final val size // io.dataloom.api.security/DataLoomDigest.size|{}size[0]
+        final fun <get-size>(): kotlin/Int // io.dataloom.api.security/DataLoomDigest.size.<get-size>|<get-size>(){}[0]
+
+    final fun contentEquals(io.dataloom.api.security/DataLoomDigest): kotlin/Boolean // io.dataloom.api.security/DataLoomDigest.contentEquals|contentEquals(io.dataloom.api.security.DataLoomDigest){}[0]
+    final fun copyBytes(): kotlin/ByteArray // io.dataloom.api.security/DataLoomDigest.copyBytes|copyBytes(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.security/DataLoomDigest.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.security/DataLoomDigest.hashCode|hashCode(){}[0]
+    final fun toHex(): kotlin/String // io.dataloom.api.security/DataLoomDigest.toHex|toHex(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.security/DataLoomDigest.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.security/DataLoomMac { // io.dataloom.api.security/DataLoomMac|null[0]
+    constructor <init>(io.dataloom.api.security/HmacAlgorithm, kotlin/ByteArray) // io.dataloom.api.security/DataLoomMac.<init>|<init>(io.dataloom.api.security.HmacAlgorithm;kotlin.ByteArray){}[0]
+
+    final val algorithm // io.dataloom.api.security/DataLoomMac.algorithm|{}algorithm[0]
+        final fun <get-algorithm>(): io.dataloom.api.security/HmacAlgorithm // io.dataloom.api.security/DataLoomMac.algorithm.<get-algorithm>|<get-algorithm>(){}[0]
+    final val size // io.dataloom.api.security/DataLoomMac.size|{}size[0]
+        final fun <get-size>(): kotlin/Int // io.dataloom.api.security/DataLoomMac.size.<get-size>|<get-size>(){}[0]
+
+    final fun contentEquals(io.dataloom.api.security/DataLoomMac): kotlin/Boolean // io.dataloom.api.security/DataLoomMac.contentEquals|contentEquals(io.dataloom.api.security.DataLoomMac){}[0]
+    final fun copyBytes(): kotlin/ByteArray // io.dataloom.api.security/DataLoomMac.copyBytes|copyBytes(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.security/DataLoomMac.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.security/DataLoomMac.hashCode|hashCode(){}[0]
+    final fun toHex(): kotlin/String // io.dataloom.api.security/DataLoomMac.toHex|toHex(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.security/DataLoomMac.toString|toString(){}[0]
 }
 
 final class io.dataloom.api.time/AppleDataLoomClock : io.dataloom.api.time/DataLoomClock { // io.dataloom.api.time/AppleDataLoomClock|null[0]
@@ -483,4 +559,15 @@ final value class io.dataloom.api.identifier/WorkflowId { // io.dataloom.api.ide
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/WorkflowId.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/WorkflowId.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.identifier/WorkflowId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.security/KeyReference { // io.dataloom.api.security/KeyReference|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.security/KeyReference.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.security/KeyReference.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.security/KeyReference.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.security/KeyReference.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.security/KeyReference.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.security/KeyReference.toString|toString(){}[0]
 }

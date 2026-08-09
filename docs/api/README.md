@@ -74,6 +74,7 @@ complete V1 strategy, asset, plugin, governance, or observability engine.
 | [Clock](./clock.md) | Available contract | Injected wall-clock and monotonic-duration abstractions, both with production JVM/Android/Apple implementations. SDK-wide adoption of the monotonic clock inside existing timeout/retry components remains open. |
 | [Secure random](./secure-random.md) | Available contract | Injected cryptographically secure random-bytes abstraction, with production JVM/Android/Apple implementations. SDK-wide adoption (key/nonce/token generation) remains open. |
 | [Identifier generation](./identifier-generation.md) | Available contract | Injected identifier-generator contract and deterministic test use. |
+| [Integrity and key references](./integrity-and-key-references.md) | Available contract | Unkeyed digest and keyed HMAC ("signature") primitives plus an opaque key-reference label, with production JVM/Android/Apple implementations. Consumer wiring (asset-sync manifests, encryption metadata) remains open. |
 
 ## Provider contracts and assembly
 
