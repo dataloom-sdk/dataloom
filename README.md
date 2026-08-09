@@ -69,19 +69,41 @@ qualification remain before the strategy engine is complete.
 
 ## Market-readiness dashboard
 
-- **Last reconciled:** 2026-08-04
+- **Last reconciled:** 2026-08-09
 - **Recorded V1 target:** 2026-08-27
 - **Current verdict:** **NO-GO — not production-ready or market-ready**
-- **Accepted engineering/release gates:** **1 of 10** (`#93` complete; `#94`–`#102` open)
+- **Accepted engineering/release gates:** **0 of 10** (`#93`–`#102` all open)
+
+> [!NOTE]
+> An earlier version of this dashboard reported `1 of 10` with `#93` marked
+> complete. That was inaccurate: `#93` is still missing versioned
+> configuration snapshots, a shared policy engine, secure random/key/signature
+> primitives, and an explicit KMP Android target, among other items below.
+> Corrected here rather than left standing — see the acceptance rule this
+> project holds itself to immediately below.
 
 Progress below is acceptance-based, not a percentage of code written. A gate is
 `COMPLETE` only when its issue criteria have executable evidence on the same
 reviewed commit. `IN PROGRESS` therefore includes substantial implementations
-that still have unqualified release behavior.
+that still have unqualified release behavior. A gate can absorb real, tested,
+merged work for a long time before it flips to `COMPLETE` — that is by design,
+not a sign nothing is happening. This log exists so that work is visible in
+between gate flips.
+
+### Recently shipped (newest first)
+
+| Date | What landed | Gate/track |
+|---|---|---|
+| 2026-08-09 | Corrected the dashboard's stale `1 of 10`/`#93`-complete claim to `0 of 10` | Documentation accuracy |
+| 2026-08-08 | Production `DataLoomClock`/`DataLoomMonotonicClock` for JVM, Android, and iOS (`#221`) | `#93` foundations |
+| 2026-08-08 | Reference DataStore-backed `StorageProvider` for small key-value/cache-first data (`#220`) | Adoption readiness |
+| 2026-08-08 | Compile-verified getting-started quickstart guide (`#214`) | Adoption readiness |
+| 2026-08-08 | 7 more reference-provider modules opened and in flight (Room, SQLDelight, file-based, Ktor, Retrofit, GraphQL, gRPC) | Adoption readiness |
+| 2026-08-08 | Repository cleanup: 48 stale branches deleted, 10 superseded process issues closed | Repository hygiene |
 
 | Next priority | V1 gate | Status | Finished on `main` | Still pending before the gate is complete |
 |---:|---|---|---|---|
-| — | [DL-039 foundations, artifacts, compatibility](https://github.com/dataloom-sdk/dataloom/issues/93) | COMPLETE | Public API/provider/runtime boundaries, module rules, JVM and Kotlin/Native ABI baselines, external-consumer compilation, durable state primitives, deterministic clocks/randomness, configuration and policy foundations, canonical envelope/redaction contracts, and a deterministic bounded V1 wire codec/upcast registry | — |
+| 0 | [DL-039 foundations, artifacts, compatibility](https://github.com/dataloom-sdk/dataloom/issues/93) | PARTIAL | Public API/provider/runtime boundaries, module rules, JVM and Kotlin/Native ABI baselines, external-consumer compilation, durable queue/retry/circuit state primitives, canonical operational envelope/redaction and deterministic bounded V1 wire codec/upcast registry, and production wall-clock/monotonic-clock implementations for JVM, Android, and iOS (`#221`, 2026-08-08) | Versioned configuration snapshots/precedence/rollback, a shared cross-subsystem policy engine, durable state for conflict/events/assets/audit, secure random/key/signature/integrity primitives, an explicit KMP Android target, and the final published artifact graph/BOM |
 | 1 | [DL-039B six strategy engine](https://github.com/dataloom-sdk/dataloom/issues/102) | IN PROGRESS | Versioned contracts and deterministic planner for all six strategies; direct network-only and remote-first slices; fail-closed queue admission; Room v8/Apple v4 accepted-plan persistence; exact encoder/resolver correspondence; direct, protected, and queued replay without current-policy evaluation; typed fallback and reconciliation hooks | Complete atomic offline-first intent/outbox admission, cache value/refresh ownership, hybrid coherence/conflict application, durable strategy events/diagnostics, and the full native Android/KMP Android/KMP iOS failure/restart matrix |
 | 2 | [DL-039A Android/KMP/iOS parity](https://github.com/dataloom-sdk/dataloom/issues/101) | IN PROGRESS | Native Android adapters, Kotlin/Native Apple targets, XCFramework assembly, Swift smoke compilation, and initial Apple file-backed persistence | Add explicit KMP Android variants, production `dataloom-android`/`dataloom-ios` aggregation, iOS lifecycle/connectivity/background/security adapters, staged external consumers, and the complete parity matrix |
 | 3 | [DL-040 retry and circuit breaker](https://github.com/dataloom-sdk/dataloom/issues/94) | QUALIFICATION BLOCKED | FR-RETRY-001–012 implementation mapping; built-in backoff/jitter, limits, hints, six timeout boundaries, durable Room/Apple circuit state, half-open leases, authorized administration, bounded telemetry, and common/platform-store recovery flows | Prove real Android and Apple process termination/relaunch, genuine cross-process probe contention where supported, and the complete AC-FUNC-004 provider flow through native Android, KMP Android, and KMP iOS |
@@ -91,6 +113,28 @@ that still have unqualified release behavior.
 | 7 | [DL-044 plugin platform](https://github.com/dataloom-sdk/dataloom/issues/98) | NOT STARTED | Provider SPI exists; no V1 plugin lifecycle is accepted | Implement manifests, compatibility, deny-by-default permissions, lifecycle, resource bounds, deterministic ordering, isolation, hot disable, audit, certification kit, and a reference non-provider plugin |
 | 8 | [DL-045 enterprise governance](https://github.com/dataloom-sdk/dataloom/issues/99) | NOT STARTED | Tenant identifiers and limited retry/circuit administration foundations exist | Enforce tenant isolation, RBAC, signed policy packs, tamper-evident/offline audit, residency, support/fleet diagnostics, configuration locks, LTS/catalog governance, and AC-FUNC-010 |
 | 9 | [DL-046 immutable V1 release](https://github.com/dataloom-sdk/dataloom/issues/100) | BLOCKED / NO-GO | Continuous JVM, Android, Apple, ABI, XCFramework, header, Swift-smoke, schema, and migration validation foundations exist | Close #93–#99 and #101–#102; qualify one immutable candidate; verify staged consumers, compatibility, performance, security, SBOM/provenance/signatures/licenses, documentation, legal approval, publication, rollback, and post-publish smoke tests |
+
+### Adoption readiness — reference providers
+
+Not a frozen V1 gate. Tracks how easy DataLoom is to actually adopt today:
+reference `StorageProvider`/`TransportProvider` implementations an application
+can use directly or fork, so nobody has to hand-write both providers from
+scratch before writing a line of sync code. Every technology below is an
+equally-valid choice — none is preferred or required.
+
+| Provider | Technology | Platforms | Status |
+|---|---|---|---|
+| Storage | Room | Android/JVM | [#209](https://github.com/dataloom-sdk/dataloom/issues/209) → [PR #212](https://github.com/dataloom-sdk/dataloom/pull/212) — CI failing, fix pending |
+| Storage | SQLDelight | Android + iOS | [#215](https://github.com/dataloom-sdk/dataloom/issues/215) → [PR #216](https://github.com/dataloom-sdk/dataloom/pull/216) — CI failing, fix pending |
+| Storage | Plain files (zero dependency) | Android + iOS | [#217](https://github.com/dataloom-sdk/dataloom/issues/217) → [PR #219](https://github.com/dataloom-sdk/dataloom/pull/219) — CI failing, fix pending |
+| Storage | DataStore (small key-value/cache-first data) | Android | ✅ Merged ([#218](https://github.com/dataloom-sdk/dataloom/issues/218) → [PR #220](https://github.com/dataloom-sdk/dataloom/pull/220)) |
+| Transport | Ktor | Android + iOS + JVM | [#210](https://github.com/dataloom-sdk/dataloom/issues/210) → [PR #213](https://github.com/dataloom-sdk/dataloom/pull/213) — CI failing, fix pending |
+| Transport | Retrofit/OkHttp | Android/JVM | [#226](https://github.com/dataloom-sdk/dataloom/issues/226) → [PR #227](https://github.com/dataloom-sdk/dataloom/pull/227) — in progress |
+| Transport | GraphQL (Apollo Kotlin) | Android + iOS | [#222](https://github.com/dataloom-sdk/dataloom/issues/222) → [PR #224](https://github.com/dataloom-sdk/dataloom/pull/224) — in progress |
+| Transport | gRPC | Android/JVM (iOS not yet supported by the ecosystem) | [#223](https://github.com/dataloom-sdk/dataloom/issues/223) → [PR #225](https://github.com/dataloom-sdk/dataloom/pull/225) — in progress |
+| Docs | Getting-started quickstart | — | ✅ Merged ([#211](https://github.com/dataloom-sdk/dataloom/issues/211) → [PR #214](https://github.com/dataloom-sdk/dataloom/pull/214)) |
+
+**2 of 9 merged, 4 blocked on CI fixes with feedback already posted, 3 freshly in progress.**
 
 ### Market evidence gates
 
@@ -259,6 +303,7 @@ validation order, read [building DataLoom](./docs/development/building.md).
 
 Start with the [documentation hub](./docs/README.md).
 
+- [Getting started quickstart](./docs/getting-started.md)
 - [System overview](./docs/architecture/system-overview.md)
 - [Six-strategy guide](./docs/strategies/README.md)
 - [API reference](./docs/api/README.md)
