@@ -510,4 +510,6 @@ private class StubTransportProvider(
 
     override suspend fun health(): ProviderOperationResult<ProviderHealth> =
         ProviderOperationResult.Success(ProviderHealth(status = ProviderHealthStatus.HEALTHY))
+
+    override suspend fun close(): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
 }
