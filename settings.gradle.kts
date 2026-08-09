@@ -56,6 +56,7 @@ include(
     ":dataloom-testing",
     ":dataloom-transport-grpc",
     ":runtime-external-consumer",
+    ":dataloom-storage-file",
 )
 
 // Android implementation modules.
