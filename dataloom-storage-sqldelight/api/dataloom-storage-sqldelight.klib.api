@@ -140,7 +140,11 @@ final class io.dataloom.storage.sqldelight.internal/Outbound_changes { // io.dat
     final fun toString(): kotlin/String // io.dataloom.storage.sqldelight.internal/Outbound_changes.toString|toString(){}[0]
 }
 
-final class io.dataloom.storage.sqldelight/SqlDelightStorageDatabase // io.dataloom.storage.sqldelight/SqlDelightStorageDatabase|null[0]
+final class io.dataloom.storage.sqldelight/SqlDelightStorageDatabase { // io.dataloom.storage.sqldelight/SqlDelightStorageDatabase|null[0]
+    final object Companion { // io.dataloom.storage.sqldelight/SqlDelightStorageDatabase.Companion|null[0]
+        final fun fromDriver(app.cash.sqldelight.db/SqlDriver): io.dataloom.storage.sqldelight/SqlDelightStorageDatabase // io.dataloom.storage.sqldelight/SqlDelightStorageDatabase.Companion.fromDriver|fromDriver(app.cash.sqldelight.db.SqlDriver){}[0]
+    }
+}
 
 final class io.dataloom.storage.sqldelight/SqlDelightStorageProvider : io.dataloom.api.storage/StorageProvider { // io.dataloom.storage.sqldelight/SqlDelightStorageProvider|null[0]
     constructor <init>(io.dataloom.storage.sqldelight/SqlDelightStorageDatabase, io.dataloom.api.provider/ProviderDescriptor = ...) // io.dataloom.storage.sqldelight/SqlDelightStorageProvider.<init>|<init>(io.dataloom.storage.sqldelight.SqlDelightStorageDatabase;io.dataloom.api.provider.ProviderDescriptor){}[0]

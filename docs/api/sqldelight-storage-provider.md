@@ -2,9 +2,13 @@
 
 [API reference index](./README.md)
 
-> **Status:** Optional reference implementation module (`dataloom-storage-sqldelight`).
-> Production `dataloom-model`, `dataloom-api`, `dataloom-core`, and
-> `dataloom-runtime` remain free of SQLDelight dependencies.
+> **Status:** Optional reference implementation module (`dataloom-storage-sqldelight`,
+> JVM + iOS). Production `dataloom-model`, `dataloom-api`, `dataloom-core`, and
+> `dataloom-runtime` remain free of SQLDelight dependencies. The Android driver
+> lives in a separate `dataloom-storage-sqldelight-android` module — see
+> [Android overview](../android/README.md) — because AGP 9.0+ does not allow
+> the classic `com.android.library` plugin in the same module as
+> `org.jetbrains.kotlin.multiplatform`.
 
 ## Purpose
 
@@ -36,7 +40,13 @@ The implementation follows `StorageProvider` batching semantics (`maxEvents` /
 
 ## Quickstart (Android)
 
+Requires the separate `dataloom-storage-sqldelight-android` module (see
+[Android overview](../android/README.md)) in addition to
+`dataloom-storage-sqldelight`.
+
 ```kotlin
+import io.dataloom.storage.sqldelight.android.createAndroidSqlDelightStorageDatabase
+
 val database = createAndroidSqlDelightStorageDatabase(
     context = applicationContext,
     databaseName = "dataloom-storage.db",
@@ -54,6 +64,21 @@ val database = createIosSqlDelightStorageDatabase(
 
 val storageProvider = SqlDelightStorageProvider(database)
 ```
+
+## Building a database handle for another platform driver
+
+`SqlDelightStorageDatabase` hides the generated SQLDelight database type
+behind an `internal` constructor so it never leaks into public API surfaces.
+Platform-driver code outside this module (such as
+`dataloom-storage-sqldelight-android`) constructs a handle from an
+already-configured `app.cash.sqldelight.db.SqlDriver` instead:
+
+```kotlin
+val database = SqlDelightStorageDatabase.fromDriver(driver)
+```
+
+`fromDriver` does not run schema creation — the driver must already be
+configured for `DataLoomStorageDatabase.Schema` before calling it.
 
 ## Optional outbound staging helper
 

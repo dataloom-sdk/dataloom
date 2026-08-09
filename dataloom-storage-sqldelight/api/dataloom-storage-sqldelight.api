@@ -3,6 +3,11 @@ public final class io/dataloom/storage/sqldelight/JvmSqlDelightStorageDatabaseFa
 }
 
 public final class io/dataloom/storage/sqldelight/SqlDelightStorageDatabase {
+	public static final field Companion Lio/dataloom/storage/sqldelight/SqlDelightStorageDatabase$Companion;
+}
+
+public final class io/dataloom/storage/sqldelight/SqlDelightStorageDatabase$Companion {
+	public final fun fromDriver (Lapp/cash/sqldelight/db/SqlDriver;)Lio/dataloom/storage/sqldelight/SqlDelightStorageDatabase;
 }
 
 public final class io/dataloom/storage/sqldelight/SqlDelightStorageProvider : io/dataloom/api/storage/StorageProvider {

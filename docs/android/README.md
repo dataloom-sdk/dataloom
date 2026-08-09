@@ -10,9 +10,10 @@
 [Platform strategy](../architecture/platform-strategy.md) ·
 [Local build guide](../development/building.md)
 
-DataLoom currently has five independently consumable Android libraries. They
-adapt shared contracts to `ConnectivityManager`, WorkManager, Room, and
-Preferences DataStore without placing Android types in common code.
+DataLoom currently has six independently consumable Android libraries. They
+adapt shared contracts to `ConnectivityManager`, WorkManager, Room,
+Preferences DataStore, and SQLDelight without placing Android types in
+common code.
 
 The V1 product target is broader than these adapters. Native Android, KMP
 Android, and KMP iOS are all mandatory consumer paths. Optional native Swift
@@ -33,6 +34,7 @@ complete profile. See
 | [Room storage provider](room-storage-provider.md) | Generic outbound/inbound change-set and checkpoint persistence |
 | [DataStore storage provider](datastore-storage-provider.md) | Small key-value synchronization data (settings, flags, preferences) |
 | [Retrofit transport provider (reference)](retrofit-transport-provider.md) | JVM/Android Retrofit-backed `TransportProvider` reference |
+| [SQLDelight storage provider — Android driver](sqldelight-storage-provider-android.md) | Android `AndroidSqliteDriver` wiring for the shared SQLDelight `StorageProvider` |
 | [Security and R8](security-and-r8.md) | Consumer rules, permissions, and data-at-rest limitations |
 
 ## Current platform topology
@@ -54,18 +56,24 @@ flowchart LR
         storage["dataloom-storage-room"]
         datastoreStorage["dataloom-storage-datastore"]
         retrofitTransport["dataloom-transport-retrofit (JVM)"]
+        sqldelightAndroid["dataloom-storage-sqldelight-android"]
     end
+
+    sqldelight["dataloom-storage-sqldelight (JVM + iOS)"]
 
     model --> persistence
     model --> datastoreStorage
     model --> storage
     model --> retrofitTransport
+    model --> sqldelight
     api --> connectivity
     api --> scheduler
     api --> persistence
     api --> storage
     api --> datastoreStorage
     api --> retrofitTransport
+    api --> sqldelight
+    sqldelight --> sqldelightAndroid
     runtime --> scheduler
 
     connectivity --> nativeApp["Native Android"]
@@ -74,6 +82,7 @@ flowchart LR
     storage --> nativeApp
     datastoreStorage --> nativeApp
     retrofitTransport --> nativeApp
+    sqldelightAndroid --> nativeApp
 
     runtime -.->|"V1 target pending"| kmpApp["KMP Android"]
 ```
@@ -92,6 +101,7 @@ on Android adapters. No current Android adapter depends directly on
 | `dataloom-storage-room` | Generic Room-backed `StorageProvider` for opaque outbound/inbound change sets and checkpoints | Domain queries, business merges, encryption policy, or synchronization execution |
 | `dataloom-storage-datastore` | Preferences DataStore-backed `StorageProvider` for small key-value synchronization data | Large-scale or relational synchronization data; use `dataloom-queue-room` for those |
 | `dataloom-transport-retrofit` | JVM/Android-only reference `TransportProvider` using Retrofit suspend APIs | Kotlin/Native binaries, app-specific endpoint/DTO contracts, or authentication policy ownership |
+| `dataloom-storage-sqldelight-android` | `AndroidSqliteDriver` wiring for the shared `dataloom-storage-sqldelight` (JVM + iOS) reference `StorageProvider` | Query/schema logic (owned by `dataloom-storage-sqldelight`), domain merges, or synchronization execution |
 
 The modules are optional and do not depend on one another. An application can
 use only the adapter it needs.
@@ -108,6 +118,8 @@ implementation(project(":dataloom-queue-room"))
 implementation(project(":dataloom-storage-room"))
 implementation(project(":dataloom-storage-datastore"))
 implementation(project(":dataloom-transport-retrofit"))
+implementation(project(":dataloom-storage-sqldelight")) // JVM + iOS, always included
+implementation(project(":dataloom-storage-sqldelight-android"))
 ```
 
 Do not present these project dependencies as consumer-ready Maven coordinates.
@@ -121,8 +133,9 @@ V1 release gates.
 from resolving the Android Gradle Plugin and Google Maven artifacts when
 Android is not being validated.
 
-`dataloom-transport-retrofit` is JVM-only (Retrofit/OkHttp) and is included
-independently of `DATALOOM_ANDROID_BUILD`.
+`dataloom-transport-retrofit` and `dataloom-storage-sqldelight` are JVM/KMP
+modules and are included independently of `DATALOOM_ANDROID_BUILD`; only their
+Android driver counterparts require it.
 
 From the repository root:
 
@@ -134,7 +147,8 @@ DATALOOM_ANDROID_BUILD=true ./gradlew \
     :dataloom-scheduler-workmanager:build \
     :dataloom-queue-room:build \
     :dataloom-storage-room:build \
-    :dataloom-storage-datastore:build
+    :dataloom-storage-datastore:build \
+    :dataloom-storage-sqldelight-android:build
 ```
 
 The current Android modules use JDK 17, compile SDK 35, and minimum SDK 21. See
