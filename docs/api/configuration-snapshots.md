@@ -196,10 +196,13 @@ snapshot instance rather than reversing mutations.
 `checksum` is a `DataLoomDigest` (see
 [integrity and key references](./integrity-and-key-references.md)) over a
 deterministic, canonical encoding of every entry — entries sorted by
-`ConfigurationKey.value`, each rendered as `key type value\n` and UTF-8
-encoded, hashed with SHA-256 — computed once at construction via an
-injected `DataLoomDigestCalculator`. Two snapshots with identical entries
-always produce an identical checksum, regardless of the order entries were
+`ConfigurationKey.value`, with each entry's key, type, and value separated
+by a NUL byte (code point zero, not a printable character) and each entry
+terminated by a newline, all UTF-8 encoded, hashed with SHA-256 — computed
+once at construction via an injected `DataLoomDigestCalculator`. NUL is used
+rather than a printable separator so no possible string value can collide
+with the field boundary itself. Two snapshots with identical entries always
+produce an identical checksum, regardless of the order entries were
 supplied in, and the checksum does not depend on `version`.
 
 The constructor is `internal`: every `ConfigurationSnapshot` must be built
