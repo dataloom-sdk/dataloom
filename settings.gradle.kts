@@ -12,6 +12,11 @@ pluginManagement {
                         "org.jetbrains.kotlin:kotlin-gradle-plugin:${requested.version}",
                     )
 
+                "org.jetbrains.kotlin.jvm" ->
+                    useModule(
+                        "org.jetbrains.kotlin:kotlin-gradle-plugin:${requested.version}",
+                    )
+
                 "com.android.library" ->
                     useModule(
                         "com.android.tools.build:gradle:${requested.version}",
@@ -50,7 +55,10 @@ include(
     ":dataloom-core",
     ":dataloom-runtime",
     ":dataloom-testing",
+    ":dataloom-transport-retrofit",
+    ":dataloom-transport-grpc",
     ":runtime-external-consumer",
+    ":dataloom-storage-file",
 )
 
 // Android implementation modules.
@@ -60,12 +68,13 @@ include(
 // when the DATALOOM_ANDROID_BUILD environment variable is set to "true".
 //
 // On CI the android-validation job sets DATALOOM_ANDROID_BUILD=true and
-// builds the three modules independently.
+// builds the four modules independently.
 //
 // Modules are independently consumable:
 //   - dataloom-connectivity-android — Android ConnectivityProvider
 //   - dataloom-scheduler-workmanager — WorkManager SchedulerProvider and worker bridge
 //   - dataloom-queue-room — Room QueueProvider
+//   - dataloom-storage-room — Room StorageProvider
 //
 // See docs/android/README.md for integration guidance.
 val isAndroidBuildEnabled: Boolean =
@@ -76,6 +85,8 @@ if (isAndroidBuildEnabled) {
         ":dataloom-connectivity-android",
         ":dataloom-scheduler-workmanager",
         ":dataloom-queue-room",
+        ":dataloom-storage-room",
+        ":dataloom-storage-datastore",
     )
 }
 

@@ -10,9 +10,9 @@
 [Platform strategy](../architecture/platform-strategy.md) ·
 [Local build guide](../development/building.md)
 
-DataLoom currently has three independently consumable Android libraries. They
-adapt shared contracts to `ConnectivityManager`, WorkManager, and Room without
-placing Android types in common code.
+DataLoom currently has five independently consumable Android libraries. They
+adapt shared contracts to `ConnectivityManager`, WorkManager, Room, and
+Preferences DataStore without placing Android types in common code.
 
 The V1 product target is broader than these adapters. Native Android, KMP
 Android, and KMP iOS are all mandatory consumer paths. Optional native Swift
@@ -30,6 +30,9 @@ complete profile. See
 | [WorkManager scheduler](workmanager-scheduler.md) | Mapping schedule intents to unique WorkManager work |
 | [Worker integration](worker-integration.md) | Injecting and running one bounded queue-worker cycle |
 | [Room queue and circuit persistence](room-queue-provider.md) | Durable queue entries and circuit-breaker state |
+| [Room storage provider](room-storage-provider.md) | Generic outbound/inbound change-set and checkpoint persistence |
+| [DataStore storage provider](datastore-storage-provider.md) | Small key-value synchronization data (settings, flags, preferences) |
+| [Retrofit transport provider (reference)](retrofit-transport-provider.md) | JVM/Android Retrofit-backed `TransportProvider` reference |
 | [Security and R8](security-and-r8.md) | Consumer rules, permissions, and data-at-rest limitations |
 
 ## Current platform topology
@@ -48,17 +51,29 @@ flowchart LR
         connectivity["dataloom-connectivity-android"]
         scheduler["dataloom-scheduler-workmanager"]
         persistence["dataloom-queue-room"]
+        storage["dataloom-storage-room"]
+        datastoreStorage["dataloom-storage-datastore"]
+        retrofitTransport["dataloom-transport-retrofit (JVM)"]
     end
 
     model --> persistence
+    model --> datastoreStorage
+    model --> storage
+    model --> retrofitTransport
     api --> connectivity
     api --> scheduler
     api --> persistence
+    api --> storage
+    api --> datastoreStorage
+    api --> retrofitTransport
     runtime --> scheduler
 
     connectivity --> nativeApp["Native Android"]
     scheduler --> nativeApp
     persistence --> nativeApp
+    storage --> nativeApp
+    datastoreStorage --> nativeApp
+    retrofitTransport --> nativeApp
 
     runtime -.->|"V1 target pending"| kmpApp["KMP Android"]
 ```
@@ -74,6 +89,9 @@ on Android adapters. No current Android adapter depends directly on
 | `dataloom-connectivity-android` | Bounded `ConnectivityProvider` query using `ConnectivityManager` | Polling, endpoint reachability, or strategy selection |
 | `dataloom-scheduler-workmanager` | `SchedulerProvider`, `CoroutineWorker`, and explicit `WorkerFactory` bridge | Retry policy, queue persistence, or runtime initialization |
 | `dataloom-queue-room` | Transactional Room-backed queue, circuit state, retry administration, and circuit administration | Application domain storage, scheduling, retry policy, or synchronization execution |
+| `dataloom-storage-room` | Generic Room-backed `StorageProvider` for opaque outbound/inbound change sets and checkpoints | Domain queries, business merges, encryption policy, or synchronization execution |
+| `dataloom-storage-datastore` | Preferences DataStore-backed `StorageProvider` for small key-value synchronization data | Large-scale or relational synchronization data; use `dataloom-queue-room` for those |
+| `dataloom-transport-retrofit` | JVM/Android-only reference `TransportProvider` using Retrofit suspend APIs | Kotlin/Native binaries, app-specific endpoint/DTO contracts, or authentication policy ownership |
 
 The modules are optional and do not depend on one another. An application can
 use only the adapter it needs.
@@ -87,6 +105,9 @@ composite source build, depend only on the modules required by the host:
 implementation(project(":dataloom-connectivity-android"))
 implementation(project(":dataloom-scheduler-workmanager"))
 implementation(project(":dataloom-queue-room"))
+implementation(project(":dataloom-storage-room"))
+implementation(project(":dataloom-storage-datastore"))
+implementation(project(":dataloom-transport-retrofit"))
 ```
 
 Do not present these project dependencies as consumer-ready Maven coordinates.
@@ -100,6 +121,9 @@ V1 release gates.
 from resolving the Android Gradle Plugin and Google Maven artifacts when
 Android is not being validated.
 
+`dataloom-transport-retrofit` is JVM-only (Retrofit/OkHttp) and is included
+independently of `DATALOOM_ANDROID_BUILD`.
+
 From the repository root:
 
 ```bash
@@ -108,7 +132,9 @@ DATALOOM_ANDROID_BUILD=true ./gradlew projects --no-configuration-cache
 DATALOOM_ANDROID_BUILD=true ./gradlew \
     :dataloom-connectivity-android:build \
     :dataloom-scheduler-workmanager:build \
-    :dataloom-queue-room:build
+    :dataloom-queue-room:build \
+    :dataloom-storage-room:build \
+    :dataloom-storage-datastore:build
 ```
 
 The current Android modules use JDK 17, compile SDK 35, and minimum SDK 21. See

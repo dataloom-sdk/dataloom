@@ -71,7 +71,8 @@ complete V1 strategy, asset, plugin, governance, or observability engine.
 | [Checkpoint contracts](./checkpoint-contracts.md) | Available contract | Checkpoint keys, values, reads, and writes. |
 | [Synchronization result](./synchronization-result.md) | Available contract | Succeeded, partial, failed, cancelled, and skipped outcomes. |
 | [Synchronization progress](./synchronization-progress.md) | Available contract | Phases, units, snapshots, and summaries. |
-| [Clock](./clock.md) | Available contract | Injected wall-clock abstraction. Monotonic duration support remains a V1 gap. |
+| [Clock](./clock.md) | Available contract | Injected wall-clock and monotonic-duration abstractions, both with production JVM/Android/Apple implementations. SDK-wide adoption of the monotonic clock inside existing timeout/retry components remains open. |
+| [Secure random](./secure-random.md) | Available contract | Injected cryptographically secure random-bytes abstraction, with production JVM/Android/Apple implementations. SDK-wide adoption (key/nonce/token generation) remains open. |
 | [Identifier generation](./identifier-generation.md) | Available contract | Injected identifier-generator contract and deterministic test use. |
 
 ## Provider contracts and assembly

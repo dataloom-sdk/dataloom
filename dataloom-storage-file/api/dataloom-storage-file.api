@@ -1,0 +1,15 @@
+public final class io/dataloom/storage/file/FileStorageProvider : io/dataloom/api/storage/StorageProvider {
+	public fun <init> (Ljava/lang/String;Lio/dataloom/api/provider/ProviderDescriptor;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/provider/ProviderDescriptor;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun acknowledgeOutboundChanges (Lio/dataloom/api/synchronization/OutboundChangeAcknowledgementRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun applyInboundChanges (Lio/dataloom/api/storage/InboundChangeApplyRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun readCheckpoint (Lio/dataloom/api/synchronization/CheckpointReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun readOutboundChanges (Lio/dataloom/api/storage/OutboundChangeReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun storeOutboundChangeSet (Lio/dataloom/api/change/ChangeSet;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun writeCheckpoint (Lio/dataloom/api/synchronization/CheckpointWriteRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+

@@ -2,8 +2,12 @@
 
 [API reference index](./README.md)
 
-> **Status:** Available wall-clock contract. A monotonic duration abstraction
-> and production-wide elapsed-time enforcement remain V1 gaps.
+> **Status:** Available wall-clock and monotonic-duration contracts, each with
+> production JVM/Android and Apple implementations. Production-wide elapsed-time
+> *enforcement* (every runtime component actually using
+> `DataLoomMonotonicClock` for budgets/timeouts instead of ad hoc measurement)
+> remains a separate, broader V1 gap — this page documents the time
+> abstractions themselves, not that every consumer has adopted them yet.
 
 **Package:** `io.dataloom.api.time`
 
@@ -91,8 +95,76 @@ class QueueEnqueuer(
 | Suitable for persisted timestamps | Yes |
 
 Do not use `DataLoomClock` to measure elapsed time between two code points.
-A future dedicated monotonic-time abstraction will be introduced when elapsed
-time measurement is required by a specific runtime component.
+Use `DataLoomMonotonicClock` (below) instead.
+
+---
+
+## `DataLoomMonotonicClock`
+
+**Type:** `interface`  
+**Package:** `io.dataloom.api.time`
+
+```kotlin
+public interface DataLoomMonotonicClock {
+    public fun mark(): DataLoomMonotonicReading
+}
+```
+
+The dedicated monotonic-time abstraction referenced above. Use it to measure
+elapsed duration between two code points, such as an execution timeout budget.
+Do not use it to produce a value suitable for a persisted timestamp; use
+`DataLoomClock` for that.
+
+### `DataLoomMonotonicReading`
+
+Immutable value type wrapping non-negative `nanoseconds` since an arbitrary,
+implementation-defined origin. Readings are only meaningful relative to other
+readings from the *same* `DataLoomMonotonicClock` instance — they do not
+represent wall-clock time and are not comparable across clock instances,
+processes, or platforms.
+
+```kotlin
+public class DataLoomMonotonicReading(public val nanoseconds: Long) {
+    public fun elapsedNanosecondsSince(earlier: DataLoomMonotonicReading): Long
+}
+```
+
+`elapsedNanosecondsSince` fails closed (`IllegalArgumentException`) rather than
+returning a misleading negative duration if `earlier` is not actually earlier
+than the receiver.
+
+```kotlin
+val monotonicClock: DataLoomMonotonicClock = SystemDataLoomMonotonicClock()
+val started = monotonicClock.mark()
+// ... do work ...
+val elapsedNanos = monotonicClock.mark().elapsedNanosecondsSince(started)
+```
+
+---
+
+## Production implementations
+
+| Implementation | Interface | Target | Backing |
+|---|---|---|---|
+| `SystemDataLoomClock` | `DataLoomClock` | JVM (also serves native Android today; see below) | `System.currentTimeMillis()` |
+| `SystemDataLoomMonotonicClock` | `DataLoomMonotonicClock` | JVM (also serves native Android today) | `System.nanoTime()`, normalized to a non-negative process-relative origin |
+| `AppleDataLoomClock` | `DataLoomClock` | `iosArm64`, `iosSimulatorArm64`, `iosX64` | `clock_gettime(CLOCK_REALTIME, ...)` |
+| `AppleDataLoomMonotonicClock` | `DataLoomMonotonicClock` | `iosArm64`, `iosSimulatorArm64`, `iosX64` | `clock_gettime(CLOCK_MONOTONIC, ...)` |
+
+All four live in `dataloom-model`, alongside the contracts they implement, and
+have no mutable state — safe to share a single instance across threads and
+across a `DataLoom` instance's lifetime.
+
+The JVM implementations currently serve native Android as well, because the
+current Android adapter modules consume this module's JVM target directly;
+there is no explicit KMP Android target yet (tracked separately as a platform
+gap, not a clock gap).
+
+None of these implementations are wired into `RuntimeDependencies` or
+`DataLoomBuilder` automatically yet — an application must currently construct
+and inject them explicitly. Automatic default wiring, and adopting
+`DataLoomMonotonicClock` inside existing retry/timeout components that
+currently measure elapsed time ad hoc, remain open follow-up work.
 
 ---
 
@@ -132,18 +204,12 @@ Expired-lease recovery time
 
 ---
 
-## Deferred production implementations
-
-Production system-clock implementations are deferred. Options under
-consideration for future issues include:
-
-```
-Android/JVM system clock
-Kotlin Multiplatform clock
-Apple clock
-Application-supplied clock
-```
+## Testing
 
 Test utilities in `dataloom-testing` provide `DataLoomClock` implementations
-for deterministic testing. See
+for deterministic testing (`FixedDataLoomClock`, `MutableDataLoomClock`). See
 [Clock and Identifier Test Utilities](../testing/clock-and-identifiers.md).
+`dataloom-testing` does not yet provide an equivalent shared
+`DataLoomMonotonicClock` fake; test authors currently write a small private
+fake per test file. Consolidating that into `dataloom-testing` is open
+follow-up work.

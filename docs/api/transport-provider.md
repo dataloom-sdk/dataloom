@@ -9,11 +9,10 @@
 synchronization changes between DataLoom runtime coordination and
 application-controlled remote integrations.
 
-This issue introduces contract surfaces only. It does **not** implement
-Retrofit, Ktor, GraphQL, Apollo, gRPC, WebSocket, MQTT, HTTP,
-authentication, serialization, encryption, compression, retries,
-synchronization execution, runtime orchestration, or concrete
-transport providers.
+The shared contract remains protocol-independent. Concrete reference providers
+may be delivered as optional modules outside `dataloom-api` (for example, the
+JVM/Android Retrofit reference), while Ktor/GraphQL/gRPC and other protocol
+integrations remain separate modules.
 
 ## API changes introduced by DL-011
 
