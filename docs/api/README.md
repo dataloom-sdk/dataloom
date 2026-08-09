@@ -75,6 +75,7 @@ complete V1 strategy, asset, plugin, governance, or observability engine.
 | [Secure random](./secure-random.md) | Available contract | Injected cryptographically secure random-bytes abstraction, with production JVM/Android/Apple implementations. SDK-wide adoption (key/nonce/token generation) remains open. |
 | [Identifier generation](./identifier-generation.md) | Available contract | Injected identifier-generator contract and deterministic test use. |
 | [Integrity and key references](./integrity-and-key-references.md) | Available contract | Unkeyed digest and keyed HMAC ("signature") primitives plus an opaque key-reference label, with production JVM/Android/Apple implementations. Consumer wiring (asset-sync manifests, encryption metadata) remains open. |
+| [Configuration snapshots](./configuration-snapshots.md) | Available contract (bounded first slice) | Typed, schema-validated configuration sources merged by fixed precedence into immutable, checksummed, versioned snapshots, with bounded in-memory rollback. Durable persistence, the shared policy engine, and remote delivery remain open. |
 
 ## Provider contracts and assembly
 
