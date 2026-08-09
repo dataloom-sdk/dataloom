@@ -33,8 +33,18 @@ kotlin {
             implementation(libs.sqldelight.android.driver)
         }
 
-        findByName("iosMain")?.dependencies {
-            implementation(libs.sqldelight.native.driver)
+        // findByName("iosMain") returns null here: it is a synchronous,
+        // point-in-time lookup, and Kotlin does not register the "iosMain"
+        // intermediate source set (the one src/iosMain/kotlin actually
+        // compiles against, via compileIosMainKotlinMetadata) until later in
+        // its own target-configuration lifecycle. named(...) returns a lazy
+        // provider that defers configuration until the source set is
+        // actually created, so it sees the source set once Kotlin registers
+        // it instead of missing it entirely.
+        matching { it.name == "iosMain" }.configureEach {
+            dependencies {
+                implementation(libs.sqldelight.native.driver)
+            }
         }
     }
 }
