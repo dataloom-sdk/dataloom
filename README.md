@@ -94,6 +94,9 @@ between gate flips.
 
 | Date | What landed | Gate/track |
 |---|---|---|
+| 2026-08-09 | Reference file-backed `StorageProvider` — zero database dependency, Android + iOS (`#219`) | Adoption readiness |
+| 2026-08-09 | Reference gRPC-backed `TransportProvider` (grpc-kotlin, Android/JVM) (`#225`) | Adoption readiness |
+| 2026-08-09 | `DataLoomSecureRandom` cryptographic randomness boundary for JVM/Android/iOS (`#230`) | `#93` foundations |
 | 2026-08-09 | Corrected the dashboard's stale `1 of 10`/`#93`-complete claim to `0 of 10` | Documentation accuracy |
 | 2026-08-08 | Production `DataLoomClock`/`DataLoomMonotonicClock` for JVM, Android, and iOS (`#221`) | `#93` foundations |
 | 2026-08-08 | Reference DataStore-backed `StorageProvider` for small key-value/cache-first data (`#220`) | Adoption readiness |
@@ -103,7 +106,7 @@ between gate flips.
 
 | Next priority | V1 gate | Status | Finished on `main` | Still pending before the gate is complete |
 |---:|---|---|---|---|
-| 0 | [DL-039 foundations, artifacts, compatibility](https://github.com/dataloom-sdk/dataloom/issues/93) | PARTIAL | Public API/provider/runtime boundaries, module rules, JVM and Kotlin/Native ABI baselines, external-consumer compilation, durable queue/retry/circuit state primitives, canonical operational envelope/redaction and deterministic bounded V1 wire codec/upcast registry, and production wall-clock/monotonic-clock implementations for JVM, Android, and iOS (`#221`, 2026-08-08) | Versioned configuration snapshots/precedence/rollback, a shared cross-subsystem policy engine, durable state for conflict/events/assets/audit, secure random/key/signature/integrity primitives, an explicit KMP Android target, and the final published artifact graph/BOM |
+| 0 | [DL-039 foundations, artifacts, compatibility](https://github.com/dataloom-sdk/dataloom/issues/93) | PARTIAL | Public API/provider/runtime boundaries, module rules, JVM and Kotlin/Native ABI baselines, external-consumer compilation, durable queue/retry/circuit state primitives, canonical operational envelope/redaction and deterministic bounded V1 wire codec/upcast registry, production wall-clock/monotonic-clock implementations for JVM, Android, and iOS (`#221`, 2026-08-08), and a `DataLoomSecureRandom` cryptographic randomness boundary for JVM, Android, and iOS (`#230`, 2026-08-09) | Versioned configuration snapshots/precedence/rollback, a shared cross-subsystem policy engine, durable state for conflict/events/assets/audit, key/signature/integrity primitives and SDK-wide adoption of secure random at every key/nonce/token site, an explicit KMP Android target, and the final published artifact graph/BOM |
 | 1 | [DL-039B six strategy engine](https://github.com/dataloom-sdk/dataloom/issues/102) | IN PROGRESS | Versioned contracts and deterministic planner for all six strategies; direct network-only and remote-first slices; fail-closed queue admission; Room v8/Apple v4 accepted-plan persistence; exact encoder/resolver correspondence; direct, protected, and queued replay without current-policy evaluation; typed fallback and reconciliation hooks | Complete atomic offline-first intent/outbox admission, cache value/refresh ownership, hybrid coherence/conflict application, durable strategy events/diagnostics, and the full native Android/KMP Android/KMP iOS failure/restart matrix |
 | 2 | [DL-039A Android/KMP/iOS parity](https://github.com/dataloom-sdk/dataloom/issues/101) | IN PROGRESS | Native Android adapters, Kotlin/Native Apple targets, XCFramework assembly, Swift smoke compilation, and initial Apple file-backed persistence | Add explicit KMP Android variants, production `dataloom-android`/`dataloom-ios` aggregation, iOS lifecycle/connectivity/background/security adapters, staged external consumers, and the complete parity matrix |
 | 3 | [DL-040 retry and circuit breaker](https://github.com/dataloom-sdk/dataloom/issues/94) | QUALIFICATION BLOCKED | FR-RETRY-001–012 implementation mapping; built-in backoff/jitter, limits, hints, six timeout boundaries, durable Room/Apple circuit state, half-open leases, authorized administration, bounded telemetry, and common/platform-store recovery flows | Prove real Android and Apple process termination/relaunch, genuine cross-process probe contention where supported, and the complete AC-FUNC-004 provider flow through native Android, KMP Android, and KMP iOS |
@@ -124,17 +127,17 @@ equally-valid choice — none is preferred or required.
 
 | Provider | Technology | Platforms | Status |
 |---|---|---|---|
-| Storage | Room | Android/JVM | [#209](https://github.com/dataloom-sdk/dataloom/issues/209) → [PR #212](https://github.com/dataloom-sdk/dataloom/pull/212) — CI failing, fix pending |
-| Storage | SQLDelight | Android + iOS | [#215](https://github.com/dataloom-sdk/dataloom/issues/215) → [PR #216](https://github.com/dataloom-sdk/dataloom/pull/216) — CI failing, fix pending |
-| Storage | Plain files (zero dependency) | Android + iOS | [#217](https://github.com/dataloom-sdk/dataloom/issues/217) → [PR #219](https://github.com/dataloom-sdk/dataloom/pull/219) — CI failing, fix pending |
+| Storage | Room | Android/JVM | [#209](https://github.com/dataloom-sdk/dataloom/issues/209) → [PR #212](https://github.com/dataloom-sdk/dataloom/pull/212) — CI failing, root cause not yet isolated |
+| Storage | SQLDelight | Android + iOS | [#215](https://github.com/dataloom-sdk/dataloom/issues/215) → [PR #216](https://github.com/dataloom-sdk/dataloom/pull/216) — fix pushed 2026-08-09, CI re-running |
+| Storage | Plain files (zero dependency) | Android + iOS | ✅ Merged ([#217](https://github.com/dataloom-sdk/dataloom/issues/217) → [PR #219](https://github.com/dataloom-sdk/dataloom/pull/219)) |
 | Storage | DataStore (small key-value/cache-first data) | Android | ✅ Merged ([#218](https://github.com/dataloom-sdk/dataloom/issues/218) → [PR #220](https://github.com/dataloom-sdk/dataloom/pull/220)) |
-| Transport | Ktor | Android + iOS + JVM | [#210](https://github.com/dataloom-sdk/dataloom/issues/210) → [PR #213](https://github.com/dataloom-sdk/dataloom/pull/213) — CI failing, fix pending |
-| Transport | Retrofit/OkHttp | Android/JVM | [#226](https://github.com/dataloom-sdk/dataloom/issues/226) → [PR #227](https://github.com/dataloom-sdk/dataloom/pull/227) — in progress |
-| Transport | GraphQL (Apollo Kotlin) | Android + iOS | [#222](https://github.com/dataloom-sdk/dataloom/issues/222) → [PR #224](https://github.com/dataloom-sdk/dataloom/pull/224) — in progress |
-| Transport | gRPC | Android/JVM (iOS not yet supported by the ecosystem) | [#223](https://github.com/dataloom-sdk/dataloom/issues/223) → [PR #225](https://github.com/dataloom-sdk/dataloom/pull/225) — in progress |
+| Transport | Ktor | Android + iOS + JVM | [#210](https://github.com/dataloom-sdk/dataloom/issues/210) → [PR #213](https://github.com/dataloom-sdk/dataloom/pull/213) — fix pushed 2026-08-09, CI re-running |
+| Transport | Retrofit/OkHttp | Android/JVM | [#226](https://github.com/dataloom-sdk/dataloom/issues/226) → [PR #227](https://github.com/dataloom-sdk/dataloom/pull/227) — CI failing, fix pending |
+| Transport | GraphQL (Apollo Kotlin) | Android + iOS | [#222](https://github.com/dataloom-sdk/dataloom/issues/222) → [PR #224](https://github.com/dataloom-sdk/dataloom/pull/224) — CI failing, fix pending |
+| Transport | gRPC | Android/JVM (iOS not yet supported by the ecosystem) | ✅ Merged ([#223](https://github.com/dataloom-sdk/dataloom/issues/223) → [PR #225](https://github.com/dataloom-sdk/dataloom/pull/225)) |
 | Docs | Getting-started quickstart | — | ✅ Merged ([#211](https://github.com/dataloom-sdk/dataloom/issues/211) → [PR #214](https://github.com/dataloom-sdk/dataloom/pull/214)) |
 
-**2 of 9 merged, 4 blocked on CI fixes with feedback already posted, 3 freshly in progress.**
+**4 of 9 merged, 2 fixed and re-running CI, 2 blocked on CI fixes with feedback already posted, 1 root cause not yet isolated.**
 
 ### Market evidence gates
 
