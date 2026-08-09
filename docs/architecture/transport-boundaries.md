@@ -77,9 +77,21 @@ keeping Retrofit types outside DataLoom shared APIs.
 
 ## GraphQL guidance
 
-A future transport provider may use Apollo or another GraphQL client, but
-GraphQL documents, generated models, and client types must remain outside the
-shared DataLoom API.
+`dataloom-transport-graphql` is an optional, independently consumable reference
+[`TransportProvider`](../api/transport-provider.md) implementation backed by
+Apollo Kotlin 4.x. It maps a DataLoom push to a GraphQL mutation and a pull to
+a GraphQL query. The module is schema-agnostic: application-owned generated
+Apollo operation types and response adapters are supplied by the application
+subclass; they never enter the shared DataLoom API surface.
+
+GraphQL documents, generated models, and Apollo client types must remain outside
+the shared DataLoom contracts. `dataloom-transport-graphql` depends only on
+`dataloom-api` and the Apollo Kotlin runtime; core modules (`dataloom-model`,
+`dataloom-api`, `dataloom-core`, `dataloom-runtime`) do not gain Apollo as a
+dependency.
+
+See `dataloom-transport-graphql/README.md` for integration guidance and the
+quickstart.
 
 ## gRPC guidance
 
