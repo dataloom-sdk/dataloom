@@ -114,7 +114,12 @@ private object DefaultRetrofitTransportErrorMapper {
     fun map(throwable: Throwable): DataLoomError {
         return when (throwable) {
             is InterruptedIOException,
-            -> if (throwable is SocketTimeoutException) {
+            // OkHttp's per-call timeout (callTimeoutMillis) does not throw
+            // SocketTimeoutException — it throws a plain InterruptedIOException
+            // with the literal message "timeout" (see RealCall.timeoutExit()).
+            // Connect/read/write timeouts do throw SocketTimeoutException, a
+            // subtype of InterruptedIOException, so both are covered here.
+            -> if (throwable is SocketTimeoutException || throwable.message == "timeout") {
                 error(
                     code = "RETROFIT_TIMEOUT",
                     category = ErrorCategory.NETWORK,
