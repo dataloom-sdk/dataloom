@@ -55,6 +55,7 @@ include(
     ":dataloom-runtime",
     ":dataloom-testing",
     ":dataloom-transport-graphql",
+    ":dataloom-transport-retrofit",
     ":dataloom-transport-grpc",
     ":runtime-external-consumer",
     ":dataloom-storage-file",
