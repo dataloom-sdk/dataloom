@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "205d79c1763a4955bdc52dfc2e578318",
+    "identityHash": "eecf9cde613247fa6eb7635f1b4371c5",
     "entities": [
       {
         "tableName": "outbound_change_sets",
@@ -338,10 +338,9 @@
         }
       }
     ],
-    "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '205d79c1763a4955bdc52dfc2e578318')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'eecf9cde613247fa6eb7635f1b4371c5')"
     ]
   }
 }
