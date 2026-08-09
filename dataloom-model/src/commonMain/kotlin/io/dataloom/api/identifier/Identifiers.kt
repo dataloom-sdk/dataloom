@@ -674,3 +674,84 @@ public value class RetryPolicyId(
 
     override fun toString(): String = value
 }
+
+/**
+ * Canonical identifier for a [io.dataloom.api.policy.PolicyCheck] implementation.
+ *
+ * A [PolicyCheckId] uniquely identifies one deterministic policy check within a
+ * [io.dataloom.api.policy.PolicySet]. DataLoom does not generate check identifiers
+ * automatically; the host application or subsystem wiring the check in is
+ * responsible for supplying a meaningful, stable value. The same identifier
+ * reappears on every [io.dataloom.api.policy.PolicyCheckEvidence] entry the
+ * check produces, so it is also the join key between a
+ * [io.dataloom.api.policy.PolicyDecision]'s evidence trail and the check that
+ * produced each entry.
+ *
+ * Ownership: host application or subsystem wiring the check in (retry
+ * reclassification, conflict selection, content policy, plugin permissions,
+ * residency, or administrative overrides).
+ *
+ * Constraints:
+ * - Value must not be blank or whitespace-only.
+ * - Valid input is preserved exactly as supplied.
+ * - No normalization or automatic generation is applied.
+ * - `toString()` returns the underlying value.
+ * - Must be unique within a single [io.dataloom.api.policy.PolicySet] — see
+ *   [io.dataloom.api.policy.PolicySet]'s construction validation.
+ *
+ * Example placeholder values:
+ * ```
+ * residency-region-allowlist
+ * plugin-signature-required
+ * content-scan-quarantine
+ * ```
+ */
+@JvmInline
+public value class PolicyCheckId(
+    /** Underlying policy-check identifier value. */
+    public val value: String,
+) {
+    init {
+        require(value.isNotBlank()) { "PolicyCheckId must not be blank." }
+    }
+
+    override fun toString(): String = value
+}
+
+/**
+ * Canonical identifier for a [io.dataloom.api.policy.PolicySet].
+ *
+ * A [PolicySetId] uniquely identifies one assembled, ordered collection of
+ * policy checks. DataLoom does not generate set identifiers automatically;
+ * the caller assembling the [io.dataloom.api.policy.PolicySet] is responsible
+ * for supplying a meaningful, stable value. It reappears on every
+ * [io.dataloom.api.policy.PolicyDecision] produced from that set, so
+ * diagnostics and audit trails can attribute a decision to the named set that
+ * produced it.
+ *
+ * Ownership: host application or DataLoom subsystem assembling the set.
+ *
+ * Constraints:
+ * - Value must not be blank or whitespace-only.
+ * - Valid input is preserved exactly as supplied.
+ * - No normalization or automatic generation is applied.
+ * - `toString()` returns the underlying value.
+ *
+ * Example placeholder values:
+ * ```
+ * retry-reclassification-v1
+ * plugin-permission-defaults
+ * residency-administrative-overrides
+ * ```
+ */
+@JvmInline
+public value class PolicySetId(
+    /** Underlying policy-set identifier value. */
+    public val value: String,
+) {
+    init {
+        require(value.isNotBlank()) { "PolicySetId must not be blank." }
+    }
+
+    override fun toString(): String = value
+}

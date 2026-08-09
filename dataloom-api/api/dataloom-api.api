@@ -1336,6 +1336,147 @@ public final class io/dataloom/api/payload/PayloadContentType {
 	public final synthetic fun unbox-impl ()Ljava/lang/String;
 }
 
+public abstract interface class io/dataloom/api/policy/PolicyCheck {
+	public abstract fun evaluate (Lio/dataloom/api/policy/PolicyEvaluationInput;)Lio/dataloom/api/policy/PolicyCheckOutcome;
+	public abstract fun getId-AzaE31A ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/policy/PolicyCheckEvidence {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/policy/PolicyCheckOutcome;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-AzaE31A ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/policy/PolicyCheckOutcome;
+	public final fun copy-eqwzjLE (Ljava/lang/String;Lio/dataloom/api/policy/PolicyCheckOutcome;)Lio/dataloom/api/policy/PolicyCheckEvidence;
+	public static synthetic fun copy-eqwzjLE$default (Lio/dataloom/api/policy/PolicyCheckEvidence;Ljava/lang/String;Lio/dataloom/api/policy/PolicyCheckOutcome;ILjava/lang/Object;)Lio/dataloom/api/policy/PolicyCheckEvidence;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCheckId-AzaE31A ()Ljava/lang/String;
+	public final fun getOutcome ()Lio/dataloom/api/policy/PolicyCheckOutcome;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/policy/PolicyCheckOutcome {
+	public abstract fun getJustification ()Ljava/lang/String;
+	public abstract fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+}
+
+public final class io/dataloom/api/policy/PolicyCheckOutcome$Allow : io/dataloom/api/policy/PolicyCheckOutcome {
+	public fun <init> (Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/policy/PolicyCheckOutcome$Allow;
+	public static synthetic fun copy$default (Lio/dataloom/api/policy/PolicyCheckOutcome$Allow;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/policy/PolicyCheckOutcome$Allow;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getJustification ()Ljava/lang/String;
+	public fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/policy/PolicyCheckOutcome$Defer : io/dataloom/api/policy/PolicyCheckOutcome {
+	public fun <init> (Lio/dataloom/api/scheduling/SchedulingDelay;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Lio/dataloom/api/scheduling/SchedulingDelay;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (Lio/dataloom/api/scheduling/SchedulingDelay;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/policy/PolicyCheckOutcome$Defer;
+	public static synthetic fun copy$default (Lio/dataloom/api/policy/PolicyCheckOutcome$Defer;Lio/dataloom/api/scheduling/SchedulingDelay;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/policy/PolicyCheckOutcome$Defer;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDelay ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public fun getJustification ()Ljava/lang/String;
+	public fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/policy/PolicyCheckOutcome$Deny : io/dataloom/api/policy/PolicyCheckOutcome {
+	public fun <init> (Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/policy/PolicyCheckOutcome$Deny;
+	public static synthetic fun copy$default (Lio/dataloom/api/policy/PolicyCheckOutcome$Deny;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/policy/PolicyCheckOutcome$Deny;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getJustification ()Ljava/lang/String;
+	public fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/policy/PolicyCheckOutcome$RequireUserAction : io/dataloom/api/policy/PolicyCheckOutcome {
+	public fun <init> (Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/policy/PolicyCheckOutcome$RequireUserAction;
+	public static synthetic fun copy$default (Lio/dataloom/api/policy/PolicyCheckOutcome$RequireUserAction;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/policy/PolicyCheckOutcome$RequireUserAction;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getJustification ()Ljava/lang/String;
+	public fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/policy/PolicyConfigurationKeys {
+	public static final field INSTANCE Lio/dataloom/api/policy/PolicyConfigurationKeys;
+	public final fun getDEFER_DOMINATES_REQUIRE_USER_ACTION-6Gq9DT0 ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/policy/PolicyDecision {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/policy/PolicyCheckOutcome;Ljava/lang/String;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-hkzOuTw ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/policy/PolicyCheckOutcome;
+	public final fun component3-oXtB38g ()Ljava/lang/String;
+	public final fun component4 ()Ljava/util/List;
+	public final fun copy-tCNdeoI (Ljava/lang/String;Lio/dataloom/api/policy/PolicyCheckOutcome;Ljava/lang/String;Ljava/util/List;)Lio/dataloom/api/policy/PolicyDecision;
+	public static synthetic fun copy-tCNdeoI$default (Lio/dataloom/api/policy/PolicyDecision;Ljava/lang/String;Lio/dataloom/api/policy/PolicyCheckOutcome;Ljava/lang/String;Ljava/util/List;ILjava/lang/Object;)Lio/dataloom/api/policy/PolicyDecision;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEvidence ()Ljava/util/List;
+	public final fun getOutcome ()Lio/dataloom/api/policy/PolicyCheckOutcome;
+	public final fun getPolicySetId-hkzOuTw ()Ljava/lang/String;
+	public final fun getWinningCheckId-oXtB38g ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/policy/PolicyEvaluationBudget {
+	public fun <init> (J)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaxElapsedNanoseconds ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/policy/PolicyEvaluationInput {
+	public fun <init> (Lio/dataloom/api/context/ExecutionContext;Lio/dataloom/api/configuration/ConfigurationSnapshot;Ljava/util/Map;Lio/dataloom/api/context/DataLoomMetadata;)V
+	public synthetic fun <init> (Lio/dataloom/api/context/ExecutionContext;Lio/dataloom/api/configuration/ConfigurationSnapshot;Ljava/util/Map;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/context/ExecutionContext;
+	public final fun component2 ()Lio/dataloom/api/configuration/ConfigurationSnapshot;
+	public final fun component3 ()Ljava/util/Map;
+	public final fun component4 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy (Lio/dataloom/api/context/ExecutionContext;Lio/dataloom/api/configuration/ConfigurationSnapshot;Ljava/util/Map;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/api/policy/PolicyEvaluationInput;
+	public static synthetic fun copy$default (Lio/dataloom/api/policy/PolicyEvaluationInput;Lio/dataloom/api/context/ExecutionContext;Lio/dataloom/api/configuration/ConfigurationSnapshot;Ljava/util/Map;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/api/policy/PolicyEvaluationInput;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConfigurationSnapshot ()Lio/dataloom/api/configuration/ConfigurationSnapshot;
+	public final fun getExecutionContext ()Lio/dataloom/api/context/ExecutionContext;
+	public final fun getProviderHealth ()Ljava/util/Map;
+	public final fun getStateEvidence ()Lio/dataloom/api/context/DataLoomMetadata;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/policy/PolicyEvaluator {
+	public fun <init> (Lio/dataloom/api/time/DataLoomMonotonicClock;)V
+	public final fun evaluate (Lio/dataloom/api/policy/PolicySet;Lio/dataloom/api/policy/PolicyEvaluationInput;Lio/dataloom/api/policy/PolicyEvaluationBudget;)Lio/dataloom/api/policy/PolicyDecision;
+}
+
+public final class io/dataloom/api/policy/PolicySet {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getChecks ()Ljava/util/List;
+	public final fun getId-hkzOuTw ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/api/queue/ExpiredLeaseRecoveryRequest {
 	public fun <init> (Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/context/DataLoomMetadata;)V
 	public synthetic fun <init> (Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
