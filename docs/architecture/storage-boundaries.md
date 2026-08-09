@@ -102,14 +102,13 @@ storage. Infrastructure concerns include:
 - Idempotency records
 
 The current `dataloom-queue-room` module provides Android durable queue
-persistence through `QueueProvider`.
+persistence through `QueueProvider`. The current `dataloom-storage-room`
+module provides a generic Android Room-backed `StorageProvider` for opaque
+outbound/inbound change sets and checkpoints.
 
-DL-011 introduces the `readCheckpoint` and `writeCheckpoint` operations on
-`StorageProvider` for persisting opaque `SynchronizationCheckpoint` values,
-but no concrete checkpoint storage implementation is provided. Checkpoint
-deletion and standalone durable retry/idempotency-record persistence remain
-unimplemented and must not share schemas or DAOs with application domain
-storage.
+Checkpoint deletion and standalone durable retry/idempotency-record
+persistence remain unimplemented and must not share schemas or DAOs with
+application domain storage.
 
 ---
 
@@ -123,13 +122,10 @@ Room is appropriate for:
 - Current Android DataLoom queue persistence through the dedicated
   `dataloom-queue-room` module
 
-`dataloom-queue-room` implements `QueueProvider` only. It is not a general
-Room-backed `StorageProvider` for application domain data or synchronization
-checkpoints. A reusable Room-backed `StorageProvider` remains unimplemented,
-and its V1 technology and artifact boundary are not yet decided.
-
-DL-009 did not provide a concrete Room implementation; the later queue module
-must not be misrepresented as filling that broader storage-provider scope.
+`dataloom-queue-room` implements `QueueProvider` only. The separate
+`dataloom-storage-room` module implements a generic `StorageProvider`, but it
+still does not replace application domain DAOs, repositories, transactions, or
+business merge rules.
 
 ---
 

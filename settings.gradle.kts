@@ -67,12 +67,13 @@ include(
 // when the DATALOOM_ANDROID_BUILD environment variable is set to "true".
 //
 // On CI the android-validation job sets DATALOOM_ANDROID_BUILD=true and
-// builds the three modules independently.
+// builds the four modules independently.
 //
 // Modules are independently consumable:
 //   - dataloom-connectivity-android — Android ConnectivityProvider
 //   - dataloom-scheduler-workmanager — WorkManager SchedulerProvider and worker bridge
 //   - dataloom-queue-room — Room QueueProvider
+//   - dataloom-storage-room — Room StorageProvider
 //
 // See docs/android/README.md for integration guidance.
 val isAndroidBuildEnabled: Boolean =
@@ -83,6 +84,7 @@ if (isAndroidBuildEnabled) {
         ":dataloom-connectivity-android",
         ":dataloom-scheduler-workmanager",
         ":dataloom-queue-room",
+        ":dataloom-storage-room",
         ":dataloom-storage-datastore",
     )
 }
