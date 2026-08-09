@@ -56,7 +56,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
-import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
@@ -325,7 +324,8 @@ class GrpcTransportProviderTest {
         assertEquals(ErrorCategory.INTERNAL, error.category)
         assertEquals(Recoverability.NON_RECOVERABLE, error.recoverability)
         assertEquals("GRPC_INTERNAL", error.code.value)
-        assertNotNull(error.cause)
+        // Cause is wrapped in a transport-neutral type; no io.grpc.* type escapes.
+        assertIs<GrpcTransportCause>(error.cause)
     }
 
     @Test

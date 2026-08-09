@@ -46,13 +46,16 @@ public object GrpcStatusMapper {
 
     private fun fromStatus(status: Status, cause: Throwable): DataLoomError {
         val code = status.code ?: Status.Code.UNKNOWN
+        val sanitizedMessage = "gRPC call failed: ${code.name}"
         return GrpcDataLoomError(
             code = ErrorCode(errorCodeFor(code)),
             category = categoryFor(code),
             severity = ErrorSeverity.ERROR,
             recoverability = recoverabilityFor(code),
-            message = "gRPC call failed: ${code.name}",
-            cause = cause,
+            message = sanitizedMessage,
+            // Wrap in a transport-neutral cause so no io.grpc.* type is
+            // accessible via the DataLoomError.cause property type.
+            cause = GrpcTransportCause(sanitizedMessage, cause),
         )
     }
 

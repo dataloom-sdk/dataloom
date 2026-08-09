@@ -7,8 +7,8 @@ import io.grpc.StatusException
 import io.grpc.StatusRuntimeException
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
-import kotlin.test.assertSame
 
 class GrpcStatusMapperTest {
 
@@ -175,24 +175,56 @@ class GrpcStatusMapperTest {
         assertEquals(Recoverability.NON_RECOVERABLE, error.recoverability)
     }
 
+    @Test
+    fun `OUT_OF_RANGE maps to VALIDATION NON_RECOVERABLE`() {
+        val ex = StatusException(Status.OUT_OF_RANGE)
+        val error = GrpcStatusMapper.map(ex)
+
+        assertEquals(ErrorCategory.VALIDATION, error.category)
+        assertEquals(Recoverability.NON_RECOVERABLE, error.recoverability)
+        assertEquals("GRPC_OUT_OF_RANGE", error.code.value)
+    }
+
+    @Test
+    fun `ALREADY_EXISTS maps to NETWORK NON_RECOVERABLE`() {
+        val ex = StatusException(Status.ALREADY_EXISTS)
+        val error = GrpcStatusMapper.map(ex)
+
+        assertEquals(ErrorCategory.NETWORK, error.category)
+        assertEquals(Recoverability.NON_RECOVERABLE, error.recoverability)
+        assertEquals("GRPC_ALREADY_EXISTS", error.code.value)
+    }
+
+    @Test
+    fun `OK maps to INTERNAL NON_RECOVERABLE as unexpected success`() {
+        val ex = StatusException(Status.OK)
+        val error = GrpcStatusMapper.map(ex)
+
+        assertEquals(ErrorCategory.INTERNAL, error.category)
+        assertEquals(Recoverability.NON_RECOVERABLE, error.recoverability)
+        assertEquals("GRPC_UNEXPECTED_OK", error.code.value)
+    }
+
     // ── Cause preservation ────────────────────────────────────────────────
 
     @Test
-    fun `cause is retained in mapped error for StatusException`() {
+    fun `cause is retained in mapped error for StatusException as GrpcTransportCause`() {
         val ex = StatusException(Status.UNAVAILABLE)
         val error = GrpcStatusMapper.map(ex)
 
         assertNotNull(error.cause)
-        assertSame(ex, error.cause)
+        // The cause must be a transport-neutral wrapper, not a raw io.grpc type,
+        // so that no io.grpc.* type escapes the DataLoomError API boundary.
+        assertIs<GrpcTransportCause>(error.cause)
     }
 
     @Test
-    fun `cause is retained in mapped error for StatusRuntimeException`() {
+    fun `cause is retained in mapped error for StatusRuntimeException as GrpcTransportCause`() {
         val ex = StatusRuntimeException(Status.INTERNAL)
         val error = GrpcStatusMapper.map(ex)
 
         assertNotNull(error.cause)
-        assertSame(ex, error.cause)
+        assertIs<GrpcTransportCause>(error.cause)
     }
 
     // ── Message sanitization ──────────────────────────────────────────────
