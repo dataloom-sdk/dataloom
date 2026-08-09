@@ -1,0 +1,24 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <dataloom:dataloom-storage-file>
+final class io.dataloom.storage.file/FileStorageProvider : io.dataloom.api.storage/StorageProvider { // io.dataloom.storage.file/FileStorageProvider|null[0]
+    constructor <init>(kotlin/String, io.dataloom.api.provider/ProviderDescriptor = ...) // io.dataloom.storage.file/FileStorageProvider.<init>|<init>(kotlin.String;io.dataloom.api.provider.ProviderDescriptor){}[0]
+
+    final val descriptor // io.dataloom.storage.file/FileStorageProvider.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.storage.file/FileStorageProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    final suspend fun acknowledgeOutboundChanges(io.dataloom.api.synchronization/OutboundChangeAcknowledgementRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.storage.file/FileStorageProvider.acknowledgeOutboundChanges|acknowledgeOutboundChanges(io.dataloom.api.synchronization.OutboundChangeAcknowledgementRequest){}[0]
+    final suspend fun applyInboundChanges(io.dataloom.api.storage/InboundChangeApplyRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.storage.file/FileStorageProvider.applyInboundChanges|applyInboundChanges(io.dataloom.api.storage.InboundChangeApplyRequest){}[0]
+    final suspend fun close(): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.storage.file/FileStorageProvider.close|close(){}[0]
+    final suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.storage.file/FileStorageProvider.health|health(){}[0]
+    final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.storage.file/FileStorageProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
+    final suspend fun readCheckpoint(io.dataloom.api.synchronization/CheckpointReadRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.synchronization/SynchronizationCheckpoint?> // io.dataloom.storage.file/FileStorageProvider.readCheckpoint|readCheckpoint(io.dataloom.api.synchronization.CheckpointReadRequest){}[0]
+    final suspend fun readOutboundChanges(io.dataloom.api.storage/OutboundChangeReadRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.storage/OutboundChangeReadResult> // io.dataloom.storage.file/FileStorageProvider.readOutboundChanges|readOutboundChanges(io.dataloom.api.storage.OutboundChangeReadRequest){}[0]
+    final suspend fun storeOutboundChangeSet(io.dataloom.api.change/ChangeSet): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.storage.file/FileStorageProvider.storeOutboundChangeSet|storeOutboundChangeSet(io.dataloom.api.change.ChangeSet){}[0]
+    final suspend fun writeCheckpoint(io.dataloom.api.synchronization/CheckpointWriteRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.storage.file/FileStorageProvider.writeCheckpoint|writeCheckpoint(io.dataloom.api.synchronization.CheckpointWriteRequest){}[0]
+}
