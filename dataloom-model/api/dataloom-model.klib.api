@@ -90,6 +90,10 @@ abstract interface io.dataloom.api.error/RetryDelayHintCarrier { // io.dataloom.
         abstract fun <get-retryDelayHint>(): io.dataloom.api.error/RetryDelayHint // io.dataloom.api.error/RetryDelayHintCarrier.retryDelayHint.<get-retryDelayHint>|<get-retryDelayHint>(){}[0]
 }
 
+abstract interface io.dataloom.api.random/DataLoomSecureRandom { // io.dataloom.api.random/DataLoomSecureRandom|null[0]
+    abstract fun nextBytes(kotlin/Int): kotlin/ByteArray // io.dataloom.api.random/DataLoomSecureRandom.nextBytes|nextBytes(kotlin.Int){}[0]
+}
+
 abstract interface io.dataloom.api.time/DataLoomClock { // io.dataloom.api.time/DataLoomClock|null[0]
     abstract fun now(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.time/DataLoomClock.now|now(){}[0]
 }
@@ -130,6 +134,12 @@ final class io.dataloom.api.error/RetryDelayHint { // io.dataloom.api.error/Retr
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.error/RetryDelayHint.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.error/RetryDelayHint.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.error/RetryDelayHint.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.random/AppleDataLoomSecureRandom : io.dataloom.api.random/DataLoomSecureRandom { // io.dataloom.api.random/AppleDataLoomSecureRandom|null[0]
+    constructor <init>() // io.dataloom.api.random/AppleDataLoomSecureRandom.<init>|<init>(){}[0]
+
+    final fun nextBytes(kotlin/Int): kotlin/ByteArray // io.dataloom.api.random/AppleDataLoomSecureRandom.nextBytes|nextBytes(kotlin.Int){}[0]
 }
 
 final class io.dataloom.api.time/AppleDataLoomClock : io.dataloom.api.time/DataLoomClock { // io.dataloom.api.time/AppleDataLoomClock|null[0]

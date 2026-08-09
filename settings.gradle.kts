@@ -12,6 +12,11 @@ pluginManagement {
                         "org.jetbrains.kotlin:kotlin-gradle-plugin:${requested.version}",
                     )
 
+                "org.jetbrains.kotlin.jvm" ->
+                    useModule(
+                        "org.jetbrains.kotlin:kotlin-gradle-plugin:${requested.version}",
+                    )
+
                 "com.android.library" ->
                     useModule(
                         "com.android.tools.build:gradle:${requested.version}",
@@ -50,7 +55,9 @@ include(
     ":dataloom-runtime",
     ":dataloom-testing",
     ":dataloom-transport-retrofit",
+    ":dataloom-transport-grpc",
     ":runtime-external-consumer",
+    ":dataloom-storage-file",
 )
 
 // Android implementation modules.
