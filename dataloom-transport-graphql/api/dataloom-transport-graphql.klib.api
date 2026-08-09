@@ -1,0 +1,60 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <dataloom:dataloom-transport-graphql>
+abstract class io.dataloom.transport.graphql/ApolloGraphQLTransportProvider : io.dataloom.api.transport/TransportProvider { // io.dataloom.transport.graphql/ApolloGraphQLTransportProvider|null[0]
+    constructor <init>() // io.dataloom.transport.graphql/ApolloGraphQLTransportProvider.<init>|<init>(){}[0]
+
+    abstract val apolloClient // io.dataloom.transport.graphql/ApolloGraphQLTransportProvider.apolloClient|{}apolloClient[0]
+        abstract fun <get-apolloClient>(): com.apollographql.apollo/ApolloClient // io.dataloom.transport.graphql/ApolloGraphQLTransportProvider.apolloClient.<get-apolloClient>|<get-apolloClient>(){}[0]
+
+    abstract suspend fun executePull(io.dataloom.api.transport/PullChangesRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.transport/PullChangesResult> // io.dataloom.transport.graphql/ApolloGraphQLTransportProvider.executePull|executePull(io.dataloom.api.transport.PullChangesRequest){}[0]
+    abstract suspend fun executePush(io.dataloom.api.transport/PushChangesRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.synchronization/ChangeSetAcknowledgement> // io.dataloom.transport.graphql/ApolloGraphQLTransportProvider.executePush|executePush(io.dataloom.api.transport.PushChangesRequest){}[0]
+    final fun <#A1: com.apollographql.apollo.api/Mutation.Data> adaptMutationResponse(com.apollographql.apollo.api/ApolloResponse<#A1>, kotlin/Function1<#A1, io.dataloom.api.synchronization/ChangeSetAcknowledgement>): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.synchronization/ChangeSetAcknowledgement> // io.dataloom.transport.graphql/ApolloGraphQLTransportProvider.adaptMutationResponse|adaptMutationResponse(com.apollographql.apollo.api.ApolloResponse<0:0>;kotlin.Function1<0:0,io.dataloom.api.synchronization.ChangeSetAcknowledgement>){0§<com.apollographql.apollo.api.Mutation.Data>}[0]
+    final fun <#A1: com.apollographql.apollo.api/Query.Data> adaptQueryResponse(com.apollographql.apollo.api/ApolloResponse<#A1>, kotlin/Function1<#A1, io.dataloom.api.transport/PullChangesResult>): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.transport/PullChangesResult> // io.dataloom.transport.graphql/ApolloGraphQLTransportProvider.adaptQueryResponse|adaptQueryResponse(com.apollographql.apollo.api.ApolloResponse<0:0>;kotlin.Function1<0:0,io.dataloom.api.transport.PullChangesResult>){0§<com.apollographql.apollo.api.Query.Data>}[0]
+    final suspend fun pullChanges(io.dataloom.api.transport/PullChangesRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.transport/PullChangesResult> // io.dataloom.transport.graphql/ApolloGraphQLTransportProvider.pullChanges|pullChanges(io.dataloom.api.transport.PullChangesRequest){}[0]
+    final suspend fun pushChanges(io.dataloom.api.transport/PushChangesRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.synchronization/ChangeSetAcknowledgement> // io.dataloom.transport.graphql/ApolloGraphQLTransportProvider.pushChanges|pushChanges(io.dataloom.api.transport.PushChangesRequest){}[0]
+}
+
+final class io.dataloom.transport.graphql/GraphQLTransportError : io.dataloom.api.error/DataLoomError { // io.dataloom.transport.graphql/GraphQLTransportError|null[0]
+    constructor <init>(io.dataloom.api.error/ErrorCode, io.dataloom.api.error/ErrorCategory, io.dataloom.api.error/ErrorSeverity, io.dataloom.api.error/Recoverability, kotlin/String, kotlin/Throwable? = ...) // io.dataloom.transport.graphql/GraphQLTransportError.<init>|<init>(io.dataloom.api.error.ErrorCode;io.dataloom.api.error.ErrorCategory;io.dataloom.api.error.ErrorSeverity;io.dataloom.api.error.Recoverability;kotlin.String;kotlin.Throwable?){}[0]
+
+    final val category // io.dataloom.transport.graphql/GraphQLTransportError.category|{}category[0]
+        final fun <get-category>(): io.dataloom.api.error/ErrorCategory // io.dataloom.transport.graphql/GraphQLTransportError.category.<get-category>|<get-category>(){}[0]
+    final val cause // io.dataloom.transport.graphql/GraphQLTransportError.cause|{}cause[0]
+        final fun <get-cause>(): kotlin/Throwable? // io.dataloom.transport.graphql/GraphQLTransportError.cause.<get-cause>|<get-cause>(){}[0]
+    final val code // io.dataloom.transport.graphql/GraphQLTransportError.code|{}code[0]
+        final fun <get-code>(): io.dataloom.api.error/ErrorCode // io.dataloom.transport.graphql/GraphQLTransportError.code.<get-code>|<get-code>(){}[0]
+    final val message // io.dataloom.transport.graphql/GraphQLTransportError.message|{}message[0]
+        final fun <get-message>(): kotlin/String // io.dataloom.transport.graphql/GraphQLTransportError.message.<get-message>|<get-message>(){}[0]
+    final val recoverability // io.dataloom.transport.graphql/GraphQLTransportError.recoverability|{}recoverability[0]
+        final fun <get-recoverability>(): io.dataloom.api.error/Recoverability // io.dataloom.transport.graphql/GraphQLTransportError.recoverability.<get-recoverability>|<get-recoverability>(){}[0]
+    final val severity // io.dataloom.transport.graphql/GraphQLTransportError.severity|{}severity[0]
+        final fun <get-severity>(): io.dataloom.api.error/ErrorSeverity // io.dataloom.transport.graphql/GraphQLTransportError.severity.<get-severity>|<get-severity>(){}[0]
+
+    final fun component1(): io.dataloom.api.error/ErrorCode // io.dataloom.transport.graphql/GraphQLTransportError.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.error/ErrorCategory // io.dataloom.transport.graphql/GraphQLTransportError.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.error/ErrorSeverity // io.dataloom.transport.graphql/GraphQLTransportError.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.error/Recoverability // io.dataloom.transport.graphql/GraphQLTransportError.component4|component4(){}[0]
+    final fun component5(): kotlin/String // io.dataloom.transport.graphql/GraphQLTransportError.component5|component5(){}[0]
+    final fun component6(): kotlin/Throwable? // io.dataloom.transport.graphql/GraphQLTransportError.component6|component6(){}[0]
+    final fun copy(io.dataloom.api.error/ErrorCode = ..., io.dataloom.api.error/ErrorCategory = ..., io.dataloom.api.error/ErrorSeverity = ..., io.dataloom.api.error/Recoverability = ..., kotlin/String = ..., kotlin/Throwable? = ...): io.dataloom.transport.graphql/GraphQLTransportError // io.dataloom.transport.graphql/GraphQLTransportError.copy|copy(io.dataloom.api.error.ErrorCode;io.dataloom.api.error.ErrorCategory;io.dataloom.api.error.ErrorSeverity;io.dataloom.api.error.Recoverability;kotlin.String;kotlin.Throwable?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.transport.graphql/GraphQLTransportError.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.transport.graphql/GraphQLTransportError.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.transport.graphql/GraphQLTransportError.toString|toString(){}[0]
+}
+
+final object io.dataloom.transport.graphql/GraphQLTransportErrorCode { // io.dataloom.transport.graphql/GraphQLTransportErrorCode|null[0]
+    final val GRAPHQL_ERROR_RESPONSE // io.dataloom.transport.graphql/GraphQLTransportErrorCode.GRAPHQL_ERROR_RESPONSE|{}GRAPHQL_ERROR_RESPONSE[0]
+        final fun <get-GRAPHQL_ERROR_RESPONSE>(): io.dataloom.api.error/ErrorCode // io.dataloom.transport.graphql/GraphQLTransportErrorCode.GRAPHQL_ERROR_RESPONSE.<get-GRAPHQL_ERROR_RESPONSE>|<get-GRAPHQL_ERROR_RESPONSE>(){}[0]
+    final val HTTP_ERROR // io.dataloom.transport.graphql/GraphQLTransportErrorCode.HTTP_ERROR|{}HTTP_ERROR[0]
+        final fun <get-HTTP_ERROR>(): io.dataloom.api.error/ErrorCode // io.dataloom.transport.graphql/GraphQLTransportErrorCode.HTTP_ERROR.<get-HTTP_ERROR>|<get-HTTP_ERROR>(){}[0]
+    final val NETWORK_FAILURE // io.dataloom.transport.graphql/GraphQLTransportErrorCode.NETWORK_FAILURE|{}NETWORK_FAILURE[0]
+        final fun <get-NETWORK_FAILURE>(): io.dataloom.api.error/ErrorCode // io.dataloom.transport.graphql/GraphQLTransportErrorCode.NETWORK_FAILURE.<get-NETWORK_FAILURE>|<get-NETWORK_FAILURE>(){}[0]
+    final val NULL_DATA // io.dataloom.transport.graphql/GraphQLTransportErrorCode.NULL_DATA|{}NULL_DATA[0]
+        final fun <get-NULL_DATA>(): io.dataloom.api.error/ErrorCode // io.dataloom.transport.graphql/GraphQLTransportErrorCode.NULL_DATA.<get-NULL_DATA>|<get-NULL_DATA>(){}[0]
+}

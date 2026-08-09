@@ -14,6 +14,7 @@ room = "2.7.1"
 # KSP 2.3.1+ supports AGP 9 built-in Kotlin. Use the stable KSP2 line.
 ksp = "2.3.9"
 datastore = "1.1.7"
+apollo = "4.0.0"
 grpc-kotlin = "1.4.1"
 grpc-java = "1.68.1"
 mockito-kotlin = "5.4.0"
@@ -42,6 +43,9 @@ grpc-stub = { group = "io.grpc", name = "grpc-stub", version.ref = "grpc-java" }
 grpc-okhttp = { group = "io.grpc", name = "grpc-okhttp", version.ref = "grpc-java" }
 grpc-inprocess = { group = "io.grpc", name = "grpc-inprocess", version.ref = "grpc-java" }
 mockito-kotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockito-kotlin" }
+apollo-runtime = { group = "com.apollographql.apollo", name = "apollo-runtime", version.ref = "apollo" }
+apollo-api = { group = "com.apollographql.apollo", name = "apollo-api", version.ref = "apollo" }
+apollo-testingSupport = { group = "com.apollographql.apollo", name = "apollo-testing-support", version.ref = "apollo" }
 androidx-test-core-ktx = { group = "androidx.test", name = "core-ktx", version.ref = "androidx-test-core" }
 androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "androidx-test-runner" }
 androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidx-test-ext-junit" }

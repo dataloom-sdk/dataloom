@@ -21,9 +21,10 @@ the current repository.
 
 ## Module Overview
 
-DataLoom is currently organized into seven shared library modules, three
-Android integration modules, a macOS-only Apple distribution module, and one
-build-infrastructure included build.
+DataLoom is currently organized into six shared library modules, two optional
+reference modules (`dataloom-transport-ktor` and `dataloom-transport-graphql`),
+four Android integration modules, a macOS-only Apple distribution module, and
+one build-infrastructure included build.
 
 ```mermaid
 flowchart TD
@@ -36,6 +37,7 @@ flowchart TD
     ktor[dataloom-transport-ktor]
     connectivity[dataloom-connectivity-android]
     room[dataloom-queue-room]
+    storageRoom[dataloom-storage-room]
     work[dataloom-scheduler-workmanager]
     apple[dataloom-apple]
 
@@ -58,6 +60,8 @@ flowchart TD
     api --> connectivity
     model --> room
     api --> room
+    model --> storageRoom
+    api --> storageRoom
     api --> work
     runtime --> work
     model --> apple
@@ -83,16 +87,19 @@ Apple distribution boundary.
 | `dataloom-core` | Library module | Internal platform-independent foundation |
 | `dataloom-runtime` | Library module | Synchronization runtime and engine coordination |
 | `dataloom-testing` | Library module | Testing utilities, fakes, and controlled providers |
-| `dataloom-transport-ktor` | Library module | Optional Ktor-backed reference `TransportProvider` |
+| `dataloom-transport-ktor` | Optional reference module | Ktor-backed reference `TransportProvider`; depends only on `dataloom-api` and Ktor client |
+| `dataloom-transport-graphql` | Optional reference module | Apollo Kotlin–backed reference `TransportProvider`; depends only on `dataloom-api` and Apollo runtime |
 | `dataloom-connectivity-android` | Android library | Android `ConnectivityProvider` |
 | `dataloom-scheduler-workmanager` | Android library | WorkManager scheduler and worker bridge |
 | `dataloom-queue-room` | Android library | Room-backed durable `QueueProvider` |
+| `dataloom-storage-room` | Android library | Room-backed reference `StorageProvider` |
 | `dataloom-apple` | KMP distribution module | Static `DataLoom` XCFramework assembly |
 | `build-logic` | Build infrastructure | Gradle convention plugins (not a published library) |
 
-The seven shared modules use Kotlin Multiplatform with JVM and host-gated Apple
-targets. Android-specific functionality is isolated in dedicated Android
-libraries. None of these projects is a published V1 artifact yet.
+The six shared modules and both optional reference modules use Kotlin
+Multiplatform with JVM and host-gated Apple targets. Android-specific
+functionality is isolated in dedicated Android libraries. None of these
+projects is a published V1 artifact yet.
 
 ---
 
@@ -217,8 +224,9 @@ Current convention plugins:
   sets, reproducible archive output, Kotlin ABI baselines, and public
   dependency-boundary checks.
 
-Committed JVM and Kotlin/Native ABI baselines cover all seven shared modules;
-the Apple umbrella has its own KLib baseline. `dataloom-runtime` exposes no
+Committed JVM and Kotlin/Native ABI baselines cover all six shared modules and
+both optional reference modules; the Apple umbrella has its own KLib
+baseline. `dataloom-runtime` exposes no
 `dataloom-core` or `dataloom-testing` type in either baseline, and a build task
 rejects either namespace if it appears later. Apple validation also compiles
 the external KMP consumer for all three iOS targets and audits generated

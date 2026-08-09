@@ -110,7 +110,8 @@ DATALOOM_ANDROID_BUILD=true ./gradlew \
 DATALOOM_ANDROID_BUILD=true ./gradlew \
     :dataloom-connectivity-android:build \
     :dataloom-scheduler-workmanager:build \
-    :dataloom-queue-room:build
+    :dataloom-queue-room:build \
+    :dataloom-storage-room:build
 ```
 
 ### Workflow-aligned Android checks
@@ -129,7 +130,12 @@ DATALOOM_ANDROID_BUILD=true ./gradlew \
     :dataloom-queue-room:assembleRelease \
     :dataloom-queue-room:assembleDebugAndroidTest \
     :dataloom-queue-room:testDebugUnitTest \
-    :dataloom-queue-room:lintDebug
+    :dataloom-queue-room:lintDebug \
+    :dataloom-storage-room:assembleDebug \
+    :dataloom-storage-room:assembleRelease \
+    :dataloom-storage-room:assembleDebugAndroidTest \
+    :dataloom-storage-room:testDebugUnitTest \
+    :dataloom-storage-room:lintDebug
 ```
 
 The Android workflow also verifies the committed Room schema against KSP
@@ -137,7 +143,8 @@ output and then runs the managed-device test:
 
 ```bash
 DATALOOM_ANDROID_BUILD=true ./gradlew \
-    :dataloom-queue-room:pixel2Api35DebugAndroidTest
+    :dataloom-queue-room:pixel2Api35DebugAndroidTest \
+    :dataloom-storage-room:pixel2Api35DebugAndroidTest
 ```
 
 The managed-device task requires Android SDK components, an API 35 x86_64
@@ -182,6 +189,7 @@ $env:DATALOOM_ANDROID_BUILD = "true"
 .\gradlew.bat :dataloom-connectivity-android:build
 .\gradlew.bat :dataloom-scheduler-workmanager:build
 .\gradlew.bat :dataloom-queue-room:build
+.\gradlew.bat :dataloom-storage-room:build
 ```
 
 Shared commands use the same task names with `.\gradlew.bat`. Apple targets
@@ -220,7 +228,7 @@ Get-FileHash gradle\wrapper\gradle-wrapper.jar -Algorithm SHA256
 
 Run `./gradlew projects` with `DATALOOM_ANDROID_BUILD=true` in the same process.
 If the flag is absent or has another value, `settings.gradle.kts` intentionally
-omits all three Android projects.
+omits all four Android projects.
 
 ### Android plugin or dependency resolution fails
 

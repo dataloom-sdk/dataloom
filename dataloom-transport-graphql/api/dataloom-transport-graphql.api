@@ -1,0 +1,41 @@
+public abstract class io/dataloom/transport/graphql/ApolloGraphQLTransportProvider : io/dataloom/api/transport/TransportProvider {
+	public fun <init> ()V
+	protected final fun adaptMutationResponse (Lcom/apollographql/apollo/api/ApolloResponse;Lkotlin/jvm/functions/Function1;)Lio/dataloom/api/provider/ProviderOperationResult;
+	protected final fun adaptQueryResponse (Lcom/apollographql/apollo/api/ApolloResponse;Lkotlin/jvm/functions/Function1;)Lio/dataloom/api/provider/ProviderOperationResult;
+	protected abstract fun executePull (Lio/dataloom/api/transport/PullChangesRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	protected abstract fun executePush (Lio/dataloom/api/transport/PushChangesRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	protected abstract fun getApolloClient ()Lcom/apollographql/apollo/ApolloClient;
+	public final fun pullChanges (Lio/dataloom/api/transport/PullChangesRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun pushChanges (Lio/dataloom/api/transport/PushChangesRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/transport/graphql/GraphQLTransportError : io/dataloom/api/error/DataLoomError {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/error/ErrorCategory;Lio/dataloom/api/error/ErrorSeverity;Lio/dataloom/api/error/Recoverability;Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/error/ErrorCategory;Lio/dataloom/api/error/ErrorSeverity;Lio/dataloom/api/error/Recoverability;Ljava/lang/String;Ljava/lang/Throwable;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-7tkViRw ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/error/ErrorCategory;
+	public final fun component3 ()Lio/dataloom/api/error/ErrorSeverity;
+	public final fun component4 ()Lio/dataloom/api/error/Recoverability;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/Throwable;
+	public final fun copy-y0kl3TU (Ljava/lang/String;Lio/dataloom/api/error/ErrorCategory;Lio/dataloom/api/error/ErrorSeverity;Lio/dataloom/api/error/Recoverability;Ljava/lang/String;Ljava/lang/Throwable;)Lio/dataloom/transport/graphql/GraphQLTransportError;
+	public static synthetic fun copy-y0kl3TU$default (Lio/dataloom/transport/graphql/GraphQLTransportError;Ljava/lang/String;Lio/dataloom/api/error/ErrorCategory;Lio/dataloom/api/error/ErrorSeverity;Lio/dataloom/api/error/Recoverability;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)Lio/dataloom/transport/graphql/GraphQLTransportError;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCategory ()Lio/dataloom/api/error/ErrorCategory;
+	public fun getCause ()Ljava/lang/Throwable;
+	public fun getCode-7tkViRw ()Ljava/lang/String;
+	public fun getMessage ()Ljava/lang/String;
+	public fun getRecoverability ()Lio/dataloom/api/error/Recoverability;
+	public fun getSeverity ()Lio/dataloom/api/error/ErrorSeverity;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/transport/graphql/GraphQLTransportErrorCode {
+	public static final field INSTANCE Lio/dataloom/transport/graphql/GraphQLTransportErrorCode;
+	public final fun getGRAPHQL_ERROR_RESPONSE-7tkViRw ()Ljava/lang/String;
+	public final fun getHTTP_ERROR-7tkViRw ()Ljava/lang/String;
+	public final fun getNETWORK_FAILURE-7tkViRw ()Ljava/lang/String;
+	public final fun getNULL_DATA-7tkViRw ()Ljava/lang/String;
+}
+
