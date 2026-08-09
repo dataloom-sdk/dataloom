@@ -85,7 +85,21 @@ qualification remain before the strategy engine is complete.
 Progress below is acceptance-based, not a percentage of code written. A gate is
 `COMPLETE` only when its issue criteria have executable evidence on the same
 reviewed commit. `IN PROGRESS` therefore includes substantial implementations
-that still have unqualified release behavior.
+that still have unqualified release behavior. A gate can absorb real, tested,
+merged work for a long time before it flips to `COMPLETE` — that is by design,
+not a sign nothing is happening. This log exists so that work is visible in
+between gate flips.
+
+### Recently shipped (newest first)
+
+| Date | What landed | Gate/track |
+|---|---|---|
+| 2026-08-09 | Corrected the dashboard's stale `1 of 10`/`#93`-complete claim to `0 of 10` | Documentation accuracy |
+| 2026-08-08 | Production `DataLoomClock`/`DataLoomMonotonicClock` for JVM, Android, and iOS (`#221`) | `#93` foundations |
+| 2026-08-08 | Reference DataStore-backed `StorageProvider` for small key-value/cache-first data (`#220`) | Adoption readiness |
+| 2026-08-08 | Compile-verified getting-started quickstart guide (`#214`) | Adoption readiness |
+| 2026-08-08 | 7 more reference-provider modules opened and in flight (Room, SQLDelight, file-based, Ktor, Retrofit, GraphQL, gRPC) | Adoption readiness |
+| 2026-08-08 | Repository cleanup: 48 stale branches deleted, 10 superseded process issues closed | Repository hygiene |
 
 | Next priority | V1 gate | Status | Finished on `main` | Still pending before the gate is complete |
 |---:|---|---|---|---|
