@@ -108,6 +108,45 @@ A hint remains untrusted until bounded by `RetryHintConfiguration`.
 - Examples in docs and tests use placeholder values only.
 - The contract does not perform automatic logging.
 
+**Enforcement status:** `message` content is not automatically sanitized —
+this is a documented convention each `DataLoomError` implementation must
+uphold when it constructs its own `message`, not a runtime check. A known
+gap: some existing provider error mappers (for example the Apollo GraphQL
+transport's error mapper) forward a wrapped exception's own `.message`
+into `message` after only *truncating* it to a bounded length, which is not
+the same as redacting sensitive content — a wrapped HTTP client exception's
+message commonly embeds the request URL, which may carry a token in a query
+parameter. Closing that gap requires an actual content-classification/
+redaction strategy (regex/allowlist-based scrubbing, or switching those call
+sites to fully generic classified messages with no raw exception text at
+all) and is tracked as separate follow-up work under `#93`, not fixed by
+this section.
+
+## Safe default rendering
+
+Every current `DataLoomError` implementation across this codebase overrides
+`toString()` with `safeDiagnosticString()`:
+
+```kotlin
+override fun toString(): String = safeDiagnosticString()
+```
+
+This exists because a plain `data class`'s auto-generated `toString()`
+renders every constructor property — including `cause: Throwable?` — via
+that property's *own* `toString()`. A wrapped third-party or platform
+exception is not classified by this codebase and cannot be assumed safe to
+print by default; `safeDiagnosticString()` renders `cause` as its exception
+*type name* only, never its message or `toString()`, so that relying on the
+default `toString()` (a very common path — `println(error)`, naive
+`logger.info(error.toString())`, or simply an auto-generated data class
+`toString()` nobody thought to review) cannot leak wrapped-exception content
+by accident. Code paths that genuinely need the full cause chain (a
+debugger, an explicit diagnostic export) can still read
+`DataLoomError.cause` directly — `safeDiagnosticString()` only bounds what
+happens *by default*. See `DataLoomErrorRendering.kt` in `dataloom-model`.
+
+This does not sanitize `message` itself — see "Enforcement status" above.
+
 ## Provider-exception abstraction
 
 `DataLoomError` exposes `Throwable?` as an optional cause, but the public

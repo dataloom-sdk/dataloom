@@ -5,6 +5,7 @@ import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
+import io.dataloom.api.error.safeDiagnosticString
 import io.dataloom.api.queue.QueueEntry
 import io.dataloom.api.queue.QueueFailureDisposition
 import io.dataloom.api.retry.RetryAttempt
@@ -239,7 +240,9 @@ internal class StrategyQueueExecutionOutcomeMapper(
         override val message: String =
             "Accepted strategy fallback did not provide local state.",
         override val cause: Throwable? = null,
-    ) : DataLoomError
+    ) : DataLoomError {
+        override fun toString(): String = safeDiagnosticString()
+    }
 
     private data class AcceptedPlanUnexpectedDeferredError(
         override val code: ErrorCode = ErrorCode("DL-Q-ACCEPTED-PLAN-UNEXPECTED-DEFER"),
@@ -249,7 +252,9 @@ internal class StrategyQueueExecutionOutcomeMapper(
         override val message: String =
             "An accepted durable continuation unexpectedly deferred again.",
         override val cause: Throwable? = null,
-    ) : DataLoomError
+    ) : DataLoomError {
+        override fun toString(): String = safeDiagnosticString()
+    }
 
     private data class AcceptedPlanRejectedError(
         private val reason: String,
@@ -259,7 +264,9 @@ internal class StrategyQueueExecutionOutcomeMapper(
         override val recoverability: Recoverability = Recoverability.NON_RECOVERABLE,
         override val message: String = "Accepted strategy plan execution was rejected: $reason.",
         override val cause: Throwable? = null,
-    ) : DataLoomError
+    ) : DataLoomError {
+        override fun toString(): String = safeDiagnosticString()
+    }
 
     private data class AcceptedPlanRetryEvaluationInconsistentError(
         override val code: ErrorCode =
@@ -270,7 +277,9 @@ internal class StrategyQueueExecutionOutcomeMapper(
         override val message: String =
             "Retry evaluation returned NotRequired for a known accepted-plan failure.",
         override val cause: Throwable? = null,
-    ) : DataLoomError
+    ) : DataLoomError {
+        override fun toString(): String = safeDiagnosticString()
+    }
 
     private data class AcceptedPlanRetryAttemptExhaustedError(
         override val code: ErrorCode =
@@ -281,5 +290,7 @@ internal class StrategyQueueExecutionOutcomeMapper(
         override val message: String =
             "Accepted strategy plan cannot represent another retry attempt.",
         override val cause: Throwable? = null,
-    ) : DataLoomError
+    ) : DataLoomError {
+        override fun toString(): String = safeDiagnosticString()
+    }
 }

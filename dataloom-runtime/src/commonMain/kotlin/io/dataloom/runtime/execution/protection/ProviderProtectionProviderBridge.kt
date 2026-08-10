@@ -6,6 +6,7 @@ import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
+import io.dataloom.api.error.safeDiagnosticString
 import io.dataloom.api.provider.ProviderDescriptor
 import io.dataloom.api.provider.ProviderHealth
 import io.dataloom.api.provider.ProviderId
@@ -577,5 +578,7 @@ private object ProviderProtectionErrors {
         override val severity: ErrorSeverity = ErrorSeverity.ERROR,
         override val message: String,
         override val cause: Throwable? = null,
-    ) : DataLoomError
+    ) : DataLoomError {
+        override fun toString(): String = safeDiagnosticString()
+    }
 }

@@ -5,6 +5,7 @@ import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
+import io.dataloom.api.error.safeDiagnosticString
 import io.dataloom.api.model.SynchronizationDirection
 import io.dataloom.api.synchronization.SynchronizationResult
 import io.dataloom.api.synchronization.SynchronizationSkipReason
@@ -520,7 +521,9 @@ public class BidirectionalSynchronizationPipeline(
         override val recoverability: Recoverability,
         override val message: String,
         override val cause: Throwable? = null,
-    ) : DataLoomError
+    ) : DataLoomError {
+        override fun toString(): String = safeDiagnosticString()
+    }
 
     // -------------------------------------------------------------------------
     // Diagnostic

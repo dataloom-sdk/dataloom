@@ -593,3 +593,5 @@ final value class io.dataloom.api.security/KeyReference { // io.dataloom.api.sec
     final fun hashCode(): kotlin/Int // io.dataloom.api.security/KeyReference.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.security/KeyReference.toString|toString(){}[0]
 }
+
+final fun (io.dataloom.api.error/DataLoomError).io.dataloom.api.error/safeDiagnosticString(): kotlin/String // io.dataloom.api.error/safeDiagnosticString|safeDiagnosticString@io.dataloom.api.error.DataLoomError(){}[0]
