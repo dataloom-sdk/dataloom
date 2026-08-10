@@ -642,6 +642,10 @@ abstract fun interface <#A: kotlin/Any> io.dataloom.api.state/DurableStateMigrat
     abstract fun migrate(kotlin/Int, #A): #A // io.dataloom.api.state/DurableStateMigration.migrate|migrate(kotlin.Int;1:0){}[0]
 }
 
+abstract fun interface <#A: kotlin/Any> io.dataloom.api.state/DurableStateScopeKeyEncoder { // io.dataloom.api.state/DurableStateScopeKeyEncoder|null[0]
+    abstract fun encode(#A): kotlin/String // io.dataloom.api.state/DurableStateScopeKeyEncoder.encode|encode(1:0){}[0]
+}
+
 abstract fun interface io.dataloom.api.security/DataLoomRedactor { // io.dataloom.api.security/DataLoomRedactor|null[0]
     abstract fun redact(io.dataloom.api.security/ClassifiedData): io.dataloom.api.security/RedactionResult // io.dataloom.api.security/DataLoomRedactor.redact|redact(io.dataloom.api.security.ClassifiedData){}[0]
 }
@@ -653,6 +657,11 @@ abstract fun interface io.dataloom.api.strategy/SynchronizationStrategyEvaluator
 abstract interface <#A: kotlin/Any, #B: kotlin/Any> io.dataloom.api.state/DurableStateStore { // io.dataloom.api.state/DurableStateStore|null[0]
     abstract suspend fun compareAndSet(io.dataloom.api.state/DurableStateCompareAndSetRequest<#A, #B>): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.state/DurableStateCompareAndSetResult<#B>> // io.dataloom.api.state/DurableStateStore.compareAndSet|compareAndSet(io.dataloom.api.state.DurableStateCompareAndSetRequest<1:0,1:1>){}[0]
     abstract suspend fun load(#A): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.state/DurableStateLoadResult<#B>> // io.dataloom.api.state/DurableStateStore.load|load(1:0){}[0]
+}
+
+abstract interface <#A: kotlin/Any> io.dataloom.api.state/DurableStateCodec { // io.dataloom.api.state/DurableStateCodec|null[0]
+    abstract fun decode(kotlin/String): #A // io.dataloom.api.state/DurableStateCodec.decode|decode(kotlin.String){}[0]
+    abstract fun encode(#A): kotlin/String // io.dataloom.api.state/DurableStateCodec.encode|encode(1:0){}[0]
 }
 
 abstract interface io.dataloom.api.circuit/CircuitAdministrationAuthorizer { // io.dataloom.api.circuit/CircuitAdministrationAuthorizer|null[0]
@@ -1021,6 +1030,96 @@ sealed interface io.dataloom.api.circuit/CircuitBreakerLoadResult { // io.datalo
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitBreakerLoadResult.Missing.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitBreakerLoadResult.Missing.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitBreakerLoadResult.Missing.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.configuration/DurableConfigurationApplyOutcome { // io.dataloom.api.configuration/DurableConfigurationApplyOutcome|null[0]
+    final class Applied : io.dataloom.api.configuration/DurableConfigurationApplyOutcome { // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.Applied|null[0]
+        constructor <init>(io.dataloom.api.configuration/ConfigurationSnapshot) // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.Applied.<init>|<init>(io.dataloom.api.configuration.ConfigurationSnapshot){}[0]
+
+        final val snapshot // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.Applied.snapshot|{}snapshot[0]
+            final fun <get-snapshot>(): io.dataloom.api.configuration/ConfigurationSnapshot // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.Applied.snapshot.<get-snapshot>|<get-snapshot>(){}[0]
+
+        final fun component1(): io.dataloom.api.configuration/ConfigurationSnapshot // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.Applied.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.configuration/ConfigurationSnapshot = ...): io.dataloom.api.configuration/DurableConfigurationApplyOutcome.Applied // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.Applied.copy|copy(io.dataloom.api.configuration.ConfigurationSnapshot){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.Applied.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.Applied.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.Applied.toString|toString(){}[0]
+    }
+
+    final class PersistenceFailure : io.dataloom.api.configuration/DurableConfigurationApplyOutcome { // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.PersistenceFailure|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.PersistenceFailure.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.PersistenceFailure.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.PersistenceFailure.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.PersistenceFailure.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.api.configuration/DurableConfigurationApplyOutcome.PersistenceFailure // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.PersistenceFailure.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.PersistenceFailure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.PersistenceFailure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.PersistenceFailure.toString|toString(){}[0]
+    }
+
+    final class VersionNotMonotonic : io.dataloom.api.configuration/DurableConfigurationApplyOutcome { // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.VersionNotMonotonic|null[0]
+        constructor <init>(io.dataloom.api.configuration/ConfigurationSnapshot, kotlin/Long) // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.VersionNotMonotonic.<init>|<init>(io.dataloom.api.configuration.ConfigurationSnapshot;kotlin.Long){}[0]
+
+        final val currentVersion // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.VersionNotMonotonic.currentVersion|{}currentVersion[0]
+            final fun <get-currentVersion>(): kotlin/Long // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.VersionNotMonotonic.currentVersion.<get-currentVersion>|<get-currentVersion>(){}[0]
+        final val snapshot // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.VersionNotMonotonic.snapshot|{}snapshot[0]
+            final fun <get-snapshot>(): io.dataloom.api.configuration/ConfigurationSnapshot // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.VersionNotMonotonic.snapshot.<get-snapshot>|<get-snapshot>(){}[0]
+
+        final fun component1(): io.dataloom.api.configuration/ConfigurationSnapshot // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.VersionNotMonotonic.component1|component1(){}[0]
+        final fun component2(): kotlin/Long // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.VersionNotMonotonic.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.configuration/ConfigurationSnapshot = ..., kotlin/Long = ...): io.dataloom.api.configuration/DurableConfigurationApplyOutcome.VersionNotMonotonic // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.VersionNotMonotonic.copy|copy(io.dataloom.api.configuration.ConfigurationSnapshot;kotlin.Long){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.VersionNotMonotonic.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.VersionNotMonotonic.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.VersionNotMonotonic.toString|toString(){}[0]
+    }
+
+    final object ContentionLimitReached : io.dataloom.api.configuration/DurableConfigurationApplyOutcome { // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.ContentionLimitReached|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.ContentionLimitReached.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.ContentionLimitReached.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.configuration/DurableConfigurationApplyOutcome.ContentionLimitReached.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.configuration/DurableConfigurationRollbackOutcome { // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome|null[0]
+    final class PersistenceFailure : io.dataloom.api.configuration/DurableConfigurationRollbackOutcome { // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.PersistenceFailure|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.PersistenceFailure.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.PersistenceFailure.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.PersistenceFailure.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.PersistenceFailure.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.PersistenceFailure // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.PersistenceFailure.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.PersistenceFailure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.PersistenceFailure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.PersistenceFailure.toString|toString(){}[0]
+    }
+
+    final class RolledBack : io.dataloom.api.configuration/DurableConfigurationRollbackOutcome { // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.RolledBack|null[0]
+        constructor <init>(io.dataloom.api.configuration/ConfigurationSnapshot) // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.RolledBack.<init>|<init>(io.dataloom.api.configuration.ConfigurationSnapshot){}[0]
+
+        final val snapshot // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.RolledBack.snapshot|{}snapshot[0]
+            final fun <get-snapshot>(): io.dataloom.api.configuration/ConfigurationSnapshot // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.RolledBack.snapshot.<get-snapshot>|<get-snapshot>(){}[0]
+
+        final fun component1(): io.dataloom.api.configuration/ConfigurationSnapshot // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.RolledBack.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.configuration/ConfigurationSnapshot = ...): io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.RolledBack // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.RolledBack.copy|copy(io.dataloom.api.configuration.ConfigurationSnapshot){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.RolledBack.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.RolledBack.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.RolledBack.toString|toString(){}[0]
+    }
+
+    final object ContentionLimitReached : io.dataloom.api.configuration/DurableConfigurationRollbackOutcome { // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.ContentionLimitReached|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.ContentionLimitReached.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.ContentionLimitReached.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.ContentionLimitReached.toString|toString(){}[0]
+    }
+
+    final object NoEarlierSnapshot : io.dataloom.api.configuration/DurableConfigurationRollbackOutcome { // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.NoEarlierSnapshot|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.NoEarlierSnapshot.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.NoEarlierSnapshot.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.NoEarlierSnapshot.toString|toString(){}[0]
     }
 }
 
@@ -2243,6 +2342,26 @@ final class io.dataloom.api.configuration/ConfigurationEntrySchema { // io.datal
     final fun toString(): kotlin/String // io.dataloom.api.configuration/ConfigurationEntrySchema.toString|toString(){}[0]
 }
 
+final class io.dataloom.api.configuration/ConfigurationHistoryState { // io.dataloom.api.configuration/ConfigurationHistoryState|null[0]
+    constructor <init>(kotlin.collections/List<io.dataloom.api.configuration/ConfigurationSnapshot>) // io.dataloom.api.configuration/ConfigurationHistoryState.<init>|<init>(kotlin.collections.List<io.dataloom.api.configuration.ConfigurationSnapshot>){}[0]
+
+    final val retainedSnapshots // io.dataloom.api.configuration/ConfigurationHistoryState.retainedSnapshots|{}retainedSnapshots[0]
+        final fun <get-retainedSnapshots>(): kotlin.collections/List<io.dataloom.api.configuration/ConfigurationSnapshot> // io.dataloom.api.configuration/ConfigurationHistoryState.retainedSnapshots.<get-retainedSnapshots>|<get-retainedSnapshots>(){}[0]
+
+    final fun component1(): kotlin.collections/List<io.dataloom.api.configuration/ConfigurationSnapshot> // io.dataloom.api.configuration/ConfigurationHistoryState.component1|component1(){}[0]
+    final fun copy(kotlin.collections/List<io.dataloom.api.configuration/ConfigurationSnapshot> = ...): io.dataloom.api.configuration/ConfigurationHistoryState // io.dataloom.api.configuration/ConfigurationHistoryState.copy|copy(kotlin.collections.List<io.dataloom.api.configuration.ConfigurationSnapshot>){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationHistoryState.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/ConfigurationHistoryState.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.configuration/ConfigurationHistoryState.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.configuration/ConfigurationHistoryStateCodec : io.dataloom.api.state/DurableStateCodec<io.dataloom.api.configuration/ConfigurationHistoryState> { // io.dataloom.api.configuration/ConfigurationHistoryStateCodec|null[0]
+    constructor <init>(io.dataloom.api.security/DataLoomDigestCalculator) // io.dataloom.api.configuration/ConfigurationHistoryStateCodec.<init>|<init>(io.dataloom.api.security.DataLoomDigestCalculator){}[0]
+
+    final fun decode(kotlin/String): io.dataloom.api.configuration/ConfigurationHistoryState // io.dataloom.api.configuration/ConfigurationHistoryStateCodec.decode|decode(kotlin.String){}[0]
+    final fun encode(io.dataloom.api.configuration/ConfigurationHistoryState): kotlin/String // io.dataloom.api.configuration/ConfigurationHistoryStateCodec.encode|encode(io.dataloom.api.configuration.ConfigurationHistoryState){}[0]
+}
+
 final class io.dataloom.api.configuration/ConfigurationSchema { // io.dataloom.api.configuration/ConfigurationSchema|null[0]
     constructor <init>(kotlin.collections/Collection<io.dataloom.api.configuration/ConfigurationEntrySchema>) // io.dataloom.api.configuration/ConfigurationSchema.<init>|<init>(kotlin.collections.Collection<io.dataloom.api.configuration.ConfigurationEntrySchema>){}[0]
 
@@ -2334,6 +2453,15 @@ final class io.dataloom.api.configuration/DataLoomConfigurationResolver { // io.
     constructor <init>(io.dataloom.api.configuration/ConfigurationSchema, io.dataloom.api.security/DataLoomDigestCalculator) // io.dataloom.api.configuration/DataLoomConfigurationResolver.<init>|<init>(io.dataloom.api.configuration.ConfigurationSchema;io.dataloom.api.security.DataLoomDigestCalculator){}[0]
 
     final fun resolve(kotlin.collections/List<io.dataloom.api.configuration/ConfigurationSource>, kotlin/Long): io.dataloom.api.configuration/ConfigurationResolution // io.dataloom.api.configuration/DataLoomConfigurationResolver.resolve|resolve(kotlin.collections.List<io.dataloom.api.configuration.ConfigurationSource>;kotlin.Long){}[0]
+}
+
+final class io.dataloom.api.configuration/DurableConfigurationHistory { // io.dataloom.api.configuration/DurableConfigurationHistory|null[0]
+    constructor <init>(io.dataloom.api.state/DurableStateStore<io.dataloom.api.configuration/ConfigurationHistoryScope, io.dataloom.api.configuration/ConfigurationHistoryState>, kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.api.configuration/DurableConfigurationHistory.<init>|<init>(io.dataloom.api.state.DurableStateStore<io.dataloom.api.configuration.ConfigurationHistoryScope,io.dataloom.api.configuration.ConfigurationHistoryState>;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+
+    final suspend fun apply(io.dataloom.api.configuration/ConfigurationHistoryScope, io.dataloom.api.configuration/ConfigurationSnapshot): io.dataloom.api.configuration/DurableConfigurationApplyOutcome // io.dataloom.api.configuration/DurableConfigurationHistory.apply|apply(io.dataloom.api.configuration.ConfigurationHistoryScope;io.dataloom.api.configuration.ConfigurationSnapshot){}[0]
+    final suspend fun current(io.dataloom.api.configuration/ConfigurationHistoryScope): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.configuration/ConfigurationSnapshot?> // io.dataloom.api.configuration/DurableConfigurationHistory.current|current(io.dataloom.api.configuration.ConfigurationHistoryScope){}[0]
+    final suspend fun retainedVersions(io.dataloom.api.configuration/ConfigurationHistoryScope): io.dataloom.api.provider/ProviderOperationResult<kotlin.collections/List<kotlin/Long>> // io.dataloom.api.configuration/DurableConfigurationHistory.retainedVersions|retainedVersions(io.dataloom.api.configuration.ConfigurationHistoryScope){}[0]
+    final suspend fun rollbackToLastKnownGood(io.dataloom.api.configuration/ConfigurationHistoryScope): io.dataloom.api.configuration/DurableConfigurationRollbackOutcome // io.dataloom.api.configuration/DurableConfigurationHistory.rollbackToLastKnownGood|rollbackToLastKnownGood(io.dataloom.api.configuration.ConfigurationHistoryScope){}[0]
 }
 
 final class io.dataloom.api.conflict/ConflictDetectionRequest { // io.dataloom.api.conflict/ConflictDetectionRequest|null[0]
@@ -4108,6 +4236,17 @@ final value class io.dataloom.api.circuit/CircuitAdministrationReason { // io.da
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.circuit/CircuitAdministrationReason.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.circuit/CircuitAdministrationReason.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.circuit/CircuitAdministrationReason.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.configuration/ConfigurationHistoryScope { // io.dataloom.api.configuration/ConfigurationHistoryScope|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.configuration/ConfigurationHistoryScope.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.configuration/ConfigurationHistoryScope.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.configuration/ConfigurationHistoryScope.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationHistoryScope.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/ConfigurationHistoryScope.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.configuration/ConfigurationHistoryScope.toString|toString(){}[0]
 }
 
 final value class io.dataloom.api.configuration/ConfigurationKey { // io.dataloom.api.configuration/ConfigurationKey|null[0]
