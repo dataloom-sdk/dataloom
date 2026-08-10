@@ -25,6 +25,15 @@ public enum class StrategyExecutionRejectionReason {
     ACCEPTED_PLAN_CONTINUATION_MISSING,
     RECONCILIATION_PROVIDER_NOT_CONFIGURED,
     UNSUPPORTED_PLAN,
+
+    /**
+     * The evaluated plan requires durable queue admission for a scheduled
+     * refresh (`ENQUEUE_DURABLE_WORK`/`SCHEDULE_REFRESH`), but no coordinator
+     * currently wires evaluated plans into durable queue admission. Only the
+     * inline/synchronous refresh path (`CacheFirstStrategyProfile.requireDurableRefresh
+     * = false`) is supported by [CacheFirstStrategyExecutor] today.
+     */
+    DURABLE_REFRESH_NOT_YET_SUPPORTED,
 }
 
 /** Observable result of strategy admission and execution. */
@@ -37,6 +46,39 @@ public sealed interface StrategySynchronizationExecutionResult {
         override val completedAt: DataLoomInstant,
         public val output: StrategyTransportOutput,
     ) : StrategySynchronizationExecutionResult
+
+    /**
+     * Local cache state was served as the primary, expected outcome — not a
+     * fallback after a remote failure.
+     *
+     * Distinct from [FallbackActivated]: that variant means a remote attempt
+     * failed and local state was substituted afterward. This variant means
+     * cache-first policy chose to serve local state directly, by design,
+     * with no implication that remote was ever attempted or unavailable.
+     *
+     * [refreshOutput] is non-null only when the plan also admitted a
+     * synchronous, non-durable refresh alongside serving local state
+     * (`CacheFirstStrategyProfile.staleCachePolicy = SERVE_STALE_AND_REFRESH`
+     * or `refreshOnFreshHit = true`, with `requireDurableRefresh = false`).
+     * When present, it carries the refresh's own terminal output; the refresh
+     * having run does not change [cacheState], which always describes what
+     * was actually served to evidence at admission time.
+     */
+    public data class ServedFromCache(
+        override val evaluation: StrategyEvaluationResult,
+        override val completedAt: DataLoomInstant,
+        public val cacheState: StrategyCacheState,
+        public val refreshOutput: StrategyTransportOutput? = null,
+    ) : StrategySynchronizationExecutionResult {
+        init {
+            require(
+                cacheState == StrategyCacheState.FRESH ||
+                    cacheState == StrategyCacheState.STALE,
+            ) {
+                "ServedFromCache requires FRESH or STALE cache state."
+            }
+        }
+    }
 
     public class Failed(
         override val evaluation: StrategyEvaluationResult,

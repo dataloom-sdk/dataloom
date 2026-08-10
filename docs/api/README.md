@@ -65,6 +65,7 @@ complete V1 strategy, asset, plugin, governance, or observability engine.
 | [Execution context](./execution-context.md) | Available contract | Correlation, identity, version, locale, and metadata context. |
 | [Synchronization request](./synchronization-request.md) | Available contract | Direction, mode, priority, and execution intent. Strategy evaluation is currently a separate contract. |
 | [Synchronization strategy](./synchronization-strategy.md) | Partial implementation | Versioned six-profile contract, bounded evidence, typed decisions, immutable plans, durable identity, and deterministic planner; complete runtime integration remains. |
+| [Cache-first strategy execution](./cache-first-strategy-execution.md) | Bounded first slice | Serve-from-cache and synchronous (non-durable) refresh; the durable/scheduled-refresh branch is explicitly rejected pending queue-admission wiring. |
 | [Payload contracts](./payload-contracts.md) | Available contract | Opaque payload and media-type boundaries. |
 | [Change model](./change-model.md) | Available contract | Change events, sets, operations, versions, and entity references. |
 | [Acknowledgement contracts](./acknowledgement-contracts.md) | Available contract | Per-event remote acknowledgement results. |
@@ -201,7 +202,7 @@ The following are product commitments, not descriptions of completed APIs:
 |---|---|
 | Offline-first strategy | Complete built-in strategy and qualification not implemented |
 | Remote-first strategy | Direct provider-backed runtime and typed pull fallback implemented; durable replay, retry/circuit, conflict persistence, strategy events, and full qualification remain |
-| Cache-first strategy | Complete built-in strategy and qualification not implemented |
+| Cache-first strategy | Serve-from-cache and synchronous (non-durable) refresh implemented ([details](./cache-first-strategy-execution.md)); the default durable/scheduled-refresh branch (`requireDurableRefresh = true`) is explicitly rejected pending queue-admission wiring, not silently misexecuted; durable replay, retry/circuit, conflict persistence, strategy events, and full qualification remain |
 | Network-only strategy | Direct transport-only runtime implemented; full event/result and platform qualification remain |
 | Hybrid strategy | Complete built-in strategy and qualification not implemented |
 | Adaptive strategy | Complete built-in strategy and qualification not implemented |
