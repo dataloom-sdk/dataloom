@@ -16,8 +16,9 @@ import androidx.room.RoomDatabase
         CircuitBreakerStateEntity::class,
         RetryAdministrationStateEntity::class,
         CircuitAdministrationStateEntity::class,
+        DurableStateEntity::class,
     ],
-    version = 8,
+    version = 9,
     exportSchema = true,
 )
 public abstract class DataLoomRoomDatabase : RoomDatabase() {
@@ -27,4 +28,5 @@ public abstract class DataLoomRoomDatabase : RoomDatabase() {
     internal abstract fun retryAdministrationExecutionDao(): RetryAdministrationExecutionDao
     internal abstract fun circuitAdministrationStateDao(): CircuitAdministrationStateDao
     internal abstract fun circuitAdministrationExecutionDao(): CircuitAdministrationExecutionDao
+    internal abstract fun durableStateDao(): DurableStateDao
 }
