@@ -95,6 +95,7 @@ between gate flips.
 
 | Date | What landed | Gate/track |
 |---|---|---|
+| 2026-08-10 | Direct test coverage for `StrategySynchronizationExecutionCoordinator`'s admission logic — PROVIDERS_NOT_INITIALIZED, STRATEGY_REJECTED, DEFER, INCOMPATIBLE_TRIGGER, INCOMPATIBLE_INPUT, UNSUPPORTED_PLAN, PROVIDER_RESOLUTION_FAILED, 7 tests (`#247`); closes out direct test coverage for the entire network-only/remote-first execution path (`#241`+`#243`+`#245`+`#247`, 34 tests total, zero production code changed) | `#102` hardening |
 | 2026-08-10 | Direct unit test coverage for `RemoteFirstStrategyExecutor` — SERVE_LOCAL fast path, transport-only PULL, non-persisting BIDIRECTIONAL, and the provider-backed pipeline branch, 13 tests (`#245`); third hardening slice of the `#101`/`#102` pivot, closing a previously-undocumented zero-coverage gap on the second of only two strategies with real execution logic | `#102` hardening |
 | 2026-08-10 | PUSH/BIDIRECTIONAL coordinator-level test coverage for network-only in `DataLoomBuilderProtectedStrategyTest` — the provider-protection/circuit-breaker layer previously only covered PULL (`#243`); second hardening slice of the `#101`/`#102` pivot | `#102` hardening |
 | 2026-08-10 | Direct unit test coverage for `NetworkOnlyStrategyExecutor` — PUSH/PULL/BIDIRECTIONAL, all three acknowledgement-validation failure modes (`#241`); first hardening slice of the `#101`/`#102` pivot, closing a previously-undocumented zero-coverage gap on the network-only executor | `#102` hardening |
