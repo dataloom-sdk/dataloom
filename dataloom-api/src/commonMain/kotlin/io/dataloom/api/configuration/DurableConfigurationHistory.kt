@@ -5,6 +5,7 @@ import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.state.DurableStateCompareAndSetRequest
 import io.dataloom.api.state.DurableStateCompareAndSetResult
 import io.dataloom.api.state.DurableStateLoadResult
+import io.dataloom.api.state.DurableStateScopeKeyEncoder
 import io.dataloom.api.state.DurableStateStore
 import kotlin.jvm.JvmInline
 
@@ -25,6 +26,18 @@ public value class ConfigurationHistoryScope(
     }
 
     override fun toString(): String = value
+
+    public companion object {
+        /**
+         * Reference [DurableStateScopeKeyEncoder] for [ConfigurationHistoryScope].
+         * [value] is already validated non-blank and is the entire scope
+         * identity, so no escaping/composition is needed — unlike
+         * [io.dataloom.api.policy.PolicyDecisionScope], which composes two
+         * fields and needs a collision-safe encoding.
+         */
+        public val KeyEncoder: DurableStateScopeKeyEncoder<ConfigurationHistoryScope> =
+            DurableStateScopeKeyEncoder { it.value }
+    }
 }
 
 /**
