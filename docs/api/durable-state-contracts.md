@@ -2,10 +2,11 @@
 
 [API reference index](./README.md)
 
-> **Status:** The contract exists, is proven implementable, and has one real
-> domain adoption end to end — configuration snapshot history, including a
-> production Room persistence implementation. Other domains (policy
-> decisions, and so on) have not adopted it yet.
+> **Status:** The contract exists, is proven implementable, and has two real
+> domain adoptions end to end — configuration snapshot history and policy
+> decisions — both backed by the same production Room persistence
+> implementation. Other domains (conflict, events, assets, audit) have not
+> adopted it yet.
 
 ## Status
 
@@ -158,20 +159,61 @@ See [configuration snapshots](./configuration-snapshots.md#durableconfigurationh
 for `DurableConfigurationHistory`'s own `apply`/`rollbackToLastKnownGood`
 semantics.
 
+## Adoption: policy decisions
+
+[`DurablePolicyDecisionLog`](./policy-foundation.md#durablepolicydecisionlog)
+(`io.dataloom.api.policy`) is the second real domain adoption, and reuses
+`RoomDurableStateStore` directly — no new Room DAO/entity/migration code was
+written for it:
+
+- **`TScope`** is `PolicyDecisionScope` — one `PolicySetId` evaluated for
+  one `ExecutionId` (`ExecutionContext`'s own required canonical identifier
+  for one execution, reused as the natural idempotency key).
+- **`TState`** is `PolicyDecisionRecord` — the committed `PolicyDecision`
+  plus when it was committed.
+- Unlike configuration history's monotonic-version model, this domain is
+  **commit-once**: `expectedVersion = null` (insert-if-absent) is the only
+  compare-and-set shape this adapter ever issues. A later commit for the
+  same scope is judged only by whether it agrees with what is already
+  there — matching, not versioning, is the whole operation.
+- **`PolicyDecisionRecordCodec`** (`DurableStateCodec<PolicyDecisionRecord>`)
+  is the reference text codec, following the same hex-encoded,
+  bounded-length, fail-closed-on-malformed-payload discipline as
+  `ConfigurationHistoryStateCodec`.
+- **`PolicyDecisionScope.KeyEncoder`** length-prefixes both fields before
+  concatenating (the same scheme `circuitBreakerScopeKey` established) so no
+  possible `PolicySetId`/`ExecutionId` content can shift a field boundary
+  and collide with a different scope's encoded key.
+- Wired the same way configuration history is:
+  `RoomDurableStateStore(database, "policy-decisions", PolicyDecisionScope.KeyEncoder, PolicyDecisionRecordCodec())`
+  — proving `RoomDurableStateStore`'s genericity for real, not just by
+  assertion.
+
+Both `ConfigurationHistoryScope` and `PolicyDecisionScope` now expose a
+`KeyEncoder` companion property with their reference `DurableStateCodec`
+implementation, so adopting `RoomDurableStateStore` for either domain never
+requires writing a scope-key encoder by hand.
+
+See [policy foundation](./policy-foundation.md#durablepolicydecisionlog) for
+`DurablePolicyDecisionLog`'s own `commit`/`current` semantics, including why
+commit-once rather than versioned, and how idempotent retries are
+distinguished from genuine conflicts.
+
 ## What this does not do yet
 
-- **Policy decisions** (`PolicyDecision`) have no durable persistence yet —
-  real, separately-scoped follow-up work. Adopting `DurableStateStore` for
-  it means choosing `TScope`/`TState` for that domain, a
-  `DurableStateCodec<TState>` implementation, and wiring it into the
-  domain's existing resolver/evaluator flow — the same shape
-  `DurableConfigurationHistory` above already establishes.
+- **Wiring either durable adapter into a real evaluation/resolution call
+  site.** Nothing in `dataloom-runtime` calls `DurableConfigurationHistory.apply`
+  or `DurablePolicyDecisionLog.commit` yet — both remain available primitives,
+  not adopted end to end by any real synchronization flow.
+- **Conflict, events, assets, and audit** durable state — real,
+  separately-scoped follow-up work; not started.
 - **An Apple file-backed `DurableStateStore` implementation.** Only the
   Room implementation exists so far;
   `AppleFileCircuitBreakerStateStore` remains the only precedent for what
   an Apple file-backed one would look like.
 - **SDK-wide adoption.** `DataLoomConfigurationHistory` (in-memory) is not
-  superseded or removed by `DurableConfigurationHistory` — nothing in the
-  runtime has been switched over to use the durable variant yet; that is
-  further follow-up work, not implied by this contract or its first
-  adoption existing.
+  superseded or removed by `DurableConfigurationHistory`, and plain
+  `PolicyDecision` values are not superseded by `PolicyDecisionRecord` —
+  nothing in the runtime has been switched over to use either durable
+  variant yet; that is further follow-up work, not implied by this contract
+  or its adoptions existing.

@@ -4,14 +4,16 @@
 
 > **Status:** Available in-memory contract with a production implementation
 > (no platform-specific code is required — everything below is pure common
-> Kotlin). This is a bounded first slice of `#93`'s "deterministic policy
-> foundation" requirement, not the full target described in
+> Kotlin), plus an optional durable commit log
+> ([`DurablePolicyDecisionLog`](#durablepolicydecisionlog)) for callers that
+> need a committed decision to survive a process restart. This is a bounded
+> first slice of `#93`'s "deterministic policy foundation" requirement, not
+> the full target described in
 > [ADR-0002](../adr/ADR-0002-v1-artifact-and-foundation-architecture.md)'s
 > `### Policy` section. No existing type (`RetryPolicy`, `StrategyPolicy`,
 > `ExistingSchedulePolicy`, `ConflictResolutionDecision`) is migrated onto
-> this foundation, no decision is persisted, and none of the six eventual
-> consumers' concrete rules are implemented here — see
-> [Deliberately not included](#deliberately-not-included).
+> this foundation, and none of the six eventual consumers' concrete rules are
+> implemented here — see [Deliberately not included](#deliberately-not-included).
 
 **Package:** `io.dataloom.api.policy`
 
@@ -264,7 +266,67 @@ outcome disagreeing with its own identity, and no consistency-check
 validation is needed for that mismatch.
 
 A `PolicyDecision` is a plain in-memory value. Creating one does not commit,
-persist, or act on it — see [Deliberately not included](#deliberately-not-included).
+persist, or act on it — see [`DurablePolicyDecisionLog`](#durablepolicydecisionlog)
+for the durable variant, and [Deliberately not included](#deliberately-not-included)
+for what remains genuinely unaddressed.
+
+---
+
+## `DurablePolicyDecisionLog`
+
+**Package:** `io.dataloom.api.policy` · see also
+[durable state contracts](./durable-state-contracts.md)
+
+```kotlin
+public class DurablePolicyDecisionLog(
+    store: DurableStateStore<PolicyDecisionScope, PolicyDecisionRecord>,
+    schemaVersion: Int = 1,
+    maximumStateUpdateAttempts: Int = 8,
+) {
+    public suspend fun current(scope: PolicyDecisionScope): ProviderOperationResult<PolicyDecisionRecord?>
+    public suspend fun commit(
+        scope: PolicyDecisionScope,
+        decision: PolicyDecision,
+        committedAt: DataLoomInstant,
+    ): DurablePolicyDecisionCommitOutcome
+}
+```
+
+Durably records a [`PolicyDecision`](#policydecision) via a
+[`DurableStateStore`](./durable-state-contracts.md), implementing ADR-0002's
+"the resulting decision/evidence is committed with the state transition"
+requirement this doc's status callout previously listed as out of scope.
+
+- **`PolicyDecisionScope`** identifies one committed decision: a
+  `PolicySetId` evaluated for one `ExecutionId` — `ExecutionId` is
+  `ExecutionContext`'s own required canonical identifier for one execution,
+  reused here as the natural idempotency key rather than inventing a second
+  identifier scheme.
+- **Commit-once, not versioned.** Unlike
+  [`DurableConfigurationHistory`](./configuration-snapshots.md#durableconfigurationhistory)'s
+  monotonic-version model, a policy decision is evaluated once for one
+  execution and recorded as a fact of what happened, not a value that
+  legitimately changes over time. `commit` is insert-if-absent: the first
+  commit for a scope wins and is never overwritten.
+- **Idempotent retries, distinct conflicts.** `PolicyEvaluator.evaluate` is
+  deterministic for the same inputs, so a caller retrying "evaluate then
+  commit" after a crash or duplicate delivery reproduces the same decision —
+  `commit` reports `DurablePolicyDecisionCommitOutcome.AlreadyCommitted`
+  rather than failing. A `DurablePolicyDecisionCommitOutcome.Conflict` (the
+  same scope, a *different* decision) is returned distinctly from ordinary
+  contention, because it points at a genuine caller bug — the same
+  `ExecutionId`/`PolicySetId` pair evaluated against two different
+  `PolicyEvaluationInput`s — not an expected race.
+- Follows the same bounded load-evaluate-compare-and-set retry loop
+  `DurableConfigurationHistory` and `CircuitBreakerCoordinator` already
+  establish, giving up with `ContentionLimitReached` after
+  `maximumStateUpdateAttempts`.
+- **`PolicyDecisionRecordCodec`** (`DurableStateCodec<PolicyDecisionRecord>`)
+  is the reference text codec for use with a generic string-payload store —
+  see [`RoomDurableStateStore`](./durable-state-contracts.md#roomdurablestatestore-dataloom-queue-room).
+  No new Room DAO/entity code was needed to adopt it: the same generic store
+  shipped for configuration snapshot history is reused directly, supplying
+  this codec and `PolicyDecisionScope.KeyEncoder` instead.
 
 ---
 
@@ -299,11 +361,12 @@ dominance has no override key at all.
   `ConflictResolutionDecision` onto this foundation.** No existing type is
   changed. Adoption is separate follow-up work, the same posture already
   established for every other `#93` primitive shipped so far.
-- **Durable/transactional persistence of decisions or evidence.** ADR-0002's
-  "the resulting decision/evidence is committed with the state transition"
-  belongs to the ADR's separate "Durable state" foundation bullet, not this
-  one. A `PolicyDecision` here is a plain in-memory value with no
-  commit/store hook.
+- **Wiring `DurablePolicyDecisionLog` into any real evaluation call site.**
+  The durable commit log exists and is proven implementable (see
+  [`DurablePolicyDecisionLog`](#durablepolicydecisionlog)), but nothing in
+  `dataloom-runtime` calls `commit` after `PolicyEvaluator.evaluate` yet —
+  that wiring is separate follow-up work, the same posture already
+  established for every other `#93` primitive shipped so far.
 - **The six subsystems' concrete rules** (retry reclassification, conflict
   selection, content policy, plugin permissions, residency, administrative
   overrides). This ships the generic `PolicyCheck`/`PolicySet`/`PolicyEvaluator`

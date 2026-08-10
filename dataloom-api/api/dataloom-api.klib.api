@@ -1248,6 +1248,69 @@ sealed interface io.dataloom.api.operational/OperationalEnvelopeDecodeResult { /
     }
 }
 
+sealed interface io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome { // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome|null[0]
+    final class AlreadyCommitted : io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome { // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.AlreadyCommitted|null[0]
+        constructor <init>(io.dataloom.api.policy/PolicyDecisionRecord) // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.AlreadyCommitted.<init>|<init>(io.dataloom.api.policy.PolicyDecisionRecord){}[0]
+
+        final val record // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.AlreadyCommitted.record|{}record[0]
+            final fun <get-record>(): io.dataloom.api.policy/PolicyDecisionRecord // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.AlreadyCommitted.record.<get-record>|<get-record>(){}[0]
+
+        final fun component1(): io.dataloom.api.policy/PolicyDecisionRecord // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.AlreadyCommitted.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.policy/PolicyDecisionRecord = ...): io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.AlreadyCommitted // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.AlreadyCommitted.copy|copy(io.dataloom.api.policy.PolicyDecisionRecord){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.AlreadyCommitted.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.AlreadyCommitted.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.AlreadyCommitted.toString|toString(){}[0]
+    }
+
+    final class Committed : io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome { // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.Committed|null[0]
+        constructor <init>(io.dataloom.api.policy/PolicyDecisionRecord) // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.Committed.<init>|<init>(io.dataloom.api.policy.PolicyDecisionRecord){}[0]
+
+        final val record // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.Committed.record|{}record[0]
+            final fun <get-record>(): io.dataloom.api.policy/PolicyDecisionRecord // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.Committed.record.<get-record>|<get-record>(){}[0]
+
+        final fun component1(): io.dataloom.api.policy/PolicyDecisionRecord // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.Committed.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.policy/PolicyDecisionRecord = ...): io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.Committed // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.Committed.copy|copy(io.dataloom.api.policy.PolicyDecisionRecord){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.Committed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.Committed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.Committed.toString|toString(){}[0]
+    }
+
+    final class Conflict : io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome { // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.Conflict|null[0]
+        constructor <init>(io.dataloom.api.policy/PolicyDecisionRecord, io.dataloom.api.policy/PolicyDecision) // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.Conflict.<init>|<init>(io.dataloom.api.policy.PolicyDecisionRecord;io.dataloom.api.policy.PolicyDecision){}[0]
+
+        final val attempted // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.Conflict.attempted|{}attempted[0]
+            final fun <get-attempted>(): io.dataloom.api.policy/PolicyDecision // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.Conflict.attempted.<get-attempted>|<get-attempted>(){}[0]
+        final val existing // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.Conflict.existing|{}existing[0]
+            final fun <get-existing>(): io.dataloom.api.policy/PolicyDecisionRecord // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.Conflict.existing.<get-existing>|<get-existing>(){}[0]
+
+        final fun component1(): io.dataloom.api.policy/PolicyDecisionRecord // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.Conflict.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.policy/PolicyDecision // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.Conflict.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.policy/PolicyDecisionRecord = ..., io.dataloom.api.policy/PolicyDecision = ...): io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.Conflict // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.Conflict.copy|copy(io.dataloom.api.policy.PolicyDecisionRecord;io.dataloom.api.policy.PolicyDecision){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.Conflict.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.Conflict.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.Conflict.toString|toString(){}[0]
+    }
+
+    final class PersistenceFailure : io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome { // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.PersistenceFailure|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.PersistenceFailure.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.PersistenceFailure.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.PersistenceFailure.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.PersistenceFailure.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.PersistenceFailure // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.PersistenceFailure.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.PersistenceFailure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.PersistenceFailure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.PersistenceFailure.toString|toString(){}[0]
+    }
+
+    final object ContentionLimitReached : io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome { // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.ContentionLimitReached|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.ContentionLimitReached.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.ContentionLimitReached.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome.ContentionLimitReached.toString|toString(){}[0]
+    }
+}
+
 sealed interface io.dataloom.api.policy/PolicyCheckOutcome { // io.dataloom.api.policy/PolicyCheckOutcome|null[0]
     abstract val justification // io.dataloom.api.policy/PolicyCheckOutcome.justification|{}justification[0]
         abstract fun <get-justification>(): kotlin/String // io.dataloom.api.policy/PolicyCheckOutcome.justification.<get-justification>|<get-justification>(){}[0]
@@ -2723,6 +2786,13 @@ final class io.dataloom.api.payload/DataLoomPayload { // io.dataloom.api.payload
     final fun toString(): kotlin/String // io.dataloom.api.payload/DataLoomPayload.toString|toString(){}[0]
 }
 
+final class io.dataloom.api.policy/DurablePolicyDecisionLog { // io.dataloom.api.policy/DurablePolicyDecisionLog|null[0]
+    constructor <init>(io.dataloom.api.state/DurableStateStore<io.dataloom.api.policy/PolicyDecisionScope, io.dataloom.api.policy/PolicyDecisionRecord>, kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.api.policy/DurablePolicyDecisionLog.<init>|<init>(io.dataloom.api.state.DurableStateStore<io.dataloom.api.policy.PolicyDecisionScope,io.dataloom.api.policy.PolicyDecisionRecord>;kotlin.Int;kotlin.Int){}[0]
+
+    final suspend fun commit(io.dataloom.api.policy/PolicyDecisionScope, io.dataloom.api.policy/PolicyDecision, io.dataloom.api.time/DataLoomInstant): io.dataloom.api.policy/DurablePolicyDecisionCommitOutcome // io.dataloom.api.policy/DurablePolicyDecisionLog.commit|commit(io.dataloom.api.policy.PolicyDecisionScope;io.dataloom.api.policy.PolicyDecision;io.dataloom.api.time.DataLoomInstant){}[0]
+    final suspend fun current(io.dataloom.api.policy/PolicyDecisionScope): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.policy/PolicyDecisionRecord?> // io.dataloom.api.policy/DurablePolicyDecisionLog.current|current(io.dataloom.api.policy.PolicyDecisionScope){}[0]
+}
+
 final class io.dataloom.api.policy/PolicyCheckEvidence { // io.dataloom.api.policy/PolicyCheckEvidence|null[0]
     constructor <init>(io.dataloom.api.identifier/PolicyCheckId, io.dataloom.api.policy/PolicyCheckOutcome) // io.dataloom.api.policy/PolicyCheckEvidence.<init>|<init>(io.dataloom.api.identifier.PolicyCheckId;io.dataloom.api.policy.PolicyCheckOutcome){}[0]
 
@@ -2759,6 +2829,50 @@ final class io.dataloom.api.policy/PolicyDecision { // io.dataloom.api.policy/Po
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.policy/PolicyDecision.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.policy/PolicyDecision.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.policy/PolicyDecision.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.policy/PolicyDecisionRecord { // io.dataloom.api.policy/PolicyDecisionRecord|null[0]
+    constructor <init>(io.dataloom.api.policy/PolicyDecision, io.dataloom.api.time/DataLoomInstant) // io.dataloom.api.policy/PolicyDecisionRecord.<init>|<init>(io.dataloom.api.policy.PolicyDecision;io.dataloom.api.time.DataLoomInstant){}[0]
+
+    final val committedAt // io.dataloom.api.policy/PolicyDecisionRecord.committedAt|{}committedAt[0]
+        final fun <get-committedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.policy/PolicyDecisionRecord.committedAt.<get-committedAt>|<get-committedAt>(){}[0]
+    final val decision // io.dataloom.api.policy/PolicyDecisionRecord.decision|{}decision[0]
+        final fun <get-decision>(): io.dataloom.api.policy/PolicyDecision // io.dataloom.api.policy/PolicyDecisionRecord.decision.<get-decision>|<get-decision>(){}[0]
+
+    final fun component1(): io.dataloom.api.policy/PolicyDecision // io.dataloom.api.policy/PolicyDecisionRecord.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.policy/PolicyDecisionRecord.component2|component2(){}[0]
+    final fun copy(io.dataloom.api.policy/PolicyDecision = ..., io.dataloom.api.time/DataLoomInstant = ...): io.dataloom.api.policy/PolicyDecisionRecord // io.dataloom.api.policy/PolicyDecisionRecord.copy|copy(io.dataloom.api.policy.PolicyDecision;io.dataloom.api.time.DataLoomInstant){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.policy/PolicyDecisionRecord.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.policy/PolicyDecisionRecord.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.policy/PolicyDecisionRecord.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.policy/PolicyDecisionRecordCodec : io.dataloom.api.state/DurableStateCodec<io.dataloom.api.policy/PolicyDecisionRecord> { // io.dataloom.api.policy/PolicyDecisionRecordCodec|null[0]
+    constructor <init>() // io.dataloom.api.policy/PolicyDecisionRecordCodec.<init>|<init>(){}[0]
+
+    final fun decode(kotlin/String): io.dataloom.api.policy/PolicyDecisionRecord // io.dataloom.api.policy/PolicyDecisionRecordCodec.decode|decode(kotlin.String){}[0]
+    final fun encode(io.dataloom.api.policy/PolicyDecisionRecord): kotlin/String // io.dataloom.api.policy/PolicyDecisionRecordCodec.encode|encode(io.dataloom.api.policy.PolicyDecisionRecord){}[0]
+}
+
+final class io.dataloom.api.policy/PolicyDecisionScope { // io.dataloom.api.policy/PolicyDecisionScope|null[0]
+    constructor <init>(io.dataloom.api.identifier/PolicySetId, io.dataloom.api.identifier/ExecutionId) // io.dataloom.api.policy/PolicyDecisionScope.<init>|<init>(io.dataloom.api.identifier.PolicySetId;io.dataloom.api.identifier.ExecutionId){}[0]
+
+    final val executionId // io.dataloom.api.policy/PolicyDecisionScope.executionId|{}executionId[0]
+        final fun <get-executionId>(): io.dataloom.api.identifier/ExecutionId // io.dataloom.api.policy/PolicyDecisionScope.executionId.<get-executionId>|<get-executionId>(){}[0]
+    final val policySetId // io.dataloom.api.policy/PolicyDecisionScope.policySetId|{}policySetId[0]
+        final fun <get-policySetId>(): io.dataloom.api.identifier/PolicySetId // io.dataloom.api.policy/PolicyDecisionScope.policySetId.<get-policySetId>|<get-policySetId>(){}[0]
+
+    final fun component1(): io.dataloom.api.identifier/PolicySetId // io.dataloom.api.policy/PolicyDecisionScope.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.identifier/ExecutionId // io.dataloom.api.policy/PolicyDecisionScope.component2|component2(){}[0]
+    final fun copy(io.dataloom.api.identifier/PolicySetId = ..., io.dataloom.api.identifier/ExecutionId = ...): io.dataloom.api.policy/PolicyDecisionScope // io.dataloom.api.policy/PolicyDecisionScope.copy|copy(io.dataloom.api.identifier.PolicySetId;io.dataloom.api.identifier.ExecutionId){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.policy/PolicyDecisionScope.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.policy/PolicyDecisionScope.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.policy/PolicyDecisionScope.toString|toString(){}[0]
+
+    final object Companion { // io.dataloom.api.policy/PolicyDecisionScope.Companion|null[0]
+        final val KeyEncoder // io.dataloom.api.policy/PolicyDecisionScope.Companion.KeyEncoder|{}KeyEncoder[0]
+            final fun <get-KeyEncoder>(): io.dataloom.api.state/DurableStateScopeKeyEncoder<io.dataloom.api.policy/PolicyDecisionScope> // io.dataloom.api.policy/PolicyDecisionScope.Companion.KeyEncoder.<get-KeyEncoder>|<get-KeyEncoder>(){}[0]
+    }
 }
 
 final class io.dataloom.api.policy/PolicyEvaluationBudget { // io.dataloom.api.policy/PolicyEvaluationBudget|null[0]
@@ -4247,6 +4361,11 @@ final value class io.dataloom.api.configuration/ConfigurationHistoryScope { // i
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationHistoryScope.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/ConfigurationHistoryScope.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.configuration/ConfigurationHistoryScope.toString|toString(){}[0]
+
+    final object Companion { // io.dataloom.api.configuration/ConfigurationHistoryScope.Companion|null[0]
+        final val KeyEncoder // io.dataloom.api.configuration/ConfigurationHistoryScope.Companion.KeyEncoder|{}KeyEncoder[0]
+            final fun <get-KeyEncoder>(): io.dataloom.api.state/DurableStateScopeKeyEncoder<io.dataloom.api.configuration/ConfigurationHistoryScope> // io.dataloom.api.configuration/ConfigurationHistoryScope.Companion.KeyEncoder.<get-KeyEncoder>|<get-KeyEncoder>(){}[0]
+    }
 }
 
 final value class io.dataloom.api.configuration/ConfigurationKey { // io.dataloom.api.configuration/ConfigurationKey|null[0]

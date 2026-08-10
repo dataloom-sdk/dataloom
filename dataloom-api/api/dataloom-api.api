@@ -556,6 +556,7 @@ public final class io/dataloom/api/configuration/ConfigurationFindingSeverity : 
 }
 
 public final class io/dataloom/api/configuration/ConfigurationHistoryScope {
+	public static final field Companion Lio/dataloom/api/configuration/ConfigurationHistoryScope$Companion;
 	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/configuration/ConfigurationHistoryScope;
 	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
 	public fun equals (Ljava/lang/Object;)Z
@@ -567,6 +568,10 @@ public final class io/dataloom/api/configuration/ConfigurationHistoryScope {
 	public fun toString ()Ljava/lang/String;
 	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
 	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/configuration/ConfigurationHistoryScope$Companion {
+	public final fun getKeyEncoder ()Lio/dataloom/api/state/DurableStateScopeKeyEncoder;
 }
 
 public final class io/dataloom/api/configuration/ConfigurationHistoryState {
@@ -1462,6 +1467,69 @@ public final class io/dataloom/api/payload/PayloadContentType {
 	public final synthetic fun unbox-impl ()Ljava/lang/String;
 }
 
+public abstract interface class io/dataloom/api/policy/DurablePolicyDecisionCommitOutcome {
+}
+
+public final class io/dataloom/api/policy/DurablePolicyDecisionCommitOutcome$AlreadyCommitted : io/dataloom/api/policy/DurablePolicyDecisionCommitOutcome {
+	public fun <init> (Lio/dataloom/api/policy/PolicyDecisionRecord;)V
+	public final fun component1 ()Lio/dataloom/api/policy/PolicyDecisionRecord;
+	public final fun copy (Lio/dataloom/api/policy/PolicyDecisionRecord;)Lio/dataloom/api/policy/DurablePolicyDecisionCommitOutcome$AlreadyCommitted;
+	public static synthetic fun copy$default (Lio/dataloom/api/policy/DurablePolicyDecisionCommitOutcome$AlreadyCommitted;Lio/dataloom/api/policy/PolicyDecisionRecord;ILjava/lang/Object;)Lio/dataloom/api/policy/DurablePolicyDecisionCommitOutcome$AlreadyCommitted;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/policy/PolicyDecisionRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/policy/DurablePolicyDecisionCommitOutcome$Committed : io/dataloom/api/policy/DurablePolicyDecisionCommitOutcome {
+	public fun <init> (Lio/dataloom/api/policy/PolicyDecisionRecord;)V
+	public final fun component1 ()Lio/dataloom/api/policy/PolicyDecisionRecord;
+	public final fun copy (Lio/dataloom/api/policy/PolicyDecisionRecord;)Lio/dataloom/api/policy/DurablePolicyDecisionCommitOutcome$Committed;
+	public static synthetic fun copy$default (Lio/dataloom/api/policy/DurablePolicyDecisionCommitOutcome$Committed;Lio/dataloom/api/policy/PolicyDecisionRecord;ILjava/lang/Object;)Lio/dataloom/api/policy/DurablePolicyDecisionCommitOutcome$Committed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/policy/PolicyDecisionRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/policy/DurablePolicyDecisionCommitOutcome$Conflict : io/dataloom/api/policy/DurablePolicyDecisionCommitOutcome {
+	public fun <init> (Lio/dataloom/api/policy/PolicyDecisionRecord;Lio/dataloom/api/policy/PolicyDecision;)V
+	public final fun component1 ()Lio/dataloom/api/policy/PolicyDecisionRecord;
+	public final fun component2 ()Lio/dataloom/api/policy/PolicyDecision;
+	public final fun copy (Lio/dataloom/api/policy/PolicyDecisionRecord;Lio/dataloom/api/policy/PolicyDecision;)Lio/dataloom/api/policy/DurablePolicyDecisionCommitOutcome$Conflict;
+	public static synthetic fun copy$default (Lio/dataloom/api/policy/DurablePolicyDecisionCommitOutcome$Conflict;Lio/dataloom/api/policy/PolicyDecisionRecord;Lio/dataloom/api/policy/PolicyDecision;ILjava/lang/Object;)Lio/dataloom/api/policy/DurablePolicyDecisionCommitOutcome$Conflict;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAttempted ()Lio/dataloom/api/policy/PolicyDecision;
+	public final fun getExisting ()Lio/dataloom/api/policy/PolicyDecisionRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/policy/DurablePolicyDecisionCommitOutcome$ContentionLimitReached : io/dataloom/api/policy/DurablePolicyDecisionCommitOutcome {
+	public static final field INSTANCE Lio/dataloom/api/policy/DurablePolicyDecisionCommitOutcome$ContentionLimitReached;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/policy/DurablePolicyDecisionCommitOutcome$PersistenceFailure : io/dataloom/api/policy/DurablePolicyDecisionCommitOutcome {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/api/policy/DurablePolicyDecisionCommitOutcome$PersistenceFailure;
+	public static synthetic fun copy$default (Lio/dataloom/api/policy/DurablePolicyDecisionCommitOutcome$PersistenceFailure;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/api/policy/DurablePolicyDecisionCommitOutcome$PersistenceFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/policy/DurablePolicyDecisionLog {
+	public fun <init> (Lio/dataloom/api/state/DurableStateStore;II)V
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun commit (Lio/dataloom/api/policy/PolicyDecisionScope;Lio/dataloom/api/policy/PolicyDecision;Lio/dataloom/api/time/DataLoomInstant;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun current (Lio/dataloom/api/policy/PolicyDecisionScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
 public abstract interface class io/dataloom/api/policy/PolicyCheck {
 	public abstract fun evaluate (Lio/dataloom/api/policy/PolicyEvaluationInput;)Lio/dataloom/api/policy/PolicyCheckOutcome;
 	public abstract fun getId-AzaE31A ()Ljava/lang/String;
@@ -1563,6 +1631,45 @@ public final class io/dataloom/api/policy/PolicyDecision {
 	public final fun getWinningCheckId-oXtB38g ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/policy/PolicyDecisionRecord {
+	public fun <init> (Lio/dataloom/api/policy/PolicyDecision;Lio/dataloom/api/time/DataLoomInstant;)V
+	public final fun component1 ()Lio/dataloom/api/policy/PolicyDecision;
+	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy (Lio/dataloom/api/policy/PolicyDecision;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/api/policy/PolicyDecisionRecord;
+	public static synthetic fun copy$default (Lio/dataloom/api/policy/PolicyDecisionRecord;Lio/dataloom/api/policy/PolicyDecision;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/api/policy/PolicyDecisionRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCommittedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getDecision ()Lio/dataloom/api/policy/PolicyDecision;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/policy/PolicyDecisionRecordCodec : io/dataloom/api/state/DurableStateCodec {
+	public fun <init> ()V
+	public fun decode (Ljava/lang/String;)Lio/dataloom/api/policy/PolicyDecisionRecord;
+	public synthetic fun decode (Ljava/lang/String;)Ljava/lang/Object;
+	public fun encode (Lio/dataloom/api/policy/PolicyDecisionRecord;)Ljava/lang/String;
+	public synthetic fun encode (Ljava/lang/Object;)Ljava/lang/String;
+}
+
+public final class io/dataloom/api/policy/PolicyDecisionScope {
+	public static final field Companion Lio/dataloom/api/policy/PolicyDecisionScope$Companion;
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-hkzOuTw ()Ljava/lang/String;
+	public final fun component2-_s34tUE ()Ljava/lang/String;
+	public final fun copy-6pmf3RE (Ljava/lang/String;Ljava/lang/String;)Lio/dataloom/api/policy/PolicyDecisionScope;
+	public static synthetic fun copy-6pmf3RE$default (Lio/dataloom/api/policy/PolicyDecisionScope;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/policy/PolicyDecisionScope;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExecutionId-_s34tUE ()Ljava/lang/String;
+	public final fun getPolicySetId-hkzOuTw ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/policy/PolicyDecisionScope$Companion {
+	public final fun getKeyEncoder ()Lio/dataloom/api/state/DurableStateScopeKeyEncoder;
 }
 
 public final class io/dataloom/api/policy/PolicyEvaluationBudget {

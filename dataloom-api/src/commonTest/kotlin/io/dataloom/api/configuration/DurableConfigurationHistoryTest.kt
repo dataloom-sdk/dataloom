@@ -32,6 +32,17 @@ class DurableConfigurationHistoryTest {
     private val scope = ConfigurationHistoryScope("app")
 
     @Test
+    fun keyEncoderEncodesEqualScopesIdenticallyAndDistinctScopesDifferently() {
+        val encoder = ConfigurationHistoryScope.KeyEncoder
+        assertEquals(encoder.encode(ConfigurationHistoryScope("app")), encoder.encode(ConfigurationHistoryScope("app")))
+        assertEquals("app", encoder.encode(ConfigurationHistoryScope("app")))
+        assertEquals(
+            encoder.encode(ConfigurationHistoryScope("app-1")) != encoder.encode(ConfigurationHistoryScope("app-2")),
+            true,
+        )
+    }
+
+    @Test
     fun currentIsNullBeforeAnySuccessfulApply() = runTest {
         val history = DurableConfigurationHistory(InMemoryDurableConfigurationHistoryStore())
         val result = assertIs<ProviderOperationResult.Success<ConfigurationSnapshot?>>(history.current(scope))
