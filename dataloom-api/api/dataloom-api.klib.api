@@ -638,12 +638,21 @@ final enum class io.dataloom.api.synchronization/SynchronizationSkipReason : kot
     final fun values(): kotlin/Array<io.dataloom.api.synchronization/SynchronizationSkipReason> // io.dataloom.api.synchronization/SynchronizationSkipReason.values|values#static(){}[0]
 }
 
+abstract fun interface <#A: kotlin/Any> io.dataloom.api.state/DurableStateMigration { // io.dataloom.api.state/DurableStateMigration|null[0]
+    abstract fun migrate(kotlin/Int, #A): #A // io.dataloom.api.state/DurableStateMigration.migrate|migrate(kotlin.Int;1:0){}[0]
+}
+
 abstract fun interface io.dataloom.api.security/DataLoomRedactor { // io.dataloom.api.security/DataLoomRedactor|null[0]
     abstract fun redact(io.dataloom.api.security/ClassifiedData): io.dataloom.api.security/RedactionResult // io.dataloom.api.security/DataLoomRedactor.redact|redact(io.dataloom.api.security.ClassifiedData){}[0]
 }
 
 abstract fun interface io.dataloom.api.strategy/SynchronizationStrategyEvaluator { // io.dataloom.api.strategy/SynchronizationStrategyEvaluator|null[0]
     abstract fun evaluate(io.dataloom.api.strategy/StrategyEvaluationRequest): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.api.strategy/SynchronizationStrategyEvaluator.evaluate|evaluate(io.dataloom.api.strategy.StrategyEvaluationRequest){}[0]
+}
+
+abstract interface <#A: kotlin/Any, #B: kotlin/Any> io.dataloom.api.state/DurableStateStore { // io.dataloom.api.state/DurableStateStore|null[0]
+    abstract suspend fun compareAndSet(io.dataloom.api.state/DurableStateCompareAndSetRequest<#A, #B>): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.state/DurableStateCompareAndSetResult<#B>> // io.dataloom.api.state/DurableStateStore.compareAndSet|compareAndSet(io.dataloom.api.state.DurableStateCompareAndSetRequest<1:0,1:1>){}[0]
+    abstract suspend fun load(#A): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.state/DurableStateLoadResult<#B>> // io.dataloom.api.state/DurableStateStore.load|load(1:0){}[0]
 }
 
 abstract interface io.dataloom.api.circuit/CircuitAdministrationAuthorizer { // io.dataloom.api.circuit/CircuitAdministrationAuthorizer|null[0]
@@ -797,6 +806,55 @@ abstract interface io.dataloom.api.transport/TransportProvider : io.dataloom.api
 
     abstract suspend fun pullChanges(io.dataloom.api.transport/PullChangesRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.transport/PullChangesResult> // io.dataloom.api.transport/TransportProvider.pullChanges|pullChanges(io.dataloom.api.transport.PullChangesRequest){}[0]
     abstract suspend fun pushChanges(io.dataloom.api.transport/PushChangesRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.synchronization/ChangeSetAcknowledgement> // io.dataloom.api.transport/TransportProvider.pushChanges|pushChanges(io.dataloom.api.transport.PushChangesRequest){}[0]
+}
+
+sealed interface <#A: out kotlin/Any> io.dataloom.api.state/DurableStateCompareAndSetResult { // io.dataloom.api.state/DurableStateCompareAndSetResult|null[0]
+    final class <#A1: kotlin/Any> Conflict : io.dataloom.api.state/DurableStateCompareAndSetResult<#A1> { // io.dataloom.api.state/DurableStateCompareAndSetResult.Conflict|null[0]
+        constructor <init>(io.dataloom.api.state/DurableStateRecord<#A1>?) // io.dataloom.api.state/DurableStateCompareAndSetResult.Conflict.<init>|<init>(io.dataloom.api.state.DurableStateRecord<1:0>?){}[0]
+
+        final val current // io.dataloom.api.state/DurableStateCompareAndSetResult.Conflict.current|{}current[0]
+            final fun <get-current>(): io.dataloom.api.state/DurableStateRecord<#A1>? // io.dataloom.api.state/DurableStateCompareAndSetResult.Conflict.current.<get-current>|<get-current>(){}[0]
+
+        final fun component1(): io.dataloom.api.state/DurableStateRecord<#A1>? // io.dataloom.api.state/DurableStateCompareAndSetResult.Conflict.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.state/DurableStateRecord<#A1>? = ...): io.dataloom.api.state/DurableStateCompareAndSetResult.Conflict<#A1> // io.dataloom.api.state/DurableStateCompareAndSetResult.Conflict.copy|copy(io.dataloom.api.state.DurableStateRecord<1:0>?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.state/DurableStateCompareAndSetResult.Conflict.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.state/DurableStateCompareAndSetResult.Conflict.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.state/DurableStateCompareAndSetResult.Conflict.toString|toString(){}[0]
+    }
+
+    final class <#A1: kotlin/Any> Updated : io.dataloom.api.state/DurableStateCompareAndSetResult<#A1> { // io.dataloom.api.state/DurableStateCompareAndSetResult.Updated|null[0]
+        constructor <init>(io.dataloom.api.state/DurableStateRecord<#A1>) // io.dataloom.api.state/DurableStateCompareAndSetResult.Updated.<init>|<init>(io.dataloom.api.state.DurableStateRecord<1:0>){}[0]
+
+        final val record // io.dataloom.api.state/DurableStateCompareAndSetResult.Updated.record|{}record[0]
+            final fun <get-record>(): io.dataloom.api.state/DurableStateRecord<#A1> // io.dataloom.api.state/DurableStateCompareAndSetResult.Updated.record.<get-record>|<get-record>(){}[0]
+
+        final fun component1(): io.dataloom.api.state/DurableStateRecord<#A1> // io.dataloom.api.state/DurableStateCompareAndSetResult.Updated.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.state/DurableStateRecord<#A1> = ...): io.dataloom.api.state/DurableStateCompareAndSetResult.Updated<#A1> // io.dataloom.api.state/DurableStateCompareAndSetResult.Updated.copy|copy(io.dataloom.api.state.DurableStateRecord<1:0>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.state/DurableStateCompareAndSetResult.Updated.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.state/DurableStateCompareAndSetResult.Updated.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.state/DurableStateCompareAndSetResult.Updated.toString|toString(){}[0]
+    }
+}
+
+sealed interface <#A: out kotlin/Any> io.dataloom.api.state/DurableStateLoadResult { // io.dataloom.api.state/DurableStateLoadResult|null[0]
+    final class <#A1: kotlin/Any> Found : io.dataloom.api.state/DurableStateLoadResult<#A1> { // io.dataloom.api.state/DurableStateLoadResult.Found|null[0]
+        constructor <init>(io.dataloom.api.state/DurableStateRecord<#A1>) // io.dataloom.api.state/DurableStateLoadResult.Found.<init>|<init>(io.dataloom.api.state.DurableStateRecord<1:0>){}[0]
+
+        final val record // io.dataloom.api.state/DurableStateLoadResult.Found.record|{}record[0]
+            final fun <get-record>(): io.dataloom.api.state/DurableStateRecord<#A1> // io.dataloom.api.state/DurableStateLoadResult.Found.record.<get-record>|<get-record>(){}[0]
+
+        final fun component1(): io.dataloom.api.state/DurableStateRecord<#A1> // io.dataloom.api.state/DurableStateLoadResult.Found.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.state/DurableStateRecord<#A1> = ...): io.dataloom.api.state/DurableStateLoadResult.Found<#A1> // io.dataloom.api.state/DurableStateLoadResult.Found.copy|copy(io.dataloom.api.state.DurableStateRecord<1:0>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.state/DurableStateLoadResult.Found.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.state/DurableStateLoadResult.Found.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.state/DurableStateLoadResult.Found.toString|toString(){}[0]
+    }
+
+    final object Missing : io.dataloom.api.state/DurableStateLoadResult<kotlin/Nothing> { // io.dataloom.api.state/DurableStateLoadResult.Missing|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.state/DurableStateLoadResult.Missing.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.state/DurableStateLoadResult.Missing.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.state/DurableStateLoadResult.Missing.toString|toString(){}[0]
+    }
 }
 
 sealed interface io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision { // io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision|null[0]
@@ -1824,6 +1882,47 @@ sealed interface io.dataloom.api.transport/PullChangesResult { // io.dataloom.ap
         final fun hashCode(): kotlin/Int // io.dataloom.api.transport/PullChangesResult.NoChanges.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.api.transport/PullChangesResult.NoChanges.toString|toString(){}[0]
     }
+}
+
+final class <#A: kotlin/Any, #B: kotlin/Any> io.dataloom.api.state/DurableStateCompareAndSetRequest { // io.dataloom.api.state/DurableStateCompareAndSetRequest|null[0]
+    constructor <init>(#A, kotlin/Long?, #B, kotlin/Int) // io.dataloom.api.state/DurableStateCompareAndSetRequest.<init>|<init>(1:0;kotlin.Long?;1:1;kotlin.Int){}[0]
+
+    final val expectedVersion // io.dataloom.api.state/DurableStateCompareAndSetRequest.expectedVersion|{}expectedVersion[0]
+        final fun <get-expectedVersion>(): kotlin/Long? // io.dataloom.api.state/DurableStateCompareAndSetRequest.expectedVersion.<get-expectedVersion>|<get-expectedVersion>(){}[0]
+    final val nextSchemaVersion // io.dataloom.api.state/DurableStateCompareAndSetRequest.nextSchemaVersion|{}nextSchemaVersion[0]
+        final fun <get-nextSchemaVersion>(): kotlin/Int // io.dataloom.api.state/DurableStateCompareAndSetRequest.nextSchemaVersion.<get-nextSchemaVersion>|<get-nextSchemaVersion>(){}[0]
+    final val nextState // io.dataloom.api.state/DurableStateCompareAndSetRequest.nextState|{}nextState[0]
+        final fun <get-nextState>(): #B // io.dataloom.api.state/DurableStateCompareAndSetRequest.nextState.<get-nextState>|<get-nextState>(){}[0]
+    final val scope // io.dataloom.api.state/DurableStateCompareAndSetRequest.scope|{}scope[0]
+        final fun <get-scope>(): #A // io.dataloom.api.state/DurableStateCompareAndSetRequest.scope.<get-scope>|<get-scope>(){}[0]
+
+    final fun component1(): #A // io.dataloom.api.state/DurableStateCompareAndSetRequest.component1|component1(){}[0]
+    final fun component2(): kotlin/Long? // io.dataloom.api.state/DurableStateCompareAndSetRequest.component2|component2(){}[0]
+    final fun component3(): #B // io.dataloom.api.state/DurableStateCompareAndSetRequest.component3|component3(){}[0]
+    final fun component4(): kotlin/Int // io.dataloom.api.state/DurableStateCompareAndSetRequest.component4|component4(){}[0]
+    final fun copy(#A = ..., kotlin/Long? = ..., #B = ..., kotlin/Int = ...): io.dataloom.api.state/DurableStateCompareAndSetRequest<#A, #B> // io.dataloom.api.state/DurableStateCompareAndSetRequest.copy|copy(1:0;kotlin.Long?;1:1;kotlin.Int){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.state/DurableStateCompareAndSetRequest.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.state/DurableStateCompareAndSetRequest.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.state/DurableStateCompareAndSetRequest.toString|toString(){}[0]
+}
+
+final class <#A: kotlin/Any> io.dataloom.api.state/DurableStateRecord { // io.dataloom.api.state/DurableStateRecord|null[0]
+    constructor <init>(#A, kotlin/Long, kotlin/Int) // io.dataloom.api.state/DurableStateRecord.<init>|<init>(1:0;kotlin.Long;kotlin.Int){}[0]
+
+    final val schemaVersion // io.dataloom.api.state/DurableStateRecord.schemaVersion|{}schemaVersion[0]
+        final fun <get-schemaVersion>(): kotlin/Int // io.dataloom.api.state/DurableStateRecord.schemaVersion.<get-schemaVersion>|<get-schemaVersion>(){}[0]
+    final val state // io.dataloom.api.state/DurableStateRecord.state|{}state[0]
+        final fun <get-state>(): #A // io.dataloom.api.state/DurableStateRecord.state.<get-state>|<get-state>(){}[0]
+    final val version // io.dataloom.api.state/DurableStateRecord.version|{}version[0]
+        final fun <get-version>(): kotlin/Long // io.dataloom.api.state/DurableStateRecord.version.<get-version>|<get-version>(){}[0]
+
+    final fun component1(): #A // io.dataloom.api.state/DurableStateRecord.component1|component1(){}[0]
+    final fun component2(): kotlin/Long // io.dataloom.api.state/DurableStateRecord.component2|component2(){}[0]
+    final fun component3(): kotlin/Int // io.dataloom.api.state/DurableStateRecord.component3|component3(){}[0]
+    final fun copy(#A = ..., kotlin/Long = ..., kotlin/Int = ...): io.dataloom.api.state/DurableStateRecord<#A> // io.dataloom.api.state/DurableStateRecord.copy|copy(1:0;kotlin.Long;kotlin.Int){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.state/DurableStateRecord.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.state/DurableStateRecord.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.state/DurableStateRecord.toString|toString(){}[0]
 }
 
 final class io.dataloom.api.change/ChangeEvent { // io.dataloom.api.change/ChangeEvent|null[0]
@@ -4375,3 +4474,4 @@ final object io.dataloom.api.strategy/StrategyExecutionPlanCodec { // io.dataloo
 }
 
 final fun (io.dataloom.api.strategy/PersistedStrategyDecision).io.dataloom.api.strategy/correspondsTo(io.dataloom.api.strategy/StrategyExecutionPlan): kotlin/Boolean // io.dataloom.api.strategy/correspondsTo|correspondsTo@io.dataloom.api.strategy.PersistedStrategyDecision(io.dataloom.api.strategy.StrategyExecutionPlan){}[0]
+final fun <#A: kotlin/Any> io.dataloom.api.state/applyMigration(io.dataloom.api.state/DurableStateRecord<#A>, kotlin/Int, io.dataloom.api.state/DurableStateMigration<#A>): io.dataloom.api.state/DurableStateRecord<#A> // io.dataloom.api.state/applyMigration|applyMigration(io.dataloom.api.state.DurableStateRecord<0:0>;kotlin.Int;io.dataloom.api.state.DurableStateMigration<0:0>){0§<kotlin.Any>}[0]
