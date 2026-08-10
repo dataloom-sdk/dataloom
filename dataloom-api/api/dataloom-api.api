@@ -2416,6 +2416,97 @@ public final class io/dataloom/api/security/StrictDataLoomRedactor : io/dataloom
 	public fun redact (Lio/dataloom/api/security/ClassifiedData;)Lio/dataloom/api/security/RedactionResult;
 }
 
+public final class io/dataloom/api/state/DurableStateCompareAndSetRequest {
+	public fun <init> (Ljava/lang/Object;Ljava/lang/Long;Ljava/lang/Object;I)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun component2 ()Ljava/lang/Long;
+	public final fun component3 ()Ljava/lang/Object;
+	public final fun component4 ()I
+	public final fun copy (Ljava/lang/Object;Ljava/lang/Long;Ljava/lang/Object;I)Lio/dataloom/api/state/DurableStateCompareAndSetRequest;
+	public static synthetic fun copy$default (Lio/dataloom/api/state/DurableStateCompareAndSetRequest;Ljava/lang/Object;Ljava/lang/Long;Ljava/lang/Object;IILjava/lang/Object;)Lio/dataloom/api/state/DurableStateCompareAndSetRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExpectedVersion ()Ljava/lang/Long;
+	public final fun getNextSchemaVersion ()I
+	public final fun getNextState ()Ljava/lang/Object;
+	public final fun getScope ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/state/DurableStateCompareAndSetResult {
+}
+
+public final class io/dataloom/api/state/DurableStateCompareAndSetResult$Conflict : io/dataloom/api/state/DurableStateCompareAndSetResult {
+	public fun <init> (Lio/dataloom/api/state/DurableStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/state/DurableStateRecord;
+	public final fun copy (Lio/dataloom/api/state/DurableStateRecord;)Lio/dataloom/api/state/DurableStateCompareAndSetResult$Conflict;
+	public static synthetic fun copy$default (Lio/dataloom/api/state/DurableStateCompareAndSetResult$Conflict;Lio/dataloom/api/state/DurableStateRecord;ILjava/lang/Object;)Lio/dataloom/api/state/DurableStateCompareAndSetResult$Conflict;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCurrent ()Lio/dataloom/api/state/DurableStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/state/DurableStateCompareAndSetResult$Updated : io/dataloom/api/state/DurableStateCompareAndSetResult {
+	public fun <init> (Lio/dataloom/api/state/DurableStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/state/DurableStateRecord;
+	public final fun copy (Lio/dataloom/api/state/DurableStateRecord;)Lio/dataloom/api/state/DurableStateCompareAndSetResult$Updated;
+	public static synthetic fun copy$default (Lio/dataloom/api/state/DurableStateCompareAndSetResult$Updated;Lio/dataloom/api/state/DurableStateRecord;ILjava/lang/Object;)Lio/dataloom/api/state/DurableStateCompareAndSetResult$Updated;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/state/DurableStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/state/DurableStateLoadResult {
+}
+
+public final class io/dataloom/api/state/DurableStateLoadResult$Found : io/dataloom/api/state/DurableStateLoadResult {
+	public fun <init> (Lio/dataloom/api/state/DurableStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/state/DurableStateRecord;
+	public final fun copy (Lio/dataloom/api/state/DurableStateRecord;)Lio/dataloom/api/state/DurableStateLoadResult$Found;
+	public static synthetic fun copy$default (Lio/dataloom/api/state/DurableStateLoadResult$Found;Lio/dataloom/api/state/DurableStateRecord;ILjava/lang/Object;)Lio/dataloom/api/state/DurableStateLoadResult$Found;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/state/DurableStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/state/DurableStateLoadResult$Missing : io/dataloom/api/state/DurableStateLoadResult {
+	public static final field INSTANCE Lio/dataloom/api/state/DurableStateLoadResult$Missing;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/state/DurableStateMigration {
+	public abstract fun migrate (ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/api/state/DurableStateRecord {
+	public fun <init> (Ljava/lang/Object;JI)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun component2 ()J
+	public final fun component3 ()I
+	public final fun copy (Ljava/lang/Object;JI)Lio/dataloom/api/state/DurableStateRecord;
+	public static synthetic fun copy$default (Lio/dataloom/api/state/DurableStateRecord;Ljava/lang/Object;JIILjava/lang/Object;)Lio/dataloom/api/state/DurableStateRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSchemaVersion ()I
+	public final fun getState ()Ljava/lang/Object;
+	public final fun getVersion ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/state/DurableStateStore {
+	public abstract fun compareAndSet (Lio/dataloom/api/state/DurableStateCompareAndSetRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun load (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/api/state/DurableStateStoreKt {
+	public static final fun applyMigration (Lio/dataloom/api/state/DurableStateRecord;ILio/dataloom/api/state/DurableStateMigration;)Lio/dataloom/api/state/DurableStateRecord;
+}
+
 public final class io/dataloom/api/storage/InboundChangeApplyRequest {
 	public fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/change/ChangeSet;)V
 	public final fun component1 ()Lio/dataloom/api/model/SynchronizationRequest;

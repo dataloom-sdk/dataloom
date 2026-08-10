@@ -22,5 +22,10 @@ kotlin {
                 api(project(":dataloom-provider-api"))
             }
         }
+        commonTest {
+            dependencies {
+                implementation(libs.kotlinx.coroutines.test)
+            }
+        }
     }
 }
