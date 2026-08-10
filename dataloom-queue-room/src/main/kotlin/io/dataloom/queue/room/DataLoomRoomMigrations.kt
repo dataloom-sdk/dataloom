@@ -154,6 +154,24 @@ public object DataLoomRoomMigrations {
         }
     }
 
+    /** Adds the generic, namespaced durable-state table used by [io.dataloom.queue.room.RoomDurableStateStore]. */
+    public val MIGRATION_8_9: Migration = object : Migration(8, 9) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS durable_states (
+                    namespace TEXT NOT NULL,
+                    scope_key TEXT NOT NULL,
+                    state_payload TEXT NOT NULL,
+                    schema_version INTEGER NOT NULL,
+                    record_version INTEGER NOT NULL,
+                    PRIMARY KEY(namespace, scope_key)
+                )
+                """.trimIndent(),
+            )
+        }
+    }
+
     /** Complete ordered migration set used by [DataLoomDatabaseBuilder]. */
     public val ALL: Array<Migration>
         get() = arrayOf(
@@ -164,5 +182,6 @@ public object DataLoomRoomMigrations {
             MIGRATION_5_6,
             MIGRATION_6_7,
             MIGRATION_7_8,
+            MIGRATION_8_9,
         )
 }

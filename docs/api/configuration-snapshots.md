@@ -4,14 +4,17 @@
 
 > **Status:** Available in-memory contract with a production implementation
 > (no platform-specific code is required — everything below is pure common
-> Kotlin). This is a bounded first slice of `#93`'s "versioned immutable
-> configuration snapshots, validation, precedence, safe rollout, and
-> rollback" requirement, not the full target described in
+> Kotlin), plus an optional durable variant
+> ([`DurableConfigurationHistory`](#durableconfigurationhistory)) for callers
+> that need history to survive a process restart. This is a bounded first
+> slice of `#93`'s "versioned immutable configuration snapshots, validation,
+> precedence, safe rollout, and rollback" requirement, not the full target
+> described in
 > [ADR-0002](../adr/ADR-0002-v1-artifact-and-foundation-architecture.md)'s
-> `### Configuration` section. Durable/transactional persistence, the shared
-> policy engine, remote config delivery, and wiring into
-> `RuntimeDependencies`/`DataLoomBuilder` are explicitly out of scope here —
-> see [Deliberately not included](#deliberately-not-included).
+> `### Configuration` section. The shared policy engine, remote config
+> delivery, and wiring into `RuntimeDependencies`/`DataLoomBuilder` are
+> explicitly out of scope here — see
+> [Deliberately not included](#deliberately-not-included).
 
 **Package:** `io.dataloom.api.configuration`
 
@@ -245,7 +248,62 @@ Bounded, in-memory, monotonically versioned history of applied snapshots.
 
 This is an in-memory primitive only — it does not persist history across a
 process restart, and provides no distributed compare-and-set/fencing
-guarantee. See [Deliberately not included](#deliberately-not-included).
+guarantee. A caller that needs durability should use
+[`DurableConfigurationHistory`](#durableconfigurationhistory) instead; the
+two are not layered on top of each other and a given call site should pick
+one, not both.
+
+---
+
+## `DurableConfigurationHistory`
+
+**Package:** `io.dataloom.api.configuration` · see also
+[durable state contracts](./durable-state-contracts.md)
+
+```kotlin
+public class DurableConfigurationHistory(
+    store: DurableStateStore<ConfigurationHistoryScope, ConfigurationHistoryState>,
+    maxRetainedVersions: Int = 10,
+    schemaVersion: Int = 1,
+    maximumStateUpdateAttempts: Int = 8,
+) {
+    public suspend fun current(scope: ConfigurationHistoryScope): ProviderOperationResult<ConfigurationSnapshot?>
+    public suspend fun retainedVersions(scope: ConfigurationHistoryScope): ProviderOperationResult<List<Long>>
+    public suspend fun apply(scope: ConfigurationHistoryScope, snapshot: ConfigurationSnapshot): DurableConfigurationApplyOutcome
+    public suspend fun rollbackToLastKnownGood(scope: ConfigurationHistoryScope): DurableConfigurationRollbackOutcome
+}
+```
+
+Same monotonic-version and bounded-retention semantics as
+`DataLoomConfigurationHistory` above — a candidate is only accepted when its
+version strictly exceeds the scope's current one, and only the most recent
+`maxRetainedVersions` snapshots are kept — but every `apply` and
+`rollbackToLastKnownGood` call is persisted through a
+[`DurableStateStore`](./durable-state-contracts.md) rather than held in a
+process-local field, so history survives a process restart and stays
+consistent under concurrent writers.
+
+- **`ConfigurationHistoryScope`** identifies which history a call addresses
+  (one per application, tenant, or configuration domain sharing a store).
+- **`ConfigurationHistoryState`** is the durable `TState`: every currently
+  retained snapshot for a scope, oldest first.
+- Every mutation follows the same bounded load-evaluate-compare-and-set
+  retry loop `CircuitBreakerCoordinator` established for
+  `CircuitBreakerStateStore`: on a compare-and-set conflict, the whole
+  operation re-reads current state and retries, up to
+  `maximumStateUpdateAttempts` times, before giving up with
+  `DurableConfigurationApplyOutcome.ContentionLimitReached` /
+  `DurableConfigurationRollbackOutcome.ContentionLimitReached`.
+- **`ConfigurationHistoryStateCodec`** (`DurableStateCodec<ConfigurationHistoryState>`)
+  is the reference text codec for use with a generic string-payload store —
+  see [`RoomDurableStateStore`](./durable-state-contracts.md#roomdurablestatestore-dataloom-queue-room)
+  in `dataloom-queue-room`. Each encoded snapshot carries its checksum hex;
+  decoding recomputes the checksum via `ConfigurationSnapshot.create` and
+  requires it to match, so storage-layer corruption that still parses as
+  well-formed fields fails closed instead of silently returning the wrong
+  snapshot.
+- `DataLoomConfigurationHistory` is not superseded by this type — an
+  in-process-only caller with no durability requirement can keep using it.
 
 ---
 

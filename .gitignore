@@ -22,6 +22,9 @@
 build/
 .gradle/
 
+# Machine-local Android SDK location; never portable across machines.
+local.properties
+
 # Gradle wrapper JAR must be committed; exclude all other JARs
 *.jar
 !gradle/wrapper/gradle-wrapper.jar

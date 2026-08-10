@@ -555,6 +555,39 @@ public final class io/dataloom/api/configuration/ConfigurationFindingSeverity : 
 	public static fun values ()[Lio/dataloom/api/configuration/ConfigurationFindingSeverity;
 }
 
+public final class io/dataloom/api/configuration/ConfigurationHistoryScope {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/configuration/ConfigurationHistoryScope;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/configuration/ConfigurationHistoryState {
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lio/dataloom/api/configuration/ConfigurationHistoryState;
+	public static synthetic fun copy$default (Lio/dataloom/api/configuration/ConfigurationHistoryState;Ljava/util/List;ILjava/lang/Object;)Lio/dataloom/api/configuration/ConfigurationHistoryState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRetainedSnapshots ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/configuration/ConfigurationHistoryStateCodec : io/dataloom/api/state/DurableStateCodec {
+	public fun <init> (Lio/dataloom/api/security/DataLoomDigestCalculator;)V
+	public fun decode (Ljava/lang/String;)Lio/dataloom/api/configuration/ConfigurationHistoryState;
+	public synthetic fun decode (Ljava/lang/String;)Ljava/lang/Object;
+	public fun encode (Lio/dataloom/api/configuration/ConfigurationHistoryState;)Ljava/lang/String;
+	public synthetic fun encode (Ljava/lang/Object;)Ljava/lang/String;
+}
+
 public final class io/dataloom/api/configuration/ConfigurationKey {
 	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/configuration/ConfigurationKey;
 	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
@@ -751,6 +784,99 @@ public final class io/dataloom/api/configuration/DataLoomConfigurationHistory {
 public final class io/dataloom/api/configuration/DataLoomConfigurationResolver {
 	public fun <init> (Lio/dataloom/api/configuration/ConfigurationSchema;Lio/dataloom/api/security/DataLoomDigestCalculator;)V
 	public final fun resolve (Ljava/util/List;J)Lio/dataloom/api/configuration/ConfigurationResolution;
+}
+
+public abstract interface class io/dataloom/api/configuration/DurableConfigurationApplyOutcome {
+}
+
+public final class io/dataloom/api/configuration/DurableConfigurationApplyOutcome$Applied : io/dataloom/api/configuration/DurableConfigurationApplyOutcome {
+	public fun <init> (Lio/dataloom/api/configuration/ConfigurationSnapshot;)V
+	public final fun component1 ()Lio/dataloom/api/configuration/ConfigurationSnapshot;
+	public final fun copy (Lio/dataloom/api/configuration/ConfigurationSnapshot;)Lio/dataloom/api/configuration/DurableConfigurationApplyOutcome$Applied;
+	public static synthetic fun copy$default (Lio/dataloom/api/configuration/DurableConfigurationApplyOutcome$Applied;Lio/dataloom/api/configuration/ConfigurationSnapshot;ILjava/lang/Object;)Lio/dataloom/api/configuration/DurableConfigurationApplyOutcome$Applied;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSnapshot ()Lio/dataloom/api/configuration/ConfigurationSnapshot;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/configuration/DurableConfigurationApplyOutcome$ContentionLimitReached : io/dataloom/api/configuration/DurableConfigurationApplyOutcome {
+	public static final field INSTANCE Lio/dataloom/api/configuration/DurableConfigurationApplyOutcome$ContentionLimitReached;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/configuration/DurableConfigurationApplyOutcome$PersistenceFailure : io/dataloom/api/configuration/DurableConfigurationApplyOutcome {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/api/configuration/DurableConfigurationApplyOutcome$PersistenceFailure;
+	public static synthetic fun copy$default (Lio/dataloom/api/configuration/DurableConfigurationApplyOutcome$PersistenceFailure;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/api/configuration/DurableConfigurationApplyOutcome$PersistenceFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/configuration/DurableConfigurationApplyOutcome$VersionNotMonotonic : io/dataloom/api/configuration/DurableConfigurationApplyOutcome {
+	public fun <init> (Lio/dataloom/api/configuration/ConfigurationSnapshot;J)V
+	public final fun component1 ()Lio/dataloom/api/configuration/ConfigurationSnapshot;
+	public final fun component2 ()J
+	public final fun copy (Lio/dataloom/api/configuration/ConfigurationSnapshot;J)Lio/dataloom/api/configuration/DurableConfigurationApplyOutcome$VersionNotMonotonic;
+	public static synthetic fun copy$default (Lio/dataloom/api/configuration/DurableConfigurationApplyOutcome$VersionNotMonotonic;Lio/dataloom/api/configuration/ConfigurationSnapshot;JILjava/lang/Object;)Lio/dataloom/api/configuration/DurableConfigurationApplyOutcome$VersionNotMonotonic;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCurrentVersion ()J
+	public final fun getSnapshot ()Lio/dataloom/api/configuration/ConfigurationSnapshot;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/configuration/DurableConfigurationHistory {
+	public fun <init> (Lio/dataloom/api/state/DurableStateStore;III)V
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;IIIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun apply-nOxfZrg (Ljava/lang/String;Lio/dataloom/api/configuration/ConfigurationSnapshot;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun current-E4LhCTY (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun retainedVersions-E4LhCTY (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun rollbackToLastKnownGood-E4LhCTY (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/dataloom/api/configuration/DurableConfigurationRollbackOutcome {
+}
+
+public final class io/dataloom/api/configuration/DurableConfigurationRollbackOutcome$ContentionLimitReached : io/dataloom/api/configuration/DurableConfigurationRollbackOutcome {
+	public static final field INSTANCE Lio/dataloom/api/configuration/DurableConfigurationRollbackOutcome$ContentionLimitReached;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/configuration/DurableConfigurationRollbackOutcome$NoEarlierSnapshot : io/dataloom/api/configuration/DurableConfigurationRollbackOutcome {
+	public static final field INSTANCE Lio/dataloom/api/configuration/DurableConfigurationRollbackOutcome$NoEarlierSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/configuration/DurableConfigurationRollbackOutcome$PersistenceFailure : io/dataloom/api/configuration/DurableConfigurationRollbackOutcome {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/api/configuration/DurableConfigurationRollbackOutcome$PersistenceFailure;
+	public static synthetic fun copy$default (Lio/dataloom/api/configuration/DurableConfigurationRollbackOutcome$PersistenceFailure;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/api/configuration/DurableConfigurationRollbackOutcome$PersistenceFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/configuration/DurableConfigurationRollbackOutcome$RolledBack : io/dataloom/api/configuration/DurableConfigurationRollbackOutcome {
+	public fun <init> (Lio/dataloom/api/configuration/ConfigurationSnapshot;)V
+	public final fun component1 ()Lio/dataloom/api/configuration/ConfigurationSnapshot;
+	public final fun copy (Lio/dataloom/api/configuration/ConfigurationSnapshot;)Lio/dataloom/api/configuration/DurableConfigurationRollbackOutcome$RolledBack;
+	public static synthetic fun copy$default (Lio/dataloom/api/configuration/DurableConfigurationRollbackOutcome$RolledBack;Lio/dataloom/api/configuration/ConfigurationSnapshot;ILjava/lang/Object;)Lio/dataloom/api/configuration/DurableConfigurationRollbackOutcome$RolledBack;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSnapshot ()Lio/dataloom/api/configuration/ConfigurationSnapshot;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/dataloom/api/conflict/ConflictDetectionRequest {
@@ -2416,6 +2542,11 @@ public final class io/dataloom/api/security/StrictDataLoomRedactor : io/dataloom
 	public fun redact (Lio/dataloom/api/security/ClassifiedData;)Lio/dataloom/api/security/RedactionResult;
 }
 
+public abstract interface class io/dataloom/api/state/DurableStateCodec {
+	public abstract fun decode (Ljava/lang/String;)Ljava/lang/Object;
+	public abstract fun encode (Ljava/lang/Object;)Ljava/lang/String;
+}
+
 public final class io/dataloom/api/state/DurableStateCompareAndSetRequest {
 	public fun <init> (Ljava/lang/Object;Ljava/lang/Long;Ljava/lang/Object;I)V
 	public final fun component1 ()Ljava/lang/Object;
@@ -2496,6 +2627,10 @@ public final class io/dataloom/api/state/DurableStateRecord {
 	public final fun getVersion ()J
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/state/DurableStateScopeKeyEncoder {
+	public abstract fun encode (Ljava/lang/Object;)Ljava/lang/String;
 }
 
 public abstract interface class io/dataloom/api/state/DurableStateStore {
