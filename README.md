@@ -95,6 +95,7 @@ between gate flips.
 
 | Date | What landed | Gate/track |
 |---|---|---|
+| 2026-08-10 | Direct unit test coverage for `RemoteFirstStrategyExecutor` — SERVE_LOCAL fast path, transport-only PULL, non-persisting BIDIRECTIONAL, and the provider-backed pipeline branch, 13 tests (`#245`); third hardening slice of the `#101`/`#102` pivot, closing a previously-undocumented zero-coverage gap on the second of only two strategies with real execution logic | `#102` hardening |
 | 2026-08-10 | PUSH/BIDIRECTIONAL coordinator-level test coverage for network-only in `DataLoomBuilderProtectedStrategyTest` — the provider-protection/circuit-breaker layer previously only covered PULL (`#243`); second hardening slice of the `#101`/`#102` pivot | `#102` hardening |
 | 2026-08-10 | Direct unit test coverage for `NetworkOnlyStrategyExecutor` — PUSH/PULL/BIDIRECTIONAL, all three acknowledgement-validation failure modes (`#241`); first hardening slice of the `#101`/`#102` pivot, closing a previously-undocumented zero-coverage gap on the network-only executor | `#102` hardening |
 | 2026-08-09 | Deterministic policy foundation primitives — `PolicyEvaluator`, `PolicySet`, `PolicyCheckOutcome` (allow/deny/require-user-action/defer), time-bounded fail-closed evaluation (`#239`) | `#93` foundations |
