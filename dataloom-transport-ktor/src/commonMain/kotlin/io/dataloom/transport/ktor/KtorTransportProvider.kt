@@ -8,6 +8,7 @@ import io.dataloom.api.error.Recoverability
 import io.dataloom.api.error.RetryDelayHint
 import io.dataloom.api.error.RetryDelayHintCarrier
 import io.dataloom.api.error.RetryDelayHintSource
+import io.dataloom.api.error.safeDiagnosticString
 import io.dataloom.api.provider.ProviderCapability
 import io.dataloom.api.provider.ProviderDescriptor
 import io.dataloom.api.provider.ProviderHealth
@@ -410,7 +411,9 @@ private object KtorTransportError {
         override val recoverability: Recoverability,
         override val message: String,
         override val cause: Throwable? = null,
-    ) : DataLoomError
+    ) : DataLoomError {
+        override fun toString(): String = safeDiagnosticString()
+    }
 
     private data class RemoteError(
         override val code: ErrorCode,
@@ -420,7 +423,9 @@ private object KtorTransportError {
         override val message: String,
         override val remoteOutcome: StrategyRemoteOutcome,
         override val cause: Throwable? = null,
-    ) : ClassifiedStrategyRemoteError
+    ) : ClassifiedStrategyRemoteError {
+        override fun toString(): String = safeDiagnosticString()
+    }
 
     private data class RetryableRemoteError(
         override val code: ErrorCode,
@@ -431,5 +436,7 @@ private object KtorTransportError {
         override val remoteOutcome: StrategyRemoteOutcome,
         override val retryDelayHint: RetryDelayHint,
         override val cause: Throwable? = null,
-    ) : ClassifiedStrategyRemoteError, RetryDelayHintCarrier
+    ) : ClassifiedStrategyRemoteError, RetryDelayHintCarrier {
+        override fun toString(): String = safeDiagnosticString()
+    }
 }

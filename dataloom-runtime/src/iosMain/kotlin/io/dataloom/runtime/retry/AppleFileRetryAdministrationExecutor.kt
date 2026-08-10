@@ -5,6 +5,7 @@ import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
+import io.dataloom.api.error.safeDiagnosticString
 import io.dataloom.api.queue.QueueEntryState
 import io.dataloom.api.retry.AuthorizedRetryAdministrationCommand
 import io.dataloom.api.retry.RetryAdministrationAction
@@ -349,7 +350,9 @@ private object AppleRetryAdministrationExecutorError {
         override val recoverability: Recoverability,
         override val message: String,
         override val cause: Throwable? = null,
-    ) : DataLoomError
+    ) : DataLoomError {
+        override fun toString(): String = safeDiagnosticString()
+    }
 }
 
 private const val APPLE_RETRY_ADMIN_COMMAND_CONFLICT: String =

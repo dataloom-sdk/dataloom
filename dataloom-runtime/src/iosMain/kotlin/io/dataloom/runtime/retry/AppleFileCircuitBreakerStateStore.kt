@@ -16,6 +16,7 @@ import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
+import io.dataloom.api.error.safeDiagnosticString
 import io.dataloom.api.identifier.TenantId
 import io.dataloom.api.identifier.WorkflowId
 import io.dataloom.api.provider.ProviderId
@@ -629,7 +630,9 @@ private object AppleCircuitStoreError {
         override val recoverability: Recoverability,
         override val message: String,
         override val cause: Throwable? = null,
-    ) : DataLoomError
+    ) : DataLoomError {
+        override fun toString(): String = safeDiagnosticString()
+    }
 }
 
 internal class AppleCircuitFileException : Exception()

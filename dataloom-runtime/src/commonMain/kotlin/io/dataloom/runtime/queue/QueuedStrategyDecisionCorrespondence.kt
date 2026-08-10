@@ -5,6 +5,7 @@ import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
+import io.dataloom.api.error.safeDiagnosticString
 import io.dataloom.api.queue.QueueEntry
 import io.dataloom.api.strategy.PersistedStrategyDecision
 import io.dataloom.api.strategy.StrategyExecutionPlan
@@ -59,7 +60,9 @@ internal object QueuedStrategyDecisionCorrespondence {
         override val message: String =
             "Resolved queued work does not match the durable strategy decision.",
         override val cause: Throwable? = null,
-    ) : DataLoomError
+    ) : DataLoomError {
+        override fun toString(): String = safeDiagnosticString()
+    }
 
     /** Canonical, redacted complete-plan resolver-contract failure. */
     private data class QueuedStrategyPlanMismatchError(
@@ -70,5 +73,7 @@ internal object QueuedStrategyDecisionCorrespondence {
         override val message: String =
             "Resolved queued work does not match the durable strategy plan.",
         override val cause: Throwable? = null,
-    ) : DataLoomError
+    ) : DataLoomError {
+        override fun toString(): String = safeDiagnosticString()
+    }
 }

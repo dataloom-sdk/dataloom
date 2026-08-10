@@ -5,6 +5,7 @@ import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
+import io.dataloom.api.error.safeDiagnosticString
 import io.dataloom.api.queue.QueueDeferralReason
 import io.dataloom.api.queue.QueueEntry
 import io.dataloom.api.provider.StrategyProviderBindings
@@ -445,7 +446,9 @@ internal class QueuedSynchronizationExecutionHandler(
         override val message: String =
             "Queued accepted-plan execution requires the accepted-plan coordinator.",
         override val cause: Throwable? = null,
-    ) : DataLoomError
+    ) : DataLoomError {
+        override fun toString(): String = safeDiagnosticString()
+    }
 
     private data class AcceptedStrategyDecisionMissingError(
         override val code: ErrorCode =
@@ -456,7 +459,9 @@ internal class QueuedSynchronizationExecutionHandler(
         override val message: String =
             "Queued accepted-plan execution requires the durable strategy decision.",
         override val cause: Throwable? = null,
-    ) : DataLoomError
+    ) : DataLoomError {
+        override fun toString(): String = safeDiagnosticString()
+    }
 
     private class StructuralRejectionError(
         private val reason: io.dataloom.runtime.execution.SynchronizationExecutionRejectionReason,

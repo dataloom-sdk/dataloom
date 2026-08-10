@@ -5,6 +5,7 @@ import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
+import io.dataloom.api.error.safeDiagnosticString
 import io.dataloom.api.queue.QueueDeferralReason
 import io.dataloom.api.queue.QueueEntry
 import io.dataloom.api.queue.QueueFailureDisposition
@@ -246,7 +247,9 @@ public class ProviderProtectedQueuedSynchronizationExecutionHandler(
         override val message: String =
             "Protected queued accepted-plan execution is not configured.",
         override val cause: Throwable? = null,
-    ) : DataLoomError
+    ) : DataLoomError {
+        override fun toString(): String = safeDiagnosticString()
+    }
 
     private data class AcceptedStrategyDecisionMissingError(
         override val code: ErrorCode =
@@ -257,7 +260,9 @@ public class ProviderProtectedQueuedSynchronizationExecutionHandler(
         override val message: String =
             "Protected queued accepted-plan execution requires a durable decision.",
         override val cause: Throwable? = null,
-    ) : DataLoomError
+    ) : DataLoomError {
+        override fun toString(): String = safeDiagnosticString()
+    }
 
     private data class StructuralRejectionError(
         private val reason: SynchronizationExecutionRejectionReason,
@@ -268,7 +273,9 @@ public class ProviderProtectedQueuedSynchronizationExecutionHandler(
         override val message: String =
             "Protected synchronization was rejected before pipeline invocation: $reason",
         override val cause: Throwable? = null,
-    ) : DataLoomError
+    ) : DataLoomError {
+        override fun toString(): String = safeDiagnosticString()
+    }
 
     private data class ConnectivityProviderMissingError(
         override val code: ErrorCode =
@@ -279,7 +286,9 @@ public class ProviderProtectedQueuedSynchronizationExecutionHandler(
         override val message: String =
             "Protected queued synchronization requires a configured connectivity provider.",
         override val cause: Throwable? = null,
-    ) : DataLoomError
+    ) : DataLoomError {
+        override fun toString(): String = safeDiagnosticString()
+    }
 
     private data class RetryAttemptExhaustedError(
         override val code: ErrorCode = ErrorCode("DL-PROTECTED-QUEUE-RETRY-ATTEMPT-EXHAUSTED"),
@@ -289,5 +298,7 @@ public class ProviderProtectedQueuedSynchronizationExecutionHandler(
         override val message: String =
             "Protected queued synchronization cannot represent another retry attempt.",
         override val cause: Throwable? = null,
-    ) : DataLoomError
+    ) : DataLoomError {
+        override fun toString(): String = safeDiagnosticString()
+    }
 }

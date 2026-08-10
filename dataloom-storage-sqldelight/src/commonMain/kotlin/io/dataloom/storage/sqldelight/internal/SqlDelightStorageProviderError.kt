@@ -5,6 +5,7 @@ import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
+import io.dataloom.api.error.safeDiagnosticString
 
 internal object SqlDelightStorageProviderError {
     fun databaseFailure(cause: Throwable): DataLoomError = StorageError(
@@ -23,5 +24,7 @@ internal object SqlDelightStorageProviderError {
         override val recoverability: Recoverability,
         override val message: String,
         override val cause: Throwable?,
-    ) : DataLoomError
+    ) : DataLoomError {
+        override fun toString(): String = safeDiagnosticString()
+    }
 }

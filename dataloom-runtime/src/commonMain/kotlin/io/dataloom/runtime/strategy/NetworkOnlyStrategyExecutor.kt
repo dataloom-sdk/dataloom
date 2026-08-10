@@ -6,6 +6,7 @@ import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
+import io.dataloom.api.error.safeDiagnosticString
 import io.dataloom.api.execution.StrategyProviderSet
 import io.dataloom.api.model.SynchronizationDirection
 import io.dataloom.api.provider.ProviderOperationResult
@@ -217,5 +218,7 @@ internal class NetworkOnlyStrategyExecutor(
         override val severity: ErrorSeverity = ErrorSeverity.ERROR,
         override val recoverability: Recoverability = Recoverability.NON_RECOVERABLE,
         override val cause: Throwable? = null,
-    ) : DataLoomError
+    ) : DataLoomError {
+        override fun toString(): String = safeDiagnosticString()
+    }
 }

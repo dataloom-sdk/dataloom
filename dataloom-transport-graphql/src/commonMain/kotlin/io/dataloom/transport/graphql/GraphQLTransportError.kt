@@ -5,6 +5,7 @@ import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
+import io.dataloom.api.error.safeDiagnosticString
 
 /**
  * Canonical DataLoom error produced by the Apollo GraphQL transport provider.
@@ -44,4 +45,6 @@ public data class GraphQLTransportError(
     override val recoverability: Recoverability,
     override val message: String,
     override val cause: Throwable? = null,
-) : DataLoomError
+) : DataLoomError {
+    override fun toString(): String = safeDiagnosticString()
+}

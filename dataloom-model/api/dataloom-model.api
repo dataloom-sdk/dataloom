@@ -22,6 +22,10 @@ public abstract interface class io/dataloom/api/error/DataLoomError {
 	public abstract fun getSeverity ()Lio/dataloom/api/error/ErrorSeverity;
 }
 
+public final class io/dataloom/api/error/DataLoomErrorRenderingKt {
+	public static final fun safeDiagnosticString (Lio/dataloom/api/error/DataLoomError;)Ljava/lang/String;
+}
+
 public final class io/dataloom/api/error/ErrorCategory : java/lang/Enum {
 	public static final field AUTHENTICATION Lio/dataloom/api/error/ErrorCategory;
 	public static final field AUTHORIZATION Lio/dataloom/api/error/ErrorCategory;
