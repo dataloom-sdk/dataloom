@@ -77,7 +77,9 @@ internal class StrategySynchronizationExecutionCoordinator(
                     )
                 }
             }
-            BuiltInSynchronizationStrategy.REMOTE_FIRST -> {
+            BuiltInSynchronizationStrategy.REMOTE_FIRST,
+            BuiltInSynchronizationStrategy.CACHE_FIRST,
+            -> {
                 if (request.input !is StrategyOperationInput.ProviderBacked) {
                     return rejected(
                         evaluation = evaluation,
@@ -134,6 +136,21 @@ internal class StrategySynchronizationExecutionCoordinator(
             BuiltInSynchronizationStrategy.REMOTE_FIRST
         ) {
             return RemoteFirstStrategyExecutor(
+                clock = clock,
+                runtimeDependencies = runtimeDependencies,
+                pipelineRegistry = pipelineRegistry,
+                lifecycleEventEmitter = lifecycleEventEmitter,
+            ).execute(
+                request = request,
+                evaluation = evaluation,
+                providers = executionProviders,
+            )
+        }
+        if (
+            evaluation.plan.effectiveStrategy ==
+            BuiltInSynchronizationStrategy.CACHE_FIRST
+        ) {
+            return CacheFirstStrategyExecutor(
                 clock = clock,
                 runtimeDependencies = runtimeDependencies,
                 pipelineRegistry = pipelineRegistry,

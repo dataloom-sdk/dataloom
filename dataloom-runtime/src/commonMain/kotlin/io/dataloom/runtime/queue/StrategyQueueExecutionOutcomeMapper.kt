@@ -41,6 +41,17 @@ internal class StrategyQueueExecutionOutcomeMapper(
                 is StrategyTransportOutput.Bidirectional,
                 -> QueueEntryExecutionOutcome.Completed(result.completedAt)
             }
+        is StrategySynchronizationExecutionResult.ServedFromCache ->
+            when (val refresh = result.refreshOutput) {
+                null -> QueueEntryExecutionOutcome.Completed(result.completedAt)
+                is StrategyTransportOutput.ProviderBacked ->
+                    mapSynchronizationResult(refresh.result, entry)
+                is StrategyTransportOutput.Pushed,
+                is StrategyTransportOutput.Pulled,
+                is StrategyTransportOutput.Bidirectional,
+                is StrategyTransportOutput.RemoteFirstBidirectional,
+                -> QueueEntryExecutionOutcome.Completed(result.completedAt)
+            }
         is StrategySynchronizationExecutionResult.FallbackActivated -> {
             val unresolvedErrors = errorsFrom(result.partialOutput)
             if (unresolvedErrors.isEmpty()) {

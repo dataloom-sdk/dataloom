@@ -26,7 +26,6 @@ import io.dataloom.api.provider.ProviderVersion
 import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.api.runtime.RuntimeDependencies
 import io.dataloom.api.runtime.RuntimeIdentifierGenerators
-import io.dataloom.api.strategy.CacheFirstStrategyProfile
 import io.dataloom.api.strategy.NetworkOnlyStrategyProfile
 import io.dataloom.api.strategy.OfflineFirstStrategyProfile
 import io.dataloom.api.strategy.RemoteFirstStrategyProfile
@@ -170,21 +169,23 @@ class DataLoomBuilderDirectStrategyExecutionTest {
 
     @Test
     fun strategyWithoutABuiltInExecutorIsUnsupported() = runTest {
+        // Offline-first has no built-in executor at all (unlike cache-first,
+        // which gained one -- see CacheFirstStrategyExecutorTest for its
+        // DURABLE_REFRESH_NOT_YET_SUPPORTED rejection instead).
         val transport = RecordingTransportProvider()
         val bindings = StrategyProviderBindings(transportProviderId = transport.descriptor.id)
         val dataLoom = builder(transport, bindings).build()
         assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
 
         val request = StrategySynchronizationRequest(
-            request = synchronizationRequest("cache-first-unsupported", SynchronizationDirection.PULL),
-            decisionId = StrategyDecisionId("direct-cache-first-decision"),
-            planId = StrategyPlanId("direct-cache-first-plan"),
-            profile = CacheFirstStrategyProfile(
-                id = StrategyProfileId("direct-cache-first-profile"),
+            request = synchronizationRequest("offline-first-unsupported", SynchronizationDirection.PULL),
+            decisionId = StrategyDecisionId("direct-offline-first-unsupported-decision"),
+            planId = StrategyPlanId("direct-offline-first-unsupported-plan"),
+            profile = OfflineFirstStrategyProfile(
+                id = StrategyProfileId("direct-offline-first-unsupported-profile"),
                 configurationVersion = StrategyConfigurationVersion(1L),
-                refreshOnFreshHit = false,
             ),
-            evidence = StrategyRuntimeEvidence(cacheState = StrategyCacheState.FRESH),
+            evidence = StrategyRuntimeEvidence(connectivity = StrategyConnectivity.AVAILABLE),
             input = StrategyOperationInput.ProviderBacked,
         )
 
