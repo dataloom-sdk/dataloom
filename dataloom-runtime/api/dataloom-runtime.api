@@ -103,6 +103,25 @@ public final class io/dataloom/runtime/conflict/ConflictResolverRegistry {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/runtime/conflict/DurableConflictDetectionCoordinator {
+	public fun <init> (Lio/dataloom/runtime/conflict/SynchronizationConflictOrchestrator;Lio/dataloom/api/conflict/DurableUnresolvedConflictLog;Lio/dataloom/api/time/DataLoomClock;)V
+	public final fun detectAndResolve (Lio/dataloom/runtime/conflict/ConflictOrchestrationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/conflict/DurableConflictDetectionResult {
+	public fun <init> (Lio/dataloom/runtime/conflict/ConflictOrchestrationResult;Lio/dataloom/api/conflict/DurableUnresolvedConflictRecordOutcome;)V
+	public final fun component1 ()Lio/dataloom/runtime/conflict/ConflictOrchestrationResult;
+	public final fun component2 ()Lio/dataloom/api/conflict/DurableUnresolvedConflictRecordOutcome;
+	public final fun copy (Lio/dataloom/runtime/conflict/ConflictOrchestrationResult;Lio/dataloom/api/conflict/DurableUnresolvedConflictRecordOutcome;)Lio/dataloom/runtime/conflict/DurableConflictDetectionResult;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/conflict/DurableConflictDetectionResult;Lio/dataloom/runtime/conflict/ConflictOrchestrationResult;Lio/dataloom/api/conflict/DurableUnresolvedConflictRecordOutcome;ILjava/lang/Object;)Lio/dataloom/runtime/conflict/DurableConflictDetectionResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getOrchestration ()Lio/dataloom/runtime/conflict/ConflictOrchestrationResult;
+	public final fun getUnresolvedRecordOutcome ()Lio/dataloom/api/conflict/DurableUnresolvedConflictRecordOutcome;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/runtime/conflict/SynchronizationConflictOrchestrator {
 	public fun <init> (Lio/dataloom/runtime/conflict/ConflictDetectorRegistry;Lio/dataloom/runtime/conflict/ConflictResolverRegistry;Lio/dataloom/runtime/execution/lifecycle/SynchronizationRuntimeEventEmitter;)V
 	public synthetic fun <init> (Lio/dataloom/runtime/conflict/ConflictDetectorRegistry;Lio/dataloom/runtime/conflict/ConflictResolverRegistry;Lio/dataloom/runtime/execution/lifecycle/SynchronizationRuntimeEventEmitter;ILkotlin/jvm/internal/DefaultConstructorMarker;)V

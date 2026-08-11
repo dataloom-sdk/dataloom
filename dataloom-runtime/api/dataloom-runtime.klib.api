@@ -2561,6 +2561,29 @@ final class io.dataloom.runtime.conflict/ConflictResolverRegistry { // io.datalo
     final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictResolverRegistry.toString|toString(){}[0]
 }
 
+final class io.dataloom.runtime.conflict/DurableConflictDetectionCoordinator { // io.dataloom.runtime.conflict/DurableConflictDetectionCoordinator|null[0]
+    constructor <init>(io.dataloom.runtime.conflict/SynchronizationConflictOrchestrator, io.dataloom.api.conflict/DurableUnresolvedConflictLog, io.dataloom.api.time/DataLoomClock) // io.dataloom.runtime.conflict/DurableConflictDetectionCoordinator.<init>|<init>(io.dataloom.runtime.conflict.SynchronizationConflictOrchestrator;io.dataloom.api.conflict.DurableUnresolvedConflictLog;io.dataloom.api.time.DataLoomClock){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.runtime.conflict/DurableConflictDetectionCoordinator.toString|toString(){}[0]
+    final suspend fun detectAndResolve(io.dataloom.runtime.conflict/ConflictOrchestrationRequest): io.dataloom.runtime.conflict/DurableConflictDetectionResult // io.dataloom.runtime.conflict/DurableConflictDetectionCoordinator.detectAndResolve|detectAndResolve(io.dataloom.runtime.conflict.ConflictOrchestrationRequest){}[0]
+}
+
+final class io.dataloom.runtime.conflict/DurableConflictDetectionResult { // io.dataloom.runtime.conflict/DurableConflictDetectionResult|null[0]
+    constructor <init>(io.dataloom.runtime.conflict/ConflictOrchestrationResult, io.dataloom.api.conflict/DurableUnresolvedConflictRecordOutcome?) // io.dataloom.runtime.conflict/DurableConflictDetectionResult.<init>|<init>(io.dataloom.runtime.conflict.ConflictOrchestrationResult;io.dataloom.api.conflict.DurableUnresolvedConflictRecordOutcome?){}[0]
+
+    final val orchestration // io.dataloom.runtime.conflict/DurableConflictDetectionResult.orchestration|{}orchestration[0]
+        final fun <get-orchestration>(): io.dataloom.runtime.conflict/ConflictOrchestrationResult // io.dataloom.runtime.conflict/DurableConflictDetectionResult.orchestration.<get-orchestration>|<get-orchestration>(){}[0]
+    final val unresolvedRecordOutcome // io.dataloom.runtime.conflict/DurableConflictDetectionResult.unresolvedRecordOutcome|{}unresolvedRecordOutcome[0]
+        final fun <get-unresolvedRecordOutcome>(): io.dataloom.api.conflict/DurableUnresolvedConflictRecordOutcome? // io.dataloom.runtime.conflict/DurableConflictDetectionResult.unresolvedRecordOutcome.<get-unresolvedRecordOutcome>|<get-unresolvedRecordOutcome>(){}[0]
+
+    final fun component1(): io.dataloom.runtime.conflict/ConflictOrchestrationResult // io.dataloom.runtime.conflict/DurableConflictDetectionResult.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.conflict/DurableUnresolvedConflictRecordOutcome? // io.dataloom.runtime.conflict/DurableConflictDetectionResult.component2|component2(){}[0]
+    final fun copy(io.dataloom.runtime.conflict/ConflictOrchestrationResult = ..., io.dataloom.api.conflict/DurableUnresolvedConflictRecordOutcome? = ...): io.dataloom.runtime.conflict/DurableConflictDetectionResult // io.dataloom.runtime.conflict/DurableConflictDetectionResult.copy|copy(io.dataloom.runtime.conflict.ConflictOrchestrationResult;io.dataloom.api.conflict.DurableUnresolvedConflictRecordOutcome?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/DurableConflictDetectionResult.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/DurableConflictDetectionResult.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.conflict/DurableConflictDetectionResult.toString|toString(){}[0]
+}
+
 final class io.dataloom.runtime.conflict/SynchronizationConflictOrchestrator { // io.dataloom.runtime.conflict/SynchronizationConflictOrchestrator|null[0]
     constructor <init>(io.dataloom.runtime.conflict/ConflictDetectorRegistry, io.dataloom.runtime.conflict/ConflictResolverRegistry, io.dataloom.runtime.execution.lifecycle/SynchronizationRuntimeEventEmitter? = ...) // io.dataloom.runtime.conflict/SynchronizationConflictOrchestrator.<init>|<init>(io.dataloom.runtime.conflict.ConflictDetectorRegistry;io.dataloom.runtime.conflict.ConflictResolverRegistry;io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitter?){}[0]
 
