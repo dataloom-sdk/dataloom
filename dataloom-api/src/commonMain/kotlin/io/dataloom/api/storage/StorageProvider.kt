@@ -62,6 +62,19 @@ import io.dataloom.api.synchronization.SynchronizationCheckpoint
  * - avoid exposing Room, SQLDelight, DataStore, SharedPreferences, SQLite,
  *   Realm, ObjectBox, DAO, cursor, transaction, or filesystem types
  * - avoid performing transport operations
+ *
+ * ## `readLocalConflictCandidate` is not a general query method
+ *
+ * [readLocalConflictCandidate] looks like the general-purpose entity reads this
+ * contract otherwise forbids, so its narrow scope is spelled out explicitly:
+ * it exists solely so the runtime can compare one specific incoming inbound
+ * [io.dataloom.api.change.ChangeEvent] against its local counterpart for
+ * synchronization conflict detection — never for arbitrary application
+ * reads, and never returning more than one entity's local change per call.
+ * Its default implementation returns [LocalConflictCandidateReadResult.NotFound]
+ * unconditionally, so every existing [StorageProvider] implementation
+ * continues to compile and behave exactly as before without overriding it;
+ * conflict detection during inbound pull is opt-in per provider.
  */
 public interface StorageProvider : DataLoomProvider {
 
@@ -175,4 +188,48 @@ public interface StorageProvider : DataLoomProvider {
     public suspend fun writeCheckpoint(
         request: CheckpointWriteRequest,
     ): ProviderOperationResult<Unit>
+
+    /**
+     * Reads the local counterpart of one incoming inbound
+     * [io.dataloom.api.change.ChangeEvent], for synchronization conflict
+     * detection only — see this interface's own
+     * "`readLocalConflictCandidate` is not a general query method" section
+     * for why this exists despite the general "avoid general-purpose query
+     * methods" constraint.
+     *
+     * A successful result returns
+     * [LocalConflictCandidateReadResult.NotFound] when no local change or
+     * state exists for [LocalConflictCandidateReadRequest.entity] — this is
+     * the ordinary case for a create with no prior local history, not an
+     * error — or [LocalConflictCandidateReadResult.Found] with the local
+     * [io.dataloom.api.change.ChangeEvent] to compare against.
+     *
+     * ## Default implementation
+     *
+     * The default implementation returns
+     * [LocalConflictCandidateReadResult.NotFound] unconditionally. Every
+     * [StorageProvider] implementation that predates this method continues
+     * to compile and behave exactly as before without overriding it — the
+     * caller (an inbound synchronization pipeline attempting conflict
+     * detection) treats an unconditional `NotFound` exactly as it treats a
+     * genuine "no local counterpart" result: no conflict is detected, and
+     * conflict detection is silently a no-op for that provider, not an
+     * error. A provider opts into conflict detection by overriding this
+     * method to perform a real local read.
+     *
+     * This contract does not define caching, staleness tolerance, or
+     * transactional consistency with a concurrently in-flight
+     * [applyInboundChanges] call for the same entity.
+     *
+     * @param request immutable read request naming the entity to find a
+     *   local conflict candidate for.
+     * @return [ProviderOperationResult.Success] with a
+     *   [LocalConflictCandidateReadResult] when the read operation succeeds
+     *   (including the no-local-counterpart case), or
+     *   [ProviderOperationResult.Failure] with a canonical DataLoom error.
+     */
+    public suspend fun readLocalConflictCandidate(
+        request: LocalConflictCandidateReadRequest,
+    ): ProviderOperationResult<LocalConflictCandidateReadResult> =
+        ProviderOperationResult.Success(LocalConflictCandidateReadResult.NotFound)
 }

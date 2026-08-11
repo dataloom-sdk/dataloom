@@ -805,6 +805,7 @@ abstract interface io.dataloom.api.storage/StorageProvider : io.dataloom.api.pro
     abstract suspend fun readCheckpoint(io.dataloom.api.synchronization/CheckpointReadRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.synchronization/SynchronizationCheckpoint?> // io.dataloom.api.storage/StorageProvider.readCheckpoint|readCheckpoint(io.dataloom.api.synchronization.CheckpointReadRequest){}[0]
     abstract suspend fun readOutboundChanges(io.dataloom.api.storage/OutboundChangeReadRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.storage/OutboundChangeReadResult> // io.dataloom.api.storage/StorageProvider.readOutboundChanges|readOutboundChanges(io.dataloom.api.storage.OutboundChangeReadRequest){}[0]
     abstract suspend fun writeCheckpoint(io.dataloom.api.synchronization/CheckpointWriteRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.api.storage/StorageProvider.writeCheckpoint|writeCheckpoint(io.dataloom.api.synchronization.CheckpointWriteRequest){}[0]
+    open suspend fun readLocalConflictCandidate(io.dataloom.api.storage/LocalConflictCandidateReadRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.storage/LocalConflictCandidateReadResult> // io.dataloom.api.storage/StorageProvider.readLocalConflictCandidate|readLocalConflictCandidate(io.dataloom.api.storage.LocalConflictCandidateReadRequest){}[0]
 }
 
 abstract interface io.dataloom.api.strategy/ClassifiedStrategyRemoteError : io.dataloom.api.error/DataLoomError { // io.dataloom.api.strategy/ClassifiedStrategyRemoteError|null[0]
@@ -1622,6 +1623,27 @@ sealed interface io.dataloom.api.retry/RetryDecision { // io.dataloom.api.retry/
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.retry/RetryDecision.Stop.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.api.retry/RetryDecision.Stop.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.api.retry/RetryDecision.Stop.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.storage/LocalConflictCandidateReadResult { // io.dataloom.api.storage/LocalConflictCandidateReadResult|null[0]
+    final class Found : io.dataloom.api.storage/LocalConflictCandidateReadResult { // io.dataloom.api.storage/LocalConflictCandidateReadResult.Found|null[0]
+        constructor <init>(io.dataloom.api.change/ChangeEvent) // io.dataloom.api.storage/LocalConflictCandidateReadResult.Found.<init>|<init>(io.dataloom.api.change.ChangeEvent){}[0]
+
+        final val localChange // io.dataloom.api.storage/LocalConflictCandidateReadResult.Found.localChange|{}localChange[0]
+            final fun <get-localChange>(): io.dataloom.api.change/ChangeEvent // io.dataloom.api.storage/LocalConflictCandidateReadResult.Found.localChange.<get-localChange>|<get-localChange>(){}[0]
+
+        final fun component1(): io.dataloom.api.change/ChangeEvent // io.dataloom.api.storage/LocalConflictCandidateReadResult.Found.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.change/ChangeEvent = ...): io.dataloom.api.storage/LocalConflictCandidateReadResult.Found // io.dataloom.api.storage/LocalConflictCandidateReadResult.Found.copy|copy(io.dataloom.api.change.ChangeEvent){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.storage/LocalConflictCandidateReadResult.Found.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.storage/LocalConflictCandidateReadResult.Found.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.storage/LocalConflictCandidateReadResult.Found.toString|toString(){}[0]
+    }
+
+    final object NotFound : io.dataloom.api.storage/LocalConflictCandidateReadResult { // io.dataloom.api.storage/LocalConflictCandidateReadResult.NotFound|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.storage/LocalConflictCandidateReadResult.NotFound.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.storage/LocalConflictCandidateReadResult.NotFound.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.storage/LocalConflictCandidateReadResult.NotFound.toString|toString(){}[0]
     }
 }
 
@@ -3821,6 +3843,22 @@ final class io.dataloom.api.storage/InboundChangeApplyRequest { // io.dataloom.a
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.storage/InboundChangeApplyRequest.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.storage/InboundChangeApplyRequest.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.storage/InboundChangeApplyRequest.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.storage/LocalConflictCandidateReadRequest { // io.dataloom.api.storage/LocalConflictCandidateReadRequest|null[0]
+    constructor <init>(io.dataloom.api.model/SynchronizationRequest, io.dataloom.api.change/EntityReference) // io.dataloom.api.storage/LocalConflictCandidateReadRequest.<init>|<init>(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.change.EntityReference){}[0]
+
+    final val entity // io.dataloom.api.storage/LocalConflictCandidateReadRequest.entity|{}entity[0]
+        final fun <get-entity>(): io.dataloom.api.change/EntityReference // io.dataloom.api.storage/LocalConflictCandidateReadRequest.entity.<get-entity>|<get-entity>(){}[0]
+    final val request // io.dataloom.api.storage/LocalConflictCandidateReadRequest.request|{}request[0]
+        final fun <get-request>(): io.dataloom.api.model/SynchronizationRequest // io.dataloom.api.storage/LocalConflictCandidateReadRequest.request.<get-request>|<get-request>(){}[0]
+
+    final fun component1(): io.dataloom.api.model/SynchronizationRequest // io.dataloom.api.storage/LocalConflictCandidateReadRequest.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.change/EntityReference // io.dataloom.api.storage/LocalConflictCandidateReadRequest.component2|component2(){}[0]
+    final fun copy(io.dataloom.api.model/SynchronizationRequest = ..., io.dataloom.api.change/EntityReference = ...): io.dataloom.api.storage/LocalConflictCandidateReadRequest // io.dataloom.api.storage/LocalConflictCandidateReadRequest.copy|copy(io.dataloom.api.model.SynchronizationRequest;io.dataloom.api.change.EntityReference){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.storage/LocalConflictCandidateReadRequest.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.storage/LocalConflictCandidateReadRequest.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.storage/LocalConflictCandidateReadRequest.toString|toString(){}[0]
 }
 
 final class io.dataloom.api.storage/OutboundChangeReadRequest { // io.dataloom.api.storage/OutboundChangeReadRequest|null[0]

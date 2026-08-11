@@ -334,6 +334,7 @@ final enum class io.dataloom.runtime.retry/StorageCircuitOperation : kotlin/Enum
     enum entry HEALTH // io.dataloom.runtime.retry/StorageCircuitOperation.HEALTH|null[0]
     enum entry INITIALIZE // io.dataloom.runtime.retry/StorageCircuitOperation.INITIALIZE|null[0]
     enum entry READ_CHECKPOINT // io.dataloom.runtime.retry/StorageCircuitOperation.READ_CHECKPOINT|null[0]
+    enum entry READ_LOCAL_CONFLICT_CANDIDATE // io.dataloom.runtime.retry/StorageCircuitOperation.READ_LOCAL_CONFLICT_CANDIDATE|null[0]
     enum entry READ_OUTBOUND_CHANGES // io.dataloom.runtime.retry/StorageCircuitOperation.READ_OUTBOUND_CHANGES|null[0]
     enum entry WRITE_CHECKPOINT // io.dataloom.runtime.retry/StorageCircuitOperation.WRITE_CHECKPOINT|null[0]
 
@@ -2638,6 +2639,17 @@ final class io.dataloom.runtime.execution.bidirectional/BidirectionalSynchroniza
     final suspend fun execute(io.dataloom.runtime.execution/SynchronizationExecutionContext): io.dataloom.api.synchronization/SynchronizationResult // io.dataloom.runtime.execution.bidirectional/BidirectionalSynchronizationPipeline.execute|execute(io.dataloom.runtime.execution.SynchronizationExecutionContext){}[0]
 }
 
+final class io.dataloom.runtime.execution.inbound/InboundPullConflictDetectionConfiguration { // io.dataloom.runtime.execution.inbound/InboundPullConflictDetectionConfiguration|null[0]
+    constructor <init>(io.dataloom.runtime.conflict/DurableConflictDetectionCoordinator, io.dataloom.runtime.conflict/ConflictOrchestrationBindings) // io.dataloom.runtime.execution.inbound/InboundPullConflictDetectionConfiguration.<init>|<init>(io.dataloom.runtime.conflict.DurableConflictDetectionCoordinator;io.dataloom.runtime.conflict.ConflictOrchestrationBindings){}[0]
+
+    final val bindings // io.dataloom.runtime.execution.inbound/InboundPullConflictDetectionConfiguration.bindings|{}bindings[0]
+        final fun <get-bindings>(): io.dataloom.runtime.conflict/ConflictOrchestrationBindings // io.dataloom.runtime.execution.inbound/InboundPullConflictDetectionConfiguration.bindings.<get-bindings>|<get-bindings>(){}[0]
+    final val coordinator // io.dataloom.runtime.execution.inbound/InboundPullConflictDetectionConfiguration.coordinator|{}coordinator[0]
+        final fun <get-coordinator>(): io.dataloom.runtime.conflict/DurableConflictDetectionCoordinator // io.dataloom.runtime.execution.inbound/InboundPullConflictDetectionConfiguration.coordinator.<get-coordinator>|<get-coordinator>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.runtime.execution.inbound/InboundPullConflictDetectionConfiguration.toString|toString(){}[0]
+}
+
 final class io.dataloom.runtime.execution.inbound/InboundPullPipelineConfiguration { // io.dataloom.runtime.execution.inbound/InboundPullPipelineConfiguration|null[0]
     constructor <init>(kotlin.collections/Set<io.dataloom.api.identifier/EntityType> = ..., kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.runtime.execution.inbound/InboundPullPipelineConfiguration.<init>|<init>(kotlin.collections.Set<io.dataloom.api.identifier.EntityType>;kotlin.Int;kotlin.Int){}[0]
 
@@ -2654,7 +2666,7 @@ final class io.dataloom.runtime.execution.inbound/InboundPullPipelineConfigurati
 }
 
 final class io.dataloom.runtime.execution.inbound/InboundPullSynchronizationPipeline : io.dataloom.runtime.execution/SynchronizationPipeline { // io.dataloom.runtime.execution.inbound/InboundPullSynchronizationPipeline|null[0]
-    constructor <init>(io.dataloom.runtime.execution.inbound/InboundPullPipelineConfiguration) // io.dataloom.runtime.execution.inbound/InboundPullSynchronizationPipeline.<init>|<init>(io.dataloom.runtime.execution.inbound.InboundPullPipelineConfiguration){}[0]
+    constructor <init>(io.dataloom.runtime.execution.inbound/InboundPullPipelineConfiguration, io.dataloom.runtime.execution.inbound/InboundPullConflictDetectionConfiguration? = ...) // io.dataloom.runtime.execution.inbound/InboundPullSynchronizationPipeline.<init>|<init>(io.dataloom.runtime.execution.inbound.InboundPullPipelineConfiguration;io.dataloom.runtime.execution.inbound.InboundPullConflictDetectionConfiguration?){}[0]
 
     final val direction // io.dataloom.runtime.execution.inbound/InboundPullSynchronizationPipeline.direction|{}direction[0]
         final fun <get-direction>(): io.dataloom.api.model/SynchronizationDirection // io.dataloom.runtime.execution.inbound/InboundPullSynchronizationPipeline.direction.<get-direction>|<get-direction>(){}[0]
@@ -4011,6 +4023,7 @@ final class io.dataloom.runtime.retry/TimeoutEnforcingStorageProvider : io.datal
     final suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.runtime.retry/TimeoutEnforcingStorageProvider.health|health(){}[0]
     final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.retry/TimeoutEnforcingStorageProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
     final suspend fun readCheckpoint(io.dataloom.api.synchronization/CheckpointReadRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.synchronization/SynchronizationCheckpoint?> // io.dataloom.runtime.retry/TimeoutEnforcingStorageProvider.readCheckpoint|readCheckpoint(io.dataloom.api.synchronization.CheckpointReadRequest){}[0]
+    final suspend fun readLocalConflictCandidate(io.dataloom.api.storage/LocalConflictCandidateReadRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.storage/LocalConflictCandidateReadResult> // io.dataloom.runtime.retry/TimeoutEnforcingStorageProvider.readLocalConflictCandidate|readLocalConflictCandidate(io.dataloom.api.storage.LocalConflictCandidateReadRequest){}[0]
     final suspend fun readOutboundChanges(io.dataloom.api.storage/OutboundChangeReadRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.storage/OutboundChangeReadResult> // io.dataloom.runtime.retry/TimeoutEnforcingStorageProvider.readOutboundChanges|readOutboundChanges(io.dataloom.api.storage.OutboundChangeReadRequest){}[0]
     final suspend fun writeCheckpoint(io.dataloom.api.synchronization/CheckpointWriteRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.retry/TimeoutEnforcingStorageProvider.writeCheckpoint|writeCheckpoint(io.dataloom.api.synchronization.CheckpointWriteRequest){}[0]
 }

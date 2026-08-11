@@ -288,6 +288,13 @@ public final class io/dataloom/runtime/execution/bidirectional/BidirectionalSync
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/runtime/execution/inbound/InboundPullConflictDetectionConfiguration {
+	public fun <init> (Lio/dataloom/runtime/conflict/DurableConflictDetectionCoordinator;Lio/dataloom/runtime/conflict/ConflictOrchestrationBindings;)V
+	public final fun getBindings ()Lio/dataloom/runtime/conflict/ConflictOrchestrationBindings;
+	public final fun getCoordinator ()Lio/dataloom/runtime/conflict/DurableConflictDetectionCoordinator;
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/runtime/execution/inbound/InboundPullPipelineConfiguration {
 	public fun <init> ()V
 	public fun <init> (Ljava/util/Set;II)V
@@ -301,7 +308,8 @@ public final class io/dataloom/runtime/execution/inbound/InboundPullPipelineConf
 }
 
 public final class io/dataloom/runtime/execution/inbound/InboundPullSynchronizationPipeline : io/dataloom/runtime/execution/SynchronizationPipeline {
-	public fun <init> (Lio/dataloom/runtime/execution/inbound/InboundPullPipelineConfiguration;)V
+	public fun <init> (Lio/dataloom/runtime/execution/inbound/InboundPullPipelineConfiguration;Lio/dataloom/runtime/execution/inbound/InboundPullConflictDetectionConfiguration;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/execution/inbound/InboundPullPipelineConfiguration;Lio/dataloom/runtime/execution/inbound/InboundPullConflictDetectionConfiguration;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun execute (Lio/dataloom/runtime/execution/SynchronizationExecutionContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getDirection ()Lio/dataloom/api/model/SynchronizationDirection;
 }
@@ -2507,6 +2515,7 @@ public final class io/dataloom/runtime/retry/StorageCircuitOperation : java/lang
 	public static final field HEALTH Lio/dataloom/runtime/retry/StorageCircuitOperation;
 	public static final field INITIALIZE Lio/dataloom/runtime/retry/StorageCircuitOperation;
 	public static final field READ_CHECKPOINT Lio/dataloom/runtime/retry/StorageCircuitOperation;
+	public static final field READ_LOCAL_CONFLICT_CANDIDATE Lio/dataloom/runtime/retry/StorageCircuitOperation;
 	public static final field READ_OUTBOUND_CHANGES Lio/dataloom/runtime/retry/StorageCircuitOperation;
 	public static final field WRITE_CHECKPOINT Lio/dataloom/runtime/retry/StorageCircuitOperation;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
@@ -2684,6 +2693,7 @@ public final class io/dataloom/runtime/retry/TimeoutEnforcingStorageProvider : i
 	public fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun readCheckpoint (Lio/dataloom/api/synchronization/CheckpointReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun readLocalConflictCandidate (Lio/dataloom/api/storage/LocalConflictCandidateReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun readOutboundChanges (Lio/dataloom/api/storage/OutboundChangeReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun writeCheckpoint (Lio/dataloom/api/synchronization/CheckpointWriteRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }

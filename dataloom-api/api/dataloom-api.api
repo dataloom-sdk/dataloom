@@ -2884,6 +2884,40 @@ public final class io/dataloom/api/storage/InboundChangeApplyRequest {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/api/storage/LocalConflictCandidateReadRequest {
+	public fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/change/EntityReference;)V
+	public final fun component1 ()Lio/dataloom/api/model/SynchronizationRequest;
+	public final fun component2 ()Lio/dataloom/api/change/EntityReference;
+	public final fun copy (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/change/EntityReference;)Lio/dataloom/api/storage/LocalConflictCandidateReadRequest;
+	public static synthetic fun copy$default (Lio/dataloom/api/storage/LocalConflictCandidateReadRequest;Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/change/EntityReference;ILjava/lang/Object;)Lio/dataloom/api/storage/LocalConflictCandidateReadRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntity ()Lio/dataloom/api/change/EntityReference;
+	public final fun getRequest ()Lio/dataloom/api/model/SynchronizationRequest;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/storage/LocalConflictCandidateReadResult {
+}
+
+public final class io/dataloom/api/storage/LocalConflictCandidateReadResult$Found : io/dataloom/api/storage/LocalConflictCandidateReadResult {
+	public fun <init> (Lio/dataloom/api/change/ChangeEvent;)V
+	public final fun component1 ()Lio/dataloom/api/change/ChangeEvent;
+	public final fun copy (Lio/dataloom/api/change/ChangeEvent;)Lio/dataloom/api/storage/LocalConflictCandidateReadResult$Found;
+	public static synthetic fun copy$default (Lio/dataloom/api/storage/LocalConflictCandidateReadResult$Found;Lio/dataloom/api/change/ChangeEvent;ILjava/lang/Object;)Lio/dataloom/api/storage/LocalConflictCandidateReadResult$Found;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLocalChange ()Lio/dataloom/api/change/ChangeEvent;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/storage/LocalConflictCandidateReadResult$NotFound : io/dataloom/api/storage/LocalConflictCandidateReadResult {
+	public static final field INSTANCE Lio/dataloom/api/storage/LocalConflictCandidateReadResult$NotFound;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/api/storage/OutboundChangeReadRequest {
 	public fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Ljava/util/Set;Ljava/lang/Integer;)V
 	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Ljava/util/Set;Ljava/lang/Integer;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -2923,8 +2957,13 @@ public abstract interface class io/dataloom/api/storage/StorageProvider : io/dat
 	public abstract fun applyInboundChanges (Lio/dataloom/api/storage/InboundChangeApplyRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
 	public abstract fun readCheckpoint (Lio/dataloom/api/synchronization/CheckpointReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun readLocalConflictCandidate (Lio/dataloom/api/storage/LocalConflictCandidateReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun readOutboundChanges (Lio/dataloom/api/storage/OutboundChangeReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun writeCheckpoint (Lio/dataloom/api/synchronization/CheckpointWriteRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/api/storage/StorageProvider$DefaultImpls {
+	public static fun readLocalConflictCandidate (Lio/dataloom/api/storage/StorageProvider;Lio/dataloom/api/storage/LocalConflictCandidateReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/dataloom/api/strategy/AdaptiveStrategyProfile : io/dataloom/api/strategy/SynchronizationStrategyProfile {
@@ -3288,6 +3327,10 @@ public abstract interface class io/dataloom/api/strategy/StrategyLocalFallbackPr
 	public abstract fun evaluateLocalFallback (Lio/dataloom/api/strategy/StrategyLocalFallbackRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
+public final class io/dataloom/api/strategy/StrategyLocalFallbackProvider$DefaultImpls {
+	public static fun readLocalConflictCandidate (Lio/dataloom/api/strategy/StrategyLocalFallbackProvider;Lio/dataloom/api/storage/LocalConflictCandidateReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
 public final class io/dataloom/api/strategy/StrategyLocalFallbackRequest {
 	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLio/dataloom/api/strategy/StrategyRemoteOutcome;ZLio/dataloom/api/strategy/StrategyCacheState;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lio/dataloom/api/model/SynchronizationRequest;
@@ -3432,6 +3475,10 @@ public final class io/dataloom/api/strategy/StrategyProviderHealth : java/lang/E
 
 public abstract interface class io/dataloom/api/strategy/StrategyReconciliationProvider : io/dataloom/api/storage/StorageProvider {
 	public abstract fun reconcileStrategy (Lio/dataloom/api/strategy/StrategyReconciliationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/api/strategy/StrategyReconciliationProvider$DefaultImpls {
+	public static fun readLocalConflictCandidate (Lio/dataloom/api/strategy/StrategyReconciliationProvider;Lio/dataloom/api/storage/LocalConflictCandidateReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/dataloom/api/strategy/StrategyReconciliationRequest {

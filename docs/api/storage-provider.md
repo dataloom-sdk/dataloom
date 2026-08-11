@@ -117,6 +117,7 @@ with application-controlled storage.
 | `acknowledgeOutboundChanges(request)` | `suspend` | Records a remote acknowledgement in storage (DL-011). |
 | `readCheckpoint(request)` | `suspend` | Reads a stored checkpoint, or `null` when none is stored (DL-011). |
 | `writeCheckpoint(request)` | `suspend` | Persists a checkpoint (DL-011). |
+| `readLocalConflictCandidate(request)` | `suspend` | Reads the local counterpart of one incoming inbound change, for conflict detection only. Optional — see below. |
 
 ---
 
@@ -215,6 +216,47 @@ storageProvider.writeCheckpoint(writeRequest)
 
 See [Checkpoint Contracts](./checkpoint-contracts.md) for the critical
 apply-before-advance rule.
+
+---
+
+## Reading Local Conflict Candidates (opt-in, for conflict detection only)
+
+```kotlin
+val candidateRequest = LocalConflictCandidateReadRequest(
+    request = synchronizationRequest,
+    entity = incomingRemoteEvent.entity,
+)
+
+when (val result = storageProvider.readLocalConflictCandidate(candidateRequest)) {
+    is ProviderOperationResult.Success -> when (val outcome = result.value) {
+        is LocalConflictCandidateReadResult.NotFound -> { /* no local counterpart; nothing to compare */ }
+        is LocalConflictCandidateReadResult.Found -> {
+            val localChange = outcome.localChange // compare against the incoming remote ChangeEvent
+        }
+    }
+    is ProviderOperationResult.Failure -> { /* treat as NotFound; never fail the batch because of this */ }
+}
+```
+
+This method exists solely so the runtime (specifically
+[`InboundPullSynchronizationPipeline`](./inbound-pull-pipeline.md#conflict-detection))
+can compare one specific incoming inbound `ChangeEvent` against its local
+counterpart for synchronization conflict detection — **it is not a general
+entity read**, and the interface's own KDoc names it as a deliberate,
+narrow exception to "avoid general-purpose query methods." It must never
+return more than one entity's local change per call, and must never be used
+for arbitrary application reads.
+
+The default implementation returns `LocalConflictCandidateReadResult.NotFound`
+unconditionally, so every `StorageProvider` implementation written before
+this method existed continues to compile and behave exactly as before
+without overriding it. Conflict detection during inbound pull is opt-in per
+provider — a provider adopts it by overriding this method with a real local
+read.
+
+None of the reference providers (Room, SQLDelight, file-based, DataStore)
+override this method yet; adopting it per provider is separate,
+unstarted follow-up work.
 
 ---
 

@@ -14,4 +14,5 @@ public enum class StorageCircuitOperation(
     ACKNOWLEDGE_OUTBOUND_CHANGES(RetryOperation("storage.acknowledge-outbound-changes")),
     READ_CHECKPOINT(RetryOperation("storage.read-checkpoint")),
     WRITE_CHECKPOINT(RetryOperation("storage.write-checkpoint")),
+    READ_LOCAL_CONFLICT_CANDIDATE(RetryOperation("storage.read-local-conflict-candidate")),
 }

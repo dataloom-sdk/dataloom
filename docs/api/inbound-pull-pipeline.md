@@ -3,7 +3,9 @@
 [API reference index](./README.md)
 
 > **Status:** Available execution foundation with checkpoint and progress-event
-> integration. It is not a complete V1 synchronization strategy.
+> integration, plus optional best-effort conflict detection (see
+> [Conflict detection](#conflict-detection)). It is not a complete V1
+> synchronization strategy.
 
 `InboundPullSynchronizationPipeline` is the second concrete
 `SynchronizationPipeline` implementation. It reads the stored synchronization
@@ -68,6 +70,7 @@ payload references released one at a time.
 ```kotlin
 public class InboundPullSynchronizationPipeline(
     private val configuration: InboundPullPipelineConfiguration,
+    private val conflictDetection: InboundPullConflictDetectionConfiguration? = null,
 ) : SynchronizationPipeline
 ```
 
@@ -81,6 +84,8 @@ public class InboundPullSynchronizationPipeline(
   receive a provider registry, lifecycle coordinator, provider resolver,
   `CoroutineScope`, dispatcher, Android `Context`, DI framework, logger,
   queue processor, or scheduler.
+- `conflictDetection` is optional and `null` by default — see
+  [Conflict detection](#conflict-detection).
 
 ---
 
@@ -294,9 +299,13 @@ original `SynchronizationRequest` is preserved unchanged in every result.
 - `inboundEventsReceived` — incremented when a valid `Changes` result is
   accepted for processing (before apply).
 - `inboundEventsApplied` — incremented after `applyInboundChanges` succeeds.
+- `conflictsDetected` — incremented per event when conflict detection is
+  enabled and the orchestration outcome indicates a genuine detected
+  conflict (see [Conflict detection](#conflict-detection)); `0` when
+  `conflictDetection` is not supplied.
 
-Unrelated outbound and conflict counters remain zero. All invariants required
-by `SynchronizationSummary` are satisfied.
+Unrelated outbound counters remain zero. All invariants required by
+`SynchronizationSummary` are satisfied.
 
 ---
 
@@ -336,13 +345,62 @@ scheduling, enqueuing, or dequeueing operation.
 
 ---
 
-## Conflict boundary
+## Conflict detection
 
-`ConflictDetector` and `ConflictResolver` are never called. Conflict
-orchestration exists as a separate runtime boundary but is not integrated into
-this pipeline's apply path. `StorageProvider.applyInboundChanges` is
-responsible for applying the supplied batch according to the current
-storage-provider contract.
+Supplying `conflictDetection` (an `InboundPullConflictDetectionConfiguration`
+— a `DurableConflictDetectionCoordinator` plus a `ConflictOrchestrationBindings`)
+turns on best-effort conflict detection for inbound changes. Without it, this
+pipeline behaves exactly as it did before this capability existed —
+`ConflictDetector`/`ConflictResolver` are never reached, matching this
+section's original text.
+
+When supplied, for every event in an accepted `ChangeSet`, **before** that
+batch is applied:
+
+1. The pipeline reads the local conflict candidate for that event's entity via
+   `StorageProvider.readLocalConflictCandidate`.
+2. When a local counterpart is found, it calls
+   `DurableConflictDetectionCoordinator.detectAndResolve` with the local and
+   remote `ChangeEvent`s. Genuinely unresolved outcomes (no resolver
+   configured or found) are durably recorded via
+   [`DurableUnresolvedConflictLog`](./durable-state-contracts.md#adoption-unresolved-conflicts).
+
+Detection is **strictly observational**: its outcome never blocks, alters, or
+delays `applyInboundChanges` for the same batch — `StorageProvider.applyInboundChanges`
+remains solely responsible for applying the supplied batch, unchanged from
+before. A `readLocalConflictCandidate` failure is treated the same as "no
+local counterpart" — detection is skipped for that one event, and the batch
+application proceeds unaffected; no `SynchronizationResult` is ever failed
+because of a conflict-detection-only failure.
+
+`SynchronizationSummary.conflictsDetected` counts every event whose
+orchestration outcome was not `ConflictOrchestrationResult.NoConflict` (and
+was not `DetectorNotFound`, since that means detection never actually ran).
+This field previously always read `0`; it is now populated for real when
+conflict detection is enabled.
+
+Detection reads one entity at a time — there is no batch-local-read
+capability on `StorageProvider` — so a batch of `n` events issues up to `n`
+additional `readLocalConflictCandidate` calls when `conflictDetection` is
+supplied. This is a known, documented characteristic of this first slice,
+not an oversight.
+
+### Known gap: not available through provider-protection or timeout wrapping consistently
+
+`StorageProvider.readLocalConflictCandidate` has a safe default
+(`NotFound`) so every pre-existing `StorageProvider` implementation compiles
+and behaves unchanged without adopting it. Two decorator types in
+`dataloom-runtime` wrap an arbitrary `StorageProvider`:
+`TimeoutEnforcingStorageProvider` forwards this call correctly (a pure
+pass-through, timeout-wrapped like every other operation).
+`ProviderProtectionStorageBridge` (and its dependents) does **not** — a
+`StorageProvider` wrapped with circuit-breaker provider protection always
+reports `NotFound` through this path today, regardless of what the real
+provider supports, because closing that gap properly requires a breaking
+addition to `StorageCircuitScopes`'s constructor (a new circuit-protected
+operation). That is real, separately-scoped follow-up work, not silently
+broken — conflict detection is simply unavailable, not silently wrong, for
+a provider-protection-wrapped storage setup.
 
 ---
 
@@ -405,4 +463,22 @@ val configuration = InboundPullPipelineConfiguration(
 val pipeline = InboundPullSynchronizationPipeline(configuration)
 
 val registry = SynchronizationPipelineRegistry(listOf(pipeline))
+```
+
+With conflict detection enabled (see [Conflict detection](#conflict-detection)):
+
+```kotlin
+val coordinator = DurableConflictDetectionCoordinator(
+    orchestrator = SynchronizationConflictOrchestrator(detectorRegistry, resolverRegistry),
+    unresolvedConflictLog = DurableUnresolvedConflictLog(store),
+    clock = clock,
+)
+
+val pipeline = InboundPullSynchronizationPipeline(
+    configuration = configuration,
+    conflictDetection = InboundPullConflictDetectionConfiguration(
+        coordinator = coordinator,
+        bindings = ConflictOrchestrationBindings(detectorId, resolverId),
+    ),
+)
 ```

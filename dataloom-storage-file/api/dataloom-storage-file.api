@@ -8,6 +8,7 @@ public final class io/dataloom/storage/file/FileStorageProvider : io/dataloom/ap
 	public fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun readCheckpoint (Lio/dataloom/api/synchronization/CheckpointReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun readLocalConflictCandidate (Lio/dataloom/api/storage/LocalConflictCandidateReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun readOutboundChanges (Lio/dataloom/api/storage/OutboundChangeReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun storeOutboundChangeSet (Lio/dataloom/api/change/ChangeSet;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun writeCheckpoint (Lio/dataloom/api/synchronization/CheckpointWriteRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
