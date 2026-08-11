@@ -26,6 +26,8 @@ import io.dataloom.api.provider.ProviderVersion
 import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.api.runtime.RuntimeDependencies
 import io.dataloom.api.runtime.RuntimeIdentifierGenerators
+import io.dataloom.api.strategy.HybridSource
+import io.dataloom.api.strategy.HybridStrategyProfile
 import io.dataloom.api.strategy.NetworkOnlyStrategyProfile
 import io.dataloom.api.strategy.OfflineFirstStrategyProfile
 import io.dataloom.api.strategy.RemoteFirstStrategyProfile
@@ -169,21 +171,25 @@ class DataLoomBuilderDirectStrategyExecutionTest {
 
     @Test
     fun strategyWithoutABuiltInExecutorIsUnsupported() = runTest {
-        // Offline-first has no built-in executor at all (unlike cache-first,
-        // which gained one -- see CacheFirstStrategyExecutorTest for its
-        // DURABLE_REFRESH_NOT_YET_SUPPORTED rejection instead).
+        // Hybrid has no built-in executor at all (unlike offline-first, which
+        // gained one -- see OfflineFirstStrategyExecutorTest for its
+        // DURABLE_REFRESH_NOT_YET_SUPPORTED rejection instead). Adaptive would
+        // work equally well here; hybrid is used because it needs no nested
+        // profile to construct.
         val transport = RecordingTransportProvider()
         val bindings = StrategyProviderBindings(transportProviderId = transport.descriptor.id)
         val dataLoom = builder(transport, bindings).build()
         assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
 
         val request = StrategySynchronizationRequest(
-            request = synchronizationRequest("offline-first-unsupported", SynchronizationDirection.PULL),
-            decisionId = StrategyDecisionId("direct-offline-first-unsupported-decision"),
-            planId = StrategyPlanId("direct-offline-first-unsupported-plan"),
-            profile = OfflineFirstStrategyProfile(
-                id = StrategyProfileId("direct-offline-first-unsupported-profile"),
+            request = synchronizationRequest("hybrid-unsupported", SynchronizationDirection.PULL),
+            decisionId = StrategyDecisionId("direct-hybrid-unsupported-decision"),
+            planId = StrategyPlanId("direct-hybrid-unsupported-plan"),
+            profile = HybridStrategyProfile(
+                id = StrategyProfileId("direct-hybrid-unsupported-profile"),
                 configurationVersion = StrategyConfigurationVersion(1L),
+                primarySource = HybridSource.REMOTE,
+                fallbackSource = HybridSource.LOCAL,
             ),
             evidence = StrategyRuntimeEvidence(connectivity = StrategyConnectivity.AVAILABLE),
             input = StrategyOperationInput.ProviderBacked,
