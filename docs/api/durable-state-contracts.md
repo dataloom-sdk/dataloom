@@ -5,8 +5,12 @@
 > **Status:** The contract exists, is proven implementable, and has three real
 > domain adoptions end to end — configuration snapshot history, policy
 > decisions, and unresolved conflicts — all backed by the same production
-> Room persistence implementation. Other domains (events, assets, audit)
-> have not adopted it yet.
+> Room persistence implementation. One of the three
+> ([unresolved conflicts](#adoption-unresolved-conflicts)) also has a real
+> runtime caller now (`DurableConflictDetectionCoordinator`); the other two
+> remain unwired because nothing yet calls the underlying evaluator/resolver
+> they would attach to. Other domains (events, assets, audit) have not
+> adopted the contract itself yet.
 
 ## Status
 
@@ -236,13 +240,33 @@ for why this log deliberately does not call
 forbids applying anything "to storage, queues, or any synchronization
 pipeline") and for the full unresolved-vs-resolved scoping rationale.
 
+### First real caller: `DurableConflictDetectionCoordinator`
+
+`DurableUnresolvedConflictLog` has a real adopter —
+[`DurableConflictDetectionCoordinator`](./conflict-orchestration.md#durable-conflict-detection-coordinator)
+(`io.dataloom.runtime.conflict`, module `dataloom-runtime`) wraps
+`SynchronizationConflictOrchestrator.detectAndResolve` and durably records
+its `ResolverNotConfigured`/`ResolverNotFound` outcomes. This was possible
+here — and not yet possible for `DurableConfigurationHistory`/
+`DurablePolicyDecisionLog` — because the orchestrator's own `detectAndResolve`
+was a genuinely standalone, callable component, unlike `PolicyEvaluator.evaluate`
+and `DataLoomConfigurationResolver.resolve`, which (as of writing) have no
+real caller anywhere in the codebase to compose with. This coordinator is not
+itself called by any `SynchronizationPipeline` yet — see
+[conflict orchestration](./conflict-orchestration.md#durable-conflict-detection-coordinator)
+for exactly what remains unwired.
+
 ## What this does not do yet
 
-- **Wiring any adopted durable adapter into a real evaluation/resolution/detection
-  call site.** Nothing in `dataloom-runtime` calls `DurableConfigurationHistory.apply`,
-  `DurablePolicyDecisionLog.commit`, or `DurableUnresolvedConflictLog.record`
-  yet — all three remain available primitives, not adopted end to end by any
-  real synchronization flow.
+- **Wiring `DurableConfigurationHistory.apply` or `DurablePolicyDecisionLog.commit`
+  into a real call site.** Both remain available primitives with no real
+  caller — genuinely blocked, not just undone, since neither
+  `DataLoomConfigurationResolver.resolve` nor `PolicyEvaluator.evaluate` has
+  a real caller anywhere in `dataloom-runtime` to compose with yet. Wiring
+  either durable adapter in would currently mean inventing that caller too.
+- **Wiring `DurableConflictDetectionCoordinator` into a real
+  `SynchronizationPipeline`.** The coordinator itself is real and callable
+  today; no pipeline calls it yet.
 - **Durably persisting resolved `ConflictResolutionDecision`s**, including
   `Merge`'s payload — deliberately out of scope for
   `DurableUnresolvedConflictLog`; a separate, larger design question.

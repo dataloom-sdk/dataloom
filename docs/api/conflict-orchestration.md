@@ -3,8 +3,9 @@
 [API reference index](./README.md)
 
 > **Status:** Partial V1 subsystem. Exact custom detector/resolver orchestration
-> exists, plus a bounded first slice of durable unresolved-conflict persistence
-> (see [Durable unresolved-conflict log](#durable-unresolved-conflict-log));
+> exists, plus a bounded first slice of durable unresolved-conflict persistence,
+> now with a real caller
+> ([Durable conflict detection coordinator](#durable-conflict-detection-coordinator));
 > the complete built-in and durable conflict engine does not.
 
 **Package:** `io.dataloom.runtime.conflict`  
@@ -427,15 +428,69 @@ convention rather than a mechanical extension of it.
 resolution retrieves it separately (for example from a durable event
 outbox) by change event ID.
 
-This does not call `SynchronizationConflictOrchestrator`, is not called by
-it, and does not change the orchestrator's own documented boundary ("does
-not apply resolution decisions to storage" — see
-[Boundaries](#boundaries)). Wiring `record` into a real
-`detectAndResolve` caller is separate, unstarted follow-up work — this log
-is an available primitive today, not adopted end to end by any runtime
-conflict-handling flow yet.
+`DurableUnresolvedConflictLog` itself does not call
+`SynchronizationConflictOrchestrator`, is not called by it, and does not
+change the orchestrator's own documented boundary ("does not apply
+resolution decisions to storage" — see [Boundaries](#boundaries)). See
+[Durable conflict detection coordinator](#durable-conflict-detection-coordinator)
+below for the real caller that wires the two together from the outside.
 
 [`ChangeEvent.payload`]: ./conflict-contracts.md
+
+---
+
+## Durable conflict detection coordinator
+
+**Package:** `io.dataloom.runtime.conflict` · **Module:** `dataloom-runtime`
+
+```kotlin
+public class DurableConflictDetectionCoordinator(
+    orchestrator: SynchronizationConflictOrchestrator,
+    unresolvedConflictLog: DurableUnresolvedConflictLog,
+    clock: DataLoomClock,
+) {
+    public suspend fun detectAndResolve(
+        request: ConflictOrchestrationRequest,
+    ): DurableConflictDetectionResult
+}
+
+public data class DurableConflictDetectionResult(
+    public val orchestration: ConflictOrchestrationResult,
+    public val unresolvedRecordOutcome: DurableUnresolvedConflictRecordOutcome?,
+)
+```
+
+The first real caller of `DurableUnresolvedConflictLog.record` — until this
+shipped, the log was an available primitive with no adopter, the same
+situation `DurableConfigurationHistory` and `DurablePolicyDecisionLog` are
+still in (see [durable state contracts](./durable-state-contracts.md)).
+
+- Calls `SynchronizationConflictOrchestrator.detectAndResolve(request)`
+  first, unchanged.
+- When the result is `ConflictOrchestrationResult.ResolverNotConfigured` or
+  `.ResolverNotFound`, builds an `UnresolvedConflictRecord` from the
+  conflict and calls `unresolvedConflictLog.record`. Every other outcome
+  (`DetectorNotFound`, `NoConflict`, `Resolved`) is returned with a `null`
+  `unresolvedRecordOutcome` — no record attempt is made.
+- **A durable-recording failure never hides the real orchestration
+  result.** `DurableConflictDetectionResult.orchestration` is always the
+  exact value `SynchronizationConflictOrchestrator` returned; a
+  `PersistenceFailure` or `ContentionLimitReached` on the durable side is
+  surfaced separately via `unresolvedRecordOutcome`, mirroring the
+  orchestrator's own posture for its optional event emitter ("ordinary
+  observer failures do not stop resolver selection or resolution").
+- Does not reach inside the orchestrator or change its documented boundary
+  — it composes `detectAndResolve` from the outside, the same way any
+  caller would combine a side-effect-free component with a durable store.
+
+Not yet wired into any `SynchronizationPipeline` — `BidirectionalSynchronizationPipeline`
+never called `SynchronizationConflictOrchestrator` at all before this
+coordinator existed (its `SynchronizationSummary.conflictsDetected` counter
+is populated by summing child-pipeline summaries, not by running conflict
+detection). This coordinator is the missing integration layer, callable
+directly by an application or a future pipeline; becoming the standard way
+a synchronization pipeline detects and durably records conflicts is
+separate, unstarted follow-up work.
 
 ---
 
