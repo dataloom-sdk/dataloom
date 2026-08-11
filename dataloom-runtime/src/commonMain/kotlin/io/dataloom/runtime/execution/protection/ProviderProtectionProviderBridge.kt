@@ -63,6 +63,22 @@ internal class ProviderProtectionEvidenceCollector {
  * Pipeline-local bridge that preserves full protected-operation evidence in a
  * separate collector before adapting the terminal operation outcome to the
  * historical [StorageProvider] contract.
+ *
+ * ## Known gap: `readLocalConflictCandidate` is not circuit-protected
+ *
+ * [readLocalConflictCandidate][StorageProvider.readLocalConflictCandidate]
+ * is not overridden here, so calls through this bridge always receive the
+ * interface's default `NotFound` result regardless of what the wrapped
+ * provider actually supports — the same as an un-adopted provider, not a
+ * bridge failure. [ProtectedStorageOperations] and
+ * [CircuitBreakerStorageOperationAdapter] would both need a new
+ * circuit-protected operation (including a breaking addition to
+ * [StorageCircuitScopes]'s constructor) to close this properly. That is
+ * real, separately-scoped follow-up work — see
+ * [io.dataloom.api.storage.StorageProvider]'s own KDoc for
+ * `readLocalConflictCandidate`'s purpose. Conflict detection during inbound
+ * pull is simply unavailable, not silently wrong, for a
+ * provider-protection-wrapped [StorageProvider] today.
  */
 internal class ProviderProtectionStorageBridge(
     private val protectedOperations: ProtectedStorageOperations,

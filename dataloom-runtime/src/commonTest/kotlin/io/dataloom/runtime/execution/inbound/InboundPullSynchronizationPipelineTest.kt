@@ -3,6 +3,17 @@ package io.dataloom.runtime.execution.inbound
 import io.dataloom.api.change.ChangeEvent
 import io.dataloom.api.change.ChangeSet
 import io.dataloom.api.change.EntityReference
+import io.dataloom.api.conflict.ConflictDetectionRequest
+import io.dataloom.api.conflict.ConflictDetectionResult
+import io.dataloom.api.conflict.ConflictDetector
+import io.dataloom.api.conflict.ConflictResolutionDecision
+import io.dataloom.api.conflict.ConflictResolutionRequest
+import io.dataloom.api.conflict.ConflictResolver
+import io.dataloom.api.conflict.ConflictType
+import io.dataloom.api.conflict.DurableUnresolvedConflictLog
+import io.dataloom.api.conflict.SynchronizationConflict
+import io.dataloom.api.conflict.UnresolvedConflictReason
+import io.dataloom.api.conflict.UnresolvedConflictRecord
 import io.dataloom.api.context.ExecutionContext
 import io.dataloom.api.error.DataLoomError
 import io.dataloom.api.error.ErrorCategory
@@ -13,7 +24,9 @@ import io.dataloom.api.identifier.ChangeEventId
 import io.dataloom.api.identifier.ChangeSetId
 import io.dataloom.api.identifier.CheckpointKey
 import io.dataloom.api.identifier.CheckpointToken
+import io.dataloom.api.identifier.ConflictDetectorId
 import io.dataloom.api.identifier.ConflictId
+import io.dataloom.api.identifier.ConflictResolverId
 import io.dataloom.api.identifier.CorrelationId
 import io.dataloom.api.identifier.EntityId
 import io.dataloom.api.identifier.EntityType
@@ -37,7 +50,14 @@ import io.dataloom.api.provider.ProviderName
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.provider.ProviderVersion
+import io.dataloom.api.state.DurableStateCompareAndSetRequest
+import io.dataloom.api.state.DurableStateCompareAndSetResult
+import io.dataloom.api.state.DurableStateLoadResult
+import io.dataloom.api.state.DurableStateRecord
+import io.dataloom.api.state.DurableStateStore
 import io.dataloom.api.storage.InboundChangeApplyRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadResult
 import io.dataloom.api.storage.OutboundChangeReadRequest
 import io.dataloom.api.storage.OutboundChangeReadResult
 import io.dataloom.api.storage.StorageProvider
@@ -57,6 +77,11 @@ import io.dataloom.api.transport.TransportProvider
 import io.dataloom.core.provider.ResolvedSynchronizationProviders
 import io.dataloom.api.runtime.RuntimeDependencies
 import io.dataloom.api.runtime.RuntimeIdentifierGenerators
+import io.dataloom.runtime.conflict.ConflictDetectorRegistry
+import io.dataloom.runtime.conflict.ConflictOrchestrationBindings
+import io.dataloom.runtime.conflict.ConflictResolverRegistry
+import io.dataloom.runtime.conflict.DurableConflictDetectionCoordinator
+import io.dataloom.runtime.conflict.SynchronizationConflictOrchestrator
 import io.dataloom.runtime.execution.SynchronizationExecutionContext
 import io.dataloom.runtime.execution.SynchronizationPipeline
 import kotlin.coroutines.Continuation
@@ -114,6 +139,11 @@ class InboundPullSynchronizationPipelineTest {
             mutableListOf(ProviderOperationResult.Success(null)),
         private val applyResults: MutableList<ProviderOperationResult<Unit>> = mutableListOf(),
         private val writeCheckpointResults: MutableList<ProviderOperationResult<Unit>> = mutableListOf(),
+        // Keyed by entity ID. Absent keys fall back to the interface's own
+        // default (Success(NotFound)), matching every pre-existing test's
+        // expectations unchanged.
+        private val localConflictCandidateResults:
+            MutableMap<String, ProviderOperationResult<LocalConflictCandidateReadResult>> = mutableMapOf(),
     ) : StorageProvider {
         override val descriptor: ProviderDescriptor = ProviderDescriptor(
             id = ProviderId(id),
@@ -125,6 +155,7 @@ class InboundPullSynchronizationPipelineTest {
         val readCheckpointRequests: MutableList<CheckpointReadRequest> = mutableListOf()
         val applyRequests: MutableList<InboundChangeApplyRequest> = mutableListOf()
         val writeCheckpointRequests: MutableList<CheckpointWriteRequest> = mutableListOf()
+        val localConflictCandidateRequests: MutableList<LocalConflictCandidateReadRequest> = mutableListOf()
         var readCheckpointCallCount: Int = 0
         var applyCallCount: Int = 0
         var writeCheckpointCallCount: Int = 0
@@ -133,6 +164,7 @@ class InboundPullSynchronizationPipelineTest {
         var initializeCallCount: Int = 0
         var healthCallCount: Int = 0
         var closeCallCount: Int = 0
+        var localConflictCandidateCallCount: Int = 0
 
         // Tracks the interleaved sequence of operation names for ordering
         // assertions.
@@ -199,6 +231,15 @@ class InboundPullSynchronizationPipelineTest {
                 "FakeStorageProvider: no queued writeCheckpoint result."
             }
             return writeCheckpointResults.removeAt(0)
+        }
+
+        override suspend fun readLocalConflictCandidate(
+            request: LocalConflictCandidateReadRequest,
+        ): ProviderOperationResult<LocalConflictCandidateReadResult> {
+            localConflictCandidateRequests.add(request)
+            localConflictCandidateCallCount++
+            return localConflictCandidateResults[request.entity.id.value]
+                ?: ProviderOperationResult.Success(LocalConflictCandidateReadResult.NotFound)
         }
     }
 
@@ -2315,6 +2356,293 @@ class InboundPullSynchronizationPipelineTest {
         assertEquals(0, storage.readOutboundCallCount)
         assertEquals(0, storage.acknowledgeCallCount)
         assertEquals(0, transport.pushCallCount)
+    }
+
+    // =========================================================================
+    // Conflict detection (opt-in)
+    // =========================================================================
+
+    private class FakeConflictDetector(
+        override val id: ConflictDetectorId,
+        private val result: ConflictDetectionResult,
+    ) : ConflictDetector {
+        var invokeCount = 0
+        override fun detect(request: ConflictDetectionRequest): ConflictDetectionResult {
+            invokeCount++
+            return result
+        }
+    }
+
+    private class FakeConflictResolver(
+        override val id: ConflictResolverId,
+        private val decision: ConflictResolutionDecision,
+    ) : ConflictResolver {
+        override fun resolve(request: ConflictResolutionRequest): ConflictResolutionDecision = decision
+    }
+
+    /** Minimal in-memory DurableStateStore fake, mirroring the one DurableUnresolvedConflictLogTest uses. */
+    private class InMemoryUnresolvedConflictStore : DurableStateStore<ConflictId, UnresolvedConflictRecord> {
+        private val records = mutableMapOf<ConflictId, DurableStateRecord<UnresolvedConflictRecord>>()
+
+        override suspend fun load(
+            scope: ConflictId,
+        ): ProviderOperationResult<DurableStateLoadResult<UnresolvedConflictRecord>> {
+            val record = records[scope]
+            return ProviderOperationResult.Success(
+                if (record == null) DurableStateLoadResult.Missing else DurableStateLoadResult.Found(record),
+            )
+        }
+
+        override suspend fun compareAndSet(
+            request: DurableStateCompareAndSetRequest<ConflictId, UnresolvedConflictRecord>,
+        ): ProviderOperationResult<DurableStateCompareAndSetResult<UnresolvedConflictRecord>> {
+            val current = records[request.scope]
+            if (current?.version != request.expectedVersion) {
+                return ProviderOperationResult.Success(DurableStateCompareAndSetResult.Conflict(current))
+            }
+            val updated = DurableStateRecord(
+                state = request.nextState,
+                version = (current?.version ?: -1L) + 1L,
+                schemaVersion = request.nextSchemaVersion,
+            )
+            records[request.scope] = updated
+            return ProviderOperationResult.Success(DurableStateCompareAndSetResult.Updated(updated))
+        }
+    }
+
+    private val conflictDetectorId = ConflictDetectorId("detector-1")
+
+    private fun makeConflictDetectionConfig(
+        detectionResult: ConflictDetectionResult,
+        resolver: ConflictResolver? = null,
+        unresolvedConflictLog: DurableUnresolvedConflictLog = DurableUnresolvedConflictLog(InMemoryUnresolvedConflictStore()),
+    ): InboundPullConflictDetectionConfiguration {
+        val detectorRegistry = ConflictDetectorRegistry(listOf(FakeConflictDetector(conflictDetectorId, detectionResult)))
+        val resolverRegistry = ConflictResolverRegistry(if (resolver == null) emptyList() else listOf(resolver))
+        val orchestrator = SynchronizationConflictOrchestrator(detectorRegistry, resolverRegistry)
+        val coordinator = DurableConflictDetectionCoordinator(orchestrator, unresolvedConflictLog, FakeClock())
+        return InboundPullConflictDetectionConfiguration(
+            coordinator = coordinator,
+            bindings = ConflictOrchestrationBindings(conflictDetectorId, resolver?.id),
+        )
+    }
+
+    @Test
+    fun conflictDetection_disabledByDefault_localReadIsNeverCalled() {
+        val changeSet = makeChangeSet(eventIds = listOf("event-1"))
+        val storage = FakeStorageProvider(
+            readCheckpointResults = mutableListOf(ProviderOperationResult.Success(null)),
+            applyResults = mutableListOf(ProviderOperationResult.Success(Unit)),
+        )
+        val transport = FakeTransportProvider(
+            pullResults = mutableListOf(
+                ProviderOperationResult.Success(PullChangesResult.Changes(changeSet = changeSet, hasMore = false)),
+            ),
+        )
+        val context = makeContext(storage, transport)
+
+        runSuspend { makePipeline().execute(context) }
+
+        assertEquals(0, storage.localConflictCandidateCallCount)
+    }
+
+    @Test
+    fun conflictDetection_noLocalCandidate_skipsDetectionAndStillApplies() {
+        val changeSet = makeChangeSet(eventIds = listOf("event-1"))
+        val storage = FakeStorageProvider(
+            readCheckpointResults = mutableListOf(ProviderOperationResult.Success(null)),
+            applyResults = mutableListOf(ProviderOperationResult.Success(Unit)),
+        )
+        val transport = FakeTransportProvider(
+            pullResults = mutableListOf(
+                ProviderOperationResult.Success(PullChangesResult.Changes(changeSet = changeSet, hasMore = false)),
+            ),
+        )
+        val context = makeContext(storage, transport)
+        val pipeline = InboundPullSynchronizationPipeline(
+            InboundPullPipelineConfiguration(),
+            makeConflictDetectionConfig(ConflictDetectionResult.NoConflict),
+        )
+
+        val result = runSuspend { pipeline.execute(context) }
+
+        assertEquals(1, storage.localConflictCandidateCallCount)
+        assertEquals(1, storage.applyCallCount)
+        val succeeded = assertIs<SynchronizationResult.Succeeded>(result)
+        assertEquals(0L, succeeded.summary.conflictsDetected)
+    }
+
+    @Test
+    fun conflictDetection_localCandidateFoundButNoConflict_countsZeroAndStillApplies() {
+        val remoteEvent = makeChangeEvent("event-1")
+        val localEvent = makeChangeEvent("local-event-1").copy(entity = remoteEvent.entity)
+        val changeSet = ChangeSet(id = ChangeSetId("cs-1"), events = listOf(remoteEvent))
+        val storage = FakeStorageProvider(
+            readCheckpointResults = mutableListOf(ProviderOperationResult.Success(null)),
+            applyResults = mutableListOf(ProviderOperationResult.Success(Unit)),
+            localConflictCandidateResults = mutableMapOf(
+                remoteEvent.entity.id.value to ProviderOperationResult.Success(
+                    LocalConflictCandidateReadResult.Found(localEvent),
+                ),
+            ),
+        )
+        val transport = FakeTransportProvider(
+            pullResults = mutableListOf(
+                ProviderOperationResult.Success(PullChangesResult.Changes(changeSet = changeSet, hasMore = false)),
+            ),
+        )
+        val context = makeContext(storage, transport)
+        val pipeline = InboundPullSynchronizationPipeline(
+            InboundPullPipelineConfiguration(),
+            makeConflictDetectionConfig(ConflictDetectionResult.NoConflict),
+        )
+
+        val result = runSuspend { pipeline.execute(context) }
+
+        val succeeded = assertIs<SynchronizationResult.Succeeded>(result)
+        assertEquals(0L, succeeded.summary.conflictsDetected)
+        assertEquals(1, storage.applyCallCount)
+    }
+
+    @Test
+    fun conflictDetection_resolverNotConfigured_isDurablyRecordedAndDoesNotBlockApply() {
+        val remoteEvent = makeChangeEvent("event-1")
+        val localEvent = makeChangeEvent("local-event-1").copy(entity = remoteEvent.entity)
+        val changeSet = ChangeSet(id = ChangeSetId("cs-1"), events = listOf(remoteEvent))
+        val storage = FakeStorageProvider(
+            readCheckpointResults = mutableListOf(ProviderOperationResult.Success(null)),
+            applyResults = mutableListOf(ProviderOperationResult.Success(Unit)),
+            localConflictCandidateResults = mutableMapOf(
+                remoteEvent.entity.id.value to ProviderOperationResult.Success(
+                    LocalConflictCandidateReadResult.Found(localEvent),
+                ),
+            ),
+        )
+        val transport = FakeTransportProvider(
+            pullResults = mutableListOf(
+                ProviderOperationResult.Success(PullChangesResult.Changes(changeSet = changeSet, hasMore = false)),
+            ),
+        )
+        val context = makeContext(storage, transport)
+        val detectedConflict = SynchronizationConflict(
+            id = ConflictId("conflict-1"),
+            type = ConflictType.CONCURRENT_CHANGE,
+            entity = remoteEvent.entity,
+            localChange = localEvent,
+            remoteChange = remoteEvent,
+        )
+        val unresolvedConflictLog = DurableUnresolvedConflictLog(InMemoryUnresolvedConflictStore())
+        val pipeline = InboundPullSynchronizationPipeline(
+            InboundPullPipelineConfiguration(),
+            makeConflictDetectionConfig(
+                ConflictDetectionResult.ConflictDetected(detectedConflict),
+                unresolvedConflictLog = unresolvedConflictLog,
+            ),
+        )
+
+        val result = runSuspend { pipeline.execute(context) }
+
+        // Apply proceeds even though a conflict was detected -- detection is observational only.
+        assertEquals(1, storage.applyCallCount)
+        val succeeded = assertIs<SynchronizationResult.Succeeded>(result)
+        assertEquals(1L, succeeded.summary.conflictsDetected)
+        val current = runSuspend { unresolvedConflictLog.current(ConflictId("conflict-1")) }
+        val found = assertIs<ProviderOperationResult.Success<UnresolvedConflictRecord?>>(current)
+        assertEquals(UnresolvedConflictReason.RESOLVER_NOT_CONFIGURED, found.value?.reason)
+    }
+
+    @Test
+    fun conflictDetection_resolvedDecision_countsAsConflictButDoesNotBlockApply() {
+        val remoteEvent = makeChangeEvent("event-1")
+        val localEvent = makeChangeEvent("local-event-1").copy(entity = remoteEvent.entity)
+        val changeSet = ChangeSet(id = ChangeSetId("cs-1"), events = listOf(remoteEvent))
+        val storage = FakeStorageProvider(
+            readCheckpointResults = mutableListOf(ProviderOperationResult.Success(null)),
+            applyResults = mutableListOf(ProviderOperationResult.Success(Unit)),
+            localConflictCandidateResults = mutableMapOf(
+                remoteEvent.entity.id.value to ProviderOperationResult.Success(
+                    LocalConflictCandidateReadResult.Found(localEvent),
+                ),
+            ),
+        )
+        val transport = FakeTransportProvider(
+            pullResults = mutableListOf(
+                ProviderOperationResult.Success(PullChangesResult.Changes(changeSet = changeSet, hasMore = false)),
+            ),
+        )
+        val context = makeContext(storage, transport)
+        val detectedConflict = SynchronizationConflict(
+            id = ConflictId("conflict-1"),
+            type = ConflictType.CONCURRENT_CHANGE,
+            entity = remoteEvent.entity,
+            localChange = localEvent,
+            remoteChange = remoteEvent,
+        )
+        val resolver = FakeConflictResolver(ConflictResolverId("resolver-1"), ConflictResolutionDecision.UseRemote())
+        val pipeline = InboundPullSynchronizationPipeline(
+            InboundPullPipelineConfiguration(),
+            makeConflictDetectionConfig(
+                ConflictDetectionResult.ConflictDetected(detectedConflict),
+                resolver = resolver,
+            ),
+        )
+
+        val result = runSuspend { pipeline.execute(context) }
+
+        assertEquals(1, storage.applyCallCount)
+        val succeeded = assertIs<SynchronizationResult.Succeeded>(result)
+        assertEquals(1L, succeeded.summary.conflictsDetected)
+    }
+
+    @Test
+    fun conflictDetection_localReadFailure_isTreatedAsNotFoundAndDoesNotFailTheBatch() {
+        val remoteEvent = makeChangeEvent("event-1")
+        val changeSet = ChangeSet(id = ChangeSetId("cs-1"), events = listOf(remoteEvent))
+        val storage = FakeStorageProvider(
+            readCheckpointResults = mutableListOf(ProviderOperationResult.Success(null)),
+            applyResults = mutableListOf(ProviderOperationResult.Success(Unit)),
+            localConflictCandidateResults = mutableMapOf(
+                remoteEvent.entity.id.value to ProviderOperationResult.Failure(FakeError()),
+            ),
+        )
+        val transport = FakeTransportProvider(
+            pullResults = mutableListOf(
+                ProviderOperationResult.Success(PullChangesResult.Changes(changeSet = changeSet, hasMore = false)),
+            ),
+        )
+        val context = makeContext(storage, transport)
+        val pipeline = InboundPullSynchronizationPipeline(
+            InboundPullPipelineConfiguration(),
+            makeConflictDetectionConfig(ConflictDetectionResult.NoConflict),
+        )
+
+        val result = runSuspend { pipeline.execute(context) }
+
+        assertIs<SynchronizationResult.Succeeded>(result)
+        assertEquals(1, storage.applyCallCount)
+    }
+
+    @Test
+    fun conflictDetection_readsOneEventPerEntityInTheBatch() {
+        val changeSet = makeChangeSet(eventIds = listOf("event-1", "event-2", "event-3"))
+        val storage = FakeStorageProvider(
+            readCheckpointResults = mutableListOf(ProviderOperationResult.Success(null)),
+            applyResults = mutableListOf(ProviderOperationResult.Success(Unit)),
+        )
+        val transport = FakeTransportProvider(
+            pullResults = mutableListOf(
+                ProviderOperationResult.Success(PullChangesResult.Changes(changeSet = changeSet, hasMore = false)),
+            ),
+        )
+        val context = makeContext(storage, transport)
+        val pipeline = InboundPullSynchronizationPipeline(
+            InboundPullPipelineConfiguration(),
+            makeConflictDetectionConfig(ConflictDetectionResult.NoConflict),
+        )
+
+        runSuspend { pipeline.execute(context) }
+
+        assertEquals(3, storage.localConflictCandidateCallCount)
     }
 }
 

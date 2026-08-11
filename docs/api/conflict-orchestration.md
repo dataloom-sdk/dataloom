@@ -3,9 +3,10 @@
 [API reference index](./README.md)
 
 > **Status:** Partial V1 subsystem. Exact custom detector/resolver orchestration
-> exists, plus a bounded first slice of durable unresolved-conflict persistence,
-> now with a real caller
-> ([Durable conflict detection coordinator](#durable-conflict-detection-coordinator));
+> exists, plus a bounded first slice of durable unresolved-conflict
+> persistence, now wired into a real pipeline
+> ([Durable conflict detection coordinator](#durable-conflict-detection-coordinator),
+> [inbound pull pipeline](./inbound-pull-pipeline.md#conflict-detection));
 > the complete built-in and durable conflict engine does not.
 
 **Package:** `io.dataloom.runtime.conflict`  
@@ -483,14 +484,21 @@ still in (see [durable state contracts](./durable-state-contracts.md)).
   — it composes `detectAndResolve` from the outside, the same way any
   caller would combine a side-effect-free component with a durable store.
 
-Not yet wired into any `SynchronizationPipeline` — `BidirectionalSynchronizationPipeline`
-never called `SynchronizationConflictOrchestrator` at all before this
-coordinator existed (its `SynchronizationSummary.conflictsDetected` counter
-is populated by summing child-pipeline summaries, not by running conflict
-detection). This coordinator is the missing integration layer, callable
-directly by an application or a future pipeline; becoming the standard way
-a synchronization pipeline detects and durably records conflicts is
-separate, unstarted follow-up work.
+**Now wired into a real pipeline.**
+[`InboundPullSynchronizationPipeline`](./inbound-pull-pipeline.md#conflict-detection)
+calls this coordinator when constructed with an optional
+`InboundPullConflictDetectionConfiguration` — the first
+`SynchronizationPipeline` to actually run conflict detection.
+(`BidirectionalSynchronizationPipeline` itself still never calls
+`SynchronizationConflictOrchestrator` directly; its
+`SynchronizationSummary.conflictsDetected` counter is populated by summing
+its child pipelines' summaries, so it inherits real counts once its inbound
+child pipeline has conflict detection enabled.) `OutboundPushSynchronizationPipeline`
+is not a candidate — push has no remote state to compare a local change
+against.
+
+Applications can also call `detectAndResolve` directly without going
+through any pipeline, same as before.
 
 ---
 

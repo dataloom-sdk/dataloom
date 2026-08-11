@@ -1,5 +1,7 @@
 package io.dataloom.runtime.execution.inbound
 
+import io.dataloom.api.change.ChangeSet
+import io.dataloom.api.conflict.ConflictDetectionRequest
 import io.dataloom.api.error.DataLoomError
 import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorCode
@@ -12,6 +14,8 @@ import io.dataloom.api.model.SynchronizationDirection
 import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.storage.InboundChangeApplyRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadResult
 import io.dataloom.api.synchronization.CheckpointReadRequest
 import io.dataloom.api.synchronization.CheckpointWriteRequest
 import io.dataloom.api.synchronization.SynchronizationCheckpoint
@@ -24,6 +28,8 @@ import io.dataloom.api.synchronization.SynchronizationSummary
 import io.dataloom.api.time.DataLoomInstant
 import io.dataloom.api.transport.PullChangesRequest
 import io.dataloom.api.transport.PullChangesResult
+import io.dataloom.runtime.conflict.ConflictOrchestrationRequest
+import io.dataloom.runtime.conflict.ConflictOrchestrationResult
 import io.dataloom.runtime.execution.SynchronizationExecutionContext
 import io.dataloom.runtime.execution.SynchronizationPipeline
 import io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitter
@@ -134,11 +140,48 @@ import io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitte
  * This pipeline calls only
  * [io.dataloom.api.storage.StorageProvider.readCheckpoint],
  * [io.dataloom.api.transport.TransportProvider.pullChanges],
- * [io.dataloom.api.storage.StorageProvider.applyInboundChanges], and
- * [io.dataloom.api.storage.StorageProvider.writeCheckpoint]. It does not call
- * outbound storage or transport operations, provider lifecycle or health
- * operations, [io.dataloom.api.retry.RetryPolicy], scheduler, queue,
- * connectivity, conflict, or observer operations.
+ * [io.dataloom.api.storage.StorageProvider.applyInboundChanges],
+ * [io.dataloom.api.storage.StorageProvider.writeCheckpoint], and — only when
+ * [conflictDetection] is supplied —
+ * [io.dataloom.api.storage.StorageProvider.readLocalConflictCandidate] and
+ * [io.dataloom.runtime.conflict.DurableConflictDetectionCoordinator.detectAndResolve].
+ * It does not call outbound storage or transport operations, provider
+ * lifecycle or health operations, [io.dataloom.api.retry.RetryPolicy],
+ * scheduler, queue, connectivity, or observer operations.
+ *
+ * ## Conflict detection
+ *
+ * Supplying [conflictDetection] turns on best-effort conflict detection for
+ * inbound changes; without it, this pipeline behaves exactly as it did
+ * before this capability existed. For each event in an accepted
+ * [io.dataloom.api.change.ChangeSet], **before** that batch is applied, the
+ * pipeline reads the local conflict candidate for that event's entity via
+ * [io.dataloom.api.storage.StorageProvider.readLocalConflictCandidate].
+ * When one is found, the pipeline calls
+ * [io.dataloom.runtime.conflict.DurableConflictDetectionCoordinator.detectAndResolve]
+ * with the local and remote [io.dataloom.api.change.ChangeEvent]s, which
+ * durably records genuinely unresolved outcomes (see
+ * [io.dataloom.api.conflict.DurableUnresolvedConflictLog]).
+ *
+ * Detection is strictly observational in this slice: its outcome never
+ * blocks, alters, or delays [io.dataloom.api.storage.StorageProvider.applyInboundChanges]
+ * for the same batch — matching
+ * [io.dataloom.runtime.conflict.SynchronizationConflictOrchestrator]'s own
+ * "does not apply resolution decisions to storage" boundary. A
+ * [io.dataloom.api.provider.ProviderOperationResult.Failure] from
+ * `readLocalConflictCandidate` is treated the same as
+ * [io.dataloom.api.storage.LocalConflictCandidateReadResult.NotFound] —
+ * detection is skipped for that one event, the batch application proceeds
+ * unaffected, and no [SynchronizationResult] is ever failed because of a
+ * conflict-detection-only failure. [SynchronizationSummary.conflictsDetected]
+ * counts every event whose orchestration outcome was not
+ * [io.dataloom.runtime.conflict.ConflictOrchestrationResult.NoConflict].
+ *
+ * Detection reads one entity at a time — there is no batch-local-read
+ * capability — so a batch of `n` events issues up to `n` additional
+ * [io.dataloom.api.storage.StorageProvider.readLocalConflictCandidate] calls
+ * when [conflictDetection] is supplied. This is a known, documented
+ * characteristic of this first slice, not an oversight.
  *
  * ## Cancellation
  *
@@ -161,9 +204,13 @@ import io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitte
  *
  * @param configuration the [InboundPullPipelineConfiguration] bounding this
  *   pipeline's entity-type restriction and batch limits.
+ * @param conflictDetection optional [InboundPullConflictDetectionConfiguration].
+ *   `null` (the default) means conflict detection is off, and this pipeline
+ *   behaves exactly as it did before this capability existed.
  */
 public class InboundPullSynchronizationPipeline(
     private val configuration: InboundPullPipelineConfiguration,
+    private val conflictDetection: InboundPullConflictDetectionConfiguration? = null,
 ) : SynchronizationPipeline {
 
     override val direction: SynchronizationDirection = SynchronizationDirection.PULL
@@ -177,6 +224,7 @@ public class InboundPullSynchronizationPipeline(
 
         var inboundEventsReceived = 0L
         var inboundEventsApplied = 0L
+        var conflictsDetected = 0L
         var batchesProcessed = 0
         val processedChangeSetIds = mutableSetOf<ChangeSetId>()
 
@@ -184,7 +232,50 @@ public class InboundPullSynchronizationPipeline(
             SynchronizationSummary(
                 inboundEventsReceived = inboundEventsReceived,
                 inboundEventsApplied = inboundEventsApplied,
+                conflictsDetected = conflictsDetected,
             )
+
+        suspend fun detectConflictsBeforeApplying(changeSet: ChangeSet) {
+            val detection = conflictDetection ?: return
+            for (event in changeSet.events) {
+                val candidateOutcome = storageProvider.readLocalConflictCandidate(
+                    LocalConflictCandidateReadRequest(request = request, entity = event.entity),
+                )
+                val localChange = when (candidateOutcome) {
+                    is ProviderOperationResult.Success -> when (val value = candidateOutcome.value) {
+                        is LocalConflictCandidateReadResult.Found -> value.localChange
+                        is LocalConflictCandidateReadResult.NotFound -> null
+                    }
+                    // A conflict-detection-only read failure never blocks batch
+                    // application; detection is simply skipped for this event.
+                    is ProviderOperationResult.Failure -> null
+                } ?: continue
+
+                val detectionResult = detection.coordinator.detectAndResolve(
+                    ConflictOrchestrationRequest(
+                        detectionRequest = ConflictDetectionRequest(
+                            synchronizationRequest = request,
+                            localChange = localChange,
+                            remoteChange = event,
+                        ),
+                        bindings = detection.bindings,
+                    ),
+                )
+                // Only count a genuine detected conflict: the detector actually ran and
+                // reported ConflictDetected. DetectorNotFound means detection never ran
+                // at all (a configuration problem, not a conflict), and NoConflict means
+                // it ran and found nothing.
+                when (detectionResult.orchestration) {
+                    is ConflictOrchestrationResult.ResolverNotConfigured,
+                    is ConflictOrchestrationResult.ResolverNotFound,
+                    is ConflictOrchestrationResult.Resolved,
+                    -> conflictsDetected++
+                    is ConflictOrchestrationResult.DetectorNotFound,
+                    is ConflictOrchestrationResult.NoConflict,
+                    -> Unit
+                }
+            }
+        }
 
         fun terminalTimestamp(): DataLoomInstant = context.runtimeDependencies.clock.now()
 
@@ -288,6 +379,11 @@ public class InboundPullSynchronizationPipeline(
                     // Count received events when a valid Changes result is
                     // accepted for processing.
                     inboundEventsReceived += changeSet.events.size.toLong()
+
+                    // Step 4.5 (opt-in): detect conflicts against local state before
+                    // applying. Strictly observational -- never blocks or alters the
+                    // apply step below. No-op when conflictDetection was not supplied.
+                    detectConflictsBeforeApplying(changeSet)
 
                     // Step 5: Apply the inbound change set.
                     // Emit APPLYING_INBOUND phase immediately before the apply call.

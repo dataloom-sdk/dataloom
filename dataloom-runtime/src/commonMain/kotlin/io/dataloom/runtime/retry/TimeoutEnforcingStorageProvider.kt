@@ -11,6 +11,8 @@ import io.dataloom.api.provider.ProviderHealth
 import io.dataloom.api.provider.ProviderInitializationContext
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.storage.InboundChangeApplyRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadResult
 import io.dataloom.api.storage.OutboundChangeReadRequest
 import io.dataloom.api.storage.OutboundChangeReadResult
 import io.dataloom.api.storage.StorageProvider
@@ -91,6 +93,13 @@ public class TimeoutEnforcingStorageProvider(
             delegate.writeCheckpoint(request)
         }
 
+    override suspend fun readLocalConflictCandidate(
+        request: LocalConflictCandidateReadRequest,
+    ): ProviderOperationResult<LocalConflictCandidateReadResult> =
+        execute(StorageCircuitOperation.READ_LOCAL_CONFLICT_CANDIDATE) {
+            delegate.readLocalConflictCandidate(request)
+        }
+
     private suspend fun <T> execute(
         operation: StorageCircuitOperation,
         block: suspend () -> ProviderOperationResult<T>,
@@ -124,6 +133,7 @@ internal object StorageTimeoutErrors {
             StorageCircuitOperation.HEALTH,
             StorageCircuitOperation.READ_OUTBOUND_CHANGES,
             StorageCircuitOperation.READ_CHECKPOINT,
+            StorageCircuitOperation.READ_LOCAL_CONFLICT_CANDIDATE,
             -> Recoverability.RECOVERABLE
             StorageCircuitOperation.INITIALIZE,
             StorageCircuitOperation.CLOSE,
@@ -136,6 +146,7 @@ internal object StorageTimeoutErrors {
             StorageCircuitOperation.HEALTH,
             StorageCircuitOperation.READ_OUTBOUND_CHANGES,
             StorageCircuitOperation.READ_CHECKPOINT,
+            StorageCircuitOperation.READ_LOCAL_CONFLICT_CANDIDATE,
             -> "The storage provider ${operation.retryOperation.value} operation exceeded its " +
                 "configured timeout."
             StorageCircuitOperation.APPLY_INBOUND_CHANGES,

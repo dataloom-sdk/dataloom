@@ -6,11 +6,12 @@
 > domain adoptions end to end — configuration snapshot history, policy
 > decisions, and unresolved conflicts — all backed by the same production
 > Room persistence implementation. One of the three
-> ([unresolved conflicts](#adoption-unresolved-conflicts)) also has a real
-> runtime caller now (`DurableConflictDetectionCoordinator`); the other two
-> remain unwired because nothing yet calls the underlying evaluator/resolver
-> they would attach to. Other domains (events, assets, audit) have not
-> adopted the contract itself yet.
+> ([unresolved conflicts](#adoption-unresolved-conflicts)) is now wired into
+> a real `SynchronizationPipeline`
+> (`DurableConflictDetectionCoordinator` → `InboundPullSynchronizationPipeline`);
+> the other two remain unwired because nothing yet calls the underlying
+> evaluator/resolver they would attach to. Other domains (events, assets,
+> audit) have not adopted the contract itself yet.
 
 ## Status
 
@@ -240,7 +241,7 @@ for why this log deliberately does not call
 forbids applying anything "to storage, queues, or any synchronization
 pipeline") and for the full unresolved-vs-resolved scoping rationale.
 
-### First real caller: `DurableConflictDetectionCoordinator`
+### First real caller, now wired end to end: `DurableConflictDetectionCoordinator`
 
 `DurableUnresolvedConflictLog` has a real adopter —
 [`DurableConflictDetectionCoordinator`](./conflict-orchestration.md#durable-conflict-detection-coordinator)
@@ -251,10 +252,21 @@ here — and not yet possible for `DurableConfigurationHistory`/
 `DurablePolicyDecisionLog` — because the orchestrator's own `detectAndResolve`
 was a genuinely standalone, callable component, unlike `PolicyEvaluator.evaluate`
 and `DataLoomConfigurationResolver.resolve`, which (as of writing) have no
-real caller anywhere in the codebase to compose with. This coordinator is not
-itself called by any `SynchronizationPipeline` yet — see
-[conflict orchestration](./conflict-orchestration.md#durable-conflict-detection-coordinator)
-for exactly what remains unwired.
+real caller anywhere in the codebase to compose with.
+
+This coordinator is now itself called by a real pipeline:
+[`InboundPullSynchronizationPipeline`](./inbound-pull-pipeline.md#conflict-detection),
+when constructed with an optional `InboundPullConflictDetectionConfiguration`.
+Making that possible required a new opt-in `StorageProvider` capability
+(`readLocalConflictCandidate` — see [storage provider](./storage-provider.md#reading-local-conflict-candidates-opt-in-for-conflict-detection-only)),
+since no existing provider read gave the pipeline a local `ChangeEvent` to
+compare an incoming remote one against. Two `StorageProvider` decorators in
+`dataloom-runtime` needed updating to forward the new call correctly instead
+of silently defaulting to "no local counterpart":
+`TimeoutEnforcingStorageProvider` now forwards it (timeout-wrapped like every
+other operation); `ProviderProtectionStorageBridge` does not yet — see
+[inbound pull pipeline](./inbound-pull-pipeline.md#known-gap-not-available-through-provider-protection-or-timeout-wrapping-consistently)
+for that named, deliberately out-of-scope gap.
 
 ## What this does not do yet
 
@@ -264,9 +276,19 @@ for exactly what remains unwired.
   `DataLoomConfigurationResolver.resolve` nor `PolicyEvaluator.evaluate` has
   a real caller anywhere in `dataloom-runtime` to compose with yet. Wiring
   either durable adapter in would currently mean inventing that caller too.
-- **Wiring `DurableConflictDetectionCoordinator` into a real
-  `SynchronizationPipeline`.** The coordinator itself is real and callable
-  today; no pipeline calls it yet.
+- **Conflict detection through a circuit-breaker-protected `StorageProvider`.**
+  `ProviderProtectionStorageBridge` does not forward `readLocalConflictCandidate`
+  — closing this properly needs a breaking addition to `StorageCircuitScopes`'s
+  constructor. Real, separately-scoped follow-up work.
+- **Reference-provider adoption of `readLocalConflictCandidate`.** None of
+  Room, SQLDelight, file-based, or DataStore override it yet; the interface's
+  safe `NotFound` default means conflict detection is simply inert for those
+  providers today, not broken.
+- **Wiring `DurableConflictDetectionCoordinator` into `BidirectionalSynchronizationPipeline`
+  or `OutboundPushSynchronizationPipeline` directly.** Bidirectional inherits
+  real counts through its inbound child once that child has conflict
+  detection configured; outbound is not a candidate (push has no remote
+  state to compare a local change against).
 - **Durably persisting resolved `ConflictResolutionDecision`s**, including
   `Merge`'s payload — deliberately out of scope for
   `DurableUnresolvedConflictLog`; a separate, larger design question.
