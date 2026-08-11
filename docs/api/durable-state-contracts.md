@@ -2,11 +2,11 @@
 
 [API reference index](./README.md)
 
-> **Status:** The contract exists, is proven implementable, and has two real
-> domain adoptions end to end — configuration snapshot history and policy
-> decisions — both backed by the same production Room persistence
-> implementation. Other domains (conflict, events, assets, audit) have not
-> adopted it yet.
+> **Status:** The contract exists, is proven implementable, and has three real
+> domain adoptions end to end — configuration snapshot history, policy
+> decisions, and unresolved conflicts — all backed by the same production
+> Room persistence implementation. Other domains (events, assets, audit)
+> have not adopted it yet.
 
 ## Status
 
@@ -199,21 +199,63 @@ See [policy foundation](./policy-foundation.md#durablepolicydecisionlog) for
 commit-once rather than versioned, and how idempotent retries are
 distinguished from genuine conflicts.
 
+## Adoption: unresolved conflicts
+
+[`DurableUnresolvedConflictLog`](./conflict-orchestration.md#durable-unresolved-conflict-log)
+(`io.dataloom.api.conflict`) is the third real domain adoption, and — like
+policy decisions — reuses `RoomDurableStateStore` directly with zero new
+Room code:
+
+- **`TScope`** is `ConflictId` — reused directly rather than composed into a
+  new wrapper type, unlike `ConfigurationHistoryScope`/`PolicyDecisionScope`.
+- **`TState`** is `UnresolvedConflictRecord` — a conflict's type, entity,
+  which local/remote changes disagreed (as payload-free
+  `UnresolvedConflictChangeSummary` values, never the original `ChangeEvent`),
+  why no resolver ran, and when it was recorded.
+- **Commit-once, narrower scope than policy decisions.** Only the two
+  *unresolved* outcomes are covered
+  (`ConflictOrchestrationResult.ResolverNotConfigured`/`.ResolverNotFound`)
+  — not resolved decisions, and specifically not
+  `ConflictResolutionDecision.Merge`'s application-supplied `ChangeEvent`
+  payload. Losslessly persisting that payload would be the first exception
+  to this codebase's consistent "durable/audit codecs never carry payload
+  content" convention, and is a deliberately separate, larger design
+  question this slice does not answer.
+- **`UnresolvedConflictRecordCodec`** (`DurableStateCodec<UnresolvedConflictRecord>`)
+  is the reference text codec, same hex-encoded/bounded-length/fail-closed
+  discipline as the other two domains' codecs.
+- **`DurableUnresolvedConflictLog.KeyEncoder`** — since `ConflictId` is a
+  pre-existing shared identifier this log did not introduce, its reference
+  key encoder is attached to the log class itself rather than to `ConflictId`
+  (Kotlin cannot add a companion member to an existing class from a
+  different file).
+
+See [conflict orchestration](./conflict-orchestration.md#durable-unresolved-conflict-log)
+for why this log deliberately does not call
+`SynchronizationConflictOrchestrator` (whose own documented boundary already
+forbids applying anything "to storage, queues, or any synchronization
+pipeline") and for the full unresolved-vs-resolved scoping rationale.
+
 ## What this does not do yet
 
-- **Wiring either durable adapter into a real evaluation/resolution call
-  site.** Nothing in `dataloom-runtime` calls `DurableConfigurationHistory.apply`
-  or `DurablePolicyDecisionLog.commit` yet — both remain available primitives,
-  not adopted end to end by any real synchronization flow.
-- **Conflict, events, assets, and audit** durable state — real,
-  separately-scoped follow-up work; not started.
+- **Wiring any adopted durable adapter into a real evaluation/resolution/detection
+  call site.** Nothing in `dataloom-runtime` calls `DurableConfigurationHistory.apply`,
+  `DurablePolicyDecisionLog.commit`, or `DurableUnresolvedConflictLog.record`
+  yet — all three remain available primitives, not adopted end to end by any
+  real synchronization flow.
+- **Durably persisting resolved `ConflictResolutionDecision`s**, including
+  `Merge`'s payload — deliberately out of scope for
+  `DurableUnresolvedConflictLog`; a separate, larger design question.
+- **Events, assets, and audit** durable state — real, separately-scoped
+  follow-up work; not started.
 - **An Apple file-backed `DurableStateStore` implementation.** Only the
   Room implementation exists so far;
   `AppleFileCircuitBreakerStateStore` remains the only precedent for what
   an Apple file-backed one would look like.
 - **SDK-wide adoption.** `DataLoomConfigurationHistory` (in-memory) is not
-  superseded or removed by `DurableConfigurationHistory`, and plain
-  `PolicyDecision` values are not superseded by `PolicyDecisionRecord` —
-  nothing in the runtime has been switched over to use either durable
+  superseded or removed by `DurableConfigurationHistory`, plain
+  `PolicyDecision` values are not superseded by `PolicyDecisionRecord`, and
+  nothing durably persists unresolved conflicts today outside this log
+  itself — nothing in the runtime has been switched over to use any durable
   variant yet; that is further follow-up work, not implied by this contract
   or its adoptions existing.

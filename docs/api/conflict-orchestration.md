@@ -3,7 +3,9 @@
 [API reference index](./README.md)
 
 > **Status:** Partial V1 subsystem. Exact custom detector/resolver orchestration
-> exists; the complete built-in and durable conflict engine does not.
+> exists, plus a bounded first slice of durable unresolved-conflict persistence
+> (see [Durable unresolved-conflict log](#durable-unresolved-conflict-log));
+> the complete built-in and durable conflict engine does not.
 
 **Package:** `io.dataloom.runtime.conflict`  
 **Module:** `dataloom-runtime`
@@ -372,6 +374,68 @@ decisions automatically. The caller currently consumes the
 `ConflictResolutionDecision`. V1 requires an atomic runtime application and
 durable unresolved-conflict path rather than leaving the product engine at
 this boundary.
+
+---
+
+## Durable unresolved-conflict log
+
+**Package:** `io.dataloom.api.conflict` · **Module:** `dataloom-api` · see also
+[durable state contracts](./durable-state-contracts.md)
+
+```kotlin
+public class DurableUnresolvedConflictLog(
+    store: DurableStateStore<ConflictId, UnresolvedConflictRecord>,
+    schemaVersion: Int = 1,
+    maximumStateUpdateAttempts: Int = 8,
+) {
+    public suspend fun current(conflictId: ConflictId): ProviderOperationResult<UnresolvedConflictRecord?>
+    public suspend fun record(
+        conflictId: ConflictId,
+        record: UnresolvedConflictRecord,
+    ): DurableUnresolvedConflictRecordOutcome
+}
+```
+
+A bounded first slice of the "durable unresolved-conflict path" this page's
+own "No automatic resolution" section names as still missing. `record` is
+insert-if-absent, commit-once — a conflict's unresolved facts (type, entity,
+which changes disagreed, why no resolver ran) do not legitimately change
+over time, so a later `record` call for the same `ConflictId` is judged only
+by whether it agrees with what's already there:
+`DurableUnresolvedConflictRecordOutcome.AlreadyRecorded` (idempotent retry)
+vs. `.Conflict` (the same conflict identifier reused for different
+underlying facts — a genuine caller bug, not ordinary contention).
+
+**Deliberately in scope: only the two unresolved outcomes.**
+[`ConflictOrchestrationResult.ResolverNotConfigured`](#conflictorchestrationresult)
+and [`.ResolverNotFound`](#conflictorchestrationresult) — a conflict the
+orchestrator detected but could not automatically resolve, which today is
+simply lost once the caller's in-memory result goes out of scope. A fully
+*resolved* `ConflictResolutionDecision`'s durability — including
+`ConflictResolutionDecision.Merge`'s application-supplied `ChangeEvent`
+payload — is a separate, larger design question this slice does not
+attempt: this codebase's durable/audit codecs consistently exclude payload
+content (see `UnresolvedConflictChangeSummary`'s own documentation), and
+losslessly persisting a merge payload would be the first exception to that
+convention rather than a mechanical extension of it.
+
+**Payload-free by construction, not just by codec discipline.**
+`UnresolvedConflictRecord` structurally excludes
+[`ChangeEvent.payload`][] — it carries `UnresolvedConflictChangeSummary`
+(change event ID, operation, metadata) per side, not the original
+`ChangeEvent`. A caller that needs the actual changed content for manual
+resolution retrieves it separately (for example from a durable event
+outbox) by change event ID.
+
+This does not call `SynchronizationConflictOrchestrator`, is not called by
+it, and does not change the orchestrator's own documented boundary ("does
+not apply resolution decisions to storage" — see
+[Boundaries](#boundaries)). Wiring `record` into a real
+`detectAndResolve` caller is separate, unstarted follow-up work — this log
+is an available primitive today, not adopted end to end by any runtime
+conflict-handling flow yet.
+
+[`ChangeEvent.payload`]: ./conflict-contracts.md
 
 ---
 
