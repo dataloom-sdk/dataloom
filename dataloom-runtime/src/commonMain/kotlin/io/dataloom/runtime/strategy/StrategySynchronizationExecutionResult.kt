@@ -27,11 +27,18 @@ public enum class StrategyExecutionRejectionReason {
     UNSUPPORTED_PLAN,
 
     /**
-     * The evaluated plan requires durable queue admission for a scheduled
-     * refresh (`ENQUEUE_DURABLE_WORK`/`SCHEDULE_REFRESH`), but no coordinator
-     * currently wires evaluated plans into durable queue admission. Only the
-     * inline/synchronous refresh path (`CacheFirstStrategyProfile.requireDurableRefresh
-     * = false`) is supported by [CacheFirstStrategyExecutor] today.
+     * The evaluated plan requires durable queue admission
+     * (`ENQUEUE_DURABLE_WORK`, alongside `SCHEDULE_REFRESH` for cache-first
+     * or on its own for offline-first), but no coordinator currently wires
+     * evaluated plans into durable queue admission
+     * ([StrategyQueueAdmissionEvaluator] exists but has no caller). Only the
+     * inline/synchronous path is supported today:
+     * `CacheFirstStrategyProfile.requireDurableRefresh = false` for
+     * [CacheFirstStrategyExecutor], `OfflineFirstStrategyProfile.requireDurableQueue
+     * = false` for [OfflineFirstStrategyExecutor]. Named for the first
+     * executor that needed it; the underlying gap (no queue-admission wiring)
+     * is identical for both, so this one reason covers both rather than two
+     * near-duplicate reasons for the same root cause.
      */
     DURABLE_REFRESH_NOT_YET_SUPPORTED,
 }
