@@ -117,7 +117,7 @@ internal class HybridStrategyExecutor(
             )
         }
 
-        val profile = request.profile as HybridStrategyProfile
+        val profile = resolvedProfile(request, evaluation) as HybridStrategyProfile
         return when (request.request.direction) {
             SynchronizationDirection.PUSH ->
                 executeViaPipeline(request, evaluation, providers, SynchronizationDirection.PUSH)
