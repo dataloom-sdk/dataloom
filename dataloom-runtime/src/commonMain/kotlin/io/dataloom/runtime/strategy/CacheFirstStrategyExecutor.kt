@@ -7,6 +7,7 @@ import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
 import io.dataloom.api.error.safeDiagnosticString
 import io.dataloom.api.execution.StrategyProviderSet
+import io.dataloom.api.identifier.QueueEntryId
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.runtime.RuntimeDependencies
 import io.dataloom.api.strategy.StrategyCacheState
@@ -45,20 +46,23 @@ import io.dataloom.runtime.execution.lifecycle.SynchronizationLifecycleEventEmit
  *   PUSH_REMOTE]`).
  *
  * A plan that requires durable queue admission for a scheduled refresh
- * (`requireDurableRefresh = true`, the default —
- * `operations` includes `ENQUEUE_DURABLE_WORK`/`SCHEDULE_REFRESH`) is
- * explicitly rejected with
- * [StrategyExecutionRejectionReason.DURABLE_REFRESH_NOT_YET_SUPPORTED]
- * rather than silently misexecuted: no coordinator in this codebase today
- * wires an evaluated plan into durable queue admission
- * ([StrategyQueueAdmissionEvaluator] exists but has no caller), so honoring
- * that branch correctly is out of scope for this executor.
+ * (`requireDurableRefresh = true`, the default — `operations` includes
+ * `ENQUEUE_DURABLE_WORK`/`SCHEDULE_REFRESH`) never also includes
+ * `PULL_REMOTE`/`PERSIST_REMOTE` alongside it — the durable refresh
+ * replaces, rather than joins, the synchronous refresh — so admitting it
+ * durably and still serving local state (`SERVE_LOCAL` is always present in
+ * this branch) requires no special-casing beyond the admission call itself.
+ * When [durableQueueAdmitter] is `null` or admission reports
+ * [StrategyDurableQueueAdmissionOutcome.NotConfigured], the branch is
+ * rejected with [StrategyExecutionRejectionReason.DURABLE_REFRESH_NOT_YET_SUPPORTED]
+ * exactly as before durable admission wiring existed.
  */
 internal class CacheFirstStrategyExecutor(
     private val clock: DataLoomClock,
     private val runtimeDependencies: RuntimeDependencies,
     private val pipelineRegistry: SynchronizationPipelineRegistry,
     private val lifecycleEventEmitter: SynchronizationLifecycleEventEmitter?,
+    private val durableQueueAdmitter: StrategyDurableQueueAdmitter? = null,
 ) {
     public suspend fun execute(
         request: StrategySynchronizationRequest,
@@ -67,11 +71,19 @@ internal class CacheFirstStrategyExecutor(
     ): StrategySynchronizationExecutionResult {
         val operations = evaluation.plan.operations
 
+        var durableQueueEntryId: QueueEntryId? = null
         if (StrategyOperation.ENQUEUE_DURABLE_WORK in operations) {
-            return rejected(
-                evaluation,
-                StrategyExecutionRejectionReason.DURABLE_REFRESH_NOT_YET_SUPPORTED,
-            )
+            val admitter = durableQueueAdmitter
+                ?: return rejected(evaluation, StrategyExecutionRejectionReason.DURABLE_REFRESH_NOT_YET_SUPPORTED)
+            when (val outcome = admitter.admit(request, evaluation, providers)) {
+                is StrategyDurableQueueAdmissionOutcome.NotConfigured -> return rejected(
+                    evaluation,
+                    StrategyExecutionRejectionReason.DURABLE_REFRESH_NOT_YET_SUPPORTED,
+                )
+                is StrategyDurableQueueAdmissionOutcome.Admitted -> durableQueueEntryId = outcome.queueEntryId
+                is StrategyDurableQueueAdmissionOutcome.Rejected -> return rejected(evaluation, outcome.reason)
+                is StrategyDurableQueueAdmissionOutcome.Failed -> return failed(evaluation, outcome.error)
+            }
         }
 
         val servesLocal = StrategyOperation.SERVE_LOCAL in operations
@@ -94,6 +106,7 @@ internal class CacheFirstStrategyExecutor(
                 cacheState = requireNotNull(cacheState) {
                     "Cache-first plan without SERVE_LOCAL or a remote operation is unreachable."
                 },
+                durableQueueEntryId = durableQueueEntryId,
             )
         }
 
@@ -116,7 +129,7 @@ internal class CacheFirstStrategyExecutor(
         val result = pipeline.execute(context)
         lifecycleEventEmitter?.emitCompleted(context, result)
 
-        return mapPipelineResult(evaluation, cacheState, result)
+        return mapPipelineResult(evaluation, cacheState, durableQueueEntryId, result)
     }
 
     private suspend fun serveLocal(
@@ -166,6 +179,7 @@ internal class CacheFirstStrategyExecutor(
     private fun mapPipelineResult(
         evaluation: StrategyEvaluationResult,
         cacheState: StrategyCacheState?,
+        durableQueueEntryId: QueueEntryId?,
         result: SynchronizationResult,
     ): StrategySynchronizationExecutionResult = when (result) {
         is SynchronizationResult.Failed -> failed(evaluation, result.error)
@@ -183,6 +197,7 @@ internal class CacheFirstStrategyExecutor(
                 completedAt = clock.now(),
                 cacheState = cacheState,
                 refreshOutput = StrategyTransportOutput.ProviderBacked(result),
+                durableQueueEntryId = durableQueueEntryId,
             )
         } else {
             StrategySynchronizationExecutionResult.Executed(

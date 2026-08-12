@@ -66,9 +66,7 @@ It fails closed with a distinct contract error
 (`DL-STRATEGY-HYBRID-LOCAL-STATE-MISMATCH`) rather than being folded into an
 ordinary rejection or silently treated as success.
 
-## Known gaps
-
-### Durable queue admission for the reconciled fallback branch
+## Durable queue admission for the reconciled fallback branch
 
 When `HybridSource.LOCAL` is selected as an explicit fallback from a
 `REMOTE` primary (i.e. remote was not eligible, so the evaluator fell back to
@@ -76,44 +74,53 @@ local) and `HybridStrategyProfile.reconcileAfterFallback` is `true` (the
 default), the evaluated plan's operations include `ENQUEUE_DURABLE_WORK` and
 `RECONCILE` alongside the local-serve operations.
 
-`StrategyQueueAdmissionEvaluator` and `StrategyDurableContinuationPlan`
-already exist in this codebase as building blocks for durable-work admission,
-but nothing currently wires an evaluated plan containing
-`ENQUEUE_DURABLE_WORK` into that machinery before reaching strategy
-execution — the same gap `CacheFirstStrategyExecutor` and
-`OfflineFirstStrategyExecutor` already document for their own durable
-branches. `HybridStrategyExecutor` detects this case explicitly
-(`ENQUEUE_DURABLE_WORK in evaluation.plan.operations`) and rejects it with
-the same shared `StrategyExecutionRejectionReason.DURABLE_REFRESH_NOT_YET_SUPPORTED`
-reason — reused rather than duplicated, since the underlying root cause (no
-queue-admission wiring) is identical across all three executors.
+`HybridStrategyExecutor` hands this branch to `StrategyDurableQueueAdmitter`,
+an opt-in capability — see
+[durable-queue-admission.md](durable-queue-admission.md) for the full
+design. Behavior forks on whether `SERVE_LOCAL` is also present:
+
+- **PULL/BIDIRECTIONAL** (`SERVE_LOCAL` present): admission does not replace
+  serving local state — both happen. The terminal `ServedFromCache` carries
+  a non-null `durableQueueEntryId` when admission succeeds.
+- **PUSH** (`SERVE_LOCAL` absent — see the next section): admission *is*
+  the entire outcome. Returns `DurablyEnqueued` immediately, the same
+  short-circuit shape `OfflineFirstStrategyExecutor` uses for its own
+  durable branch.
 
 `RECONCILE` only ever appears alongside `ENQUEUE_DURABLE_WORK` in the
-evaluator's hybrid branch — never alone — so this one check also covers
-hybrid's only reachable `RECONCILE` shape. Unlike `OfflineFirstStrategyExecutor`,
-this executor never calls `StrategyReconciliationProvider` directly.
+evaluator's hybrid branch — never alone — so admission is the only thing
+that needs to happen for it. Unlike `OfflineFirstStrategyExecutor`, this
+executor never calls `StrategyReconciliationProvider` directly — the
+durably admitted continuation owns `RECONCILE` entirely.
 
-**To get synchronous hybrid fallback behavior today**, construct
-`HybridStrategyProfile` with `reconcileAfterFallback = false`. Durable queue
-admission requires the queue-admission wiring described above, which is a
-separate, larger piece of work — not a variant of this executor.
+**When no `QueuedSynchronizationWorkEncoder` is configured** (the default),
+this executor's behavior is unchanged from before durable admission wiring
+existed: the branch is rejected with the same shared
+`StrategyExecutionRejectionReason.DURABLE_REFRESH_NOT_YET_SUPPORTED` reason
+cache-first/offline-first use. To get synchronous hybrid fallback behavior
+without configuring an encoder at all, construct `HybridStrategyProfile`
+with `reconcileAfterFallback = false`.
 
-### Transport-free PUSH with `LOCAL` selected
+## Known gap: transport-free PUSH with `LOCAL` selected and no reconciliation
 
-`HybridSource.LOCAL` selected for a PUSH-direction request produces a plan
-whose only operation is `READ_LOCAL` — there is no `SERVE_LOCAL` operation to
-serve (nothing to serve for a push) and, since `LOCAL` was explicitly chosen
+`HybridSource.LOCAL` selected for a PUSH-direction request with
+`reconcileAfterFallback = false` (or not selected as a fallback at all)
+produces a plan whose only operation is `READ_LOCAL` — there is no
+`SERVE_LOCAL` operation to serve (nothing to serve for a push), no
+`ENQUEUE_DURABLE_WORK` to admit, and, since `LOCAL` was explicitly chosen
 over `REMOTE`, no remote operation either.
 
 No variant of `StrategyTransportOutput` represents a transport-free success,
 and unlike the `ACCEPT_LOCAL` no-op branches in `CacheFirstStrategyExecutor`/
 `OfflineFirstStrategyExecutor` (always paired with a required remote leg in
-the same plan), this is the first genuinely transport-free plan shape in the
-strategy engine. Rather than invent a signature-incompatible zero-effort
-success value for one narrow branch, it is rejected explicitly with
-`StrategyExecutionRejectionReason.HYBRID_LOCAL_PUSH_NOT_YET_SUPPORTED` until
-a proper transport-free result type is added to
-`StrategySynchronizationExecutionResult`.
+the same plan), this is the first genuinely transport-free plan shape with
+nothing at all to admit or serve. Rather than invent a signature-incompatible
+zero-effort success value for one narrow branch, it is rejected explicitly
+with `StrategyExecutionRejectionReason.HYBRID_LOCAL_PUSH_NOT_YET_SUPPORTED`.
+Note this is narrower than it was before durable admission wiring: a PUSH
+request that *does* carry `ENQUEUE_DURABLE_WORK` (the default
+`reconcileAfterFallback = true`) now returns `DurablyEnqueued` instead of
+hitting this rejection — see the section above.
 
 ## Coordinator wiring
 

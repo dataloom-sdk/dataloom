@@ -1,6 +1,7 @@
 package io.dataloom.runtime.strategy
 
 import io.dataloom.api.error.DataLoomError
+import io.dataloom.api.identifier.QueueEntryId
 import io.dataloom.api.provider.ProviderBindingFailure
 import io.dataloom.api.strategy.StrategyCacheState
 import io.dataloom.api.strategy.StrategyEvaluationResult
@@ -29,18 +30,33 @@ public enum class StrategyExecutionRejectionReason {
     /**
      * The evaluated plan requires durable queue admission
      * (`ENQUEUE_DURABLE_WORK`, alongside `SCHEDULE_REFRESH` for cache-first
-     * or on its own for offline-first), but no coordinator currently wires
-     * evaluated plans into durable queue admission
-     * ([StrategyQueueAdmissionEvaluator] exists but has no caller). Only the
-     * inline/synchronous path is supported today:
-     * `CacheFirstStrategyProfile.requireDurableRefresh = false` for
-     * [CacheFirstStrategyExecutor], `OfflineFirstStrategyProfile.requireDurableQueue
-     * = false` for [OfflineFirstStrategyExecutor]. Named for the first
-     * executor that needed it; the underlying gap (no queue-admission wiring)
-     * is identical for both, so this one reason covers both rather than two
-     * near-duplicate reasons for the same root cause.
+     * or on its own for offline-first/hybrid), but no
+     * [io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder] is
+     * configured ([io.dataloom.runtime.facade.DataLoomBuilder.queueSubmissionEncoder]
+     * / [io.dataloom.runtime.facade.DataLoomBuilder.queueSubmissionConfiguration]).
+     * [StrategyDurableQueueAdmitter] is the real admission path once an
+     * encoder is configured; this reason is what every caller received
+     * before an encoder existed, and is still what an unconfigured caller
+     * receives today — durable admission is opt-in, not a breaking
+     * requirement. Named for the first executor that needed it; the
+     * underlying gap (no encoder configured) is identical across the three
+     * strategies that can produce `ENQUEUE_DURABLE_WORK` plans, so this one
+     * reason covers all of them rather than near-duplicate reasons for the
+     * same root cause.
      */
     DURABLE_REFRESH_NOT_YET_SUPPORTED,
+
+    /**
+     * A [StrategyDurableQueueAdmitter] admission attempt could not resolve a
+     * queue provider, or the resolved storage/transport providers lack a
+     * [io.dataloom.api.provider.ProviderId] to persist on the durable queue
+     * entry. This is defensive: the plan's `requiredCapabilities` already
+     * demand these roles, so provider resolution should already have failed
+     * with [PROVIDER_RESOLUTION_FAILED] before reaching admission. Reserved
+     * for the case where resolution nominally succeeded but the resolved
+     * provider set is still structurally incomplete.
+     */
+    DURABLE_ADMISSION_PROVIDERS_INCOMPLETE,
 
     /**
      * A [HybridStrategyExecutor] plan selected `HybridSource.LOCAL` for a
@@ -87,12 +103,24 @@ public sealed interface StrategySynchronizationExecutionResult {
      * When present, it carries the refresh's own terminal output; the refresh
      * having run does not change [cacheState], which always describes what
      * was actually served to evidence at admission time.
+     *
+     * [durableQueueEntryId] is non-null only when the plan also admitted a
+     * *durable* refresh/reconciliation alongside serving local state
+     * (`requireDurableRefresh = true` for cache-first, or hybrid's
+     * `LOCAL`-selected-as-fallback branch with `reconcileAfterFallback =
+     * true`), and a [StrategyDurableQueueAdmitter] was configured and
+     * admission succeeded. Mutually exclusive with [refreshOutput] in
+     * practice — the evaluator never produces a plan requiring both a
+     * synchronous and a durable refresh at once — but both are independently
+     * nullable rather than a sealed choice, to avoid forcing every caller
+     * through a `when` for the common case where neither is present.
      */
     public data class ServedFromCache(
         override val evaluation: StrategyEvaluationResult,
         override val completedAt: DataLoomInstant,
         public val cacheState: StrategyCacheState,
         public val refreshOutput: StrategyTransportOutput? = null,
+        public val durableQueueEntryId: QueueEntryId? = null,
     ) : StrategySynchronizationExecutionResult {
         init {
             require(
@@ -241,10 +269,42 @@ public sealed interface StrategySynchronizationExecutionResult {
         public val output: StrategyTransportOutput,
     ) : StrategySynchronizationExecutionResult
 
-    /** Strategy admitted durable work instead of running transport directly. */
+    /**
+     * Strategy admitted durable work instead of running transport directly.
+     *
+     * [queueEntryId] is non-null only when a [StrategyDurableQueueAdmitter]
+     * was configured and real durable admission succeeded for this deferral.
+     * When `null`, no queue provider was ever called — the deferral is a
+     * pure in-memory signal, same as every `Deferred` result before durable
+     * admission wiring existed; the caller is responsible for its own retry
+     * strategy, exactly as documented for an unconfigured
+     * [io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder].
+     */
     public data class Deferred(
         override val evaluation: StrategyEvaluationResult,
         override val completedAt: DataLoomInstant,
+        public val queueEntryId: QueueEntryId? = null,
+    ) : StrategySynchronizationExecutionResult
+
+    /**
+     * A plan was durably admitted and that admission is the entire outcome
+     * of this call — no synchronous transport ran.
+     *
+     * Distinct from [Deferred]: `Deferred` means the evaluator itself
+     * decided not to attempt anything right now (typically connectivity
+     * unavailable/unknown). `DurablyEnqueued` means the plan's disposition
+     * was `EXECUTE`/`SERVE_AND_REFRESH` — the evaluator expected transport
+     * to run — but the strategy in question (currently only
+     * [OfflineFirstStrategyExecutor], and [HybridStrategyExecutor] for its
+     * transport-free PUSH branch) treats durable admission as a complete
+     * substitute for the synchronous attempt rather than running both,
+     * to avoid a duplicate remote call once the durably admitted
+     * continuation is later processed by a queue worker.
+     */
+    public data class DurablyEnqueued(
+        override val evaluation: StrategyEvaluationResult,
+        override val completedAt: DataLoomInstant,
+        public val queueEntryId: QueueEntryId,
     ) : StrategySynchronizationExecutionResult
 
     /** Execution was rejected before a provider operation. */

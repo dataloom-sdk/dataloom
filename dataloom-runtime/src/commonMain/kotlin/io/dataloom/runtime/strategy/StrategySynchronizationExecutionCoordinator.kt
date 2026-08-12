@@ -1,10 +1,13 @@
 package io.dataloom.runtime.strategy
 
+import io.dataloom.api.execution.StrategyProviderSet
 import io.dataloom.api.provider.ProviderLifecycleCoordinatorState
 import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
 import io.dataloom.api.strategy.StrategyDisposition
+import io.dataloom.api.strategy.StrategyEvaluationResult
 import io.dataloom.api.strategy.StrategyExecutionTrigger
+import io.dataloom.api.strategy.StrategyOperation
 import io.dataloom.api.strategy.StrategyOperationInput
 import io.dataloom.api.strategy.StrategySynchronizationRequest
 import io.dataloom.api.runtime.RuntimeDependencies
@@ -14,6 +17,7 @@ import io.dataloom.core.provider.StrategyProviderResolutionResult
 import io.dataloom.core.provider.StrategyProviderResolver
 import io.dataloom.runtime.execution.SynchronizationPipelineRegistry
 import io.dataloom.runtime.execution.lifecycle.SynchronizationLifecycleEventEmitter
+import io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder
 
 /** Admits a strategy request before resolving or invoking any provider. */
 internal class StrategySynchronizationExecutionCoordinator(
@@ -24,7 +28,14 @@ internal class StrategySynchronizationExecutionCoordinator(
     private val runtimeDependencies: RuntimeDependencies,
     private val pipelineRegistry: SynchronizationPipelineRegistry,
     private val lifecycleEventEmitter: SynchronizationLifecycleEventEmitter?,
+    private val durableQueueWorkEncoder: QueuedSynchronizationWorkEncoder? = null,
 ) {
+    private val durableQueueAdmitter = StrategyDurableQueueAdmitter(
+        clock = clock,
+        runtimeDependencies = runtimeDependencies,
+        encoder = durableQueueWorkEncoder,
+    )
+
     public suspend fun execute(
         request: StrategySynchronizationRequest,
         bindings: StrategyProviderBindings,
@@ -53,9 +64,11 @@ internal class StrategySynchronizationExecutionCoordinator(
                 evaluation = evaluation,
                 reason = StrategyExecutionRejectionReason.STRATEGY_REJECTED,
             )
-            StrategyDisposition.DEFER -> return StrategySynchronizationExecutionResult.Deferred(
+            StrategyDisposition.DEFER -> return handleDefer(
+                request = request,
+                bindings = bindings,
                 evaluation = evaluation,
-                completedAt = clock.now(),
+                providerBoundary = providerBoundary,
             )
             StrategyDisposition.EXECUTE,
             StrategyDisposition.SERVE_AND_REFRESH,
@@ -95,32 +108,16 @@ internal class StrategySynchronizationExecutionCoordinator(
             )
         }
 
-        val providers = when (
-            val resolution = providerResolver.resolve(
-                bindings = bindings,
-                requiredCapabilities = evaluation.plan.requiredCapabilities,
-            )
-        ) {
-            is StrategyProviderResolutionResult.Success -> resolution.providers
-            is StrategyProviderResolutionResult.Failure -> {
-                return StrategySynchronizationExecutionResult.Rejected(
-                    evaluation = evaluation,
-                    completedAt = clock.now(),
-                    reason = StrategyExecutionRejectionReason.PROVIDER_RESOLUTION_FAILED,
-                    missingCapabilities = resolution.missingCapabilities,
-                    bindingFailures = resolution.bindingFailures,
-                )
-            }
-        }
-
         val executionProviders = when (
-            val preparation = providerBoundary.prepare(evaluation, providers)
-        ) {
-            is StrategyProviderExecutionPreparation.Prepared -> preparation.providers
-            is StrategyProviderExecutionPreparation.Rejected -> return rejected(
+            val resolved = resolveExecutionProviders(
+                bindings = bindings,
+                requiredCapabilities = admissionAwareCapabilities(evaluation),
                 evaluation = evaluation,
-                reason = preparation.reason,
+                providerBoundary = providerBoundary,
             )
+        ) {
+            is ResolvedProviders.Prepared -> resolved.providers
+            is ResolvedProviders.Rejected -> return resolved.result
         }
 
         if (
@@ -157,6 +154,7 @@ internal class StrategySynchronizationExecutionCoordinator(
                 runtimeDependencies = runtimeDependencies,
                 pipelineRegistry = pipelineRegistry,
                 lifecycleEventEmitter = lifecycleEventEmitter,
+                durableQueueAdmitter = durableQueueAdmitter,
             ).execute(
                 request = request,
                 evaluation = evaluation,
@@ -172,6 +170,7 @@ internal class StrategySynchronizationExecutionCoordinator(
                 runtimeDependencies = runtimeDependencies,
                 pipelineRegistry = pipelineRegistry,
                 lifecycleEventEmitter = lifecycleEventEmitter,
+                durableQueueAdmitter = durableQueueAdmitter,
             ).execute(
                 request = request,
                 evaluation = evaluation,
@@ -187,6 +186,7 @@ internal class StrategySynchronizationExecutionCoordinator(
                 runtimeDependencies = runtimeDependencies,
                 pipelineRegistry = pipelineRegistry,
                 lifecycleEventEmitter = lifecycleEventEmitter,
+                durableQueueAdmitter = durableQueueAdmitter,
             ).execute(
                 request = request,
                 evaluation = evaluation,
@@ -205,6 +205,147 @@ internal class StrategySynchronizationExecutionCoordinator(
             evaluation = evaluation,
             reason = StrategyExecutionRejectionReason.UNSUPPORTED_PLAN,
         )
+    }
+
+    /**
+     * Handles a `DEFER`-disposition plan.
+     *
+     * When [durableQueueWorkEncoder] is not configured, or the plan does not
+     * require durable admission (`ENQUEUE_DURABLE_WORK` absent — e.g. a
+     * network-only/remote-first connectivity defer that carries no durable
+     * continuation), this returns the same bare
+     * [StrategySynchronizationExecutionResult.Deferred] every caller has
+     * always received — a pure in-memory signal, no provider ever resolved
+     * or called.
+     *
+     * When an encoder is configured and the plan does require durable
+     * admission, providers are resolved (scoped to the plan's own
+     * `requiredCapabilities`, exactly like the EXECUTE/SERVE_AND_REFRESH
+     * path below) and [StrategyDurableQueueAdmitter] is invoked for real.
+     * Once an application opts into durable admission this way, a deferral
+     * that cannot actually be admitted is surfaced as a real
+     * [StrategySynchronizationExecutionResult.Rejected]/[StrategySynchronizationExecutionResult.Failed]
+     * rather than a silent bare `Deferred` — the whole point of opting in is
+     * knowing for certain whether intent survived, not a soft "maybe."
+     */
+    private suspend fun handleDefer(
+        request: StrategySynchronizationRequest,
+        bindings: StrategyProviderBindings,
+        evaluation: StrategyEvaluationResult,
+        providerBoundary: StrategyProviderExecutionBoundary,
+    ): StrategySynchronizationExecutionResult {
+        if (
+            durableQueueWorkEncoder == null ||
+            StrategyOperation.ENQUEUE_DURABLE_WORK !in evaluation.plan.operations
+        ) {
+            return StrategySynchronizationExecutionResult.Deferred(
+                evaluation = evaluation,
+                completedAt = clock.now(),
+            )
+        }
+
+        val executionProviders = when (
+            val resolved = resolveExecutionProviders(
+                bindings = bindings,
+                requiredCapabilities = admissionAwareCapabilities(evaluation),
+                evaluation = evaluation,
+                providerBoundary = providerBoundary,
+            )
+        ) {
+            is ResolvedProviders.Prepared -> resolved.providers
+            is ResolvedProviders.Rejected -> return resolved.result
+        }
+
+        return when (
+            val outcome = durableQueueAdmitter.admit(request, evaluation, executionProviders)
+        ) {
+            is StrategyDurableQueueAdmissionOutcome.NotConfigured ->
+                StrategySynchronizationExecutionResult.Deferred(
+                    evaluation = evaluation,
+                    completedAt = clock.now(),
+                )
+            is StrategyDurableQueueAdmissionOutcome.Admitted ->
+                StrategySynchronizationExecutionResult.Deferred(
+                    evaluation = evaluation,
+                    completedAt = clock.now(),
+                    queueEntryId = outcome.queueEntryId,
+                )
+            is StrategyDurableQueueAdmissionOutcome.Rejected -> rejected(evaluation, outcome.reason)
+            is StrategyDurableQueueAdmissionOutcome.Failed -> StrategySynchronizationExecutionResult.Failed(
+                evaluation = evaluation,
+                completedAt = clock.now(),
+                error = outcome.error,
+                transportAttempted = false,
+            )
+        }
+    }
+
+    /**
+     * The capabilities to resolve providers for, widened to also cover the
+     * plan's durable continuation when durable admission is actually
+     * configured.
+     *
+     * A plan's own `requiredCapabilities` reflect only what runs
+     * *synchronously* right now — cache-first's durable-refresh branch, for
+     * example, never requires `TRANSPORT` at the top level, since the
+     * refresh itself is meant to run later via the durable continuation.
+     * But [StrategyDurableQueueAdmitter] needs to persist a real
+     * [io.dataloom.api.provider.SynchronizationProviderBindings] on the
+     * queue entry for that later replay, which requires a non-null
+     * transport (and storage) provider ID *now*, at admission time — not
+     * just whatever the synchronous portion happens to need. Widening only
+     * when [durableQueueWorkEncoder] is configured keeps an unconfigured
+     * caller's resolution requirements byte-for-byte identical to before
+     * durable admission wiring existed.
+     */
+    private fun admissionAwareCapabilities(
+        evaluation: StrategyEvaluationResult,
+    ): Set<io.dataloom.api.strategy.StrategyProviderCapability> {
+        val continuationCapabilities = if (durableQueueWorkEncoder != null) {
+            evaluation.plan.durableContinuation?.requiredCapabilities ?: emptySet()
+        } else {
+            emptySet()
+        }
+        return evaluation.plan.requiredCapabilities + continuationCapabilities
+    }
+
+    private suspend fun resolveExecutionProviders(
+        bindings: StrategyProviderBindings,
+        requiredCapabilities: Set<io.dataloom.api.strategy.StrategyProviderCapability>,
+        evaluation: StrategyEvaluationResult,
+        providerBoundary: StrategyProviderExecutionBoundary,
+    ): ResolvedProviders {
+        val providers = when (
+            val resolution = providerResolver.resolve(
+                bindings = bindings,
+                requiredCapabilities = requiredCapabilities,
+            )
+        ) {
+            is StrategyProviderResolutionResult.Success -> resolution.providers
+            is StrategyProviderResolutionResult.Failure -> {
+                return ResolvedProviders.Rejected(
+                    StrategySynchronizationExecutionResult.Rejected(
+                        evaluation = evaluation,
+                        completedAt = clock.now(),
+                        reason = StrategyExecutionRejectionReason.PROVIDER_RESOLUTION_FAILED,
+                        missingCapabilities = resolution.missingCapabilities,
+                        bindingFailures = resolution.bindingFailures,
+                    ),
+                )
+            }
+        }
+
+        return when (val preparation = providerBoundary.prepare(evaluation, providers)) {
+            is StrategyProviderExecutionPreparation.Prepared ->
+                ResolvedProviders.Prepared(preparation.providers)
+            is StrategyProviderExecutionPreparation.Rejected ->
+                ResolvedProviders.Rejected(rejected(evaluation, preparation.reason))
+        }
+    }
+
+    private sealed interface ResolvedProviders {
+        data class Prepared(val providers: StrategyProviderSet) : ResolvedProviders
+        data class Rejected(val result: StrategySynchronizationExecutionResult) : ResolvedProviders
     }
 
     private fun rejected(

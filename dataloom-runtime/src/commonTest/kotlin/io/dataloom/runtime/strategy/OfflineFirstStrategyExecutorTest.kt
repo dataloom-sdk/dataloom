@@ -113,6 +113,61 @@ class OfflineFirstStrategyExecutorTest {
         assertEquals(0, storage.reconcileStrategyCalls)
     }
 
+    @Test
+    fun durableQueueIsAdmittedAndShortCircuitsTheSynchronousRemoteAttempt() = runTest {
+        // requireDurableQueue = true + connectivity available means the plan
+        // carries ENQUEUE_DURABLE_WORK alongside a full remote leg and
+        // RECONCILE. Running both would risk a duplicate remote call once the
+        // durably admitted continuation is later processed by a queue worker,
+        // so admission replaces the synchronous attempt entirely.
+        val storage = FakeOfflineFirstStorageProvider()
+        val pipeline = FakePipeline(SynchronizationDirection.PUSH) { context ->
+            SynchronizationResult.Succeeded(
+                request = context.request,
+                completedAt = now,
+                summary = SynchronizationSummary(outboundEventsRead = 1, outboundEventsAccepted = 1),
+            )
+        }
+        val queue = FakeAdmissionQueueProvider()
+        val request = offlineFirstRequest(
+            direction = SynchronizationDirection.PUSH,
+            profile = offlineFirstProfile(requireDurableQueue = true, reconcileWhenOnline = true),
+        )
+        val result = executor(
+            pipelineRegistry = SynchronizationPipelineRegistry(listOf(pipeline)),
+            durableQueueAdmitter = admitter(FakeEncoder()),
+        ).execute(
+            request = request,
+            evaluation = evaluationFor(request),
+            providers = providerSet(FakeTransportProvider(), storage, queue = queue),
+        )
+        val enqueued = assertIs<StrategySynchronizationExecutionResult.DurablyEnqueued>(result)
+        assertEquals(QueueEntryId("offline-first-queue-entry"), enqueued.queueEntryId)
+        assertEquals(1, queue.enqueueCalls)
+        assertEquals(0, pipeline.executeCalls)
+        assertEquals(0, storage.evaluateLocalFallbackCalls)
+        assertEquals(0, storage.reconcileStrategyCalls)
+    }
+
+    @Test
+    fun durableQueueAdmissionFailurePropagatesAsFailed() = runTest {
+        val providerError = testError("ENQUEUE_UNAVAILABLE")
+        val queue = FakeAdmissionQueueProvider(
+            enqueueResult = ProviderOperationResult.Failure(providerError),
+        )
+        val request = offlineFirstRequest(
+            direction = SynchronizationDirection.PUSH,
+            profile = offlineFirstProfile(requireDurableQueue = true, reconcileWhenOnline = false),
+        )
+        val result = executor(durableQueueAdmitter = admitter(FakeEncoder())).execute(
+            request = request,
+            evaluation = evaluationFor(request),
+            providers = providerSet(FakeTransportProvider(), FakeOfflineFirstStorageProvider(), queue = queue),
+        )
+        val failed = assertIs<StrategySynchronizationExecutionResult.Failed>(result)
+        assertEquals(providerError, failed.error)
+    }
+
     // -------------------------------------------------------------------------
     // PUSH
     // -------------------------------------------------------------------------
@@ -368,11 +423,21 @@ class OfflineFirstStrategyExecutorTest {
 
     private fun executor(
         pipelineRegistry: SynchronizationPipelineRegistry = SynchronizationPipelineRegistry(emptyList()),
+        durableQueueAdmitter: StrategyDurableQueueAdmitter? = null,
     ): OfflineFirstStrategyExecutor = OfflineFirstStrategyExecutor(
         clock = clock,
         runtimeDependencies = runtimeDependencies,
         pipelineRegistry = pipelineRegistry,
         lifecycleEventEmitter = null,
+        durableQueueAdmitter = durableQueueAdmitter,
+    )
+
+    private fun admitter(
+        encoder: io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder?,
+    ): StrategyDurableQueueAdmitter = StrategyDurableQueueAdmitter(
+        clock = clock,
+        runtimeDependencies = runtimeDependencies,
+        encoder = encoder,
     )
 
     private fun offlineFirstProfile(
@@ -414,12 +479,13 @@ class OfflineFirstStrategyExecutorTest {
     private fun providerSet(
         transport: TransportProvider,
         storage: StorageProvider?,
+        queue: QueueProvider? = null,
     ): StrategyProviderSet = object : StrategyProviderSet {
         override val storageProvider: StorageProvider? = storage
         override val transportProvider: TransportProvider = transport
         override val schedulerProvider: SchedulerProvider? = null
         override val connectivityProvider: ConnectivityProvider? = null
-        override val queueProvider: QueueProvider? = null
+        override val queueProvider: QueueProvider? = queue
     }
 
     private fun testError(code: String): DataLoomError = TestOfflineFirstError(ErrorCode(code))
@@ -476,6 +542,88 @@ class OfflineFirstStrategyExecutorTest {
             request: PullChangesRequest,
         ): ProviderOperationResult<PullChangesResult> =
             ProviderOperationResult.Failure(TestOfflineFirstError(ErrorCode("PULL_UNUSED")))
+    }
+
+    private class FakeEncoder : io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder {
+        override fun encode(
+            submission: io.dataloom.runtime.submission.QueuedSynchronizationSubmission,
+        ): io.dataloom.runtime.submission.QueuedSynchronizationWorkEncodingResult =
+            io.dataloom.runtime.submission.QueuedSynchronizationWorkEncodingResult.Encoded(
+                io.dataloom.api.queue.QueueEnqueueRequest(
+                    entry = io.dataloom.api.queue.QueueEntry(
+                        id = submission.queueEntryId,
+                        synchronizationRequest = submission.work.request,
+                        state = io.dataloom.api.queue.QueueEntryState.PENDING,
+                        enqueuedAt = submission.availableAt,
+                        availableAt = submission.availableAt,
+                        workflowTimeoutState = submission.workflowTimeoutState,
+                        strategyDecision = submission.work.strategyDecision,
+                        strategyPlan = submission.work.strategyPlan,
+                    ),
+                ),
+            )
+    }
+
+    private class FakeAdmissionQueueProvider(
+        private val enqueueResult: ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit),
+    ) : QueueProvider {
+        var enqueueCalls: Int = 0
+            private set
+
+        override val descriptor: ProviderDescriptor = ProviderDescriptor(
+            id = ProviderId("offline-first-queue"),
+            name = ProviderName("Offline First Queue"),
+            type = ProviderType.QUEUE,
+            version = ProviderVersion("1.0.0"),
+        )
+
+        override suspend fun initialize(
+            context: ProviderInitializationContext,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun health(): ProviderOperationResult<ProviderHealth> =
+            ProviderOperationResult.Success(ProviderHealth(ProviderHealthStatus.HEALTHY))
+
+        override suspend fun close(): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun enqueue(
+            request: io.dataloom.api.queue.QueueEnqueueRequest,
+        ): ProviderOperationResult<Unit> {
+            enqueueCalls++
+            return enqueueResult
+        }
+
+        override suspend fun acquire(
+            request: io.dataloom.api.queue.QueueAcquireRequest,
+        ): ProviderOperationResult<io.dataloom.api.queue.QueueAcquireResult> =
+            ProviderOperationResult.Success(io.dataloom.api.queue.QueueAcquireResult.NoEntries)
+
+        override suspend fun complete(
+            request: io.dataloom.api.queue.QueueCompletionRequest,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun reschedule(
+            request: io.dataloom.api.queue.QueueRescheduleRequest,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun defer(
+            request: io.dataloom.api.queue.QueueDeferralRequest,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun fail(
+            request: io.dataloom.api.queue.QueueFailureRequest,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun cancel(
+            request: io.dataloom.api.queue.QueueCancellationRequest,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun recoverExpiredLeases(
+            request: io.dataloom.api.queue.ExpiredLeaseRecoveryRequest,
+        ): ProviderOperationResult<io.dataloom.api.queue.ExpiredLeaseRecoveryResult> =
+            ProviderOperationResult.Success(
+                io.dataloom.api.queue.ExpiredLeaseRecoveryResult(recoveredEntries = 0),
+            )
     }
 
     /** Plain [StorageProvider] with none of the optional strategy capabilities. */

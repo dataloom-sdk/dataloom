@@ -203,6 +203,124 @@ class DataLoomBuilderDirectStrategyExecutionTest {
     }
 
     // -------------------------------------------------------------------------
+    // DEFER durable admission — previously a bare in-memory Deferred, now
+    // real queue admission once a QueuedSynchronizationWorkEncoder is
+    // configured on the builder (the same encoder DataLoom.queueSubmission
+    // already uses for the manual submission path).
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun deferWithoutAnEncoderConfiguredStaysABareInMemorySignal() = runTest {
+        val transport = RecordingTransportProvider()
+        val storage = RecordingStorageProvider()
+        val bindings = StrategyProviderBindings(
+            storageProviderId = storage.descriptor.id,
+            transportProviderId = transport.descriptor.id,
+        )
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(runtimeDependencies())
+            .provider(transport)
+            .provider(storage)
+            .defaultStrategyProviderBindings(bindings)
+            .build()
+        assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
+
+        val result = dataLoom.synchronize(offlineFirstDeferredPushRequest(), bindings)
+
+        val deferred = assertIs<StrategySynchronizationExecutionResult.Deferred>(result)
+        assertEquals(null, deferred.queueEntryId)
+    }
+
+    @Test
+    fun deferWithAnEncoderConfiguredIsDurablyAdmittedForReal() = runTest {
+        val transport = RecordingTransportProvider()
+        val storage = RecordingStorageProvider()
+        val queue = RecordingQueueProvider()
+        val bindings = StrategyProviderBindings(
+            storageProviderId = storage.descriptor.id,
+            transportProviderId = transport.descriptor.id,
+            queueProviderId = queue.descriptor.id,
+        )
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(runtimeDependencies())
+            .provider(transport)
+            .provider(storage)
+            .provider(queue)
+            .defaultStrategyProviderBindings(bindings)
+            .defaultProviderBindings(
+                io.dataloom.api.provider.SynchronizationProviderBindings(
+                    storageProviderId = storage.descriptor.id,
+                    transportProviderId = transport.descriptor.id,
+                    queueProviderId = queue.descriptor.id,
+                ),
+            )
+            .queueSubmissionEncoder(RecordingEncoder())
+            .build()
+        assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
+
+        val result = dataLoom.synchronize(offlineFirstDeferredPushRequest(), bindings)
+
+        val deferred = assertIs<StrategySynchronizationExecutionResult.Deferred>(result)
+        assertEquals(QueueEntryId("direct-strategy-queue-entry"), deferred.queueEntryId)
+        assertEquals(1, queue.enqueueCalls)
+    }
+
+    @Test
+    fun deferWithAnEncoderConfiguredButProviderFailureIsARealFailureNotASilentDefer() = runTest {
+        val transport = RecordingTransportProvider()
+        val storage = RecordingStorageProvider()
+        val providerError = object : io.dataloom.api.error.DataLoomError {
+            override val code = io.dataloom.api.error.ErrorCode("ENQUEUE_UNAVAILABLE")
+            override val category = io.dataloom.api.error.ErrorCategory.NETWORK
+            override val severity = io.dataloom.api.error.ErrorSeverity.ERROR
+            override val recoverability = io.dataloom.api.error.Recoverability.RECOVERABLE
+            override val message = "test durable-admission provider failure"
+            override val cause: Throwable? = null
+        }
+        val queue = RecordingQueueProvider(enqueueResult = ProviderOperationResult.Failure(providerError))
+        val bindings = StrategyProviderBindings(
+            storageProviderId = storage.descriptor.id,
+            transportProviderId = transport.descriptor.id,
+            queueProviderId = queue.descriptor.id,
+        )
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(runtimeDependencies())
+            .provider(transport)
+            .provider(storage)
+            .provider(queue)
+            .defaultStrategyProviderBindings(bindings)
+            .defaultProviderBindings(
+                io.dataloom.api.provider.SynchronizationProviderBindings(
+                    storageProviderId = storage.descriptor.id,
+                    transportProviderId = transport.descriptor.id,
+                    queueProviderId = queue.descriptor.id,
+                ),
+            )
+            .queueSubmissionEncoder(RecordingEncoder())
+            .build()
+        assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
+
+        val result = dataLoom.synchronize(offlineFirstDeferredPushRequest(), bindings)
+
+        val failed = assertIs<StrategySynchronizationExecutionResult.Failed>(result)
+        assertEquals(providerError, failed.error)
+    }
+
+    private fun offlineFirstDeferredPushRequest(): StrategySynchronizationRequest =
+        StrategySynchronizationRequest(
+            request = synchronizationRequest("offline-first-defer", SynchronizationDirection.PUSH),
+            decisionId = StrategyDecisionId("direct-offline-first-defer-decision"),
+            planId = StrategyPlanId("direct-offline-first-defer-plan"),
+            profile = io.dataloom.api.strategy.OfflineFirstStrategyProfile(
+                id = StrategyProfileId("direct-offline-first-defer-profile"),
+                configurationVersion = StrategyConfigurationVersion(1L),
+                requireDurableQueue = true,
+            ),
+            evidence = StrategyRuntimeEvidence(connectivity = StrategyConnectivity.UNAVAILABLE),
+            input = StrategyOperationInput.ProviderBacked,
+        )
+
+    // -------------------------------------------------------------------------
     // Fixtures
     // -------------------------------------------------------------------------
 
@@ -303,5 +421,127 @@ class DataLoomBuilderDirectStrategyExecutionTest {
         override suspend fun pullChanges(
             request: PullChangesRequest,
         ): ProviderOperationResult<PullChangesResult> = pullResult
+    }
+
+    private class RecordingStorageProvider : io.dataloom.api.storage.StorageProvider {
+        override val descriptor: ProviderDescriptor = ProviderDescriptor(
+            id = ProviderId("direct-strategy-storage"),
+            name = ProviderName("Direct Strategy Storage"),
+            type = ProviderType.STORAGE,
+            version = ProviderVersion("1.0.0"),
+        )
+
+        override suspend fun initialize(
+            context: ProviderInitializationContext,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun health(): ProviderOperationResult<ProviderHealth> =
+            ProviderOperationResult.Success(ProviderHealth(ProviderHealthStatus.HEALTHY))
+
+        override suspend fun close(): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun readOutboundChanges(
+            request: io.dataloom.api.storage.OutboundChangeReadRequest,
+        ): ProviderOperationResult<io.dataloom.api.storage.OutboundChangeReadResult> =
+            ProviderOperationResult.Success(io.dataloom.api.storage.OutboundChangeReadResult.NoChanges)
+
+        override suspend fun applyInboundChanges(
+            request: io.dataloom.api.storage.InboundChangeApplyRequest,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun acknowledgeOutboundChanges(
+            request: io.dataloom.api.synchronization.OutboundChangeAcknowledgementRequest,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun readCheckpoint(
+            request: io.dataloom.api.synchronization.CheckpointReadRequest,
+        ): ProviderOperationResult<io.dataloom.api.synchronization.SynchronizationCheckpoint?> =
+            ProviderOperationResult.Success(null)
+
+        override suspend fun writeCheckpoint(
+            request: io.dataloom.api.synchronization.CheckpointWriteRequest,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+    }
+
+    private class RecordingQueueProvider(
+        private val enqueueResult: ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit),
+    ) : io.dataloom.api.queue.QueueProvider {
+        var enqueueCalls: Int = 0
+            private set
+
+        override val descriptor: ProviderDescriptor = ProviderDescriptor(
+            id = ProviderId("direct-strategy-queue"),
+            name = ProviderName("Direct Strategy Queue"),
+            type = ProviderType.QUEUE,
+            version = ProviderVersion("1.0.0"),
+        )
+
+        override suspend fun initialize(
+            context: ProviderInitializationContext,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun health(): ProviderOperationResult<ProviderHealth> =
+            ProviderOperationResult.Success(ProviderHealth(ProviderHealthStatus.HEALTHY))
+
+        override suspend fun close(): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun enqueue(
+            request: io.dataloom.api.queue.QueueEnqueueRequest,
+        ): ProviderOperationResult<Unit> {
+            enqueueCalls++
+            return enqueueResult
+        }
+
+        override suspend fun acquire(
+            request: io.dataloom.api.queue.QueueAcquireRequest,
+        ): ProviderOperationResult<io.dataloom.api.queue.QueueAcquireResult> =
+            ProviderOperationResult.Success(io.dataloom.api.queue.QueueAcquireResult.NoEntries)
+
+        override suspend fun complete(
+            request: io.dataloom.api.queue.QueueCompletionRequest,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun reschedule(
+            request: io.dataloom.api.queue.QueueRescheduleRequest,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun defer(
+            request: io.dataloom.api.queue.QueueDeferralRequest,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun fail(
+            request: io.dataloom.api.queue.QueueFailureRequest,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun cancel(
+            request: io.dataloom.api.queue.QueueCancellationRequest,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun recoverExpiredLeases(
+            request: io.dataloom.api.queue.ExpiredLeaseRecoveryRequest,
+        ): ProviderOperationResult<io.dataloom.api.queue.ExpiredLeaseRecoveryResult> =
+            ProviderOperationResult.Success(
+                io.dataloom.api.queue.ExpiredLeaseRecoveryResult(recoveredEntries = 0),
+            )
+    }
+
+    private class RecordingEncoder : io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder {
+        override fun encode(
+            submission: io.dataloom.runtime.submission.QueuedSynchronizationSubmission,
+        ): io.dataloom.runtime.submission.QueuedSynchronizationWorkEncodingResult =
+            io.dataloom.runtime.submission.QueuedSynchronizationWorkEncodingResult.Encoded(
+                io.dataloom.api.queue.QueueEnqueueRequest(
+                    entry = io.dataloom.api.queue.QueueEntry(
+                        id = submission.queueEntryId,
+                        synchronizationRequest = submission.work.request,
+                        state = io.dataloom.api.queue.QueueEntryState.PENDING,
+                        enqueuedAt = submission.availableAt,
+                        availableAt = submission.availableAt,
+                        workflowTimeoutState = submission.workflowTimeoutState,
+                        strategyDecision = submission.work.strategyDecision,
+                        strategyPlan = submission.work.strategyPlan,
+                    ),
+                ),
+            )
     }
 }

@@ -65,28 +65,33 @@ the provider's own error. Reconciliation is skipped entirely (never
 attempted) when the pipeline run itself did not succeed — there is nothing
 to reconcile.
 
-## Known gap: durable queue admission
+## Durable queue admission
 
 `OfflineFirstStrategyProfile.requireDurableQueue` defaults to `true`. When
-true, the evaluated plan's `operations` includes `ENQUEUE_DURABLE_WORK` —
-meaning the *default* profile configuration hits this gap today, the same
-situation `CacheFirstStrategyExecutor` documents for its own durable-refresh
-branch.
+true and connectivity is available, the evaluated plan's `operations`
+includes `ENQUEUE_DURABLE_WORK` *alongside* the full synchronous remote
+leg and (when `reconcileWhenOnline`) `RECONCILE`.
 
-`StrategyQueueAdmissionEvaluator` and `StrategyDurableContinuationPlan`
-already exist in this codebase as building blocks for durable-work admission,
-but nothing currently wires an evaluated plan containing
-`ENQUEUE_DURABLE_WORK` into that machinery before reaching strategy
-execution. `OfflineFirstStrategyExecutor` detects this case explicitly
-(`ENQUEUE_DURABLE_WORK in evaluation.plan.operations`) and rejects it with
-`StrategyExecutionRejectionReason.DURABLE_REFRESH_NOT_YET_SUPPORTED` — reused
-rather than duplicated, since the underlying root cause (no queue-admission
-wiring) is identical to cache-first's own gap.
+`OfflineFirstStrategyExecutor` hands this branch to
+`StrategyDurableQueueAdmitter`, an opt-in capability — see
+[durable-queue-admission.md](durable-queue-admission.md) for the full
+design, including why durable admission *replaces* the synchronous remote
+attempt here (running both risks a duplicate remote call once the durably
+admitted continuation is later processed by a queue worker) rather than
+running alongside it the way cache-first's durable branch does. On success
+this returns `StrategySynchronizationExecutionResult.DurablyEnqueued`
+immediately — the actual push/pull happens later, off this call, matching
+offline-first's own description: "commit local intent durably, then
+synchronize."
 
-**To get synchronous offline-first behavior today**, construct
-`OfflineFirstStrategyProfile` with `requireDurableQueue = false`. Durable
-queue admission requires the queue-admission wiring described above, which
-is a separate, larger piece of work — not a variant of this executor.
+**When no `QueuedSynchronizationWorkEncoder` is configured** (the default),
+this executor's behavior is unchanged from before durable admission wiring
+existed: the branch is rejected with
+`StrategyExecutionRejectionReason.DURABLE_REFRESH_NOT_YET_SUPPORTED` — the
+same reason cache-first's own unconfigured durable-refresh branch uses,
+since the root cause (no encoder configured) is identical. To get
+synchronous offline-first behavior without configuring an encoder at all,
+construct `OfflineFirstStrategyProfile` with `requireDurableQueue = false`.
 
 ## Coordinator wiring
 

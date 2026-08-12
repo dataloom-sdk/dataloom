@@ -96,6 +96,8 @@ internal class StrategyQueueExecutionOutcomeMapper(
         }
         is StrategySynchronizationExecutionResult.Deferred ->
             failed(AcceptedPlanUnexpectedDeferredError())
+        is StrategySynchronizationExecutionResult.DurablyEnqueued ->
+            failed(AcceptedPlanUnexpectedDurablyEnqueuedError())
         is StrategySynchronizationExecutionResult.Rejected ->
             failed(AcceptedPlanRejectedError(result.reason.name))
     }
@@ -251,6 +253,19 @@ internal class StrategyQueueExecutionOutcomeMapper(
         override val recoverability: Recoverability = Recoverability.NON_RECOVERABLE,
         override val message: String =
             "An accepted durable continuation unexpectedly deferred again.",
+        override val cause: Throwable? = null,
+    ) : DataLoomError {
+        override fun toString(): String = safeDiagnosticString()
+    }
+
+    private data class AcceptedPlanUnexpectedDurablyEnqueuedError(
+        override val code: ErrorCode = ErrorCode("DL-Q-ACCEPTED-PLAN-UNEXPECTED-DURABLY-ENQUEUED"),
+        override val category: ErrorCategory = ErrorCategory.STATE,
+        override val severity: ErrorSeverity = ErrorSeverity.ERROR,
+        override val recoverability: Recoverability = Recoverability.NON_RECOVERABLE,
+        override val message: String =
+            "An accepted durable continuation unexpectedly admitted another durable " +
+                "continuation instead of executing.",
         override val cause: Throwable? = null,
     ) : DataLoomError {
         override fun toString(): String = safeDiagnosticString()

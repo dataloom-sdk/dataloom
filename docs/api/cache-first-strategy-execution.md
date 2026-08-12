@@ -64,27 +64,29 @@ It fails closed with a distinct contract error
 (`DL-STRATEGY-CACHE-FIRST-LOCAL-STATE-MISMATCH`) rather than being folded
 into an ordinary rejection or silently treated as success.
 
-## Known gap: durable/scheduled refresh
+## Durable/scheduled refresh
 
 `CacheFirstStrategyProfile.requireDurableRefresh` defaults to `true`. When
 true, the evaluator's `refreshOperations()` produces
 `[ENQUEUE_DURABLE_WORK, SCHEDULE_REFRESH]` instead of the synchronous
-`[PULL_REMOTE, PERSIST_REMOTE]` pair — meaning the *default* profile
-configuration for a refresh-on-hit policy hits this gap today.
+`[PULL_REMOTE, PERSIST_REMOTE]` pair.
 
-`StrategyQueueAdmissionEvaluator` and `StrategyDurableContinuationPlan`
-already exist in this codebase as building blocks for durable-work admission,
-but nothing currently wires an evaluated plan containing
-`ENQUEUE_DURABLE_WORK` into that machinery before reaching strategy
-execution. `CacheFirstStrategyExecutor` detects this case explicitly
-(`ENQUEUE_DURABLE_WORK in evaluation.plan.operations`) and rejects it with
-`StrategyExecutionRejectionReason.DURABLE_REFRESH_NOT_YET_SUPPORTED` — a
-distinct, honest reason, not a reuse of the generic `UNSUPPORTED_PLAN`.
+`CacheFirstStrategyExecutor` detects this case
+(`ENQUEUE_DURABLE_WORK in evaluation.plan.operations`) and hands it to
+`StrategyDurableQueueAdmitter`, an opt-in capability — see
+[durable-queue-admission.md](durable-queue-admission.md) for the full
+design. Serving local state and admitting the refresh durably both happen:
+the terminal `ServedFromCache` carries a non-null `durableQueueEntryId`
+when admission succeeds.
 
-**To get synchronous cache-first refresh behavior today**, construct
-`CacheFirstStrategyProfile` with `requireDurableRefresh = false`. Durable
-scheduled refresh requires the queue-admission wiring described above, which
-is a separate, larger piece of work — not a variant of this executor.
+**When no `QueuedSynchronizationWorkEncoder` is configured** (the default —
+`DataLoomBuilder.queueSubmissionEncoder`/`queueSubmissionConfiguration`
+were never called), this executor's behavior is unchanged from before
+durable admission wiring existed: the branch is rejected with
+`StrategyExecutionRejectionReason.DURABLE_REFRESH_NOT_YET_SUPPORTED`. To get
+synchronous cache-first refresh behavior without configuring an encoder at
+all, construct `CacheFirstStrategyProfile` with
+`requireDurableRefresh = false`.
 
 ## Coordinator wiring
 

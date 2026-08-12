@@ -614,6 +614,7 @@ public class DataLoomBuilder {
             runtimeDependencies = deps,
             pipelineRegistry = strategyPipelineRegistry,
             lifecycleEventEmitter = lifecycleEventEmitter,
+            durableQueueWorkEncoder = queueSubmissionSpecValue?.encoder,
         )
         val acceptedStrategyPlanCoordinator = AcceptedStrategyPlanExecutionCoordinator(
             lifecycleCoordinator = lifecycleCoordinator,

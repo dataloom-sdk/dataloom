@@ -7,6 +7,7 @@ import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
 import io.dataloom.api.error.safeDiagnosticString
 import io.dataloom.api.execution.StrategyProviderSet
+import io.dataloom.api.identifier.QueueEntryId
 import io.dataloom.api.model.SynchronizationDirection
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.runtime.RuntimeDependencies
@@ -59,19 +60,28 @@ import io.dataloom.runtime.execution.lifecycle.SynchronizationLifecycleEventEmit
  *   asked for.
  * - `ENQUEUE_DURABLE_WORK in operations` (`LOCAL` selected as an explicit
  *   fallback from a `REMOTE` primary, with `reconcileAfterFallback = true`,
- *   the default): rejected with
- *   [StrategyExecutionRejectionReason.DURABLE_REFRESH_NOT_YET_SUPPORTED],
- *   the same shared reason cache-first/offline-first already use for the
- *   identical root cause — no coordinator in this codebase wires an
- *   evaluated plan into durable queue admission yet
- *   (`StrategyQueueAdmissionEvaluator` exists but has no caller). `RECONCILE`
- *   only ever appears alongside `ENQUEUE_DURABLE_WORK` in the evaluator's
- *   hybrid branch — never alone — so this one check also covers hybrid's
- *   only reachable `RECONCILE` shape; unlike [OfflineFirstStrategyExecutor],
- *   this executor never calls `StrategyReconciliationProvider` directly.
+ *   the default): admitted via [durableQueueAdmitter] when configured.
+ *   `RECONCILE` only ever appears alongside `ENQUEUE_DURABLE_WORK` in the
+ *   evaluator's hybrid branch — never alone — so admission is the only thing
+ *   that needs to happen for it; unlike [OfflineFirstStrategyExecutor], this
+ *   executor never calls `StrategyReconciliationProvider` directly — the
+ *   durably admitted continuation owns `RECONCILE` entirely. For PULL/
+ *   BIDIRECTIONAL (`SERVE_LOCAL` present alongside `ENQUEUE_DURABLE_WORK`),
+ *   admission does not replace serving local state — both happen, with the
+ *   durable queue entry attached to the terminal
+ *   [StrategySynchronizationExecutionResult.ServedFromCache]. For PUSH
+ *   (`SERVE_LOCAL` absent — see the next bullet), admission *is* the entire
+ *   outcome: returns
+ *   [StrategySynchronizationExecutionResult.DurablyEnqueued] immediately.
+ *   When [durableQueueAdmitter] is `null` or admission reports
+ *   [StrategyDurableQueueAdmissionOutcome.NotConfigured], the branch is
+ *   rejected with
+ *   [StrategyExecutionRejectionReason.DURABLE_REFRESH_NOT_YET_SUPPORTED]
+ *   exactly as before durable admission wiring existed.
  * - A plan whose only operation is `READ_LOCAL` (`LOCAL` selected for a PUSH
- *   direction request — nothing to serve, and `LOCAL` was explicitly chosen
- *   over `REMOTE`, so no transport runs either) is rejected with
+ *   direction request with `ENQUEUE_DURABLE_WORK` absent too — nothing to
+ *   serve, nothing to durably admit, and `LOCAL` was explicitly chosen over
+ *   `REMOTE`, so no transport runs either) is rejected with
  *   [StrategyExecutionRejectionReason.HYBRID_LOCAL_PUSH_NOT_YET_SUPPORTED].
  *   See that reason's KDoc for the full rationale.
  */
@@ -80,6 +90,7 @@ internal class HybridStrategyExecutor(
     private val runtimeDependencies: RuntimeDependencies,
     private val pipelineRegistry: SynchronizationPipelineRegistry,
     private val lifecycleEventEmitter: SynchronizationLifecycleEventEmitter?,
+    private val durableQueueAdmitter: StrategyDurableQueueAdmitter? = null,
 ) {
     public suspend fun execute(
         request: StrategySynchronizationRequest,
@@ -88,11 +99,29 @@ internal class HybridStrategyExecutor(
     ): StrategySynchronizationExecutionResult {
         val operations = evaluation.plan.operations
 
+        var durableQueueEntryId: QueueEntryId? = null
         if (StrategyOperation.ENQUEUE_DURABLE_WORK in operations) {
-            return rejected(
-                evaluation,
-                StrategyExecutionRejectionReason.DURABLE_REFRESH_NOT_YET_SUPPORTED,
-            )
+            val admitter = durableQueueAdmitter
+                ?: return rejected(evaluation, StrategyExecutionRejectionReason.DURABLE_REFRESH_NOT_YET_SUPPORTED)
+            when (val outcome = admitter.admit(request, evaluation, providers)) {
+                is StrategyDurableQueueAdmissionOutcome.NotConfigured -> return rejected(
+                    evaluation,
+                    StrategyExecutionRejectionReason.DURABLE_REFRESH_NOT_YET_SUPPORTED,
+                )
+                is StrategyDurableQueueAdmissionOutcome.Admitted -> {
+                    if (StrategyOperation.SERVE_LOCAL !in operations) {
+                        // PUSH direction: nothing left to run synchronously.
+                        return StrategySynchronizationExecutionResult.DurablyEnqueued(
+                            evaluation = evaluation,
+                            completedAt = clock.now(),
+                            queueEntryId = outcome.queueEntryId,
+                        )
+                    }
+                    durableQueueEntryId = outcome.queueEntryId
+                }
+                is StrategyDurableQueueAdmissionOutcome.Rejected -> return rejected(evaluation, outcome.reason)
+                is StrategyDurableQueueAdmissionOutcome.Failed -> return failed(evaluation, outcome.error)
+            }
         }
 
         if (StrategyOperation.SERVE_LOCAL in operations) {
@@ -104,6 +133,7 @@ internal class HybridStrategyExecutor(
                         evaluation = evaluation,
                         completedAt = clock.now(),
                         cacheState = served.cacheState,
+                        durableQueueEntryId = durableQueueEntryId,
                     )
             }
         }
