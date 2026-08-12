@@ -36,7 +36,7 @@ internal class RemoteFirstStrategyExecutor(
         evaluation: StrategyEvaluationResult,
         providers: StrategyProviderSet,
     ): StrategySynchronizationExecutionResult {
-        val profile = request.profile as RemoteFirstStrategyProfile
+        val profile = resolvedProfile(request, evaluation) as RemoteFirstStrategyProfile
         val fallbackProvider = localFallbackProvider(evaluation, providers)
             ?: if (requiresLocalFallback(evaluation)) {
                 return rejected(
