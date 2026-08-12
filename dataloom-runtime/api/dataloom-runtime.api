@@ -2798,6 +2798,7 @@ public final class io/dataloom/runtime/strategy/BuiltInSynchronizationStrategyEv
 public final class io/dataloom/runtime/strategy/StrategyExecutionRejectionReason : java/lang/Enum {
 	public static final field ACCEPTED_PLAN_CONTINUATION_MISSING Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field ACCEPTED_PLAN_MISMATCH Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
+	public static final field DURABLE_ADMISSION_PROVIDERS_INCOMPLETE Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field DURABLE_REFRESH_NOT_YET_SUPPORTED Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field HYBRID_LOCAL_PUSH_NOT_YET_SUPPORTED Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field INCOMPATIBLE_INPUT Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
@@ -2836,14 +2837,32 @@ public final class io/dataloom/runtime/strategy/StrategySynchronizationExecution
 }
 
 public final class io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$Deferred : io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult {
-	public fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;)V
+	public synthetic fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
 	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
-	public final fun copy (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$Deferred;
-	public static synthetic fun copy$default (Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$Deferred;Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$Deferred;
+	public final fun component3-T_ZE2vg ()Ljava/lang/String;
+	public final fun copy-mwUukn8 (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$Deferred;
+	public static synthetic fun copy-mwUukn8$default (Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$Deferred;Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$Deferred;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
 	public fun getEvaluation ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
+	public final fun getQueueEntryId-T_ZE2vg ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$DurablyEnqueued : io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult {
+	public synthetic fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
+	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component3-ARA1dI0 ()Ljava/lang/String;
+	public final fun copy-AiSKM3g (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$DurablyEnqueued;
+	public static synthetic fun copy-AiSKM3g$default (Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$DurablyEnqueued;Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$DurablyEnqueued;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun getEvaluation ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
+	public final fun getQueueEntryId-ARA1dI0 ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
@@ -2934,17 +2953,19 @@ public final class io/dataloom/runtime/strategy/StrategySynchronizationExecution
 }
 
 public final class io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$ServedFromCache : io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult {
-	public fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/api/strategy/StrategyTransportOutput;)V
-	public synthetic fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/api/strategy/StrategyTransportOutput;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/api/strategy/StrategyTransportOutput;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/api/strategy/StrategyTransportOutput;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
 	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
 	public final fun component3 ()Lio/dataloom/api/strategy/StrategyCacheState;
 	public final fun component4 ()Lio/dataloom/api/strategy/StrategyTransportOutput;
-	public final fun copy (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/api/strategy/StrategyTransportOutput;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$ServedFromCache;
-	public static synthetic fun copy$default (Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$ServedFromCache;Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/api/strategy/StrategyTransportOutput;ILjava/lang/Object;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$ServedFromCache;
+	public final fun component5-T_ZE2vg ()Ljava/lang/String;
+	public final fun copy-OurRbI8 (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/api/strategy/StrategyTransportOutput;Ljava/lang/String;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$ServedFromCache;
+	public static synthetic fun copy-OurRbI8$default (Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$ServedFromCache;Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyCacheState;Lio/dataloom/api/strategy/StrategyTransportOutput;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$ServedFromCache;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCacheState ()Lio/dataloom/api/strategy/StrategyCacheState;
 	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getDurableQueueEntryId-T_ZE2vg ()Ljava/lang/String;
 	public fun getEvaluation ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
 	public final fun getRefreshOutput ()Lio/dataloom/api/strategy/StrategyTransportOutput;
 	public fun hashCode ()I

@@ -56,14 +56,29 @@ import io.dataloom.runtime.execution.lifecycle.SynchronizationLifecycleEventEmit
  * from the pipeline run, not a served cache snapshot.
  *
  * A plan that requires durable queue admission (`profile.requireDurableQueue`,
- * the default — `operations` includes `ENQUEUE_DURABLE_WORK`) is explicitly
+ * the default — `operations` includes `ENQUEUE_DURABLE_WORK`) is, unlike
+ * cache-first's own durable branch, always paired with the *same* plan's
+ * full remote operations and (when `reconcileWhenOnline`) `RECONCILE` too —
+ * connectivity is available, so the evaluator expects both "try now" and
+ * "guarantee durability" from one plan. Running both would risk a duplicate
+ * remote call once the durably admitted continuation is later processed by
+ * a queue worker (there is no reliable way to cancel an entry that a
+ * concurrent worker may already have picked up), so when
+ * [durableQueueAdmitter] is configured and admission succeeds, durable
+ * admission *replaces* the synchronous remote attempt for this call: the
+ * method returns [StrategySynchronizationExecutionResult.DurablyEnqueued]
+ * immediately and never runs the pipeline or reconciliation below. This
+ * matches offline-first's own one-line description ("commit local intent
+ * durably, then synchronize") — the actual push/pull happens later, off
+ * this call, when the durably admitted continuation is processed.
+ *
+ * When [durableQueueAdmitter] is `null` or admission reports
+ * [StrategyDurableQueueAdmissionOutcome.NotConfigured], the branch is
  * rejected with
- * [StrategyExecutionRejectionReason.DURABLE_REFRESH_NOT_YET_SUPPORTED] rather
- * than silently misexecuted, for the same reason
- * [CacheFirstStrategyExecutor] rejects its own durable-refresh branch: no
- * coordinator in this codebase today wires an evaluated plan into durable
- * queue admission ([StrategyQueueAdmissionEvaluator] exists but has no
- * caller).
+ * [StrategyExecutionRejectionReason.DURABLE_REFRESH_NOT_YET_SUPPORTED]
+ * exactly as before durable admission wiring existed — nothing here changes
+ * observable behavior for a caller that has not configured a
+ * [io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder].
  *
  * A plan that requires reconciliation (`profile.reconcileWhenOnline`, the
  * default — `operations` includes `RECONCILE`) is honored for real via
@@ -73,13 +88,18 @@ import io.dataloom.runtime.execution.lifecycle.SynchronizationLifecycleEventEmit
  * provider does not implement [StrategyReconciliationProvider], the plan is
  * rejected with
  * [StrategyExecutionRejectionReason.RECONCILIATION_PROVIDER_NOT_CONFIGURED]
- * rather than silently skipping reconciliation.
+ * rather than silently skipping reconciliation. This only applies to the
+ * `requireDurableQueue = false` synchronous path — the durable-admission
+ * branch above never reaches this reconciliation step; the durably admitted
+ * continuation carries its own `RECONCILE` operation, owned entirely by
+ * whichever coordinator later replays it.
  */
 internal class OfflineFirstStrategyExecutor(
     private val clock: DataLoomClock,
     private val runtimeDependencies: RuntimeDependencies,
     private val pipelineRegistry: SynchronizationPipelineRegistry,
     private val lifecycleEventEmitter: SynchronizationLifecycleEventEmitter?,
+    private val durableQueueAdmitter: StrategyDurableQueueAdmitter? = null,
 ) {
     public suspend fun execute(
         request: StrategySynchronizationRequest,
@@ -89,10 +109,22 @@ internal class OfflineFirstStrategyExecutor(
         val operations = evaluation.plan.operations
 
         if (StrategyOperation.ENQUEUE_DURABLE_WORK in operations) {
-            return rejected(
-                evaluation,
-                StrategyExecutionRejectionReason.DURABLE_REFRESH_NOT_YET_SUPPORTED,
-            )
+            val admitter = durableQueueAdmitter
+                ?: return rejected(evaluation, StrategyExecutionRejectionReason.DURABLE_REFRESH_NOT_YET_SUPPORTED)
+            return when (val outcome = admitter.admit(request, evaluation, providers)) {
+                is StrategyDurableQueueAdmissionOutcome.NotConfigured -> rejected(
+                    evaluation,
+                    StrategyExecutionRejectionReason.DURABLE_REFRESH_NOT_YET_SUPPORTED,
+                )
+                is StrategyDurableQueueAdmissionOutcome.Admitted ->
+                    StrategySynchronizationExecutionResult.DurablyEnqueued(
+                        evaluation = evaluation,
+                        completedAt = clock.now(),
+                        queueEntryId = outcome.queueEntryId,
+                    )
+                is StrategyDurableQueueAdmissionOutcome.Rejected -> rejected(evaluation, outcome.reason)
+                is StrategyDurableQueueAdmissionOutcome.Failed -> failed(evaluation, outcome.error)
+            }
         }
 
         if (StrategyOperation.SERVE_LOCAL in operations) {
