@@ -66,6 +66,8 @@ complete V1 strategy, asset, plugin, governance, or observability engine.
 | [Synchronization request](./synchronization-request.md) | Available contract | Direction, mode, priority, and execution intent. Strategy evaluation is currently a separate contract. |
 | [Synchronization strategy](./synchronization-strategy.md) | Partial implementation | Versioned six-profile contract, bounded evidence, typed decisions, immutable plans, durable identity, and deterministic planner; complete runtime integration remains. |
 | [Cache-first strategy execution](./cache-first-strategy-execution.md) | Bounded first slice | Serve-from-cache and synchronous (non-durable) refresh; the durable/scheduled-refresh branch is explicitly rejected pending queue-admission wiring. |
+| [Offline-first strategy execution](./offline-first-strategy-execution.md) | Bounded first slice | Accept/serve local state unconditionally, then synchronize remotely, with reconciliation via `StrategyReconciliationProvider`; the durable-queue branch (`requireDurableQueue = true`, the default) is explicitly rejected pending queue-admission wiring. |
+| [Hybrid strategy execution](./hybrid-strategy-execution.md) | Bounded first slice | Evaluator-selected `LOCAL`/`REMOTE` source, honoring `persistRemoteResult`; the reconciled-fallback branch and one transport-free PUSH plan shape are explicitly rejected pending queue-admission wiring and a transport-free result type, respectively. |
 | [Payload contracts](./payload-contracts.md) | Available contract | Opaque payload and media-type boundaries. |
 | [Change model](./change-model.md) | Available contract | Change events, sets, operations, versions, and entity references. |
 | [Acknowledgement contracts](./acknowledgement-contracts.md) | Available contract | Per-event remote acknowledgement results. |
@@ -201,11 +203,11 @@ The following are product commitments, not descriptions of completed APIs:
 
 | Mandatory V1 capability | Current repository status |
 |---|---|
-| Offline-first strategy | Complete built-in strategy and qualification not implemented |
+| Offline-first strategy | Accept/serve local state plus remote synchronization and reconciliation implemented ([details](./offline-first-strategy-execution.md)); the default durable-queue branch (`requireDurableQueue = true`) is explicitly rejected pending queue-admission wiring, not silently misexecuted; durable replay, retry/circuit, conflict persistence, strategy events, and full qualification remain |
 | Remote-first strategy | Direct provider-backed runtime and typed pull fallback implemented; durable replay, retry/circuit, conflict persistence, strategy events, and full qualification remain |
 | Cache-first strategy | Serve-from-cache and synchronous (non-durable) refresh implemented ([details](./cache-first-strategy-execution.md)); the default durable/scheduled-refresh branch (`requireDurableRefresh = true`) is explicitly rejected pending queue-admission wiring, not silently misexecuted; durable replay, retry/circuit, conflict persistence, strategy events, and full qualification remain |
 | Network-only strategy | Direct transport-only runtime implemented; full event/result and platform qualification remain |
-| Hybrid strategy | Complete built-in strategy and qualification not implemented |
+| Hybrid strategy | Evaluator-selected local/remote source execution implemented ([details](./hybrid-strategy-execution.md)); the reconciled-fallback branch (`reconcileAfterFallback = true`, the default, when falling back from a `REMOTE` primary) is explicitly rejected pending queue-admission wiring, and one transport-free PUSH plan shape is rejected pending a transport-free result type; durable replay, retry/circuit, conflict persistence, strategy events, and full qualification remain |
 | Adaptive strategy | Complete built-in strategy and qualification not implemented |
 | Standard retry and durable circuit breaker | Fail-closed protection, standard backoff/jitter, durable budgets, bounded hints, timeout contracts, selected runtime assembly, circuit state, authorized cross-platform manual retry, and assembled Android/Apple circuit administration are implemented; complete observability and qualification remain |
 | Built-in conflict policies and persistence | Partial custom contracts/orchestration only |

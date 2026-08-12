@@ -26,8 +26,6 @@ import io.dataloom.api.provider.ProviderVersion
 import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.api.runtime.RuntimeDependencies
 import io.dataloom.api.runtime.RuntimeIdentifierGenerators
-import io.dataloom.api.strategy.HybridSource
-import io.dataloom.api.strategy.HybridStrategyProfile
 import io.dataloom.api.strategy.NetworkOnlyStrategyProfile
 import io.dataloom.api.strategy.OfflineFirstStrategyProfile
 import io.dataloom.api.strategy.RemoteFirstStrategyProfile
@@ -67,8 +65,11 @@ import kotlinx.coroutines.test.runTest
  * is covered indirectly by [DataLoomBuilderProtectedStrategyTest] and the direct
  * executor test suites, but the coordinator's own admission gates
  * (`PROVIDERS_NOT_INITIALIZED`, strategy `REJECT`/`DEFER` disposition,
- * `INCOMPATIBLE_TRIGGER`, `INCOMPATIBLE_INPUT`, `UNSUPPORTED_PLAN`, and
+ * `INCOMPATIBLE_TRIGGER`, `INCOMPATIBLE_INPUT`, and
  * `PROVIDER_RESOLUTION_FAILED`) had no dedicated coverage anywhere.
+ * `UNSUPPORTED_PLAN` was covered here too until `HybridStrategyExecutor`
+ * shipped and closed off the last reachable plan shape that hit it — see
+ * the removal note further down this file.
  */
 class DataLoomBuilderDirectStrategyExecutionTest {
 
@@ -169,37 +170,19 @@ class DataLoomBuilderDirectStrategyExecutionTest {
         assertEquals(StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT, rejected.reason)
     }
 
-    @Test
-    fun strategyWithoutABuiltInExecutorIsUnsupported() = runTest {
-        // Hybrid has no built-in executor at all (unlike offline-first, which
-        // gained one -- see OfflineFirstStrategyExecutorTest for its
-        // DURABLE_REFRESH_NOT_YET_SUPPORTED rejection instead). Adaptive would
-        // work equally well here; hybrid is used because it needs no nested
-        // profile to construct.
-        val transport = RecordingTransportProvider()
-        val bindings = StrategyProviderBindings(transportProviderId = transport.descriptor.id)
-        val dataLoom = builder(transport, bindings).build()
-        assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
-
-        val request = StrategySynchronizationRequest(
-            request = synchronizationRequest("hybrid-unsupported", SynchronizationDirection.PULL),
-            decisionId = StrategyDecisionId("direct-hybrid-unsupported-decision"),
-            planId = StrategyPlanId("direct-hybrid-unsupported-plan"),
-            profile = HybridStrategyProfile(
-                id = StrategyProfileId("direct-hybrid-unsupported-profile"),
-                configurationVersion = StrategyConfigurationVersion(1L),
-                primarySource = HybridSource.REMOTE,
-                fallbackSource = HybridSource.LOCAL,
-            ),
-            evidence = StrategyRuntimeEvidence(connectivity = StrategyConnectivity.AVAILABLE),
-            input = StrategyOperationInput.ProviderBacked,
-        )
-
-        val result = dataLoom.synchronize(request, bindings)
-
-        val rejected = assertIs<StrategySynchronizationExecutionResult.Rejected>(result)
-        assertEquals(StrategyExecutionRejectionReason.UNSUPPORTED_PLAN, rejected.reason)
-    }
+    // NOTE: `strategyWithoutABuiltInExecutorIsUnsupported` (asserting
+    // UNSUPPORTED_PLAN for a strategy with no built-in executor) was removed
+    // once HybridStrategyExecutor shipped. It previously used
+    // HybridStrategyProfile — the last concrete strategy without an
+    // executor at the time — and its own comment already noted "Adaptive
+    // would work equally well here". That's no longer true: Adaptive always
+    // resolves to one of the five now-supported concrete strategies (or a
+    // REJECT-disposition plan that never reaches the coordinator's
+    // effectiveStrategy dispatch at all), so there is no longer any plan
+    // shape reachable through the public evaluator that hits this
+    // coordinator's UNSUPPORTED_PLAN branch. See the "NOTE" comment on
+    // StrategySynchronizationExecutionCoordinator's own dispatch for the
+    // full explanation of why that branch is kept as defensive dead code.
 
     @Test
     fun unknownTransportBindingFailsProviderResolution() = runTest {

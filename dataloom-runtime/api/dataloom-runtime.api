@@ -2799,6 +2799,7 @@ public final class io/dataloom/runtime/strategy/StrategyExecutionRejectionReason
 	public static final field ACCEPTED_PLAN_CONTINUATION_MISSING Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field ACCEPTED_PLAN_MISMATCH Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field DURABLE_REFRESH_NOT_YET_SUPPORTED Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
+	public static final field HYBRID_LOCAL_PUSH_NOT_YET_SUPPORTED Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field INCOMPATIBLE_INPUT Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field INCOMPATIBLE_TRIGGER Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;
 	public static final field LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED Lio/dataloom/runtime/strategy/StrategyExecutionRejectionReason;

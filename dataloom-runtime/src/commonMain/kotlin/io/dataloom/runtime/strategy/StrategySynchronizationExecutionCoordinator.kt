@@ -80,6 +80,7 @@ internal class StrategySynchronizationExecutionCoordinator(
             BuiltInSynchronizationStrategy.REMOTE_FIRST,
             BuiltInSynchronizationStrategy.CACHE_FIRST,
             BuiltInSynchronizationStrategy.OFFLINE_FIRST,
+            BuiltInSynchronizationStrategy.HYBRID,
             -> {
                 if (request.input !is StrategyOperationInput.ProviderBacked) {
                     return rejected(
@@ -177,6 +178,29 @@ internal class StrategySynchronizationExecutionCoordinator(
                 providers = executionProviders,
             )
         }
+        if (
+            evaluation.plan.effectiveStrategy ==
+            BuiltInSynchronizationStrategy.HYBRID
+        ) {
+            return HybridStrategyExecutor(
+                clock = clock,
+                runtimeDependencies = runtimeDependencies,
+                pipelineRegistry = pipelineRegistry,
+                lifecycleEventEmitter = lifecycleEventEmitter,
+            ).execute(
+                request = request,
+                evaluation = evaluation,
+                providers = executionProviders,
+            )
+        }
+        // NOTE: with all five concrete built-in strategies now dispatched
+        // above, this branch is currently unreachable via the public
+        // evaluator — `StrategyExecutionPlan.effectiveStrategy` can never be
+        // `ADAPTIVE` itself (see its init-block `require`), and adaptive
+        // resolution always produces one of the five strategies handled
+        // above or a REJECT-disposition plan that never reaches this switch.
+        // Kept as a defensive fallback for a hypothetical future concrete
+        // strategy added without updating this dispatch.
         return rejected(
             evaluation = evaluation,
             reason = StrategyExecutionRejectionReason.UNSUPPORTED_PLAN,

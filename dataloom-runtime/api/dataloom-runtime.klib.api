@@ -391,6 +391,7 @@ final enum class io.dataloom.runtime.strategy/StrategyExecutionRejectionReason :
     enum entry ACCEPTED_PLAN_CONTINUATION_MISSING // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.ACCEPTED_PLAN_CONTINUATION_MISSING|null[0]
     enum entry ACCEPTED_PLAN_MISMATCH // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.ACCEPTED_PLAN_MISMATCH|null[0]
     enum entry DURABLE_REFRESH_NOT_YET_SUPPORTED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.DURABLE_REFRESH_NOT_YET_SUPPORTED|null[0]
+    enum entry HYBRID_LOCAL_PUSH_NOT_YET_SUPPORTED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.HYBRID_LOCAL_PUSH_NOT_YET_SUPPORTED|null[0]
     enum entry INCOMPATIBLE_INPUT // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT|null[0]
     enum entry INCOMPATIBLE_TRIGGER // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.INCOMPATIBLE_TRIGGER|null[0]
     enum entry LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED|null[0]

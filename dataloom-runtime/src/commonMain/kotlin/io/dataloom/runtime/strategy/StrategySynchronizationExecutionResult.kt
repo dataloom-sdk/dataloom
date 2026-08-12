@@ -41,6 +41,23 @@ public enum class StrategyExecutionRejectionReason {
      * near-duplicate reasons for the same root cause.
      */
     DURABLE_REFRESH_NOT_YET_SUPPORTED,
+
+    /**
+     * A [HybridStrategyExecutor] plan selected `HybridSource.LOCAL` for a
+     * PUSH-direction request. The evaluator's local-fallback operation set
+     * for PUSH is `[READ_LOCAL]` only — there is no `SERVE_LOCAL` operation
+     * to serve (nothing to serve for a push) and, since `LOCAL` was
+     * explicitly selected over `REMOTE`, no remote operation either. No
+     * variant of [io.dataloom.api.strategy.StrategyTransportOutput]
+     * represents a transport-free success, and unlike the `ACCEPT_LOCAL`
+     * no-op branches in [CacheFirstStrategyExecutor]/[OfflineFirstStrategyExecutor]
+     * (always paired with a required remote leg in the same plan), this is
+     * the first genuinely transport-free plan shape in the strategy engine.
+     * Rather than invent a signature-incompatible zero-effort success value
+     * for one narrow branch, it is rejected explicitly until a proper
+     * transport-free result type is added to [StrategySynchronizationExecutionResult].
+     */
+    HYBRID_LOCAL_PUSH_NOT_YET_SUPPORTED,
 }
 
 /** Observable result of strategy admission and execution. */
