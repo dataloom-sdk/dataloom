@@ -67,10 +67,11 @@ every other Android provider module in this repository.
 
 - KMP Android: shared modules still expose only a `jvm()` target consumed
   by Android bytecode, not an explicit `androidTarget()` KMP variant.
-  Adding one is a separate, larger, and structurally riskier piece of work
-  (this repository's own history with AGP 9+ and `androidTarget()`/
-  `com.android.library` conflicts — see the SQLDelight module-split
-  precedent — means this needs its own careful, isolated slice).
+  This has now been attempted twice and confirmed genuinely blocked in
+  this repository's current Kotlin/AGP combination, not just theoretically
+  risky — see
+  [kmp-android-target-blocker.md](kmp-android-target-blocker.md) for the
+  reproduced failure and what has already been ruled out.
 - KMP iOS: `dataloom-ios` does not exist. No production Apple lifecycle,
   connectivity, `BGTaskScheduler`, files, security, or persistence
   adapters exist; `dataloom-apple` today only assembles the XCFramework
