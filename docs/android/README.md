@@ -36,6 +36,7 @@ complete profile. See
 | [Retrofit transport provider (reference)](retrofit-transport-provider.md) | JVM/Android Retrofit-backed `TransportProvider` reference |
 | [SQLDelight storage provider — Android driver](sqldelight-storage-provider-android.md) | Android `AndroidSqliteDriver` wiring for the shared SQLDelight `StorageProvider` |
 | [Security and R8](security-and-r8.md) | Consumer rules, permissions, and data-at-rest limitations |
+| [Native Android reference consumer](reference-consumer.md) | Proof that the connectivity/storage/queue/scheduler adapters compose with `DataLoomBuilder` into one buildable `DataLoom` |
 
 ## Current platform topology
 
@@ -76,6 +77,14 @@ flowchart LR
     sqldelight --> sqldelightAndroid
     runtime --> scheduler
 
+    referenceConsumer["runtime-android-reference-consumer"]
+
+    connectivity --> referenceConsumer
+    scheduler --> referenceConsumer
+    persistence --> referenceConsumer
+    storage --> referenceConsumer
+    runtime --> referenceConsumer
+
     connectivity --> nativeApp["Native Android"]
     scheduler --> nativeApp
     persistence --> nativeApp
@@ -83,6 +92,7 @@ flowchart LR
     datastoreStorage --> nativeApp
     retrofitTransport --> nativeApp
     sqldelightAndroid --> nativeApp
+    referenceConsumer -.->|"compile-only proof"| nativeApp
 
     runtime -.->|"V1 target pending"| kmpApp["KMP Android"]
 ```
@@ -102,6 +112,7 @@ on Android adapters. No current Android adapter depends directly on
 | `dataloom-storage-datastore` | Preferences DataStore-backed `StorageProvider` for small key-value synchronization data | Large-scale or relational synchronization data; use `dataloom-queue-room` for those |
 | `dataloom-transport-retrofit` | JVM/Android-only reference `TransportProvider` using Retrofit suspend APIs | Kotlin/Native binaries, app-specific endpoint/DTO contracts, or authentication policy ownership |
 | `dataloom-storage-sqldelight-android` | `AndroidSqliteDriver` wiring for the shared `dataloom-storage-sqldelight` (JVM + iOS) reference `StorageProvider` | Query/schema logic (owned by `dataloom-storage-sqldelight`), domain merges, or synchronization execution |
+| `runtime-android-reference-consumer` | Compile-only proof that connectivity/storage/queue/scheduler adapters compose with `DataLoomBuilder` ([details](reference-consumer.md)) | Runtime execution proof (no Robolectric/instrumented test infrastructure yet), a real transport, or published-artifact resolution |
 
 The modules are optional and do not depend on one another. An application can
 use only the adapter it needs.
@@ -148,7 +159,8 @@ DATALOOM_ANDROID_BUILD=true ./gradlew \
     :dataloom-queue-room:build \
     :dataloom-storage-room:build \
     :dataloom-storage-datastore:build \
-    :dataloom-storage-sqldelight-android:build
+    :dataloom-storage-sqldelight-android:build \
+    :runtime-android-reference-consumer:build
 ```
 
 The current Android modules use JDK 17, compile SDK 35, and minimum SDK 21. See
@@ -160,7 +172,7 @@ workflow-aligned assemble, unit-test, lint, schema, and managed-device tasks.
 
 | Area | Current state | Required before V1 |
 |---|---|---|
-| Native Android | Connectivity, WorkManager, and Room queue/circuit foundations exist | Published-style consumer and end-to-end qualification |
+| Native Android | Connectivity, WorkManager, and Room queue/circuit foundations exist; a real `DataLoomBuilder` composition of all four now compiles ([reference consumer](reference-consumer.md)) | Runtime (Robolectric/instrumented) proof, published-style artifact resolution, and end-to-end qualification |
 | KMP Android | Shared code has JVM and Apple targets, but no explicit Android KMP target | Published KMP Android variant and external consumer fixture |
 | KMP iOS | Producer compilation baseline exists | Apple adapters, executable consumer, and platform parity |
 | Native Swift | XCFramework compile smoke exists | Optional; qualify separately if distributed |

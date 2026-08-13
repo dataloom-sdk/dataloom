@@ -70,7 +70,7 @@ include(
 // when the DATALOOM_ANDROID_BUILD environment variable is set to "true".
 //
 // On CI the android-validation job sets DATALOOM_ANDROID_BUILD=true and
-// builds the six modules independently.
+// builds these modules independently.
 //
 // Modules are independently consumable:
 //   - dataloom-connectivity-android — Android ConnectivityProvider
@@ -81,6 +81,9 @@ include(
 //     for dataloom-storage-sqldelight (JVM + iOS module, always included above;
 //     split out because AGP 9.0+ does not allow com.android.library in the
 //     same module as org.jetbrains.kotlin.multiplatform)
+//   - runtime-android-reference-consumer — compile-only proof that the four
+//     provider modules above compose with DataLoomBuilder (#101/DL-039A);
+//     see docs/android/reference-consumer.md
 //
 // See docs/android/README.md for integration guidance.
 val isAndroidBuildEnabled: Boolean =
@@ -94,6 +97,7 @@ if (isAndroidBuildEnabled) {
         ":dataloom-storage-room",
         ":dataloom-storage-datastore",
         ":dataloom-storage-sqldelight-android",
+        ":runtime-android-reference-consumer",
     )
 }
 
