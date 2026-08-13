@@ -37,6 +37,7 @@ complete profile. See
 | [SQLDelight storage provider — Android driver](sqldelight-storage-provider-android.md) | Android `AndroidSqliteDriver` wiring for the shared SQLDelight `StorageProvider` |
 | [Security and R8](security-and-r8.md) | Consumer rules, permissions, and data-at-rest limitations |
 | [Native Android reference consumer](reference-consumer.md) | Proof that the connectivity/storage/queue/scheduler adapters compose with `DataLoomBuilder` into one buildable `DataLoom` |
+| [KMP Android target: confirmed blocker](kmp-android-target-blocker.md) | What has already been tried and ruled out for exposing an explicit Android KMP variant, before attempting it again |
 
 ## Current platform topology
 
@@ -173,7 +174,7 @@ workflow-aligned assemble, unit-test, lint, schema, and managed-device tasks.
 | Area | Current state | Required before V1 |
 |---|---|---|
 | Native Android | Connectivity, WorkManager, and Room queue/circuit foundations exist; a real `DataLoomBuilder` composition of all four now compiles ([reference consumer](reference-consumer.md)) | Runtime (Robolectric/instrumented) proof, published-style artifact resolution, and end-to-end qualification |
-| KMP Android | Shared code has JVM and Apple targets, but no explicit Android KMP target | Published KMP Android variant and external consumer fixture |
+| KMP Android | Shared code has JVM and Apple targets, but no explicit Android KMP target — attempted and confirmed blocked by a Gradle plugin-resolution conflict, see [kmp-android-target-blocker.md](kmp-android-target-blocker.md) | Published KMP Android variant and external consumer fixture |
 | KMP iOS | Producer compilation baseline exists | Apple adapters, executable consumer, and platform parity |
 | Native Swift | XCFramework compile smoke exists | Optional; qualify separately if distributed |
 | Six strategy profiles | Contracts and orchestration building blocks exist | Built-in policy behavior and parity suites for every profile |
