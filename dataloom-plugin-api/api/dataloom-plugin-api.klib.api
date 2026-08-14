@@ -1,0 +1,171 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <dataloom:dataloom-plugin-api>
+final enum class io.dataloom.api.plugin/PluginHookPoint : kotlin/Enum<io.dataloom.api.plugin/PluginHookPoint> { // io.dataloom.api.plugin/PluginHookPoint|null[0]
+    enum entry CONFLICT // io.dataloom.api.plugin/PluginHookPoint.CONFLICT|null[0]
+    enum entry DIAGNOSTICS // io.dataloom.api.plugin/PluginHookPoint.DIAGNOSTICS|null[0]
+    enum entry EVENTS // io.dataloom.api.plugin/PluginHookPoint.EVENTS|null[0]
+    enum entry METRICS // io.dataloom.api.plugin/PluginHookPoint.METRICS|null[0]
+    enum entry POLICY // io.dataloom.api.plugin/PluginHookPoint.POLICY|null[0]
+    enum entry WORKFLOW_INTERCEPTOR // io.dataloom.api.plugin/PluginHookPoint.WORKFLOW_INTERCEPTOR|null[0]
+
+    final val entries // io.dataloom.api.plugin/PluginHookPoint.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.plugin/PluginHookPoint> // io.dataloom.api.plugin/PluginHookPoint.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.plugin/PluginHookPoint // io.dataloom.api.plugin/PluginHookPoint.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.plugin/PluginHookPoint> // io.dataloom.api.plugin/PluginHookPoint.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.api.plugin/PluginLifecycleState : kotlin/Enum<io.dataloom.api.plugin/PluginLifecycleState> { // io.dataloom.api.plugin/PluginLifecycleState|null[0]
+    enum entry ACTIVE // io.dataloom.api.plugin/PluginLifecycleState.ACTIVE|null[0]
+    enum entry DEGRADED // io.dataloom.api.plugin/PluginLifecycleState.DEGRADED|null[0]
+    enum entry DISABLED // io.dataloom.api.plugin/PluginLifecycleState.DISABLED|null[0]
+    enum entry INITIALIZING // io.dataloom.api.plugin/PluginLifecycleState.INITIALIZING|null[0]
+    enum entry LOADED // io.dataloom.api.plugin/PluginLifecycleState.LOADED|null[0]
+    enum entry UNLOADED // io.dataloom.api.plugin/PluginLifecycleState.UNLOADED|null[0]
+    enum entry VALIDATED // io.dataloom.api.plugin/PluginLifecycleState.VALIDATED|null[0]
+
+    final val entries // io.dataloom.api.plugin/PluginLifecycleState.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.plugin/PluginLifecycleState> // io.dataloom.api.plugin/PluginLifecycleState.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.api.plugin/PluginLifecycleState.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.plugin/PluginLifecycleState> // io.dataloom.api.plugin/PluginLifecycleState.values|values#static(){}[0]
+}
+
+abstract interface io.dataloom.api.plugin/DataLoomPlugin { // io.dataloom.api.plugin/DataLoomPlugin|null[0]
+    abstract val executionBounds // io.dataloom.api.plugin/DataLoomPlugin.executionBounds|{}executionBounds[0]
+        abstract fun <get-executionBounds>(): io.dataloom.api.plugin/PluginExecutionBounds // io.dataloom.api.plugin/DataLoomPlugin.executionBounds.<get-executionBounds>|<get-executionBounds>(){}[0]
+    abstract val manifest // io.dataloom.api.plugin/DataLoomPlugin.manifest|{}manifest[0]
+        abstract fun <get-manifest>(): io.dataloom.api.plugin/PluginManifest // io.dataloom.api.plugin/DataLoomPlugin.manifest.<get-manifest>|<get-manifest>(){}[0]
+}
+
+final class io.dataloom.api.plugin/PluginCompatibilityRange { // io.dataloom.api.plugin/PluginCompatibilityRange|null[0]
+    constructor <init>(io.dataloom.api.identifier/RuntimeVersion, io.dataloom.api.identifier/RuntimeVersion? = ...) // io.dataloom.api.plugin/PluginCompatibilityRange.<init>|<init>(io.dataloom.api.identifier.RuntimeVersion;io.dataloom.api.identifier.RuntimeVersion?){}[0]
+
+    final val maximumSdkVersion // io.dataloom.api.plugin/PluginCompatibilityRange.maximumSdkVersion|{}maximumSdkVersion[0]
+        final fun <get-maximumSdkVersion>(): io.dataloom.api.identifier/RuntimeVersion? // io.dataloom.api.plugin/PluginCompatibilityRange.maximumSdkVersion.<get-maximumSdkVersion>|<get-maximumSdkVersion>(){}[0]
+    final val minimumSdkVersion // io.dataloom.api.plugin/PluginCompatibilityRange.minimumSdkVersion|{}minimumSdkVersion[0]
+        final fun <get-minimumSdkVersion>(): io.dataloom.api.identifier/RuntimeVersion // io.dataloom.api.plugin/PluginCompatibilityRange.minimumSdkVersion.<get-minimumSdkVersion>|<get-minimumSdkVersion>(){}[0]
+
+    final fun component1(): io.dataloom.api.identifier/RuntimeVersion // io.dataloom.api.plugin/PluginCompatibilityRange.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.identifier/RuntimeVersion? // io.dataloom.api.plugin/PluginCompatibilityRange.component2|component2(){}[0]
+    final fun copy(io.dataloom.api.identifier/RuntimeVersion = ..., io.dataloom.api.identifier/RuntimeVersion? = ...): io.dataloom.api.plugin/PluginCompatibilityRange // io.dataloom.api.plugin/PluginCompatibilityRange.copy|copy(io.dataloom.api.identifier.RuntimeVersion;io.dataloom.api.identifier.RuntimeVersion?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.plugin/PluginCompatibilityRange.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.plugin/PluginCompatibilityRange.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.plugin/PluginCompatibilityRange.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.plugin/PluginDependency { // io.dataloom.api.plugin/PluginDependency|null[0]
+    constructor <init>(io.dataloom.api.plugin/PluginId, io.dataloom.api.plugin/PluginCompatibilityRange) // io.dataloom.api.plugin/PluginDependency.<init>|<init>(io.dataloom.api.plugin.PluginId;io.dataloom.api.plugin.PluginCompatibilityRange){}[0]
+
+    final val compatibilityRange // io.dataloom.api.plugin/PluginDependency.compatibilityRange|{}compatibilityRange[0]
+        final fun <get-compatibilityRange>(): io.dataloom.api.plugin/PluginCompatibilityRange // io.dataloom.api.plugin/PluginDependency.compatibilityRange.<get-compatibilityRange>|<get-compatibilityRange>(){}[0]
+    final val pluginId // io.dataloom.api.plugin/PluginDependency.pluginId|{}pluginId[0]
+        final fun <get-pluginId>(): io.dataloom.api.plugin/PluginId // io.dataloom.api.plugin/PluginDependency.pluginId.<get-pluginId>|<get-pluginId>(){}[0]
+
+    final fun component1(): io.dataloom.api.plugin/PluginId // io.dataloom.api.plugin/PluginDependency.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.plugin/PluginCompatibilityRange // io.dataloom.api.plugin/PluginDependency.component2|component2(){}[0]
+    final fun copy(io.dataloom.api.plugin/PluginId = ..., io.dataloom.api.plugin/PluginCompatibilityRange = ...): io.dataloom.api.plugin/PluginDependency // io.dataloom.api.plugin/PluginDependency.copy|copy(io.dataloom.api.plugin.PluginId;io.dataloom.api.plugin.PluginCompatibilityRange){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.plugin/PluginDependency.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.plugin/PluginDependency.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.plugin/PluginDependency.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.plugin/PluginExecutionBounds { // io.dataloom.api.plugin/PluginExecutionBounds|null[0]
+    constructor <init>(kotlin/Long, kotlin/Int) // io.dataloom.api.plugin/PluginExecutionBounds.<init>|<init>(kotlin.Long;kotlin.Int){}[0]
+
+    final val maximumConcurrentInvocations // io.dataloom.api.plugin/PluginExecutionBounds.maximumConcurrentInvocations|{}maximumConcurrentInvocations[0]
+        final fun <get-maximumConcurrentInvocations>(): kotlin/Int // io.dataloom.api.plugin/PluginExecutionBounds.maximumConcurrentInvocations.<get-maximumConcurrentInvocations>|<get-maximumConcurrentInvocations>(){}[0]
+    final val maximumExecutionMillis // io.dataloom.api.plugin/PluginExecutionBounds.maximumExecutionMillis|{}maximumExecutionMillis[0]
+        final fun <get-maximumExecutionMillis>(): kotlin/Long // io.dataloom.api.plugin/PluginExecutionBounds.maximumExecutionMillis.<get-maximumExecutionMillis>|<get-maximumExecutionMillis>(){}[0]
+
+    final fun component1(): kotlin/Long // io.dataloom.api.plugin/PluginExecutionBounds.component1|component1(){}[0]
+    final fun component2(): kotlin/Int // io.dataloom.api.plugin/PluginExecutionBounds.component2|component2(){}[0]
+    final fun copy(kotlin/Long = ..., kotlin/Int = ...): io.dataloom.api.plugin/PluginExecutionBounds // io.dataloom.api.plugin/PluginExecutionBounds.copy|copy(kotlin.Long;kotlin.Int){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.plugin/PluginExecutionBounds.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.plugin/PluginExecutionBounds.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.plugin/PluginExecutionBounds.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.plugin/PluginManifest { // io.dataloom.api.plugin/PluginManifest|null[0]
+    constructor <init>(io.dataloom.api.plugin/PluginId, io.dataloom.api.plugin/PluginVersion, io.dataloom.api.plugin/PluginVendor, io.dataloom.api.plugin/PluginCompatibilityRange, kotlin.collections/Set<io.dataloom.api.plugin/PluginCapability> = ..., kotlin.collections/Set<io.dataloom.api.plugin/PluginPermission> = ..., kotlin.collections/Set<io.dataloom.api.plugin/PluginDependency> = ...) // io.dataloom.api.plugin/PluginManifest.<init>|<init>(io.dataloom.api.plugin.PluginId;io.dataloom.api.plugin.PluginVersion;io.dataloom.api.plugin.PluginVendor;io.dataloom.api.plugin.PluginCompatibilityRange;kotlin.collections.Set<io.dataloom.api.plugin.PluginCapability>;kotlin.collections.Set<io.dataloom.api.plugin.PluginPermission>;kotlin.collections.Set<io.dataloom.api.plugin.PluginDependency>){}[0]
+
+    final val capabilities // io.dataloom.api.plugin/PluginManifest.capabilities|{}capabilities[0]
+        final fun <get-capabilities>(): kotlin.collections/Set<io.dataloom.api.plugin/PluginCapability> // io.dataloom.api.plugin/PluginManifest.capabilities.<get-capabilities>|<get-capabilities>(){}[0]
+    final val compatibleSdkRange // io.dataloom.api.plugin/PluginManifest.compatibleSdkRange|{}compatibleSdkRange[0]
+        final fun <get-compatibleSdkRange>(): io.dataloom.api.plugin/PluginCompatibilityRange // io.dataloom.api.plugin/PluginManifest.compatibleSdkRange.<get-compatibleSdkRange>|<get-compatibleSdkRange>(){}[0]
+    final val dependencies // io.dataloom.api.plugin/PluginManifest.dependencies|{}dependencies[0]
+        final fun <get-dependencies>(): kotlin.collections/Set<io.dataloom.api.plugin/PluginDependency> // io.dataloom.api.plugin/PluginManifest.dependencies.<get-dependencies>|<get-dependencies>(){}[0]
+    final val id // io.dataloom.api.plugin/PluginManifest.id|{}id[0]
+        final fun <get-id>(): io.dataloom.api.plugin/PluginId // io.dataloom.api.plugin/PluginManifest.id.<get-id>|<get-id>(){}[0]
+    final val permissions // io.dataloom.api.plugin/PluginManifest.permissions|{}permissions[0]
+        final fun <get-permissions>(): kotlin.collections/Set<io.dataloom.api.plugin/PluginPermission> // io.dataloom.api.plugin/PluginManifest.permissions.<get-permissions>|<get-permissions>(){}[0]
+    final val vendor // io.dataloom.api.plugin/PluginManifest.vendor|{}vendor[0]
+        final fun <get-vendor>(): io.dataloom.api.plugin/PluginVendor // io.dataloom.api.plugin/PluginManifest.vendor.<get-vendor>|<get-vendor>(){}[0]
+    final val version // io.dataloom.api.plugin/PluginManifest.version|{}version[0]
+        final fun <get-version>(): io.dataloom.api.plugin/PluginVersion // io.dataloom.api.plugin/PluginManifest.version.<get-version>|<get-version>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.plugin/PluginManifest.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.plugin/PluginManifest.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.plugin/PluginManifest.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.plugin/PluginCapability { // io.dataloom.api.plugin/PluginCapability|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.plugin/PluginCapability.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.plugin/PluginCapability.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.plugin/PluginCapability.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.plugin/PluginCapability.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.plugin/PluginCapability.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.plugin/PluginCapability.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.plugin/PluginId { // io.dataloom.api.plugin/PluginId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.plugin/PluginId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.plugin/PluginId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.plugin/PluginId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.plugin/PluginId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.plugin/PluginId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.plugin/PluginId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.plugin/PluginPermission { // io.dataloom.api.plugin/PluginPermission|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.plugin/PluginPermission.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.plugin/PluginPermission.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.plugin/PluginPermission.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.plugin/PluginPermission.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.plugin/PluginPermission.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.plugin/PluginPermission.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.plugin/PluginVendor { // io.dataloom.api.plugin/PluginVendor|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.plugin/PluginVendor.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.plugin/PluginVendor.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.plugin/PluginVendor.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.plugin/PluginVendor.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.plugin/PluginVendor.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.plugin/PluginVendor.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.plugin/PluginVersion { // io.dataloom.api.plugin/PluginVersion|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.plugin/PluginVersion.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.plugin/PluginVersion.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.plugin/PluginVersion.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.plugin/PluginVersion.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.plugin/PluginVersion.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.plugin/PluginVersion.toString|toString(){}[0]
+}

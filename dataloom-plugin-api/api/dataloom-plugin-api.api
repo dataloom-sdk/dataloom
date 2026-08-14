@@ -1,0 +1,155 @@
+public abstract interface class io/dataloom/api/plugin/DataLoomPlugin {
+	public abstract fun getExecutionBounds ()Lio/dataloom/api/plugin/PluginExecutionBounds;
+	public abstract fun getManifest ()Lio/dataloom/api/plugin/PluginManifest;
+}
+
+public final class io/dataloom/api/plugin/PluginCapability {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/plugin/PluginCapability;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/plugin/PluginCompatibilityRange {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-bVFqHQY ()Ljava/lang/String;
+	public final fun component2-vZrNJ34 ()Ljava/lang/String;
+	public final fun copy-MuT5KAU (Ljava/lang/String;Ljava/lang/String;)Lio/dataloom/api/plugin/PluginCompatibilityRange;
+	public static synthetic fun copy-MuT5KAU$default (Lio/dataloom/api/plugin/PluginCompatibilityRange;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/plugin/PluginCompatibilityRange;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaximumSdkVersion-vZrNJ34 ()Ljava/lang/String;
+	public final fun getMinimumSdkVersion-bVFqHQY ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/plugin/PluginDependency {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/plugin/PluginCompatibilityRange;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-zTuMttM ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/plugin/PluginCompatibilityRange;
+	public final fun copy-fMNmWBQ (Ljava/lang/String;Lio/dataloom/api/plugin/PluginCompatibilityRange;)Lio/dataloom/api/plugin/PluginDependency;
+	public static synthetic fun copy-fMNmWBQ$default (Lio/dataloom/api/plugin/PluginDependency;Ljava/lang/String;Lio/dataloom/api/plugin/PluginCompatibilityRange;ILjava/lang/Object;)Lio/dataloom/api/plugin/PluginDependency;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCompatibilityRange ()Lio/dataloom/api/plugin/PluginCompatibilityRange;
+	public final fun getPluginId-zTuMttM ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/plugin/PluginExecutionBounds {
+	public fun <init> (JI)V
+	public final fun component1 ()J
+	public final fun component2 ()I
+	public final fun copy (JI)Lio/dataloom/api/plugin/PluginExecutionBounds;
+	public static synthetic fun copy$default (Lio/dataloom/api/plugin/PluginExecutionBounds;JIILjava/lang/Object;)Lio/dataloom/api/plugin/PluginExecutionBounds;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaximumConcurrentInvocations ()I
+	public final fun getMaximumExecutionMillis ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/plugin/PluginHookPoint : java/lang/Enum {
+	public static final field CONFLICT Lio/dataloom/api/plugin/PluginHookPoint;
+	public static final field DIAGNOSTICS Lio/dataloom/api/plugin/PluginHookPoint;
+	public static final field EVENTS Lio/dataloom/api/plugin/PluginHookPoint;
+	public static final field METRICS Lio/dataloom/api/plugin/PluginHookPoint;
+	public static final field POLICY Lio/dataloom/api/plugin/PluginHookPoint;
+	public static final field WORKFLOW_INTERCEPTOR Lio/dataloom/api/plugin/PluginHookPoint;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/plugin/PluginHookPoint;
+	public static fun values ()[Lio/dataloom/api/plugin/PluginHookPoint;
+}
+
+public final class io/dataloom/api/plugin/PluginId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/plugin/PluginId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/plugin/PluginLifecycleState : java/lang/Enum {
+	public static final field ACTIVE Lio/dataloom/api/plugin/PluginLifecycleState;
+	public static final field DEGRADED Lio/dataloom/api/plugin/PluginLifecycleState;
+	public static final field DISABLED Lio/dataloom/api/plugin/PluginLifecycleState;
+	public static final field INITIALIZING Lio/dataloom/api/plugin/PluginLifecycleState;
+	public static final field LOADED Lio/dataloom/api/plugin/PluginLifecycleState;
+	public static final field UNLOADED Lio/dataloom/api/plugin/PluginLifecycleState;
+	public static final field VALIDATED Lio/dataloom/api/plugin/PluginLifecycleState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/plugin/PluginLifecycleState;
+	public static fun values ()[Lio/dataloom/api/plugin/PluginLifecycleState;
+}
+
+public final class io/dataloom/api/plugin/PluginManifest {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/plugin/PluginCompatibilityRange;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/plugin/PluginCompatibilityRange;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCapabilities ()Ljava/util/Set;
+	public final fun getCompatibleSdkRange ()Lio/dataloom/api/plugin/PluginCompatibilityRange;
+	public final fun getDependencies ()Ljava/util/Set;
+	public final fun getId-zTuMttM ()Ljava/lang/String;
+	public final fun getPermissions ()Ljava/util/Set;
+	public final fun getVendor-8NP8LPU ()Ljava/lang/String;
+	public final fun getVersion-ExxkGiQ ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/plugin/PluginPermission {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/plugin/PluginPermission;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/plugin/PluginVendor {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/plugin/PluginVendor;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/plugin/PluginVersion {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/plugin/PluginVersion;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+

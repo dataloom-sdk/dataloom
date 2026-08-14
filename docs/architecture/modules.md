@@ -114,6 +114,7 @@ Apple distribution boundary.
 |---|---|---|
 | `dataloom-model` | Library module | Dependency-root canonical models; first slice contains clock primitives |
 | `dataloom-provider-api` | Library module | Minimal provider lifecycle, descriptor, binding, and registry contracts |
+| `dataloom-plugin-api` | Library module | Plugin manifest, permission, lifecycle-label, hook-point, and execution-bounds SPI contracts, zero behavior ([details](../api/plugin-api.md)) |
 | `dataloom-api` | Library module | Current public contracts, models, and error types |
 | `dataloom-core` | Library module | Internal platform-independent foundation |
 | `dataloom-runtime` | Library module | Synchronization runtime and engine coordination |
@@ -131,6 +132,7 @@ Apple distribution boundary.
 | `dataloom-storage-sqldelight-android` | Android library | `AndroidSqliteDriver` wiring for `dataloom-storage-sqldelight` |
 | `dataloom-android` | Android library | Real production aggregation of the four core Android providers plus wiring helpers ([details](../android/dataloom-android.md)) |
 | `dataloom-apple` | KMP distribution module | Static `DataLoom` XCFramework assembly |
+| `dataloom-platform-ios` | iOS-only KMP library | First `#101` slice toward the published `dataloom-ios` artifact: `AppleConnectivityProvider` via a bounded `NWPathMonitor` query. iOS targets only, no macOS-only device/simulator proof yet |
 | `runtime-external-consumer` | Compile-only fixture | Proves the public runtime surface compiles without a `dataloom-core` dependency (JVM) |
 | `runtime-android-reference-consumer` | Compile-only fixture | Proves `dataloom-android`'s wiring helpers compose with `DataLoomBuilder` ([details](../android/reference-consumer.md)) |
 | `build-logic` | Build infrastructure | Gradle convention plugins (not a published library) |
@@ -174,6 +176,24 @@ Rules:
 - Must remain platform-independent.
 - Must not depend on `dataloom-api`, `dataloom-core`, or `dataloom-runtime`.
 - Must not contain provider implementations or runtime orchestration.
+
+---
+
+### `dataloom-plugin-api`
+
+Provides the stable plugin manifest, permission, lifecycle-label, hook-point,
+and execution-bounds SPI contracts required to freeze `#93`'s "plugin API"
+line in the V1 published artifact graph. Contains no plugin discovery,
+loading, enforcement, or certification behavior — that engine is `#98`'s job,
+built on top of these contracts. See [plugin-api.md](../api/plugin-api.md)
+for the exact scope boundary.
+
+Rules:
+
+- May depend only on `dataloom-model`.
+- Must remain platform-independent.
+- Must not depend on `dataloom-api`, `dataloom-core`, or `dataloom-runtime`.
+- Must not contain plugin loading, enforcement, or lifecycle-engine behavior.
 
 ---
 

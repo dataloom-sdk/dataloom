@@ -50,6 +50,7 @@ rootProject.name = "dataloom"
 include(
     ":dataloom-model",
     ":dataloom-provider-api",
+    ":dataloom-plugin-api",
     ":dataloom-api",
     ":dataloom-storage-sqldelight",
     ":dataloom-core",
