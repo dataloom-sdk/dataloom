@@ -1,0 +1,19 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <dataloom:dataloom-platform-ios>
+final class io.dataloom.platform.ios.connectivity/AppleConnectivityProvider : io.dataloom.api.connectivity/ConnectivityProvider { // io.dataloom.platform.ios.connectivity/AppleConnectivityProvider|null[0]
+    constructor <init>() // io.dataloom.platform.ios.connectivity/AppleConnectivityProvider.<init>|<init>(){}[0]
+
+    final val descriptor // io.dataloom.platform.ios.connectivity/AppleConnectivityProvider.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.platform.ios.connectivity/AppleConnectivityProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    final suspend fun close(): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.platform.ios.connectivity/AppleConnectivityProvider.close|close(){}[0]
+    final suspend fun currentConnectivity(io.dataloom.api.connectivity/ConnectivityCheckRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.connectivity/ConnectivitySnapshot> // io.dataloom.platform.ios.connectivity/AppleConnectivityProvider.currentConnectivity|currentConnectivity(io.dataloom.api.connectivity.ConnectivityCheckRequest){}[0]
+    final suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.platform.ios.connectivity/AppleConnectivityProvider.health|health(){}[0]
+    final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.platform.ios.connectivity/AppleConnectivityProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
+}
