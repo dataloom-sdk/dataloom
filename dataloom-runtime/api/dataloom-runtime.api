@@ -464,6 +464,7 @@ public final class io/dataloom/runtime/facade/DataLoomBuilder {
 	public final fun circuitAdministrationConfiguration (Lio/dataloom/runtime/facade/DataLoomCircuitAdministrationSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun circuitQueueWorkerConfiguration (Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorkerSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun circuitQueueWorkerSchedulerConfiguration (Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorkerSchedulerSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
+	public final fun conflictDetectionConfiguration (Lio/dataloom/runtime/facade/DataLoomConflictDetectionSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun connectivityConfiguration (Lio/dataloom/runtime/connectivity/SynchronizationConnectivityConfiguration;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun defaultProviderBindings (Lio/dataloom/api/provider/SynchronizationProviderBindings;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun defaultStrategyProviderBindings (Lio/dataloom/api/provider/StrategyProviderBindings;)Lio/dataloom/runtime/facade/DataLoomBuilder;
@@ -519,6 +520,17 @@ public final class io/dataloom/runtime/facade/DataLoomCircuitQueueWorkerSpec {
 	public final fun getProcessingScopes ()Lio/dataloom/runtime/queue/QueueProcessingCircuitScopes;
 	public final fun getRecoveryScope ()Lio/dataloom/api/circuit/CircuitBreakerScope;
 	public final fun getWorkerSpec ()Lio/dataloom/runtime/facade/DataLoomQueueWorkerSpec;
+}
+
+public final class io/dataloom/runtime/facade/DataLoomConflictDetectionSpec {
+	public fun <init> (Ljava/util/Collection;Ljava/util/Collection;Lio/dataloom/runtime/conflict/ConflictOrchestrationBindings;Lio/dataloom/api/state/DurableStateStore;II)V
+	public synthetic fun <init> (Ljava/util/Collection;Ljava/util/Collection;Lio/dataloom/runtime/conflict/ConflictOrchestrationBindings;Lio/dataloom/api/state/DurableStateStore;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getBindings ()Lio/dataloom/runtime/conflict/ConflictOrchestrationBindings;
+	public final fun getDetectors ()Ljava/util/Collection;
+	public final fun getResolvers ()Ljava/util/Collection;
+	public final fun getUnresolvedConflictLogMaximumStateUpdateAttempts ()I
+	public final fun getUnresolvedConflictLogSchemaVersion ()I
+	public final fun getUnresolvedConflictStore ()Lio/dataloom/api/state/DurableStateStore;
 }
 
 public abstract interface class io/dataloom/runtime/facade/DataLoomProtectedStrategySynchronization {
