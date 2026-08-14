@@ -124,4 +124,12 @@ val isAppleKlibCrossCompileEnabled: Boolean =
 
 if (isAppleHost || isAppleKlibCrossCompileEnabled) {
     include(":dataloom-apple")
+
+    // dataloom-platform-ios -- first bounded slice of the eventual
+    // dataloom-ios platform artifact (#101 / DL-039A): a real
+    // ConnectivityProvider implementation for iOS. Gated the same way as
+    // dataloom-apple above since it declares only iosArm64/
+    // iosSimulatorArm64/iosX64 targets. See
+    // docs/apple/connectivity-provider.md.
+    include(":dataloom-platform-ios")
 }
