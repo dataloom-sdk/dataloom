@@ -57,9 +57,11 @@ import io.dataloom.api.transport.PushChangesRequest
 import io.dataloom.api.transport.TransportProvider
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 
 /**
@@ -243,6 +245,44 @@ class NetworkOnlyStrategyExecutorTest {
     }
 
     // -------------------------------------------------------------------------
+    // Cancellation
+    //
+    // #102 acceptance: "Authentication, validation, conflict, cancellation,
+    // and non-retryable failures cannot be hidden by fallback." Proves a real
+    // kotlinx.coroutines.CancellationException thrown mid-transport-call
+    // actually propagates out of execute() rather than being converted into
+    // a Failed result — a structurally different, previously-untested
+    // property from the Failed/error-mapping tests above, which only prove
+    // ProviderOperationResult.Failure business-error handling.
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun pullCancellationPropagatesRatherThanBecomingAFailedResult() = runTest {
+        val transport = FakeTransportProvider(pullThrows = CancellationException("pull cancelled"))
+
+        assertFailsWith<CancellationException> {
+            executor.execute(
+                request = networkOnlyRequest(SynchronizationDirection.PULL),
+                evaluation = evaluationFor(SynchronizationDirection.PULL),
+                providers = providerSet(transport),
+            )
+        }
+    }
+
+    @Test
+    fun pushCancellationPropagatesRatherThanBecomingAFailedResult() = runTest {
+        val transport = FakeTransportProvider(pushThrows = CancellationException("push cancelled"))
+
+        assertFailsWith<CancellationException> {
+            executor.execute(
+                request = networkOnlyRequest(SynchronizationDirection.PUSH, outboundChangeSet = changeSet),
+                evaluation = evaluationFor(SynchronizationDirection.PUSH),
+                providers = providerSet(transport),
+            )
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // BIDIRECTIONAL
     // -------------------------------------------------------------------------
 
@@ -384,6 +424,8 @@ class NetworkOnlyStrategyExecutorTest {
     private class FakeTransportProvider(
         private val pushResult: ProviderOperationResult<ChangeSetAcknowledgement>? = null,
         private val pullResult: ProviderOperationResult<PullChangesResult>? = null,
+        private val pushThrows: Throwable? = null,
+        private val pullThrows: Throwable? = null,
     ) : TransportProvider {
         var pushCalls: Int = 0
             private set
@@ -410,6 +452,7 @@ class NetworkOnlyStrategyExecutorTest {
             request: PushChangesRequest,
         ): ProviderOperationResult<ChangeSetAcknowledgement> {
             pushCalls++
+            pushThrows?.let { throw it }
             return requireNotNull(pushResult) { "Test did not configure a pushChanges result." }
         }
 
@@ -417,6 +460,7 @@ class NetworkOnlyStrategyExecutorTest {
             request: PullChangesRequest,
         ): ProviderOperationResult<PullChangesResult> {
             pullCalls++
+            pullThrows?.let { throw it }
             return requireNotNull(pullResult) { "Test did not configure a pullChanges result." }
         }
     }
