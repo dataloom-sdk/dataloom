@@ -81,9 +81,11 @@ import io.dataloom.runtime.execution.lifecycle.SynchronizationLifecycleEventEmit
  * - A plan whose only operation is `READ_LOCAL` (`LOCAL` selected for a PUSH
  *   direction request with `ENQUEUE_DURABLE_WORK` absent too — nothing to
  *   serve, nothing to durably admit, and `LOCAL` was explicitly chosen over
- *   `REMOTE`, so no transport runs either) is rejected with
- *   [StrategyExecutionRejectionReason.HYBRID_LOCAL_PUSH_NOT_YET_SUPPORTED].
- *   See that reason's KDoc for the full rationale.
+ *   `REMOTE`, so no transport runs either) returns
+ *   [StrategySynchronizationExecutionResult.AcceptedLocally] — accepting
+ *   local state genuinely is the entire outcome here, the same `ACCEPT_LOCAL`
+ *   no-op meaning [CacheFirstStrategyExecutor]/[OfflineFirstStrategyExecutor]
+ *   already use elsewhere.
  */
 internal class HybridStrategyExecutor(
     private val clock: DataLoomClock,
@@ -141,9 +143,9 @@ internal class HybridStrategyExecutor(
         val needsRemote = StrategyOperation.PULL_REMOTE in operations ||
             StrategyOperation.PUSH_REMOTE in operations
         if (!needsRemote) {
-            return rejected(
-                evaluation,
-                StrategyExecutionRejectionReason.HYBRID_LOCAL_PUSH_NOT_YET_SUPPORTED,
+            return StrategySynchronizationExecutionResult.AcceptedLocally(
+                evaluation = evaluation,
+                completedAt = clock.now(),
             )
         }
 

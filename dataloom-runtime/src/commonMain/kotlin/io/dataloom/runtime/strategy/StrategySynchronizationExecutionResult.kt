@@ -59,19 +59,14 @@ public enum class StrategyExecutionRejectionReason {
     DURABLE_ADMISSION_PROVIDERS_INCOMPLETE,
 
     /**
-     * A [HybridStrategyExecutor] plan selected `HybridSource.LOCAL` for a
-     * PUSH-direction request. The evaluator's local-fallback operation set
-     * for PUSH is `[READ_LOCAL]` only — there is no `SERVE_LOCAL` operation
-     * to serve (nothing to serve for a push) and, since `LOCAL` was
-     * explicitly selected over `REMOTE`, no remote operation either. No
-     * variant of [io.dataloom.api.strategy.StrategyTransportOutput]
-     * represents a transport-free success, and unlike the `ACCEPT_LOCAL`
-     * no-op branches in [CacheFirstStrategyExecutor]/[OfflineFirstStrategyExecutor]
-     * (always paired with a required remote leg in the same plan), this is
-     * the first genuinely transport-free plan shape in the strategy engine.
-     * Rather than invent a signature-incompatible zero-effort success value
-     * for one narrow branch, it is rejected explicitly until a proper
-     * transport-free result type is added to [StrategySynchronizationExecutionResult].
+     * No longer produced. A [HybridStrategyExecutor] plan that selects
+     * `HybridSource.LOCAL` for a PUSH-direction request (operations
+     * `[READ_LOCAL]` only — no `SERVE_LOCAL`, no remote operation) now
+     * returns [StrategySynchronizationExecutionResult.AcceptedLocally]
+     * instead of this rejection. Kept as a public enum entry rather than
+     * removed, since removing it would be an ABI break; retained only for
+     * historical/diagnostic reference by callers that logged it before this
+     * change.
      */
     HYBRID_LOCAL_PUSH_NOT_YET_SUPPORTED,
 }
@@ -305,6 +300,29 @@ public sealed interface StrategySynchronizationExecutionResult {
         override val evaluation: StrategyEvaluationResult,
         override val completedAt: DataLoomInstant,
         public val queueEntryId: QueueEntryId,
+    ) : StrategySynchronizationExecutionResult
+
+    /**
+     * The plan's entire outcome was accepting local intent — no transport
+     * ran, and nothing was durably admitted.
+     *
+     * Distinct from [DurablyEnqueued]: that variant means a queue provider
+     * was actually called. This variant means the plan itself never
+     * required transport or durable admission in the first place — a
+     * `HybridSource.LOCAL` selection for a PUSH-direction request produces
+     * operations `[READ_LOCAL]` only, meaning the local write was already
+     * accepted by the time this plan was evaluated (the same `ACCEPT_LOCAL`
+     * meaning [CacheFirstStrategyExecutor]/[OfflineFirstStrategyExecutor]
+     * already treat as a no-op elsewhere), and `LOCAL` was explicitly chosen
+     * over `REMOTE`, so no transport runs either. Accepting local state is
+     * genuinely the entire outcome, not a placeholder for missing behavior.
+     * Currently only reachable through [HybridStrategyExecutor]'s
+     * PUSH-direction, `HybridSource.LOCAL`-selected branch without
+     * `ENQUEUE_DURABLE_WORK`.
+     */
+    public data class AcceptedLocally(
+        override val evaluation: StrategyEvaluationResult,
+        override val completedAt: DataLoomInstant,
     ) : StrategySynchronizationExecutionResult
 
     /** Execution was rejected before a provider operation. */

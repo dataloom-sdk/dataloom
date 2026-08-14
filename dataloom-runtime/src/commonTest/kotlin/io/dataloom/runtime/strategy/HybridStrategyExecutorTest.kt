@@ -466,9 +466,10 @@ class HybridStrategyExecutorTest {
     }
 
     @Test
-    fun localPrimaryPushIsRejectedAsTransportFree() = runTest {
+    fun localPrimaryPushIsAcceptedLocallyAsTransportFree() = runTest {
         // LOCAL primary selected for a PUSH direction produces a plan whose
         // only operation is READ_LOCAL -- nothing to serve, nothing to push.
+        // Accepting local intent is genuinely the entire outcome here.
         val storage = FakeFallbackStorageProvider(
             fallbackResult = ProviderOperationResult.Success(
                 StrategyLocalFallbackResult.Available(StrategyCacheState.FRESH),
@@ -484,11 +485,7 @@ class HybridStrategyExecutorTest {
             evaluation = evaluationFor(request),
             providers = providerSet(FakeTransportProvider(), storage),
         )
-        val rejected = assertIs<StrategySynchronizationExecutionResult.Rejected>(result)
-        assertEquals(
-            StrategyExecutionRejectionReason.HYBRID_LOCAL_PUSH_NOT_YET_SUPPORTED,
-            rejected.reason,
-        )
+        assertIs<StrategySynchronizationExecutionResult.AcceptedLocally>(result)
         assertEquals(0, storage.evaluateLocalFallbackCalls)
     }
 

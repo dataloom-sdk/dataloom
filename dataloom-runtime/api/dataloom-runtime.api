@@ -2821,6 +2821,19 @@ public abstract interface class io/dataloom/runtime/strategy/StrategySynchroniza
 	public abstract fun getEvaluation ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
 }
 
+public final class io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$AcceptedLocally : io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult {
+	public fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;)V
+	public final fun component1 ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
+	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$AcceptedLocally;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$AcceptedLocally;Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$AcceptedLocally;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCompletedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun getEvaluation ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult$Cancelled : io/dataloom/runtime/strategy/StrategySynchronizationExecutionResult {
 	public fun <init> (Lio/dataloom/api/strategy/StrategyEvaluationResult;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/strategy/StrategyTransportOutput;)V
 	public final fun component1 ()Lio/dataloom/api/strategy/StrategyEvaluationResult;
