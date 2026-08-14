@@ -183,6 +183,64 @@ class BuiltInSynchronizationStrategyEvaluatorTest {
     }
 
     @Test
+    fun remoteFirstDegradedTransportHealthStillAttemptsRemote() {
+        // #102 acceptance: "provider degradation ... matrices pass for every
+        // built-in profile." Zero test in this suite ever varied
+        // transportHealth/storageHealth away from HEALTHY before this —
+        // every evaluate* function that reads transportHealth only checks
+        // `== UNAVAILABLE` / `!= UNAVAILABLE`, so DEGRADED is currently
+        // folded together with HEALTHY (treated as "still usable") rather
+        // than triggering any distinct behavior. This test proves and locks
+        // in that current, previously-undocumented fact rather than
+        // silently assuming it.
+        val result = evaluate(
+            profile = remote(),
+            direction = SynchronizationDirection.PULL,
+            evidence = evidence(
+                connectivity = StrategyConnectivity.AVAILABLE,
+                transportHealth = StrategyProviderHealth.DEGRADED,
+            ),
+        )
+
+        assertEquals(StrategyDisposition.EXECUTE, result.plan.disposition)
+        assertTrue(StrategyOperation.PULL_REMOTE in result.plan.operations)
+    }
+
+    @Test
+    fun remoteFirstUnavailableTransportHealthTriggersSameOutcomeAsUnavailableConnectivity() {
+        // Proves transportHealth == UNAVAILABLE independently gates the
+        // same "unavailable" branch connectivity == UNAVAILABLE does — the
+        // production `||` between them (line 236-237) had no direct test;
+        // every existing REJECT/fallback test drove it via connectivity only.
+        val withFallback = evaluate(
+            profile = remote(fallbackOn = setOf(StrategyRemoteOutcome.UNAVAILABLE)),
+            direction = SynchronizationDirection.PULL,
+            evidence = evidence(
+                connectivity = StrategyConnectivity.AVAILABLE,
+                cacheState = StrategyCacheState.STALE,
+                transportHealth = StrategyProviderHealth.UNAVAILABLE,
+            ),
+        )
+        val withoutFallback = evaluate(
+            profile = remote(),
+            direction = SynchronizationDirection.PULL,
+            evidence = evidence(
+                connectivity = StrategyConnectivity.AVAILABLE,
+                cacheState = StrategyCacheState.STALE,
+                transportHealth = StrategyProviderHealth.UNAVAILABLE,
+            ),
+        )
+
+        assertEquals(StrategyDisposition.EXECUTE, withFallback.plan.disposition)
+        assertEquals(listOf(StrategyOperation.SERVE_LOCAL), withFallback.plan.operations)
+        assertEquals(StrategyDisposition.REJECT, withoutFallback.plan.disposition)
+        assertEquals(
+            StrategyRejectionReason.CONNECTIVITY_UNAVAILABLE,
+            withoutFallback.plan.rejectionReason,
+        )
+    }
+
+    @Test
     fun remoteFirstUnknownConnectivityPolicyIsExplicit() {
         val deferred = evaluate(
             profile = remote(unknown = UnknownConnectivityPolicy.DEFER),
@@ -548,11 +606,12 @@ class BuiltInSynchronizationStrategyEvaluatorTest {
         connectivity: StrategyConnectivity = StrategyConnectivity.NOT_EVALUATED,
         cacheState: StrategyCacheState = StrategyCacheState.NOT_EVALUATED,
         hasPendingLocalChanges: Boolean = false,
+        transportHealth: StrategyProviderHealth = StrategyProviderHealth.HEALTHY,
     ): StrategyRuntimeEvidence = StrategyRuntimeEvidence(
         connectivity = connectivity,
         cacheState = cacheState,
         storageHealth = StrategyProviderHealth.HEALTHY,
-        transportHealth = StrategyProviderHealth.HEALTHY,
+        transportHealth = transportHealth,
         queueHealth = StrategyProviderHealth.HEALTHY,
         hasPendingLocalChanges = hasPendingLocalChanges,
         isBackgroundExecutionAvailable = true,
