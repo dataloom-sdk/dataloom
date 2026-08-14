@@ -81,6 +81,10 @@ include(
 //     for dataloom-storage-sqldelight (JVM + iOS module, always included above;
 //     split out because AGP 9.0+ does not allow com.android.library in the
 //     same module as org.jetbrains.kotlin.multiplatform)
+//   - dataloom-android — real, production platform artifact aggregating the
+//     provider modules above into one convenience dependency, per #101's
+//     required "stable dataloom-android...platform artifact" (DL-039A);
+//     see docs/android/dataloom-android.md
 //   - runtime-android-reference-consumer — compile-only proof that the four
 //     provider modules above compose with DataLoomBuilder (#101/DL-039A);
 //     see docs/android/reference-consumer.md
@@ -97,6 +101,7 @@ if (isAndroidBuildEnabled) {
         ":dataloom-storage-room",
         ":dataloom-storage-datastore",
         ":dataloom-storage-sqldelight-android",
+        ":dataloom-android",
         ":runtime-android-reference-consumer",
     )
 }
