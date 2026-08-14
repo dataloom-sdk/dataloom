@@ -205,6 +205,35 @@ class BuiltInSynchronizationStrategyEvaluatorTest {
     }
 
     @Test
+    fun networkOnlyUnknownConnectivityPolicyIsExplicit() {
+        // Network-only shares the same unknownConnectivityResult() dispatch
+        // mechanism as remote-first and hybrid (both already covered above),
+        // but had zero test coverage of its own despite NetworkOnlyStrategyProfile
+        // forbidding DEFER at construction (see
+        // networkOnlyCannotPromiseQueueBackedDeferral in StrategyContractsTest) —
+        // only ATTEMPT_REMOTE and REJECT are constructible, and only
+        // ATTEMPT_REMOTE was ever exercised through the evaluator.
+        val rejected = evaluate(
+            profile = network(unknown = UnknownConnectivityPolicy.REJECT),
+            direction = SynchronizationDirection.PULL,
+            evidence = evidence(connectivity = StrategyConnectivity.UNKNOWN),
+        )
+        val attempted = evaluate(
+            profile = network(unknown = UnknownConnectivityPolicy.ATTEMPT_REMOTE),
+            direction = SynchronizationDirection.PULL,
+            evidence = evidence(connectivity = StrategyConnectivity.UNKNOWN),
+        )
+
+        assertEquals(StrategyDisposition.REJECT, rejected.plan.disposition)
+        assertEquals(
+            StrategyRejectionReason.CONNECTIVITY_UNKNOWN,
+            rejected.plan.rejectionReason,
+        )
+        assertEquals(StrategyDisposition.EXECUTE, attempted.plan.disposition)
+        assertTrue(StrategyOperation.PULL_REMOTE in attempted.plan.operations)
+    }
+
+    @Test
     fun cacheFirstFreshStaleAndMissingDecisionsAreDistinct() {
         val profile = cache()
         val fresh = evaluate(
@@ -506,9 +535,12 @@ class BuiltInSynchronizationStrategyEvaluatorTest {
         configurationVersion = version(),
     )
 
-    private fun network(): NetworkOnlyStrategyProfile = NetworkOnlyStrategyProfile(
+    private fun network(
+        unknown: UnknownConnectivityPolicy = UnknownConnectivityPolicy.ATTEMPT_REMOTE,
+    ): NetworkOnlyStrategyProfile = NetworkOnlyStrategyProfile(
         id = StrategyProfileId("network"),
         configurationVersion = version(),
+        unknownConnectivityPolicy = unknown,
     )
 
     private fun hybridRemote(
