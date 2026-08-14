@@ -403,6 +403,53 @@ class BuiltInSynchronizationStrategyEvaluatorTest {
     }
 
     @Test
+    fun adaptiveLimitedConnectivityPrefersHybridOverCacheOverOffline() {
+        // #102 acceptance: "Adaptive: bounded deterministic selection among
+        // configured concrete profiles using ... connectivity ..."
+        // LIMITED connectivity had zero test coverage anywhere in this suite
+        // despite selectAdaptiveCandidate() giving it its own distinct
+        // preference order (HYBRID > CACHE_FIRST > OFFLINE_FIRST) — neither
+        // the same as AVAILABLE's (REMOTE_FIRST-led) nor UNAVAILABLE's
+        // (OFFLINE_FIRST-led) ordering.
+        val allThreeCandidates = AdaptiveStrategyProfile(
+            id = StrategyProfileId("adaptive-limited"),
+            configurationVersion = version(),
+            candidates = listOf(hybridRemote(), cache(), offline()),
+        )
+        val hybridSelected = evaluate(
+            allThreeCandidates,
+            SynchronizationDirection.PULL,
+            evidence(connectivity = StrategyConnectivity.LIMITED),
+        )
+
+        val cacheAndOfflineOnly = AdaptiveStrategyProfile(
+            id = StrategyProfileId("adaptive-limited-no-hybrid"),
+            configurationVersion = version(),
+            candidates = listOf(cache(), offline()),
+        )
+        val cacheSelected = evaluate(
+            cacheAndOfflineOnly,
+            SynchronizationDirection.PULL,
+            evidence(connectivity = StrategyConnectivity.LIMITED),
+        )
+
+        val offlineOnly = AdaptiveStrategyProfile(
+            id = StrategyProfileId("adaptive-limited-offline-only"),
+            configurationVersion = version(),
+            candidates = listOf(offline()),
+        )
+        val offlineSelected = evaluate(
+            offlineOnly,
+            SynchronizationDirection.PULL,
+            evidence(connectivity = StrategyConnectivity.LIMITED),
+        )
+
+        assertEquals(BuiltInSynchronizationStrategy.HYBRID, hybridSelected.plan.effectiveStrategy)
+        assertEquals(BuiltInSynchronizationStrategy.CACHE_FIRST, cacheSelected.plan.effectiveStrategy)
+        assertEquals(BuiltInSynchronizationStrategy.OFFLINE_FIRST, offlineSelected.plan.effectiveStrategy)
+    }
+
+    @Test
     fun adaptiveWithoutEligibleOrSafeDefaultRejectsExplicitly() {
         val result = evaluate(
             profile = AdaptiveStrategyProfile(
