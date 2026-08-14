@@ -419,6 +419,49 @@ class BuiltInSynchronizationStrategyEvaluatorTest {
     }
 
     @Test
+    fun hybridStorageHealthGatesLocalFallbackIndependentlyOfCacheState() {
+        // #102 acceptance: "provider degradation ... matrices pass for
+        // every built-in profile." storageHealth is read in exactly one
+        // place across the whole evaluator (evaluateHybrid's localAvailable
+        // check) and was never varied away from HEALTHY by any test —
+        // evidence() did not even expose it as a parameter before this.
+        //
+        // Same setup as hybridRemotePrimaryUsesDeclaredLocalFallbackAndReconciliation's
+        // "fallback" case (remote unavailable, cache STALE) but with
+        // storageHealth varied: UNAVAILABLE must reject even though cache
+        // state alone would normally permit local fallback; DEGRADED must
+        // not block it, mirroring the DEGRADED-is-still-usable pattern
+        // already proven for transportHealth.
+        val profile = hybridRemote()
+        val storageUnavailable = evaluate(
+            profile,
+            SynchronizationDirection.PULL,
+            evidence(
+                connectivity = StrategyConnectivity.UNAVAILABLE,
+                cacheState = StrategyCacheState.STALE,
+                storageHealth = StrategyProviderHealth.UNAVAILABLE,
+            ),
+        )
+        val storageDegraded = evaluate(
+            profile,
+            SynchronizationDirection.PULL,
+            evidence(
+                connectivity = StrategyConnectivity.UNAVAILABLE,
+                cacheState = StrategyCacheState.STALE,
+                storageHealth = StrategyProviderHealth.DEGRADED,
+            ),
+        )
+
+        assertEquals(StrategyDisposition.REJECT, storageUnavailable.plan.disposition)
+        assertEquals(
+            StrategyRejectionReason.REQUIRED_CAPABILITY_UNAVAILABLE,
+            storageUnavailable.plan.rejectionReason,
+        )
+        assertEquals(StrategyDisposition.SERVE_AND_REFRESH, storageDegraded.plan.disposition)
+        assertTrue(StrategyOperation.SERVE_LOCAL in storageDegraded.plan.operations)
+    }
+
+    @Test
     fun hybridUnknownConnectivityPolicyDoesNotImproviseFallback() {
         val deferred = evaluate(
             profile = hybridRemote(
@@ -607,10 +650,11 @@ class BuiltInSynchronizationStrategyEvaluatorTest {
         cacheState: StrategyCacheState = StrategyCacheState.NOT_EVALUATED,
         hasPendingLocalChanges: Boolean = false,
         transportHealth: StrategyProviderHealth = StrategyProviderHealth.HEALTHY,
+        storageHealth: StrategyProviderHealth = StrategyProviderHealth.HEALTHY,
     ): StrategyRuntimeEvidence = StrategyRuntimeEvidence(
         connectivity = connectivity,
         cacheState = cacheState,
-        storageHealth = StrategyProviderHealth.HEALTHY,
+        storageHealth = storageHealth,
         transportHealth = transportHealth,
         queueHealth = StrategyProviderHealth.HEALTHY,
         hasPendingLocalChanges = hasPendingLocalChanges,
