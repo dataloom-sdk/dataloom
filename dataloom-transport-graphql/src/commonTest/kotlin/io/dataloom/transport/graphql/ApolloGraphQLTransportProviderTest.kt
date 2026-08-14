@@ -417,6 +417,45 @@ class ApolloGraphQLTransportProviderTest {
         assertEquals(true, error.message.contains("3"))
     }
 
+    // -------------------------------------------------------------------------
+    // Error mapper — message content never leaks exception/response text
+    //
+    // #93 acceptance criterion: "No secrets, credentials, payloads, or
+    // unbounded-cardinality values are exposed by defaults." `.take(200)`-style
+    // truncation is not sanitization; these tests prove the mapper never
+    // forwards Throwable.message or GraphQL error-message content at all,
+    // regardless of what it contains.
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `ApolloErrorMapper never forwards ApolloNetworkException message content`() {
+        val secretToken = "eyJhbGciOiJIUzI1NiJ9.secret-token-value"
+        val ex = ApolloNetworkException(
+            message = "Connection to https://api.example.com/graphql?token=$secretToken failed",
+            platformCause = null,
+        )
+
+        val error = ApolloErrorMapper.fromApolloException(ex)
+
+        assertEquals(false, error.message.contains(secretToken))
+        assertEquals(false, error.toString().contains(secretToken))
+        // Still diagnosable via the exception's type name, just not its content.
+        assertEquals(true, error.message.contains("ApolloNetworkException"))
+    }
+
+    @Test
+    fun `ApolloErrorMapper never forwards GraphQL server error message content`() {
+        val sensitiveDetail = "user.email=someone@example.com violates unique constraint"
+        val errors = listOf(
+            com.apollographql.apollo.api.Error.Builder(message = sensitiveDetail).build(),
+        )
+
+        val error = ApolloErrorMapper.fromGraphQLErrors(errors)
+
+        assertEquals(false, error.message.contains(sensitiveDetail))
+        assertEquals(false, error.toString().contains(sensitiveDetail))
+    }
+
     @Test
     fun `ApolloErrorMapper nullDataError has NULL_DATA code and NON_RECOVERABLE`() {
         val error = ApolloErrorMapper.nullDataError()
