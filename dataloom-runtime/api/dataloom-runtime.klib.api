@@ -1918,6 +1918,22 @@ sealed interface io.dataloom.runtime.strategy/StrategySynchronizationExecutionRe
     abstract val evaluation // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.evaluation|{}evaluation[0]
         abstract fun <get-evaluation>(): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.evaluation.<get-evaluation>|<get-evaluation>(){}[0]
 
+    final class AcceptedLocally : io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult { // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.AcceptedLocally|null[0]
+        constructor <init>(io.dataloom.api.strategy/StrategyEvaluationResult, io.dataloom.api.time/DataLoomInstant) // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.AcceptedLocally.<init>|<init>(io.dataloom.api.strategy.StrategyEvaluationResult;io.dataloom.api.time.DataLoomInstant){}[0]
+
+        final val completedAt // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.AcceptedLocally.completedAt|{}completedAt[0]
+            final fun <get-completedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.AcceptedLocally.completedAt.<get-completedAt>|<get-completedAt>(){}[0]
+        final val evaluation // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.AcceptedLocally.evaluation|{}evaluation[0]
+            final fun <get-evaluation>(): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.AcceptedLocally.evaluation.<get-evaluation>|<get-evaluation>(){}[0]
+
+        final fun component1(): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.AcceptedLocally.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.time/DataLoomInstant // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.AcceptedLocally.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.strategy/StrategyEvaluationResult = ..., io.dataloom.api.time/DataLoomInstant = ...): io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.AcceptedLocally // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.AcceptedLocally.copy|copy(io.dataloom.api.strategy.StrategyEvaluationResult;io.dataloom.api.time.DataLoomInstant){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.AcceptedLocally.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.AcceptedLocally.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.AcceptedLocally.toString|toString(){}[0]
+    }
+
     final class Cancelled : io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult { // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled|null[0]
         constructor <init>(io.dataloom.api.strategy/StrategyEvaluationResult, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.strategy/StrategyTransportOutput) // io.dataloom.runtime.strategy/StrategySynchronizationExecutionResult.Cancelled.<init>|<init>(io.dataloom.api.strategy.StrategyEvaluationResult;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.strategy.StrategyTransportOutput){}[0]
 

@@ -2,15 +2,11 @@
 
 ## Status
 
-**Bounded first slice.** `HybridStrategyExecutor` handles every branch
-`BuiltInSynchronizationStrategyEvaluator` can produce for
-`HybridStrategyProfile` that is directly, synchronously executable. The
-branch that requires durable queue admission (`reconcileAfterFallback = true`,
-the profile default, when the evaluator's `LOCAL` selection is itself a
-fallback from a `REMOTE` primary) is explicitly rejected rather than silently
-misexecuted, and one narrow transport-free plan shape (`LOCAL` selected for a
-PUSH request) is rejected too, since no result type in this codebase
-represents a transport-free success yet. See "Known gaps" below.
+**Complete for every branch the evaluator can produce.** `HybridStrategyExecutor`
+now handles every branch `BuiltInSynchronizationStrategyEvaluator` can
+produce for `HybridStrategyProfile`, including the transport-free PUSH plan
+shape and the durable-admission branch (opt-in via a configured
+`QueuedSynchronizationWorkEncoder` — see "Durable queue admission" below).
 
 ## What it does
 
@@ -28,8 +24,8 @@ local attempt.
 | `REMOTE` selected (primary or as a fallback from a `LOCAL` primary), any direction | `operations ⊇ remoteOperations(direction, persistRemote)` | Runs the registered `SynchronizationPipeline` for the request's direction, honoring `persistRemoteResult` (see below). |
 | `LOCAL` selected, PULL | `operations = [SERVE_LOCAL]` | Served via `StrategyLocalFallbackProvider`, same pattern cache-first/offline-first use. Terminal result is `ServedFromCache`, no refresh output — hybrid's `LOCAL` branch never also runs a remote leg. |
 | `LOCAL` selected, BIDIRECTIONAL | `operations = [READ_LOCAL, SERVE_LOCAL]` | Same as above — `READ_LOCAL` documents that the push side is locally accepted with no remote push attempted; `SERVE_LOCAL` covers the pull side. |
-| `LOCAL` selected, PUSH | `operations = [READ_LOCAL]` | **Rejected** — see "Known gaps" below. |
-| `LOCAL` selected as an explicit fallback from a `REMOTE` primary, `reconcileAfterFallback = true` (the default) | `operations` includes `ENQUEUE_DURABLE_WORK` and `RECONCILE` | **Rejected** — see "Known gaps" below. |
+| `LOCAL` selected, PUSH | `operations = [READ_LOCAL]` | Terminal result is `AcceptedLocally` — accepting local intent is genuinely the entire outcome. See "Transport-free PUSH" below. |
+| `LOCAL` selected as an explicit fallback from a `REMOTE` primary, `reconcileAfterFallback = true` (the default) | `operations` includes `ENQUEUE_DURABLE_WORK` and `RECONCILE` | Admitted via `StrategyDurableQueueAdmitter` when configured; rejected with the shared `DURABLE_REFRESH_NOT_YET_SUPPORTED` reason otherwise. See "Durable queue admission" below. |
 
 ## Honoring `persistRemoteResult`
 
@@ -66,6 +62,26 @@ It fails closed with a distinct contract error
 (`DL-STRATEGY-HYBRID-LOCAL-STATE-MISMATCH`) rather than being folded into an
 ordinary rejection or silently treated as success.
 
+## Transport-free PUSH
+
+`HybridSource.LOCAL` selected for a PUSH-direction request without
+`ENQUEUE_DURABLE_WORK` (i.e. either not selected as a fallback at all, or
+`reconcileAfterFallback = false`) produces a plan whose only operation is
+`READ_LOCAL` — there is no `SERVE_LOCAL` operation to serve (nothing to serve
+for a push), no `ENQUEUE_DURABLE_WORK` to admit, and, since `LOCAL` was
+explicitly chosen over `REMOTE`, no remote operation either.
+
+This executor returns `StrategySynchronizationExecutionResult.AcceptedLocally`
+for this shape — accepting local intent (already true by the time this plan
+was evaluated) genuinely is the entire outcome, the same `ACCEPT_LOCAL`
+no-op meaning `CacheFirstStrategyExecutor`/`OfflineFirstStrategyExecutor`
+already use elsewhere, just expressed as a terminal result here since nothing
+else in the plan follows it. This was previously rejected with
+`StrategyExecutionRejectionReason.HYBRID_LOCAL_PUSH_NOT_YET_SUPPORTED`
+(kept as a public enum entry for ABI stability, but no longer produced) until
+`AcceptedLocally` was added as the first genuinely transport-free result type
+in the strategy engine.
+
 ## Durable queue admission for the reconciled fallback branch
 
 When `HybridSource.LOCAL` is selected as an explicit fallback from a
@@ -100,27 +116,6 @@ existed: the branch is rejected with the same shared
 cache-first/offline-first use. To get synchronous hybrid fallback behavior
 without configuring an encoder at all, construct `HybridStrategyProfile`
 with `reconcileAfterFallback = false`.
-
-## Known gap: transport-free PUSH with `LOCAL` selected and no reconciliation
-
-`HybridSource.LOCAL` selected for a PUSH-direction request with
-`reconcileAfterFallback = false` (or not selected as a fallback at all)
-produces a plan whose only operation is `READ_LOCAL` — there is no
-`SERVE_LOCAL` operation to serve (nothing to serve for a push), no
-`ENQUEUE_DURABLE_WORK` to admit, and, since `LOCAL` was explicitly chosen
-over `REMOTE`, no remote operation either.
-
-No variant of `StrategyTransportOutput` represents a transport-free success,
-and unlike the `ACCEPT_LOCAL` no-op branches in `CacheFirstStrategyExecutor`/
-`OfflineFirstStrategyExecutor` (always paired with a required remote leg in
-the same plan), this is the first genuinely transport-free plan shape with
-nothing at all to admit or serve. Rather than invent a signature-incompatible
-zero-effort success value for one narrow branch, it is rejected explicitly
-with `StrategyExecutionRejectionReason.HYBRID_LOCAL_PUSH_NOT_YET_SUPPORTED`.
-Note this is narrower than it was before durable admission wiring: a PUSH
-request that *does* carry `ENQUEUE_DURABLE_WORK` (the default
-`reconcileAfterFallback = true`) now returns `DurablyEnqueued` instead of
-hitting this rejection — see the section above.
 
 ## Coordinator wiring
 

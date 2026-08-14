@@ -295,5 +295,6 @@ private fun strategyStatus(result: StrategySynchronizationExecutionResult): Stri
         is StrategySynchronizationExecutionResult.Cancelled -> "CANCELLED"
         is StrategySynchronizationExecutionResult.Deferred -> "DEFERRED"
         is StrategySynchronizationExecutionResult.DurablyEnqueued -> "DURABLY_ENQUEUED"
+        is StrategySynchronizationExecutionResult.AcceptedLocally -> "ACCEPTED_LOCALLY"
         is StrategySynchronizationExecutionResult.Rejected -> "REJECTED"
     }
