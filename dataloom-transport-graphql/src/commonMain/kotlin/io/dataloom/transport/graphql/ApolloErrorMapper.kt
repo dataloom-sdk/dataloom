@@ -27,8 +27,11 @@ internal object ApolloErrorMapper {
      * - All other [ApolloException] subtypes → NETWORK_FAILURE, NETWORK category,
      *   UNKNOWN recoverability.
      *
-     * The exception [cause] is preserved for diagnostics. No sensitive fields
-     * are surfaced in [GraphQLTransportError.message].
+     * The exception [cause] is preserved for diagnostics. [GraphQLTransportError.message]
+     * never includes [Throwable.message] content — an underlying HTTP client or
+     * platform exception's message is not something this codebase controls or
+     * can assume is free of URLs, tokens, or other sensitive content (see
+     * [safeMessage]), so only the exception's type name is surfaced.
      */
     fun fromApolloException(exception: ApolloException): GraphQLTransportError =
         when (exception) {
@@ -74,20 +77,20 @@ internal object ApolloErrorMapper {
      *
      * The error is classified as [io.dataloom.api.error.ErrorCategory.PROVIDER]
      * because the failure originates from the application's GraphQL provider
-     * (server) rather than the network transport layer. Only the message of the
-     * first error is included in the diagnostic summary. Full error details are
-     * not forwarded to prevent accidental leakage of sensitive server-side
-     * context.
+     * (server) rather than the network transport layer. No GraphQL error
+     * message content is forwarded — a server-side error message is
+     * application-defined text this codebase does not control and cannot
+     * assume is free of business data or personal data, so [message] carries
+     * only the error count, never response-body content.
      *
      * @param errors non-empty list of GraphQL errors from the response.
      */
     fun fromGraphQLErrors(errors: List<Error>): GraphQLTransportError {
         val count = errors.size
-        val firstMessage = errors.firstOrNull()?.message?.take(200) ?: "GraphQL error"
         val summary = if (count == 1) {
-            "GraphQL error response: $firstMessage"
+            "GraphQL error response (1 error)"
         } else {
-            "GraphQL error response ($count errors): $firstMessage"
+            "GraphQL error response ($count errors)"
         }
         return GraphQLTransportError(
             code = GraphQLTransportErrorCode.GRAPHQL_ERROR_RESPONSE,
@@ -110,6 +113,18 @@ internal object ApolloErrorMapper {
         message = "GraphQL response contained null data without errors",
     )
 
+    /**
+     * Returns a diagnostic label for [exception] that never includes
+     * [Throwable.message] content.
+     *
+     * `.take(200)`-style truncation is not sanitization — a client/platform
+     * exception's message routinely embeds the request URL (which may carry
+     * a token in a query parameter), a hostname, or other environment detail
+     * this codebase does not control. Only the exception's type name is
+     * safe to assume is free of that content, matching the same
+     * type-name-only pattern [io.dataloom.api.error.safeDiagnosticString]
+     * already applies to [io.dataloom.api.error.DataLoomError.cause].
+     */
     private fun safeMessage(exception: Throwable): String =
-        exception.message?.take(200) ?: exception::class.simpleName ?: "unknown"
+        exception::class.simpleName ?: "unknown"
 }

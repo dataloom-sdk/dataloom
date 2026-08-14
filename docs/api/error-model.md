@@ -109,18 +109,26 @@ A hint remains untrusted until bounded by `RetryHintConfiguration`.
 - The contract does not perform automatic logging.
 
 **Enforcement status:** `message` content is not automatically sanitized —
-this is a documented convention each `DataLoomError` implementation must
-uphold when it constructs its own `message`, not a runtime check. A known
-gap: some existing provider error mappers (for example the Apollo GraphQL
-transport's error mapper) forward a wrapped exception's own `.message`
-into `message` after only *truncating* it to a bounded length, which is not
-the same as redacting sensitive content — a wrapped HTTP client exception's
-message commonly embeds the request URL, which may carry a token in a query
-parameter. Closing that gap requires an actual content-classification/
-redaction strategy (regex/allowlist-based scrubbing, or switching those call
-sites to fully generic classified messages with no raw exception text at
-all) and is tracked as separate follow-up work under `#93`, not fixed by
-this section.
+this remains a documented convention each `DataLoomError` implementation must
+uphold when it constructs its own `message`, not a runtime check. There is no
+type-level guarantee against a future implementation putting sensitive
+content in `message`.
+
+**Closed gap (`#93`):** every current call site across this codebase was
+audited for the specific pattern that previously violated this convention —
+forwarding a wrapped exception's own `.message`, or a remote server's own
+error-message text, into a public `DataLoomError.message` after only
+*truncating* it to a bounded length. Truncation is not redaction: a wrapped
+HTTP client exception's message commonly embeds the request URL, which may
+carry a token in a query parameter, and a GraphQL server's own error text is
+application-defined content this codebase does not control. The Apollo
+GraphQL transport's error mapper (`ApolloErrorMapper`) was the only
+confirmed live instance (checked against Ktor, Retrofit, and gRPC's mappers,
+which already construct fully static `message` text with no wrapped-exception
+or server-response content) — it no longer forwards `Throwable.message` or
+GraphQL response-error message content at all. Exception diagnosability is
+preserved via the exception's type name only, the same type-name-only
+pattern `safeDiagnosticString()` already applies to `cause` below.
 
 ## Safe default rendering
 
