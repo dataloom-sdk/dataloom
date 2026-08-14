@@ -79,9 +79,11 @@ import io.dataloom.runtime.execution.SynchronizationPipeline
 import io.dataloom.runtime.execution.SynchronizationPipelineRegistry
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 
 /**
@@ -221,6 +223,33 @@ class RemoteFirstStrategyExecutorTest {
         val output = assertIs<StrategyTransportOutput.Pulled>(executed.output)
         assertIs<PullChangesResult.NoChanges>(output.result)
         assertEquals(1, transport.pullCalls)
+    }
+
+    @Test
+    fun transportOnlyPullCancellationPropagatesRatherThanBecomingAResult() = runTest {
+        // #102 acceptance: "cancellation ... cannot be hidden by fallback."
+        // A real kotlinx.coroutines.CancellationException from the direct
+        // (non-persisting) transport-only path must propagate out of
+        // execute(), not be converted into any typed result — including a
+        // FallbackActivated result, which allowlisted UNAVAILABLE failures
+        // would otherwise trigger.
+        val transport = FakeTransportProvider(pullThrows = CancellationException("pull cancelled"))
+        val request = remoteFirstRequest(
+            direction = SynchronizationDirection.PULL,
+            profile = remoteFirstProfile(
+                fallbackOn = setOf(StrategyRemoteOutcome.UNAVAILABLE),
+                persistRemoteResult = false,
+            ),
+            cacheState = StrategyCacheState.FRESH,
+        )
+
+        assertFailsWith<CancellationException> {
+            executor().execute(
+                request = request,
+                evaluation = evaluationFor(request),
+                providers = providerSet(transport, FakeFallbackStorageProvider()),
+            )
+        }
     }
 
     @Test
@@ -633,6 +662,8 @@ class RemoteFirstStrategyExecutorTest {
     private class FakeTransportProvider(
         private val pushResult: ProviderOperationResult<io.dataloom.api.synchronization.ChangeSetAcknowledgement>? = null,
         private val pullResult: ProviderOperationResult<PullChangesResult>? = null,
+        private val pushThrows: Throwable? = null,
+        private val pullThrows: Throwable? = null,
     ) : TransportProvider {
         var pushCalls: Int = 0
             private set
@@ -659,6 +690,7 @@ class RemoteFirstStrategyExecutorTest {
             request: PushChangesRequest,
         ): ProviderOperationResult<io.dataloom.api.synchronization.ChangeSetAcknowledgement> {
             pushCalls++
+            pushThrows?.let { throw it }
             return requireNotNull(pushResult) { "Test did not configure a pushChanges result." }
         }
 
@@ -666,6 +698,7 @@ class RemoteFirstStrategyExecutorTest {
             request: PullChangesRequest,
         ): ProviderOperationResult<PullChangesResult> {
             pullCalls++
+            pullThrows?.let { throw it }
             return requireNotNull(pullResult) { "Test did not configure a pullChanges result." }
         }
     }
