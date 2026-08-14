@@ -1,6 +1,8 @@
 package io.dataloom.consumer.android
 
 import android.content.Context
+import io.dataloom.android.androidDataLoomProviders
+import io.dataloom.android.installAndroidProviders
 import io.dataloom.api.identifier.ConflictId
 import io.dataloom.api.identifier.IdentifierGenerator
 import io.dataloom.api.identifier.QueueEntryId
@@ -15,8 +17,6 @@ import io.dataloom.api.provider.ProviderName
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.provider.ProviderVersion
-import io.dataloom.api.provider.StrategyProviderBindings
-import io.dataloom.api.provider.SynchronizationProviderBindings
 import io.dataloom.api.runtime.RuntimeDependencies
 import io.dataloom.api.runtime.RuntimeIdentifierGenerators
 import io.dataloom.api.synchronization.ChangeSetAcknowledgement
@@ -26,20 +26,24 @@ import io.dataloom.api.transport.PullChangesResult
 import io.dataloom.api.transport.PushChangesRequest
 import io.dataloom.api.transport.TransportProvider
 import io.dataloom.connectivity.android.AndroidConnectivityProvider
-import io.dataloom.queue.room.DataLoomDatabaseBuilder
 import io.dataloom.queue.room.RoomQueueProvider
 import io.dataloom.runtime.facade.DataLoom
 import io.dataloom.runtime.facade.DataLoomBuilder
 import io.dataloom.scheduler.workmanager.WorkManagerSchedulerProvider
-import io.dataloom.storage.room.DataLoomStorageDatabaseBuilder
 import io.dataloom.storage.room.RoomStorageProvider
 import java.util.UUID
 
 /**
  * Native Android reference wiring for `#101` (DL-039A) — proves that
+ * `dataloom-android`'s public [installAndroidProviders] helper (which wires
  * [AndroidConnectivityProvider], [RoomStorageProvider], [RoomQueueProvider],
- * and [WorkManagerSchedulerProvider] actually compose into one buildable
+ * and [WorkManagerSchedulerProvider]) actually composes into one buildable
  * [DataLoom] instance through [DataLoomBuilder]'s public API.
+ *
+ * This module used to hand-wire all four providers directly; it now
+ * dogfoods `dataloom-android`'s own real, production helper instead —
+ * proving that helper's public API is genuinely usable end to end, not just
+ * self-declared usable in its own module's KDoc.
  *
  * ## Scope
  *
@@ -52,18 +56,6 @@ import java.util.UUID
  * requires either a real device/emulator instrumented test or a Robolectric
  * unit test; neither exists in this repository yet. That remains a
  * separate, larger follow-up — not silently claimed as covered here.
- *
- * ## What this proves that nothing else in the repository did before it
- *
- * Each of the four Android provider modules
- * (`dataloom-connectivity-android`, `dataloom-storage-room`,
- * `dataloom-queue-room`, `dataloom-scheduler-workmanager`) has its own
- * isolated unit tests, but no module or test previously wired all four
- * together against a real [DataLoomBuilder] assembly. This function is that
- * proof, at compile time: if any provider's constructor signature, required
- * capability, or [DataLoomBuilder] binding shape ever drifts out of sync
- * with what a real native Android application would need, this module fails
- * to compile.
  *
  * ## Transport
  *
@@ -81,42 +73,12 @@ import java.util.UUID
  *   contract.
  */
 public fun buildReferenceDataLoom(context: Context): DataLoom {
-    val applicationContext = context.applicationContext ?: context
-
-    val connectivityProvider = AndroidConnectivityProvider(applicationContext)
-    val storageProvider = RoomStorageProvider(
-        DataLoomStorageDatabaseBuilder.build(applicationContext),
-    )
-    val queueProvider = RoomQueueProvider(
-        DataLoomDatabaseBuilder.build(applicationContext),
-    )
-    val schedulerProvider = WorkManagerSchedulerProvider(applicationContext)
+    val providers = androidDataLoomProviders(context)
     val transportProvider = ReferenceTransportProvider()
-
-    val bindings = SynchronizationProviderBindings(
-        storageProviderId = storageProvider.descriptor.id,
-        transportProviderId = transportProvider.descriptor.id,
-        schedulerProviderId = schedulerProvider.descriptor.id,
-        connectivityProviderId = connectivityProvider.descriptor.id,
-        queueProviderId = queueProvider.descriptor.id,
-    )
-    val strategyBindings = StrategyProviderBindings(
-        storageProviderId = storageProvider.descriptor.id,
-        transportProviderId = transportProvider.descriptor.id,
-        schedulerProviderId = schedulerProvider.descriptor.id,
-        connectivityProviderId = connectivityProvider.descriptor.id,
-        queueProviderId = queueProvider.descriptor.id,
-    )
 
     return DataLoomBuilder()
         .runtimeDependencies(referenceRuntimeDependencies())
-        .provider(connectivityProvider)
-        .provider(storageProvider)
-        .provider(queueProvider)
-        .provider(schedulerProvider)
-        .provider(transportProvider)
-        .defaultProviderBindings(bindings)
-        .defaultStrategyProviderBindings(strategyBindings)
+        .installAndroidProviders(providers, transportProvider)
         .build()
 }
 
