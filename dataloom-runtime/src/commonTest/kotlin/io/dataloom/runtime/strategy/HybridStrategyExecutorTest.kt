@@ -69,8 +69,10 @@ import io.dataloom.runtime.execution.SynchronizationPipeline
 import io.dataloom.runtime.execution.SynchronizationPipelineRegistry
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 
 /**
@@ -359,6 +361,33 @@ class HybridStrategyExecutorTest {
         assertIs<StrategyTransportOutput.Pulled>(executed.output)
         assertEquals(1, transport.pullCalls)
         assertEquals(0, pipeline.executeCalls)
+    }
+
+    @Test
+    fun persistRemoteResultFalsePullCancellationPropagatesRatherThanBecomingAResult() = runTest {
+        // #102 acceptance: "cancellation ... cannot be hidden by fallback."
+        // Hybrid's REMOTE-selected plan never carries a StrategyFallbackPlan
+        // (unlike remote-first's reactive fallback), so there is no local
+        // branch that could plausibly mask this — but it was still never
+        // proven that a real CancellationException from the direct transport
+        // call propagates rather than becoming a Failed result.
+        val transport = FakeTransportProvider(pullThrows = CancellationException("pull cancelled"))
+        val request = hybridRequest(
+            direction = SynchronizationDirection.PULL,
+            profile = hybridProfile(
+                primarySource = HybridSource.REMOTE,
+                persistRemoteResult = false,
+            ),
+            connectivity = StrategyConnectivity.AVAILABLE,
+        )
+
+        assertFailsWith<CancellationException> {
+            executor().execute(
+                request = request,
+                evaluation = evaluationFor(request),
+                providers = providerSet(transport, FakeFallbackStorageProvider()),
+            )
+        }
     }
 
     @Test
@@ -719,6 +748,8 @@ class HybridStrategyExecutorTest {
     private class FakeTransportProvider(
         private val pushResult: ProviderOperationResult<io.dataloom.api.synchronization.ChangeSetAcknowledgement>? = null,
         private val pullResult: ProviderOperationResult<PullChangesResult>? = null,
+        private val pushThrows: Throwable? = null,
+        private val pullThrows: Throwable? = null,
     ) : TransportProvider {
         var pushCalls: Int = 0
             private set
@@ -745,6 +776,7 @@ class HybridStrategyExecutorTest {
             request: PushChangesRequest,
         ): ProviderOperationResult<io.dataloom.api.synchronization.ChangeSetAcknowledgement> {
             pushCalls++
+            pushThrows?.let { throw it }
             return requireNotNull(pushResult) { "Test did not configure a pushChanges result." }
         }
 
@@ -752,6 +784,7 @@ class HybridStrategyExecutorTest {
             request: PullChangesRequest,
         ): ProviderOperationResult<PullChangesResult> {
             pullCalls++
+            pullThrows?.let { throw it }
             return requireNotNull(pullResult) { "Test did not configure a pullChanges result." }
         }
     }
