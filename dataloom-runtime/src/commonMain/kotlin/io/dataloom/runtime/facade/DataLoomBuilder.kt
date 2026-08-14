@@ -22,9 +22,16 @@ import io.dataloom.runtime.execution.SynchronizationPipeline
 import io.dataloom.runtime.execution.SynchronizationPipelineRegistry
 import io.dataloom.runtime.execution.bidirectional.BidirectionalPipelineConfiguration
 import io.dataloom.runtime.execution.bidirectional.BidirectionalSynchronizationPipeline
+import io.dataloom.api.conflict.DurableUnresolvedConflictLog
+import io.dataloom.runtime.conflict.ConflictDetectorRegistry
+import io.dataloom.runtime.conflict.ConflictResolverRegistry
+import io.dataloom.runtime.conflict.DurableConflictDetectionCoordinator
+import io.dataloom.runtime.conflict.SynchronizationConflictOrchestrator
+import io.dataloom.runtime.execution.inbound.InboundPullConflictDetectionConfiguration
 import io.dataloom.runtime.execution.inbound.InboundPullPipelineConfiguration
 import io.dataloom.runtime.execution.inbound.InboundPullSynchronizationPipeline
 import io.dataloom.runtime.execution.lifecycle.DispatchingSynchronizationLifecycleEventEmitter
+import io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitter
 import io.dataloom.runtime.execution.protection.ProviderProtectedStrategySynchronizationCoordinator
 import io.dataloom.runtime.execution.protection.ProviderProtectedSynchronizationCoordinator
 import io.dataloom.runtime.execution.outbound.OutboundPushPipelineConfiguration
@@ -143,6 +150,7 @@ public class DataLoomBuilder {
     private var strategyProviderProtectionSpec: DataLoomStrategyProviderProtectionSpec? = null
     private var retryAdministrationSpec: DataLoomRetryAdministrationSpec? = null
     private var circuitAdministrationSpec: DataLoomCircuitAdministrationSpec? = null
+    private var conflictDetectionSpec: DataLoomConflictDetectionSpec? = null
     private var built: Boolean = false
 
     // =========================================================================
@@ -252,6 +260,33 @@ public class DataLoomBuilder {
     public fun inboundConfiguration(config: InboundPullPipelineConfiguration): DataLoomBuilder =
         apply {
             inboundConfiguration = config
+        }
+
+    /**
+     * Enables real conflict detection during inbound pull for every
+     * registered pipeline — the default direct pipelines and the strategy
+     * engine's canonical pipelines used by all six built-in strategies.
+     *
+     * [io.dataloom.runtime.execution.inbound.InboundPullSynchronizationPipeline]
+     * has accepted an optional conflict-detection configuration since `#258`,
+     * but nothing in [DataLoomBuilder] constructed one before this method
+     * existed — every pipeline ran with conflict detection permanently
+     * disabled regardless of what an application registered. Calling this
+     * method is the only way to turn it on.
+     *
+     * When this method is not called, behavior is unchanged from before it
+     * existed: no local conflict candidate is ever read, and
+     * [io.dataloom.api.synchronization.SynchronizationSummary.conflictsDetected]
+     * stays `0`.
+     *
+     * @param spec the detectors, resolvers, binding, and durable
+     *   unresolved-conflict store to use. See [DataLoomConflictDetectionSpec]
+     *   for the full contract.
+     * @return this builder for chaining.
+     */
+    public fun conflictDetectionConfiguration(spec: DataLoomConflictDetectionSpec): DataLoomBuilder =
+        apply {
+            conflictDetectionSpec = spec
         }
 
     /**
@@ -581,8 +616,28 @@ public class DataLoomBuilder {
             null
         }
 
+        // --- 4b. Build conflict-detection configuration (optional) ---
+        val conflictDetectionConfig = conflictDetectionSpec?.let { spec ->
+            InboundPullConflictDetectionConfiguration(
+                coordinator = DurableConflictDetectionCoordinator(
+                    orchestrator = SynchronizationConflictOrchestrator(
+                        detectorRegistry = ConflictDetectorRegistry(spec.detectors),
+                        resolverRegistry = ConflictResolverRegistry(spec.resolvers),
+                        eventEmitter = lifecycleEventEmitter as? SynchronizationRuntimeEventEmitter,
+                    ),
+                    unresolvedConflictLog = DurableUnresolvedConflictLog(
+                        store = spec.unresolvedConflictStore,
+                        schemaVersion = spec.unresolvedConflictLogSchemaVersion,
+                        maximumStateUpdateAttempts = spec.unresolvedConflictLogMaximumStateUpdateAttempts,
+                    ),
+                    clock = deps.clock,
+                ),
+                bindings = spec.bindings,
+            )
+        }
+
         // --- 5. Build pipeline registry with defaults and custom overrides ---
-        val finalPipelineRegistry = buildPipelineRegistry()
+        val finalPipelineRegistry = buildPipelineRegistry(conflictDetectionConfig)
 
         // --- 6. Build connectivity (use NONE by default) ---
         val effectiveConnectivityConfiguration =
@@ -605,7 +660,7 @@ public class DataLoomBuilder {
             connectivityConfiguration = effectiveConnectivityConfiguration,
             connectivityPreflight = connectivityPreflight,
         )
-        val strategyPipelineRegistry = buildStrategyPipelineRegistry()
+        val strategyPipelineRegistry = buildStrategyPipelineRegistry(conflictDetectionConfig)
         val strategyExecutionCoordinator = StrategySynchronizationExecutionCoordinator(
             lifecycleCoordinator = lifecycleCoordinator,
             evaluator = BuiltInSynchronizationStrategyEvaluator(),
@@ -786,7 +841,9 @@ public class DataLoomBuilder {
      * [SynchronizationPipelineRegistry] throws [IllegalArgumentException] for
      * duplicate directions.
      */
-    private fun buildPipelineRegistry(): SynchronizationPipelineRegistry {
+    private fun buildPipelineRegistry(
+        conflictDetectionConfig: InboundPullConflictDetectionConfiguration?,
+    ): SynchronizationPipelineRegistry {
         val customCopy = customPipelineList.toList()
 
         val customDirections = customCopy.map { it.direction }.toSet()
@@ -802,6 +859,7 @@ public class DataLoomBuilder {
             customCopy.firstOrNull { it.direction == io.dataloom.api.model.SynchronizationDirection.PULL }
                 ?: InboundPullSynchronizationPipeline(
                     inboundConfiguration ?: InboundPullPipelineConfiguration(),
+                    conflictDetectionConfig,
                 )
 
         val effectiveBidirectional: SynchronizationPipeline =
@@ -836,12 +894,15 @@ public class DataLoomBuilder {
      * Built-in strategy semantics must not silently change because an
      * application registered a legacy custom pipeline.
      */
-    private fun buildStrategyPipelineRegistry(): SynchronizationPipelineRegistry {
+    private fun buildStrategyPipelineRegistry(
+        conflictDetectionConfig: InboundPullConflictDetectionConfiguration?,
+    ): SynchronizationPipelineRegistry {
         val outbound = OutboundPushSynchronizationPipeline(
             outboundConfiguration ?: OutboundPushPipelineConfiguration(),
         )
         val inbound = InboundPullSynchronizationPipeline(
             inboundConfiguration ?: InboundPullPipelineConfiguration(),
+            conflictDetectionConfig,
         )
         val bidirectional = BidirectionalSynchronizationPipeline(
             outboundPipeline = outbound,
