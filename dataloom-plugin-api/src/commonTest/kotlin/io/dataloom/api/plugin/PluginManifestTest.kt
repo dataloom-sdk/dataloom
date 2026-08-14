@@ -28,7 +28,7 @@ class PluginManifestTest {
     )
 
     @Test
-    fun `defaults to empty capabilities, permissions, and dependencies`() {
+    fun `defaults to empty capabilities and permissions and dependencies`() {
         val result = manifest()
 
         assertTrue(result.capabilities.isEmpty())
@@ -37,7 +37,7 @@ class PluginManifestTest {
     }
 
     @Test
-    fun `preserves supplied capabilities, permissions, and dependencies`() {
+    fun `preserves supplied capabilities and permissions and dependencies`() {
         val capability = PluginCapability("custom-conflict-resolution")
         val permission = PluginPermission("network-access")
         val dependency = PluginDependency(
