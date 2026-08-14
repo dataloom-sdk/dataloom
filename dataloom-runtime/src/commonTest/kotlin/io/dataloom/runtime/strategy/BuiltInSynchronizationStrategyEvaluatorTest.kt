@@ -533,6 +533,56 @@ class BuiltInSynchronizationStrategyEvaluatorTest {
     }
 
     @Test
+    fun adaptiveAvailableConnectivitySkipsRemoteCandidatesWhenTransportIsUnavailable() {
+        // #102 acceptance: "provider degradation ... matrices pass for
+        // every built-in profile" and "Adaptive: bounded deterministic
+        // selection among configured concrete profiles using ...
+        // provider health/circuit state ...". selectAdaptiveCandidate()'s
+        // AVAILABLE branch (line ~104) gates REMOTE_FIRST/HYBRID(remote)/
+        // NETWORK_ONLY behind `transportHealth != UNAVAILABLE` — a
+        // genuinely distinct signal from connectivity itself (e.g. a
+        // circuit breaker open on the transport provider while the device
+        // is still online) — but no test ever varied transportHealth for
+        // adaptive selection specifically.
+        val adaptive = AdaptiveStrategyProfile(
+            id = StrategyProfileId("adaptive-transport-health"),
+            configurationVersion = version(),
+            candidates = listOf(remote(), cache(), offline()),
+        )
+        // MISSING (not FRESH) cache state is deliberate: selectAdaptiveCandidate()
+        // shortcuts straight to CACHE_FIRST whenever cacheState == FRESH,
+        // before the connectivity/transportHealth branch is even reached —
+        // using FRESH here would test that shortcut, not transportHealth.
+        val transportUnavailable = evaluate(
+            adaptive,
+            SynchronizationDirection.PULL,
+            evidence(
+                connectivity = StrategyConnectivity.AVAILABLE,
+                cacheState = StrategyCacheState.MISSING,
+                transportHealth = StrategyProviderHealth.UNAVAILABLE,
+            ),
+        )
+        val transportDegraded = evaluate(
+            adaptive,
+            SynchronizationDirection.PULL,
+            evidence(
+                connectivity = StrategyConnectivity.AVAILABLE,
+                cacheState = StrategyCacheState.MISSING,
+                transportHealth = StrategyProviderHealth.DEGRADED,
+            ),
+        )
+
+        assertEquals(
+            BuiltInSynchronizationStrategy.CACHE_FIRST,
+            transportUnavailable.plan.effectiveStrategy,
+        )
+        assertEquals(
+            BuiltInSynchronizationStrategy.REMOTE_FIRST,
+            transportDegraded.plan.effectiveStrategy,
+        )
+    }
+
+    @Test
     fun adaptiveLimitedConnectivityPrefersHybridOverCacheOverOffline() {
         // #102 acceptance: "Adaptive: bounded deterministic selection among
         // configured concrete profiles using ... connectivity ..."
