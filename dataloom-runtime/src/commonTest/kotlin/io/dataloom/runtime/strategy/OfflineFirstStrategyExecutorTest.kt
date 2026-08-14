@@ -71,7 +71,9 @@ import io.dataloom.runtime.execution.SynchronizationPipeline
 import io.dataloom.runtime.execution.SynchronizationPipelineRegistry
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 
 /**
@@ -229,6 +231,38 @@ class OfflineFirstStrategyExecutorTest {
         assertIs<SynchronizationResult.Succeeded>(output.result)
         assertEquals(1, storage.evaluateLocalFallbackCalls)
         assertEquals(1, pipeline.executeCalls)
+    }
+
+    @Test
+    fun remoteSynchronizationCancellationPropagatesRatherThanBecomingAResult() = runTest {
+        // #102 acceptance: "cancellation ... cannot be hidden by fallback."
+        // Every offline-first plan always carries a remote leg (the evaluator
+        // only reaches EXECUTE when connectivity is available), so a real
+        // cancellation here must propagate out of execute() rather than be
+        // converted into any Executed/Failed result — plausible here
+        // specifically because local state was already served successfully
+        // and could mask the remote leg's cancellation as if it never ran.
+        val storage = FakeOfflineFirstStorageProvider(
+            fallbackResult = ProviderOperationResult.Success(
+                StrategyLocalFallbackResult.Available(StrategyCacheState.FRESH),
+            ),
+        )
+        val pipeline = FakePipeline(SynchronizationDirection.PULL) {
+            throw CancellationException("remote synchronization cancelled")
+        }
+        val request = offlineFirstRequest(
+            direction = SynchronizationDirection.PULL,
+            profile = offlineFirstProfile(requireDurableQueue = false, reconcileWhenOnline = false),
+            cacheState = StrategyCacheState.FRESH,
+        )
+
+        assertFailsWith<CancellationException> {
+            executor(SynchronizationPipelineRegistry(listOf(pipeline))).execute(
+                request = request,
+                evaluation = evaluationFor(request),
+                providers = providerSet(FakeTransportProvider(), storage),
+            )
+        }
     }
 
     @Test
