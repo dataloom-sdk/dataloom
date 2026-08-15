@@ -30,3 +30,17 @@ final class io.dataloom.platform.ios.scheduling/AppleSchedulerProvider : io.data
     final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.platform.ios.scheduling/AppleSchedulerProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
     final suspend fun schedule(io.dataloom.api.scheduling/ScheduleRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.scheduling/ScheduleReceipt> // io.dataloom.platform.ios.scheduling/AppleSchedulerProvider.schedule|schedule(io.dataloom.api.scheduling.ScheduleRequest){}[0]
 }
+
+final class io.dataloom.platform.ios/AppleDataLoomProviders { // io.dataloom.platform.ios/AppleDataLoomProviders|null[0]
+    final val connectivity // io.dataloom.platform.ios/AppleDataLoomProviders.connectivity|{}connectivity[0]
+        final fun <get-connectivity>(): io.dataloom.platform.ios.connectivity/AppleConnectivityProvider // io.dataloom.platform.ios/AppleDataLoomProviders.connectivity.<get-connectivity>|<get-connectivity>(){}[0]
+    final val queue // io.dataloom.platform.ios/AppleDataLoomProviders.queue|{}queue[0]
+        final fun <get-queue>(): io.dataloom.runtime.queue/AppleFileQueueProvider // io.dataloom.platform.ios/AppleDataLoomProviders.queue.<get-queue>|<get-queue>(){}[0]
+    final val scheduler // io.dataloom.platform.ios/AppleDataLoomProviders.scheduler|{}scheduler[0]
+        final fun <get-scheduler>(): io.dataloom.platform.ios.scheduling/AppleSchedulerProvider // io.dataloom.platform.ios/AppleDataLoomProviders.scheduler.<get-scheduler>|<get-scheduler>(){}[0]
+    final val storage // io.dataloom.platform.ios/AppleDataLoomProviders.storage|{}storage[0]
+        final fun <get-storage>(): io.dataloom.storage.sqldelight/SqlDelightStorageProvider // io.dataloom.platform.ios/AppleDataLoomProviders.storage.<get-storage>|<get-storage>(){}[0]
+}
+
+final fun (io.dataloom.runtime.facade/DataLoomBuilder).io.dataloom.platform.ios/installAppleProviders(io.dataloom.platform.ios/AppleDataLoomProviders, io.dataloom.api.transport/TransportProvider): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.platform.ios/installAppleProviders|installAppleProviders@io.dataloom.runtime.facade.DataLoomBuilder(io.dataloom.platform.ios.AppleDataLoomProviders;io.dataloom.api.transport.TransportProvider){}[0]
+final fun io.dataloom.platform.ios/appleDataLoomProviders(kotlin.collections/Set<kotlin/String>, kotlin/String, kotlin/String = ..., kotlin/String = ...): io.dataloom.platform.ios/AppleDataLoomProviders // io.dataloom.platform.ios/appleDataLoomProviders|appleDataLoomProviders(kotlin.collections.Set<kotlin.String>;kotlin.String;kotlin.String;kotlin.String){}[0]
