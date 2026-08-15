@@ -506,6 +506,35 @@ class BuiltInSynchronizationStrategyEvaluatorTest {
     }
 
     @Test
+    fun hybridMissingCacheStatePreventsLocalFallbackIndependentlyOfStorageHealth() {
+        // #102 acceptance: "fresh/stale/missing cache ... matrices pass for
+        // every built-in profile." Completes the other half of
+        // evaluateHybrid's localAvailable conjunction — hybridStorageHealth-
+        // GatesLocalFallbackIndependentlyOfCacheState above already proved
+        // storageHealth == UNAVAILABLE rejects even with STALE (available)
+        // cache; this proves the mirror case: cacheState == MISSING rejects
+        // even with fully HEALTHY storage, since isLocalDataAvailable()
+        // only ever returns true for FRESH or STALE. Every existing hybrid
+        // evaluator test only ever used STALE for this branch — MISSING was
+        // never exercised at all.
+        val profile = hybridRemote()
+        val result = evaluate(
+            profile,
+            SynchronizationDirection.PULL,
+            evidence(
+                connectivity = StrategyConnectivity.UNAVAILABLE,
+                cacheState = StrategyCacheState.MISSING,
+            ),
+        )
+
+        assertEquals(StrategyDisposition.REJECT, result.plan.disposition)
+        assertEquals(
+            StrategyRejectionReason.REQUIRED_CAPABILITY_UNAVAILABLE,
+            result.plan.rejectionReason,
+        )
+    }
+
+    @Test
     fun hybridUnknownConnectivityPolicyDoesNotImproviseFallback() {
         val deferred = evaluate(
             profile = hybridRemote(
