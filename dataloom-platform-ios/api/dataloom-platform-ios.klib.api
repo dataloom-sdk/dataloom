@@ -17,3 +17,16 @@ final class io.dataloom.platform.ios.connectivity/AppleConnectivityProvider : io
     final suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.platform.ios.connectivity/AppleConnectivityProvider.health|health(){}[0]
     final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.platform.ios.connectivity/AppleConnectivityProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
 }
+
+final class io.dataloom.platform.ios.scheduling/AppleSchedulerProvider : io.dataloom.api.scheduling/SchedulerProvider { // io.dataloom.platform.ios.scheduling/AppleSchedulerProvider|null[0]
+    constructor <init>(kotlin.collections/Set<kotlin/String>) // io.dataloom.platform.ios.scheduling/AppleSchedulerProvider.<init>|<init>(kotlin.collections.Set<kotlin.String>){}[0]
+
+    final val descriptor // io.dataloom.platform.ios.scheduling/AppleSchedulerProvider.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.platform.ios.scheduling/AppleSchedulerProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    final suspend fun cancel(io.dataloom.api.scheduling/ScheduleCancellationRequest): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.platform.ios.scheduling/AppleSchedulerProvider.cancel|cancel(io.dataloom.api.scheduling.ScheduleCancellationRequest){}[0]
+    final suspend fun close(): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.platform.ios.scheduling/AppleSchedulerProvider.close|close(){}[0]
+    final suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.platform.ios.scheduling/AppleSchedulerProvider.health|health(){}[0]
+    final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.platform.ios.scheduling/AppleSchedulerProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
+    final suspend fun schedule(io.dataloom.api.scheduling/ScheduleRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.scheduling/ScheduleReceipt> // io.dataloom.platform.ios.scheduling/AppleSchedulerProvider.schedule|schedule(io.dataloom.api.scheduling.ScheduleRequest){}[0]
+}
