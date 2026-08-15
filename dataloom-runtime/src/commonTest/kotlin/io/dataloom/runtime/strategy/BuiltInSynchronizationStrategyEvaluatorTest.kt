@@ -352,6 +352,50 @@ class BuiltInSynchronizationStrategyEvaluatorTest {
     }
 
     @Test
+    fun cacheFirstServeStalePolicyServesWithoutSchedulingAnyRefresh() {
+        // #102 acceptance: "fresh/stale/missing cache ... matrices pass for
+        // every built-in profile." StaleCachePolicy has three values —
+        // REJECT (covered above) and the cache() factory's own default
+        // SERVE_STALE_AND_REFRESH (covered by the fresh/stale/missing test
+        // above) — but SERVE_STALE itself, the "serve what we have and do
+        // NOT refresh" middle policy, had zero test coverage anywhere in
+        // this suite.
+        val result = evaluate(
+            profile = CacheFirstStrategyProfile(
+                id = StrategyProfileId("cache-serve-stale-only"),
+                configurationVersion = version(),
+                staleCachePolicy = StaleCachePolicy.SERVE_STALE,
+            ),
+            direction = SynchronizationDirection.PULL,
+            evidence = evidence(cacheState = StrategyCacheState.STALE),
+        )
+
+        assertEquals(StrategyDisposition.EXECUTE, result.plan.disposition)
+        assertEquals(listOf(StrategyOperation.SERVE_LOCAL), result.plan.operations)
+        assertFalse(StrategyOperation.SCHEDULE_REFRESH in result.plan.operations)
+    }
+
+    @Test
+    fun cacheFirstUnknownCacheStateRejectsRatherThanGuessing() {
+        // The evaluateCacheFirst() UNKNOWN/NOT_EVALUATED branch (a distinct
+        // fourth case alongside FRESH/STALE/MISSING) had no direct test —
+        // the adaptive-selection test elsewhere in this file exercises
+        // StrategyCacheState.UNKNOWN, but only for evaluateAdaptive's own
+        // candidate routing, never for evaluateCacheFirst's own dispatch.
+        val result = evaluate(
+            profile = cache(),
+            direction = SynchronizationDirection.PULL,
+            evidence = evidence(cacheState = StrategyCacheState.UNKNOWN),
+        )
+
+        assertEquals(StrategyDisposition.REJECT, result.plan.disposition)
+        assertEquals(
+            StrategyRejectionReason.REQUIRED_CAPABILITY_UNAVAILABLE,
+            result.plan.rejectionReason,
+        )
+    }
+
+    @Test
     fun networkOnlyNeverRequiresOrInvokesLocalCapabilitiesAcrossDirections() {
         SynchronizationDirection.entries.forEach { direction ->
             val result = evaluate(
