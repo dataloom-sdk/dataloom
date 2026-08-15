@@ -6,6 +6,7 @@ import io.dataloom.api.identifier.TraceId
 import io.dataloom.api.identifier.WorkflowId
 import io.dataloom.api.security.DataClassification
 import io.dataloom.api.security.RedactedAttributes
+import io.dataloom.api.security.isBoundedToken
 import io.dataloom.api.time.DataLoomInstant
 import kotlin.jvm.JvmInline
 
@@ -13,7 +14,7 @@ import kotlin.jvm.JvmInline
 @JvmInline
 public value class OperationalEventId(public val value: String) {
     init {
-        require(value.isOperationalToken()) { "OperationalEventId must be a bounded token." }
+        require(isBoundedToken(value, MAX_OPERATIONAL_TOKEN_LENGTH, ::isOperationalTokenCharacter)) { "OperationalEventId must be a bounded token." }
     }
 
     override fun toString(): String = value
@@ -23,7 +24,7 @@ public value class OperationalEventId(public val value: String) {
 @JvmInline
 public value class OperationalEventType(public val value: String) {
     init {
-        require(value.isOperationalToken()) { "OperationalEventType must be a bounded token." }
+        require(isBoundedToken(value, MAX_OPERATIONAL_TOKEN_LENGTH, ::isOperationalTokenCharacter)) { "OperationalEventType must be a bounded token." }
     }
 
     override fun toString(): String = value
@@ -33,7 +34,7 @@ public value class OperationalEventType(public val value: String) {
 @JvmInline
 public value class OperationalEventSource(public val value: String) {
     init {
-        require(value.isOperationalToken()) { "OperationalEventSource must be a bounded token." }
+        require(isBoundedToken(value, MAX_OPERATIONAL_TOKEN_LENGTH, ::isOperationalTokenCharacter)) { "OperationalEventSource must be a bounded token." }
     }
 
     override fun toString(): String = value
@@ -43,7 +44,7 @@ public value class OperationalEventSource(public val value: String) {
 @JvmInline
 public value class OperationalPayloadType(public val value: String) {
     init {
-        require(value.isOperationalToken()) { "OperationalPayloadType must be a bounded token." }
+        require(isBoundedToken(value, MAX_OPERATIONAL_TOKEN_LENGTH, ::isOperationalTokenCharacter)) { "OperationalPayloadType must be a bounded token." }
     }
 
     override fun toString(): String = value
@@ -53,7 +54,7 @@ public value class OperationalPayloadType(public val value: String) {
 @JvmInline
 public value class OperationalPayloadEncoding(public val value: String) {
     init {
-        require(value.isOperationalToken()) { "OperationalPayloadEncoding must be a bounded token." }
+        require(isBoundedToken(value, MAX_OPERATIONAL_TOKEN_LENGTH, ::isOperationalTokenCharacter)) { "OperationalPayloadEncoding must be a bounded token." }
     }
 
     override fun toString(): String = value
@@ -149,14 +150,12 @@ public data class OperationalEventEnvelope(
 
 private const val MAX_OPERATIONAL_TOKEN_LENGTH: Int = 128
 
-private fun String.isOperationalToken(): Boolean =
-    length in 1..MAX_OPERATIONAL_TOKEN_LENGTH && all { character: Char ->
-        character in 'a'..'z' ||
-            character in 'A'..'Z' ||
-            character in '0'..'9' ||
-            character == '.' ||
-            character == '_' ||
-            character == '-' ||
-            character == ':' ||
-            character == '/'
-    }
+private fun isOperationalTokenCharacter(character: Char): Boolean =
+    character in 'a'..'z' ||
+        character in 'A'..'Z' ||
+        character in '0'..'9' ||
+        character == '.' ||
+        character == '_' ||
+        character == '-' ||
+        character == ':' ||
+        character == '/'

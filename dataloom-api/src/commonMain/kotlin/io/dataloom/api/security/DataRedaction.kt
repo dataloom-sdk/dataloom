@@ -73,7 +73,7 @@ public class ClassifiedData private constructor(
                 "Classified data contains too many fields."
             }
             entries.keys.forEach { key: String ->
-                require(key.length in 1..MAX_CLASSIFIED_KEY_LENGTH && key.isSafeAttributeKey()) {
+                require(isBoundedToken(key, MAX_CLASSIFIED_KEY_LENGTH, ::isSafeAttributeKeyCharacter)) {
                     "Classified data key must be a bounded ASCII token."
                 }
             }
@@ -119,7 +119,7 @@ public class RedactedAttributes private constructor(
                 "Redacted attributes contain too many fields."
             }
             entries.forEach { (key: String, value: String) ->
-                require(key.length in 1..MAX_REDACTED_KEY_LENGTH && key.isSafeAttributeKey()) {
+                require(isBoundedToken(key, MAX_REDACTED_KEY_LENGTH, ::isSafeAttributeKeyCharacter)) {
                     "Redacted attribute key must be a bounded ASCII token."
                 }
                 require(value.length <= MAX_REDACTED_VALUE_LENGTH) {
@@ -271,11 +271,10 @@ public class StrictDataLoomRedactor(
     }
 }
 
-private fun String.isSafeAttributeKey(): Boolean = all { character: Char ->
+private fun isSafeAttributeKeyCharacter(character: Char): Boolean =
     character in 'a'..'z' ||
         character in 'A'..'Z' ||
         character in '0'..'9' ||
         character == '.' ||
         character == '_' ||
         character == '-'
-}
