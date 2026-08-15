@@ -1,0 +1,312 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <dataloom:dataloom-config>
+final enum class io.dataloom.api.configuration/ConfigurationFindingSeverity : kotlin/Enum<io.dataloom.api.configuration/ConfigurationFindingSeverity> { // io.dataloom.api.configuration/ConfigurationFindingSeverity|null[0]
+    enum entry ERROR // io.dataloom.api.configuration/ConfigurationFindingSeverity.ERROR|null[0]
+    enum entry WARNING // io.dataloom.api.configuration/ConfigurationFindingSeverity.WARNING|null[0]
+
+    final val entries // io.dataloom.api.configuration/ConfigurationFindingSeverity.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.configuration/ConfigurationFindingSeverity> // io.dataloom.api.configuration/ConfigurationFindingSeverity.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.configuration/ConfigurationFindingSeverity // io.dataloom.api.configuration/ConfigurationFindingSeverity.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.configuration/ConfigurationFindingSeverity> // io.dataloom.api.configuration/ConfigurationFindingSeverity.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.api.configuration/ConfigurationScope : kotlin/Enum<io.dataloom.api.configuration/ConfigurationScope> { // io.dataloom.api.configuration/ConfigurationScope|null[0]
+    enum entry BUILT_IN_DEFAULT // io.dataloom.api.configuration/ConfigurationScope.BUILT_IN_DEFAULT|null[0]
+    enum entry LOCAL_OVERRIDE // io.dataloom.api.configuration/ConfigurationScope.LOCAL_OVERRIDE|null[0]
+    enum entry REMOTE_ASSIGNED // io.dataloom.api.configuration/ConfigurationScope.REMOTE_ASSIGNED|null[0]
+
+    final val entries // io.dataloom.api.configuration/ConfigurationScope.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.configuration/ConfigurationScope> // io.dataloom.api.configuration/ConfigurationScope.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.configuration/ConfigurationScope // io.dataloom.api.configuration/ConfigurationScope.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.configuration/ConfigurationScope> // io.dataloom.api.configuration/ConfigurationScope.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.api.configuration/ConfigurationValueType : kotlin/Enum<io.dataloom.api.configuration/ConfigurationValueType> { // io.dataloom.api.configuration/ConfigurationValueType|null[0]
+    enum entry BOOLEAN // io.dataloom.api.configuration/ConfigurationValueType.BOOLEAN|null[0]
+    enum entry DOUBLE // io.dataloom.api.configuration/ConfigurationValueType.DOUBLE|null[0]
+    enum entry LONG // io.dataloom.api.configuration/ConfigurationValueType.LONG|null[0]
+    enum entry SECRET_REFERENCE // io.dataloom.api.configuration/ConfigurationValueType.SECRET_REFERENCE|null[0]
+    enum entry STRING // io.dataloom.api.configuration/ConfigurationValueType.STRING|null[0]
+
+    final val entries // io.dataloom.api.configuration/ConfigurationValueType.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.configuration/ConfigurationValueType> // io.dataloom.api.configuration/ConfigurationValueType.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.configuration/ConfigurationValueType // io.dataloom.api.configuration/ConfigurationValueType.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.configuration/ConfigurationValueType> // io.dataloom.api.configuration/ConfigurationValueType.values|values#static(){}[0]
+}
+
+final class io.dataloom.api.configuration/ConfigurationEntrySchema { // io.dataloom.api.configuration/ConfigurationEntrySchema|null[0]
+    constructor <init>(io.dataloom.api.configuration/ConfigurationKey, io.dataloom.api.configuration/ConfigurationValueType, kotlin/Boolean = ...) // io.dataloom.api.configuration/ConfigurationEntrySchema.<init>|<init>(io.dataloom.api.configuration.ConfigurationKey;io.dataloom.api.configuration.ConfigurationValueType;kotlin.Boolean){}[0]
+
+    final val key // io.dataloom.api.configuration/ConfigurationEntrySchema.key|{}key[0]
+        final fun <get-key>(): io.dataloom.api.configuration/ConfigurationKey // io.dataloom.api.configuration/ConfigurationEntrySchema.key.<get-key>|<get-key>(){}[0]
+    final val required // io.dataloom.api.configuration/ConfigurationEntrySchema.required|{}required[0]
+        final fun <get-required>(): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationEntrySchema.required.<get-required>|<get-required>(){}[0]
+    final val type // io.dataloom.api.configuration/ConfigurationEntrySchema.type|{}type[0]
+        final fun <get-type>(): io.dataloom.api.configuration/ConfigurationValueType // io.dataloom.api.configuration/ConfigurationEntrySchema.type.<get-type>|<get-type>(){}[0]
+
+    final fun component1(): io.dataloom.api.configuration/ConfigurationKey // io.dataloom.api.configuration/ConfigurationEntrySchema.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.configuration/ConfigurationValueType // io.dataloom.api.configuration/ConfigurationEntrySchema.component2|component2(){}[0]
+    final fun component3(): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationEntrySchema.component3|component3(){}[0]
+    final fun copy(io.dataloom.api.configuration/ConfigurationKey = ..., io.dataloom.api.configuration/ConfigurationValueType = ..., kotlin/Boolean = ...): io.dataloom.api.configuration/ConfigurationEntrySchema // io.dataloom.api.configuration/ConfigurationEntrySchema.copy|copy(io.dataloom.api.configuration.ConfigurationKey;io.dataloom.api.configuration.ConfigurationValueType;kotlin.Boolean){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationEntrySchema.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/ConfigurationEntrySchema.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.configuration/ConfigurationEntrySchema.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.configuration/ConfigurationSchema { // io.dataloom.api.configuration/ConfigurationSchema|null[0]
+    constructor <init>(kotlin.collections/Collection<io.dataloom.api.configuration/ConfigurationEntrySchema>) // io.dataloom.api.configuration/ConfigurationSchema.<init>|<init>(kotlin.collections.Collection<io.dataloom.api.configuration.ConfigurationEntrySchema>){}[0]
+
+    final val entries // io.dataloom.api.configuration/ConfigurationSchema.entries|{}entries[0]
+        final fun <get-entries>(): kotlin.collections/Map<io.dataloom.api.configuration/ConfigurationKey, io.dataloom.api.configuration/ConfigurationEntrySchema> // io.dataloom.api.configuration/ConfigurationSchema.entries.<get-entries>|<get-entries>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationSchema.equals|equals(kotlin.Any?){}[0]
+    final fun get(io.dataloom.api.configuration/ConfigurationKey): io.dataloom.api.configuration/ConfigurationEntrySchema? // io.dataloom.api.configuration/ConfigurationSchema.get|get(io.dataloom.api.configuration.ConfigurationKey){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/ConfigurationSchema.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.configuration/ConfigurationSchema.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.configuration/ConfigurationSnapshot { // io.dataloom.api.configuration/ConfigurationSnapshot|null[0]
+    final val checksum // io.dataloom.api.configuration/ConfigurationSnapshot.checksum|{}checksum[0]
+        final fun <get-checksum>(): io.dataloom.api.security/DataLoomDigest // io.dataloom.api.configuration/ConfigurationSnapshot.checksum.<get-checksum>|<get-checksum>(){}[0]
+    final val keys // io.dataloom.api.configuration/ConfigurationSnapshot.keys|{}keys[0]
+        final fun <get-keys>(): kotlin.collections/Set<io.dataloom.api.configuration/ConfigurationKey> // io.dataloom.api.configuration/ConfigurationSnapshot.keys.<get-keys>|<get-keys>(){}[0]
+    final val version // io.dataloom.api.configuration/ConfigurationSnapshot.version|{}version[0]
+        final fun <get-version>(): kotlin/Long // io.dataloom.api.configuration/ConfigurationSnapshot.version.<get-version>|<get-version>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationSnapshot.equals|equals(kotlin.Any?){}[0]
+    final fun get(io.dataloom.api.configuration/ConfigurationKey): io.dataloom.api.configuration/ConfigurationValue? // io.dataloom.api.configuration/ConfigurationSnapshot.get|get(io.dataloom.api.configuration.ConfigurationKey){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/ConfigurationSnapshot.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.configuration/ConfigurationSnapshot.toString|toString(){}[0]
+
+    final object Companion { // io.dataloom.api.configuration/ConfigurationSnapshot.Companion|null[0]
+        final fun create(kotlin/Long, kotlin.collections/Map<io.dataloom.api.configuration/ConfigurationKey, io.dataloom.api.configuration/ConfigurationValue>, io.dataloom.api.security/DataLoomDigestCalculator): io.dataloom.api.configuration/ConfigurationSnapshot // io.dataloom.api.configuration/ConfigurationSnapshot.Companion.create|create(kotlin.Long;kotlin.collections.Map<io.dataloom.api.configuration.ConfigurationKey,io.dataloom.api.configuration.ConfigurationValue>;io.dataloom.api.security.DataLoomDigestCalculator){}[0]
+    }
+}
+
+final class io.dataloom.api.configuration/ConfigurationSource { // io.dataloom.api.configuration/ConfigurationSource|null[0]
+    constructor <init>(io.dataloom.api.configuration/ConfigurationScope, kotlin.collections/Map<io.dataloom.api.configuration/ConfigurationKey, io.dataloom.api.configuration/ConfigurationValue>) // io.dataloom.api.configuration/ConfigurationSource.<init>|<init>(io.dataloom.api.configuration.ConfigurationScope;kotlin.collections.Map<io.dataloom.api.configuration.ConfigurationKey,io.dataloom.api.configuration.ConfigurationValue>){}[0]
+
+    final val entries // io.dataloom.api.configuration/ConfigurationSource.entries|{}entries[0]
+        final fun <get-entries>(): kotlin.collections/Map<io.dataloom.api.configuration/ConfigurationKey, io.dataloom.api.configuration/ConfigurationValue> // io.dataloom.api.configuration/ConfigurationSource.entries.<get-entries>|<get-entries>(){}[0]
+    final val scope // io.dataloom.api.configuration/ConfigurationSource.scope|{}scope[0]
+        final fun <get-scope>(): io.dataloom.api.configuration/ConfigurationScope // io.dataloom.api.configuration/ConfigurationSource.scope.<get-scope>|<get-scope>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationSource.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/ConfigurationSource.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.configuration/ConfigurationSource.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.configuration/ConfigurationValidationFinding { // io.dataloom.api.configuration/ConfigurationValidationFinding|null[0]
+    constructor <init>(io.dataloom.api.configuration/ConfigurationFindingSeverity, io.dataloom.api.configuration/ConfigurationKey?, kotlin/String) // io.dataloom.api.configuration/ConfigurationValidationFinding.<init>|<init>(io.dataloom.api.configuration.ConfigurationFindingSeverity;io.dataloom.api.configuration.ConfigurationKey?;kotlin.String){}[0]
+
+    final val key // io.dataloom.api.configuration/ConfigurationValidationFinding.key|{}key[0]
+        final fun <get-key>(): io.dataloom.api.configuration/ConfigurationKey? // io.dataloom.api.configuration/ConfigurationValidationFinding.key.<get-key>|<get-key>(){}[0]
+    final val message // io.dataloom.api.configuration/ConfigurationValidationFinding.message|{}message[0]
+        final fun <get-message>(): kotlin/String // io.dataloom.api.configuration/ConfigurationValidationFinding.message.<get-message>|<get-message>(){}[0]
+    final val severity // io.dataloom.api.configuration/ConfigurationValidationFinding.severity|{}severity[0]
+        final fun <get-severity>(): io.dataloom.api.configuration/ConfigurationFindingSeverity // io.dataloom.api.configuration/ConfigurationValidationFinding.severity.<get-severity>|<get-severity>(){}[0]
+
+    final fun component1(): io.dataloom.api.configuration/ConfigurationFindingSeverity // io.dataloom.api.configuration/ConfigurationValidationFinding.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.configuration/ConfigurationKey? // io.dataloom.api.configuration/ConfigurationValidationFinding.component2|component2(){}[0]
+    final fun component3(): kotlin/String // io.dataloom.api.configuration/ConfigurationValidationFinding.component3|component3(){}[0]
+    final fun copy(io.dataloom.api.configuration/ConfigurationFindingSeverity = ..., io.dataloom.api.configuration/ConfigurationKey? = ..., kotlin/String = ...): io.dataloom.api.configuration/ConfigurationValidationFinding // io.dataloom.api.configuration/ConfigurationValidationFinding.copy|copy(io.dataloom.api.configuration.ConfigurationFindingSeverity;io.dataloom.api.configuration.ConfigurationKey?;kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationValidationFinding.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/ConfigurationValidationFinding.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.configuration/ConfigurationValidationFinding.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.configuration/ConfigurationValidationResult { // io.dataloom.api.configuration/ConfigurationValidationResult|null[0]
+    constructor <init>(kotlin.collections/List<io.dataloom.api.configuration/ConfigurationValidationFinding>) // io.dataloom.api.configuration/ConfigurationValidationResult.<init>|<init>(kotlin.collections.List<io.dataloom.api.configuration.ConfigurationValidationFinding>){}[0]
+
+    final val findings // io.dataloom.api.configuration/ConfigurationValidationResult.findings|{}findings[0]
+        final fun <get-findings>(): kotlin.collections/List<io.dataloom.api.configuration/ConfigurationValidationFinding> // io.dataloom.api.configuration/ConfigurationValidationResult.findings.<get-findings>|<get-findings>(){}[0]
+    final val isValid // io.dataloom.api.configuration/ConfigurationValidationResult.isValid|{}isValid[0]
+        final fun <get-isValid>(): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationValidationResult.isValid.<get-isValid>|<get-isValid>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationValidationResult.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/ConfigurationValidationResult.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.configuration/ConfigurationValidationResult.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.configuration/DataLoomConfigurationHistory { // io.dataloom.api.configuration/DataLoomConfigurationHistory|null[0]
+    constructor <init>(kotlin/Int = ...) // io.dataloom.api.configuration/DataLoomConfigurationHistory.<init>|<init>(kotlin.Int){}[0]
+
+    final val current // io.dataloom.api.configuration/DataLoomConfigurationHistory.current|{}current[0]
+        final fun <get-current>(): io.dataloom.api.configuration/ConfigurationSnapshot? // io.dataloom.api.configuration/DataLoomConfigurationHistory.current.<get-current>|<get-current>(){}[0]
+    final val retainedVersions // io.dataloom.api.configuration/DataLoomConfigurationHistory.retainedVersions|{}retainedVersions[0]
+        final fun <get-retainedVersions>(): kotlin.collections/List<kotlin/Long> // io.dataloom.api.configuration/DataLoomConfigurationHistory.retainedVersions.<get-retainedVersions>|<get-retainedVersions>(){}[0]
+
+    final fun apply(io.dataloom.api.configuration/ConfigurationSnapshot): io.dataloom.api.configuration/ConfigurationApplyOutcome // io.dataloom.api.configuration/DataLoomConfigurationHistory.apply|apply(io.dataloom.api.configuration.ConfigurationSnapshot){}[0]
+    final fun rollbackToLastKnownGood(): io.dataloom.api.configuration/ConfigurationSnapshot? // io.dataloom.api.configuration/DataLoomConfigurationHistory.rollbackToLastKnownGood|rollbackToLastKnownGood(){}[0]
+}
+
+final class io.dataloom.api.configuration/DataLoomConfigurationResolver { // io.dataloom.api.configuration/DataLoomConfigurationResolver|null[0]
+    constructor <init>(io.dataloom.api.configuration/ConfigurationSchema, io.dataloom.api.security/DataLoomDigestCalculator) // io.dataloom.api.configuration/DataLoomConfigurationResolver.<init>|<init>(io.dataloom.api.configuration.ConfigurationSchema;io.dataloom.api.security.DataLoomDigestCalculator){}[0]
+
+    final fun resolve(kotlin.collections/List<io.dataloom.api.configuration/ConfigurationSource>, kotlin/Long): io.dataloom.api.configuration/ConfigurationResolution // io.dataloom.api.configuration/DataLoomConfigurationResolver.resolve|resolve(kotlin.collections.List<io.dataloom.api.configuration.ConfigurationSource>;kotlin.Long){}[0]
+}
+
+final value class io.dataloom.api.configuration/ConfigurationKey { // io.dataloom.api.configuration/ConfigurationKey|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.configuration/ConfigurationKey.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.configuration/ConfigurationKey.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.configuration/ConfigurationKey.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationKey.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/ConfigurationKey.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.configuration/ConfigurationKey.toString|toString(){}[0]
+}
+
+sealed class io.dataloom.api.configuration/ConfigurationApplyOutcome { // io.dataloom.api.configuration/ConfigurationApplyOutcome|null[0]
+    final class Applied : io.dataloom.api.configuration/ConfigurationApplyOutcome { // io.dataloom.api.configuration/ConfigurationApplyOutcome.Applied|null[0]
+        constructor <init>(io.dataloom.api.configuration/ConfigurationSnapshot) // io.dataloom.api.configuration/ConfigurationApplyOutcome.Applied.<init>|<init>(io.dataloom.api.configuration.ConfigurationSnapshot){}[0]
+
+        final val snapshot // io.dataloom.api.configuration/ConfigurationApplyOutcome.Applied.snapshot|{}snapshot[0]
+            final fun <get-snapshot>(): io.dataloom.api.configuration/ConfigurationSnapshot // io.dataloom.api.configuration/ConfigurationApplyOutcome.Applied.snapshot.<get-snapshot>|<get-snapshot>(){}[0]
+
+        final fun component1(): io.dataloom.api.configuration/ConfigurationSnapshot // io.dataloom.api.configuration/ConfigurationApplyOutcome.Applied.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.configuration/ConfigurationSnapshot = ...): io.dataloom.api.configuration/ConfigurationApplyOutcome.Applied // io.dataloom.api.configuration/ConfigurationApplyOutcome.Applied.copy|copy(io.dataloom.api.configuration.ConfigurationSnapshot){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationApplyOutcome.Applied.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/ConfigurationApplyOutcome.Applied.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.configuration/ConfigurationApplyOutcome.Applied.toString|toString(){}[0]
+    }
+
+    final class VersionNotMonotonic : io.dataloom.api.configuration/ConfigurationApplyOutcome { // io.dataloom.api.configuration/ConfigurationApplyOutcome.VersionNotMonotonic|null[0]
+        constructor <init>(io.dataloom.api.configuration/ConfigurationSnapshot, kotlin/Long) // io.dataloom.api.configuration/ConfigurationApplyOutcome.VersionNotMonotonic.<init>|<init>(io.dataloom.api.configuration.ConfigurationSnapshot;kotlin.Long){}[0]
+
+        final val currentVersion // io.dataloom.api.configuration/ConfigurationApplyOutcome.VersionNotMonotonic.currentVersion|{}currentVersion[0]
+            final fun <get-currentVersion>(): kotlin/Long // io.dataloom.api.configuration/ConfigurationApplyOutcome.VersionNotMonotonic.currentVersion.<get-currentVersion>|<get-currentVersion>(){}[0]
+        final val snapshot // io.dataloom.api.configuration/ConfigurationApplyOutcome.VersionNotMonotonic.snapshot|{}snapshot[0]
+            final fun <get-snapshot>(): io.dataloom.api.configuration/ConfigurationSnapshot // io.dataloom.api.configuration/ConfigurationApplyOutcome.VersionNotMonotonic.snapshot.<get-snapshot>|<get-snapshot>(){}[0]
+
+        final fun component1(): io.dataloom.api.configuration/ConfigurationSnapshot // io.dataloom.api.configuration/ConfigurationApplyOutcome.VersionNotMonotonic.component1|component1(){}[0]
+        final fun component2(): kotlin/Long // io.dataloom.api.configuration/ConfigurationApplyOutcome.VersionNotMonotonic.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.configuration/ConfigurationSnapshot = ..., kotlin/Long = ...): io.dataloom.api.configuration/ConfigurationApplyOutcome.VersionNotMonotonic // io.dataloom.api.configuration/ConfigurationApplyOutcome.VersionNotMonotonic.copy|copy(io.dataloom.api.configuration.ConfigurationSnapshot;kotlin.Long){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationApplyOutcome.VersionNotMonotonic.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/ConfigurationApplyOutcome.VersionNotMonotonic.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.configuration/ConfigurationApplyOutcome.VersionNotMonotonic.toString|toString(){}[0]
+    }
+}
+
+sealed class io.dataloom.api.configuration/ConfigurationResolution { // io.dataloom.api.configuration/ConfigurationResolution|null[0]
+    abstract val findings // io.dataloom.api.configuration/ConfigurationResolution.findings|{}findings[0]
+        abstract fun <get-findings>(): kotlin.collections/List<io.dataloom.api.configuration/ConfigurationValidationFinding> // io.dataloom.api.configuration/ConfigurationResolution.findings.<get-findings>|<get-findings>(){}[0]
+
+    final class Admitted : io.dataloom.api.configuration/ConfigurationResolution { // io.dataloom.api.configuration/ConfigurationResolution.Admitted|null[0]
+        constructor <init>(io.dataloom.api.configuration/ConfigurationSnapshot, kotlin.collections/List<io.dataloom.api.configuration/ConfigurationValidationFinding>) // io.dataloom.api.configuration/ConfigurationResolution.Admitted.<init>|<init>(io.dataloom.api.configuration.ConfigurationSnapshot;kotlin.collections.List<io.dataloom.api.configuration.ConfigurationValidationFinding>){}[0]
+
+        final val findings // io.dataloom.api.configuration/ConfigurationResolution.Admitted.findings|{}findings[0]
+            final fun <get-findings>(): kotlin.collections/List<io.dataloom.api.configuration/ConfigurationValidationFinding> // io.dataloom.api.configuration/ConfigurationResolution.Admitted.findings.<get-findings>|<get-findings>(){}[0]
+        final val snapshot // io.dataloom.api.configuration/ConfigurationResolution.Admitted.snapshot|{}snapshot[0]
+            final fun <get-snapshot>(): io.dataloom.api.configuration/ConfigurationSnapshot // io.dataloom.api.configuration/ConfigurationResolution.Admitted.snapshot.<get-snapshot>|<get-snapshot>(){}[0]
+
+        final fun component1(): io.dataloom.api.configuration/ConfigurationSnapshot // io.dataloom.api.configuration/ConfigurationResolution.Admitted.component1|component1(){}[0]
+        final fun component2(): kotlin.collections/List<io.dataloom.api.configuration/ConfigurationValidationFinding> // io.dataloom.api.configuration/ConfigurationResolution.Admitted.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.configuration/ConfigurationSnapshot = ..., kotlin.collections/List<io.dataloom.api.configuration/ConfigurationValidationFinding> = ...): io.dataloom.api.configuration/ConfigurationResolution.Admitted // io.dataloom.api.configuration/ConfigurationResolution.Admitted.copy|copy(io.dataloom.api.configuration.ConfigurationSnapshot;kotlin.collections.List<io.dataloom.api.configuration.ConfigurationValidationFinding>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationResolution.Admitted.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/ConfigurationResolution.Admitted.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.configuration/ConfigurationResolution.Admitted.toString|toString(){}[0]
+    }
+
+    final class Rejected : io.dataloom.api.configuration/ConfigurationResolution { // io.dataloom.api.configuration/ConfigurationResolution.Rejected|null[0]
+        constructor <init>(kotlin.collections/List<io.dataloom.api.configuration/ConfigurationValidationFinding>) // io.dataloom.api.configuration/ConfigurationResolution.Rejected.<init>|<init>(kotlin.collections.List<io.dataloom.api.configuration.ConfigurationValidationFinding>){}[0]
+
+        final val findings // io.dataloom.api.configuration/ConfigurationResolution.Rejected.findings|{}findings[0]
+            final fun <get-findings>(): kotlin.collections/List<io.dataloom.api.configuration/ConfigurationValidationFinding> // io.dataloom.api.configuration/ConfigurationResolution.Rejected.findings.<get-findings>|<get-findings>(){}[0]
+
+        final fun component1(): kotlin.collections/List<io.dataloom.api.configuration/ConfigurationValidationFinding> // io.dataloom.api.configuration/ConfigurationResolution.Rejected.component1|component1(){}[0]
+        final fun copy(kotlin.collections/List<io.dataloom.api.configuration/ConfigurationValidationFinding> = ...): io.dataloom.api.configuration/ConfigurationResolution.Rejected // io.dataloom.api.configuration/ConfigurationResolution.Rejected.copy|copy(kotlin.collections.List<io.dataloom.api.configuration.ConfigurationValidationFinding>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationResolution.Rejected.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/ConfigurationResolution.Rejected.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.configuration/ConfigurationResolution.Rejected.toString|toString(){}[0]
+    }
+}
+
+sealed class io.dataloom.api.configuration/ConfigurationValue { // io.dataloom.api.configuration/ConfigurationValue|null[0]
+    abstract val type // io.dataloom.api.configuration/ConfigurationValue.type|{}type[0]
+        abstract fun <get-type>(): io.dataloom.api.configuration/ConfigurationValueType // io.dataloom.api.configuration/ConfigurationValue.type.<get-type>|<get-type>(){}[0]
+
+    final class BooleanValue : io.dataloom.api.configuration/ConfigurationValue { // io.dataloom.api.configuration/ConfigurationValue.BooleanValue|null[0]
+        constructor <init>(kotlin/Boolean) // io.dataloom.api.configuration/ConfigurationValue.BooleanValue.<init>|<init>(kotlin.Boolean){}[0]
+
+        final val type // io.dataloom.api.configuration/ConfigurationValue.BooleanValue.type|{}type[0]
+            final fun <get-type>(): io.dataloom.api.configuration/ConfigurationValueType // io.dataloom.api.configuration/ConfigurationValue.BooleanValue.type.<get-type>|<get-type>(){}[0]
+        final val value // io.dataloom.api.configuration/ConfigurationValue.BooleanValue.value|{}value[0]
+            final fun <get-value>(): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationValue.BooleanValue.value.<get-value>|<get-value>(){}[0]
+
+        final fun component1(): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationValue.BooleanValue.component1|component1(){}[0]
+        final fun copy(kotlin/Boolean = ...): io.dataloom.api.configuration/ConfigurationValue.BooleanValue // io.dataloom.api.configuration/ConfigurationValue.BooleanValue.copy|copy(kotlin.Boolean){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationValue.BooleanValue.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/ConfigurationValue.BooleanValue.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.configuration/ConfigurationValue.BooleanValue.toString|toString(){}[0]
+    }
+
+    final class DoubleValue : io.dataloom.api.configuration/ConfigurationValue { // io.dataloom.api.configuration/ConfigurationValue.DoubleValue|null[0]
+        constructor <init>(kotlin/Double) // io.dataloom.api.configuration/ConfigurationValue.DoubleValue.<init>|<init>(kotlin.Double){}[0]
+
+        final val type // io.dataloom.api.configuration/ConfigurationValue.DoubleValue.type|{}type[0]
+            final fun <get-type>(): io.dataloom.api.configuration/ConfigurationValueType // io.dataloom.api.configuration/ConfigurationValue.DoubleValue.type.<get-type>|<get-type>(){}[0]
+        final val value // io.dataloom.api.configuration/ConfigurationValue.DoubleValue.value|{}value[0]
+            final fun <get-value>(): kotlin/Double // io.dataloom.api.configuration/ConfigurationValue.DoubleValue.value.<get-value>|<get-value>(){}[0]
+
+        final fun component1(): kotlin/Double // io.dataloom.api.configuration/ConfigurationValue.DoubleValue.component1|component1(){}[0]
+        final fun copy(kotlin/Double = ...): io.dataloom.api.configuration/ConfigurationValue.DoubleValue // io.dataloom.api.configuration/ConfigurationValue.DoubleValue.copy|copy(kotlin.Double){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationValue.DoubleValue.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/ConfigurationValue.DoubleValue.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.configuration/ConfigurationValue.DoubleValue.toString|toString(){}[0]
+    }
+
+    final class LongValue : io.dataloom.api.configuration/ConfigurationValue { // io.dataloom.api.configuration/ConfigurationValue.LongValue|null[0]
+        constructor <init>(kotlin/Long) // io.dataloom.api.configuration/ConfigurationValue.LongValue.<init>|<init>(kotlin.Long){}[0]
+
+        final val type // io.dataloom.api.configuration/ConfigurationValue.LongValue.type|{}type[0]
+            final fun <get-type>(): io.dataloom.api.configuration/ConfigurationValueType // io.dataloom.api.configuration/ConfigurationValue.LongValue.type.<get-type>|<get-type>(){}[0]
+        final val value // io.dataloom.api.configuration/ConfigurationValue.LongValue.value|{}value[0]
+            final fun <get-value>(): kotlin/Long // io.dataloom.api.configuration/ConfigurationValue.LongValue.value.<get-value>|<get-value>(){}[0]
+
+        final fun component1(): kotlin/Long // io.dataloom.api.configuration/ConfigurationValue.LongValue.component1|component1(){}[0]
+        final fun copy(kotlin/Long = ...): io.dataloom.api.configuration/ConfigurationValue.LongValue // io.dataloom.api.configuration/ConfigurationValue.LongValue.copy|copy(kotlin.Long){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationValue.LongValue.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/ConfigurationValue.LongValue.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.configuration/ConfigurationValue.LongValue.toString|toString(){}[0]
+    }
+
+    final class SecretReferenceValue : io.dataloom.api.configuration/ConfigurationValue { // io.dataloom.api.configuration/ConfigurationValue.SecretReferenceValue|null[0]
+        constructor <init>(io.dataloom.api.security/KeyReference) // io.dataloom.api.configuration/ConfigurationValue.SecretReferenceValue.<init>|<init>(io.dataloom.api.security.KeyReference){}[0]
+
+        final val reference // io.dataloom.api.configuration/ConfigurationValue.SecretReferenceValue.reference|{}reference[0]
+            final fun <get-reference>(): io.dataloom.api.security/KeyReference // io.dataloom.api.configuration/ConfigurationValue.SecretReferenceValue.reference.<get-reference>|<get-reference>(){}[0]
+        final val type // io.dataloom.api.configuration/ConfigurationValue.SecretReferenceValue.type|{}type[0]
+            final fun <get-type>(): io.dataloom.api.configuration/ConfigurationValueType // io.dataloom.api.configuration/ConfigurationValue.SecretReferenceValue.type.<get-type>|<get-type>(){}[0]
+
+        final fun component1(): io.dataloom.api.security/KeyReference // io.dataloom.api.configuration/ConfigurationValue.SecretReferenceValue.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.security/KeyReference = ...): io.dataloom.api.configuration/ConfigurationValue.SecretReferenceValue // io.dataloom.api.configuration/ConfigurationValue.SecretReferenceValue.copy|copy(io.dataloom.api.security.KeyReference){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationValue.SecretReferenceValue.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/ConfigurationValue.SecretReferenceValue.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.configuration/ConfigurationValue.SecretReferenceValue.toString|toString(){}[0]
+    }
+
+    final class StringValue : io.dataloom.api.configuration/ConfigurationValue { // io.dataloom.api.configuration/ConfigurationValue.StringValue|null[0]
+        constructor <init>(kotlin/String) // io.dataloom.api.configuration/ConfigurationValue.StringValue.<init>|<init>(kotlin.String){}[0]
+
+        final val type // io.dataloom.api.configuration/ConfigurationValue.StringValue.type|{}type[0]
+            final fun <get-type>(): io.dataloom.api.configuration/ConfigurationValueType // io.dataloom.api.configuration/ConfigurationValue.StringValue.type.<get-type>|<get-type>(){}[0]
+        final val value // io.dataloom.api.configuration/ConfigurationValue.StringValue.value|{}value[0]
+            final fun <get-value>(): kotlin/String // io.dataloom.api.configuration/ConfigurationValue.StringValue.value.<get-value>|<get-value>(){}[0]
+
+        final fun component1(): kotlin/String // io.dataloom.api.configuration/ConfigurationValue.StringValue.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): io.dataloom.api.configuration/ConfigurationValue.StringValue // io.dataloom.api.configuration/ConfigurationValue.StringValue.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/ConfigurationValue.StringValue.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/ConfigurationValue.StringValue.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.configuration/ConfigurationValue.StringValue.toString|toString(){}[0]
+    }
+}

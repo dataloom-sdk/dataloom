@@ -115,6 +115,7 @@ Apple distribution boundary.
 | `dataloom-model` | Library module | Dependency-root canonical models; first slice contains clock primitives |
 | `dataloom-provider-api` | Library module | Minimal provider lifecycle, descriptor, binding, and registry contracts |
 | `dataloom-plugin-api` | Library module | Plugin manifest, permission, lifecycle-label, hook-point, and execution-bounds SPI contracts, zero behavior ([details](../api/plugin-api.md)) |
+| `dataloom-config` | Library module | Typed configuration values/keys/schema/sources, versioned immutable snapshots, and deterministic precedence/rollback history — moved out of `dataloom-api` (`#93`), which now depends on it |
 | `dataloom-api` | Library module | Current public contracts, models, and error types |
 | `dataloom-core` | Library module | Internal platform-independent foundation |
 | `dataloom-runtime` | Library module | Synchronization runtime and engine coordination |
@@ -197,6 +198,37 @@ Rules:
 
 ---
 
+### `dataloom-config`
+
+Published as `dataloom-config` per ADR-0002: typed configuration values,
+keys, schema, and sources; versioned immutable snapshots with integrity
+checksums; and deterministic precedence/rollback history
+(`DataLoomConfigurationHistory`, `DataLoomConfigurationResolver`). Moved out
+of `dataloom-api` (`#93`, originally landed as part of `#236`/`#255`) — it
+had zero callers outside its own package and depended only on
+`dataloom-model`, so it was never actually coupled to `dataloom-api`; the
+split now matches ADR-0002's intended graph, where `dataloom-config` is a
+peer of `dataloom-api`, not a sub-dependency of it. `dataloom-api` now
+depends on `dataloom-config` for real reasons: its own policy foundation
+(`PolicyEvaluator`, `PolicyEvaluationInput`, `PolicyConfigurationKeys`) takes
+configuration snapshots/values/keys as evaluation input.
+
+Two configuration types stayed in `dataloom-api` rather than moving:
+`ConfigurationHistoryStateCodec` and `DurableConfigurationHistory` — both
+depend on `dataloom-api`'s own `DurableStateStore`/`DurableStateCodec`
+durable-state contract, which is intentionally not part of
+`dataloom-config`'s minimal-dependency surface.
+
+Rules:
+
+- May depend only on `dataloom-model`.
+- Must remain platform-independent.
+- Must not depend on `dataloom-api`, `dataloom-core`, or `dataloom-runtime`.
+- Must not contain durable-state-store integration — that stays in
+  `dataloom-api` alongside the durable-state contract it depends on.
+
+---
+
 ### `dataloom-api`
 
 Provides the current public contracts that host applications and production
@@ -211,8 +243,8 @@ baseline is approved. Current content includes:
 Rules:
 
 - Must remain platform-independent.
-- May depend on `dataloom-model` and `dataloom-provider-api`; must not depend
-  on a DataLoom implementation module.
+- May depend on `dataloom-model`, `dataloom-provider-api`, and
+  `dataloom-config`; must not depend on a DataLoom implementation module.
 - Must not expose third-party dependency types through its API.
 - Must not contain runtime implementations.
 - Must not depend on Android APIs.

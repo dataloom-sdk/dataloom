@@ -20,6 +20,7 @@ kotlin {
             dependencies {
                 api(project(":dataloom-model"))
                 api(project(":dataloom-provider-api"))
+                api(project(":dataloom-config"))
             }
         }
         commonTest {
