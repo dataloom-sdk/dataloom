@@ -134,4 +134,13 @@ if (isAppleHost || isAppleKlibCrossCompileEnabled) {
     // iosSimulatorArm64/iosX64 targets. See
     // docs/apple/connectivity-provider.md.
     include(":dataloom-platform-ios")
+
+    // runtime-ios-reference-consumer -- compile-only proof that
+    // dataloom-platform-ios's AppleDataLoomProviders/appleDataLoomProviders/
+    // installAppleProviders helpers compose with DataLoomBuilder (#101 /
+    // DL-039A), mirroring runtime-android-reference-consumer's role for the
+    // Android path. Gated the same way as dataloom-platform-ios above since
+    // its consuming code lives in src/iosMain and depends on that module.
+    // See docs/apple/reference-consumer.md.
+    include(":runtime-ios-reference-consumer")
 }

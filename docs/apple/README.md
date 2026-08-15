@@ -34,6 +34,7 @@ about the current Apple baseline. See
 | [Apple circuit store](circuit-state-store.md) | File-backed circuit/administration CAS, atomic mutation/receipt, integrity, and migration |
 | [Apple durable queue](queue-state-store.md) | Queue entries, leases, retry budgets, workflow deadlines, recovery, and integrity |
 | [Apple retry-administration store](retry-administration-state-store.md) | Authorized command CAS, immutable audit state, restart, and integrity |
+| [iOS reference consumer](reference-consumer.md) | Compile-only proof that `dataloom-platform-ios`'s four core providers compose with `DataLoomBuilder` |
 | [XCFramework integration](xcframework-integration.md) | Assembly and compile-only Xcode integration |
 | [Swift interoperability](swift-interop.md) | Current Objective-C/Swift bridge and known API defects |
 | [Swift smoke fixture](../../apple-smoke/README.md) | Reproduce the selected-symbol compile check |
