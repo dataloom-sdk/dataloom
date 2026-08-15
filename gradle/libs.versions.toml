@@ -22,6 +22,7 @@ androidx-test-core = "1.7.0"
 androidx-test-runner = "1.7.0"
 androidx-test-ext-junit = "1.3.0"
 sqldelight = "2.3.2"
+robolectric = "4.16.1"
 
 [libraries]
 kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
@@ -55,6 +56,7 @@ sqldelight-sqlite-driver = { group = "app.cash.sqldelight", name = "sqlite-drive
 sqldelight-android-driver = { group = "app.cash.sqldelight", name = "android-driver", version.ref = "sqldelight" }
 sqldelight-native-driver = { group = "app.cash.sqldelight", name = "native-driver", version.ref = "sqldelight" }
 sqldelight-dialect = { group = "app.cash.sqldelight", name = "sqlite-3-24-dialect", version.ref = "sqldelight" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }

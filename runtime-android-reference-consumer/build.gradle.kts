@@ -1,18 +1,27 @@
 // Native Android reference consumer for #101 (DL-039A).
 //
-// Compile-only fixture — mirrors runtime-external-consumer's own documented
-// scope (proving dependency-graph resolution and public-API wiring compile
-// correctly), applied to dataloom-android's real production wiring helper
-// instead of the JVM-only public runtime surface.
+// Mirrors runtime-external-consumer's own documented scope (proving
+// dependency-graph resolution and public-API wiring compile correctly),
+// applied to dataloom-android's real production wiring helper instead of
+// the JVM-only public runtime surface.
 //
 // Proves that dataloom-android's installAndroidProviders/androidDataLoomProviders
 // helpers (which wire AndroidConnectivityProvider, RoomStorageProvider,
 // RoomQueueProvider, and WorkManagerSchedulerProvider) actually compose with
 // DataLoomBuilder into one buildable DataLoom instance -- dogfooding
 // dataloom-android's own public API rather than hand-wiring the four
-// providers directly. Does not prove runtime behavior on a device or
-// emulator; see AndroidReferenceConsumer.kt's KDoc for the explicit
-// boundary.
+// providers directly.
+//
+// A Robolectric-backed unit test (AndroidReferenceConsumerRobolectricTest)
+// now additionally proves those four real providers actually construct and
+// initialize/shut down cleanly against a real (simulated) Android runtime --
+// a genuine Room database open, a real WorkManager instance, a real
+// ConnectivityManager service lookup -- not just compile. It does not prove
+// behavior on a physical device or emulator, and it does not exercise
+// synchronize()/the full foreground/offline/retry/conflict/asset/
+// cancellation matrix #101's acceptance criteria require; see
+// AndroidReferenceConsumer.kt's and the Robolectric test's own KDoc for the
+// exact boundary.
 //
 // Rules:
 // - May depend on dataloom-android (which itself depends on the shared
@@ -41,6 +50,12 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -49,6 +64,12 @@ dependencies {
     implementation(project(":dataloom-api"))
     implementation(project(":dataloom-android"))
     implementation(libs.kotlinx.coroutines.core)
+
+    testImplementation(kotlin("test-junit"))
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core.ktx)
+    testImplementation(libs.workmanager.testing)
 }
 
 tasks.register("checkRuntimeAndroidReferenceConsumer") {

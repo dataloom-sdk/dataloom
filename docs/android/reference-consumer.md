@@ -2,7 +2,8 @@
 
 ## Status
 
-**Compile-only fixture — first bounded slice of `#101` (DL-039A).** The
+**Compile-time proof plus a Robolectric-backed runtime proof — first two
+bounded slices of `#101` (DL-039A).** The
 `runtime-android-reference-consumer` module wires
 `AndroidConnectivityProvider`, `RoomStorageProvider`, `RoomQueueProvider`,
 and `WorkManagerSchedulerProvider` into one real, buildable `DataLoom`
@@ -17,21 +18,30 @@ Each of the four Android provider modules
 (`dataloom-connectivity-android`, `dataloom-storage-room`,
 `dataloom-queue-room`, `dataloom-scheduler-workmanager`) already had its
 own isolated unit tests. Nothing previously wired all four together against
-a real `DataLoomBuilder` assembly — this module is that proof, at compile
-time: if any provider's constructor signature, required capability, or
-`DataLoomBuilder` binding shape drifts out of sync with what a real native
-Android application would need, this module fails to compile.
+a real `DataLoomBuilder` assembly — this module's main source set is that
+proof, at compile time: if any provider's constructor signature, required
+capability, or `DataLoomBuilder` binding shape drifts out of sync with what
+a real native Android application would need, this module fails to
+compile.
 
-It does **not** prove runtime behavior on a device or emulator.
-`buildReferenceDataLoom(context)` is real, correct wiring code — not a
-stub — but nothing in this module calls `DataLoom.initialize()` or
-`DataLoom.synchronize()` against a real Android `Context`, `Room`
-database, or `WorkManager` instance. This repository has no Robolectric or
-instrumented-test infrastructure yet; adding either is a separate,
-larger follow-up, not silently claimed as covered here. This mirrors the
-same documented boundary `runtime-external-consumer` already established
-for the JVM-only public runtime surface — "compile-only fixture" is an
-established pattern in this repo, not a new one invented for this module.
+`AndroidReferenceConsumerRobolectricTest` goes one step further: it runs
+`DataLoom.initialize()` then `DataLoom.shutdown()` against a real
+(Robolectric-simulated) Android runtime — a genuine `WorkManager` instance
+via `WorkManagerTestInitHelper`, two genuine Room-backed SQLite databases,
+and a genuine `ConnectivityManager` service lookup. This is real runtime
+evidence, not a compile-time inference: if any provider's `initialize()`/
+`shutdown()` implementation genuinely fails against Android framework code
+(not just against DataLoom's own contracts), this test fails.
+
+It still does **not** prove behavior on a physical device or emulator —
+Robolectric simulates the Android framework on the JVM, a real and useful
+signal but not identical to on-device timing, process-death, or
+OS-version-specific behavior — and it does not call `DataLoom.synchronize()`
+against real storage/queue/transport I/O, which stays a separate, larger
+follow-up. This mirrors the same documented boundary `runtime-external-consumer`
+already established for the JVM-only public runtime surface — "compile-only,
+then Robolectric, then device/emulator" is a deliberately staged proof, not
+a claim that everything is now covered.
 
 ## Transport is intentionally illustrative
 
@@ -56,12 +66,19 @@ DATALOOM_ANDROID_BUILD=true ./gradlew :runtime-android-reference-consumer:check
 ```
 
 Verified for real: `compileDebugKotlin` succeeds (proving the whole
-provider-composition graph resolves and type-checks), `lintDebug` passes,
-and the full repository's Android `check` task (excluding a pre-existing,
-unrelated `dataloom-storage-datastore` test failure — see that module's
-own test report) is unaffected. No ABI baseline applies — this is a plain
-`com.android.library` module, not a KMP convention-plugin module, matching
-every other Android provider module in this repository.
+provider-composition graph resolves and type-checks); `testDebugUnitTest`
+runs `AndroidReferenceConsumerRobolectricTest` and passes (1 test, 0
+failures, 0 errors — confirmed via the JUnit XML report, not just a green
+build); `lintDebug` passes; and the full repository's Android `check` task
+(excluding a pre-existing, unrelated `dataloom-storage-datastore` test
+failure — see that module's own test report) is unaffected. No ABI
+baseline applies — this is a plain `com.android.library` module, not a
+KMP convention-plugin module, matching every other Android provider
+module in this repository.
+
+Robolectric's own SDK-jar downloads run once per machine on first use, not
+on every build — expect the first `testDebugUnitTest` invocation on a
+fresh checkout to take noticeably longer than subsequent runs.
 
 ## What remains open on `#101`
 
@@ -72,12 +89,16 @@ every other Android provider module in this repository.
   risky — see
   [kmp-android-target-blocker.md](kmp-android-target-blocker.md) for the
   reproduced failure and what has already been ruled out.
-- KMP iOS: `dataloom-ios` does not exist. No production Apple lifecycle,
-  connectivity, `BGTaskScheduler`, files, security, or persistence
-  adapters exist; `dataloom-apple` today only assembles the XCFramework
-  distribution surface.
-- Runtime proof (Robolectric or instrumented) that this module's wiring
-  actually initializes and synchronizes successfully, not just compiles.
+- KMP iOS: `dataloom-ios` does not exist as a published artifact yet
+  (though `dataloom-platform-ios` now covers its provider layer — see
+  [the Apple guide](../apple/README.md)). No production Apple lifecycle
+  adapter exists for either platform.
+- Device/emulator runtime proof — Robolectric closes part of this gap for
+  Android (see above); nothing closes it for iOS yet, and neither platform
+  has been proven on a physical device or emulator.
+- `DataLoom.synchronize()` runtime proof — this module's Robolectric test
+  covers `initialize()`/`shutdown()` only, not a full synchronization pass
+  against real storage/queue/transport I/O.
 - Native Android and KMP Android+iOS consumers resolving staged/published
   artifacts rather than project includes — the same bar
   `runtime-external-consumer` also does not yet meet for the JVM path.
