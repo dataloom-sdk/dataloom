@@ -82,6 +82,7 @@ complete V1 strategy, asset, plugin, governance, or observability engine.
 | [Integrity and key references](./integrity-and-key-references.md) | Available contract | Unkeyed digest and keyed HMAC ("signature") primitives plus an opaque key-reference label, with production JVM/Android/Apple implementations. Consumer wiring (asset-sync manifests, encryption metadata) remains open. |
 | [Configuration snapshots](./configuration-snapshots.md) | Available contract (bounded first slice) | Typed, schema-validated configuration sources merged by fixed precedence into immutable, checksummed, versioned snapshots, with bounded in-memory rollback. Durable persistence, the shared policy engine, and remote delivery remain open. |
 | [Deterministic policy foundation](./policy-foundation.md) | Available contract (bounded first slice) | Generic, side-effect-free policy check/decision primitive (allow/deny/require-user-action/defer) with deny-dominates-allow precedence, a configurable require-user-action/defer tie-break, and a time-bounded, fail-closed evaluator. No subsystem's concrete rules are implemented; adoption by retry, conflict, content policy, plugin permissions, residency, and administrative overrides remains open. |
+| [Least-privilege capabilities](./least-privilege.md) | Available primitive | Bounded, deny-by-default capability grant (`Capability`/`GrantedCapabilities`) plus a shared `isAuthorized` check. No subsystem's enforcement engine is wired to it yet; plugin permission enforcement remains `#98`'s job. |
 
 ## Provider contracts and assembly
 

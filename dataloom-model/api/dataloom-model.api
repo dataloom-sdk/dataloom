@@ -524,6 +524,20 @@ public final class io/dataloom/api/random/SystemDataLoomSecureRandom : io/datalo
 	public fun nextBytes (I)[B
 }
 
+public final class io/dataloom/api/security/Capability {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/security/Capability;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
 public final class io/dataloom/api/security/DataLoomDigest {
 	public fun <init> (Lio/dataloom/api/security/DigestAlgorithm;[B)V
 	public final fun contentEquals (Lio/dataloom/api/security/DataLoomDigest;)Z
@@ -565,6 +579,22 @@ public final class io/dataloom/api/security/DigestAlgorithm : java/lang/Enum {
 	public static fun values ()[Lio/dataloom/api/security/DigestAlgorithm;
 }
 
+public final class io/dataloom/api/security/GrantedCapabilities {
+	public static final field Companion Lio/dataloom/api/security/GrantedCapabilities$Companion;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSize ()I
+	public fun hashCode ()I
+	public final fun holds-aIVBPZg (Ljava/lang/String;)Z
+	public final fun holdsAll (Ljava/util/Set;)Z
+	public final fun isEmpty ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/security/GrantedCapabilities$Companion {
+	public final fun getNone ()Lio/dataloom/api/security/GrantedCapabilities;
+	public final fun of (Ljava/util/Set;)Lio/dataloom/api/security/GrantedCapabilities;
+}
+
 public final class io/dataloom/api/security/HmacAlgorithm : java/lang/Enum {
 	public static final field HMAC_SHA_256 Lio/dataloom/api/security/HmacAlgorithm;
 	public static final field HMAC_SHA_512 Lio/dataloom/api/security/HmacAlgorithm;
@@ -585,6 +615,10 @@ public final class io/dataloom/api/security/KeyReference {
 	public fun toString ()Ljava/lang/String;
 	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
 	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/security/LeastPrivilegeKt {
+	public static final fun isAuthorized (Ljava/util/Set;Lio/dataloom/api/security/GrantedCapabilities;)Z
 }
 
 public final class io/dataloom/api/security/SystemDataLoomDigestCalculator : io/dataloom/api/security/DataLoomDigestCalculator {

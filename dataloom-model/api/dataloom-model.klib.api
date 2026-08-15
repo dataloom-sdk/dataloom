@@ -218,6 +218,25 @@ final class io.dataloom.api.security/DataLoomMac { // io.dataloom.api.security/D
     final fun toString(): kotlin/String // io.dataloom.api.security/DataLoomMac.toString|toString(){}[0]
 }
 
+final class io.dataloom.api.security/GrantedCapabilities { // io.dataloom.api.security/GrantedCapabilities|null[0]
+    final val size // io.dataloom.api.security/GrantedCapabilities.size|{}size[0]
+        final fun <get-size>(): kotlin/Int // io.dataloom.api.security/GrantedCapabilities.size.<get-size>|<get-size>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.security/GrantedCapabilities.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.security/GrantedCapabilities.hashCode|hashCode(){}[0]
+    final fun holds(io.dataloom.api.security/Capability): kotlin/Boolean // io.dataloom.api.security/GrantedCapabilities.holds|holds(io.dataloom.api.security.Capability){}[0]
+    final fun holdsAll(kotlin.collections/Set<io.dataloom.api.security/Capability>): kotlin/Boolean // io.dataloom.api.security/GrantedCapabilities.holdsAll|holdsAll(kotlin.collections.Set<io.dataloom.api.security.Capability>){}[0]
+    final fun isEmpty(): kotlin/Boolean // io.dataloom.api.security/GrantedCapabilities.isEmpty|isEmpty(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.security/GrantedCapabilities.toString|toString(){}[0]
+
+    final object Companion { // io.dataloom.api.security/GrantedCapabilities.Companion|null[0]
+        final val None // io.dataloom.api.security/GrantedCapabilities.Companion.None|{}None[0]
+            final fun <get-None>(): io.dataloom.api.security/GrantedCapabilities // io.dataloom.api.security/GrantedCapabilities.Companion.None.<get-None>|<get-None>(){}[0]
+
+        final fun of(kotlin.collections/Set<io.dataloom.api.security/Capability>): io.dataloom.api.security/GrantedCapabilities // io.dataloom.api.security/GrantedCapabilities.Companion.of|of(kotlin.collections.Set<io.dataloom.api.security.Capability>){}[0]
+    }
+}
+
 final class io.dataloom.api.time/AppleDataLoomClock : io.dataloom.api.time/DataLoomClock { // io.dataloom.api.time/AppleDataLoomClock|null[0]
     constructor <init>() // io.dataloom.api.time/AppleDataLoomClock.<init>|<init>(){}[0]
 
@@ -583,6 +602,17 @@ final value class io.dataloom.api.identifier/WorkflowId { // io.dataloom.api.ide
     final fun toString(): kotlin/String // io.dataloom.api.identifier/WorkflowId.toString|toString(){}[0]
 }
 
+final value class io.dataloom.api.security/Capability { // io.dataloom.api.security/Capability|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.security/Capability.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.security/Capability.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.security/Capability.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.security/Capability.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.security/Capability.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.security/Capability.toString|toString(){}[0]
+}
+
 final value class io.dataloom.api.security/KeyReference { // io.dataloom.api.security/KeyReference|null[0]
     constructor <init>(kotlin/String) // io.dataloom.api.security/KeyReference.<init>|<init>(kotlin.String){}[0]
 
@@ -595,3 +625,4 @@ final value class io.dataloom.api.security/KeyReference { // io.dataloom.api.sec
 }
 
 final fun (io.dataloom.api.error/DataLoomError).io.dataloom.api.error/safeDiagnosticString(): kotlin/String // io.dataloom.api.error/safeDiagnosticString|safeDiagnosticString@io.dataloom.api.error.DataLoomError(){}[0]
+final fun io.dataloom.api.security/isAuthorized(kotlin.collections/Set<io.dataloom.api.security/Capability>, io.dataloom.api.security/GrantedCapabilities): kotlin/Boolean // io.dataloom.api.security/isAuthorized|isAuthorized(kotlin.collections.Set<io.dataloom.api.security.Capability>;io.dataloom.api.security.GrantedCapabilities){}[0]
