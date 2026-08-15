@@ -85,6 +85,40 @@ class BuiltInSynchronizationStrategyEvaluatorTest {
     }
 
     @Test
+    fun offlineFirstServesLocalOnlyWhenCacheStateMakesDataAvailable() {
+        // #102 acceptance: "fresh/stale/missing cache ... matrices pass for
+        // every built-in profile." evaluateOfflineFirst() gates SERVE_LOCAL
+        // for PULL/BIDIRECTIONAL behind isLocalDataAvailable(cacheState) —
+        // but every existing offline-first test either used PUSH (which
+        // never checks cache state at all) or left cacheState at its
+        // NOT_EVALUATED default without ever asserting on SERVE_LOCAL's
+        // presence or absence. This is the first test to vary cache state
+        // for offline-first and confirm the gate actually works both ways.
+        val available = evaluate(
+            profile = offline(),
+            direction = SynchronizationDirection.PULL,
+            evidence = evidence(
+                connectivity = StrategyConnectivity.UNAVAILABLE,
+                cacheState = StrategyCacheState.STALE,
+            ),
+        )
+        val missing = evaluate(
+            profile = offline(),
+            direction = SynchronizationDirection.PULL,
+            evidence = evidence(
+                connectivity = StrategyConnectivity.UNAVAILABLE,
+                cacheState = StrategyCacheState.MISSING,
+            ),
+        )
+
+        assertEquals(StrategyDisposition.DEFER, available.plan.disposition)
+        assertTrue(StrategyOperation.SERVE_LOCAL in available.plan.operations)
+        assertEquals(StrategyDisposition.DEFER, missing.plan.disposition)
+        assertFalse(StrategyOperation.SERVE_LOCAL in missing.plan.operations)
+        assertTrue(StrategyOperation.ENQUEUE_DURABLE_WORK in missing.plan.operations)
+    }
+
+    @Test
     fun remoteFirstUsesOnlyConfiguredTypedFallback() {
         val withFallback = evaluate(
             profile = remote(fallbackOn = setOf(StrategyRemoteOutcome.UNAVAILABLE)),
