@@ -14,11 +14,11 @@ import io.dataloom.api.provider.ProviderName
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.provider.ProviderVersion
+import io.dataloom.api.random.AppleDataLoomSecureRandom
 import io.dataloom.api.random.DataLoomSecureRandom
 import io.dataloom.api.runtime.RuntimeDependencies
 import io.dataloom.api.runtime.RuntimeIdentifierGenerators
 import io.dataloom.api.synchronization.ChangeSetAcknowledgement
-import io.dataloom.api.random.AppleDataLoomSecureRandom
 import io.dataloom.api.time.AppleDataLoomClock
 import io.dataloom.api.transport.PullChangesRequest
 import io.dataloom.api.transport.PullChangesResult
@@ -29,6 +29,7 @@ import io.dataloom.platform.ios.appleDataLoomProviders
 import io.dataloom.platform.ios.installAppleProviders
 import io.dataloom.runtime.facade.DataLoom
 import io.dataloom.runtime.facade.DataLoomBuilder
+import io.dataloom.runtime.queue.AppleFileQueueProvider
 
 /**
  * iOS reference wiring for `#101` (DL-039A) — proves that
@@ -73,14 +74,25 @@ import io.dataloom.runtime.facade.DataLoomBuilder
  *   application has already resolved, passed straight through to
  *   [appleDataLoomProviders]. DataLoom does not resolve platform paths
  *   itself.
+ * @param storageDatabaseName passed straight through to
+ *   [appleDataLoomProviders]. Override only when isolation from a
+ *   previous call's on-disk database is required — for example, a test
+ *   asserting on a fresh instance's own [DataLoom.initialize] behavior
+ *   rather than a resumed one's.
+ * @param queueFileName passed straight through to [appleDataLoomProviders].
+ *   Same override rationale as [storageDatabaseName].
  */
 public fun buildReferenceDataLoom(
     preRegisteredIdentifiers: Set<String> = emptySet(),
     directoryPath: String,
+    storageDatabaseName: String = "dataloom-storage.db",
+    queueFileName: String = AppleFileQueueProvider.DEFAULT_FILE_NAME,
 ): DataLoom {
     val providers = appleDataLoomProviders(
         preRegisteredIdentifiers = preRegisteredIdentifiers,
         directoryPath = directoryPath,
+        storageDatabaseName = storageDatabaseName,
+        queueFileName = queueFileName,
     )
     val transportProvider = ReferenceTransportProvider()
 

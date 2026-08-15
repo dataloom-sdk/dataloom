@@ -2,16 +2,17 @@
 
 ## Status
 
-**Compile-only fixture — mirrors the native Android reference consumer for
-`#101` (DL-039A).** The `runtime-ios-reference-consumer` module wires
-`AppleConnectivityProvider`, `SqlDelightStorageProvider`,
-`AppleFileQueueProvider`, and `AppleSchedulerProvider` into one real,
-buildable `DataLoom` instance through `DataLoomBuilder`'s public API, using
-`dataloom-platform-ios`'s own `appleDataLoomProviders`/`installAppleProviders`
-helpers rather than hand-wiring the four providers directly. This closes the
-"the aggregate published artifact and external/reference consumer are
-missing" gap issue `#101` names for iOS specifically — not the broader KMP
-Android/native Android consumer paths, which are separately covered (see
+**Compile-time proof plus a Kotlin/Native Simulator runtime test — mirrors
+the native Android reference consumer for `#101` (DL-039A).** The
+`runtime-ios-reference-consumer` module wires `AppleConnectivityProvider`,
+`SqlDelightStorageProvider`, `AppleFileQueueProvider`, and
+`AppleSchedulerProvider` into one real, buildable `DataLoom` instance
+through `DataLoomBuilder`'s public API, using `dataloom-platform-ios`'s own
+`appleDataLoomProviders`/`installAppleProviders` helpers rather than
+hand-wiring the four providers directly. This closes the "the aggregate
+published artifact and external/reference consumer are missing" gap issue
+`#101` names for iOS specifically — not the broader KMP Android/native
+Android consumer paths, which are separately covered (see
 [the Android reference consumer](../android/reference-consumer.md)).
 
 ## What this proves, and what it does not
@@ -24,22 +25,31 @@ Each of the four iOS provider pieces
 `AppleDataLoomProviders`/`appleDataLoomProviders`/`installAppleProviders`
 themselves shipped with `dataloom-platform-ios`. Nothing previously wired
 all four together against a real `DataLoomBuilder` assembly from a separate
-consuming module — this module is that proof, at compile time: if any
-provider's constructor signature, required capability, or `DataLoomBuilder`
-binding shape drifts out of sync with what a real iOS application would
-need, this module fails to compile.
+consuming module — this module's main source set is that proof, at compile
+time: if any provider's constructor signature, required capability, or
+`DataLoomBuilder` binding shape drifts out of sync with what a real iOS
+application would need, this module fails to compile.
 
-It does **not** prove runtime behavior on a device or simulator.
-`buildReferenceDataLoom(...)` is real, correct wiring code — not a stub —
-but nothing in this module calls `DataLoom.initialize()` or
-`DataLoom.synchronize()` against a real iOS `Network.framework` path,
-`BGTaskScheduler`, or SQLite database. This repository has no XCTest-backed
-integration-test infrastructure yet; adding it is a separate, larger
-follow-up, not silently claimed as covered here. This mirrors the same
-documented boundary `runtime-android-reference-consumer` and
-`runtime-external-consumer` already established — "compile-only fixture" is
-an established pattern in this repository, not a new one invented for this
-module.
+`IosReferenceConsumerTest` goes one step further: it runs
+`DataLoom.initialize()` then `DataLoom.shutdown()` against a real
+Kotlin/Native iOS Simulator runtime, executed by
+`iosSimulatorArm64Test`/`iosX64Test` on macOS CI — a genuine
+`NWPathMonitor` query, `BGTaskScheduler` binding, SQLite database open (via
+SQLDelight's native driver), and file read/write under a real temporary
+directory. This is Kotlin/Native's own native test-execution mechanism —
+the same one `dataloom-runtime`'s Apple circuit/queue/retry-administration
+store tests already use — not a JVM shadow layer like Android's
+Robolectric.
+
+It still does **not** prove behavior on a physical device, and it does not
+call `DataLoom.synchronize()` against real storage/queue/transport I/O,
+which stays a separate, larger follow-up — the same two boundaries
+`runtime-android-reference-consumer`'s Robolectric test documents for
+Android. This repository's Windows development host can cross-compile
+`IosReferenceConsumerTest` (catching type errors and API drift) but cannot
+execute it — only a real macOS host with Xcode and the iOS Simulator can;
+this repository's `apple-validation.yml` CI job (`macos-15`) is the actual
+pass/fail signal for this file's runtime behavior.
 
 ## Transport is intentionally illustrative
 
@@ -63,15 +73,20 @@ Kotlin/Native cross-compilation without a full XCFramework/Xcode toolchain.
 ./gradlew -Pdataloom.appleKlibCrossCompile=true :runtime-ios-reference-consumer:check
 ```
 
-Verified for real: `compileKotlinIosArm64`/`IosSimulatorArm64`/`IosX64` all
-succeed (proving the whole provider-composition graph resolves and
-type-checks on real Kotlin/Native targets, not just JVM), the module's own
-`check` task passes, and the module is correctly absent from the project
-graph on a plain (non-Apple, non-cross-compile) build — confirmed via
+Verified locally on Windows: `compileKotlinIosArm64`/`IosSimulatorArm64`/
+`IosX64` and their `compileTestKotlinIos*` counterparts all succeed
+(proving the whole provider-composition graph, including the test, resolves
+and type-checks on real Kotlin/Native targets); the module's own `check`
+task passes with `iosSimulatorArm64Test`/`iosX64Test` correctly `SKIPPED`
+(no simulator toolchain on Windows — this is an expected skip, not a false
+pass); and the module is correctly absent from the project graph on a
+plain (non-Apple, non-cross-compile) build — confirmed via
 `./gradlew projects` with and without the cross-compile flag. No ABI
-baseline applies — this is a compile-only fixture module, not a published
-API surface, matching `runtime-android-reference-consumer` and
-`runtime-external-consumer`'s existing precedent.
+baseline applies — this is a fixture module, not a published API surface,
+matching `runtime-android-reference-consumer` and
+`runtime-external-consumer`'s existing precedent. Actual runtime pass/fail
+for `IosReferenceConsumerTest` is confirmed by the real macOS CI leg (see
+this PR/commit's own CI result), not by anything this Windows host can run.
 
 ## What remains open on `#101`
 
@@ -83,10 +98,14 @@ API surface, matching `runtime-android-reference-consumer` and
 - iOS lifecycle integration: no `LifecycleProvider` contract exists in this
   codebase at all yet — an open design question, not attempted by this
   module or `dataloom-platform-ios`.
-- Runtime proof (XCTest or a real device/simulator run) that this module's
-  wiring actually initializes and synchronizes successfully, not just
-  compiles — the same gap `runtime-android-reference-consumer` has for
-  Robolectric/instrumented tests.
+- Device runtime proof — the iOS Simulator is a real Apple-provided
+  runtime, not a shadow layer, but device-only behavior (background
+  execution limits, real network conditions, memory pressure) can still
+  differ; neither platform has been proven on a physical device.
+- `DataLoom.synchronize()` runtime proof — this module's Simulator test
+  covers `initialize()`/`shutdown()` only, not a full synchronization pass
+  against real storage/queue/transport I/O, the same boundary
+  `runtime-android-reference-consumer`'s Robolectric test has.
 - Native Android, KMP Android, and KMP iOS consumers resolving staged/
   published artifacts rather than project includes — the same bar
   `runtime-external-consumer` also does not yet meet for the JVM path.
