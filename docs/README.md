@@ -117,6 +117,7 @@ The [architecture hub](./architecture/README.md) connects the system views:
 ## Build, test, and contribute
 
 - [Local development and validation](./development/building.md)
+- [Supply-chain dependency verification](./development/supply-chain-verification.md)
 - [Testing toolkit](./testing/testing-toolkit.md)
 - [Contributing](../CONTRIBUTING.md)
 - [Security policy](../SECURITY.md)
