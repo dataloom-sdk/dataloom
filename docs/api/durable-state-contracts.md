@@ -11,7 +11,10 @@
 > (`DurableConflictDetectionCoordinator` → `InboundPullSynchronizationPipeline`);
 > the other two remain unwired because nothing yet calls the underlying
 > evaluator/resolver they would attach to. Other domains (events, assets,
-> audit) have not adopted the contract itself yet.
+> audit) have not adopted the contract itself yet. A second platform
+> implementation, [`AppleFileDurableStateStore`](#applefiledurablestatestore-dataloom-runtime),
+> now also exists (`dataloom-runtime`, `iosMain`) — the contract is no longer
+> Room-only.
 
 ## Status
 
@@ -140,6 +143,64 @@ rather than throwing or silently misbehaving; only
 `kotlinx.coroutines.CancellationException` propagates unchanged. Record
 version exhaustion (`expectedVersion == Long.MAX_VALUE`) is rejected before
 ever reaching Room, matching `RoomCircuitBreakerStateStore`.
+
+## `AppleFileDurableStateStore` (`dataloom-runtime`)
+
+```kotlin
+public class AppleFileDurableStateStore<TScope : Any, TState : Any>(
+    directoryPath: String,
+    fileName: String = AppleFileDurableStateStore.DEFAULT_FILE_NAME,
+    scopeKeyEncoder: DurableStateScopeKeyEncoder<TScope>,
+    codec: DurableStateCodec<TState>,
+) : DurableStateStore<TScope, TState>
+```
+
+The Apple (`iosMain`) counterpart to `RoomDurableStateStore` — same generic
+`load`/`compareAndSet` contract, same optimistic-concurrency and
+insert-if-absent semantics, but backed by one owner-only, `flock`-guarded,
+atomically-written TSV file per `AppleFileDurableStateStore` instance instead
+of a shared database table. It follows the exact locking and atomic-write
+discipline `AppleFileCircuitBreakerStateStore` already established for
+Apple platforms: process-shared advisory exclusive `flock` (non-blocking,
+retried with a short delay on contention), a temp-file write followed by
+`fsync` + `rename` + parent-directory `fsync` so a snapshot is never
+observed half-written, owner-only file/directory permissions, and a bounded
+snapshot size (4 MiB total, matching `RoomDurableStateStore`'s per-payload
+bound).
+
+**One file per domain, not one shared store with a namespace.** Unlike
+`RoomDurableStateStore`, `AppleFileDurableStateStore` has no `namespace`
+parameter — each instance owns one dedicated file, addressed by
+`directoryPath` + `fileName` (defaulting to
+`AppleFileDurableStateStore.DEFAULT_FILE_NAME`). This mirrors how Apple's
+existing file-based providers already work (queue, circuit-breaker,
+retry-administration each own one dedicated file) rather than inventing a
+shared-database convention Apple's file-based providers don't otherwise use;
+a domain adopting this store on Apple picks its own `fileName` the same way
+it would pick a Room `namespace`.
+
+Fails closed the same way `RoomDurableStateStore` and
+`AppleFileCircuitBreakerStateStore` do: a codec `encode`/`decode` failure,
+an oversized payload, a corrupt on-disk snapshot, or a file I/O failure all
+return a sanitized `ProviderOperationResult.Failure`
+(`DURABLE_STATE_APPLE_ENCODE_FAILURE`, `DURABLE_STATE_APPLE_PAYLOAD_TOO_LARGE`,
+`DURABLE_STATE_APPLE_STATE_CORRUPT`, `DURABLE_STATE_APPLE_FILE_IO_FAILURE`)
+rather than throwing or leaking file content into an error message; only
+`kotlinx.coroutines.CancellationException` propagates unchanged. `encode`
+runs, and the payload size is checked, before the file lock is ever taken,
+so a codec or size failure never touches the file. Record version
+exhaustion (`expectedVersion == Long.MAX_VALUE`) reuses the shared
+`DURABLE_STATE_VERSION_EXHAUSTED` code and is rejected before any file
+access, matching both `RoomDurableStateStore` and
+`AppleFileCircuitBreakerStateStore`. The constructor validates
+`directoryPath`/`fileName` (absolute path, no NUL, no dot-traversal, file
+name is one safe path component) eagerly, before any file exists.
+
+Verified by cross-compiling all three Apple targets
+(`iosArm64`/`iosSimulatorArm64`/`iosX64`) on this repository's Windows CI
+cross-compilation path; linking and executing the test suite requires the
+macOS `apple-validation.yml` job, matching every other Apple-only runtime
+component in this codebase.
 
 ## Adoption: configuration snapshot history
 
@@ -294,10 +355,12 @@ for that named, deliberately out-of-scope gap.
   `DurableUnresolvedConflictLog`; a separate, larger design question.
 - **Events, assets, and audit** durable state — real, separately-scoped
   follow-up work; not started.
-- **An Apple file-backed `DurableStateStore` implementation.** Only the
-  Room implementation exists so far;
-  `AppleFileCircuitBreakerStateStore` remains the only precedent for what
-  an Apple file-backed one would look like.
+- **Any real domain adopting `AppleFileDurableStateStore`.** The
+  implementation exists and is verified (cross-compiled, unit-tested — see
+  [above](#applefiledurablestatestore-dataloom-runtime)), but no domain has
+  wired it up as its Apple-platform `DurableStateStore` yet; the three real
+  adoptions above (configuration history, policy decisions, unresolved
+  conflicts) are still Room-only.
 - **SDK-wide adoption.** `DataLoomConfigurationHistory` (in-memory) is not
   superseded or removed by `DurableConfigurationHistory`, plain
   `PolicyDecision` values are not superseded by `PolicyDecisionRecord`, and
