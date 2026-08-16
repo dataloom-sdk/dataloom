@@ -26,10 +26,12 @@ import io.dataloom.api.transport.PullChangesResult
 import io.dataloom.api.transport.PushChangesRequest
 import io.dataloom.api.transport.TransportProvider
 import io.dataloom.connectivity.android.AndroidConnectivityProvider
+import io.dataloom.queue.room.DataLoomDatabaseBuilder
 import io.dataloom.queue.room.RoomQueueProvider
 import io.dataloom.runtime.facade.DataLoom
 import io.dataloom.runtime.facade.DataLoomBuilder
 import io.dataloom.scheduler.workmanager.WorkManagerSchedulerProvider
+import io.dataloom.storage.room.DataLoomStorageDatabaseBuilder
 import io.dataloom.storage.room.RoomStorageProvider
 import java.util.UUID
 
@@ -50,9 +52,10 @@ import java.util.UUID
  * [buildReferenceDataLoom] is real, correct wiring code — it is not a fake
  * or a stub. `AndroidReferenceConsumerRobolectricTest` proves it against a
  * real (Robolectric-simulated) Android runtime, including a full
- * [DataLoom.synchronize] pass — see that test's own KDoc for the exact
- * boundary of what is and is not covered (a real device/emulator
- * instrumented test remains a separate, larger follow-up).
+ * [DataLoom.synchronize] pass, and `AndroidReferenceConsumerInstrumentedTest`
+ * (`src/androidTest`) proves the same against a real Gradle Managed Device
+ * emulator — see each test's own KDoc for the exact boundary of what is and
+ * is not covered.
  *
  * ## Transport
  *
@@ -74,12 +77,26 @@ import java.util.UUID
  *   contract.
  * @param transportProvider the [TransportProvider] to register. Defaults to
  *   [ReferenceTransportProvider].
+ * @param storageDatabaseName passed straight through to
+ *   [androidDataLoomProviders]. Override only when isolation from a
+ *   previous run's on-disk database is required — for example, an
+ *   instrumented test asserting on a fresh instance's own behavior rather
+ *   than a resumed one's.
+ * @param queueDatabaseName passed straight through to
+ *   [androidDataLoomProviders]. Same override rationale as
+ *   [storageDatabaseName].
  */
 public fun buildReferenceDataLoom(
     context: Context,
     transportProvider: TransportProvider = ReferenceTransportProvider(),
+    storageDatabaseName: String = DataLoomStorageDatabaseBuilder.DEFAULT_NAME,
+    queueDatabaseName: String = DataLoomDatabaseBuilder.DEFAULT_NAME,
 ): DataLoom {
-    val providers = androidDataLoomProviders(context)
+    val providers = androidDataLoomProviders(
+        context = context,
+        storageDatabaseName = storageDatabaseName,
+        queueDatabaseName = queueDatabaseName,
+    )
 
     return DataLoomBuilder()
         .runtimeDependencies(referenceRuntimeDependencies())

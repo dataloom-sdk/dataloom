@@ -19,11 +19,17 @@
 // ConnectivityManager service lookup -- not just compile. A second test in
 // the same class proves a real DataLoom.synchronize() PULL pass genuinely
 // writes an inbound change to that real Room database
-// (summary.inboundEventsApplied == 1). It does not prove behavior on a
-// physical device or emulator, and it does not exercise the full
-// foreground/offline/retry/conflict/asset/cancellation matrix #101's
-// acceptance criteria require; see AndroidReferenceConsumer.kt's and the
-// Robolectric test's own KDoc for the exact boundary.
+// (summary.inboundEventsApplied == 1).
+//
+// AndroidReferenceConsumerInstrumentedTest (src/androidTest) proves the
+// identical two scenarios again against pixel2Api35, a real Gradle Managed
+// Device AVD emulator -- genuine on-emulator execution, not a JVM shadow
+// layer, mirroring dataloom-queue-room's and dataloom-storage-room's own
+// managed-device instrumented tests. It still does not prove behavior on a
+// physical device, and it does not exercise the full foreground/offline/
+// retry/conflict/asset/cancellation matrix #101's acceptance criteria
+// require; see AndroidReferenceConsumer.kt's and each test's own KDoc for
+// the exact boundary.
 //
 // Rules:
 // - May depend on dataloom-android (which itself depends on the shared
@@ -40,6 +46,7 @@ android {
 
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -57,6 +64,16 @@ android {
         unitTests {
             isIncludeAndroidResources = true
         }
+        managedDevices {
+            localDevices {
+                create("pixel2Api35") {
+                    device = "Pixel 2"
+                    apiLevel = 35
+                    systemImageSource = "aosp"
+                    testedAbi = "x86_64"
+                }
+            }
+        }
     }
 }
 
@@ -72,6 +89,13 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core.ktx)
     testImplementation(libs.workmanager.testing)
+
+    androidTestImplementation(kotlin("test-junit"))
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.androidx.test.core.ktx)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.workmanager.testing)
 }
 
 tasks.register("checkRuntimeAndroidReferenceConsumer") {
