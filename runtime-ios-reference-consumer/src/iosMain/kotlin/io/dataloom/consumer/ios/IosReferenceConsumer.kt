@@ -45,15 +45,12 @@ import io.dataloom.runtime.queue.AppleFileQueueProvider
  *
  * ## Scope
  *
- * This is a **compile-only fixture**, the same documented boundary
- * `runtime-android-reference-consumer` already established for the Android
- * path. [buildReferenceDataLoom] is real, correct wiring code — it is not a
- * fake or a stub — but nothing in this module calls [DataLoom.initialize]
- * or [DataLoom.synchronize] against a real iOS `Network.framework` path,
- * `BGTaskScheduler`, or SQLite database. Proving that requires either a
- * real device/simulator instrumented test or an XCTest-backed integration
- * test; neither exists in this repository yet. That remains a separate,
- * larger follow-up — not silently claimed as covered here.
+ * [buildReferenceDataLoom] is real, correct wiring code — it is not a fake
+ * or a stub. `IosReferenceConsumerTest` proves it against a real
+ * Kotlin/Native iOS Simulator runtime, including a full [DataLoom.synchronize]
+ * pass — see that test's own KDoc for the exact boundary of what is and is
+ * not covered (a real device instrumented test remains a separate, larger
+ * follow-up).
  *
  * ## Transport
  *
@@ -61,10 +58,13 @@ import io.dataloom.runtime.queue.AppleFileQueueProvider
  * authentication, and payload serialization are always application-owned.
  * A real application would use `dataloom-transport-ktor` (this repository's
  * only transport module that cross-compiles for Kotlin/Native today) or its
- * own [TransportProvider]. This fixture uses [ReferenceTransportProvider],
+ * own [TransportProvider]. This fixture defaults to [ReferenceTransportProvider],
  * a minimal illustrative stub, to keep this module scoped to proving iOS
  * *provider* composition rather than re-proving an already-covered
- * transport module's own HTTP integration.
+ * transport module's own HTTP integration. [transportProvider] is
+ * overridable so a caller (for example a test proving a full
+ * synchronization pass) can supply a transport that actually returns data,
+ * without hand-wiring the other three providers again.
  *
  * @param preRegisteredIdentifiers passed straight through to
  *   [appleDataLoomProviders] — the exact `BGTaskScheduler` identifiers the
@@ -81,12 +81,15 @@ import io.dataloom.runtime.queue.AppleFileQueueProvider
  *   rather than a resumed one's.
  * @param queueFileName passed straight through to [appleDataLoomProviders].
  *   Same override rationale as [storageDatabaseName].
+ * @param transportProvider the [TransportProvider] to register. Defaults to
+ *   [ReferenceTransportProvider].
  */
 public fun buildReferenceDataLoom(
     preRegisteredIdentifiers: Set<String> = emptySet(),
     directoryPath: String,
     storageDatabaseName: String = "dataloom-storage.db",
     queueFileName: String = AppleFileQueueProvider.DEFAULT_FILE_NAME,
+    transportProvider: TransportProvider = ReferenceTransportProvider(),
 ): DataLoom {
     val providers = appleDataLoomProviders(
         preRegisteredIdentifiers = preRegisteredIdentifiers,
@@ -94,7 +97,6 @@ public fun buildReferenceDataLoom(
         storageDatabaseName = storageDatabaseName,
         queueFileName = queueFileName,
     )
-    val transportProvider = ReferenceTransportProvider()
 
     return DataLoomBuilder()
         .runtimeDependencies(referenceRuntimeDependencies())

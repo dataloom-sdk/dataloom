@@ -41,10 +41,20 @@ the same one `dataloom-runtime`'s Apple circuit/queue/retry-administration
 store tests already use — not a JVM shadow layer like Android's
 Robolectric.
 
+A second test in the same class, `realIosProvidersApplyAPulledChangeToRealStorage`,
+goes one step further still: it calls `DataLoom.synchronize()` with a real
+inbound `ChangeSet` (via a test-only `TransportProvider` that always
+returns one `CREATE` event) and asserts `summary.inboundEventsApplied == 1`
+— proving the event was genuinely written to the real SQLite database, not
+just that the call returned a "succeeded" status. `SynchronizationExecutionCoordinator`
+defaults to `SynchronizationConnectivityConfiguration.NONE` (confirmed by
+reading its own KDoc), so this does not depend on the Simulator's
+`NWPathMonitor` reporting a connected network.
+
 It still does **not** prove behavior on a physical device, and it does not
-call `DataLoom.synchronize()` against real storage/queue/transport I/O,
-which stays a separate, larger follow-up — the same two boundaries
-`runtime-android-reference-consumer`'s Robolectric test documents for
+exercise queue admission, retry/circuit behavior, or conflict detection,
+which stay a separate, larger follow-up — the same boundary
+`runtime-android-reference-consumer`'s Robolectric tests document for
 Android. This repository's Windows development host can cross-compile
 `IosReferenceConsumerTest` (catching type errors and API drift) but cannot
 execute it — only a real macOS host with Xcode and the iOS Simulator can;
@@ -102,10 +112,9 @@ this PR/commit's own CI result), not by anything this Windows host can run.
   runtime, not a shadow layer, but device-only behavior (background
   execution limits, real network conditions, memory pressure) can still
   differ; neither platform has been proven on a physical device.
-- `DataLoom.synchronize()` runtime proof — this module's Simulator test
-  covers `initialize()`/`shutdown()` only, not a full synchronization pass
-  against real storage/queue/transport I/O, the same boundary
-  `runtime-android-reference-consumer`'s Robolectric test has.
+- Queue admission, retry/circuit behavior, and conflict detection during a
+  real synchronization pass — both platforms' `synchronize()` proofs cover
+  a direct PULL/FULL pass only, not the queued/protected paths.
 - Native Android, KMP Android, and KMP iOS consumers resolving staged/
   published artifacts rather than project includes — the same bar
   `runtime-external-consumer` also does not yet meet for the JVM path.

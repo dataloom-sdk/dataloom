@@ -18,10 +18,13 @@
 // iosSimulatorArm64Test/iosX64Test on macOS CI -- the same real-runtime
 // execution mechanism (not a JVM shadow layer like Robolectric)
 // dataloom-runtime's own Apple circuit/queue/retry-administration store
-// tests already use. This Windows development host can cross-compile
-// iosSimulatorArm64Test/iosX64Test but cannot execute them -- only a real
-// macOS host with the iOS Simulator can; see IosReferenceConsumerTest.kt's
-// KDoc for the exact boundary this leaves open.
+// tests already use. A second test in the same class proves a real
+// DataLoom.synchronize() PULL pass genuinely writes an inbound change to
+// the real SQLite database (summary.inboundEventsApplied == 1). This
+// Windows development host can cross-compile iosSimulatorArm64Test/
+// iosX64Test but cannot execute them -- only a real macOS host with the iOS
+// Simulator can; see IosReferenceConsumerTest.kt's KDoc for the exact
+// boundary this leaves open.
 //
 // Rules:
 // - May depend on dataloom-platform-ios (which itself depends on
