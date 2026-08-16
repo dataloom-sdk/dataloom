@@ -42,9 +42,30 @@ plugins {
 kotlin {
     explicitApi()
 
-    iosArm64()
-    iosSimulatorArm64()
-    iosX64()
+    listOf(
+        iosArm64(),
+        iosSimulatorArm64(),
+        iosX64(),
+    ).forEach { target ->
+        // SQLDelight's NativeSqliteDriver (used by SqlDelightStorageProvider,
+        // reached transitively through dataloom-platform-ios ->
+        // dataloom-storage-sqldelight) requires the system sqlite3 library.
+        // dataloom-storage-sqldelight declares that dependency on its own
+        // iosMain, so its own test/framework binaries link cleanly, but that
+        // linker requirement does not reliably propagate across multiple
+        // project-dependency hops in Kotlin/Native -- this module is three
+        // hops downstream (runtime-ios-reference-consumer ->
+        // dataloom-platform-ios -> dataloom-storage-sqldelight), and its
+        // test binary genuinely failed to link with "Undefined symbols ...
+        // _sqlite3_bind_blob" without this explicit flag (confirmed via a
+        // real macOS CI failure, not guessed in advance). dataloom-apple's
+        // XCFramework binaries.framework build does not need this same flag
+        // -- Kotlin/Native's linker behaves differently for a
+        // dynamic/static framework than for an executable test binary.
+        target.binaries.all {
+            linkerOpts += "-lsqlite3"
+        }
+    }
 
     sourceSets {
         // named("iosMain")/named("iosTest") are synchronous, point-in-time
