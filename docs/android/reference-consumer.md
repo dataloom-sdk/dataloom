@@ -2,8 +2,9 @@
 
 ## Status
 
-**Compile-time proof plus a Robolectric-backed runtime proof — first two
-bounded slices of `#101` (DL-039A).** The
+**Compile-time proof, a Robolectric-backed runtime proof, and a real
+Gradle Managed Device emulator proof — three staged slices of `#101`
+(DL-039A).** The
 `runtime-android-reference-consumer` module wires
 `AndroidConnectivityProvider`, `RoomStorageProvider`, `RoomQueueProvider`,
 and `WorkManagerSchedulerProvider` into one real, buildable `DataLoom`
@@ -43,16 +44,27 @@ defaults to `SynchronizationConnectivityConfiguration.NONE` (confirmed by
 reading its own KDoc), so this does not depend on Robolectric's
 `ConnectivityManager` shadow reporting a connected network.
 
-It still does **not** prove behavior on a physical device or emulator —
-Robolectric simulates the Android framework on the JVM, a real and useful
-signal but not identical to on-device timing, process-death, or
-OS-version-specific behavior — and it does not exercise queue admission,
-retry/circuit behavior, or conflict detection, which stay a separate,
-larger follow-up. This mirrors the same documented boundary
+`AndroidReferenceConsumerInstrumentedTest` (`src/androidTest`) goes one
+step further still: it runs the identical two proofs — initialize/shutdown,
+then a real `synchronize()` PULL pass — against `pixel2Api35`, a real
+Gradle Managed Device AVD emulator (API 35, AOSP, x86_64) executed on the
+real Linux CI runner via KVM, the same managed-device mechanism
+`dataloom-queue-room`'s and `dataloom-storage-room`'s own instrumented
+tests already use. This is genuine on-emulator execution — a real
+`android.app.Application` process, a real `WorkManager` instance, a real
+Room-backed SQLite database on a real filesystem — not a JVM shadow layer.
+
+It still does **not** prove behavior on a physical device — an AVD emulator
+is closer to real hardware than Robolectric, but background execution
+limits, real network conditions, and manufacturer-specific OS behavior can
+still differ from an actual phone or tablet — and it does not exercise
+queue admission, retry/circuit behavior, or conflict detection, which stay
+a separate, larger follow-up. This mirrors the same documented boundary
 `runtime-external-consumer` already established for the JVM-only public
-runtime surface — "compile-only, then Robolectric initialize/shutdown,
-then Robolectric synchronize(), then device/emulator" is a deliberately
-staged proof, not a claim that everything is now covered.
+runtime surface — "compile-only, then Robolectric initialize/shutdown, then
+Robolectric synchronize(), then the same two proofs again on a real
+managed-device emulator" is a deliberately staged proof, not a claim that
+everything is now covered.
 
 ## Transport is intentionally illustrative
 
@@ -76,20 +88,32 @@ to the Google Maven repository.
 DATALOOM_ANDROID_BUILD=true ./gradlew :runtime-android-reference-consumer:check
 ```
 
-Verified for real: `compileDebugKotlin` succeeds (proving the whole
-provider-composition graph resolves and type-checks); `testDebugUnitTest`
-runs `AndroidReferenceConsumerRobolectricTest` and passes (2 tests, 0
-failures, 0 errors — confirmed via the JUnit XML report, not just a green
-build); `lintDebug` passes; and the full repository's Android `check` task
-(excluding a pre-existing, unrelated `dataloom-storage-datastore` test
-failure — see that module's own test report) is unaffected. No ABI
-baseline applies — this is a plain `com.android.library` module, not a
-KMP convention-plugin module, matching every other Android provider
-module in this repository.
+Verified for real (local Windows host): `compileDebugKotlin` succeeds
+(proving the whole provider-composition graph resolves and type-checks);
+`testDebugUnitTest` runs `AndroidReferenceConsumerRobolectricTest` and
+passes (2 tests, 0 failures, 0 errors — confirmed via the JUnit XML report,
+not just a green build); `compileDebugAndroidTestKotlin` and
+`assembleDebugAndroidTest` both succeed, producing a real, packaged
+instrumented-test APK; `lintDebug` passes; and the full repository's
+Android `check` task (excluding a pre-existing, unrelated
+`dataloom-storage-datastore` test failure — see that module's own test
+report) is unaffected. No ABI baseline applies — this is a plain
+`com.android.library` module, not a KMP convention-plugin module, matching
+every other Android provider module in this repository.
 
 Robolectric's own SDK-jar downloads run once per machine on first use, not
 on every build — expect the first `testDebugUnitTest` invocation on a
 fresh checkout to take noticeably longer than subsequent runs.
+
+Actually **running** `AndroidReferenceConsumerInstrumentedTest` on
+`pixel2Api35` requires KVM, which is Linux-only — this repository's
+`android-validation.yml` CI job enables it specifically for this purpose.
+Local Windows verification is limited to compiling and packaging the test
+APK; the real pass/fail signal is `android-validation.yml`'s own
+"Run managed-device tests" step, which now also runs
+`:runtime-android-reference-consumer:pixel2Api35DebugAndroidTest` alongside
+`dataloom-queue-room`'s and `dataloom-storage-room`'s existing
+managed-device tests.
 
 ## What remains open on `#101`
 
@@ -104,9 +128,10 @@ fresh checkout to take noticeably longer than subsequent runs.
   (though `dataloom-platform-ios` now covers its provider layer — see
   [the Apple guide](../apple/README.md)). No production Apple lifecycle
   adapter exists for either platform.
-- Device/emulator runtime proof — Robolectric (Android) and the iOS
-  Simulator (`runtime-ios-reference-consumer`) both close part of this gap;
-  neither platform has been proven on a physical device or emulator.
+- Physical-device runtime proof — Android now has a real AVD emulator proof
+  (`pixel2Api35`, above) alongside Robolectric, and iOS has the Simulator
+  (`runtime-ios-reference-consumer`); neither platform has been proven on
+  actual physical hardware.
 - Queue admission, retry/circuit behavior, and conflict detection during a
   real synchronization pass — both platforms' `synchronize()` proofs cover
   a direct PULL/FULL pass only, not the queued/protected paths.

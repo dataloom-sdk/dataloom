@@ -166,13 +166,14 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Run Room managed-device test
+      - name: Run managed-device tests
         shell: bash
         run: |
           set -o pipefail
           ./gradlew \
             :dataloom-queue-room:pixel2Api35DebugAndroidTest \
             :dataloom-storage-room:pixel2Api35DebugAndroidTest \
+            :runtime-android-reference-consumer:pixel2Api35DebugAndroidTest \
             --configuration-cache \
             --stacktrace \
             --console=plain 2>&1 | tee android-ci-logs/room-managed-device.log
