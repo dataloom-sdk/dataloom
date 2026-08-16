@@ -71,7 +71,7 @@ the strategy engine is complete.
 
 ## Market-readiness dashboard
 
-- **Last reconciled:** 2026-08-14
+- **Last reconciled:** 2026-08-16
 - **Recorded V1 target:** 2026-08-27
 - **Current verdict:** **NO-GO — not production-ready or market-ready**
 - **Accepted engineering/release gates:** **0 of 10** (`#93`–`#102` all open)
@@ -85,7 +85,7 @@ time before it flips.
 |---:|---|---|---:|
 | 0 | [DL-039 foundations, artifacts, compatibility](https://github.com/dataloom-sdk/dataloom/issues/93) | PARTIAL | 65% |
 | 1 | [DL-039B six strategy engine](https://github.com/dataloom-sdk/dataloom/issues/102) | IN PROGRESS | 75% |
-| 2 | [DL-039A Android/KMP/iOS parity](https://github.com/dataloom-sdk/dataloom/issues/101) | IN PROGRESS | 55% |
+| 2 | [DL-039A Android/KMP/iOS parity](https://github.com/dataloom-sdk/dataloom/issues/101) | IN PROGRESS | 60% |
 | 3 | [DL-040 retry and circuit breaker](https://github.com/dataloom-sdk/dataloom/issues/94) | QUALIFICATION BLOCKED | 70% |
 | 4 | [DL-041 conflict engine](https://github.com/dataloom-sdk/dataloom/issues/95) | IN PROGRESS | 35% |
 | 5 | [DL-042 events, observability, health, dashboard](https://github.com/dataloom-sdk/dataloom/issues/96) | IN PROGRESS | 40% |
@@ -98,11 +98,11 @@ time before it flips.
 
 **Recent highlights** (newest first):
 
-- 2026-08-14 — Conflict detection reachable from `DataLoomBuilder` for all six strategies (`#272`)
-- 2026-08-14 — Hybrid's transport-free-PUSH gap closed with `AcceptedLocally` (`#271`)
-- 2026-08-14 — `dataloom-android` platform aggregation artifact shipped (`#270`)
-- 2026-08-14 — Native Android reference consumer proves the four core providers compose (`#267`)
-- 2026-08-13 — Durable queue admission wired for cache-first/offline-first/hybrid (`#265`)
+- 2026-08-16 — `DataLoom.synchronize()` genuinely writes a pulled change to real storage, proven on both Android and iOS (`#302`, `#303`)
+- 2026-08-16 — Kotlin/Native iOS Simulator runtime proof for the iOS reference consumer (`#301`)
+- 2026-08-15 — Robolectric runtime proof for the Android reference consumer (`#300`)
+- 2026-08-15 — iOS reference consumer added, mirroring the Android one (`#299`)
+- 2026-08-15 — `#93`'s security-primitives foundation fully closed: least privilege and supply-chain dependency verification shipped (`#295`, `#296`)
 
 The full dated log (every entry back to project start), per-gate evidence
 citations, adoption-readiness table, market-evidence gates, and execution
