@@ -2553,6 +2553,18 @@ sealed interface io.dataloom.runtime.worker/QueueWorkerWakeUpPlan { // io.datalo
     }
 }
 
+final class <#A: kotlin/Any, #B: kotlin/Any> io.dataloom.runtime.state/AppleFileDurableStateStore : io.dataloom.api.state/DurableStateStore<#A, #B> { // io.dataloom.runtime.state/AppleFileDurableStateStore|null[0]
+    constructor <init>(kotlin/String, kotlin/String = ..., io.dataloom.api.state/DurableStateScopeKeyEncoder<#A>, io.dataloom.api.state/DurableStateCodec<#B>) // io.dataloom.runtime.state/AppleFileDurableStateStore.<init>|<init>(kotlin.String;kotlin.String;io.dataloom.api.state.DurableStateScopeKeyEncoder<1:0>;io.dataloom.api.state.DurableStateCodec<1:1>){}[0]
+
+    final suspend fun compareAndSet(io.dataloom.api.state/DurableStateCompareAndSetRequest<#A, #B>): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.state/DurableStateCompareAndSetResult<#B>> // io.dataloom.runtime.state/AppleFileDurableStateStore.compareAndSet|compareAndSet(io.dataloom.api.state.DurableStateCompareAndSetRequest<1:0,1:1>){}[0]
+    final suspend fun load(#A): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.state/DurableStateLoadResult<#B>> // io.dataloom.runtime.state/AppleFileDurableStateStore.load|load(1:0){}[0]
+
+    final object Companion { // io.dataloom.runtime.state/AppleFileDurableStateStore.Companion|null[0]
+        final const val DEFAULT_FILE_NAME // io.dataloom.runtime.state/AppleFileDurableStateStore.Companion.DEFAULT_FILE_NAME|{}DEFAULT_FILE_NAME[0]
+            final fun <get-DEFAULT_FILE_NAME>(): kotlin/String // io.dataloom.runtime.state/AppleFileDurableStateStore.Companion.DEFAULT_FILE_NAME.<get-DEFAULT_FILE_NAME>|<get-DEFAULT_FILE_NAME>(){}[0]
+    }
+}
+
 final class io.dataloom.runtime.conflict/ConflictDetectorRegistry { // io.dataloom.runtime.conflict/ConflictDetectorRegistry|null[0]
     constructor <init>(kotlin.collections/Collection<io.dataloom.api.conflict/ConflictDetector>) // io.dataloom.runtime.conflict/ConflictDetectorRegistry.<init>|<init>(kotlin.collections.Collection<io.dataloom.api.conflict.ConflictDetector>){}[0]
 
