@@ -16,12 +16,14 @@
 // now additionally proves those four real providers actually construct and
 // initialize/shut down cleanly against a real (simulated) Android runtime --
 // a genuine Room database open, a real WorkManager instance, a real
-// ConnectivityManager service lookup -- not just compile. It does not prove
-// behavior on a physical device or emulator, and it does not exercise
-// synchronize()/the full foreground/offline/retry/conflict/asset/
-// cancellation matrix #101's acceptance criteria require; see
-// AndroidReferenceConsumer.kt's and the Robolectric test's own KDoc for the
-// exact boundary.
+// ConnectivityManager service lookup -- not just compile. A second test in
+// the same class proves a real DataLoom.synchronize() PULL pass genuinely
+// writes an inbound change to that real Room database
+// (summary.inboundEventsApplied == 1). It does not prove behavior on a
+// physical device or emulator, and it does not exercise the full
+// foreground/offline/retry/conflict/asset/cancellation matrix #101's
+// acceptance criteria require; see AndroidReferenceConsumer.kt's and the
+// Robolectric test's own KDoc for the exact boundary.
 //
 // Rules:
 // - May depend on dataloom-android (which itself depends on the shared

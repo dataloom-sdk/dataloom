@@ -33,15 +33,26 @@ evidence, not a compile-time inference: if any provider's `initialize()`/
 `shutdown()` implementation genuinely fails against Android framework code
 (not just against DataLoom's own contracts), this test fails.
 
+A second test in the same class, `realAndroidProvidersApplyAPulledChangeToRealStorage`,
+goes one step further still: it calls `DataLoom.synchronize()` with a real
+inbound `ChangeSet` (via a test-only `TransportProvider` that always
+returns one `CREATE` event) and asserts `summary.inboundEventsApplied == 1`
+— proving the event was genuinely written to the real Room database, not
+just that the call returned a "succeeded" status. `SynchronizationExecutionCoordinator`
+defaults to `SynchronizationConnectivityConfiguration.NONE` (confirmed by
+reading its own KDoc), so this does not depend on Robolectric's
+`ConnectivityManager` shadow reporting a connected network.
+
 It still does **not** prove behavior on a physical device or emulator —
 Robolectric simulates the Android framework on the JVM, a real and useful
 signal but not identical to on-device timing, process-death, or
-OS-version-specific behavior — and it does not call `DataLoom.synchronize()`
-against real storage/queue/transport I/O, which stays a separate, larger
-follow-up. This mirrors the same documented boundary `runtime-external-consumer`
-already established for the JVM-only public runtime surface — "compile-only,
-then Robolectric, then device/emulator" is a deliberately staged proof, not
-a claim that everything is now covered.
+OS-version-specific behavior — and it does not exercise queue admission,
+retry/circuit behavior, or conflict detection, which stay a separate,
+larger follow-up. This mirrors the same documented boundary
+`runtime-external-consumer` already established for the JVM-only public
+runtime surface — "compile-only, then Robolectric initialize/shutdown,
+then Robolectric synchronize(), then device/emulator" is a deliberately
+staged proof, not a claim that everything is now covered.
 
 ## Transport is intentionally illustrative
 
@@ -67,7 +78,7 @@ DATALOOM_ANDROID_BUILD=true ./gradlew :runtime-android-reference-consumer:check
 
 Verified for real: `compileDebugKotlin` succeeds (proving the whole
 provider-composition graph resolves and type-checks); `testDebugUnitTest`
-runs `AndroidReferenceConsumerRobolectricTest` and passes (1 test, 0
+runs `AndroidReferenceConsumerRobolectricTest` and passes (2 tests, 0
 failures, 0 errors — confirmed via the JUnit XML report, not just a green
 build); `lintDebug` passes; and the full repository's Android `check` task
 (excluding a pre-existing, unrelated `dataloom-storage-datastore` test
@@ -93,12 +104,12 @@ fresh checkout to take noticeably longer than subsequent runs.
   (though `dataloom-platform-ios` now covers its provider layer — see
   [the Apple guide](../apple/README.md)). No production Apple lifecycle
   adapter exists for either platform.
-- Device/emulator runtime proof — Robolectric closes part of this gap for
-  Android (see above); nothing closes it for iOS yet, and neither platform
-  has been proven on a physical device or emulator.
-- `DataLoom.synchronize()` runtime proof — this module's Robolectric test
-  covers `initialize()`/`shutdown()` only, not a full synchronization pass
-  against real storage/queue/transport I/O.
+- Device/emulator runtime proof — Robolectric (Android) and the iOS
+  Simulator (`runtime-ios-reference-consumer`) both close part of this gap;
+  neither platform has been proven on a physical device or emulator.
+- Queue admission, retry/circuit behavior, and conflict detection during a
+  real synchronization pass — both platforms' `synchronize()` proofs cover
+  a direct PULL/FULL pass only, not the queued/protected paths.
 - Native Android and KMP Android+iOS consumers resolving staged/published
   artifacts rather than project includes — the same bar
   `runtime-external-consumer` also does not yet meet for the JVM path.

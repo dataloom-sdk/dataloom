@@ -47,15 +47,12 @@ import java.util.UUID
  *
  * ## Scope
  *
- * This is a **compile-only fixture**, the same documented boundary
- * `runtime-external-consumer` already established for the JVM-only public
- * runtime surface. [buildReferenceDataLoom] is real, correct wiring code —
- * it is not a fake or a stub — but nothing in this module calls
- * [DataLoom.initialize] or [DataLoom.synchronize] against a real Android
- * `Context`, `Room` database, or `WorkManager` instance. Proving that
- * requires either a real device/emulator instrumented test or a Robolectric
- * unit test; neither exists in this repository yet. That remains a
- * separate, larger follow-up — not silently claimed as covered here.
+ * [buildReferenceDataLoom] is real, correct wiring code — it is not a fake
+ * or a stub. `AndroidReferenceConsumerRobolectricTest` proves it against a
+ * real (Robolectric-simulated) Android runtime, including a full
+ * [DataLoom.synchronize] pass — see that test's own KDoc for the exact
+ * boundary of what is and is not covered (a real device/emulator
+ * instrumented test remains a separate, larger follow-up).
  *
  * ## Transport
  *
@@ -64,17 +61,25 @@ import java.util.UUID
  * A real application would use `dataloom-transport-ktor`,
  * `dataloom-transport-retrofit`, `dataloom-transport-graphql`,
  * `dataloom-transport-grpc`, or its own [TransportProvider]. This fixture
- * uses [ReferenceTransportProvider], a minimal illustrative stub, to keep
- * this module scoped to proving Android *provider* composition rather than
- * re-proving an already-covered transport module's own HTTP integration.
+ * defaults to [ReferenceTransportProvider], a minimal illustrative stub, to
+ * keep this module scoped to proving Android *provider* composition rather
+ * than re-proving an already-covered transport module's own HTTP
+ * integration. [transportProvider] is overridable so a caller (for example
+ * a test proving a full synchronization pass) can supply a transport that
+ * actually returns data, without hand-wiring the other three providers
+ * again.
  *
  * @param context an Android `Context`. Only [Context.getApplicationContext]
  *   is ever read from it, matching every Android provider's own documented
  *   contract.
+ * @param transportProvider the [TransportProvider] to register. Defaults to
+ *   [ReferenceTransportProvider].
  */
-public fun buildReferenceDataLoom(context: Context): DataLoom {
+public fun buildReferenceDataLoom(
+    context: Context,
+    transportProvider: TransportProvider = ReferenceTransportProvider(),
+): DataLoom {
     val providers = androidDataLoomProviders(context)
-    val transportProvider = ReferenceTransportProvider()
 
     return DataLoomBuilder()
         .runtimeDependencies(referenceRuntimeDependencies())
