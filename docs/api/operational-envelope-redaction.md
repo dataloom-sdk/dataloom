@@ -1,8 +1,10 @@
 # Operational Envelope and Redaction
 
 Status: **available foundation**. The shared contracts, strict redactor,
-canonical V1 wire codec, and schema-upcast registry are implemented. Durable
-delivery, persistence, and complete subsystem adapters remain V1 work.
+canonical V1 wire codec, and schema-upcast registry are implemented. A
+bounded first slice of durable persistence exists (see "Durable outbox"
+below); acknowledgement, replay, retention, filtering, and complete subsystem
+adapters remain V1 work.
 
 ## Purpose
 
@@ -129,12 +131,79 @@ gap" note. The primitive exists and is tested; adopting it at a real call
 site remains available, not forced, consistent with this codebase's
 standing "don't build ahead of a concrete near-term consumer" discipline.
 
+## Durable outbox (bounded first slice)
+
+`DurableOperationalEventOutbox` (`io.dataloom.api.operational`) is a bounded
+first slice of DL-042's durable-outbox requirement: it persists
+`OperationalEventEnvelope` instances so they survive a process restart, and
+reads back everything currently persisted for one
+`OperationalEventOutboxScope`, oldest first.
+
+```kotlin
+val outbox = DurableOperationalEventOutbox(store)
+val scope = OperationalEventOutboxScope("retry-events")
+
+when (val outcome = outbox.append(scope, envelope)) {
+    is DurableOperationalEventOutboxAppendOutcome.Appended -> Unit
+    is DurableOperationalEventOutboxAppendOutcome.AlreadyAppended -> Unit // idempotent retry
+    else -> Unit // Conflict / PersistenceFailure / ContentionLimitReached
+}
+
+val persisted = outbox.entries(scope) // every envelope appended so far, oldest first
+```
+
+### Why this reuses `DurableStateStore`, not `QueueProvider`
+
+An outbox needs ordered append plus "read everything currently persisted"
+semantics. `io.dataloom.api.queue.QueueProvider` already has durable
+enqueue/acquire semantics, but its `QueueEntry` is DataLoom's own
+synchronization workflow execution record — it requires a
+`SynchronizationRequest` and carries lease, retry-attempt, and strategy-plan
+fields that have no meaning for an arbitrary operational event. Reusing it
+here would mean either forcing events through work-item
+lease/acquire/complete/fail semantics they do not need, or breaking
+`QueueEntry` to make its synchronization fields optional.
+
+`DurableStateStore`'s own documentation already names "event outbox/audit" as
+a domain it was generalized to serve. `DurableOperationalEventOutbox` follows
+the same per-scope load-evaluate-compare-and-set pattern this codebase's
+other durable-state adopters
+(`DurableConfigurationHistory`, `DurablePolicyDecisionLog`,
+`DurableUnresolvedConflictLog`) already establish: the persisted `TState`
+(`OperationalEventOutboxState`) itself holds the ordered list, so ordering
+and multiplicity live inside one versioned record rather than requiring a new
+provider contract. `OperationalEventOutboxStateCodec` encodes each entry with
+the existing frozen `OperationalEnvelopeWireCodec` V1 frame — it never
+reinvents the envelope's own byte layout, only Base64-wraps each frame to
+join multiple entries into one text payload.
+
+### What this does not do yet
+
+- **No acknowledgement or per-item removal.** `entries` always returns the
+  full retained list; there is no "mark consumed" operation.
+- **No retention or eviction policy.** Entries accumulate without bound
+  (bounded only by the codec's overall encoded-length safety limit, not by
+  business retention policy).
+- **No filtering or subscription delivery.**
+- **No enumeration across scopes.** A caller must already know which
+  `OperationalEventOutboxScope` to read.
+- **No wired caller.** The "in-process event dispatch" already shipped
+  (`SynchronizationEventDispatcher`) delivers `SynchronizationEvent`, a
+  different domain type, to registered observers — it does not construct
+  `OperationalEventEnvelope` instances anywhere today. Bridging
+  `SynchronizationEvent` (or any other real runtime signal) into an envelope
+  and durably appending it is separate, larger follow-up work, consistent
+  with `DurableConfigurationHistory` and `DurablePolicyDecisionLog` each
+  originally shipping without a real caller.
+
 ## Remaining V1 boundary
 
 This foundation does not yet provide:
 
 - payload classification, minimization, encoding, encryption, or integrity;
-- durable outbox/acknowledgement/replay/retention/ordering;
+- durable outbox acknowledgement, replay, retention, or cross-scope
+  enumeration (ordered append and single-scope read-back exist -- see
+  "Durable outbox" above);
 - subscription filtering or back-pressure delivery;
 - subsystem adapters for every event and administrative action;
 - policy-signature, residency, authorization, or tamper-evident audit storage;
