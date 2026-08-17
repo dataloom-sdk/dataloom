@@ -507,6 +507,10 @@ class DataLoomBuilderProviderProtectionTest {
                     providerId,
                     StorageCircuitOperation.WRITE_CHECKPOINT.retryOperation,
                 ),
+                readLocalConflictCandidate = scope(
+                    providerId,
+                    StorageCircuitOperation.READ_LOCAL_CONFLICT_CANDIDATE.retryOperation,
+                ),
             )
 
         fun transportScopes(providerId: ProviderId): TransportCircuitScopes =

@@ -8,6 +8,8 @@ import io.dataloom.api.circuit.CircuitBreakerScope
 import io.dataloom.api.circuit.CircuitBreakerState
 import io.dataloom.api.circuit.CircuitBreakerStateRecord
 import io.dataloom.api.circuit.CircuitBreakerStateStore
+import io.dataloom.api.change.ChangeEvent
+import io.dataloom.api.change.EntityReference
 import io.dataloom.api.context.ExecutionContext
 import io.dataloom.api.error.DataLoomError
 import io.dataloom.api.error.ErrorCategory
@@ -15,8 +17,11 @@ import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
 import io.dataloom.api.execution.SynchronizationProviderSet
+import io.dataloom.api.identifier.ChangeEventId
 import io.dataloom.api.identifier.ConflictId
 import io.dataloom.api.identifier.CorrelationId
+import io.dataloom.api.identifier.EntityId
+import io.dataloom.api.identifier.EntityType
 import io.dataloom.api.identifier.ExecutionId
 import io.dataloom.api.identifier.IdentifierGenerator
 import io.dataloom.api.identifier.QueueEntryId
@@ -24,6 +29,7 @@ import io.dataloom.api.identifier.QueueLeaseId
 import io.dataloom.api.identifier.SynchronizationEventId
 import io.dataloom.api.identifier.SynchronizationSessionId
 import io.dataloom.api.identifier.WorkflowId
+import io.dataloom.api.model.ChangeOperation
 import io.dataloom.api.model.SynchronizationDirection
 import io.dataloom.api.model.SynchronizationMode
 import io.dataloom.api.model.SynchronizationRequest
@@ -40,6 +46,8 @@ import io.dataloom.api.runtime.RuntimeDependencies
 import io.dataloom.api.runtime.RuntimeIdentifierGenerators
 import io.dataloom.api.scheduling.SchedulingDelay
 import io.dataloom.api.storage.InboundChangeApplyRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadResult
 import io.dataloom.api.storage.OutboundChangeReadRequest
 import io.dataloom.api.storage.OutboundChangeReadResult
 import io.dataloom.api.storage.StorageProvider
@@ -290,6 +298,66 @@ class ProviderProtectedSynchronizationRuntimeTest {
         assertTrue(evidenceText.contains("SENSITIVE_FAILURE"))
     }
 
+    @Test
+    fun `open circuit rejects readLocalConflictCandidate the same way as other protected storage operations`() =
+        runTest {
+            val storage = RecordingStorageProvider()
+            val conflictScope = storageScopes(storage.descriptor.id).readLocalConflictCandidate
+            val storageStore = RecordingCircuitStore(
+                initialRecords = mapOf(conflictScope to openRecord(conflictScope)),
+            )
+            val bridge = ProviderProtectionStorageBridge(
+                protectedOperations = protectedStorage(storage, storageStore),
+                evidenceCollector = ProviderProtectionEvidenceCollector(),
+            )
+
+            val result = bridge.readLocalConflictCandidate(
+                LocalConflictCandidateReadRequest(
+                    request = synchronizationRequest(),
+                    entity = EntityReference(
+                        type = EntityType("Order"),
+                        id = EntityId("entity-1"),
+                    ),
+                ),
+            )
+
+            val failure = assertIs<ProviderOperationResult.Failure>(result)
+            assertEquals("PROVIDER_CIRCUIT_OPEN", failure.error.code.value)
+            assertEquals(0, storage.readLocalConflictCandidateCalls)
+        }
+
+    @Test
+    fun `closed circuit forwards the real local conflict candidate result unchanged`() = runTest {
+        val localChange = ChangeEvent(
+            id = ChangeEventId("local-conflict-candidate"),
+            entity = EntityReference(type = EntityType("Order"), id = EntityId("entity-1")),
+            operation = ChangeOperation.UPDATE,
+        )
+        val storage = RecordingStorageProvider(
+            conflictCandidateResult = ProviderOperationResult.Success(
+                LocalConflictCandidateReadResult.Found(localChange),
+            ),
+        )
+        val bridge = ProviderProtectionStorageBridge(
+            protectedOperations = protectedStorage(storage, RecordingCircuitStore()),
+            evidenceCollector = ProviderProtectionEvidenceCollector(),
+        )
+
+        val result = bridge.readLocalConflictCandidate(
+            LocalConflictCandidateReadRequest(
+                request = synchronizationRequest(),
+                entity = EntityReference(type = EntityType("Order"), id = EntityId("entity-1")),
+            ),
+        )
+
+        val success = assertIs<ProviderOperationResult.Success<LocalConflictCandidateReadResult>>(
+            result,
+        )
+        val found = assertIs<LocalConflictCandidateReadResult.Found>(success.value)
+        assertSame(localChange, found.localChange)
+        assertEquals(1, storage.readLocalConflictCandidateCalls)
+    }
+
     private fun protectedStorage(
         provider: StorageProvider,
         store: CircuitBreakerStateStore,
@@ -361,8 +429,13 @@ class ProviderProtectedSynchronizationRuntimeTest {
         private val healthResult: ProviderOperationResult<ProviderHealth> =
             ProviderOperationResult.Success(ProviderHealth(ProviderHealthStatus.HEALTHY)),
         private val cancelHealth: Boolean = false,
+        private val conflictCandidateResult:
+            ProviderOperationResult<LocalConflictCandidateReadResult> =
+            ProviderOperationResult.Success(LocalConflictCandidateReadResult.NotFound),
     ) : StorageProvider {
         var healthCalls: Int = 0
+            private set
+        var readLocalConflictCandidateCalls: Int = 0
             private set
 
         override val descriptor: ProviderDescriptor = ProviderDescriptor(
@@ -406,6 +479,13 @@ class ProviderProtectedSynchronizationRuntimeTest {
         override suspend fun writeCheckpoint(
             request: CheckpointWriteRequest,
         ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun readLocalConflictCandidate(
+            request: LocalConflictCandidateReadRequest,
+        ): ProviderOperationResult<LocalConflictCandidateReadResult> {
+            readLocalConflictCandidateCalls++
+            return conflictCandidateResult
+        }
     }
 
     private class RecordingTransportProvider(
@@ -582,6 +662,10 @@ class ProviderProtectedSynchronizationRuntimeTest {
                 writeCheckpoint = scope(
                     providerId,
                     StorageCircuitOperation.WRITE_CHECKPOINT.retryOperation,
+                ),
+                readLocalConflictCandidate = scope(
+                    providerId,
+                    StorageCircuitOperation.READ_LOCAL_CONFLICT_CANDIDATE.retryOperation,
                 ),
             )
 
