@@ -27,6 +27,8 @@ import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.provider.ProviderVersion
 import io.dataloom.api.storage.InboundChangeApplyRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadResult
 import io.dataloom.api.storage.OutboundChangeReadRequest
 import io.dataloom.api.storage.OutboundChangeReadResult
 import io.dataloom.api.storage.StorageProvider
@@ -89,6 +91,33 @@ import kotlinx.coroutines.flow.first
  * This limit exists because DataStore is designed for small, bounded key-value data, not
  * high-volume change streams. For applications that generate many change events, use
  * `dataloom-queue-room` (issues #209 and #215).
+ *
+ * ## `readLocalConflictCandidate`
+ *
+ * Overrides the safe [StorageProvider.readLocalConflictCandidate] default,
+ * following the same outbound-only principle established by
+ * `RoomStorageProvider`, `SqlDelightStorageProvider`, and `FileStorageProvider`:
+ * only the outbound pending index/event records are considered, never the
+ * `dl.in.<entityType>.<entityId>` inbound records — even though those are
+ * directly entity-keyed and would be trivial to read. Inbound-applied state
+ * is not local intent to compare an incoming remote change against; only a
+ * still-pending outbound edit is.
+ *
+ * This is the simplest of the four reference providers' implementations of
+ * this method: [acknowledgeOutboundChanges] already deletes the event record
+ * for **both** [ChangeAcknowledgementStatus.ACCEPTED] and
+ * [ChangeAcknowledgementStatus.REJECTED] (there is no DataStore analog to
+ * `SqlDelightStorageProvider`'s retained-but-filtered `REJECTED` row or
+ * `FileStorageProvider`'s `rejected/` directory), so nothing beyond a
+ * genuinely still-pending edit can ever be found — no separate
+ * accepted/rejected exclusion logic is needed here.
+ *
+ * There is no per-entity index for outbound events, matching
+ * `FileStorageProvider`'s situation: [dl.out.pending][outboundPendingKey]
+ * is the only ordering this provider persists, so finding the latest match
+ * for one entity means scanning it in order and keeping the last hit — a
+ * cost consistent with this provider's own small-bounded-data scope, not an
+ * oversight.
  *
  * ## Inbound apply semantics
  *
@@ -285,6 +314,47 @@ public class DataStoreStorageProvider(
             val changeSet = ChangeSet(id = changeSetId, events = events)
             ProviderOperationResult.Success(
                 OutboundChangeReadResult.Changes(changeSet = changeSet, hasMore = hasMore),
+            )
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: IOException) {
+            ProviderOperationResult.Failure(DataStoreStorageProviderError.ioFailure(e))
+        }
+    }
+
+    /**
+     * Reads the local counterpart of one incoming inbound [ChangeEvent] for
+     * synchronization conflict detection, considering only still-pending
+     * outbound edits.
+     *
+     * See this class's own "`readLocalConflictCandidate`" KDoc section above
+     * for the full design rationale.
+     *
+     * @param request read request naming the entity to find a local conflict
+     *   candidate for.
+     * @return [ProviderOperationResult.Success] with a
+     *   [LocalConflictCandidateReadResult], or [ProviderOperationResult.Failure]
+     *   with code `DATASTORE_IO_FAILURE` on an IO error.
+     */
+    override suspend fun readLocalConflictCandidate(
+        request: LocalConflictCandidateReadRequest,
+    ): ProviderOperationResult<LocalConflictCandidateReadResult> {
+        return try {
+            val snapshot = dataStore.data.first()
+            var latestMatch: ChangeEvent? = null
+            for ((_, eventId) in snapshot.parsePendingIndex()) {
+                val record = snapshot[outboundEventKey(eventId)] ?: continue
+                val event = decodeEvent(record) ?: continue
+                if (event.entity.type == request.entity.type && event.entity.id == request.entity.id) {
+                    latestMatch = event
+                }
+            }
+            ProviderOperationResult.Success(
+                if (latestMatch == null) {
+                    LocalConflictCandidateReadResult.NotFound
+                } else {
+                    LocalConflictCandidateReadResult.Found(latestMatch)
+                },
             )
         } catch (e: CancellationException) {
             throw e
