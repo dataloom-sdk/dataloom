@@ -342,10 +342,11 @@ for that named, deliberately out-of-scope gap.
   — closing this properly needs a breaking addition to `StorageCircuitScopes`'s
   constructor. Real, separately-scoped follow-up work.
 - **Reference-provider adoption of `readLocalConflictCandidate`.** `Room`
-  overrides it now (see [storage provider](./storage-provider.md#reading-local-conflict-candidates-opt-in-for-conflict-detection-only));
-  `SQLDelight`, file-based, and `DataStore` still don't — the interface's
-  safe `NotFound` default means conflict detection is simply inert for those
-  providers today, not broken.
+  and `SQLDelight` override it now (see
+  [storage provider](./storage-provider.md#reading-local-conflict-candidates-opt-in-for-conflict-detection-only));
+  file-based and `DataStore` still don't — the interface's safe `NotFound`
+  default means conflict detection is simply inert for those providers
+  today, not broken.
 - **Wiring `DurableConflictDetectionCoordinator` into `BidirectionalSynchronizationPipeline`
   or `OutboundPushSynchronizationPipeline` directly.** Bidirectional inherits
   real counts through its inbound child once that child has conflict

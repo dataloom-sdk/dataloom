@@ -87,6 +87,25 @@ UPDATE outbound_changes
 SET state = ?
 WHERE event_id = ?;
 
+selectLatestOutboundChangeForEntity:
+SELECT
+    sequence,
+    event_id,
+    change_set_id,
+    change_set_metadata,
+    entity_type,
+    entity_id,
+    entity_version,
+    operation,
+    payload_content_type,
+    payload_bytes,
+    event_metadata,
+    state
+FROM outbound_changes
+WHERE entity_type = ? AND entity_id = ?
+ORDER BY sequence DESC
+LIMIT 1;
+
 insertOrReplaceInboundAppliedChange:
 INSERT INTO inbound_changes_applied(
     event_id,

@@ -25,6 +25,8 @@ import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.provider.ProviderVersion
 import io.dataloom.api.storage.InboundChangeApplyRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadResult
 import io.dataloom.api.storage.OutboundChangeReadRequest
 import io.dataloom.api.storage.OutboundChangeReadResult
 import io.dataloom.api.storage.StorageProvider
@@ -43,6 +45,28 @@ import kotlin.coroutines.cancellation.CancellationException
  * checkpoints to SQLDelight-managed SQLite tables. The class is thread-safe for
  * concurrent callers as long as the supplied SQLDelight driver is thread-safe
  * for the current platform.
+ *
+ * ## `readLocalConflictCandidate`
+ *
+ * Overrides the safe [StorageProvider.readLocalConflictCandidate] default,
+ * mirroring `RoomStorageProvider`'s reference approach: considers only the
+ * `outbound_changes` table, never `inbound_changes_applied`, since the
+ * outbound table is this provider's own record of the local application's
+ * pending or recently-made edits — exactly what a genuine local-vs-remote
+ * conflict compares against. An entity with no outbound row has no local
+ * edit to disagree with an incoming remote change, so an inbound-only-synced
+ * entity correctly reports [LocalConflictCandidateReadResult.NotFound].
+ *
+ * Unlike Room, this provider's own [acknowledgeOutboundChanges] *deletes* the
+ * row for an [io.dataloom.api.synchronization.ChangeAcknowledgementStatus.ACCEPTED]
+ * event rather than retaining it — an existing, already-documented platform
+ * difference this method does not paper over. In practice this means an
+ * entity whose only outbound edit has already been accepted by the remote
+ * also correctly reports `NotFound`: there is no still-outstanding local
+ * edit left to compare, which is at least as defensible as Room's
+ * retain-everything behavior for this narrow purpose. When multiple
+ * outbound rows remain for the same entity, the highest `sequence` (the
+ * most recently inserted) is returned.
  */
 public class SqlDelightStorageProvider(
     private val storage: SqlDelightStorageDatabase,
@@ -170,6 +194,22 @@ public class SqlDelightStorageProvider(
         }
     }
 
+    override suspend fun readLocalConflictCandidate(
+        request: LocalConflictCandidateReadRequest,
+    ): ProviderOperationResult<LocalConflictCandidateReadResult> = runStorageOperation {
+        val row = queries.selectLatestOutboundChangeForEntity(
+            entity_type = request.entity.type.value,
+            entity_id = request.entity.id.value,
+            mapper = ::OutboundRow,
+        ).executeAsOneOrNull()
+
+        if (row == null) {
+            LocalConflictCandidateReadResult.NotFound
+        } else {
+            LocalConflictCandidateReadResult.Found(row.toChangeEvent())
+        }
+    }
+
     override suspend fun readCheckpoint(
         request: CheckpointReadRequest,
     ): ProviderOperationResult<SynchronizationCheckpoint?> = runStorageOperation {
@@ -207,22 +247,22 @@ public class SqlDelightStorageProvider(
         val first = first()
         return ChangeSet(
             id = ChangeSetId(first.changeSetId),
-            events = map { row ->
-                ChangeEvent(
-                    id = ChangeEventId(row.eventId),
-                    entity = EntityReference(
-                        type = EntityType(row.entityType),
-                        id = EntityId(row.entityId),
-                        version = row.entityVersion?.let(::EntityVersion),
-                    ),
-                    operation = ChangeOperation.valueOf(row.operation),
-                    payload = row.toPayload(),
-                    metadata = decodeMetadata(row.eventMetadata),
-                )
-            },
+            events = map { row -> row.toChangeEvent() },
             metadata = decodeMetadata(first.changeSetMetadata),
         )
     }
+
+    private fun OutboundRow.toChangeEvent(): ChangeEvent = ChangeEvent(
+        id = ChangeEventId(eventId),
+        entity = EntityReference(
+            type = EntityType(entityType),
+            id = EntityId(entityId),
+            version = entityVersion?.let(::EntityVersion),
+        ),
+        operation = ChangeOperation.valueOf(operation),
+        payload = toPayload(),
+        metadata = decodeMetadata(eventMetadata),
+    )
 
     private fun OutboundRow.toPayload(): DataLoomPayload? {
         val contentType: String = payloadContentType ?: return null

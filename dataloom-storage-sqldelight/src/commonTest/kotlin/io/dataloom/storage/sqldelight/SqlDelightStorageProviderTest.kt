@@ -1,6 +1,16 @@
 package io.dataloom.storage.sqldelight
 
+import io.dataloom.api.change.ChangeEvent
+import io.dataloom.api.change.ChangeSet
+import io.dataloom.api.change.EntityReference
+import io.dataloom.api.identifier.ChangeEventId
+import io.dataloom.api.identifier.ChangeSetId
+import io.dataloom.api.identifier.EntityId
+import io.dataloom.api.identifier.EntityType
+import io.dataloom.api.model.ChangeOperation
 import io.dataloom.api.provider.ProviderOperationResult
+import io.dataloom.api.storage.LocalConflictCandidateReadRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadResult
 import io.dataloom.api.storage.OutboundChangeReadResult
 import io.dataloom.api.synchronization.ChangeAcknowledgementStatus
 import kotlin.coroutines.startCoroutine
@@ -93,6 +103,130 @@ class SqlDelightStorageProviderTest {
         val readResult = runSuspend { provider.readOutboundChanges(sampleOutboundReadRequest()) }
         val success = assertIs<ProviderOperationResult.Success<OutboundChangeReadResult>>(readResult)
         assertIs<OutboundChangeReadResult.Changes>(success.value)
+    }
+
+    @Test
+    fun `readLocalConflictCandidate returns NotFound for an untouched entity`() {
+        val provider = SqlDelightStorageProvider(createTestSqlDelightStorageDatabase())
+
+        val result = runSuspend {
+            provider.readLocalConflictCandidate(
+                LocalConflictCandidateReadRequest(
+                    request = sampleSynchronizationRequest("candidate"),
+                    entity = EntityReference(type = EntityType("customer"), id = EntityId("customer-untouched")),
+                ),
+            )
+        }
+
+        val success = assertIs<ProviderOperationResult.Success<LocalConflictCandidateReadResult>>(result)
+        assertEquals(LocalConflictCandidateReadResult.NotFound, success.value)
+    }
+
+    @Test
+    fun `readLocalConflictCandidate returns the most recently persisted outbound event for the entity`() {
+        val provider = SqlDelightStorageProvider(createTestSqlDelightStorageDatabase())
+        val entity = EntityReference(type = EntityType("customer"), id = EntityId("customer-1"))
+        runSuspend {
+            provider.persistOutboundChanges(
+                ChangeSet(
+                    id = ChangeSetId("changes-first"),
+                    events = listOf(
+                        ChangeEvent(id = ChangeEventId("event-first"), entity = entity, operation = ChangeOperation.UPDATE),
+                    ),
+                ),
+            )
+            provider.persistOutboundChanges(
+                ChangeSet(
+                    id = ChangeSetId("changes-second"),
+                    events = listOf(
+                        ChangeEvent(id = ChangeEventId("event-second"), entity = entity, operation = ChangeOperation.UPDATE),
+                    ),
+                ),
+            )
+        }
+
+        val result = runSuspend {
+            provider.readLocalConflictCandidate(
+                LocalConflictCandidateReadRequest(
+                    request = sampleSynchronizationRequest("candidate"),
+                    entity = entity,
+                ),
+            )
+        }
+
+        val found = assertIs<LocalConflictCandidateReadResult.Found>(
+            assertIs<ProviderOperationResult.Success<LocalConflictCandidateReadResult>>(result).value,
+        )
+        assertEquals("event-second", found.localChange.id.value)
+    }
+
+    @Test
+    fun `readLocalConflictCandidate returns NotFound once the only outbound edit is accepted`() {
+        // Unlike RoomStorageProvider, this provider's own acknowledgeOutboundChanges
+        // deletes an ACCEPTED row rather than retaining it — an existing platform
+        // difference this test proves for real, not just documents in KDoc.
+        val provider = SqlDelightStorageProvider(createTestSqlDelightStorageDatabase())
+        val entity = EntityReference(type = EntityType("customer"), id = EntityId("customer-accepted"))
+        runSuspend {
+            provider.persistOutboundChanges(
+                ChangeSet(
+                    id = ChangeSetId("changes-accepted"),
+                    events = listOf(
+                        ChangeEvent(id = ChangeEventId("event-accepted"), entity = entity, operation = ChangeOperation.UPDATE),
+                    ),
+                ),
+            )
+            provider.acknowledgeOutboundChanges(
+                sampleOutboundAcknowledgementRequest(
+                    changeSetId = "changes-accepted",
+                    eventId = "event-accepted",
+                    status = ChangeAcknowledgementStatus.ACCEPTED,
+                ),
+            )
+        }
+
+        val result = runSuspend {
+            provider.readLocalConflictCandidate(
+                LocalConflictCandidateReadRequest(
+                    request = sampleSynchronizationRequest("candidate"),
+                    entity = entity,
+                ),
+            )
+        }
+
+        val success = assertIs<ProviderOperationResult.Success<LocalConflictCandidateReadResult>>(result)
+        assertEquals(LocalConflictCandidateReadResult.NotFound, success.value)
+    }
+
+    @Test
+    fun `readLocalConflictCandidate ignores inbound-only history for the same entity`() {
+        val provider = SqlDelightStorageProvider(createTestSqlDelightStorageDatabase())
+        val entity = EntityReference(type = EntityType("customer"), id = EntityId("customer-inbound-only"))
+
+        runSuspend {
+            provider.applyInboundChanges(
+                sampleInboundApplyRequest(
+                    changeSet = ChangeSet(
+                        id = ChangeSetId("inbound-only"),
+                        events = listOf(
+                            ChangeEvent(id = ChangeEventId("event-inbound"), entity = entity, operation = ChangeOperation.UPDATE),
+                        ),
+                    ),
+                ),
+            )
+        }
+
+        val result = runSuspend {
+            provider.readLocalConflictCandidate(
+                LocalConflictCandidateReadRequest(
+                    request = sampleSynchronizationRequest("candidate"),
+                    entity = entity,
+                ),
+            )
+        }
+
+        val success = assertIs<ProviderOperationResult.Success<LocalConflictCandidateReadResult>>(result)
+        assertEquals(LocalConflictCandidateReadResult.NotFound, success.value)
     }
 
     @Test
