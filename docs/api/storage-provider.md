@@ -254,9 +254,24 @@ without overriding it. Conflict detection during inbound pull is opt-in per
 provider — a provider adopts it by overriding this method with a real local
 read.
 
-None of the reference providers (Room, SQLDelight, file-based, DataStore)
-override this method yet; adopting it per provider is separate,
-unstarted follow-up work.
+`RoomStorageProvider` (`dataloom-storage-room`) is the first reference
+provider to override this method for real, demonstrating what a genuine
+implementation looks like: it considers only its own *outbound* change-event
+log — the local application's pending or recently-made edits — never the
+inbound log. An entity with no outbound history correctly reports `NotFound`
+even if it was previously synced via an inbound apply, since that case is an
+ordinary remote update with no local edit to disagree with, not a conflict.
+When multiple outbound events exist for the same entity, the most recently
+appended one (by change-set insertion order, then in-set event order) is
+returned — the underlying schema has no shared wall-clock ordering between
+its outbound and inbound tables, so "most recently appended" is the only
+ordering it can support without inventing a new one. See
+[`RoomStorageProvider`'s own KDoc](../../dataloom-storage-room/src/main/kotlin/io/dataloom/storage/room/RoomStorageProvider.kt)
+for the full reasoning.
+
+SQLDelight, file-based, and DataStore reference providers do not override
+this method yet; adopting it per provider is separate, unstarted follow-up
+work.
 
 ---
 

@@ -206,6 +206,23 @@ internal abstract class OutboundChangeDao {
     )
     internal abstract suspend fun findStoredEvents(changeSetId: String): List<OutboundChangeEventEntity>
 
+    @Query(
+        """
+        SELECT outbound_change_events.*
+        FROM outbound_change_events
+        INNER JOIN outbound_change_sets
+            ON outbound_change_sets.change_set_id = outbound_change_events.change_set_id
+        WHERE outbound_change_events.entity_type = :entityType
+          AND outbound_change_events.entity_id = :entityId
+        ORDER BY outbound_change_sets.storage_sequence DESC, outbound_change_events.event_index DESC
+        LIMIT 1
+        """,
+    )
+    internal abstract suspend fun findLatestEventForEntity(
+        entityType: String,
+        entityId: String,
+    ): OutboundChangeEventEntity?
+
     @Transaction
     internal open suspend fun appendChangeSet(changeSet: ChangeSet) {
         val entity = changeSet.toOutboundEntity()

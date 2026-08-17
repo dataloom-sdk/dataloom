@@ -90,7 +90,7 @@ internal fun SynchronizationCheckpoint.toEntity(): StorageCheckpointEntity = Sto
     metadataJson = metadata.toJsonOrNull(),
 )
 
-private fun OutboundChangeEventEntity.toDomain(): ChangeEvent = reconstructChangeEvent(
+internal fun OutboundChangeEventEntity.toDomain(): ChangeEvent = reconstructChangeEvent(
     eventId = eventId,
     entityType = entityType,
     entityId = entityId,

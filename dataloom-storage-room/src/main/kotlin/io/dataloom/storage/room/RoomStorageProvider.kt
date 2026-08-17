@@ -10,6 +10,8 @@ import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.provider.ProviderVersion
 import io.dataloom.api.storage.InboundChangeApplyRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadResult
 import io.dataloom.api.storage.OutboundChangeReadRequest
 import io.dataloom.api.storage.OutboundChangeReadResult
 import io.dataloom.api.storage.StorageProvider
@@ -41,6 +43,25 @@ import java.util.concurrent.CancellationException
  * [readOutboundChanges]. Retry events remain eligible for later reads. Inbound
  * application persists opaque change sets and checkpoints in generic tables
  * without interpreting payload bytes.
+ *
+ * ## `readLocalConflictCandidate`
+ *
+ * Overrides the safe [StorageProvider.readLocalConflictCandidate] default —
+ * this is the reference implementation demonstrating what a real provider
+ * override looks like. Deliberately considers only the *outbound* change-event
+ * log, never inbound: the outbound log is this provider's own record of the
+ * local application's pending or recently-made edits, which is exactly what a
+ * genuine local-vs-remote conflict compares against. An entity with no
+ * outbound history has no local edit to disagree with an incoming remote
+ * change, so an inbound-only-synced entity correctly reports
+ * [io.dataloom.api.storage.LocalConflictCandidateReadResult.NotFound] — that
+ * case is an ordinary apply, not a conflict. When multiple outbound events
+ * exist for the same entity (across one or more change sets, any
+ * acknowledgement status), the most recently appended one is returned,
+ * ordered by change-set insertion order then in-set event order — the two
+ * change-set/event tables have no shared wall-clock ordering, so "most
+ * recently appended" (not "most recently acknowledged" or a timestamp) is the
+ * only ordering this schema can support without inventing one.
  *
  * ## Cancellation
  *
@@ -109,6 +130,22 @@ public class RoomStorageProvider(
         } else {
             ProviderOperationResult.Failure(StorageProviderError.acknowledgementTargetMissing())
         }
+    }
+
+    override suspend fun readLocalConflictCandidate(
+        request: LocalConflictCandidateReadRequest,
+    ): ProviderOperationResult<LocalConflictCandidateReadResult> = executeDatabaseOperation {
+        val entity = outboundChangeDao.findLatestEventForEntity(
+            entityType = request.entity.type.value,
+            entityId = request.entity.id.value,
+        )
+        ProviderOperationResult.Success(
+            if (entity == null) {
+                LocalConflictCandidateReadResult.NotFound
+            } else {
+                LocalConflictCandidateReadResult.Found(entity.toDomain())
+            },
+        )
     }
 
     override suspend fun readCheckpoint(

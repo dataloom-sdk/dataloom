@@ -33,6 +33,8 @@ import io.dataloom.api.payload.DataLoomPayload
 import io.dataloom.api.payload.PayloadContentType
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.storage.InboundChangeApplyRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadResult
 import io.dataloom.api.storage.OutboundChangeReadRequest
 import io.dataloom.api.storage.OutboundChangeReadResult
 import io.dataloom.api.synchronization.ChangeAcknowledgementStatus
@@ -187,6 +189,76 @@ class RoomStorageProviderInstrumentedTest {
         )
         assertEquals(listOf("event-2"), changes.changeSet.events.map { it.id.value })
         assertEquals(false, changes.hasMore)
+    }
+
+    @Test
+    fun readLocalConflictCandidateReturnsTheMostRecentlyAppendedOutboundEventForTheEntity() = runBlocking {
+        database.outboundChangeDao().appendChangeSet(
+            ChangeSet(
+                id = ChangeSetId("outbound-3"),
+                events = listOf(changeEvent("event-1", "customer", "customer-1")),
+            ),
+        )
+        database.outboundChangeDao().appendChangeSet(
+            ChangeSet(
+                id = ChangeSetId("outbound-4"),
+                events = listOf(changeEvent("event-2", "customer", "customer-1")),
+            ),
+        )
+
+        val result = provider.readLocalConflictCandidate(
+            LocalConflictCandidateReadRequest(
+                request = request(),
+                entity = EntityReference(type = EntityType("customer"), id = EntityId("customer-1")),
+            ),
+        )
+
+        val found = assertIs<LocalConflictCandidateReadResult.Found>(
+            assertIs<ProviderOperationResult.Success<LocalConflictCandidateReadResult>>(result).value,
+        )
+        assertEquals("event-2", found.localChange.id.value)
+    }
+
+    @Test
+    fun readLocalConflictCandidateReturnsNotFoundForAnEntityWithNoOutboundHistory() = runBlocking {
+        val result = provider.readLocalConflictCandidate(
+            LocalConflictCandidateReadRequest(
+                request = request(),
+                entity = EntityReference(type = EntityType("customer"), id = EntityId("customer-untouched")),
+            ),
+        )
+
+        val success = assertIs<ProviderOperationResult.Success<LocalConflictCandidateReadResult>>(result)
+        assertEquals(LocalConflictCandidateReadResult.NotFound, success.value)
+    }
+
+    @Test
+    fun readLocalConflictCandidateIgnoresInboundOnlyHistoryForTheSameEntity() = runBlocking {
+        // Applying an inbound change for an entity that has never had a local
+        // outbound edit must not surface as a conflict candidate — this is the
+        // ordinary "apply the remote update" case, not a local-vs-remote
+        // disagreement, matching RoomStorageProvider's own documented design.
+        assertIs<ProviderOperationResult.Success<Unit>>(
+            provider.applyInboundChanges(
+                InboundChangeApplyRequest(
+                    request = request(),
+                    changeSet = ChangeSet(
+                        id = ChangeSetId("inbound-2"),
+                        events = listOf(changeEvent("event-3", "customer", "customer-2")),
+                    ),
+                ),
+            ),
+        )
+
+        val result = provider.readLocalConflictCandidate(
+            LocalConflictCandidateReadRequest(
+                request = request(),
+                entity = EntityReference(type = EntityType("customer"), id = EntityId("customer-2")),
+            ),
+        )
+
+        val success = assertIs<ProviderOperationResult.Success<LocalConflictCandidateReadResult>>(result)
+        assertEquals(LocalConflictCandidateReadResult.NotFound, success.value)
     }
 
     @Test
