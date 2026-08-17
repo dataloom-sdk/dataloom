@@ -114,6 +114,23 @@ uphold when it constructs its own `message`, not a runtime check. There is no
 type-level guarantee against a future implementation putting sensitive
 content in `message`.
 
+**Defense-in-depth primitive (`#93`):** [`MessageContentRedactor`](./operational-envelope-redaction.md#message-content-redaction)
+(`io.dataloom.api.security`, module `dataloom-api`) and its reference
+implementation `PatternBasedMessageContentRedactor` exist for exactly this
+residual risk — a deterministic, bounded scan of free text for a fixed set
+of common secret-shaped patterns (Bearer/Authorization tokens, JWT-shaped
+tokens, AWS-style access key IDs, sensitive query-string parameter values,
+URL Basic-Auth credentials, email addresses), each masked on match. It is
+explicitly **not** a general-purpose secret scanner and does not replace the
+"must not include credentials, tokens, keys, or personal data" convention
+above — it is a second layer for the case where that convention is violated
+anyway. No call site is wired to it yet: the one confirmed live violation
+this codebase had (`ApolloErrorMapper`, see "Closed gap" below) was already
+fixed by removing the unsafe forwarding entirely rather than needing
+redaction, so there is currently no concrete consumer to wire it into
+without inventing one. The primitive exists and is tested; adopting it at a
+real call site remains available, not forced.
+
 **Closed gap (`#93`):** every current call site across this codebase was
 audited for the specific pattern that previously violated this convention —
 forwarding a wrapped exception's own `.message`, or a remote server's own
