@@ -1262,6 +1262,69 @@ sealed interface io.dataloom.api.conflict/DurableUnresolvedConflictRecordOutcome
     }
 }
 
+sealed interface io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome { // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome|null[0]
+    final class AlreadyAppended : io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome { // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.AlreadyAppended|null[0]
+        constructor <init>(io.dataloom.api.operational/OperationalEventEnvelope) // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.AlreadyAppended.<init>|<init>(io.dataloom.api.operational.OperationalEventEnvelope){}[0]
+
+        final val envelope // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.AlreadyAppended.envelope|{}envelope[0]
+            final fun <get-envelope>(): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.AlreadyAppended.envelope.<get-envelope>|<get-envelope>(){}[0]
+
+        final fun component1(): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.AlreadyAppended.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.operational/OperationalEventEnvelope = ...): io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.AlreadyAppended // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.AlreadyAppended.copy|copy(io.dataloom.api.operational.OperationalEventEnvelope){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.AlreadyAppended.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.AlreadyAppended.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.AlreadyAppended.toString|toString(){}[0]
+    }
+
+    final class Appended : io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome { // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.Appended|null[0]
+        constructor <init>(io.dataloom.api.operational/OperationalEventEnvelope) // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.Appended.<init>|<init>(io.dataloom.api.operational.OperationalEventEnvelope){}[0]
+
+        final val envelope // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.Appended.envelope|{}envelope[0]
+            final fun <get-envelope>(): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.Appended.envelope.<get-envelope>|<get-envelope>(){}[0]
+
+        final fun component1(): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.Appended.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.operational/OperationalEventEnvelope = ...): io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.Appended // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.Appended.copy|copy(io.dataloom.api.operational.OperationalEventEnvelope){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.Appended.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.Appended.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.Appended.toString|toString(){}[0]
+    }
+
+    final class Conflict : io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome { // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.Conflict|null[0]
+        constructor <init>(io.dataloom.api.operational/OperationalEventEnvelope, io.dataloom.api.operational/OperationalEventEnvelope) // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.Conflict.<init>|<init>(io.dataloom.api.operational.OperationalEventEnvelope;io.dataloom.api.operational.OperationalEventEnvelope){}[0]
+
+        final val attempted // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.Conflict.attempted|{}attempted[0]
+            final fun <get-attempted>(): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.Conflict.attempted.<get-attempted>|<get-attempted>(){}[0]
+        final val existing // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.Conflict.existing|{}existing[0]
+            final fun <get-existing>(): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.Conflict.existing.<get-existing>|<get-existing>(){}[0]
+
+        final fun component1(): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.Conflict.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.Conflict.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.operational/OperationalEventEnvelope = ..., io.dataloom.api.operational/OperationalEventEnvelope = ...): io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.Conflict // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.Conflict.copy|copy(io.dataloom.api.operational.OperationalEventEnvelope;io.dataloom.api.operational.OperationalEventEnvelope){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.Conflict.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.Conflict.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.Conflict.toString|toString(){}[0]
+    }
+
+    final class PersistenceFailure : io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome { // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.PersistenceFailure|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.PersistenceFailure.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.PersistenceFailure.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.PersistenceFailure.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.PersistenceFailure.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.PersistenceFailure // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.PersistenceFailure.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.PersistenceFailure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.PersistenceFailure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.PersistenceFailure.toString|toString(){}[0]
+    }
+
+    final object ContentionLimitReached : io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome { // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.ContentionLimitReached|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.ContentionLimitReached.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.ContentionLimitReached.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.ContentionLimitReached.toString|toString(){}[0]
+    }
+}
+
 sealed interface io.dataloom.api.operational/OperationalEnvelopeDecodeResult { // io.dataloom.api.operational/OperationalEnvelopeDecodeResult|null[0]
     final class Decoded : io.dataloom.api.operational/OperationalEnvelopeDecodeResult { // io.dataloom.api.operational/OperationalEnvelopeDecodeResult.Decoded|null[0]
         constructor <init>(io.dataloom.api.operational/OperationalEventEnvelope) // io.dataloom.api.operational/OperationalEnvelopeDecodeResult.Decoded.<init>|<init>(io.dataloom.api.operational.OperationalEventEnvelope){}[0]
@@ -2716,6 +2779,13 @@ final class io.dataloom.api.model/SynchronizationRequest { // io.dataloom.api.mo
     final fun toString(): kotlin/String // io.dataloom.api.model/SynchronizationRequest.toString|toString(){}[0]
 }
 
+final class io.dataloom.api.operational/DurableOperationalEventOutbox { // io.dataloom.api.operational/DurableOperationalEventOutbox|null[0]
+    constructor <init>(io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState>, kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.api.operational/DurableOperationalEventOutbox.<init>|<init>(io.dataloom.api.state.DurableStateStore<io.dataloom.api.operational.OperationalEventOutboxScope,io.dataloom.api.operational.OperationalEventOutboxState>;kotlin.Int;kotlin.Int){}[0]
+
+    final suspend fun append(io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventEnvelope): io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome // io.dataloom.api.operational/DurableOperationalEventOutbox.append|append(io.dataloom.api.operational.OperationalEventOutboxScope;io.dataloom.api.operational.OperationalEventEnvelope){}[0]
+    final suspend fun entries(io.dataloom.api.operational/OperationalEventOutboxScope): io.dataloom.api.provider/ProviderOperationResult<kotlin.collections/List<io.dataloom.api.operational/OperationalEventEnvelope>> // io.dataloom.api.operational/DurableOperationalEventOutbox.entries|entries(io.dataloom.api.operational.OperationalEventOutboxScope){}[0]
+}
+
 final class io.dataloom.api.operational/OperationalEventEnvelope { // io.dataloom.api.operational/OperationalEventEnvelope|null[0]
     constructor <init>(io.dataloom.api.operational/OperationalEventId, io.dataloom.api.operational/OperationalEventType, io.dataloom.api.operational/OperationalEventSource, io.dataloom.api.operational/OperationalEventCategory, io.dataloom.api.operational/OperationalSchemaVersion, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.identifier/CorrelationId, io.dataloom.api.operational/OperationalEventId? = ..., io.dataloom.api.identifier/TraceId? = ..., io.dataloom.api.identifier/TenantId? = ..., io.dataloom.api.identifier/WorkflowId? = ..., io.dataloom.api.operational/OperationalPayloadDescriptor, io.dataloom.api.security/RedactedAttributes = ...) // io.dataloom.api.operational/OperationalEventEnvelope.<init>|<init>(io.dataloom.api.operational.OperationalEventId;io.dataloom.api.operational.OperationalEventType;io.dataloom.api.operational.OperationalEventSource;io.dataloom.api.operational.OperationalEventCategory;io.dataloom.api.operational.OperationalSchemaVersion;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.identifier.CorrelationId;io.dataloom.api.operational.OperationalEventId?;io.dataloom.api.identifier.TraceId?;io.dataloom.api.identifier.TenantId?;io.dataloom.api.identifier.WorkflowId?;io.dataloom.api.operational.OperationalPayloadDescriptor;io.dataloom.api.security.RedactedAttributes){}[0]
 
@@ -2763,6 +2833,26 @@ final class io.dataloom.api.operational/OperationalEventEnvelope { // io.dataloo
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/OperationalEventEnvelope.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.operational/OperationalEventEnvelope.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.operational/OperationalEventEnvelope.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.operational/OperationalEventOutboxState { // io.dataloom.api.operational/OperationalEventOutboxState|null[0]
+    constructor <init>(kotlin.collections/List<io.dataloom.api.operational/OperationalEventEnvelope>) // io.dataloom.api.operational/OperationalEventOutboxState.<init>|<init>(kotlin.collections.List<io.dataloom.api.operational.OperationalEventEnvelope>){}[0]
+
+    final val entries // io.dataloom.api.operational/OperationalEventOutboxState.entries|{}entries[0]
+        final fun <get-entries>(): kotlin.collections/List<io.dataloom.api.operational/OperationalEventEnvelope> // io.dataloom.api.operational/OperationalEventOutboxState.entries.<get-entries>|<get-entries>(){}[0]
+
+    final fun component1(): kotlin.collections/List<io.dataloom.api.operational/OperationalEventEnvelope> // io.dataloom.api.operational/OperationalEventOutboxState.component1|component1(){}[0]
+    final fun copy(kotlin.collections/List<io.dataloom.api.operational/OperationalEventEnvelope> = ...): io.dataloom.api.operational/OperationalEventOutboxState // io.dataloom.api.operational/OperationalEventOutboxState.copy|copy(kotlin.collections.List<io.dataloom.api.operational.OperationalEventEnvelope>){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/OperationalEventOutboxState.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.operational/OperationalEventOutboxState.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.operational/OperationalEventOutboxState.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.operational/OperationalEventOutboxStateCodec : io.dataloom.api.state/DurableStateCodec<io.dataloom.api.operational/OperationalEventOutboxState> { // io.dataloom.api.operational/OperationalEventOutboxStateCodec|null[0]
+    constructor <init>() // io.dataloom.api.operational/OperationalEventOutboxStateCodec.<init>|<init>(){}[0]
+
+    final fun decode(kotlin/String): io.dataloom.api.operational/OperationalEventOutboxState // io.dataloom.api.operational/OperationalEventOutboxStateCodec.decode|decode(kotlin.String){}[0]
+    final fun encode(io.dataloom.api.operational/OperationalEventOutboxState): kotlin/String // io.dataloom.api.operational/OperationalEventOutboxStateCodec.encode|encode(io.dataloom.api.operational.OperationalEventOutboxState){}[0]
 }
 
 final class io.dataloom.api.operational/OperationalPayloadDescriptor { // io.dataloom.api.operational/OperationalPayloadDescriptor|null[0]
@@ -4424,6 +4514,22 @@ final value class io.dataloom.api.operational/OperationalEventId { // io.dataloo
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/OperationalEventId.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.operational/OperationalEventId.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.operational/OperationalEventId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.operational/OperationalEventOutboxScope { // io.dataloom.api.operational/OperationalEventOutboxScope|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.operational/OperationalEventOutboxScope.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.operational/OperationalEventOutboxScope.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.operational/OperationalEventOutboxScope.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/OperationalEventOutboxScope.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.operational/OperationalEventOutboxScope.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.operational/OperationalEventOutboxScope.toString|toString(){}[0]
+
+    final object Companion { // io.dataloom.api.operational/OperationalEventOutboxScope.Companion|null[0]
+        final val KeyEncoder // io.dataloom.api.operational/OperationalEventOutboxScope.Companion.KeyEncoder|{}KeyEncoder[0]
+            final fun <get-KeyEncoder>(): io.dataloom.api.state/DurableStateScopeKeyEncoder<io.dataloom.api.operational/OperationalEventOutboxScope> // io.dataloom.api.operational/OperationalEventOutboxScope.Companion.KeyEncoder.<get-KeyEncoder>|<get-KeyEncoder>(){}[0]
+    }
 }
 
 final value class io.dataloom.api.operational/OperationalEventSource { // io.dataloom.api.operational/OperationalEventSource|null[0]

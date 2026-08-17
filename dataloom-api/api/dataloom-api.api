@@ -1104,6 +1104,69 @@ public abstract interface class io/dataloom/api/observation/SynchronizationObser
 	public abstract fun onEvent (Lio/dataloom/api/synchronization/SynchronizationEvent;)V
 }
 
+public final class io/dataloom/api/operational/DurableOperationalEventOutbox {
+	public fun <init> (Lio/dataloom/api/state/DurableStateStore;II)V
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun append-aDAAC7I (Ljava/lang/String;Lio/dataloom/api/operational/OperationalEventEnvelope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun entries-7ZrZbUU (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome {
+}
+
+public final class io/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome$AlreadyAppended : io/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome {
+	public fun <init> (Lio/dataloom/api/operational/OperationalEventEnvelope;)V
+	public final fun component1 ()Lio/dataloom/api/operational/OperationalEventEnvelope;
+	public final fun copy (Lio/dataloom/api/operational/OperationalEventEnvelope;)Lio/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome$AlreadyAppended;
+	public static synthetic fun copy$default (Lio/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome$AlreadyAppended;Lio/dataloom/api/operational/OperationalEventEnvelope;ILjava/lang/Object;)Lio/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome$AlreadyAppended;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEnvelope ()Lio/dataloom/api/operational/OperationalEventEnvelope;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome$Appended : io/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome {
+	public fun <init> (Lio/dataloom/api/operational/OperationalEventEnvelope;)V
+	public final fun component1 ()Lio/dataloom/api/operational/OperationalEventEnvelope;
+	public final fun copy (Lio/dataloom/api/operational/OperationalEventEnvelope;)Lio/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome$Appended;
+	public static synthetic fun copy$default (Lio/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome$Appended;Lio/dataloom/api/operational/OperationalEventEnvelope;ILjava/lang/Object;)Lio/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome$Appended;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEnvelope ()Lio/dataloom/api/operational/OperationalEventEnvelope;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome$Conflict : io/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome {
+	public fun <init> (Lio/dataloom/api/operational/OperationalEventEnvelope;Lio/dataloom/api/operational/OperationalEventEnvelope;)V
+	public final fun component1 ()Lio/dataloom/api/operational/OperationalEventEnvelope;
+	public final fun component2 ()Lio/dataloom/api/operational/OperationalEventEnvelope;
+	public final fun copy (Lio/dataloom/api/operational/OperationalEventEnvelope;Lio/dataloom/api/operational/OperationalEventEnvelope;)Lio/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome$Conflict;
+	public static synthetic fun copy$default (Lio/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome$Conflict;Lio/dataloom/api/operational/OperationalEventEnvelope;Lio/dataloom/api/operational/OperationalEventEnvelope;ILjava/lang/Object;)Lio/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome$Conflict;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAttempted ()Lio/dataloom/api/operational/OperationalEventEnvelope;
+	public final fun getExisting ()Lio/dataloom/api/operational/OperationalEventEnvelope;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome$ContentionLimitReached : io/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome {
+	public static final field INSTANCE Lio/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome$ContentionLimitReached;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome$PersistenceFailure : io/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome$PersistenceFailure;
+	public static synthetic fun copy$default (Lio/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome$PersistenceFailure;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/api/operational/DurableOperationalEventOutboxAppendOutcome$PersistenceFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/api/operational/OperationalEnvelopeDecodeFailure : java/lang/Enum {
 	public static final field EMPTY_INPUT Lio/dataloom/api/operational/OperationalEnvelopeDecodeFailure;
 	public static final field FRAME_TOO_LARGE Lio/dataloom/api/operational/OperationalEnvelopeDecodeFailure;
@@ -1209,6 +1272,44 @@ public final class io/dataloom/api/operational/OperationalEventId {
 	public fun toString ()Ljava/lang/String;
 	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
 	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalEventOutboxScope {
+	public static final field Companion Lio/dataloom/api/operational/OperationalEventOutboxScope$Companion;
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/operational/OperationalEventOutboxScope;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalEventOutboxScope$Companion {
+	public final fun getKeyEncoder ()Lio/dataloom/api/state/DurableStateScopeKeyEncoder;
+}
+
+public final class io/dataloom/api/operational/OperationalEventOutboxState {
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lio/dataloom/api/operational/OperationalEventOutboxState;
+	public static synthetic fun copy$default (Lio/dataloom/api/operational/OperationalEventOutboxState;Ljava/util/List;ILjava/lang/Object;)Lio/dataloom/api/operational/OperationalEventOutboxState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntries ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalEventOutboxStateCodec : io/dataloom/api/state/DurableStateCodec {
+	public fun <init> ()V
+	public fun decode (Ljava/lang/String;)Lio/dataloom/api/operational/OperationalEventOutboxState;
+	public synthetic fun decode (Ljava/lang/String;)Ljava/lang/Object;
+	public fun encode (Lio/dataloom/api/operational/OperationalEventOutboxState;)Ljava/lang/String;
+	public synthetic fun encode (Ljava/lang/Object;)Ljava/lang/String;
 }
 
 public final class io/dataloom/api/operational/OperationalEventSource {
