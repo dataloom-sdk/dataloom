@@ -341,8 +341,9 @@ for that named, deliberately out-of-scope gap.
   `ProviderProtectionStorageBridge` does not forward `readLocalConflictCandidate`
   — closing this properly needs a breaking addition to `StorageCircuitScopes`'s
   constructor. Real, separately-scoped follow-up work.
-- **Reference-provider adoption of `readLocalConflictCandidate`.** None of
-  Room, SQLDelight, file-based, or DataStore override it yet; the interface's
+- **Reference-provider adoption of `readLocalConflictCandidate`.** `Room`
+  overrides it now (see [storage provider](./storage-provider.md#reading-local-conflict-candidates-opt-in-for-conflict-detection-only));
+  `SQLDelight`, file-based, and `DataStore` still don't — the interface's
   safe `NotFound` default means conflict detection is simply inert for those
   providers today, not broken.
 - **Wiring `DurableConflictDetectionCoordinator` into `BidirectionalSynchronizationPipeline`

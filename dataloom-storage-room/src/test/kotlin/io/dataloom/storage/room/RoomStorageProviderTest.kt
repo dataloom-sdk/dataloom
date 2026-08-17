@@ -22,6 +22,8 @@ import io.dataloom.api.model.WorkflowPriority
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.storage.InboundChangeApplyRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadResult
 import io.dataloom.api.storage.OutboundChangeReadRequest
 import io.dataloom.api.storage.OutboundChangeReadResult
 import io.dataloom.api.synchronization.ChangeAcknowledgementStatus
@@ -169,6 +171,43 @@ class RoomStorageProviderTest {
 
         val success = assertIs<ProviderOperationResult.Success<Unit>>(result)
         assertEquals(Unit, success.value)
+    }
+
+    @Test
+    fun `readLocalConflictCandidate returns NotFound when no outbound event exists for the entity`() = runBlocking {
+        whenever(outboundChangeDao.findLatestEventForEntity("customer", "customer-1")).thenReturn(null)
+
+        val result = provider.readLocalConflictCandidate(
+            LocalConflictCandidateReadRequest(
+                request = request(),
+                entity = EntityReference(type = EntityType("customer"), id = EntityId("customer-1")),
+            ),
+        )
+
+        val success = assertIs<ProviderOperationResult.Success<LocalConflictCandidateReadResult>>(result)
+        assertEquals(LocalConflictCandidateReadResult.NotFound, success.value)
+    }
+
+    @Test
+    fun `readLocalConflictCandidate returns the latest outbound event as the local counterpart`() = runBlocking {
+        whenever(outboundChangeDao.findLatestEventForEntity("customer", "customer-1")).thenReturn(
+            changeEvent("event-1").toOutboundEntity("change-set-1", 0),
+        )
+
+        val result = provider.readLocalConflictCandidate(
+            LocalConflictCandidateReadRequest(
+                request = request(),
+                entity = EntityReference(type = EntityType("customer"), id = EntityId("customer-1")),
+            ),
+        )
+
+        val success = assertIs<ProviderOperationResult.Success<LocalConflictCandidateReadResult>>(result)
+        val found = assertIs<LocalConflictCandidateReadResult.Found>(success.value)
+        assertEquals("event-1", found.localChange.id.value)
+        // The shared `changeEvent(eventId)` fixture sets entity.id = eventId, not a
+        // separate customer id — assert against what the fixture actually produces.
+        assertEquals("event-1", found.localChange.entity.id.value)
+        assertEquals("customer", found.localChange.entity.type.value)
     }
 
     @Test
