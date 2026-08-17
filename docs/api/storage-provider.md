@@ -269,9 +269,18 @@ ordering it can support without inventing a new one. See
 [`RoomStorageProvider`'s own KDoc](../../dataloom-storage-room/src/main/kotlin/io/dataloom/storage/room/RoomStorageProvider.kt)
 for the full reasoning.
 
-SQLDelight, file-based, and DataStore reference providers do not override
-this method yet; adopting it per provider is separate, unstarted follow-up
-work.
+`SqlDelightStorageProvider` (`dataloom-storage-sqldelight`) is the second
+reference provider to override it, following the same outbound-only
+principle. One real platform difference from Room, worth knowing rather than
+papering over: this provider's own `acknowledgeOutboundChanges` *deletes*
+the row for an `ACCEPTED` event instead of retaining it, so an entity whose
+only outbound edit has already been accepted by the remote also correctly
+reports `NotFound` — there is no still-outstanding local edit left to
+compare. When multiple outbound rows remain for the same entity, the
+highest `sequence` (the most recently inserted) is returned.
+
+File-based and DataStore reference providers do not override this method
+yet; adopting it per provider is separate, unstarted follow-up work.
 
 ---
 

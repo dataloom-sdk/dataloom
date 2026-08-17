@@ -60,6 +60,8 @@ public final class io/dataloom/storage/sqldelight/internal/DataLoomStorageQuerie
 	public final fun selectCheckpointByKey (Ljava/lang/String;Lkotlin/jvm/functions/Function3;)Lapp/cash/sqldelight/Query;
 	public final fun selectEligibleOutboundChanges ()Lapp/cash/sqldelight/Query;
 	public final fun selectEligibleOutboundChanges (Lkotlin/jvm/functions/Function12;)Lapp/cash/sqldelight/Query;
+	public final fun selectLatestOutboundChangeForEntity (Ljava/lang/String;Ljava/lang/String;)Lapp/cash/sqldelight/Query;
+	public final fun selectLatestOutboundChangeForEntity (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function12;)Lapp/cash/sqldelight/Query;
 	public final fun updateOutboundStateByEventId (Ljava/lang/String;Ljava/lang/String;)Lapp/cash/sqldelight/db/QueryResult;
 	public final fun upsertCheckpoint (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lapp/cash/sqldelight/db/QueryResult;
 }
