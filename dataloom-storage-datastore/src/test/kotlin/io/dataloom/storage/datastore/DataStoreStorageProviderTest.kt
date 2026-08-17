@@ -28,6 +28,8 @@ import io.dataloom.api.provider.ProviderInitializationContext
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.storage.InboundChangeApplyRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadResult
 import io.dataloom.api.storage.OutboundChangeReadRequest
 import io.dataloom.api.storage.OutboundChangeReadResult
 import io.dataloom.api.synchronization.ChangeAcknowledgementStatus
@@ -343,6 +345,113 @@ class DataStoreStorageProviderTest {
         )
         assertEquals(ProviderOperationResult.Success(Unit), firstResult)
         assertEquals(ProviderOperationResult.Success(Unit), secondResult)
+    }
+
+    // ── readLocalConflictCandidate ────────────────────────────────────────────
+
+    @Test
+    fun `readLocalConflictCandidate returns NotFound for an untouched entity`() = runTest {
+        val provider = buildProvider(this)
+
+        val result = provider.readLocalConflictCandidate(
+            LocalConflictCandidateReadRequest(
+                request = syncRequest(),
+                entity = EntityReference(type = EntityType("Setting"), id = EntityId("untouched")),
+            ),
+        )
+
+        assertEquals(
+            ProviderOperationResult.Success(LocalConflictCandidateReadResult.NotFound),
+            result,
+        )
+    }
+
+    @Test
+    fun `readLocalConflictCandidate returns the most recently enqueued outbound event for the entity`() = runTest {
+        val provider = buildProvider(this)
+        val entity = EntityReference(type = EntityType("Setting"), id = EntityId("darkMode"))
+        provider.enqueueOutboundChanges(
+            changeSet("cs-first", changeEvent(eventId = "ev-first", entityId = "darkMode")),
+        )
+        provider.enqueueOutboundChanges(
+            changeSet("cs-second", changeEvent(eventId = "ev-second", entityId = "darkMode")),
+        )
+
+        val result = provider.readLocalConflictCandidate(
+            LocalConflictCandidateReadRequest(request = syncRequest(), entity = entity),
+        )
+
+        val found = assertIs<LocalConflictCandidateReadResult.Found>(
+            (result as ProviderOperationResult.Success).value,
+        )
+        assertEquals("ev-second", found.localChange.id.value)
+    }
+
+    @Test
+    fun `readLocalConflictCandidate returns NotFound once the only outbound edit is accepted`() = runTest {
+        val provider = buildProvider(this)
+        val entity = EntityReference(type = EntityType("Setting"), id = EntityId("accepted"))
+        provider.enqueueOutboundChanges(
+            changeSet("cs-accepted", changeEvent(eventId = "ev-accepted", entityId = "accepted")),
+        )
+        provider.acknowledgeOutboundChanges(
+            ackRequest("cs-accepted", "ev-accepted" to ChangeAcknowledgementStatus.ACCEPTED),
+        )
+
+        val result = provider.readLocalConflictCandidate(
+            LocalConflictCandidateReadRequest(request = syncRequest(), entity = entity),
+        )
+
+        assertEquals(
+            ProviderOperationResult.Success(LocalConflictCandidateReadResult.NotFound),
+            result,
+        )
+    }
+
+    @Test
+    fun `readLocalConflictCandidate returns NotFound once the only outbound edit is rejected`() = runTest {
+        // Unlike SqlDelightStorageProvider (retains a filtered REJECTED row) and
+        // FileStorageProvider (moves the event to rejected/), this provider deletes
+        // the record entirely on REJECTED, same as it does for ACCEPTED — proven
+        // here for real, not just documented in KDoc.
+        val provider = buildProvider(this)
+        val entity = EntityReference(type = EntityType("Setting"), id = EntityId("rejected"))
+        provider.enqueueOutboundChanges(
+            changeSet("cs-rejected", changeEvent(eventId = "ev-rejected", entityId = "rejected")),
+        )
+        provider.acknowledgeOutboundChanges(
+            ackRequest("cs-rejected", "ev-rejected" to ChangeAcknowledgementStatus.REJECTED),
+        )
+
+        val result = provider.readLocalConflictCandidate(
+            LocalConflictCandidateReadRequest(request = syncRequest(), entity = entity),
+        )
+
+        assertEquals(
+            ProviderOperationResult.Success(LocalConflictCandidateReadResult.NotFound),
+            result,
+        )
+    }
+
+    @Test
+    fun `readLocalConflictCandidate ignores inbound-only history for the same entity`() = runTest {
+        val provider = buildProvider(this)
+        val entity = EntityReference(type = EntityType("Setting"), id = EntityId("inboundOnly"))
+        provider.applyInboundChanges(
+            InboundChangeApplyRequest(
+                request = syncRequest(),
+                changeSet = changeSet("inbound-only", changeEvent(eventId = "ev-inbound", entityId = "inboundOnly")),
+            ),
+        )
+
+        val result = provider.readLocalConflictCandidate(
+            LocalConflictCandidateReadRequest(request = syncRequest(), entity = entity),
+        )
+
+        assertEquals(
+            ProviderOperationResult.Success(LocalConflictCandidateReadResult.NotFound),
+            result,
+        )
     }
 
     // ── Checkpoint read / write ───────────────────────────────────────────────

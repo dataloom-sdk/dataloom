@@ -292,8 +292,17 @@ it as no-longer-live local intent avoids inventing an ordering this schema
 cannot support. Matches SQLDelight in deleting an `ACCEPTED` event from the
 index rather than retaining it.
 
-DataStore reference provider does not override this method yet; adopting
-it is separate, unstarted follow-up work.
+`DataStoreStorageProvider` (`dataloom-storage-datastore`) is the fourth and
+last, completing adoption across every reference `StorageProvider`. The
+simplest of the four: its own `acknowledgeOutboundChanges` deletes the
+event record for both `ACCEPTED` and `REJECTED` alike (there is no
+DataStore analog to SQLDelight's retained-but-filtered row or file-based's
+`rejected/` directory), so nothing beyond a genuinely still-pending edit can
+ever be found — no separate accepted/rejected exclusion logic is needed.
+Like file-based, it has no per-entity index for outbound events, so the
+same documented linear-scan cost applies. Deliberately still ignores the
+directly entity-keyed `dl.in.<entityType>.<entityId>` inbound records for
+the same outbound-only reason as the other three.
 
 ---
 
