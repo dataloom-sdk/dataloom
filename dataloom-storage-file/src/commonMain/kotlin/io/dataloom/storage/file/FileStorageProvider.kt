@@ -13,6 +13,8 @@ import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.provider.ProviderVersion
 import io.dataloom.api.storage.InboundChangeApplyRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadResult
 import io.dataloom.api.storage.OutboundChangeReadRequest
 import io.dataloom.api.storage.OutboundChangeReadResult
 import io.dataloom.api.storage.StorageProvider
@@ -73,6 +75,35 @@ import kotlinx.coroutines.sync.withLock
  *
  * No third-party library beyond standard Kotlin/JVM or Kotlin/Native
  * file I/O APIs and `kotlinx.coroutines.core`.
+ *
+ * ## `readLocalConflictCandidate`
+ *
+ * Overrides the safe [StorageProvider.readLocalConflictCandidate] default,
+ * following the same outbound-only principle `RoomStorageProvider` and
+ * `SqlDelightStorageProvider` already established: only `outbound/` is
+ * considered, never `inbound/`, since it is this provider's own record of
+ * the local application's pending or recently-made edits — exactly what a
+ * genuine local-vs-remote conflict compares against. An entity with no
+ * outbound history correctly reports [LocalConflictCandidateReadResult.NotFound],
+ * including one only ever synced via [applyInboundChanges].
+ *
+ * There is no per-entity index — [outbound.idx][FILE_INDEX] is the only
+ * ordering this provider persists, so finding the latest match for one
+ * entity means scanning it in order and keeping the last hit. This is a
+ * deliberate, documented cost, not an oversight: consistent with this
+ * class's own "reference implementation... not designed for high-throughput
+ * or large-dataset production workloads" scope note above.
+ *
+ * `rejected/` is deliberately **not** consulted. An [ChangeAcknowledgementStatus.ACCEPTED]
+ * event is removed from the index the same way `SqlDelightStorageProvider`
+ * removes its row — so an entity whose only outbound edit was already
+ * accepted also correctly reports `NotFound`, no still-outstanding local
+ * edit left to compare. A [ChangeAcknowledgementStatus.REJECTED] event is
+ * moved out of `outbound/` into `rejected/` with no ordering information
+ * relative to it — there is no persisted evidence to say whether a rejected
+ * event or some other outbound entry for the same entity is more recent, so
+ * treating a rejected edit as "no longer live local intent to compare
+ * against" avoids inventing an ordering this schema cannot actually support.
  *
  * @param baseDir absolute path to the directory used for persistent storage.
  *   The directory and its subdirectories are created lazily on first use.
@@ -277,6 +308,33 @@ public class FileStorageProvider(
             ProviderOperationResult.Failure(FileStorageErrors.acknowledgeFailure())
         } catch (_: Exception) {
             ProviderOperationResult.Failure(FileStorageErrors.acknowledgeFailure())
+        }
+    }
+
+    override suspend fun readLocalConflictCandidate(
+        request: LocalConflictCandidateReadRequest,
+    ): ProviderOperationResult<LocalConflictCandidateReadResult> = mutex.withLock {
+        try {
+            fs.ensureInitialized()
+            var latestMatch: ChangeEvent? = null
+            for (eventId in readIndex()) {
+                val text = fs.readTextFile("${DIR_OUTBOUND}/${eventId}${EXT_EVENT}") ?: continue
+                val (_, event) = EventSerializer.deserialize(text) ?: continue
+                if (event.entity.type == request.entity.type && event.entity.id == request.entity.id) {
+                    latestMatch = event
+                }
+            }
+            ProviderOperationResult.Success(
+                if (latestMatch == null) {
+                    LocalConflictCandidateReadResult.NotFound
+                } else {
+                    LocalConflictCandidateReadResult.Found(latestMatch)
+                },
+            )
+        } catch (_: FileStorageIoException) {
+            ProviderOperationResult.Failure(FileStorageErrors.readFailure())
+        } catch (_: Exception) {
+            ProviderOperationResult.Failure(FileStorageErrors.readFailure())
         }
     }
 

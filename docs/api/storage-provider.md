@@ -279,8 +279,21 @@ reports `NotFound` — there is no still-outstanding local edit left to
 compare. When multiple outbound rows remain for the same entity, the
 highest `sequence` (the most recently inserted) is returned.
 
-File-based and DataStore reference providers do not override this method
-yet; adopting it per provider is separate, unstarted follow-up work.
+`FileStorageProvider` (`dataloom-storage-file`) is the third, again the
+same outbound-only principle: only `outbound/` is considered, never
+`inbound/`. Unlike Room and SQLDelight it has no per-entity index — the
+scan walks its single ordered `outbound.idx` and keeps the last match, a
+deliberate, documented cost consistent with this provider's own
+low-volume/reference scope. `rejected/` is deliberately not consulted: a
+`REJECTED` event moves there with no ordering information relative to any
+other outbound entry, so there is no persisted evidence to say whether it
+or some other outbound entry for the same entity is more recent — treating
+it as no-longer-live local intent avoids inventing an ordering this schema
+cannot support. Matches SQLDelight in deleting an `ACCEPTED` event from the
+index rather than retaining it.
+
+DataStore reference provider does not override this method yet; adopting
+it is separate, unstarted follow-up work.
 
 ---
 
