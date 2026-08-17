@@ -385,22 +385,22 @@ additional `readLocalConflictCandidate` calls when `conflictDetection` is
 supplied. This is a known, documented characteristic of this first slice,
 not an oversight.
 
-### Known gap: not available through provider-protection or timeout wrapping consistently
+### Available through provider-protection and timeout wrapping consistently
 
 `StorageProvider.readLocalConflictCandidate` has a safe default
 (`NotFound`) so every pre-existing `StorageProvider` implementation compiles
-and behaves unchanged without adopting it. Two decorator types in
-`dataloom-runtime` wrap an arbitrary `StorageProvider`:
-`TimeoutEnforcingStorageProvider` forwards this call correctly (a pure
-pass-through, timeout-wrapped like every other operation).
-`ProviderProtectionStorageBridge` (and its dependents) does **not** — a
-`StorageProvider` wrapped with circuit-breaker provider protection always
-reports `NotFound` through this path today, regardless of what the real
-provider supports, because closing that gap properly requires a breaking
-addition to `StorageCircuitScopes`'s constructor (a new circuit-protected
-operation). That is real, separately-scoped follow-up work, not silently
-broken — conflict detection is simply unavailable, not silently wrong, for
-a provider-protection-wrapped storage setup.
+and behaves unchanged without adopting it. Both decorator types in
+`dataloom-runtime` that wrap an arbitrary `StorageProvider` now forward this
+call correctly: `TimeoutEnforcingStorageProvider` (a pure pass-through,
+timeout-wrapped like every other operation) and `ProviderProtectionStorageBridge`
+(circuit-protected through a dedicated `StorageCircuitScopes.readLocalConflictCandidate`
+scope, added as a breaking constructor addition — see
+[durable state contracts](./durable-state-contracts.md#adoption-unresolved-conflicts)).
+A wrapped provider's real `Found`/`NotFound` result passes through unchanged
+when the circuit is closed; a tripped circuit rejects the call the same way
+it rejects every other protected storage operation, so conflict detection
+is unavailable (not silently wrong) while the circuit is open, exactly like
+any other protected operation during an open circuit.
 
 ---
 

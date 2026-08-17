@@ -960,6 +960,10 @@ class DataLoomBuilderProtectedStrategyTest {
                     providerId,
                     StorageCircuitOperation.WRITE_CHECKPOINT,
                 ),
+                readLocalConflictCandidate = storageScope(
+                    providerId,
+                    StorageCircuitOperation.READ_LOCAL_CONFLICT_CANDIDATE,
+                ),
             )
 
         fun transportScopes(providerId: ProviderId): TransportCircuitScopes =
