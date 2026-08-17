@@ -75,6 +75,60 @@ val envelope = OperationalEventEnvelope(
 )
 ```
 
+## Message content redaction
+
+`ClassifiedData`/`StrictDataLoomRedactor` above redact already-classified,
+*structured* key-value pairs — every field's sensitivity is known up front
+by the caller. `MessageContentRedactor` (`io.dataloom.api.security`)
+addresses a different, complementary case: *unstructured* free text, most
+notably [`DataLoomError.message`](./error-model.md#sensitive-data-restrictions),
+which carries no field-level classification to consult.
+
+`DataLoomError.message` is documented to never include credentials,
+tokens, keys, or personal data, but that is a convention each
+implementation must uphold when constructing its own message — not
+something the type system enforces. `MessageContentRedactor` exists as
+defense-in-depth for the case where that convention is violated anyway:
+
+```kotlin
+public fun interface MessageContentRedactor {
+    public fun redact(message: String): String
+}
+```
+
+`PatternBasedMessageContentRedactor`, the reference implementation, is a
+deterministic, bounded, fail-closed scan of free text for a fixed set of
+common secret-shaped patterns — Bearer/Authorization tokens, JWT-shaped
+three-segment tokens, AWS-style access key IDs, sensitive query-string
+parameter values (only the value is masked; the parameter name is kept for
+diagnosability), URL Basic-Auth embedded credentials, and email addresses.
+Input longer than 8,192 characters is bounded before any pattern runs, so
+cost stays predictable regardless of input size.
+
+```kotlin
+val redactor = PatternBasedMessageContentRedactor()
+redactor.redact("GET https://api.example.test/data?token=SECRET123 failed")
+// "GET https://api.example.test/data?token=[REDACTED] failed"
+```
+
+**This is not a general-purpose secret scanner.** It recognizes a fixed,
+reference set of common patterns and nothing more — it will not detect
+arbitrary opaque secrets, application-specific credential formats, or
+deliberately obfuscated content. It is one layer of defense-in-depth
+alongside — never instead of — each `DataLoomError` implementation's own
+responsibility to never put sensitive content in `message` in the first
+place.
+
+No call site is wired to it yet. The one confirmed live violation of the
+"`message` must not include credentials, tokens, keys, or personal data"
+convention this codebase had (`ApolloErrorMapper`, forwarding a wrapped
+exception's message after only truncating it) was already fixed by
+removing the unsafe forwarding entirely rather than needing redaction —
+see [error model](./error-model.md#sensitive-data-restrictions)'s "Closed
+gap" note. The primitive exists and is tested; adopting it at a real call
+site remains available, not forced, consistent with this codebase's
+standing "don't build ahead of a concrete near-term consumer" discipline.
+
 ## Remaining V1 boundary
 
 This foundation does not yet provide:

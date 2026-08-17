@@ -2461,6 +2461,22 @@ public final class io/dataloom/api/security/InputValidationKt {
 	public static final fun isBoundedToken (Ljava/lang/String;ILkotlin/jvm/functions/Function1;)Z
 }
 
+public abstract interface class io/dataloom/api/security/MessageContentRedactor {
+	public abstract fun redact (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class io/dataloom/api/security/PatternBasedMessageContentRedactor : io/dataloom/api/security/MessageContentRedactor {
+	public static final field Companion Lio/dataloom/api/security/PatternBasedMessageContentRedactor$Companion;
+	public static final field DEFAULT_MASK Ljava/lang/String;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun redact (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class io/dataloom/api/security/PatternBasedMessageContentRedactor$Companion {
+}
+
 public final class io/dataloom/api/security/RedactedAttributes {
 	public static final field Companion Lio/dataloom/api/security/RedactedAttributes$Companion;
 	public fun equals (Ljava/lang/Object;)Z

@@ -624,6 +624,10 @@ abstract fun interface io.dataloom.api.security/DataLoomRedactor { // io.dataloo
     abstract fun redact(io.dataloom.api.security/ClassifiedData): io.dataloom.api.security/RedactionResult // io.dataloom.api.security/DataLoomRedactor.redact|redact(io.dataloom.api.security.ClassifiedData){}[0]
 }
 
+abstract fun interface io.dataloom.api.security/MessageContentRedactor { // io.dataloom.api.security/MessageContentRedactor|null[0]
+    abstract fun redact(kotlin/String): kotlin/String // io.dataloom.api.security/MessageContentRedactor.redact|redact(kotlin.String){}[0]
+}
+
 abstract fun interface io.dataloom.api.strategy/SynchronizationStrategyEvaluator { // io.dataloom.api.strategy/SynchronizationStrategyEvaluator|null[0]
     abstract fun evaluate(io.dataloom.api.strategy/StrategyEvaluationRequest): io.dataloom.api.strategy/StrategyEvaluationResult // io.dataloom.api.strategy/SynchronizationStrategyEvaluator.evaluate|evaluate(io.dataloom.api.strategy.StrategyEvaluationRequest){}[0]
 }
@@ -3610,6 +3614,17 @@ final class io.dataloom.api.security/DataRedactionPolicy { // io.dataloom.api.se
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.security/DataRedactionPolicy.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.security/DataRedactionPolicy.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.security/DataRedactionPolicy.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.security/PatternBasedMessageContentRedactor : io.dataloom.api.security/MessageContentRedactor { // io.dataloom.api.security/PatternBasedMessageContentRedactor|null[0]
+    constructor <init>(kotlin/String = ...) // io.dataloom.api.security/PatternBasedMessageContentRedactor.<init>|<init>(kotlin.String){}[0]
+
+    final fun redact(kotlin/String): kotlin/String // io.dataloom.api.security/PatternBasedMessageContentRedactor.redact|redact(kotlin.String){}[0]
+
+    final object Companion { // io.dataloom.api.security/PatternBasedMessageContentRedactor.Companion|null[0]
+        final const val DEFAULT_MASK // io.dataloom.api.security/PatternBasedMessageContentRedactor.Companion.DEFAULT_MASK|{}DEFAULT_MASK[0]
+            final fun <get-DEFAULT_MASK>(): kotlin/String // io.dataloom.api.security/PatternBasedMessageContentRedactor.Companion.DEFAULT_MASK.<get-DEFAULT_MASK>|<get-DEFAULT_MASK>(){}[0]
+    }
 }
 
 final class io.dataloom.api.security/RedactedAttributes { // io.dataloom.api.security/RedactedAttributes|null[0]
