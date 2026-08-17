@@ -83,7 +83,7 @@ time before it flips.
 
 | # | V1 gate | Status | Est. completion |
 |---:|---|---|---:|
-| 0 | [DL-039 foundations, artifacts, compatibility](https://github.com/dataloom-sdk/dataloom/issues/93) | PARTIAL | 70% |
+| 0 | [DL-039 foundations, artifacts, compatibility](https://github.com/dataloom-sdk/dataloom/issues/93) | PARTIAL | 75% |
 | 1 | [DL-039B six strategy engine](https://github.com/dataloom-sdk/dataloom/issues/102) | IN PROGRESS | 75% |
 | 2 | [DL-039A Android/KMP/iOS parity](https://github.com/dataloom-sdk/dataloom/issues/101) | IN PROGRESS | 65% |
 | 3 | [DL-040 retry and circuit breaker](https://github.com/dataloom-sdk/dataloom/issues/94) | QUALIFICATION BLOCKED | 70% |
@@ -98,11 +98,11 @@ time before it flips.
 
 **Recent highlights** (newest first):
 
+- 2026-08-16 — `SqlDelightStorageProvider` adopts `readLocalConflictCandidate`, the second reference provider to do so, after Room (`#311`)
 - 2026-08-16 — `RoomStorageProvider` adopts `readLocalConflictCandidate`, the first reference provider to do so (`#309`)
 - 2026-08-16 — `AppleFileDurableStateStore`, the second platform implementation of the durable-state contract, alongside `RoomDurableStateStore` (`#307`)
 - 2026-08-16 — Real Gradle Managed Device AVD emulator proof for the Android reference consumer, one tier more real than Robolectric (`#304`)
 - 2026-08-16 — `DataLoom.synchronize()` genuinely writes a pulled change to real storage, proven on both Android and iOS (`#302`, `#303`)
-- 2026-08-16 — Kotlin/Native iOS Simulator runtime proof for the iOS reference consumer (`#301`)
 
 The full dated log (every entry back to project start), per-gate evidence
 citations, adoption-readiness table, market-evidence gates, and execution
