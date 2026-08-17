@@ -414,6 +414,25 @@ final enum class io.dataloom.api.strategy/StrategyDataOrigin : kotlin/Enum<io.da
     final fun values(): kotlin/Array<io.dataloom.api.strategy/StrategyDataOrigin> // io.dataloom.api.strategy/StrategyDataOrigin.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.api.strategy/StrategyDecisionOutcomeKind : kotlin/Enum<io.dataloom.api.strategy/StrategyDecisionOutcomeKind> { // io.dataloom.api.strategy/StrategyDecisionOutcomeKind|null[0]
+    enum entry ACCEPTED_LOCALLY // io.dataloom.api.strategy/StrategyDecisionOutcomeKind.ACCEPTED_LOCALLY|null[0]
+    enum entry CANCELLED // io.dataloom.api.strategy/StrategyDecisionOutcomeKind.CANCELLED|null[0]
+    enum entry DEFERRED // io.dataloom.api.strategy/StrategyDecisionOutcomeKind.DEFERRED|null[0]
+    enum entry DURABLY_ENQUEUED // io.dataloom.api.strategy/StrategyDecisionOutcomeKind.DURABLY_ENQUEUED|null[0]
+    enum entry EXECUTED // io.dataloom.api.strategy/StrategyDecisionOutcomeKind.EXECUTED|null[0]
+    enum entry FAILED // io.dataloom.api.strategy/StrategyDecisionOutcomeKind.FAILED|null[0]
+    enum entry FALLBACK_ACTIVATED // io.dataloom.api.strategy/StrategyDecisionOutcomeKind.FALLBACK_ACTIVATED|null[0]
+    enum entry FALLBACK_UNAVAILABLE // io.dataloom.api.strategy/StrategyDecisionOutcomeKind.FALLBACK_UNAVAILABLE|null[0]
+    enum entry REJECTED // io.dataloom.api.strategy/StrategyDecisionOutcomeKind.REJECTED|null[0]
+    enum entry SERVED_FROM_CACHE // io.dataloom.api.strategy/StrategyDecisionOutcomeKind.SERVED_FROM_CACHE|null[0]
+
+    final val entries // io.dataloom.api.strategy/StrategyDecisionOutcomeKind.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.strategy/StrategyDecisionOutcomeKind> // io.dataloom.api.strategy/StrategyDecisionOutcomeKind.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.strategy/StrategyDecisionOutcomeKind // io.dataloom.api.strategy/StrategyDecisionOutcomeKind.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.strategy/StrategyDecisionOutcomeKind> // io.dataloom.api.strategy/StrategyDecisionOutcomeKind.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.api.strategy/StrategyDeferralReason : kotlin/Enum<io.dataloom.api.strategy/StrategyDeferralReason> { // io.dataloom.api.strategy/StrategyDeferralReason|null[0]
     enum entry BACKGROUND_EXECUTION_UNAVAILABLE // io.dataloom.api.strategy/StrategyDeferralReason.BACKGROUND_EXECUTION_UNAVAILABLE|null[0]
     enum entry CONNECTIVITY_UNAVAILABLE // io.dataloom.api.strategy/StrategyDeferralReason.CONNECTIVITY_UNAVAILABLE|null[0]
@@ -1698,6 +1717,69 @@ sealed interface io.dataloom.api.storage/OutboundChangeReadResult { // io.datalo
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.storage/OutboundChangeReadResult.NoChanges.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.api.storage/OutboundChangeReadResult.NoChanges.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.api.storage/OutboundChangeReadResult.NoChanges.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome { // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome|null[0]
+    final class AlreadyRecorded : io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome { // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.AlreadyRecorded|null[0]
+        constructor <init>(io.dataloom.api.strategy/StrategyDecisionEvent) // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.AlreadyRecorded.<init>|<init>(io.dataloom.api.strategy.StrategyDecisionEvent){}[0]
+
+        final val event // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.AlreadyRecorded.event|{}event[0]
+            final fun <get-event>(): io.dataloom.api.strategy/StrategyDecisionEvent // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.AlreadyRecorded.event.<get-event>|<get-event>(){}[0]
+
+        final fun component1(): io.dataloom.api.strategy/StrategyDecisionEvent // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.AlreadyRecorded.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.strategy/StrategyDecisionEvent = ...): io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.AlreadyRecorded // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.AlreadyRecorded.copy|copy(io.dataloom.api.strategy.StrategyDecisionEvent){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.AlreadyRecorded.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.AlreadyRecorded.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.AlreadyRecorded.toString|toString(){}[0]
+    }
+
+    final class Conflict : io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome { // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.Conflict|null[0]
+        constructor <init>(io.dataloom.api.strategy/StrategyDecisionEvent, io.dataloom.api.strategy/StrategyDecisionEvent) // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.Conflict.<init>|<init>(io.dataloom.api.strategy.StrategyDecisionEvent;io.dataloom.api.strategy.StrategyDecisionEvent){}[0]
+
+        final val attempted // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.Conflict.attempted|{}attempted[0]
+            final fun <get-attempted>(): io.dataloom.api.strategy/StrategyDecisionEvent // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.Conflict.attempted.<get-attempted>|<get-attempted>(){}[0]
+        final val existing // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.Conflict.existing|{}existing[0]
+            final fun <get-existing>(): io.dataloom.api.strategy/StrategyDecisionEvent // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.Conflict.existing.<get-existing>|<get-existing>(){}[0]
+
+        final fun component1(): io.dataloom.api.strategy/StrategyDecisionEvent // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.Conflict.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.strategy/StrategyDecisionEvent // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.Conflict.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.strategy/StrategyDecisionEvent = ..., io.dataloom.api.strategy/StrategyDecisionEvent = ...): io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.Conflict // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.Conflict.copy|copy(io.dataloom.api.strategy.StrategyDecisionEvent;io.dataloom.api.strategy.StrategyDecisionEvent){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.Conflict.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.Conflict.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.Conflict.toString|toString(){}[0]
+    }
+
+    final class PersistenceFailure : io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome { // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.PersistenceFailure|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.PersistenceFailure.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.PersistenceFailure.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.PersistenceFailure.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.PersistenceFailure.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.PersistenceFailure // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.PersistenceFailure.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.PersistenceFailure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.PersistenceFailure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.PersistenceFailure.toString|toString(){}[0]
+    }
+
+    final class Recorded : io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome { // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.Recorded|null[0]
+        constructor <init>(io.dataloom.api.strategy/StrategyDecisionEvent) // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.Recorded.<init>|<init>(io.dataloom.api.strategy.StrategyDecisionEvent){}[0]
+
+        final val event // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.Recorded.event|{}event[0]
+            final fun <get-event>(): io.dataloom.api.strategy/StrategyDecisionEvent // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.Recorded.event.<get-event>|<get-event>(){}[0]
+
+        final fun component1(): io.dataloom.api.strategy/StrategyDecisionEvent // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.Recorded.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.strategy/StrategyDecisionEvent = ...): io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.Recorded // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.Recorded.copy|copy(io.dataloom.api.strategy.StrategyDecisionEvent){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.Recorded.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.Recorded.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.Recorded.toString|toString(){}[0]
+    }
+
+    final object ContentionLimitReached : io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome { // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.ContentionLimitReached|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.ContentionLimitReached.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.ContentionLimitReached.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.ContentionLimitReached.toString|toString(){}[0]
     }
 }
 
@@ -3878,6 +3960,18 @@ final class io.dataloom.api.strategy/CacheFirstStrategyProfile : io.dataloom.api
     final fun toString(): kotlin/String // io.dataloom.api.strategy/CacheFirstStrategyProfile.toString|toString(){}[0]
 }
 
+final class io.dataloom.api.strategy/DurableStrategyDecisionEventLog { // io.dataloom.api.strategy/DurableStrategyDecisionEventLog|null[0]
+    constructor <init>(io.dataloom.api.state/DurableStateStore<io.dataloom.api.strategy/StrategyDecisionId, io.dataloom.api.strategy/StrategyDecisionEvent>, kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.api.strategy/DurableStrategyDecisionEventLog.<init>|<init>(io.dataloom.api.state.DurableStateStore<io.dataloom.api.strategy.StrategyDecisionId,io.dataloom.api.strategy.StrategyDecisionEvent>;kotlin.Int;kotlin.Int){}[0]
+
+    final suspend fun current(io.dataloom.api.strategy/StrategyDecisionId): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.strategy/StrategyDecisionEvent?> // io.dataloom.api.strategy/DurableStrategyDecisionEventLog.current|current(io.dataloom.api.strategy.StrategyDecisionId){}[0]
+    final suspend fun record(io.dataloom.api.strategy/StrategyDecisionId, io.dataloom.api.strategy/StrategyDecisionEvent): io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome // io.dataloom.api.strategy/DurableStrategyDecisionEventLog.record|record(io.dataloom.api.strategy.StrategyDecisionId;io.dataloom.api.strategy.StrategyDecisionEvent){}[0]
+
+    final object Companion { // io.dataloom.api.strategy/DurableStrategyDecisionEventLog.Companion|null[0]
+        final val KeyEncoder // io.dataloom.api.strategy/DurableStrategyDecisionEventLog.Companion.KeyEncoder|{}KeyEncoder[0]
+            final fun <get-KeyEncoder>(): io.dataloom.api.state/DurableStateScopeKeyEncoder<io.dataloom.api.strategy/StrategyDecisionId> // io.dataloom.api.strategy/DurableStrategyDecisionEventLog.Companion.KeyEncoder.<get-KeyEncoder>|<get-KeyEncoder>(){}[0]
+    }
+}
+
 final class io.dataloom.api.strategy/HybridStrategyProfile : io.dataloom.api.strategy/SynchronizationStrategyProfile { // io.dataloom.api.strategy/HybridStrategyProfile|null[0]
     constructor <init>(io.dataloom.api.strategy/StrategyProfileId, io.dataloom.api.strategy/StrategyConfigurationVersion, io.dataloom.api.strategy/HybridSource, io.dataloom.api.strategy/HybridSource, kotlin/Boolean = ..., kotlin/Boolean = ..., io.dataloom.api.strategy/UnknownConnectivityPolicy = ...) // io.dataloom.api.strategy/HybridStrategyProfile.<init>|<init>(io.dataloom.api.strategy.StrategyProfileId;io.dataloom.api.strategy.StrategyConfigurationVersion;io.dataloom.api.strategy.HybridSource;io.dataloom.api.strategy.HybridSource;kotlin.Boolean;kotlin.Boolean;io.dataloom.api.strategy.UnknownConnectivityPolicy){}[0]
 
@@ -4006,6 +4100,61 @@ final class io.dataloom.api.strategy/RemoteFirstStrategyProfile : io.dataloom.ap
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/RemoteFirstStrategyProfile.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/RemoteFirstStrategyProfile.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.strategy/RemoteFirstStrategyProfile.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.strategy/StrategyDecisionEvent { // io.dataloom.api.strategy/StrategyDecisionEvent|null[0]
+    constructor <init>(io.dataloom.api.strategy/StrategyPlanId, io.dataloom.api.strategy/BuiltInSynchronizationStrategy, io.dataloom.api.strategy/BuiltInSynchronizationStrategy, io.dataloom.api.strategy/StrategyProfileId, io.dataloom.api.strategy/StrategyConfigurationVersion, io.dataloom.api.model/SynchronizationDirection, io.dataloom.api.model/SynchronizationMode, io.dataloom.api.strategy/StrategyDisposition, kotlin.collections/List<kotlin/String>, io.dataloom.api.strategy/StrategyDecisionOutcomeKind, kotlin/String?, io.dataloom.api.time/DataLoomInstant) // io.dataloom.api.strategy/StrategyDecisionEvent.<init>|<init>(io.dataloom.api.strategy.StrategyPlanId;io.dataloom.api.strategy.BuiltInSynchronizationStrategy;io.dataloom.api.strategy.BuiltInSynchronizationStrategy;io.dataloom.api.strategy.StrategyProfileId;io.dataloom.api.strategy.StrategyConfigurationVersion;io.dataloom.api.model.SynchronizationDirection;io.dataloom.api.model.SynchronizationMode;io.dataloom.api.strategy.StrategyDisposition;kotlin.collections.List<kotlin.String>;io.dataloom.api.strategy.StrategyDecisionOutcomeKind;kotlin.String?;io.dataloom.api.time.DataLoomInstant){}[0]
+
+    final val committedAt // io.dataloom.api.strategy/StrategyDecisionEvent.committedAt|{}committedAt[0]
+        final fun <get-committedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.strategy/StrategyDecisionEvent.committedAt.<get-committedAt>|<get-committedAt>(){}[0]
+    final val configurationVersion // io.dataloom.api.strategy/StrategyDecisionEvent.configurationVersion|{}configurationVersion[0]
+        final fun <get-configurationVersion>(): io.dataloom.api.strategy/StrategyConfigurationVersion // io.dataloom.api.strategy/StrategyDecisionEvent.configurationVersion.<get-configurationVersion>|<get-configurationVersion>(){}[0]
+    final val direction // io.dataloom.api.strategy/StrategyDecisionEvent.direction|{}direction[0]
+        final fun <get-direction>(): io.dataloom.api.model/SynchronizationDirection // io.dataloom.api.strategy/StrategyDecisionEvent.direction.<get-direction>|<get-direction>(){}[0]
+    final val disposition // io.dataloom.api.strategy/StrategyDecisionEvent.disposition|{}disposition[0]
+        final fun <get-disposition>(): io.dataloom.api.strategy/StrategyDisposition // io.dataloom.api.strategy/StrategyDecisionEvent.disposition.<get-disposition>|<get-disposition>(){}[0]
+    final val effectiveProfileId // io.dataloom.api.strategy/StrategyDecisionEvent.effectiveProfileId|{}effectiveProfileId[0]
+        final fun <get-effectiveProfileId>(): io.dataloom.api.strategy/StrategyProfileId // io.dataloom.api.strategy/StrategyDecisionEvent.effectiveProfileId.<get-effectiveProfileId>|<get-effectiveProfileId>(){}[0]
+    final val effectiveStrategy // io.dataloom.api.strategy/StrategyDecisionEvent.effectiveStrategy|{}effectiveStrategy[0]
+        final fun <get-effectiveStrategy>(): io.dataloom.api.strategy/BuiltInSynchronizationStrategy // io.dataloom.api.strategy/StrategyDecisionEvent.effectiveStrategy.<get-effectiveStrategy>|<get-effectiveStrategy>(){}[0]
+    final val mode // io.dataloom.api.strategy/StrategyDecisionEvent.mode|{}mode[0]
+        final fun <get-mode>(): io.dataloom.api.model/SynchronizationMode // io.dataloom.api.strategy/StrategyDecisionEvent.mode.<get-mode>|<get-mode>(){}[0]
+    final val outcomeDetail // io.dataloom.api.strategy/StrategyDecisionEvent.outcomeDetail|{}outcomeDetail[0]
+        final fun <get-outcomeDetail>(): kotlin/String? // io.dataloom.api.strategy/StrategyDecisionEvent.outcomeDetail.<get-outcomeDetail>|<get-outcomeDetail>(){}[0]
+    final val outcomeKind // io.dataloom.api.strategy/StrategyDecisionEvent.outcomeKind|{}outcomeKind[0]
+        final fun <get-outcomeKind>(): io.dataloom.api.strategy/StrategyDecisionOutcomeKind // io.dataloom.api.strategy/StrategyDecisionEvent.outcomeKind.<get-outcomeKind>|<get-outcomeKind>(){}[0]
+    final val planId // io.dataloom.api.strategy/StrategyDecisionEvent.planId|{}planId[0]
+        final fun <get-planId>(): io.dataloom.api.strategy/StrategyPlanId // io.dataloom.api.strategy/StrategyDecisionEvent.planId.<get-planId>|<get-planId>(){}[0]
+    final val reasonCodes // io.dataloom.api.strategy/StrategyDecisionEvent.reasonCodes|{}reasonCodes[0]
+        final fun <get-reasonCodes>(): kotlin.collections/List<kotlin/String> // io.dataloom.api.strategy/StrategyDecisionEvent.reasonCodes.<get-reasonCodes>|<get-reasonCodes>(){}[0]
+    final val reasonCodesList // io.dataloom.api.strategy/StrategyDecisionEvent.reasonCodesList|{}reasonCodesList[0]
+        final fun <get-reasonCodesList>(): kotlin.collections/List<kotlin/String> // io.dataloom.api.strategy/StrategyDecisionEvent.reasonCodesList.<get-reasonCodesList>|<get-reasonCodesList>(){}[0]
+    final val requestedStrategy // io.dataloom.api.strategy/StrategyDecisionEvent.requestedStrategy|{}requestedStrategy[0]
+        final fun <get-requestedStrategy>(): io.dataloom.api.strategy/BuiltInSynchronizationStrategy // io.dataloom.api.strategy/StrategyDecisionEvent.requestedStrategy.<get-requestedStrategy>|<get-requestedStrategy>(){}[0]
+
+    final fun component1(): io.dataloom.api.strategy/StrategyPlanId // io.dataloom.api.strategy/StrategyDecisionEvent.component1|component1(){}[0]
+    final fun component10(): io.dataloom.api.strategy/StrategyDecisionOutcomeKind // io.dataloom.api.strategy/StrategyDecisionEvent.component10|component10(){}[0]
+    final fun component11(): kotlin/String? // io.dataloom.api.strategy/StrategyDecisionEvent.component11|component11(){}[0]
+    final fun component12(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.strategy/StrategyDecisionEvent.component12|component12(){}[0]
+    final fun component2(): io.dataloom.api.strategy/BuiltInSynchronizationStrategy // io.dataloom.api.strategy/StrategyDecisionEvent.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.strategy/BuiltInSynchronizationStrategy // io.dataloom.api.strategy/StrategyDecisionEvent.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.strategy/StrategyProfileId // io.dataloom.api.strategy/StrategyDecisionEvent.component4|component4(){}[0]
+    final fun component5(): io.dataloom.api.strategy/StrategyConfigurationVersion // io.dataloom.api.strategy/StrategyDecisionEvent.component5|component5(){}[0]
+    final fun component6(): io.dataloom.api.model/SynchronizationDirection // io.dataloom.api.strategy/StrategyDecisionEvent.component6|component6(){}[0]
+    final fun component7(): io.dataloom.api.model/SynchronizationMode // io.dataloom.api.strategy/StrategyDecisionEvent.component7|component7(){}[0]
+    final fun component8(): io.dataloom.api.strategy/StrategyDisposition // io.dataloom.api.strategy/StrategyDecisionEvent.component8|component8(){}[0]
+    final fun component9(): kotlin.collections/List<kotlin/String> // io.dataloom.api.strategy/StrategyDecisionEvent.component9|component9(){}[0]
+    final fun copy(io.dataloom.api.strategy/StrategyPlanId = ..., io.dataloom.api.strategy/BuiltInSynchronizationStrategy = ..., io.dataloom.api.strategy/BuiltInSynchronizationStrategy = ..., io.dataloom.api.strategy/StrategyProfileId = ..., io.dataloom.api.strategy/StrategyConfigurationVersion = ..., io.dataloom.api.model/SynchronizationDirection = ..., io.dataloom.api.model/SynchronizationMode = ..., io.dataloom.api.strategy/StrategyDisposition = ..., kotlin.collections/List<kotlin/String> = ..., io.dataloom.api.strategy/StrategyDecisionOutcomeKind = ..., kotlin/String? = ..., io.dataloom.api.time/DataLoomInstant = ...): io.dataloom.api.strategy/StrategyDecisionEvent // io.dataloom.api.strategy/StrategyDecisionEvent.copy|copy(io.dataloom.api.strategy.StrategyPlanId;io.dataloom.api.strategy.BuiltInSynchronizationStrategy;io.dataloom.api.strategy.BuiltInSynchronizationStrategy;io.dataloom.api.strategy.StrategyProfileId;io.dataloom.api.strategy.StrategyConfigurationVersion;io.dataloom.api.model.SynchronizationDirection;io.dataloom.api.model.SynchronizationMode;io.dataloom.api.strategy.StrategyDisposition;kotlin.collections.List<kotlin.String>;io.dataloom.api.strategy.StrategyDecisionOutcomeKind;kotlin.String?;io.dataloom.api.time.DataLoomInstant){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyDecisionEvent.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyDecisionEvent.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyDecisionEvent.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.strategy/StrategyDecisionEventCodec : io.dataloom.api.state/DurableStateCodec<io.dataloom.api.strategy/StrategyDecisionEvent> { // io.dataloom.api.strategy/StrategyDecisionEventCodec|null[0]
+    constructor <init>() // io.dataloom.api.strategy/StrategyDecisionEventCodec.<init>|<init>(){}[0]
+
+    final fun decode(kotlin/String): io.dataloom.api.strategy/StrategyDecisionEvent // io.dataloom.api.strategy/StrategyDecisionEventCodec.decode|decode(kotlin.String){}[0]
+    final fun encode(io.dataloom.api.strategy/StrategyDecisionEvent): kotlin/String // io.dataloom.api.strategy/StrategyDecisionEventCodec.encode|encode(io.dataloom.api.strategy.StrategyDecisionEvent){}[0]
 }
 
 final class io.dataloom.api.strategy/StrategyDurableContinuationPlan { // io.dataloom.api.strategy/StrategyDurableContinuationPlan|null[0]

@@ -2,17 +2,20 @@
 
 [API reference index](./README.md)
 
-> **Status:** The contract exists, is proven implementable, and has three real
+> **Status:** The contract exists, is proven implementable, and has four real
 > domain adoptions end to end — configuration snapshot history, policy
-> decisions, and unresolved conflicts — all backed by the same production
-> Room persistence implementation. One of the three
-> ([unresolved conflicts](#adoption-unresolved-conflicts)) is now wired into
-> a real `SynchronizationPipeline`
-> (`DurableConflictDetectionCoordinator` → `InboundPullSynchronizationPipeline`);
-> the other two remain unwired because nothing yet calls the underlying
-> evaluator/resolver they would attach to. Other domains (events, assets,
-> audit) have not adopted the contract itself yet. A second platform
-> implementation, [`AppleFileDurableStateStore`](#applefiledurablestatestore-dataloom-runtime),
+> decisions, unresolved conflicts, and strategy decision diagnostics — all
+> backed by the same production Room persistence implementation. Two of the
+> four are wired into a real caller:
+> [unresolved conflicts](#adoption-unresolved-conflicts) into
+> `DurableConflictDetectionCoordinator` → `InboundPullSynchronizationPipeline`,
+> and [strategy decision diagnostics](#adoption-strategy-decision-diagnostics)
+> into `StrategySynchronizationExecutionCoordinator`, opt-in via
+> `DataLoomBuilder.strategyDiagnosticsConfiguration`. The other two remain
+> unwired because nothing yet calls the underlying evaluator/resolver they
+> would attach to. Other domains (events, assets, audit) have not adopted the
+> contract itself yet. A second platform implementation,
+> [`AppleFileDurableStateStore`](#applefiledurablestatestore-dataloom-runtime),
 > now also exists (`dataloom-runtime`, `iosMain`) — the contract is no longer
 > Room-only.
 
@@ -329,6 +332,89 @@ other operation); `ProviderProtectionStorageBridge` does not yet — see
 [inbound pull pipeline](./inbound-pull-pipeline.md#known-gap-not-available-through-provider-protection-or-timeout-wrapping-consistently)
 for that named, deliberately out-of-scope gap.
 
+## Adoption: strategy decision diagnostics
+
+[`DurableStrategyDecisionEventLog`](../../dataloom-api/src/commonMain/kotlin/io/dataloom/api/strategy/DurableStrategyDecisionEventLog.kt)
+(`io.dataloom.api.strategy`) is the fourth real domain adoption, and — like
+the other three — reuses `RoomDurableStateStore` directly with zero new Room
+code. It closes DL-039B's (`#102`) "durable strategy events/diagnostics"
+requirement, listed among that gate's still-pending items.
+
+- **`TScope`** is `StrategyDecisionId` — reused directly rather than composed
+  into a new wrapper type, matching `DurableUnresolvedConflictLog`'s reuse of
+  `ConflictId` rather than `ConfigurationHistoryScope`/`PolicyDecisionScope`'s
+  own composed-key approach.
+- **`TState`** is `StrategyDecisionEvent` — a payload-free summary of one
+  strategy admission/execution decision: what was requested and admitted
+  (`StrategyExecutionPlan`'s own identity/strategy/profile/disposition
+  fields), the evaluator's `reasonCodes`, a bounded `StrategyDecisionOutcomeKind`
+  (mirroring `StrategySynchronizationExecutionResult`'s sealed variants), an
+  optional short stable `outcomeDetail` code (a rejection-reason name or a
+  `DataLoomError.code` value, never an exception message), and when it was
+  recorded. Deliberately excludes `StrategyTransportOutput`,
+  `StrategyOperationInput`, and any provider content — the same
+  "identity and outcome only, never payload" convention every other
+  domain's codec in this document already follows.
+- **Diagnostics, not replay.** This is deliberately distinct from the
+  strategy engine's existing durable *continuation* state
+  (`PersistedStrategyDecision`/`StrategyDurableContinuationPlan`, persisted
+  via the queue provider so durably admitted work can resume without
+  re-evaluating current policy — Room v8/Apple v4 in the market-readiness
+  dashboard). This log is never read back by any execution path; it exists
+  purely for operator visibility and debugging.
+- **Commit-once, with one deliberate deviation from every other adoption's
+  "Conflict always means a caller bug" posture.** `record` never overwrites
+  an existing entry, exactly like `DurablePolicyDecisionLog`/
+  `DurableUnresolvedConflictLog`. But unlike those two domains — where the
+  underlying fact is provably deterministic or immutable, so a same-scope
+  mismatch can only be a caller bug — a strategy execution's *terminal
+  outcome* can legitimately differ across retries of the same
+  `StrategyDecisionId` (for example `FAILED` then `EXECUTED`), even though
+  the *evaluated plan* is deterministic. `record` still reports
+  `DurableStrategyDecisionRecordOutcome.Conflict` for any mismatch (never
+  silently overwriting the first-recorded outcome), but a mismatch confined
+  to `outcomeKind`/`outcomeDetail` is documented as an expected occurrence
+  for this domain, not necessarily a bug signal. See the class's own "Why
+  outcome mismatches are not treated as a caller bug" documentation for the
+  full reasoning, and capturing a full per-attempt outcome history (an
+  append-only shape, rather than one mutable slot per decision) is called
+  out there as a deliberately separate, larger design question this slice
+  does not answer.
+- **`StrategyDecisionEventCodec`** (`DurableStateCodec<StrategyDecisionEvent>`)
+  is the reference text codec, same hex-encoded/bounded-length/fail-closed
+  discipline as the other three domains' codecs.
+- **`DurableStrategyDecisionEventLog.KeyEncoder`** — since `StrategyDecisionId`
+  is a pre-existing shared identifier this log did not introduce, its
+  reference key encoder is attached to the log class itself, matching
+  `DurableUnresolvedConflictLog.KeyEncoder`'s own reasoning.
+
+### Real caller, wired from day one: `StrategySynchronizationExecutionCoordinator`
+
+Unlike `DurableConfigurationHistory`/`DurablePolicyDecisionLog` (still
+unwired — see below) and unlike `DurableUnresolvedConflictLog` (wired via a
+new standalone coordinator), this adoption's real caller is the strategy
+engine's own existing dispatch coordinator,
+`StrategySynchronizationExecutionCoordinator` (`io.dataloom.runtime.strategy`,
+`dataloom-runtime`, `internal`). Its `execute` entry point now delegates to a
+renamed private `executeCore` for the real admission/dispatch logic, then —
+only when an optional `strategyDecisionEventLog` constructor parameter is
+configured — durably records one `StrategyDecisionEvent` for the terminal
+result before returning it unchanged. This is a single choke point every
+`execute` overload and the `DEFER`-disposition path already funnel through,
+so every terminal result is covered, including early admission rejections
+(`PROVIDERS_NOT_INITIALIZED`, `STRATEGY_REJECTED`, and so on) that never
+reach a concrete strategy executor. Matches
+`DurableConflictDetectionCoordinator`'s own posture: a durable-recording
+failure never changes or hides the real result the caller receives.
+
+`DataLoomBuilder.strategyDiagnosticsConfiguration(DataLoomStrategyDiagnosticsSpec)`
+is the opt-in entry point — mirroring `conflictDetectionConfiguration`'s
+shape for a different domain. The application supplies a real
+`DurableStateStore<StrategyDecisionId, StrategyDecisionEvent>` (Room,
+in-memory, or its own); `DataLoomBuilder` does not select one. When this
+method is not called, behavior is byte-for-byte unchanged from before this
+feature existed: no strategy decision event is ever recorded.
+
 ## What this does not do yet
 
 - **Wiring `DurableConfigurationHistory.apply` or `DurablePolicyDecisionLog.commit`
@@ -354,13 +440,22 @@ for that named, deliberately out-of-scope gap.
 - **Any real domain adopting `AppleFileDurableStateStore`.** The
   implementation exists and is verified (cross-compiled, unit-tested — see
   [above](#applefiledurablestatestore-dataloom-runtime)), but no domain has
-  wired it up as its Apple-platform `DurableStateStore` yet; the three real
+  wired it up as its Apple-platform `DurableStateStore` yet; all four real
   adoptions above (configuration history, policy decisions, unresolved
-  conflicts) are still Room-only.
+  conflicts, strategy decision diagnostics) are still Room-only.
 - **SDK-wide adoption.** `DataLoomConfigurationHistory` (in-memory) is not
   superseded or removed by `DurableConfigurationHistory`, plain
-  `PolicyDecision` values are not superseded by `PolicyDecisionRecord`, and
+  `PolicyDecision` values are not superseded by `PolicyDecisionRecord`,
   nothing durably persists unresolved conflicts today outside this log
-  itself — nothing in the runtime has been switched over to use any durable
-  variant yet; that is further follow-up work, not implied by this contract
-  or its adoptions existing.
+  itself, and no strategy decision is durably recorded unless an application
+  opts in via `strategyDiagnosticsConfiguration` — nothing in the runtime has
+  been switched over to use any durable variant unconditionally; that is
+  further follow-up work, not implied by this contract or its adoptions
+  existing.
+- **Capturing a per-attempt outcome history for one `StrategyDecisionId`.**
+  `DurableStrategyDecisionEventLog` keeps the same one-mutable-slot-per-scope
+  shape every other adoption uses; a retried decision that terminates
+  differently the second time is reported as `Conflict` rather than losing
+  either outcome, but only the first-recorded outcome is ever persisted. An
+  append-only shape recording every attempt is a deliberately separate,
+  larger design question — see that log's own class documentation.

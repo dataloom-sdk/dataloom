@@ -2885,6 +2885,7 @@ final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.
     final fun queueWorkerConfiguration(io.dataloom.runtime.facade/DataLoomQueueWorkerSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.queueWorkerConfiguration|queueWorkerConfiguration(io.dataloom.runtime.facade.DataLoomQueueWorkerSpec){}[0]
     final fun retryAdministrationConfiguration(io.dataloom.runtime.facade/DataLoomRetryAdministrationSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.retryAdministrationConfiguration|retryAdministrationConfiguration(io.dataloom.runtime.facade.DataLoomRetryAdministrationSpec){}[0]
     final fun runtimeDependencies(io.dataloom.api.runtime/RuntimeDependencies): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.runtimeDependencies|runtimeDependencies(io.dataloom.api.runtime.RuntimeDependencies){}[0]
+    final fun strategyDiagnosticsConfiguration(io.dataloom.runtime.facade/DataLoomStrategyDiagnosticsSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.strategyDiagnosticsConfiguration|strategyDiagnosticsConfiguration(io.dataloom.runtime.facade.DataLoomStrategyDiagnosticsSpec){}[0]
     final fun strategyProviderProtectionConfiguration(io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.strategyProviderProtectionConfiguration|strategyProviderProtectionConfiguration(io.dataloom.runtime.facade.DataLoomStrategyProviderProtectionSpec){}[0]
 }
 
@@ -3017,6 +3018,17 @@ final class io.dataloom.runtime.facade/DataLoomStorageProtectionSpec { // io.dat
         final fun <get-scopes>(): io.dataloom.runtime.retry/StorageCircuitScopes // io.dataloom.runtime.facade/DataLoomStorageProtectionSpec.scopes.<get-scopes>|<get-scopes>(){}[0]
 
     final fun toString(): kotlin/String // io.dataloom.runtime.facade/DataLoomStorageProtectionSpec.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.facade/DataLoomStrategyDiagnosticsSpec { // io.dataloom.runtime.facade/DataLoomStrategyDiagnosticsSpec|null[0]
+    constructor <init>(io.dataloom.api.state/DurableStateStore<io.dataloom.api.strategy/StrategyDecisionId, io.dataloom.api.strategy/StrategyDecisionEvent>, kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.runtime.facade/DataLoomStrategyDiagnosticsSpec.<init>|<init>(io.dataloom.api.state.DurableStateStore<io.dataloom.api.strategy.StrategyDecisionId,io.dataloom.api.strategy.StrategyDecisionEvent>;kotlin.Int;kotlin.Int){}[0]
+
+    final val maximumStateUpdateAttempts // io.dataloom.runtime.facade/DataLoomStrategyDiagnosticsSpec.maximumStateUpdateAttempts|{}maximumStateUpdateAttempts[0]
+        final fun <get-maximumStateUpdateAttempts>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomStrategyDiagnosticsSpec.maximumStateUpdateAttempts.<get-maximumStateUpdateAttempts>|<get-maximumStateUpdateAttempts>(){}[0]
+    final val schemaVersion // io.dataloom.runtime.facade/DataLoomStrategyDiagnosticsSpec.schemaVersion|{}schemaVersion[0]
+        final fun <get-schemaVersion>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomStrategyDiagnosticsSpec.schemaVersion.<get-schemaVersion>|<get-schemaVersion>(){}[0]
+    final val store // io.dataloom.runtime.facade/DataLoomStrategyDiagnosticsSpec.store|{}store[0]
+        final fun <get-store>(): io.dataloom.api.state/DurableStateStore<io.dataloom.api.strategy/StrategyDecisionId, io.dataloom.api.strategy/StrategyDecisionEvent> // io.dataloom.runtime.facade/DataLoomStrategyDiagnosticsSpec.store.<get-store>|<get-store>(){}[0]
 }
 
 final class io.dataloom.runtime.facade/DataLoomStrategyLocalFallbackProtectionSpec { // io.dataloom.runtime.facade/DataLoomStrategyLocalFallbackProtectionSpec|null[0]

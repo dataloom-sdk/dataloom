@@ -481,6 +481,7 @@ public final class io/dataloom/runtime/facade/DataLoomBuilder {
 	public final fun queueWorkerConfiguration (Lio/dataloom/runtime/facade/DataLoomQueueWorkerSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun retryAdministrationConfiguration (Lio/dataloom/runtime/facade/DataLoomRetryAdministrationSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun runtimeDependencies (Lio/dataloom/api/runtime/RuntimeDependencies;)Lio/dataloom/runtime/facade/DataLoomBuilder;
+	public final fun strategyDiagnosticsConfiguration (Lio/dataloom/runtime/facade/DataLoomStrategyDiagnosticsSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun strategyProviderProtectionConfiguration (Lio/dataloom/runtime/facade/DataLoomStrategyProviderProtectionSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 }
 
@@ -596,6 +597,14 @@ public final class io/dataloom/runtime/facade/DataLoomStorageProtectionSpec {
 	public final fun getProviderTimeout ()Lio/dataloom/api/scheduling/SchedulingDelay;
 	public final fun getScopes ()Lio/dataloom/runtime/retry/StorageCircuitScopes;
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/facade/DataLoomStrategyDiagnosticsSpec {
+	public fun <init> (Lio/dataloom/api/state/DurableStateStore;II)V
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getMaximumStateUpdateAttempts ()I
+	public final fun getSchemaVersion ()I
+	public final fun getStore ()Lio/dataloom/api/state/DurableStateStore;
 }
 
 public final class io/dataloom/runtime/facade/DataLoomStrategyLocalFallbackProtectionSpec {
