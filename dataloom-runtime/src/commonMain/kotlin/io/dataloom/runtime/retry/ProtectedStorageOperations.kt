@@ -5,6 +5,8 @@ import io.dataloom.api.provider.ProviderDescriptor
 import io.dataloom.api.provider.ProviderHealth
 import io.dataloom.api.provider.ProviderInitializationContext
 import io.dataloom.api.storage.InboundChangeApplyRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadResult
 import io.dataloom.api.storage.OutboundChangeReadRequest
 import io.dataloom.api.storage.OutboundChangeReadResult
 import io.dataloom.api.synchronization.CheckpointReadRequest
@@ -39,6 +41,10 @@ public class ProtectedStorageOperations internal constructor(
         )
         validate(scopes.readCheckpoint, StorageCircuitOperation.READ_CHECKPOINT)
         validate(scopes.writeCheckpoint, StorageCircuitOperation.WRITE_CHECKPOINT)
+        validate(
+            scopes.readLocalConflictCandidate,
+            StorageCircuitOperation.READ_LOCAL_CONFLICT_CANDIDATE,
+        )
     }
 
     public suspend fun initialize(
@@ -76,6 +82,11 @@ public class ProtectedStorageOperations internal constructor(
         request: CheckpointWriteRequest,
     ): CircuitBreakerExecutionResult<Unit> =
         adapter.writeCheckpoint(scopes.writeCheckpoint, request)
+
+    public suspend fun readLocalConflictCandidate(
+        request: LocalConflictCandidateReadRequest,
+    ): CircuitBreakerExecutionResult<LocalConflictCandidateReadResult> =
+        adapter.readLocalConflictCandidate(scopes.readLocalConflictCandidate, request)
 
     private fun validate(
         scope: CircuitBreakerScope,

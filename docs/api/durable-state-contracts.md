@@ -423,10 +423,6 @@ feature existed: no strategy decision event is ever recorded.
   `DataLoomConfigurationResolver.resolve` nor `PolicyEvaluator.evaluate` has
   a real caller anywhere in `dataloom-runtime` to compose with yet. Wiring
   either durable adapter in would currently mean inventing that caller too.
-- **Conflict detection through a circuit-breaker-protected `StorageProvider`.**
-  `ProviderProtectionStorageBridge` does not forward `readLocalConflictCandidate`
-  — closing this properly needs a breaking addition to `StorageCircuitScopes`'s
-  constructor. Real, separately-scoped follow-up work.
 - **Wiring `DurableConflictDetectionCoordinator` into `BidirectionalSynchronizationPipeline`
   or `OutboundPushSynchronizationPipeline` directly.** Bidirectional inherits
   real counts through its inbound child once that child has conflict

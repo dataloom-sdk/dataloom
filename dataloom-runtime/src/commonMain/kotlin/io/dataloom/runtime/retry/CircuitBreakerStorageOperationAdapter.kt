@@ -5,6 +5,8 @@ import io.dataloom.api.provider.ProviderDescriptor
 import io.dataloom.api.provider.ProviderHealth
 import io.dataloom.api.provider.ProviderInitializationContext
 import io.dataloom.api.storage.InboundChangeApplyRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadResult
 import io.dataloom.api.storage.OutboundChangeReadRequest
 import io.dataloom.api.storage.OutboundChangeReadResult
 import io.dataloom.api.storage.StorageProvider
@@ -114,6 +116,16 @@ public class CircuitBreakerStorageOperationAdapter(
         operation = StorageCircuitOperation.WRITE_CHECKPOINT,
     ) {
         storageProvider.writeCheckpoint(request)
+    }
+
+    public suspend fun readLocalConflictCandidate(
+        scope: CircuitBreakerScope,
+        request: LocalConflictCandidateReadRequest,
+    ): CircuitBreakerExecutionResult<LocalConflictCandidateReadResult> = execute(
+        scope = scope,
+        operation = StorageCircuitOperation.READ_LOCAL_CONFLICT_CANDIDATE,
+    ) {
+        storageProvider.readLocalConflictCandidate(request)
     }
 
     private suspend fun <T> execute(

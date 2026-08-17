@@ -14,6 +14,8 @@ import io.dataloom.api.provider.ProviderInitializationContext
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.retry.RetryOperation
 import io.dataloom.api.storage.InboundChangeApplyRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadResult
 import io.dataloom.api.storage.OutboundChangeReadRequest
 import io.dataloom.api.storage.OutboundChangeReadResult
 import io.dataloom.api.storage.StorageProvider
@@ -64,21 +66,15 @@ internal class ProviderProtectionEvidenceCollector {
  * separate collector before adapting the terminal operation outcome to the
  * historical [StorageProvider] contract.
  *
- * ## Known gap: `readLocalConflictCandidate` is not circuit-protected
- *
- * [readLocalConflictCandidate][StorageProvider.readLocalConflictCandidate]
- * is not overridden here, so calls through this bridge always receive the
- * interface's default `NotFound` result regardless of what the wrapped
- * provider actually supports — the same as an un-adopted provider, not a
- * bridge failure. [ProtectedStorageOperations] and
- * [CircuitBreakerStorageOperationAdapter] would both need a new
- * circuit-protected operation (including a breaking addition to
- * [StorageCircuitScopes]'s constructor) to close this properly. That is
- * real, separately-scoped follow-up work — see
+ * [readLocalConflictCandidate][StorageProvider.readLocalConflictCandidate] is
+ * forwarded like every other operation, circuit-protected through
+ * [ProtectedStorageOperations.readLocalConflictCandidate] via the dedicated
+ * [io.dataloom.runtime.retry.StorageCircuitScopes.readLocalConflictCandidate]
+ * scope. A wrapped provider's real `Found`/`NotFound` result passes through
+ * unchanged when the circuit is closed; a tripped circuit rejects the call
+ * the same way it rejects every other protected storage operation. See
  * [io.dataloom.api.storage.StorageProvider]'s own KDoc for
- * `readLocalConflictCandidate`'s purpose. Conflict detection during inbound
- * pull is simply unavailable, not silently wrong, for a
- * provider-protection-wrapped [StorageProvider] today.
+ * `readLocalConflictCandidate`'s narrow, opt-in purpose.
  */
 internal class ProviderProtectionStorageBridge(
     private val protectedOperations: ProtectedStorageOperations,
@@ -136,6 +132,13 @@ internal class ProviderProtectionStorageBridge(
     ): ProviderOperationResult<Unit> =
         execute(StorageCircuitOperation.WRITE_CHECKPOINT) {
             protectedOperations.writeCheckpoint(request)
+        }
+
+    override suspend fun readLocalConflictCandidate(
+        request: LocalConflictCandidateReadRequest,
+    ): ProviderOperationResult<LocalConflictCandidateReadResult> =
+        execute(StorageCircuitOperation.READ_LOCAL_CONFLICT_CANDIDATE) {
+            protectedOperations.readLocalConflictCandidate(request)
         }
 
     private suspend fun <T> execute(
@@ -263,6 +266,11 @@ internal class ProviderProtectionStrategyFallbackBridge(
         request: CheckpointWriteRequest,
     ): ProviderOperationResult<Unit> = storageBridge.writeCheckpoint(request)
 
+    override suspend fun readLocalConflictCandidate(
+        request: LocalConflictCandidateReadRequest,
+    ): ProviderOperationResult<LocalConflictCandidateReadResult> =
+        storageBridge.readLocalConflictCandidate(request)
+
     override suspend fun evaluateLocalFallback(
         request: StrategyLocalFallbackRequest,
     ): ProviderOperationResult<StrategyLocalFallbackResult> =
@@ -367,6 +375,11 @@ internal class ProviderProtectionStrategyReconciliationBridge(
         request: CheckpointWriteRequest,
     ): ProviderOperationResult<Unit> = storageBridge.writeCheckpoint(request)
 
+    override suspend fun readLocalConflictCandidate(
+        request: LocalConflictCandidateReadRequest,
+    ): ProviderOperationResult<LocalConflictCandidateReadResult> =
+        storageBridge.readLocalConflictCandidate(request)
+
     override suspend fun reconcileStrategy(
         request: StrategyReconciliationRequest,
     ): ProviderOperationResult<StrategyReconciliationResult> =
@@ -450,6 +463,11 @@ internal class ProviderProtectionStrategyFallbackAndReconciliationBridge(
     override suspend fun writeCheckpoint(
         request: CheckpointWriteRequest,
     ): ProviderOperationResult<Unit> = fallbackBridge.writeCheckpoint(request)
+
+    override suspend fun readLocalConflictCandidate(
+        request: LocalConflictCandidateReadRequest,
+    ): ProviderOperationResult<LocalConflictCandidateReadResult> =
+        fallbackBridge.readLocalConflictCandidate(request)
 
     override suspend fun evaluateLocalFallback(
         request: StrategyLocalFallbackRequest,
