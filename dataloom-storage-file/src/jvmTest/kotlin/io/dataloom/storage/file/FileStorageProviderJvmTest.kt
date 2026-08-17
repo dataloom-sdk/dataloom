@@ -26,6 +26,8 @@ import io.dataloom.api.provider.ProviderInitializationContext
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.storage.InboundChangeApplyRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadRequest
+import io.dataloom.api.storage.LocalConflictCandidateReadResult
 import io.dataloom.api.storage.OutboundChangeReadRequest
 import io.dataloom.api.storage.OutboundChangeReadResult
 import io.dataloom.api.synchronization.ChangeAcknowledgementStatus
@@ -257,6 +259,126 @@ class FileStorageProviderJvmTest {
         )
         val rejectedFile = File("$dir/rejected/e1.evt")
         assertTrue(rejectedFile.exists(), "Expected rejected event file at ${rejectedFile.absolutePath}")
+    }
+
+    // ─── readLocalConflictCandidate ──────────────────────────────────────────
+
+    @Test
+    fun `readLocalConflictCandidate returns NotFound for an untouched entity`() = runTest {
+        val p = provider()
+
+        val result = p.readLocalConflictCandidate(
+            LocalConflictCandidateReadRequest(
+                request = syncRequest(),
+                entity = EntityReference(type = EntityType("customer"), id = EntityId("customer-untouched")),
+            ),
+        )
+
+        assertEquals(
+            ProviderOperationResult.Success(LocalConflictCandidateReadResult.NotFound),
+            result,
+        )
+    }
+
+    @Test
+    fun `readLocalConflictCandidate returns the most recently stored outbound event for the entity`() = runTest {
+        val p = provider()
+        val entity = EntityReference(type = EntityType("customer"), id = EntityId("customer-1"))
+        p.storeOutboundChangeSet(
+            changeSet("cs-first", ChangeEvent(id = ChangeEventId("event-first"), entity = entity, operation = ChangeOperation.UPDATE)),
+        )
+        p.storeOutboundChangeSet(
+            changeSet("cs-second", ChangeEvent(id = ChangeEventId("event-second"), entity = entity, operation = ChangeOperation.UPDATE)),
+        )
+
+        val result = p.readLocalConflictCandidate(
+            LocalConflictCandidateReadRequest(request = syncRequest(), entity = entity),
+        )
+
+        val found = assertIs<LocalConflictCandidateReadResult.Found>(
+            assertIs<ProviderOperationResult.Success<LocalConflictCandidateReadResult>>(result).value,
+        )
+        assertEquals("event-second", found.localChange.id.value)
+    }
+
+    @Test
+    fun `readLocalConflictCandidate returns NotFound once the only outbound edit is accepted`() = runTest {
+        val p = provider()
+        val entity = EntityReference(type = EntityType("customer"), id = EntityId("customer-accepted"))
+        val event = ChangeEvent(id = ChangeEventId("event-accepted"), entity = entity, operation = ChangeOperation.UPDATE)
+        p.storeOutboundChangeSet(changeSet("cs-accepted", event))
+        p.acknowledgeOutboundChanges(
+            OutboundChangeAcknowledgementRequest(
+                syncRequest(),
+                ChangeSetAcknowledgement(
+                    changeSetId = ChangeSetId("cs-accepted"),
+                    events = listOf(ChangeEventAcknowledgement(event.id, ChangeAcknowledgementStatus.ACCEPTED)),
+                ),
+            ),
+        )
+
+        val result = p.readLocalConflictCandidate(
+            LocalConflictCandidateReadRequest(request = syncRequest(), entity = entity),
+        )
+
+        assertEquals(
+            ProviderOperationResult.Success(LocalConflictCandidateReadResult.NotFound),
+            result,
+        )
+    }
+
+    @Test
+    fun `readLocalConflictCandidate does not consult rejected events`() = runTest {
+        // Deliberate scope choice, documented in the provider's own KDoc: a
+        // REJECTED event moves to rejected/ with no ordering information
+        // relative to any other outbound entry, so it is not treated as a
+        // still-live local edit to compare against.
+        val p = provider()
+        val entity = EntityReference(type = EntityType("customer"), id = EntityId("customer-rejected"))
+        val event = ChangeEvent(id = ChangeEventId("event-rejected"), entity = entity, operation = ChangeOperation.UPDATE)
+        p.storeOutboundChangeSet(changeSet("cs-rejected", event))
+        p.acknowledgeOutboundChanges(
+            OutboundChangeAcknowledgementRequest(
+                syncRequest(),
+                ChangeSetAcknowledgement(
+                    changeSetId = ChangeSetId("cs-rejected"),
+                    events = listOf(ChangeEventAcknowledgement(event.id, ChangeAcknowledgementStatus.REJECTED)),
+                ),
+            ),
+        )
+
+        val result = p.readLocalConflictCandidate(
+            LocalConflictCandidateReadRequest(request = syncRequest(), entity = entity),
+        )
+
+        assertEquals(
+            ProviderOperationResult.Success(LocalConflictCandidateReadResult.NotFound),
+            result,
+        )
+    }
+
+    @Test
+    fun `readLocalConflictCandidate ignores inbound-only history for the same entity`() = runTest {
+        val p = provider()
+        val entity = EntityReference(type = EntityType("customer"), id = EntityId("customer-inbound-only"))
+        p.applyInboundChanges(
+            InboundChangeApplyRequest(
+                syncRequest(),
+                changeSet(
+                    "inbound-only",
+                    ChangeEvent(id = ChangeEventId("event-inbound"), entity = entity, operation = ChangeOperation.UPDATE),
+                ),
+            ),
+        )
+
+        val result = p.readLocalConflictCandidate(
+            LocalConflictCandidateReadRequest(request = syncRequest(), entity = entity),
+        )
+
+        assertEquals(
+            ProviderOperationResult.Success(LocalConflictCandidateReadResult.NotFound),
+            result,
+        )
     }
 
     // ─── Inbound ─────────────────────────────────────────────────────────────
