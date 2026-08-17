@@ -4,6 +4,9 @@ import io.dataloom.api.execution.StrategyProviderSet
 import io.dataloom.api.provider.ProviderLifecycleCoordinatorState
 import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
+import io.dataloom.api.strategy.DurableStrategyDecisionEventLog
+import io.dataloom.api.strategy.StrategyDecisionEvent
+import io.dataloom.api.strategy.StrategyDecisionOutcomeKind
 import io.dataloom.api.strategy.StrategyDisposition
 import io.dataloom.api.strategy.StrategyEvaluationResult
 import io.dataloom.api.strategy.StrategyExecutionTrigger
@@ -29,6 +32,7 @@ internal class StrategySynchronizationExecutionCoordinator(
     private val pipelineRegistry: SynchronizationPipelineRegistry,
     private val lifecycleEventEmitter: SynchronizationLifecycleEventEmitter?,
     private val durableQueueWorkEncoder: QueuedSynchronizationWorkEncoder? = null,
+    private val strategyDecisionEventLog: DurableStrategyDecisionEventLog? = null,
 ) {
     private val durableQueueAdmitter = StrategyDurableQueueAdmitter(
         clock = clock,
@@ -45,7 +49,85 @@ internal class StrategySynchronizationExecutionCoordinator(
         providerBoundary = StrategyProviderExecutionBoundary.Identity,
     )
 
+    /**
+     * Delegates to [executeCore] for the real admission/dispatch logic, then
+     * -- when [strategyDecisionEventLog] is configured -- durably records a
+     * payload-free [StrategyDecisionEvent] describing the terminal result.
+     *
+     * This is the single choke point every [execute] overload and every
+     * `DEFER`-disposition path (via [handleDefer], itself only ever reached
+     * from [executeCore]) already funnels through, so every terminal
+     * [StrategySynchronizationExecutionResult] -- including early admission
+     * rejections like `PROVIDERS_NOT_INITIALIZED` -- is covered by one
+     * wrapper rather than duplicated at each of [executeCore]'s many return
+     * points. Matches
+     * [io.dataloom.runtime.conflict.DurableConflictDetectionCoordinator]'s
+     * own posture: a durable-recording failure never changes or hides the
+     * real result this method returns.
+     */
     internal suspend fun execute(
+        request: StrategySynchronizationRequest,
+        bindings: StrategyProviderBindings,
+        providerBoundary: StrategyProviderExecutionBoundary,
+    ): StrategySynchronizationExecutionResult {
+        val result = executeCore(request, bindings, providerBoundary)
+        recordDecisionEvent(result)
+        return result
+    }
+
+    private suspend fun recordDecisionEvent(result: StrategySynchronizationExecutionResult) {
+        val log = strategyDecisionEventLog ?: return
+        val (outcomeKind, outcomeDetail) = result.toDecisionOutcome()
+        val plan = result.evaluation.plan
+        val event = StrategyDecisionEvent(
+            planId = plan.id,
+            requestedStrategy = plan.requestedStrategy,
+            effectiveStrategy = plan.effectiveStrategy,
+            effectiveProfileId = plan.effectiveProfileId,
+            configurationVersion = plan.configurationVersion,
+            direction = plan.direction,
+            mode = plan.mode,
+            disposition = plan.disposition,
+            reasonCodes = result.evaluation.reasonCodes,
+            outcomeKind = outcomeKind,
+            outcomeDetail = outcomeDetail,
+            committedAt = result.completedAt,
+        )
+        log.record(result.evaluation.decisionId, event)
+    }
+
+    /**
+     * Maps a terminal [StrategySynchronizationExecutionResult] to the
+     * bounded, payload-free [StrategyDecisionOutcomeKind] vocabulary a
+     * [StrategyDecisionEvent] persists, plus an optional short, stable,
+     * non-sensitive detail code -- never an exception message or payload
+     * content, matching [StrategyDecisionEvent]'s own documented scope.
+     */
+    private fun StrategySynchronizationExecutionResult.toDecisionOutcome(): Pair<StrategyDecisionOutcomeKind, String?> =
+        when (this) {
+            is StrategySynchronizationExecutionResult.Executed ->
+                StrategyDecisionOutcomeKind.EXECUTED to null
+            is StrategySynchronizationExecutionResult.ServedFromCache ->
+                StrategyDecisionOutcomeKind.SERVED_FROM_CACHE to cacheState.name
+            is StrategySynchronizationExecutionResult.Failed ->
+                StrategyDecisionOutcomeKind.FAILED to error.code.value
+            is StrategySynchronizationExecutionResult.FallbackActivated ->
+                StrategyDecisionOutcomeKind.FALLBACK_ACTIVATED to remoteOutcome.name
+            is StrategySynchronizationExecutionResult.FallbackUnavailable ->
+                StrategyDecisionOutcomeKind.FALLBACK_UNAVAILABLE to remoteOutcome.name
+            is StrategySynchronizationExecutionResult.Cancelled ->
+                StrategyDecisionOutcomeKind.CANCELLED to null
+            is StrategySynchronizationExecutionResult.Deferred ->
+                StrategyDecisionOutcomeKind.DEFERRED to null
+            is StrategySynchronizationExecutionResult.DurablyEnqueued ->
+                StrategyDecisionOutcomeKind.DURABLY_ENQUEUED to null
+            is StrategySynchronizationExecutionResult.AcceptedLocally ->
+                StrategyDecisionOutcomeKind.ACCEPTED_LOCALLY to null
+            is StrategySynchronizationExecutionResult.Rejected ->
+                StrategyDecisionOutcomeKind.REJECTED to reason.name
+        }
+
+    private suspend fun executeCore(
         request: StrategySynchronizationRequest,
         bindings: StrategyProviderBindings,
         providerBoundary: StrategyProviderExecutionBoundary,

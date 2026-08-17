@@ -2787,6 +2787,74 @@ public abstract interface class io/dataloom/api/strategy/ClassifiedStrategyRemot
 	public abstract fun getRemoteOutcome ()Lio/dataloom/api/strategy/StrategyRemoteOutcome;
 }
 
+public final class io/dataloom/api/strategy/DurableStrategyDecisionEventLog {
+	public static final field Companion Lio/dataloom/api/strategy/DurableStrategyDecisionEventLog$Companion;
+	public fun <init> (Lio/dataloom/api/state/DurableStateStore;II)V
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun current-8btw3TI (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun record-9B10SrQ (Ljava/lang/String;Lio/dataloom/api/strategy/StrategyDecisionEvent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/api/strategy/DurableStrategyDecisionEventLog$Companion {
+	public final fun getKeyEncoder ()Lio/dataloom/api/state/DurableStateScopeKeyEncoder;
+}
+
+public abstract interface class io/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome {
+}
+
+public final class io/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome$AlreadyRecorded : io/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome {
+	public fun <init> (Lio/dataloom/api/strategy/StrategyDecisionEvent;)V
+	public final fun component1 ()Lio/dataloom/api/strategy/StrategyDecisionEvent;
+	public final fun copy (Lio/dataloom/api/strategy/StrategyDecisionEvent;)Lio/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome$AlreadyRecorded;
+	public static synthetic fun copy$default (Lio/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome$AlreadyRecorded;Lio/dataloom/api/strategy/StrategyDecisionEvent;ILjava/lang/Object;)Lio/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome$AlreadyRecorded;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEvent ()Lio/dataloom/api/strategy/StrategyDecisionEvent;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome$Conflict : io/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome {
+	public fun <init> (Lio/dataloom/api/strategy/StrategyDecisionEvent;Lio/dataloom/api/strategy/StrategyDecisionEvent;)V
+	public final fun component1 ()Lio/dataloom/api/strategy/StrategyDecisionEvent;
+	public final fun component2 ()Lio/dataloom/api/strategy/StrategyDecisionEvent;
+	public final fun copy (Lio/dataloom/api/strategy/StrategyDecisionEvent;Lio/dataloom/api/strategy/StrategyDecisionEvent;)Lio/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome$Conflict;
+	public static synthetic fun copy$default (Lio/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome$Conflict;Lio/dataloom/api/strategy/StrategyDecisionEvent;Lio/dataloom/api/strategy/StrategyDecisionEvent;ILjava/lang/Object;)Lio/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome$Conflict;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAttempted ()Lio/dataloom/api/strategy/StrategyDecisionEvent;
+	public final fun getExisting ()Lio/dataloom/api/strategy/StrategyDecisionEvent;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome$ContentionLimitReached : io/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome {
+	public static final field INSTANCE Lio/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome$ContentionLimitReached;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome$PersistenceFailure : io/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome$PersistenceFailure;
+	public static synthetic fun copy$default (Lio/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome$PersistenceFailure;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome$PersistenceFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome$Recorded : io/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome {
+	public fun <init> (Lio/dataloom/api/strategy/StrategyDecisionEvent;)V
+	public final fun component1 ()Lio/dataloom/api/strategy/StrategyDecisionEvent;
+	public final fun copy (Lio/dataloom/api/strategy/StrategyDecisionEvent;)Lio/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome$Recorded;
+	public static synthetic fun copy$default (Lio/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome$Recorded;Lio/dataloom/api/strategy/StrategyDecisionEvent;ILjava/lang/Object;)Lio/dataloom/api/strategy/DurableStrategyDecisionRecordOutcome$Recorded;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEvent ()Lio/dataloom/api/strategy/StrategyDecisionEvent;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/api/strategy/HybridSource : java/lang/Enum {
 	public static final field LOCAL Lio/dataloom/api/strategy/HybridSource;
 	public static final field REMOTE Lio/dataloom/api/strategy/HybridSource;
@@ -2962,6 +3030,48 @@ public final class io/dataloom/api/strategy/StrategyDataOrigin : java/lang/Enum 
 	public static fun values ()[Lio/dataloom/api/strategy/StrategyDataOrigin;
 }
 
+public final class io/dataloom/api/strategy/StrategyDecisionEvent {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/strategy/BuiltInSynchronizationStrategy;Lio/dataloom/api/strategy/BuiltInSynchronizationStrategy;Ljava/lang/String;JLio/dataloom/api/model/SynchronizationDirection;Lio/dataloom/api/model/SynchronizationMode;Lio/dataloom/api/strategy/StrategyDisposition;Ljava/util/List;Lio/dataloom/api/strategy/StrategyDecisionOutcomeKind;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-msoz1rs ()Ljava/lang/String;
+	public final fun component10 ()Lio/dataloom/api/strategy/StrategyDecisionOutcomeKind;
+	public final fun component11 ()Ljava/lang/String;
+	public final fun component12 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component2 ()Lio/dataloom/api/strategy/BuiltInSynchronizationStrategy;
+	public final fun component3 ()Lio/dataloom/api/strategy/BuiltInSynchronizationStrategy;
+	public final fun component4-csSrl6c ()Ljava/lang/String;
+	public final fun component5-UL4oDQM ()J
+	public final fun component6 ()Lio/dataloom/api/model/SynchronizationDirection;
+	public final fun component7 ()Lio/dataloom/api/model/SynchronizationMode;
+	public final fun component8 ()Lio/dataloom/api/strategy/StrategyDisposition;
+	public final fun component9 ()Ljava/util/List;
+	public final fun copy-gFYSmmc (Ljava/lang/String;Lio/dataloom/api/strategy/BuiltInSynchronizationStrategy;Lio/dataloom/api/strategy/BuiltInSynchronizationStrategy;Ljava/lang/String;JLio/dataloom/api/model/SynchronizationDirection;Lio/dataloom/api/model/SynchronizationMode;Lio/dataloom/api/strategy/StrategyDisposition;Ljava/util/List;Lio/dataloom/api/strategy/StrategyDecisionOutcomeKind;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/api/strategy/StrategyDecisionEvent;
+	public static synthetic fun copy-gFYSmmc$default (Lio/dataloom/api/strategy/StrategyDecisionEvent;Ljava/lang/String;Lio/dataloom/api/strategy/BuiltInSynchronizationStrategy;Lio/dataloom/api/strategy/BuiltInSynchronizationStrategy;Ljava/lang/String;JLio/dataloom/api/model/SynchronizationDirection;Lio/dataloom/api/model/SynchronizationMode;Lio/dataloom/api/strategy/StrategyDisposition;Ljava/util/List;Lio/dataloom/api/strategy/StrategyDecisionOutcomeKind;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/api/strategy/StrategyDecisionEvent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCommittedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getConfigurationVersion-UL4oDQM ()J
+	public final fun getDirection ()Lio/dataloom/api/model/SynchronizationDirection;
+	public final fun getDisposition ()Lio/dataloom/api/strategy/StrategyDisposition;
+	public final fun getEffectiveProfileId-csSrl6c ()Ljava/lang/String;
+	public final fun getEffectiveStrategy ()Lio/dataloom/api/strategy/BuiltInSynchronizationStrategy;
+	public final fun getMode ()Lio/dataloom/api/model/SynchronizationMode;
+	public final fun getOutcomeDetail ()Ljava/lang/String;
+	public final fun getOutcomeKind ()Lio/dataloom/api/strategy/StrategyDecisionOutcomeKind;
+	public final fun getPlanId-msoz1rs ()Ljava/lang/String;
+	public final fun getReasonCodes ()Ljava/util/List;
+	public final fun getReasonCodesList ()Ljava/util/List;
+	public final fun getRequestedStrategy ()Lio/dataloom/api/strategy/BuiltInSynchronizationStrategy;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/strategy/StrategyDecisionEventCodec : io/dataloom/api/state/DurableStateCodec {
+	public fun <init> ()V
+	public fun decode (Ljava/lang/String;)Lio/dataloom/api/strategy/StrategyDecisionEvent;
+	public synthetic fun decode (Ljava/lang/String;)Ljava/lang/Object;
+	public fun encode (Lio/dataloom/api/strategy/StrategyDecisionEvent;)Ljava/lang/String;
+	public synthetic fun encode (Ljava/lang/Object;)Ljava/lang/String;
+}
+
 public final class io/dataloom/api/strategy/StrategyDecisionId {
 	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/strategy/StrategyDecisionId;
 	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
@@ -2974,6 +3084,22 @@ public final class io/dataloom/api/strategy/StrategyDecisionId {
 	public fun toString ()Ljava/lang/String;
 	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
 	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/strategy/StrategyDecisionOutcomeKind : java/lang/Enum {
+	public static final field ACCEPTED_LOCALLY Lio/dataloom/api/strategy/StrategyDecisionOutcomeKind;
+	public static final field CANCELLED Lio/dataloom/api/strategy/StrategyDecisionOutcomeKind;
+	public static final field DEFERRED Lio/dataloom/api/strategy/StrategyDecisionOutcomeKind;
+	public static final field DURABLY_ENQUEUED Lio/dataloom/api/strategy/StrategyDecisionOutcomeKind;
+	public static final field EXECUTED Lio/dataloom/api/strategy/StrategyDecisionOutcomeKind;
+	public static final field FAILED Lio/dataloom/api/strategy/StrategyDecisionOutcomeKind;
+	public static final field FALLBACK_ACTIVATED Lio/dataloom/api/strategy/StrategyDecisionOutcomeKind;
+	public static final field FALLBACK_UNAVAILABLE Lio/dataloom/api/strategy/StrategyDecisionOutcomeKind;
+	public static final field REJECTED Lio/dataloom/api/strategy/StrategyDecisionOutcomeKind;
+	public static final field SERVED_FROM_CACHE Lio/dataloom/api/strategy/StrategyDecisionOutcomeKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/strategy/StrategyDecisionOutcomeKind;
+	public static fun values ()[Lio/dataloom/api/strategy/StrategyDecisionOutcomeKind;
 }
 
 public final class io/dataloom/api/strategy/StrategyDeferralReason : java/lang/Enum {

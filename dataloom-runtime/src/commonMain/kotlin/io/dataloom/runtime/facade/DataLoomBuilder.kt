@@ -23,6 +23,7 @@ import io.dataloom.runtime.execution.SynchronizationPipelineRegistry
 import io.dataloom.runtime.execution.bidirectional.BidirectionalPipelineConfiguration
 import io.dataloom.runtime.execution.bidirectional.BidirectionalSynchronizationPipeline
 import io.dataloom.api.conflict.DurableUnresolvedConflictLog
+import io.dataloom.api.strategy.DurableStrategyDecisionEventLog
 import io.dataloom.runtime.conflict.ConflictDetectorRegistry
 import io.dataloom.runtime.conflict.ConflictResolverRegistry
 import io.dataloom.runtime.conflict.DurableConflictDetectionCoordinator
@@ -151,6 +152,7 @@ public class DataLoomBuilder {
     private var retryAdministrationSpec: DataLoomRetryAdministrationSpec? = null
     private var circuitAdministrationSpec: DataLoomCircuitAdministrationSpec? = null
     private var conflictDetectionSpec: DataLoomConflictDetectionSpec? = null
+    private var strategyDiagnosticsSpec: DataLoomStrategyDiagnosticsSpec? = null
     private var built: Boolean = false
 
     // =========================================================================
@@ -287,6 +289,26 @@ public class DataLoomBuilder {
     public fun conflictDetectionConfiguration(spec: DataLoomConflictDetectionSpec): DataLoomBuilder =
         apply {
             conflictDetectionSpec = spec
+        }
+
+    /**
+     * Enables durable strategy-decision diagnostics: a payload-free audit
+     * trail of past strategy admission/execution decisions, recorded by
+     * [io.dataloom.runtime.strategy.StrategySynchronizationExecutionCoordinator]
+     * after every terminal result -- for operator visibility and debugging,
+     * never for replay or continuation. See [DataLoomStrategyDiagnosticsSpec]
+     * for the full contract.
+     *
+     * When this method is not called, behavior is unchanged from before it
+     * existed: no strategy decision event is ever recorded.
+     *
+     * @param spec the durable store (and optional schema/retry tuning) to
+     *   use. See [DataLoomStrategyDiagnosticsSpec] for the full contract.
+     * @return this builder for chaining.
+     */
+    public fun strategyDiagnosticsConfiguration(spec: DataLoomStrategyDiagnosticsSpec): DataLoomBuilder =
+        apply {
+            strategyDiagnosticsSpec = spec
         }
 
     /**
@@ -661,6 +683,14 @@ public class DataLoomBuilder {
             connectivityPreflight = connectivityPreflight,
         )
         val strategyPipelineRegistry = buildStrategyPipelineRegistry(conflictDetectionConfig)
+        // --- 8b. Build strategy-decision diagnostics log (optional) ---
+        val strategyDecisionEventLog = strategyDiagnosticsSpec?.let { spec ->
+            DurableStrategyDecisionEventLog(
+                store = spec.store,
+                schemaVersion = spec.schemaVersion,
+                maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
+            )
+        }
         val strategyExecutionCoordinator = StrategySynchronizationExecutionCoordinator(
             lifecycleCoordinator = lifecycleCoordinator,
             evaluator = BuiltInSynchronizationStrategyEvaluator(),
@@ -670,6 +700,7 @@ public class DataLoomBuilder {
             pipelineRegistry = strategyPipelineRegistry,
             lifecycleEventEmitter = lifecycleEventEmitter,
             durableQueueWorkEncoder = queueSubmissionSpecValue?.encoder,
+            strategyDecisionEventLog = strategyDecisionEventLog,
         )
         val acceptedStrategyPlanCoordinator = AcceptedStrategyPlanExecutionCoordinator(
             lifecycleCoordinator = lifecycleCoordinator,
