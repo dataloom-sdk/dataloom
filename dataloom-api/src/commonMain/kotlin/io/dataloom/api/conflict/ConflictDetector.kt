@@ -26,12 +26,23 @@ import io.dataloom.api.identifier.ConflictDetectorId
  * This keeps detection deterministic, fast, testable, multiplatform, and
  * independent of runtime infrastructure.
  *
- * ## Application ownership
+ * ## Reference and application-owned detectors
  *
- * DataLoom coordinates the conflict-detection workflow, but the host
- * application owns the domain-specific rules that determine whether a conflict
- * exists. DataLoom does not supply a built-in detector implementation in this
- * release.
+ * The DataLoom runtime provides deterministic reference detectors selected by
+ * exact [ConflictDetectorId] values for structural operation pairs, explicit
+ * entity-version mismatch, timestamp evidence, three-way ETag divergence,
+ * vector-clock concurrency, and application-owned metadata markers. Reference
+ * detectors never inspect payloads or infer business meaning.
+ *
+ * A reference detector is never selected implicitly. The host still chooses
+ * its exact ID through conflict-orchestration bindings and may explicitly
+ * override it by registering an application detector under the same ID.
+ *
+ * Applications continue to own domain-specific detection rules. Examples
+ * include financial invariants, aggregate-level conflicts, schema-aware field
+ * relationships, or evidence encoded in opaque payload content. A custom
+ * detector uses this same contract and does not replace DataLoom's surrounding
+ * orchestration and durable-recording boundaries.
  *
  * ## Payload opacity
  *
@@ -41,8 +52,19 @@ import io.dataloom.api.identifier.ConflictDetectorId
  *
  * ## Version opacity
  *
- * [io.dataloom.api.payload.EntityVersion] is opaque. DataLoom does not assume
- * numeric ordering, timestamps, or ETag semantics.
+ * [io.dataloom.api.payload.EntityVersion] is opaque. The version reference
+ * detector compares explicit values only for equality; it never parses,
+ * numerically orders, or assigns ETag/timestamp semantics to them. Dedicated
+ * timestamp, ETag, and vector-clock reference detectors use separately named,
+ * explicit metadata evidence.
+ *
+ * ## Evidence-unavailable behavior
+ *
+ * The reference evidence-based detectors fail closed: when required evidence
+ * is missing, blank, malformed, duplicated, negative, or over its documented
+ * bound, they return a `CUSTOM` conflict with a bounded reason code rather than
+ * silently returning [ConflictDetectionResult.NoConflict]. Raw evidence values
+ * are not copied into generated conflict metadata.
  *
  * ## Implementation requirements
  *
@@ -53,8 +75,9 @@ import io.dataloom.api.identifier.ConflictDetectorId
  * - Must not call providers.
  * - Must not modify application data or queues.
  * - Must not automatically log payload content.
- * - Must not generate conflict identifiers unless explicitly configured
- *   through application-controlled configuration.
+ * - Must not generate conflict identifiers unless their identity discipline is
+ *   explicit, deterministic, and application-controlled or documented by the
+ *   reference implementation.
  * - Must not depend on platform-specific types.
  *
  * Applications may provide implementations using manual construction or any
