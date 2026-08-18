@@ -2,9 +2,10 @@
 
 ## Status
 
-**Compile-time proof, a Robolectric-backed runtime proof, and a real
-Gradle Managed Device emulator proof — three staged slices of `#101`
-(DL-039A).** The
+**Compile-time proof, a Robolectric-backed runtime proof, a real
+Gradle Managed Device emulator proof, and a Robolectric-backed
+durable-queue-admission-then-replay proof for one strategy — four staged
+slices of `#101` (DL-039A).** The
 `runtime-android-reference-consumer` module wires
 `AndroidConnectivityProvider`, `RoomStorageProvider`, `RoomQueueProvider`,
 and `WorkManagerSchedulerProvider` into one real, buildable `DataLoom`
@@ -57,14 +58,39 @@ Room-backed SQLite database on a real filesystem — not a JVM shadow layer.
 It still does **not** prove behavior on a physical device — an AVD emulator
 is closer to real hardware than Robolectric, but background execution
 limits, real network conditions, and manufacturer-specific OS behavior can
-still differ from an actual phone or tablet — and it does not exercise
-queue admission, retry/circuit behavior, or conflict detection, which stay
-a separate, larger follow-up. This mirrors the same documented boundary
-`runtime-external-consumer` already established for the JVM-only public
-runtime surface — "compile-only, then Robolectric initialize/shutdown, then
-Robolectric synchronize(), then the same two proofs again on a real
-managed-device emulator" is a deliberately staged proof, not a claim that
-everything is now covered.
+still differ from an actual phone or tablet. This mirrors the same
+documented boundary `runtime-external-consumer` already established for the
+JVM-only public runtime surface — "compile-only, then Robolectric
+initialize/shutdown, then Robolectric synchronize(), then the same two
+proofs again on a real managed-device emulator" is a deliberately staged
+proof, not a claim that everything is now covered.
+
+A fourth test, `AndroidReferenceConsumerDurableQueueRobolectricTest`
+(a separate Robolectric test class in this module), closes part of the
+queue-admission/retry/circuit/conflict gap the three tests above left
+completely untouched — every proof above exercises only
+`DataLoom.synchronize()`'s *direct* execution path, never the
+durable-admission-then-replay path at all. It builds a
+`StrategySynchronizationRequest` from `OfflineFirstStrategyProfile`
+(`requireDurableQueue = true`, connectivity available) and asserts, in
+order: (1) `DataLoom.synchronize(...)` returns `DurablyEnqueued` with zero
+calls to the test transport — proving the request was durably admitted via
+`StrategyDurableQueueAdmitter` into a real Room-backed
+`RoomQueueProvider`, not executed synchronously; (2) one deterministic
+`DataLoom.queueWorker.run(...)` cycle — the same `DataLoomQueueWorker`
+capability the real `DataLoomCoroutineWorker`/`WorkManager` bridge
+delegates to in production, called directly here instead of waiting on a
+real scheduled tick, mirroring how the other tests in this module drive one
+direct pass deterministically — acquires the entry back out of that same
+real database and reaches `QueueProcessingResult.Processed` with
+`summary.completed == 1`; and (3) `AcceptedStrategyPlanExecutionCoordinator`
+(the durable-continuation replay coordinator none of the other three tests
+ever reach) genuinely replays the admitted plan's `InboundPullSynchronizationPipeline`
+leg, observed through a real `SynchronizationObserver` registered via
+`DataLoomBuilder.observer(...)` — `summary.inboundEventsApplied == 1`, the
+same bar the second test above established, now proven for the queued path
+too. This covers Android + offline-first only; see "What remains open"
+below for what it does not.
 
 ## Transport is intentionally illustrative
 
@@ -90,9 +116,10 @@ DATALOOM_ANDROID_BUILD=true ./gradlew :runtime-android-reference-consumer:check
 
 Verified for real (local Windows host): `compileDebugKotlin` succeeds
 (proving the whole provider-composition graph resolves and type-checks);
-`testDebugUnitTest` runs `AndroidReferenceConsumerRobolectricTest` and
-passes (2 tests, 0 failures, 0 errors — confirmed via the JUnit XML report,
-not just a green build); `compileDebugAndroidTestKotlin` and
+`testDebugUnitTest` runs both `AndroidReferenceConsumerRobolectricTest`
+and `AndroidReferenceConsumerDurableQueueRobolectricTest` and passes
+(3 tests, 0 failures, 0 errors — confirmed via the JUnit XML report, not
+just a green build); `compileDebugAndroidTestKotlin` and
 `assembleDebugAndroidTest` both succeed, producing a real, packaged
 instrumented-test APK; `lintDebug` passes; and the full repository's
 Android `check` task (excluding a pre-existing, unrelated
@@ -132,9 +159,15 @@ managed-device tests.
   (`pixel2Api35`, above) alongside Robolectric, and iOS has the Simulator
   (`runtime-ios-reference-consumer`); neither platform has been proven on
   actual physical hardware.
-- Queue admission, retry/circuit behavior, and conflict detection during a
-  real synchronization pass — both platforms' `synchronize()` proofs cover
-  a direct PULL/FULL pass only, not the queued/protected paths.
+- Queue admission/retry/circuit/conflict behavior during a real
+  synchronization pass, beyond the one Android + offline-first
+  admission-then-replay slice `AndroidReferenceConsumerDurableQueueRobolectricTest`
+  now proves (above): iOS has no equivalent durable-queue proof at all; the
+  other built-in strategies eligible for durable admission (cache-first,
+  remote-first, hybrid) are unexercised at this layer; and retry,
+  circuit-breaker, and conflict-detection behavior during queue replay
+  itself remain unproven even for the one slice covered — the proven entry
+  always succeeds on its first attempt.
 - Native Android and KMP Android+iOS consumers resolving staged/published
   artifacts rather than project includes — the same bar
   `runtime-external-consumer` also does not yet meet for the JVM path.
