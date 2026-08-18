@@ -26,22 +26,21 @@ import io.dataloom.api.identifier.ConflictResolverId
  * This keeps resolution deterministic, fast, testable, multiplatform, and
  * independent of runtime infrastructure.
  *
- * ## Application ownership
+ * ## Built-in and application-owned policies
  *
- * DataLoom coordinates the conflict-resolution workflow, but the host
- * application owns the domain-specific rules that determine the correct
- * resolution. Examples of application-owned policies include:
+ * The DataLoom runtime provides deterministic reference policies selected by
+ * exact [ConflictResolverId] values: client-wins, server-wins, the existing
+ * last-write-wins placeholder, timestamp-evidence, reject, and manual-review.
+ * Built-ins are never selected implicitly; the application still chooses the
+ * exact resolver ID through conflict-orchestration bindings and may override a
+ * reference policy by explicitly registering its own resolver under that ID.
  *
- * - Client wins
- * - Server wins
- * - Latest application version wins
- * - Merge selected fields
- * - Reject conflicting financial operations
- * - Require user review
- * - Custom domain resolver
- *
- * DataLoom does not assume one policy is correct for every application.
- * No built-in resolver strategy is provided in this release.
+ * Applications continue to own domain-specific rules that require knowledge of
+ * business schema or opaque payload content. Examples include field-level
+ * merges, financial-operation rejection rules, application-version ordering,
+ * and specialized user-review policy. A custom implementation uses this same
+ * contract and does not replace the surrounding DataLoom orchestration,
+ * durability, or event boundaries.
  *
  * ## Payload opacity
  *
@@ -59,9 +58,8 @@ import io.dataloom.api.identifier.ConflictResolverId
  *
  * A deferred conflict is not automatically a retry decision. A failed conflict
  * resolution is not automatically retryable. Retry policy uses the canonical
- * [io.dataloom.api.error.DataLoomError]. The future runtime may evaluate retry
- * after a conflict decision. Conflict resolvers must not call retry policy
- * directly.
+ * [io.dataloom.api.error.DataLoomError]. The runtime may evaluate retry after a
+ * conflict decision, but conflict resolvers must not call retry policy directly.
  *
  * ## Implementation requirements
  *
