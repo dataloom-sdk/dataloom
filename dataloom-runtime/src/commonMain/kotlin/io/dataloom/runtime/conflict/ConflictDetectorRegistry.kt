@@ -9,10 +9,16 @@ import io.dataloom.api.identifier.ConflictDetectorId
  *
  * ## Purpose
  *
- * [ConflictDetectorRegistry] holds all application-supplied conflict detectors
- * and provides exact ID-based lookup for the
- * [SynchronizationConflictOrchestrator]. Each registered detector ID maps to
- * exactly one detector.
+ * [ConflictDetectorRegistry] holds application-supplied conflict detectors and
+ * provides exact ID-based lookup for the
+ * [SynchronizationConflictOrchestrator]. Each application registration maps
+ * one identifier to exactly one detector.
+ *
+ * The runtime also exposes a bounded set of deterministic reference detectors
+ * by documented IDs. [lookup] checks application registrations first and then
+ * the built-in catalog. A detector is never selected implicitly: the caller
+ * must still bind its exact [ConflictDetectorId]. Registering an application
+ * detector under a built-in ID explicitly replaces that reference detector.
  *
  * ## Defensive copy
  *
@@ -24,17 +30,21 @@ import io.dataloom.api.identifier.ConflictDetectorId
  *
  * Construction throws [IllegalArgumentException] when the supplied detector
  * collection contains more than one detector with the same [ConflictDetectorId].
- * ID uniqueness is required for unambiguous detector selection.
+ * ID uniqueness is required for unambiguous application registration. A single
+ * application detector may intentionally use a built-in ID as an override.
  *
  * ## Lookup
  *
- * [lookup] returns the [ConflictDetector] registered for the given
- * [ConflictDetectorId], or `null` when no detector is registered for that ID.
+ * [lookup] returns the application detector registered for the exact ID, then
+ * falls back to the deterministic built-in detector with that ID, or returns
+ * `null` when neither exists.
  *
  * ## Registration order preservation
  *
- * Insertion order is preserved for diagnostic purposes. Detectors are stored
- * in the order they appear in the supplied collection.
+ * Insertion order is preserved for diagnostics. [detectors] contains only the
+ * application-supplied snapshot in supplied order. Built-ins are not injected
+ * into that collection and therefore do not change its historical size or
+ * iteration semantics.
  *
  * ## No mutable collection exposure
  *
@@ -43,19 +53,20 @@ import io.dataloom.api.identifier.ConflictDetectorId
  * ## Construction restrictions
  *
  * Construction performs no detection, no resolution, no provider operation,
- * no lifecycle operation, no automatic detector discovery, no reflection, and
- * no ServiceLoader usage.
+ * no lifecycle operation, no reflection, no ServiceLoader usage, and no
+ * platform discovery. Built-ins are fixed common-code objects resolved only by
+ * an explicit ID lookup.
  *
  * ## Selection key
  *
  * The explicit [ConflictDetectorId] returned by [ConflictDetector.id] is the
- * selection key. Detectors are never selected by class name, collection hash
- * order, `toString()`, ConflictType, entity type, or platform service
- * discovery.
+ * only selection key. Detectors are never selected by class name, collection
+ * hash order, `toString()`, conflict type, entity type, registration position,
+ * or platform service discovery.
  *
- * ## No global state
+ * ## No global mutable state
  *
- * The registry contains no global state and uses no service locator.
+ * The registry contains no global mutable state and uses no service locator.
  *
  * ## KMP compatibility
  *
@@ -63,8 +74,8 @@ import io.dataloom.api.identifier.ConflictDetectorId
  * Kotlin Multiplatform common code.
  *
  * @param detectors the application-supplied [ConflictDetector] instances to
- *   register. Each detector must have a unique [ConflictDetector.id]. The
- *   collection is defensively copied.
+ *   register. Each supplied detector must have a unique [ConflictDetector.id].
+ *   The collection is defensively copied.
  * @throws IllegalArgumentException if [detectors] contains duplicate
  *   [ConflictDetectorId] values.
  */
@@ -88,29 +99,32 @@ public class ConflictDetectorRegistry(
     }
 
     /**
-     * Returns the [ConflictDetector] registered for [id], or `null` when no
-     * detector is registered for that ID.
+     * Returns the detector selected by exact [id], or `null` when neither an
+     * application registration nor a built-in detector exists for that ID.
      *
-     * The lookup uses the exact [ConflictDetectorId] value as the key. It
-     * never uses class names, ordinals, ConflictType, entity type, or service
-     * discovery.
+     * Application registrations take precedence over the built-in catalog.
+     * Lookup never uses class names, ordinals, conflict type, entity type,
+     * registration position, or service discovery.
      *
      * @param id the [ConflictDetectorId] to look up.
-     * @return the registered [ConflictDetector], or `null`.
+     * @return the selected [ConflictDetector], or `null`.
      */
-    public fun lookup(id: ConflictDetectorId): ConflictDetector? = detectorMap[id]
+    public fun lookup(id: ConflictDetectorId): ConflictDetector? =
+        detectorMap[id] ?: builtInConflictDetector(id)
 
     /**
-     * Returns an unmodifiable view of all registered detectors in the order
-     * they were supplied at construction time.
+     * Returns an unmodifiable snapshot of application-supplied detectors in
+     * registration order.
      *
-     * The returned collection is read-only and reflects a defensive snapshot.
+     * Built-in detectors are intentionally not added to this list, preserving
+     * the property's historical meaning and collection size.
      */
     public val detectors: List<ConflictDetector>
         get() = detectorMap.values.toList()
 
     /**
-     * Returns a safe diagnostic string listing the registered detector IDs.
+     * Returns a safe diagnostic string listing application-registered detector
+     * IDs. Static built-in availability is not expanded into diagnostics.
      *
      * Does not invoke any detector's `toString()` method.
      */
