@@ -22,6 +22,7 @@ import io.dataloom.runtime.execution.SynchronizationPipeline
 import io.dataloom.runtime.execution.SynchronizationPipelineRegistry
 import io.dataloom.runtime.execution.bidirectional.BidirectionalPipelineConfiguration
 import io.dataloom.runtime.execution.bidirectional.BidirectionalSynchronizationPipeline
+import io.dataloom.api.conflict.DurableResolvedConflictDecisionLog
 import io.dataloom.api.conflict.DurableUnresolvedConflictLog
 import io.dataloom.api.operational.DurableOperationalEventOutbox
 import io.dataloom.api.strategy.DurableStrategyDecisionEventLog
@@ -693,6 +694,13 @@ public class DataLoomBuilder {
                         maximumStateUpdateAttempts = spec.unresolvedConflictLogMaximumStateUpdateAttempts,
                     ),
                     clock = deps.clock,
+                    resolvedConflictDecisionLog = spec.resolvedConflictDecisionStore?.let { resolvedStore ->
+                        DurableResolvedConflictDecisionLog(
+                            store = resolvedStore,
+                            schemaVersion = spec.resolvedConflictDecisionLogSchemaVersion,
+                            maximumStateUpdateAttempts = spec.resolvedConflictDecisionLogMaximumStateUpdateAttempts,
+                        )
+                    },
                 ),
                 bindings = spec.bindings,
             )

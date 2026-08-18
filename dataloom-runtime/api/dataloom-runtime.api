@@ -104,22 +104,39 @@ public final class io/dataloom/runtime/conflict/ConflictResolverRegistry {
 }
 
 public final class io/dataloom/runtime/conflict/DurableConflictDetectionCoordinator {
-	public fun <init> (Lio/dataloom/runtime/conflict/SynchronizationConflictOrchestrator;Lio/dataloom/api/conflict/DurableUnresolvedConflictLog;Lio/dataloom/api/time/DataLoomClock;)V
+	public fun <init> (Lio/dataloom/runtime/conflict/SynchronizationConflictOrchestrator;Lio/dataloom/api/conflict/DurableUnresolvedConflictLog;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/conflict/DurableResolvedConflictDecisionLog;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/conflict/SynchronizationConflictOrchestrator;Lio/dataloom/api/conflict/DurableUnresolvedConflictLog;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/conflict/DurableResolvedConflictDecisionLog;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun detectAndResolve (Lio/dataloom/runtime/conflict/ConflictOrchestrationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/dataloom/runtime/conflict/DurableConflictDetectionResult {
-	public fun <init> (Lio/dataloom/runtime/conflict/ConflictOrchestrationResult;Lio/dataloom/api/conflict/DurableUnresolvedConflictRecordOutcome;)V
+	public fun <init> (Lio/dataloom/runtime/conflict/ConflictOrchestrationResult;Lio/dataloom/api/conflict/DurableUnresolvedConflictRecordOutcome;Lio/dataloom/api/conflict/DurableResolvedConflictDecisionRecordOutcome;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/conflict/ConflictOrchestrationResult;Lio/dataloom/api/conflict/DurableUnresolvedConflictRecordOutcome;Lio/dataloom/api/conflict/DurableResolvedConflictDecisionRecordOutcome;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lio/dataloom/runtime/conflict/ConflictOrchestrationResult;
 	public final fun component2 ()Lio/dataloom/api/conflict/DurableUnresolvedConflictRecordOutcome;
-	public final fun copy (Lio/dataloom/runtime/conflict/ConflictOrchestrationResult;Lio/dataloom/api/conflict/DurableUnresolvedConflictRecordOutcome;)Lio/dataloom/runtime/conflict/DurableConflictDetectionResult;
-	public static synthetic fun copy$default (Lio/dataloom/runtime/conflict/DurableConflictDetectionResult;Lio/dataloom/runtime/conflict/ConflictOrchestrationResult;Lio/dataloom/api/conflict/DurableUnresolvedConflictRecordOutcome;ILjava/lang/Object;)Lio/dataloom/runtime/conflict/DurableConflictDetectionResult;
+	public final fun component3 ()Lio/dataloom/api/conflict/DurableResolvedConflictDecisionRecordOutcome;
+	public final fun copy (Lio/dataloom/runtime/conflict/ConflictOrchestrationResult;Lio/dataloom/api/conflict/DurableUnresolvedConflictRecordOutcome;Lio/dataloom/api/conflict/DurableResolvedConflictDecisionRecordOutcome;)Lio/dataloom/runtime/conflict/DurableConflictDetectionResult;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/conflict/DurableConflictDetectionResult;Lio/dataloom/runtime/conflict/ConflictOrchestrationResult;Lio/dataloom/api/conflict/DurableUnresolvedConflictRecordOutcome;Lio/dataloom/api/conflict/DurableResolvedConflictDecisionRecordOutcome;ILjava/lang/Object;)Lio/dataloom/runtime/conflict/DurableConflictDetectionResult;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getOrchestration ()Lio/dataloom/runtime/conflict/ConflictOrchestrationResult;
+	public final fun getResolvedDecisionRecordOutcome ()Lio/dataloom/api/conflict/DurableResolvedConflictDecisionRecordOutcome;
 	public final fun getUnresolvedRecordOutcome ()Lio/dataloom/api/conflict/DurableUnresolvedConflictRecordOutcome;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/conflict/LastWriteWinsConflictResolver : io/dataloom/api/conflict/ConflictResolver {
+	public static final field Companion Lio/dataloom/runtime/conflict/LastWriteWinsConflictResolver$Companion;
+	public synthetic fun <init> (Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getId-wOiKSnc ()Ljava/lang/String;
+	public fun resolve (Lio/dataloom/api/conflict/ConflictResolutionRequest;)Lio/dataloom/api/conflict/ConflictResolutionDecision;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/conflict/LastWriteWinsConflictResolver$Companion {
+	public final fun getDEFAULT_ID-wOiKSnc ()Ljava/lang/String;
 }
 
 public final class io/dataloom/runtime/conflict/SynchronizationConflictOrchestrator {
@@ -526,10 +543,13 @@ public final class io/dataloom/runtime/facade/DataLoomCircuitQueueWorkerSpec {
 }
 
 public final class io/dataloom/runtime/facade/DataLoomConflictDetectionSpec {
-	public fun <init> (Ljava/util/Collection;Ljava/util/Collection;Lio/dataloom/runtime/conflict/ConflictOrchestrationBindings;Lio/dataloom/api/state/DurableStateStore;II)V
-	public synthetic fun <init> (Ljava/util/Collection;Ljava/util/Collection;Lio/dataloom/runtime/conflict/ConflictOrchestrationBindings;Lio/dataloom/api/state/DurableStateStore;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/util/Collection;Ljava/util/Collection;Lio/dataloom/runtime/conflict/ConflictOrchestrationBindings;Lio/dataloom/api/state/DurableStateStore;IILio/dataloom/api/state/DurableStateStore;II)V
+	public synthetic fun <init> (Ljava/util/Collection;Ljava/util/Collection;Lio/dataloom/runtime/conflict/ConflictOrchestrationBindings;Lio/dataloom/api/state/DurableStateStore;IILio/dataloom/api/state/DurableStateStore;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getBindings ()Lio/dataloom/runtime/conflict/ConflictOrchestrationBindings;
 	public final fun getDetectors ()Ljava/util/Collection;
+	public final fun getResolvedConflictDecisionLogMaximumStateUpdateAttempts ()I
+	public final fun getResolvedConflictDecisionLogSchemaVersion ()I
+	public final fun getResolvedConflictDecisionStore ()Lio/dataloom/api/state/DurableStateStore;
 	public final fun getResolvers ()Ljava/util/Collection;
 	public final fun getUnresolvedConflictLogMaximumStateUpdateAttempts ()I
 	public final fun getUnresolvedConflictLogSchemaVersion ()I
