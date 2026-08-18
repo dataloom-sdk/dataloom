@@ -29,7 +29,8 @@ a production dependency from the Room provider to the runtime.
 `AndroidProcessTerminationCircuitBreakerInstrumentedTest` proves genuine OS
 process termination/relaunch, closing the "terminate and relaunch an
 application process" item this checkpoint previously listed as remaining
-work. It drives the real `CircuitBreakerExecutionGate` through
+work for the circuit-breaker store. It drives the real
+`CircuitBreakerExecutionGate` through
 `CircuitBreakerProcessTerminationContentProvider`, a second component Android
 hosts in its own `:circuitproof` process (`src/androidTest/AndroidManifest.xml`):
 
@@ -48,6 +49,35 @@ hosts in its own `:circuitproof` process (`src/androidTest/AndroidManifest.xml`)
   what was persisted before the kill (phase, open deadline, consecutive
   failures, probe generation).
 
+`AndroidProcessTerminationRetryBudgetInstrumentedTest` proves the equivalent
+for the separate durable retry-budget structure (attempt count, retry
+window, cumulative delay -- the `retry_attempt_number`,
+`retry_window_started_at_ms`, `retry_last_evaluated_at_ms`, and
+`retry_cumulative_delay_ms` columns on the `queue_entries` table, added by
+`DataLoomRoomMigrations.MIGRATION_1_2` and genuinely independent of the
+`circuit_breaker_states` table `MIGRATION_2_3` adds), closing that
+previously-named gap. It reuses the same kill/poll/relaunch mechanics
+(factored into `ProcessTerminationTestSupport`) against
+`RetryBudgetProcessTerminationContentProvider`, a second component Android
+hosts in its own `:retrybudgetproof` process:
+
+- one call into that process enqueues a real queue entry and drives it
+  through the real `RoomQueueProvider` production coordinator's
+  `acquire -> reschedule -> acquire -> defer` sequence, persisting a genuine
+  retry attempt number and retry-budget window/cumulative delay and reading
+  that state back through an independent acquisition (not merely echoing
+  what was requested), then returns it plus that process's real pid;
+- `ActivityManager.killBackgroundProcesses` terminates the
+  `:retrybudgetproof` process outright, polled the same way until confirmed
+  gone;
+- a second call causes Android to relaunch `:retrybudgetproof` from scratch;
+  its pid is asserted to differ from the first; and
+- the retry-budget state that fresh process reads back via a real
+  `RoomQueueProvider.acquire` call over a brand-new Room connection to the
+  same on-disk database is asserted to match exactly what was persisted
+  before the kill (retry attempt number, retry window start, last evaluated
+  instant, cumulative delay).
+
 ## Boundary
 
 `RoomRetryCircuitFunctionalQualificationInstrumentedTest` is device/emulator
@@ -55,23 +85,24 @@ database-reopen and concurrent-connection evidence; it runs within one Android
 instrumentation process and does not by itself prove application process
 termination or cross-process Room contention.
 
-`AndroidProcessTerminationCircuitBreakerInstrumentedTest` proves real process
-termination/relaunch for the Android Room circuit-breaker store specifically,
-using `ActivityManager.killBackgroundProcesses` against a second
-manifest-declared process (`:circuitproof`) rather than an external
+`AndroidProcessTerminationCircuitBreakerInstrumentedTest` and
+`AndroidProcessTerminationRetryBudgetInstrumentedTest` prove real process
+termination/relaunch for the Android Room circuit-breaker store and the
+separate retry-budget durable structure respectively, using
+`ActivityManager.killBackgroundProcesses` against a second manifest-declared
+process (`:circuitproof` and `:retrybudgetproof`) rather than an external
 host/`adb`-controlled kill -- this repository has no AndroidX Test
 Orchestrator or equivalent host-controlled test-runner infrastructure, so a
 genuinely separate OS process reachable from within instrumentation is the
-strongest mechanism currently available here. It still does not exercise
-cross-process *contention* for the half-open probe lease (two processes racing
-for the same lease), and it does not run the full retry-scheduling/
-transport-provider AC-FUNC-004 flow through a composed `DataLoomBuilder`
-instance.
+strongest mechanism currently available here. Neither test exercises
+cross-process *contention* (for the half-open probe lease, or for queue
+acquisition), and neither runs the full retry-scheduling/transport-provider
+AC-FUNC-004 flow through a composed `DataLoomBuilder` instance.
 
 ## Remaining Android acceptance work
 
-- execute genuine cross-process probe contention if the supported Android
-  deployment topology permits multiple workers;
+- execute genuine cross-process probe/acquisition contention if the supported
+  Android deployment topology permits multiple workers;
 - run the full retry scheduling and transport-provider reference flow on both
   native Android and KMP Android consumer paths; and
 - retain the permanent Android unit, ABI, schema, migration, and managed-device

@@ -9,11 +9,12 @@ through FR-RETRY-012 in common code, platform persistence, administration,
 runtime assembly, and bounded telemetry. DL-040 is still **not acceptance
 complete** because the repository does not yet contain executable evidence for
 real operating-system process termination/relaunch on every mandatory path
-(Android now has it for the circuit-breaker store specifically, via
-`AndroidProcessTerminationCircuitBreakerInstrumentedTest`; retry-budget state
-on Android and every path on Apple remain open), true cross-process probe
-contention, or the complete AC-FUNC-004 flow through every mandatory consumer
-path.
+(Android now has it for both the circuit-breaker store, via
+`AndroidProcessTerminationCircuitBreakerInstrumentedTest`, and the separate
+retry-budget durable structure, via
+`AndroidProcessTerminationRetryBudgetInstrumentedTest`; every path on Apple
+remains open), true cross-process probe contention, or the complete
+AC-FUNC-004 flow through every mandatory consumer path.
 
 This reconciliation supersedes the retry/circuit verdict in
 `DL-AUDIT-005-current-v1-conformance.md`, which predates the subsequent DL-040
@@ -27,12 +28,12 @@ domain.
 | FR-RETRY-001 — failure classification | `SynchronizationRetryEvaluator`, ordered retry protection, and provider-specific circuit classifiers centrally exclude ineligible failures before policy or protected execution. | `SynchronizationRetryEvaluatorTest`, `RetryProtectionIntegrationTest`, provider classifier tests | Implemented; final consumer-path qualification remains. |
 | FR-RETRY-002 — retry strategies | `StandardRetryPolicy` provides immediate, fixed, linear, and exponential backoff while retaining the public `RetryPolicy` extension point. | `StandardRetryPolicyTest`, `StandardRetryPolicyRuntimeIntegrationTest` | Implemented. |
 | FR-RETRY-003 — jitter | None, full, and equal jitter use an injected random source, bounded selection, overflow clamping, and deterministic sampling. | `StandardRetryJitterTest`, `RetryCircuitFunctionalQualificationTest` | Implemented. |
-| FR-RETRY-004 — attempt and elapsed limits | `RetryBudgetConfiguration` and `RetryBudgetEvaluator` enforce maximum attempts, elapsed time, cumulative delay, and next-delay affordability; durable queue state carries the budget fields. | `RetryBudgetEvaluatorTest`, `RetryBudgetRuntimeIntegrationTest`, `RetryBudgetSchedulerIntegrationTest` | Implemented; real process-loss qualification remains. |
+| FR-RETRY-004 — attempt and elapsed limits | `RetryBudgetConfiguration` and `RetryBudgetEvaluator` enforce maximum attempts, elapsed time, cumulative delay, and next-delay affordability; durable queue state carries the budget fields. | `RetryBudgetEvaluatorTest`, `RetryBudgetRuntimeIntegrationTest`, `RetryBudgetSchedulerIntegrationTest`, `AndroidProcessTerminationRetryBudgetInstrumentedTest` | Implemented; real process-loss qualification proved on Android, remains open on Apple. |
 | FR-RETRY-005 — provider/server hints | Typed bounded hints are normalized into retry evaluation and cannot reduce the configured policy delay or exceed the configured cap. | `RetryHintEvaluatorTest`, `RetryHintRuntimeIntegrationTest`, `RetryHintSchedulerIntegrationTest` | Runtime implemented; each protocol/provider adapter must demonstrate its own header normalization. |
 | FR-RETRY-006 — timeout separation | Independent connection, request, idle, workflow, provider, and policy boundaries are represented and assembled across transport, storage, queue, scheduler, and coroutine execution paths. | `RetryTimeoutCoordinatorTest`, `CoroutineRetryTimeoutExecutorTest`, transport timeout tests, queue/provider/workflow timeout tests | Implemented in shared/runtime layers; final platform failure-injection matrix remains. |
 | FR-RETRY-007 — circuit breaker | Persisted closed/open/half-open state, thresholds/windows, generation checks, exact deadlines, operation gates, and provider/storage/transport/queue adapters are assembled into runtime and builder paths. | `CircuitBreakerCoordinatorTest`, execution-gate and runtime adapter tests, Room and Apple store tests, `AndroidProcessTerminationCircuitBreakerInstrumentedTest` | Implemented; full mandatory-path qualification remains. |
 | FR-RETRY-008 — half-open probe | A durable generation-scoped probe lease permits one probe, rejects active competitors, replaces an expired lease at the exact deadline, and prevents stale completion. | `CircuitBreakerProbeLeaseRecoveryTest`, `RetryCircuitFunctionalQualificationTest`, Android and Apple functional qualification tests | Implemented; true cross-process contention remains unproved. |
-| FR-RETRY-009 — retry/circuit persistence | Queue retry budget, circuit records, probe ownership, retry administration receipts, and circuit administration receipts are durable in Room and Apple file-backed stores. | Room instrumented/store/migration tests, Apple file-store tests, Android and Apple functional qualification tests, `AndroidProcessTerminationCircuitBreakerInstrumentedTest` | Implemented; OS kill/relaunch evidence remains for retry-budget state and for every path on Apple. |
+| FR-RETRY-009 — retry/circuit persistence | Queue retry budget, circuit records, probe ownership, retry administration receipts, and circuit administration receipts are durable in Room and Apple file-backed stores. | Room instrumented/store/migration tests, Apple file-store tests, Android and Apple functional qualification tests, `AndroidProcessTerminationCircuitBreakerInstrumentedTest`, `AndroidProcessTerminationRetryBudgetInstrumentedTest` | Implemented; OS kill/relaunch evidence now covers both Android durable structures (circuit-breaker state and retry-budget state); every path on Apple remains open. |
 | FR-RETRY-010 — observability | Schema-versioned signals feed bounded per-exporter queues with drop-latest overflow, time-budgeted failure isolation, fixed-cardinality metrics, structured logs/traces, correlation propagation, and redacted health snapshots. | `BoundedRetryCircuitTelemetryTest` and external consumer compilation | Implemented for retry/circuit scope. |
 | FR-RETRY-011 — manual retry | Authorized, idempotent, audited retry commands preserve immutable failure/attempt history through common façade and atomic Room/Apple executors. | `RetryAdministrationCoordinatorTest`, façade tests, Room/Apple executor tests | Implemented; platform process-loss fault injection remains. |
 | FR-RETRY-012 — non-retryable protection/reclassification | Automatic retry protection blocks non-retryable categories; an explicit authorized, idempotent, audited reclassification command is available through the production façade and platform executors. | Retry protection tests, administration coordinator/facade tests, Room/Apple executor tests | Implemented; platform process-loss fault injection remains. |
@@ -49,7 +50,7 @@ Platform qualification extends that evidence as follows:
 | Path | Durable boundary exercised | What is still absent |
 | --- | --- | --- |
 | Common runtime | Recreated coordinator and shared durable-state contract | OS process lifecycle and platform store behavior |
-| Android Room | Real database close/reopen plus independent Room connections on a managed device; real application-process kill/relaunch of the circuit-breaker store specifically | Application-process kill/relaunch of retry-budget (attempt count/elapsed budget) state, genuine cross-process contention, and complete native/KMP Android provider flow |
+| Android Room | Real database close/reopen plus independent Room connections on a managed device; real application-process kill/relaunch of both the circuit-breaker store and the separate retry-budget durable structure (attempt count, retry window, cumulative delay) | Genuine cross-process contention and complete native/KMP Android provider flow |
 | Apple file store | Real atomic file persistence plus independently recreated stores/coordinators | Test-host termination/relaunch, genuine cross-process contention, and complete KMP iOS provider flow |
 
 The detailed executable scenarios are recorded in:
@@ -64,14 +65,15 @@ The detailed executable scenarios are recorded in:
    verifies attempt count, elapsed budget, next eligible time, open deadline,
    probe generation, and recovery state across termination. Circuit-breaker
    state (open deadline, consecutive failures, probe generation, recovery
-   state) is now covered by
-   `AndroidProcessTerminationCircuitBreakerInstrumentedTest`, which kills and
-   relaunches a genuine second Android process via
+   state) is covered by `AndroidProcessTerminationCircuitBreakerInstrumentedTest`,
+   and retry-budget state (attempt count, retry window, cumulative delay) is
+   covered by `AndroidProcessTerminationRetryBudgetInstrumentedTest` -- both
+   kill and relaunch a genuine second Android process via
    `ActivityManager.killBackgroundProcesses` rather than simulating a restart
    with a same-process database close/reopen; see
-   `DL-040-ac-func-004-android-room-qualification.md`. Retry-budget state
-   (attempt count, elapsed budget, next eligible time) across the same kind
-   of termination remains open.
+   `DL-040-ac-func-004-android-room-qualification.md`. This item is closed for
+   Android; the equivalent Apple test-host termination/relaunch scenario
+   (item 2 below) remains open.
 2. Add the equivalent Apple test-host termination/relaunch scenario against
    the same persisted files.
 3. Exercise two real processes contending for the same half-open probe lease on

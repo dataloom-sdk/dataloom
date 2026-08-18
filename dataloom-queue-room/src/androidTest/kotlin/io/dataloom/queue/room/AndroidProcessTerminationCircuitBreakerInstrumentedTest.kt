@@ -8,7 +8,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
-import kotlin.test.fail
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -81,7 +80,7 @@ class AndroidProcessTerminationCircuitBreakerInstrumentedTest {
                     "not this instrumentation test's own process.",
             )
 
-            killAndAwaitProcessDeath(context, circuitProofProcessName)
+            ProcessTerminationTestSupport.killAndAwaitProcessDeath(context, circuitProofProcessName)
 
             val reread = callProvider(
                 context,
@@ -126,30 +125,5 @@ class AndroidProcessTerminationCircuitBreakerInstrumentedTest {
                 null,
             ),
         ) { "ContentProvider call '$method' returned no result." }
-    }
-
-    /**
-     * Repeatedly asks the OS to kill background processes of this package and
-     * polls [ActivityManager.getRunningAppProcesses] until [processName] is
-     * confirmed gone. Fails the test explicitly on timeout instead of
-     * silently proceeding -- if the OS ever declines to kill the process,
-     * that must surface as a real test failure, not a false pass.
-     */
-    private fun killAndAwaitProcessDeath(context: Context, processName: String) {
-        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        val deadline = System.currentTimeMillis() + TERMINATION_TIMEOUT_MILLIS
-        while (System.currentTimeMillis() < deadline) {
-            activityManager.killBackgroundProcesses(context.packageName)
-            if (activityManager.runningAppProcesses.orEmpty().none { it.processName == processName }) {
-                return
-            }
-            Thread.sleep(POLL_INTERVAL_MILLIS)
-        }
-        fail("Timed out waiting for $processName to terminate.")
-    }
-
-    private companion object {
-        const val TERMINATION_TIMEOUT_MILLIS: Long = 10_000L
-        const val POLL_INTERVAL_MILLIS: Long = 200L
     }
 }

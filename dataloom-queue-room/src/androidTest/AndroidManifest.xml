@@ -2,16 +2,24 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!--
         Test-only additions for AndroidProcessTerminationCircuitBreakerInstrumentedTest
-        (see src/androidTest/kotlin/io/dataloom/queue/room). Neither the
-        permission nor the provider below ships in the production
-        dataloom-queue-room artifact; both are merged only into this
-        module's instrumented-test APK.
+        and AndroidProcessTerminationRetryBudgetInstrumentedTest (see
+        src/androidTest/kotlin/io/dataloom/queue/room). Neither permission nor
+        either provider below ships in the production dataloom-queue-room
+        artifact; both are merged only into this module's instrumented-test
+        APK.
 
         CircuitBreakerProcessTerminationContentProvider runs in its own
         ":circuitproof" process so the test can kill and relaunch a real,
         separate Android OS process and prove persisted circuit-breaker
         state survives that, rather than only a same-process database
         close/reopen simulation.
+
+        RetryBudgetProcessTerminationContentProvider runs in its own
+        ":retrybudgetproof" process for the equivalent proof against the
+        durable queue-entry retry-budget columns (attempt count, retry
+        window, cumulative delay), a separate Room table from
+        circuit-breaker state, written and read through the real
+        RoomQueueProvider production coordinator, not a test-only shortcut.
     -->
     <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
 
@@ -20,6 +28,11 @@
             android:name="io.dataloom.queue.room.CircuitBreakerProcessTerminationContentProvider"
             android:authorities="io.dataloom.queue.room.test.circuitproof"
             android:process=":circuitproof"
+            android:exported="false" />
+        <provider
+            android:name="io.dataloom.queue.room.RetryBudgetProcessTerminationContentProvider"
+            android:authorities="io.dataloom.queue.room.test.retrybudgetproof"
+            android:process=":retrybudgetproof"
             android:exported="false" />
     </application>
 </manifest>
