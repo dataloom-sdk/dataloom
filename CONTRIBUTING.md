@@ -101,6 +101,30 @@ Every pull request must:
 Publishing packages, creating tags/releases, merging protected changes, or
 weakening required checks always requires explicit human approval.
 
+### Evidence-based issue closing
+
+Most V1 issues are umbrella release gates delivered through multiple bounded
+pull requests. A bounded slice must use `Tracks #123` (or equivalent neutral
+linking language) and must leave the issue open after merge.
+
+Use `Closes #123`, `Fixes #123`, or another GitHub auto-closing keyword only
+when the pull request satisfies **every issue-level acceptance criterion** and
+links executable evidence for those criteria on the same reviewed commit.
+Code volume, a green subset of tests, or one completed subsystem does not close
+an umbrella gate by itself.
+
+Before approving a closing keyword, reviewers must confirm:
+
+1. every acceptance criterion is mapped to implementation and evidence;
+2. required Android, JVM/KMP, and Apple/platform evidence applies to the same
+   commit where the issue requires it;
+3. public API/ABI, durable schema/migration, security, documentation, and
+   external-consumer evidence are complete where applicable; and
+4. the readiness dashboard and issue status will remain truthful after merge.
+
+If GitHub auto-closes an issue incorrectly, reopen it immediately, preserve the
+merged slice as accepted evidence, and document the remaining acceptance work.
+
 ## Documentation expectations
 
 Follow the [documentation style guide](./docs/documentation-style.md).

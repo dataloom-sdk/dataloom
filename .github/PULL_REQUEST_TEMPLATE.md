@@ -1,6 +1,19 @@
 ## Related issue
 
-Closes #
+Tracks #
+
+<!--
+Use `Tracks #123` for a bounded implementation slice.
+Use `Closes #123` only when this PR satisfies every issue-level acceptance
+criterion with reviewed evidence on the same commit. A merged slice must not
+auto-close an umbrella V1 release gate.
+-->
+
+## Gate disposition
+
+- [ ] Bounded slice — the related issue remains open after merge
+- [ ] Complete gate — every issue acceptance criterion is satisfied and the
+      closing keyword above is intentional (link the evidence below)
 
 ## Summary
 
@@ -42,6 +55,14 @@ Closes #
 
 <!-- Exact local commands, results, and any checks not run -->
 
+## Acceptance-criteria evidence
+
+<!--
+For a bounded slice, identify exactly which criteria this PR advances and what
+remains. For a complete gate, map every criterion to implementation and
+executable evidence on this commit.
+-->
+
 ## Workflow decision
 
 - [ ] Existing workflow evidence is sufficient; no rerun needed
@@ -61,6 +82,7 @@ Closes #
 ## Reviewer checklist
 
 - [ ] Scope matches one approved issue
+- [ ] Gate disposition and issue-closing keyword are evidence-based
 - [ ] Architecture impact evaluated
 - [ ] Strategy and platform impact evaluated
 - [ ] Public API compatibility impact evaluated
