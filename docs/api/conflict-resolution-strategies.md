@@ -2,162 +2,194 @@
 
 ## Status
 
-**Bounded first slice.** This ships the *first* deterministic built-in
-`ConflictResolver` — `LastWriteWinsConflictResolver` — real decision
-application through the existing `SynchronizationConflictOrchestrator` /
-`ConflictResolverRegistry` machinery, and durable persistence of resolved
-decisions via a new `DurableResolvedConflictDecisionLog`. It does not ship
-additional built-in strategies, conflict audit, loop prevention/quarantine,
-precedence rules, a restart/concurrency proof, or AC-FUNC-002 — all of those
-remain open, tracked against
-[issue #95](https://github.com/dataloom-sdk/dataloom/issues/95) (DL-041).
+**Implemented foundation; full V1 conflict engine remains open.** DataLoom now
+ships a deterministic built-in policy catalog reachable through the existing
+`ConflictResolverRegistry` and `ConflictOrchestrationBindings`, plus durable
+recording of resolved and unresolved decisions. This is a meaningful expansion
+of DL-041, but it is not the completion claim for issue
+[#95](https://github.com/dataloom-sdk/dataloom/issues/95).
 
-## `LastWriteWinsConflictResolver`
+Still required for the full gate are decision application and convergence,
+standard detector utilities, entity/workflow/tenant/global precedence,
+loop/non-convergence quarantine, authorized manual-resolution operations,
+complete audit/metrics/retry integration, AC-FUNC-002, and mandatory-platform
+qualification.
 
-`LastWriteWinsConflictResolver` (`dataloom-runtime`,
-`io.dataloom.runtime.conflict`) implements the existing
-`io.dataloom.api.conflict.ConflictResolver` contract — the same contract
-`SynchronizationConflictOrchestrator.detectAndResolve` has accepted resolvers
-through since DL-025/DL-014. No new resolver contract, no new selection
-mechanism: registering and selecting this resolver uses the
-`ConflictResolverRegistry` and `ConflictOrchestrationBindings` machinery that
-already existed, the same way an application-supplied `ConflictResolver`
-always has.
+## Built-in policy catalog
+
+Every policy is selected by one exact `ConflictResolverId`. No conflict type,
+registration order, class name, exception, or platform name selects a policy
+implicitly.
+
+| Resolver ID | Deterministic decision | Intended use |
+|---|---|---|
+| `dataloom.builtin.client-wins` | `UseLocal` | The local/client change is explicitly authoritative. |
+| `dataloom.builtin.server-wins` | `UseRemote` | The remote/server change is explicitly authoritative. |
+| `dataloom.builtin.last-write-wins` | `UseRemote` placeholder | Preserves the previously shipped deterministic remote-wins tiebreak; it is not evidence-based recency. |
+| `dataloom.builtin.timestamp` | Newest explicit timestamp wins; equal timestamps choose remote | The application can supply trustworthy epoch-millisecond evidence. Missing or malformed evidence defers. |
+| `dataloom.builtin.reject` | `Fail` with `DL-CONFLICT-REJECTED-BY-POLICY` | Conflicting work must stop under the selected policy. |
+| `dataloom.builtin.manual` | `Defer` | The conflict must remain durable for a later authorized/manual workflow. |
+
+The registry first checks application-supplied resolvers and then the built-in
+catalog. Therefore, an application can intentionally register a custom resolver
+under a built-in ID and replace the reference implementation without a second
+selection system. The public `resolvers` property continues to expose only the
+application-supplied snapshot, preserving its historical size and ordering.
 
 ```kotlin
-val resolver = LastWriteWinsConflictResolver()
-val registry = ConflictResolverRegistry(listOf(resolver))
+val registry = ConflictResolverRegistry(
+    resolvers = listOf(myDomainSpecificResolver),
+)
+
 val bindings = ConflictOrchestrationBindings(
-    detectorId = myDetectorId,
-    resolverId = resolver.id, // "dataloom.builtin.last-write-wins" by default
+    detectorId = myDetector.id,
+    resolverId = ConflictResolverId("dataloom.builtin.server-wins"),
 )
 ```
 
-### Honest tiebreak, not evidence-based recency ordering
+## Timestamp-evidence policy
 
-The conventional "last write wins" strategy resolves in favor of whichever
-change happened most recently in wall-clock time. This implementation cannot
-do that today, because no reliable recency evidence exists anywhere on the
-inputs a `ConflictResolver` is allowed to inspect:
+The timestamp policy reads these exact metadata keys:
 
-- `io.dataloom.api.change.ChangeEvent` is explicitly documented as never
-  generating or carrying "any identifiers or timestamps."
-- `io.dataloom.api.change.EntityReference.version`
-  (`io.dataloom.api.payload.EntityVersion`) is documented as opaque by
-  `ConflictResolver` itself: "DataLoom does not assume numeric ordering,
-  timestamps, or ETag semantics."
-- `io.dataloom.api.model.SynchronizationRequest`, reachable via
-  `ConflictResolutionRequest.synchronizationRequest`, carries no request or
-  submission timestamp either.
+```text
+dataloom.conflict.local.updated-at-epoch-millis
+dataloom.conflict.remote.updated-at-epoch-millis
+```
 
-Inventing a new timestamp field on a widely shared contract like `ChangeEvent`
-or `SynchronizationConflict` to make true recency ordering possible is a real,
-separate, larger design question, out of scope for this bounded first slice.
+Evidence is read from `ConflictResolutionRequest.metadata` first and
+`SynchronizationConflict.metadata` second. A key present in request metadata is
+a higher-precedence value even when malformed; malformed higher-precedence
+evidence fails closed to `Defer` rather than falling back to a contradictory
+lower-precedence value.
 
-Given that gap, `LastWriteWinsConflictResolver` applies the smallest honest
-fallback instead: a **deterministic remote-wins tiebreak**. It always returns
-`ConflictResolutionDecision.UseRemote` for every conflict, regardless of
-`ConflictType` or change content. This is a named, tracked placeholder policy,
-not a claim of true "most recently written data wins" semantics. Remote is
-chosen over local because it matches this codebase's existing default
-synchronization posture (`InboundPullSynchronizationPipeline` already applies
-remote changes locally by default); an application that wants the opposite
-placeholder can trivially compose its own resolver returning `UseLocal`
-unconditionally.
+Both values must parse as Kotlin `Long` epoch milliseconds:
 
-A future slice that adds real recency evidence to the conflict/change
-contracts can introduce a genuinely evidence-based resolver alongside this
-one without removing it — applications that explicitly want the deterministic
-remote-wins placeholder keep it.
+- local greater than remote → `UseLocal`;
+- remote greater than local → `UseRemote`;
+- equal values → `UseRemote`, the documented deterministic convergence
+  tiebreak;
+- either value missing or malformed → `Defer`.
+
+The policy never interprets opaque `EntityVersion`, reads a clock, calls a
+provider, or guesses recency from event IDs.
+
+```kotlin
+val metadata = DataLoomMetadata.of(
+    mapOf(
+        "dataloom.conflict.local.updated-at-epoch-millis" to localUpdatedAt.toString(),
+        "dataloom.conflict.remote.updated-at-epoch-millis" to remoteUpdatedAt.toString(),
+    ),
+)
+```
+
+Applications are responsible for supplying trustworthy, consistently sourced
+evidence. A timestamp policy cannot make untrusted client time authoritative by
+itself.
+
+## Last-write-wins naming caveat
+
+`LastWriteWinsConflictResolver` remains available under
+`dataloom.builtin.last-write-wins`, but it does not perform true wall-clock
+ordering. `ChangeEvent` carries no reliable write timestamp and `EntityVersion`
+is deliberately opaque, so this resolver always returns `UseRemote` as a
+stable placeholder. It remains for compatibility and explicit use; applications
+that require real ordering should use the timestamp policy with trustworthy
+evidence or provide a domain resolver.
+
+## Field-level merge boundary
+
+DataLoom payloads are opaque to the shared engine. A generic built-in cannot
+safely know whether fields represent money, counters, addresses, permissions,
+medical observations, or another business invariant. Pretending to merge such
+content would risk data corruption.
+
+Field-level merging therefore uses the existing public `ConflictResolver`
+contract. The application decodes its own payload, applies schema-aware rules,
+and returns `ConflictResolutionDecision.Merge` with a resolved `ChangeEvent`.
+DataLoom still owns detector/resolver lookup, orchestration, durable decision
+recording, redaction boundaries, and the later application/convergence work as
+those engine slices are completed.
+
+A merge resolver must remain synchronous, deterministic, side-effect-free, and
+must not query storage or remote services while resolving.
 
 ## Durable resolved-decision persistence
 
-`DurableResolvedConflictDecisionLog` (`dataloom-api`,
-`io.dataloom.api.conflict`) is the sixth real domain adoption of the
-`DurableStateStore<TScope, TState>` contract, alongside
-`DurableConfigurationHistory`, `DurablePolicyDecisionLog`,
-`DurableUnresolvedConflictLog`, `DurableOperationalEventOutbox`, and
-`DurableStrategyDecisionEventLog`. It follows the exact shape every prior
-adopter established:
+`DurableResolvedConflictDecisionLog` records one commit-once,
+payload-minimized `ResolvedConflictDecisionRecord` per `ConflictId` through the
+shared `DurableStateStore` contract.
 
-- a domain type (`ResolvedConflictDecisionRecord`) persisted per `ConflictId`,
-- a `DurableStateCodec` (`ResolvedConflictDecisionRecordCodec` — hex-encoded,
-  bounded to 65,536 characters, fail-closed on malformed input),
-- a `DurableStateScopeKeyEncoder` (`DurableResolvedConflictDecisionLog.KeyEncoder`),
-- reused through `RoomDurableStateStore` with a new `"resolved-conflict-decisions"`
-  namespace and **zero new Room DAO/entity code**.
+It records the decision kind (`USE_LOCAL`, `USE_REMOTE`, `MERGE`, `DEFER`, or
+`FAIL`) and structural evidence only. A merge records the resolved change's
+structural identity rather than payload content. A failure records the bounded
+error code rather than its message. Repeating the same facts reports
+`AlreadyRecorded`; different facts for the same conflict report `Conflict` and
+never overwrite the original record.
 
-`record` is commit-once, insert-if-absent, with the same bounded
-load-evaluate-compare-and-set retry loop `DurableUnresolvedConflictLog` and
-`DurablePolicyDecisionLog` use. A retry that reproduces the same facts for the
-same `ConflictId` reports `AlreadyRecorded`; a retry with different facts for
-the same `ConflictId` reports `Conflict` and never overwrites the original.
+`DurableConflictDetectionCoordinator` optionally records resolved decisions and
+continues to record unresolved outcomes. A persistence failure does not hide the
+real orchestration result; the returned structure contains both the real result
+and the durable-record outcome.
 
-### Avoiding the `Merge` payload landmine
+`DataLoomConflictDetectionSpec` exposes the optional resolved-decision store,
+schema version, and bounded compare-and-set attempt count. Omitting that store
+preserves the earlier behavior and performs no resolved-decision persistence.
 
-`DurableUnresolvedConflictLog`'s own documentation names resolved-decision
-persistence as "a separate, larger design question given `Merge`'s payload" —
-`ConflictResolutionDecision.Merge` carries an application-supplied
-`ChangeEvent`, and this codebase's durable/audit codecs consistently exclude
-payload content. `DurableResolvedConflictDecisionLog` does not take on that
-exception. `ResolvedConflictDecisionRecord` classifies the decision by
-`ResolvedConflictDecisionKind` (`USE_LOCAL`, `USE_REMOTE`, `MERGE`, `DEFER`,
-`FAIL`) and, when the kind is `MERGE`, records only the merged change's
-structural identity (`changeEventId`, `operation`, `metadata`) via the same
-payload-free `UnresolvedConflictChangeSummary` type
-`DurableUnresolvedConflictLog` already uses for `localChange`/`remoteChange`.
-No variant of `ConflictResolutionDecision` ever has its payload content
-durably persisted by this log. A `FAIL` decision similarly records only the
-bounded, non-sensitive `DataLoomError.code` value — never the error message.
+## Orchestration flow
 
-`LastWriteWinsConflictResolver` never produces a `Merge` or `Fail` decision
-today (it always returns `UseRemote`), but `DurableResolvedConflictDecisionLog`
-is domain-general: it durably records whatever decision any registered
-`ConflictResolver` returns, not just this one.
+```mermaid
+sequenceDiagram
+    participant Pull as Inbound pull pipeline
+    participant Storage as StorageProvider
+    participant Detector as ConflictDetector
+    participant Registry as ConflictResolverRegistry
+    participant Resolver as Selected resolver
+    participant Durable as Durable conflict logs
 
-## Wiring: `DurableConflictDetectionCoordinator`
+    Pull->>Storage: readLocalConflictCandidate(entity)
+    Storage-->>Pull: local change (when present)
+    Pull->>Detector: detect(local, remote)
+    Detector-->>Pull: no conflict or detected conflict
+    Pull->>Registry: lookup(exact resolver ID)
+    Registry-->>Pull: application override or built-in
+    Pull->>Resolver: resolve(conflict)
+    Resolver-->>Pull: typed decision
+    Pull->>Durable: record resolved/unresolved evidence
+    Durable-->>Pull: recorded/already recorded/conflict/failure
+```
 
-`DurableConflictDetectionCoordinator` (`dataloom-runtime`,
-`io.dataloom.runtime.conflict`) — the existing real caller that already
-durably records unresolved outcomes via `DurableUnresolvedConflictLog` — gained
-a new optional constructor parameter, `resolvedConflictDecisionLog:
-DurableResolvedConflictDecisionLog? = null`. When supplied, a
-`ConflictOrchestrationResult.Resolved` outcome from
-`SynchronizationConflictOrchestrator.detectAndResolve` is durably recorded
-through it. When `null` (the default), behavior is byte-for-byte unchanged
-from before this change — no lookup or record attempt is made.
+Current inbound conflict detection is observational: it detects and records but
+does not yet atomically apply every decision, update checkpoints, and prove
+convergence. That transactional application boundary remains a release-blocking
+part of #95.
 
-A durable-recording failure never hides the real orchestration result,
-matching this coordinator's existing posture for unresolved outcomes: the
-caller always receives the real `ConflictOrchestrationResult`, plus whichever
-durable record outcome applies via
-`DurableConflictDetectionResult.resolvedDecisionRecordOutcome`.
+## Safety and determinism rules
 
-`DataLoomConflictDetectionSpec` (`dataloom-runtime`,
-`io.dataloom.runtime.facade`) exposes this as three new optional
-constructor parameters — `resolvedConflictDecisionStore`,
-`resolvedConflictDecisionLogSchemaVersion`,
-`resolvedConflictDecisionLogMaximumStateUpdateAttempts` — mirroring the
-existing `unresolvedConflictStore` parameters exactly. `DataLoomBuilder`
-constructs `DurableResolvedConflictDecisionLog` from the store when one is
-supplied and passes it into the coordinator; when no store is supplied,
-resolved-decision recording stays off, matching every other opt-in spec in
-this builder.
+- Built-ins perform no I/O, clock reads, randomness, provider calls, queue
+  mutations, or application-state mutation.
+- Cancellation and retry are outside the resolver contract.
+- IDs and error codes are stable; payloads and secrets are excluded from
+  built-in diagnostics and durable records.
+- A missing resolver ID produces the existing typed `ResolverNotFound` result;
+  it never silently selects another policy.
+- Application registration under a built-in ID is explicit override behavior,
+  not registration-order precedence.
 
-## What is still out of scope
+## Remaining V1 work
 
-- Only one built-in resolver ships (`LastWriteWinsConflictResolver`). Other
-  deterministic strategies (for example a real evidence-based recency
-  resolver, once timestamp evidence exists; a field-level merge resolver) are
-  future, separately scoped slices.
-- Conflict audit beyond this durable record (for example a queryable audit
-  trail, retention policy, or export) is not implemented.
-- Loop prevention/quarantine for repeatedly-conflicting entities is not
-  implemented.
-- Precedence rules across multiple registered resolvers are not implemented —
-  exactly one resolver is selected per `ConflictOrchestrationBindings`, as
-  before.
-- A restart/concurrency proof specific to conflict resolution (analogous to
-  the circuit-breaker and durable-queue proofs shipped for `#94`/`#101`) is
-  not implemented.
-- AC-FUNC-002 is not implemented.
+The following are not claimed by this page:
+
+- version/vector/ETag and other standard detector utilities;
+- atomic application of `UseLocal`, `UseRemote`, and `Merge` decisions with
+  checkpoint/outbox/audit effects;
+- entity > workflow > tenant > global policy precedence;
+- fingerprints, bounded attempts, loop detection, convergence limits, and
+  quarantine;
+- query/authorize/resolve operations for manual conflicts;
+- complete immutable audit, metrics, events, redaction certification, and retry
+  integration;
+- restart, duplicate, concurrent-resolution, and migration qualification;
+- AC-FUNC-002 and equivalent native Android, KMP Android, and KMP iOS evidence.
+
+The status of those requirements is tracked by issue #95 and the
+[market-readiness dashboard](../status/market-readiness.md).
