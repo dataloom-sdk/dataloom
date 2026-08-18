@@ -28,11 +28,14 @@ import io.dataloom.runtime.conflict.ConflictOrchestrationBindings
  *
  * ## What the application must supply
  *
- * - [detectors]/[resolvers]: the same
- * [io.dataloom.runtime.conflict.ConflictDetector]/[io.dataloom.runtime.conflict.ConflictResolver]
- *   implementations [io.dataloom.runtime.conflict.SynchronizationConflictOrchestrator]
- *   already accepted before this spec existed — this does not introduce a
- *   new detector/resolver contract.
+ * - [detectors]/[resolvers]: optional application implementations of the same
+ *   [io.dataloom.api.conflict.ConflictDetector] and
+ *   [io.dataloom.api.conflict.ConflictResolver] contracts the orchestrator
+ *   accepts. Exact-ID reference detector/resolver catalogs are also available
+ *   through the registries; applications can therefore leave either collection
+ *   empty when [bindings] selects a documented reference ID. An application
+ *   registration under a reference ID explicitly overrides that reference
+ *   implementation.
  * - [bindings]: which detector (required) and resolver (optional) to use
  *   for every detection call. One binding applies to the whole pipeline
  *   instance — there is no per-entity-type binding, matching
@@ -53,13 +56,14 @@ import io.dataloom.runtime.conflict.ConflictOrchestrationBindings
  * [io.dataloom.runtime.conflict.DurableConflictDetectionCoordinator]'s own
  * documented boundary.
  *
- * @param detectors the conflict detectors available for lookup by
- *   [bindings]`.detectorId`. Required, non-empty in practice (an empty
- *   collection means every detection attempt fails with
- *   `DetectorNotFound`).
- * @param resolvers the conflict resolvers available for lookup by
- *   [bindings]`.resolverId`. May be empty when [bindings]`.resolverId` is
- *   `null` (detection-only, no automatic resolution).
+ * @param detectors application conflict detectors available for exact-ID
+ *   lookup. May be empty when [bindings]`.detectorId` selects a documented
+ *   built-in detector. A supplied detector with the same ID overrides the
+ *   reference implementation.
+ * @param resolvers application conflict resolvers available for exact-ID
+ *   lookup. May be empty when no resolver is selected or when
+ *   [bindings]`.resolverId` selects a documented built-in resolver. A supplied
+ *   resolver with the same ID overrides the reference implementation.
  * @param bindings the detector/resolver binding used for every detection
  *   call this configuration enables.
  * @param unresolvedConflictStore the durable store backing
