@@ -71,7 +71,7 @@ the strategy engine is complete.
 
 ## Market-readiness dashboard
 
-- **Last reconciled:** 2026-08-16
+- **Last reconciled:** 2026-08-18
 - **Recorded V1 target:** 2026-08-27
 - **Current verdict:** **NO-GO — not production-ready or market-ready**
 - **Accepted engineering/release gates:** **0 of 10** (`#93`–`#102` all open)
@@ -84,11 +84,11 @@ time before it flips.
 | # | V1 gate | Status | Est. completion |
 |---:|---|---|---:|
 | 0 | [DL-039 foundations, artifacts, compatibility](https://github.com/dataloom-sdk/dataloom/issues/93) | PARTIAL | 85% |
-| 1 | [DL-039B six strategy engine](https://github.com/dataloom-sdk/dataloom/issues/102) | IN PROGRESS | 75% |
-| 2 | [DL-039A Android/KMP/iOS parity](https://github.com/dataloom-sdk/dataloom/issues/101) | IN PROGRESS | 65% |
+| 1 | [DL-039B six strategy engine](https://github.com/dataloom-sdk/dataloom/issues/102) | IN PROGRESS | 80% |
+| 2 | [DL-039A Android/KMP/iOS parity](https://github.com/dataloom-sdk/dataloom/issues/101) | IN PROGRESS | 68% |
 | 3 | [DL-040 retry and circuit breaker](https://github.com/dataloom-sdk/dataloom/issues/94) | QUALIFICATION BLOCKED | 70% |
 | 4 | [DL-041 conflict engine](https://github.com/dataloom-sdk/dataloom/issues/95) | IN PROGRESS | 40% |
-| 5 | [DL-042 events, observability, health, dashboard](https://github.com/dataloom-sdk/dataloom/issues/96) | IN PROGRESS | 40% |
+| 5 | [DL-042 events, observability, health, dashboard](https://github.com/dataloom-sdk/dataloom/issues/96) | IN PROGRESS | 45% |
 | 6 | [DL-043 asset synchronization](https://github.com/dataloom-sdk/dataloom/issues/97) | NOT STARTED | 0% |
 | 7 | [DL-044 plugin platform](https://github.com/dataloom-sdk/dataloom/issues/98) | NOT STARTED | 15% |
 | 8 | [DL-045 enterprise governance](https://github.com/dataloom-sdk/dataloom/issues/99) | NOT STARTED | 10% |
@@ -98,6 +98,11 @@ time before it flips.
 
 **Recent highlights** (newest first):
 
+- 2026-08-18 — Real Android durable-queue-admission-then-replay proof for offline-first — `AndroidReferenceConsumerDurableQueueRobolectricTest` (`#325`)
+- 2026-08-18 — `SynchronizationOperationalEventBridge` wires the durable operational-event outbox to real synchronization events, opt-in via `DataLoomBuilder.operationalEventOutboxConfiguration` (`#324`)
+- 2026-08-17 — Real Android circuit-breaker process kill/relaunch proof via a genuine second `:circuitproof` process (`#323`)
+- 2026-08-17 — `ProviderProtectionStorageBridge`'s `readLocalConflictCandidate` circuit-protection gap closed, with a required (breaking) `StorageCircuitScopes` scope addition (`#322`)
+- 2026-08-17 — Durable strategy-decision diagnostics — `DurableStrategyDecisionEventLog`, wired into `StrategySynchronizationExecutionCoordinator` (`#321`)
 - 2026-08-17 — `MessageContentRedactor`, a defense-in-depth free-text redaction primitive for `DataLoomError.message` and similar diagnostic content (`#317`)
 - 2026-08-16 — `DataStoreStorageProvider` adopts `readLocalConflictCandidate` — all four reference providers now adopt it (`#315`)
 - 2026-08-16 — `FileStorageProvider` adopts `readLocalConflictCandidate`, the third reference provider to do so (`#313`)

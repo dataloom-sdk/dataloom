@@ -6,7 +6,7 @@ carries every dated entry and the full per-gate evidence text; the README
 keeps only the current verdict and a short list of recent highlights so the
 front page stays readable.
 
-- **Last reconciled:** 2026-08-16
+- **Last reconciled:** 2026-08-18
 - **Recorded V1 target:** 2026-08-27
 - **Current verdict:** **NO-GO — not production-ready or market-ready**
 - **Accepted engineering/release gates:** **0 of 10** (`#93`–`#102` all open)
