@@ -9,8 +9,12 @@ import io.dataloom.api.conflict.ConflictResolutionDecision
 import io.dataloom.api.conflict.ConflictResolutionRequest
 import io.dataloom.api.conflict.ConflictResolver
 import io.dataloom.api.conflict.ConflictType
+import io.dataloom.api.conflict.DurableResolvedConflictDecisionLog
+import io.dataloom.api.conflict.DurableResolvedConflictDecisionRecordOutcome
 import io.dataloom.api.conflict.DurableUnresolvedConflictLog
 import io.dataloom.api.conflict.DurableUnresolvedConflictRecordOutcome
+import io.dataloom.api.conflict.ResolvedConflictDecisionKind
+import io.dataloom.api.conflict.ResolvedConflictDecisionRecord
 import io.dataloom.api.conflict.SynchronizationConflict
 import io.dataloom.api.conflict.UnresolvedConflictRecord
 import io.dataloom.api.conflict.UnresolvedConflictReason
@@ -195,15 +199,129 @@ class DurableConflictDetectionCoordinatorTest {
         assertIs<DurableUnresolvedConflictRecordOutcome.PersistenceFailure>(result.unresolvedRecordOutcome)
     }
 
+    @Test
+    fun aNullResolvedConflictDecisionLogSkipsRecordingAResolvedOutcome() = runTest {
+        val decision = ConflictResolutionDecision.UseRemote()
+        val coordinator = coordinator(
+            detector = FakeDetector(detectorId, ConflictDetectionResult.ConflictDetected(sampleConflict)),
+            resolver = FakeResolver(resolverId, decision),
+        )
+
+        val result = coordinator.detectAndResolve(
+            request(bindings = ConflictOrchestrationBindings(detectorId, resolverId)),
+        )
+
+        assertIs<ConflictOrchestrationResult.Resolved>(result.orchestration)
+        assertEquals(null, result.resolvedDecisionRecordOutcome)
+    }
+
+    @Test
+    fun aResolvedOutcomeIsDurablyRecordedWhenAResolvedConflictDecisionLogIsConfigured() = runTest {
+        val decision = ConflictResolutionDecision.UseRemote()
+        val resolvedLog = DurableResolvedConflictDecisionLog(InMemoryResolvedConflictDecisionStore())
+        val coordinator = coordinator(
+            detector = FakeDetector(detectorId, ConflictDetectionResult.ConflictDetected(sampleConflict)),
+            resolver = FakeResolver(resolverId, decision),
+            resolvedConflictDecisionLog = resolvedLog,
+        )
+
+        val result = coordinator.detectAndResolve(
+            request(bindings = ConflictOrchestrationBindings(detectorId, resolverId)),
+        )
+
+        assertIs<ConflictOrchestrationResult.Resolved>(result.orchestration)
+        val recorded = assertIs<DurableResolvedConflictDecisionRecordOutcome.Recorded>(result.resolvedDecisionRecordOutcome)
+        assertEquals(ResolvedConflictDecisionKind.USE_REMOTE, recorded.record.decisionKind)
+        assertEquals(resolverId, recorded.record.resolverId)
+        assertEquals(5_000L, recorded.record.committedAt.epochMilliseconds)
+
+        val current = assertIs<ProviderOperationResult.Success<ResolvedConflictDecisionRecord?>>(resolvedLog.current(conflictId))
+        assertEquals(recorded.record, current.value)
+    }
+
+    @Test
+    fun repeatedResolvedOutcomesForTheSameConflictAreIdempotent() = runTest {
+        val decision = ConflictResolutionDecision.UseRemote()
+        val resolvedLog = DurableResolvedConflictDecisionLog(InMemoryResolvedConflictDecisionStore())
+        val coordinator = coordinator(
+            detector = FakeDetector(detectorId, ConflictDetectionResult.ConflictDetected(sampleConflict)),
+            resolver = FakeResolver(resolverId, decision),
+            resolvedConflictDecisionLog = resolvedLog,
+        )
+        val orchestrationRequest = request(bindings = ConflictOrchestrationBindings(detectorId, resolverId))
+
+        coordinator.detectAndResolve(orchestrationRequest)
+        val second = coordinator.detectAndResolve(orchestrationRequest)
+
+        assertIs<DurableResolvedConflictDecisionRecordOutcome.AlreadyRecorded>(second.resolvedDecisionRecordOutcome)
+    }
+
+    @Test
+    fun aMergeDecisionIsRecordedWithOnlyStructuralIdentityNeverPayload() = runTest {
+        val mergedEntity = io.dataloom.api.change.EntityReference(entityType, entityId)
+        val mergedChangeEvent = ChangeEvent(
+            ChangeEventId("merged-event"),
+            mergedEntity,
+            ChangeOperation.UPDATE,
+            payload = io.dataloom.api.payload.DataLoomPayload(
+                io.dataloom.api.payload.PayloadContentType("application/octet-stream"),
+                byteArrayOf(1, 2, 3),
+            ),
+        )
+        val decision = ConflictResolutionDecision.Merge(expectedEntity = mergedEntity, resolvedChange = mergedChangeEvent)
+        val resolvedLog = DurableResolvedConflictDecisionLog(InMemoryResolvedConflictDecisionStore())
+        val coordinator = coordinator(
+            detector = FakeDetector(detectorId, ConflictDetectionResult.ConflictDetected(sampleConflict)),
+            resolver = FakeResolver(resolverId, decision),
+            resolvedConflictDecisionLog = resolvedLog,
+        )
+
+        val result = coordinator.detectAndResolve(
+            request(bindings = ConflictOrchestrationBindings(detectorId, resolverId)),
+        )
+
+        val recorded = assertIs<DurableResolvedConflictDecisionRecordOutcome.Recorded>(result.resolvedDecisionRecordOutcome)
+        assertEquals(ResolvedConflictDecisionKind.MERGE, recorded.record.decisionKind)
+        assertEquals(ChangeEventId("merged-event"), recorded.record.mergedChange?.changeEventId)
+    }
+
+    @Test
+    fun aFailDecisionIsRecordedWithOnlyTheBoundedErrorCode() = runTest {
+        val error = object : DataLoomError {
+            override val code = ErrorCode("SIMULATED_RESOLUTION_FAILURE")
+            override val category = ErrorCategory.VALIDATION
+            override val severity = ErrorSeverity.ERROR
+            override val recoverability = Recoverability.NON_RECOVERABLE
+            override val message = "Simulated resolution failure with sensitive detail that must never be persisted."
+            override val cause: Throwable? = null
+        }
+        val decision = ConflictResolutionDecision.Fail(error = error)
+        val resolvedLog = DurableResolvedConflictDecisionLog(InMemoryResolvedConflictDecisionStore())
+        val coordinator = coordinator(
+            detector = FakeDetector(detectorId, ConflictDetectionResult.ConflictDetected(sampleConflict)),
+            resolver = FakeResolver(resolverId, decision),
+            resolvedConflictDecisionLog = resolvedLog,
+        )
+
+        val result = coordinator.detectAndResolve(
+            request(bindings = ConflictOrchestrationBindings(detectorId, resolverId)),
+        )
+
+        val recorded = assertIs<DurableResolvedConflictDecisionRecordOutcome.Recorded>(result.resolvedDecisionRecordOutcome)
+        assertEquals(ResolvedConflictDecisionKind.FAIL, recorded.record.decisionKind)
+        assertEquals("SIMULATED_RESOLUTION_FAILURE", recorded.record.failureErrorCode)
+    }
+
     private fun coordinator(
         detector: ConflictDetector,
         resolver: ConflictResolver? = null,
         unresolvedConflictLog: DurableUnresolvedConflictLog = DurableUnresolvedConflictLog(InMemoryUnresolvedConflictStore()),
+        resolvedConflictDecisionLog: DurableResolvedConflictDecisionLog? = null,
     ): DurableConflictDetectionCoordinator {
         val detectorRegistry = ConflictDetectorRegistry(listOf(detector))
         val resolverRegistry = ConflictResolverRegistry(if (resolver == null) emptyList() else listOf(resolver))
         val orchestrator = SynchronizationConflictOrchestrator(detectorRegistry, resolverRegistry)
-        return DurableConflictDetectionCoordinator(orchestrator, unresolvedConflictLog, clock)
+        return DurableConflictDetectionCoordinator(orchestrator, unresolvedConflictLog, clock, resolvedConflictDecisionLog)
     }
 
     private fun request(bindings: ConflictOrchestrationBindings): ConflictOrchestrationRequest =
@@ -275,5 +393,34 @@ class DurableConflictDetectionCoordinatorTest {
                     override val cause: Throwable? = null
                 },
             )
+    }
+
+    private class InMemoryResolvedConflictDecisionStore : DurableStateStore<ConflictId, ResolvedConflictDecisionRecord> {
+        private val records = mutableMapOf<ConflictId, DurableStateRecord<ResolvedConflictDecisionRecord>>()
+
+        override suspend fun load(
+            scope: ConflictId,
+        ): ProviderOperationResult<DurableStateLoadResult<ResolvedConflictDecisionRecord>> {
+            val record = records[scope]
+            return ProviderOperationResult.Success(
+                if (record == null) DurableStateLoadResult.Missing else DurableStateLoadResult.Found(record),
+            )
+        }
+
+        override suspend fun compareAndSet(
+            request: DurableStateCompareAndSetRequest<ConflictId, ResolvedConflictDecisionRecord>,
+        ): ProviderOperationResult<DurableStateCompareAndSetResult<ResolvedConflictDecisionRecord>> {
+            val current = records[request.scope]
+            if (current?.version != request.expectedVersion) {
+                return ProviderOperationResult.Success(DurableStateCompareAndSetResult.Conflict(current))
+            }
+            val updated = DurableStateRecord(
+                state = request.nextState,
+                version = (current?.version ?: -1L) + 1L,
+                schemaVersion = request.nextSchemaVersion,
+            )
+            records[request.scope] = updated
+            return ProviderOperationResult.Success(DurableStateCompareAndSetResult.Updated(updated))
+        }
     }
 }

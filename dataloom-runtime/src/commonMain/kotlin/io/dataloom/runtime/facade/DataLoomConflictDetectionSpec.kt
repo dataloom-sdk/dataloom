@@ -2,7 +2,9 @@ package io.dataloom.runtime.facade
 
 import io.dataloom.api.conflict.ConflictDetector
 import io.dataloom.api.conflict.ConflictResolver
+import io.dataloom.api.conflict.DurableResolvedConflictDecisionLog
 import io.dataloom.api.conflict.DurableUnresolvedConflictLog
+import io.dataloom.api.conflict.ResolvedConflictDecisionRecord
 import io.dataloom.api.conflict.UnresolvedConflictRecord
 import io.dataloom.api.identifier.ConflictId
 import io.dataloom.api.state.DurableStateStore
@@ -67,6 +69,17 @@ import io.dataloom.runtime.conflict.ConflictOrchestrationBindings
  *   [DurableUnresolvedConflictLog]'s own schema-version parameter.
  * @param unresolvedConflictLogMaximumStateUpdateAttempts passed through to
  *   [DurableUnresolvedConflictLog]'s own retry-bound parameter.
+ * @param resolvedConflictDecisionStore optional durable store backing
+ *   [DurableResolvedConflictDecisionLog] for conflicts a resolver genuinely
+ *   resolved. `null` (the default) disables resolved-decision recording
+ *   entirely — [io.dataloom.runtime.conflict.DurableConflictDetectionCoordinator]
+ *   still records unresolved outcomes as before. The application chooses the
+ *   backing implementation, matching [unresolvedConflictStore]'s own posture.
+ * @param resolvedConflictDecisionLogSchemaVersion passed through to
+ *   [DurableResolvedConflictDecisionLog]'s own schema-version parameter.
+ * @param resolvedConflictDecisionLogMaximumStateUpdateAttempts passed
+ *   through to [DurableResolvedConflictDecisionLog]'s own retry-bound
+ *   parameter.
  */
 public class DataLoomConflictDetectionSpec(
     public val detectors: Collection<ConflictDetector>,
@@ -75,4 +88,7 @@ public class DataLoomConflictDetectionSpec(
     public val unresolvedConflictStore: DurableStateStore<ConflictId, UnresolvedConflictRecord>,
     public val unresolvedConflictLogSchemaVersion: Int = 1,
     public val unresolvedConflictLogMaximumStateUpdateAttempts: Int = 8,
+    public val resolvedConflictDecisionStore: DurableStateStore<ConflictId, ResolvedConflictDecisionRecord>? = null,
+    public val resolvedConflictDecisionLogSchemaVersion: Int = 1,
+    public val resolvedConflictDecisionLogMaximumStateUpdateAttempts: Int = 8,
 )
