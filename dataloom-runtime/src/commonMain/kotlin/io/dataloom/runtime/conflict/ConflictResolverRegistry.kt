@@ -9,10 +9,16 @@ import io.dataloom.api.identifier.ConflictResolverId
  *
  * ## Purpose
  *
- * [ConflictResolverRegistry] holds all application-supplied conflict resolvers
- * and provides exact ID-based lookup for the
- * [SynchronizationConflictOrchestrator]. Each registered resolver ID maps to
- * exactly one resolver.
+ * [ConflictResolverRegistry] holds application-supplied conflict resolvers and
+ * provides exact ID-based lookup for the
+ * [SynchronizationConflictOrchestrator]. Each application registration maps
+ * one identifier to exactly one resolver.
+ *
+ * The runtime also exposes a bounded set of deterministic built-in policies by
+ * documented IDs. [lookup] checks application registrations first and then the
+ * built-in catalog. This preserves explicit application control: registering a
+ * custom resolver under a built-in ID overrides the reference implementation.
+ * No built-in is selected implicitly; callers must still bind its exact ID.
  *
  * ## Defensive copy
  *
@@ -24,17 +30,21 @@ import io.dataloom.api.identifier.ConflictResolverId
  *
  * Construction throws [IllegalArgumentException] when the supplied resolver
  * collection contains more than one resolver with the same [ConflictResolverId].
- * ID uniqueness is required for unambiguous resolver selection.
+ * ID uniqueness is required for unambiguous application registration. A single
+ * application resolver may intentionally use a built-in ID to override it.
  *
  * ## Lookup
  *
- * [lookup] returns the [ConflictResolver] registered for the given
- * [ConflictResolverId], or `null` when no resolver is registered for that ID.
+ * [lookup] returns the application resolver registered for the exact ID, then
+ * falls back to a deterministic built-in resolver with that exact ID, or
+ * returns `null` when neither exists.
  *
  * ## Registration order preservation
  *
- * Insertion order is preserved for diagnostic purposes. Resolvers are stored
- * in the order they appear in the supplied collection.
+ * Insertion order is preserved for diagnostic purposes. [resolvers] contains
+ * only the application-supplied snapshot, in supplied order; built-ins are not
+ * injected into that collection and therefore do not change its historical
+ * size or iteration semantics.
  *
  * ## No mutable collection exposure
  *
@@ -43,19 +53,20 @@ import io.dataloom.api.identifier.ConflictResolverId
  * ## Construction restrictions
  *
  * Construction performs no detection, no resolution, no provider operation,
- * no lifecycle operation, no automatic resolver discovery, no reflection, and
- * no ServiceLoader usage.
+ * no lifecycle operation, no reflection, no ServiceLoader usage, and no
+ * platform discovery. Built-ins are fixed common-code objects resolved only by
+ * an explicit ID lookup.
  *
  * ## Selection key
  *
  * The explicit [ConflictResolverId] returned by [ConflictResolver.id] is the
- * selection key. Resolvers are never selected automatically by ConflictType,
- * class name, first registration, last registration, or ID sorting.
- * Resolution policy remains application-controlled through explicit binding.
+ * only selection key. Resolvers are never selected automatically by conflict
+ * type, class name, registration position, or ID sorting. Resolution policy
+ * remains caller-controlled through explicit binding.
  *
- * ## No global state
+ * ## No global mutable state
  *
- * The registry contains no global state and uses no service locator.
+ * The registry contains no global mutable state and uses no service locator.
  *
  * ## KMP compatibility
  *
@@ -63,8 +74,8 @@ import io.dataloom.api.identifier.ConflictResolverId
  * Kotlin Multiplatform common code.
  *
  * @param resolvers the application-supplied [ConflictResolver] instances to
- *   register. Each resolver must have a unique [ConflictResolver.id]. The
- *   collection is defensively copied.
+ *   register. Each supplied resolver must have a unique [ConflictResolver.id].
+ *   The collection is defensively copied.
  * @throws IllegalArgumentException if [resolvers] contains duplicate
  *   [ConflictResolverId] values.
  */
@@ -88,29 +99,33 @@ public class ConflictResolverRegistry(
     }
 
     /**
-     * Returns the [ConflictResolver] registered for [id], or `null` when no
-     * resolver is registered for that ID.
+     * Returns the resolver selected by the exact [id], or `null` when neither
+     * an application registration nor a built-in policy exists for that ID.
      *
-     * The lookup uses the exact [ConflictResolverId] value as the key. It
-     * never uses class names, ordinals, ConflictType, first/last registration,
-     * or ID sorting.
+     * Application registrations take precedence over the built-in catalog, so
+     * an application can intentionally replace a reference policy without a
+     * second selection mechanism. Lookup never uses class names, ordinals,
+     * conflict type, registration position, or ID sorting.
      *
      * @param id the [ConflictResolverId] to look up.
-     * @return the registered [ConflictResolver], or `null`.
+     * @return the selected [ConflictResolver], or `null`.
      */
-    public fun lookup(id: ConflictResolverId): ConflictResolver? = resolverMap[id]
+    public fun lookup(id: ConflictResolverId): ConflictResolver? =
+        resolverMap[id] ?: builtInConflictResolver(id)
 
     /**
-     * Returns an unmodifiable view of all registered resolvers in the order
-     * they were supplied at construction time.
+     * Returns an unmodifiable snapshot of application-supplied resolvers in
+     * registration order.
      *
-     * The returned collection is read-only and reflects a defensive snapshot.
+     * Built-in policies are intentionally not added to this list, preserving
+     * the property's historical meaning and collection size.
      */
     public val resolvers: List<ConflictResolver>
         get() = resolverMap.values.toList()
 
     /**
-     * Returns a safe diagnostic string listing the registered resolver IDs.
+     * Returns a safe diagnostic string listing application-registered resolver
+     * IDs. Built-in availability is static and is not expanded into diagnostics.
      *
      * Does not invoke any resolver's `toString()` method.
      */
