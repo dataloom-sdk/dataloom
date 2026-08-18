@@ -187,13 +187,31 @@ join multiple entries into one text payload.
 - **No filtering or subscription delivery.**
 - **No enumeration across scopes.** A caller must already know which
   `OperationalEventOutboxScope` to read.
-- **No wired caller.** The "in-process event dispatch" already shipped
-  (`SynchronizationEventDispatcher`) delivers `SynchronizationEvent`, a
-  different domain type, to registered observers — it does not construct
-  `OperationalEventEnvelope` instances anywhere today. Bridging
-  `SynchronizationEvent` (or any other real runtime signal) into an envelope
-  and durably appending it is separate, larger follow-up work, consistent
-  with `DurableConfigurationHistory` and `DurablePolicyDecisionLog` each
+- **One real wired caller so far — synchronization events only.**
+  `SynchronizationOperationalEventBridge` (`io.dataloom.runtime.observation.operational`)
+  maps every `SynchronizationEvent` variant (`Started`, `PhaseChanged`,
+  `ProgressUpdated`, `RetryScheduled`, `ConflictDetected`, `Completed`) to an
+  `OperationalEventEnvelope` — classifying every field it places into
+  `attributes` via `ClassifiedData`/`StrictDataLoomRedactor` as documented
+  above, reusing the event's own `occurredAt` and a sanitized form of its own
+  `SynchronizationEventId` rather than reading a clock or minting a new
+  identifier, and reusing `SynchronizationRequest.context`'s
+  `correlationId`/`traceId`/`tenantId` and `SynchronizationRequest.workflowId`
+  unchanged for the envelope's own identity fields.
+  `DispatchingSynchronizationLifecycleEventEmitter` — the sole constructor
+  and dispatch point of every `SynchronizationEvent` — calls the bridge and
+  durably appends the result after every dispatch, but only when the
+  application opts in via `DataLoomBuilder.operationalEventOutboxConfiguration(DataLoomOperationalEventOutboxSpec)`;
+  when it is not configured, no envelope is ever constructed or appended.
+  Bridging failures (envelope construction) and append outcomes other than
+  success (`Conflict`, `PersistenceFailure`, `ContentionLimitReached`) are
+  always swallowed — consistent with `StrategySynchronizationExecutionCoordinator`'s
+  own durable-diagnostics posture, a durable side-record must never change or
+  hide the real result of the operation it is describing. Every other
+  subsystem's events (retry/circuit administration, conflict resolution,
+  strategy decisions, queue lifecycle, and so on) remain unbridged; wiring
+  those is separate, larger follow-up work, consistent with
+  `DurableConfigurationHistory` and `DurablePolicyDecisionLog` each
   originally shipping without a real caller.
 
 ## Remaining V1 boundary

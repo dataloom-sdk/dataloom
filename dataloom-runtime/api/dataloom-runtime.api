@@ -315,7 +315,8 @@ public final class io/dataloom/runtime/execution/inbound/InboundPullSynchronizat
 }
 
 public final class io/dataloom/runtime/execution/lifecycle/DispatchingSynchronizationLifecycleEventEmitter : io/dataloom/runtime/execution/lifecycle/SynchronizationRuntimeEventEmitter {
-	public fun <init> (Lio/dataloom/runtime/observation/SynchronizationEventDispatcher;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/identifier/IdentifierGenerator;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/observation/SynchronizationEventDispatcher;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/identifier/IdentifierGenerator;Lio/dataloom/api/operational/DurableOperationalEventOutbox;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/observation/SynchronizationEventDispatcher;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/identifier/IdentifierGenerator;Lio/dataloom/api/operational/DurableOperationalEventOutbox;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun emitCompleted (Lio/dataloom/runtime/execution/SynchronizationExecutionContext;Lio/dataloom/api/synchronization/SynchronizationResult;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun emitConflictDetected (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/conflict/SynchronizationConflict;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun emitPhaseChanged (Lio/dataloom/runtime/execution/SynchronizationExecutionContext;Lio/dataloom/api/synchronization/SynchronizationPhase;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -471,6 +472,7 @@ public final class io/dataloom/runtime/facade/DataLoomBuilder {
 	public final fun inboundConfiguration (Lio/dataloom/runtime/execution/inbound/InboundPullPipelineConfiguration;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun observer (Lio/dataloom/api/observation/SynchronizationObserver;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun observers ([Lio/dataloom/api/observation/SynchronizationObserver;)Lio/dataloom/runtime/facade/DataLoomBuilder;
+	public final fun operationalEventOutboxConfiguration (Lio/dataloom/runtime/facade/DataLoomOperationalEventOutboxSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun outboundConfiguration (Lio/dataloom/runtime/execution/outbound/OutboundPushPipelineConfiguration;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun pipeline (Lio/dataloom/runtime/execution/SynchronizationPipeline;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun provider (Lio/dataloom/api/provider/DataLoomProvider;)Lio/dataloom/runtime/facade/DataLoomBuilder;
@@ -532,6 +534,15 @@ public final class io/dataloom/runtime/facade/DataLoomConflictDetectionSpec {
 	public final fun getUnresolvedConflictLogMaximumStateUpdateAttempts ()I
 	public final fun getUnresolvedConflictLogSchemaVersion ()I
 	public final fun getUnresolvedConflictStore ()Lio/dataloom/api/state/DurableStateStore;
+}
+
+public final class io/dataloom/runtime/facade/DataLoomOperationalEventOutboxSpec {
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;Ljava/lang/String;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;Ljava/lang/String;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getMaximumStateUpdateAttempts ()I
+	public final fun getSchemaVersion ()I
+	public final fun getScope--IyNcac ()Ljava/lang/String;
+	public final fun getStore ()Lio/dataloom/api/state/DurableStateStore;
 }
 
 public abstract interface class io/dataloom/runtime/facade/DataLoomProtectedStrategySynchronization {
@@ -788,6 +799,11 @@ public final class io/dataloom/runtime/observation/SynchronizationObserverRegist
 	public final fun isEmpty ()Z
 	public final fun lookup-M_rkR4M (Ljava/lang/String;)Lio/dataloom/api/observation/SynchronizationObserver;
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/observation/operational/SynchronizationOperationalEventBridge {
+	public static final field INSTANCE Lio/dataloom/runtime/observation/operational/SynchronizationOperationalEventBridge;
+	public final fun toEnvelope (Lio/dataloom/api/synchronization/SynchronizationEvent;)Lio/dataloom/api/operational/OperationalEventEnvelope;
 }
 
 public final class io/dataloom/runtime/observation/retry/BoundedRetryCircuitTelemetry {

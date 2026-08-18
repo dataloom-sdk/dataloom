@@ -5,6 +5,8 @@ import io.dataloom.api.error.DataLoomError
 import io.dataloom.api.identifier.IdentifierGenerator
 import io.dataloom.api.identifier.SynchronizationEventId
 import io.dataloom.api.model.SynchronizationRequest
+import io.dataloom.api.operational.DurableOperationalEventOutbox
+import io.dataloom.api.operational.OperationalEventOutboxScope
 import io.dataloom.api.retry.RetryAttempt
 import io.dataloom.api.scheduling.SchedulingDelay
 import io.dataloom.api.synchronization.SynchronizationEvent
@@ -15,6 +17,8 @@ import io.dataloom.api.time.DataLoomClock
 import io.dataloom.runtime.execution.SynchronizationExecutionContext
 import io.dataloom.runtime.observation.SynchronizationEventDispatchResult
 import io.dataloom.runtime.observation.SynchronizationEventDispatcher
+import io.dataloom.runtime.observation.operational.SynchronizationOperationalEventBridge
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * [SynchronizationLifecycleEventEmitter] implementation that constructs
@@ -37,6 +41,22 @@ import io.dataloom.runtime.observation.SynchronizationEventDispatcher
  * [emitRetryScheduled], and [emitConflictDetected]. Each method reuses the
  * same [dispatcher], [clock], and [eventIdGenerator] without duplicating
  * dispatch logic.
+ *
+ * ## DL-042 operational-event outbox bridge (optional)
+ *
+ * When [operationalEventOutbox] and [operationalEventOutboxScope] are both
+ * supplied (see [io.dataloom.runtime.facade.DataLoomOperationalEventOutboxSpec]
+ * / `DataLoomBuilder.operationalEventOutboxConfiguration`), every event this
+ * class constructs and dispatches is also bridged into an
+ * [io.dataloom.api.operational.OperationalEventEnvelope] by
+ * [SynchronizationOperationalEventBridge] and durably appended -- after
+ * dispatch, never blocking or altering it. A durable-recording failure
+ * (envelope construction, or the append itself reporting anything other than
+ * success) is swallowed and never surfaces as a
+ * [SynchronizationEventDispatchResult] change or a thrown exception; only
+ * [kotlin.coroutines.cancellation.CancellationException] still propagates.
+ * When neither collaborator is supplied, this class behaves byte-for-byte as
+ * it did before this bridge existed.
  *
  * ## Explicit injection
  *
@@ -111,11 +131,20 @@ import io.dataloom.runtime.observation.SynchronizationEventDispatcher
  *   the event occurrence timestamp.
  * @param eventIdGenerator the [IdentifierGenerator] invoked once per emitted
  *   event to produce a distinct [SynchronizationEventId].
+ * @param operationalEventOutbox optional durable outbox used to durably
+ *   record every dispatched event as an
+ *   [io.dataloom.api.operational.OperationalEventEnvelope]. `null` by
+ *   default -- no envelope is ever constructed or appended unless this and
+ *   [operationalEventOutboxScope] are both supplied.
+ * @param operationalEventOutboxScope optional scope every bridged envelope is
+ *   appended under when [operationalEventOutbox] is configured.
  */
 public class DispatchingSynchronizationLifecycleEventEmitter(
     private val dispatcher: SynchronizationEventDispatcher,
     private val clock: DataLoomClock,
     private val eventIdGenerator: IdentifierGenerator<SynchronizationEventId>,
+    private val operationalEventOutbox: DurableOperationalEventOutbox? = null,
+    private val operationalEventOutboxScope: OperationalEventOutboxScope? = null,
 ) : SynchronizationRuntimeEventEmitter {
 
     /**
@@ -140,7 +169,9 @@ public class DispatchingSynchronizationLifecycleEventEmitter(
             request = context.request,
             occurredAt = occurredAt,
         )
-        return dispatcher.dispatch(event)
+        val result = dispatcher.dispatch(event)
+        recordOperationalEvent(event)
+        return result
     }
 
     /**
@@ -168,7 +199,9 @@ public class DispatchingSynchronizationLifecycleEventEmitter(
             occurredAt = occurredAt,
             phase = phase,
         )
-        return dispatcher.dispatch(event)
+        val result = dispatcher.dispatch(event)
+        recordOperationalEvent(event)
+        return result
     }
 
     /**
@@ -199,7 +232,9 @@ public class DispatchingSynchronizationLifecycleEventEmitter(
             occurredAt = occurredAt,
             result = result,
         )
-        return dispatcher.dispatch(event)
+        val dispatchResult = dispatcher.dispatch(event)
+        recordOperationalEvent(event)
+        return dispatchResult
     }
 
     /**
@@ -227,7 +262,9 @@ public class DispatchingSynchronizationLifecycleEventEmitter(
             occurredAt = occurredAt,
             progress = progress,
         )
-        return dispatcher.dispatch(event)
+        val result = dispatcher.dispatch(event)
+        recordOperationalEvent(event)
+        return result
     }
 
     /**
@@ -260,7 +297,9 @@ public class DispatchingSynchronizationLifecycleEventEmitter(
             delay = delay,
             error = error,
         )
-        return dispatcher.dispatch(event)
+        val result = dispatcher.dispatch(event)
+        recordOperationalEvent(event)
+        return result
     }
 
     /**
@@ -290,7 +329,45 @@ public class DispatchingSynchronizationLifecycleEventEmitter(
             occurredAt = occurredAt,
             conflict = conflict,
         )
-        return dispatcher.dispatch(event)
+        val result = dispatcher.dispatch(event)
+        recordOperationalEvent(event)
+        return result
+    }
+
+    /**
+     * When [operationalEventOutbox] and [operationalEventOutboxScope] are
+     * both configured, bridges [event] into an
+     * [io.dataloom.api.operational.OperationalEventEnvelope] via
+     * [SynchronizationOperationalEventBridge] and durably appends it.
+     *
+     * Mirrors [io.dataloom.runtime.strategy.StrategySynchronizationExecutionCoordinator]'s
+     * `recordDecisionEvent`: a durable side-record failure -- whether
+     * envelope construction throws, or
+     * [io.dataloom.api.operational.DurableOperationalEventOutbox.append]
+     * itself returns
+     * [io.dataloom.api.operational.DurableOperationalEventOutboxAppendOutcome.Conflict],
+     * [io.dataloom.api.operational.DurableOperationalEventOutboxAppendOutcome.PersistenceFailure],
+     * or
+     * [io.dataloom.api.operational.DurableOperationalEventOutboxAppendOutcome.ContentionLimitReached]
+     * -- must never change or hide the real [SynchronizationEventDispatchResult]
+     * already computed and returned to the caller. [CancellationException]
+     * still propagates normally, matching [SynchronizationEventDispatcher]'s
+     * own cancellation boundary.
+     *
+     * When either collaborator is `null`, this method performs no work --
+     * byte-for-byte the same behavior as before this bridge existed.
+     */
+    private suspend fun recordOperationalEvent(event: SynchronizationEvent) {
+        val outbox = operationalEventOutbox ?: return
+        val scope = operationalEventOutboxScope ?: return
+        try {
+            val envelope = SynchronizationOperationalEventBridge.toEnvelope(event)
+            outbox.append(scope, envelope)
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (ordinary: Exception) {
+            // Intentionally swallowed -- see method doc above.
+        }
     }
 
     /**
@@ -301,6 +378,7 @@ public class DispatchingSynchronizationLifecycleEventEmitter(
      */
     override fun toString(): String =
         "DispatchingSynchronizationLifecycleEventEmitter(" +
-            "dispatcher=$dispatcher" +
+            "dispatcher=$dispatcher, " +
+            "operationalEventOutboxConfigured=${operationalEventOutbox != null}" +
             ")"
 }

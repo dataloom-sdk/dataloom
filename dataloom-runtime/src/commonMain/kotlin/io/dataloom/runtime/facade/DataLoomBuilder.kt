@@ -23,6 +23,7 @@ import io.dataloom.runtime.execution.SynchronizationPipelineRegistry
 import io.dataloom.runtime.execution.bidirectional.BidirectionalPipelineConfiguration
 import io.dataloom.runtime.execution.bidirectional.BidirectionalSynchronizationPipeline
 import io.dataloom.api.conflict.DurableUnresolvedConflictLog
+import io.dataloom.api.operational.DurableOperationalEventOutbox
 import io.dataloom.api.strategy.DurableStrategyDecisionEventLog
 import io.dataloom.runtime.conflict.ConflictDetectorRegistry
 import io.dataloom.runtime.conflict.ConflictResolverRegistry
@@ -153,6 +154,7 @@ public class DataLoomBuilder {
     private var circuitAdministrationSpec: DataLoomCircuitAdministrationSpec? = null
     private var conflictDetectionSpec: DataLoomConflictDetectionSpec? = null
     private var strategyDiagnosticsSpec: DataLoomStrategyDiagnosticsSpec? = null
+    private var operationalEventOutboxSpec: DataLoomOperationalEventOutboxSpec? = null
     private var built: Boolean = false
 
     // =========================================================================
@@ -310,6 +312,31 @@ public class DataLoomBuilder {
         apply {
             strategyDiagnosticsSpec = spec
         }
+
+    /**
+     * Enables the durable operational-event outbox bridge for synchronization
+     * events: every [io.dataloom.api.synchronization.SynchronizationEvent]
+     * the runtime constructs and dispatches is translated into an
+     * [io.dataloom.api.operational.OperationalEventEnvelope] by
+     * [io.dataloom.runtime.observation.operational.SynchronizationOperationalEventBridge]
+     * and durably appended -- for operator visibility and debugging, never
+     * for replay or continuation. See [DataLoomOperationalEventOutboxSpec]
+     * for the full contract.
+     *
+     * When this method is not called, behavior is unchanged from before it
+     * existed: no operational event envelope is ever constructed or
+     * appended.
+     *
+     * @param spec the durable store (and optional scope/schema/retry tuning)
+     *   to use. See [DataLoomOperationalEventOutboxSpec] for the full
+     *   contract.
+     * @return this builder for chaining.
+     */
+    public fun operationalEventOutboxConfiguration(
+        spec: DataLoomOperationalEventOutboxSpec,
+    ): DataLoomBuilder = apply {
+        operationalEventOutboxSpec = spec
+    }
 
     /**
      * Overrides the bidirectional pipeline configuration used when no custom
@@ -625,7 +652,18 @@ public class DataLoomBuilder {
         val strategyResolver = StrategyProviderResolver(registry)
 
         // --- 4. Build observer infrastructure (optional) ---
-        val lifecycleEventEmitter = if (observerList.isNotEmpty()) {
+        // Built when at least one observer is registered, or the operational-event
+        // outbox bridge is configured -- DispatchingSynchronizationLifecycleEventEmitter
+        // is both the sole constructor and the sole dispatch point of every
+        // SynchronizationEvent, so the bridge needs it to run even with zero observers.
+        val operationalEventOutbox = operationalEventOutboxSpec?.let { spec ->
+            DurableOperationalEventOutbox(
+                store = spec.store,
+                schemaVersion = spec.schemaVersion,
+                maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
+            )
+        }
+        val lifecycleEventEmitter = if (observerList.isNotEmpty() || operationalEventOutboxSpec != null) {
             // SynchronizationObserverRegistry throws IllegalArgumentException for duplicate IDs.
             val observerRegistry = SynchronizationObserverRegistry(observerList.toList())
             val dispatcher = SynchronizationEventDispatcher(observerRegistry)
@@ -633,6 +671,8 @@ public class DataLoomBuilder {
                 dispatcher = dispatcher,
                 clock = deps.clock,
                 eventIdGenerator = deps.identifiers.synchronizationEventIds,
+                operationalEventOutbox = operationalEventOutbox,
+                operationalEventOutboxScope = operationalEventOutboxSpec?.scope,
             )
         } else {
             null

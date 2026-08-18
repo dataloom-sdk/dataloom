@@ -2730,7 +2730,7 @@ final class io.dataloom.runtime.execution.inbound/InboundPullSynchronizationPipe
 }
 
 final class io.dataloom.runtime.execution.lifecycle/DispatchingSynchronizationLifecycleEventEmitter : io.dataloom.runtime.execution.lifecycle/SynchronizationRuntimeEventEmitter { // io.dataloom.runtime.execution.lifecycle/DispatchingSynchronizationLifecycleEventEmitter|null[0]
-    constructor <init>(io.dataloom.runtime.observation/SynchronizationEventDispatcher, io.dataloom.api.time/DataLoomClock, io.dataloom.api.identifier/IdentifierGenerator<io.dataloom.api.identifier/SynchronizationEventId>) // io.dataloom.runtime.execution.lifecycle/DispatchingSynchronizationLifecycleEventEmitter.<init>|<init>(io.dataloom.runtime.observation.SynchronizationEventDispatcher;io.dataloom.api.time.DataLoomClock;io.dataloom.api.identifier.IdentifierGenerator<io.dataloom.api.identifier.SynchronizationEventId>){}[0]
+    constructor <init>(io.dataloom.runtime.observation/SynchronizationEventDispatcher, io.dataloom.api.time/DataLoomClock, io.dataloom.api.identifier/IdentifierGenerator<io.dataloom.api.identifier/SynchronizationEventId>, io.dataloom.api.operational/DurableOperationalEventOutbox? = ..., io.dataloom.api.operational/OperationalEventOutboxScope? = ...) // io.dataloom.runtime.execution.lifecycle/DispatchingSynchronizationLifecycleEventEmitter.<init>|<init>(io.dataloom.runtime.observation.SynchronizationEventDispatcher;io.dataloom.api.time.DataLoomClock;io.dataloom.api.identifier.IdentifierGenerator<io.dataloom.api.identifier.SynchronizationEventId>;io.dataloom.api.operational.DurableOperationalEventOutbox?;io.dataloom.api.operational.OperationalEventOutboxScope?){}[0]
 
     final fun toString(): kotlin/String // io.dataloom.runtime.execution.lifecycle/DispatchingSynchronizationLifecycleEventEmitter.toString|toString(){}[0]
     final suspend fun emitCompleted(io.dataloom.runtime.execution/SynchronizationExecutionContext, io.dataloom.api.synchronization/SynchronizationResult): io.dataloom.runtime.observation/SynchronizationEventDispatchResult // io.dataloom.runtime.execution.lifecycle/DispatchingSynchronizationLifecycleEventEmitter.emitCompleted|emitCompleted(io.dataloom.runtime.execution.SynchronizationExecutionContext;io.dataloom.api.synchronization.SynchronizationResult){}[0]
@@ -2875,6 +2875,7 @@ final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.
     final fun inboundConfiguration(io.dataloom.runtime.execution.inbound/InboundPullPipelineConfiguration): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.inboundConfiguration|inboundConfiguration(io.dataloom.runtime.execution.inbound.InboundPullPipelineConfiguration){}[0]
     final fun observer(io.dataloom.api.observation/SynchronizationObserver): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.observer|observer(io.dataloom.api.observation.SynchronizationObserver){}[0]
     final fun observers(kotlin/Array<out io.dataloom.api.observation/SynchronizationObserver>...): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.observers|observers(kotlin.Array<out|io.dataloom.api.observation.SynchronizationObserver>...){}[0]
+    final fun operationalEventOutboxConfiguration(io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.operationalEventOutboxConfiguration|operationalEventOutboxConfiguration(io.dataloom.runtime.facade.DataLoomOperationalEventOutboxSpec){}[0]
     final fun outboundConfiguration(io.dataloom.runtime.execution.outbound/OutboundPushPipelineConfiguration): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.outboundConfiguration|outboundConfiguration(io.dataloom.runtime.execution.outbound.OutboundPushPipelineConfiguration){}[0]
     final fun pipeline(io.dataloom.runtime.execution/SynchronizationPipeline): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.pipeline|pipeline(io.dataloom.runtime.execution.SynchronizationPipeline){}[0]
     final fun provider(io.dataloom.api.provider/DataLoomProvider): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.provider|provider(io.dataloom.api.provider.DataLoomProvider){}[0]
@@ -2949,6 +2950,19 @@ final class io.dataloom.runtime.facade/DataLoomConflictDetectionSpec { // io.dat
         final fun <get-unresolvedConflictLogSchemaVersion>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomConflictDetectionSpec.unresolvedConflictLogSchemaVersion.<get-unresolvedConflictLogSchemaVersion>|<get-unresolvedConflictLogSchemaVersion>(){}[0]
     final val unresolvedConflictStore // io.dataloom.runtime.facade/DataLoomConflictDetectionSpec.unresolvedConflictStore|{}unresolvedConflictStore[0]
         final fun <get-unresolvedConflictStore>(): io.dataloom.api.state/DurableStateStore<io.dataloom.api.identifier/ConflictId, io.dataloom.api.conflict/UnresolvedConflictRecord> // io.dataloom.runtime.facade/DataLoomConflictDetectionSpec.unresolvedConflictStore.<get-unresolvedConflictStore>|<get-unresolvedConflictStore>(){}[0]
+}
+
+final class io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec { // io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec|null[0]
+    constructor <init>(io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState>, io.dataloom.api.operational/OperationalEventOutboxScope = ..., kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec.<init>|<init>(io.dataloom.api.state.DurableStateStore<io.dataloom.api.operational.OperationalEventOutboxScope,io.dataloom.api.operational.OperationalEventOutboxState>;io.dataloom.api.operational.OperationalEventOutboxScope;kotlin.Int;kotlin.Int){}[0]
+
+    final val maximumStateUpdateAttempts // io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec.maximumStateUpdateAttempts|{}maximumStateUpdateAttempts[0]
+        final fun <get-maximumStateUpdateAttempts>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec.maximumStateUpdateAttempts.<get-maximumStateUpdateAttempts>|<get-maximumStateUpdateAttempts>(){}[0]
+    final val schemaVersion // io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec.schemaVersion|{}schemaVersion[0]
+        final fun <get-schemaVersion>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec.schemaVersion.<get-schemaVersion>|<get-schemaVersion>(){}[0]
+    final val scope // io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec.scope|{}scope[0]
+        final fun <get-scope>(): io.dataloom.api.operational/OperationalEventOutboxScope // io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec.scope.<get-scope>|<get-scope>(){}[0]
+    final val store // io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec.store|{}store[0]
+        final fun <get-store>(): io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState> // io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec.store.<get-store>|<get-store>(){}[0]
 }
 
 final class io.dataloom.runtime.facade/DataLoomProviderProtectionSpec { // io.dataloom.runtime.facade/DataLoomProviderProtectionSpec|null[0]
@@ -4276,6 +4290,10 @@ final value class io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExp
 
 final object io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationRuntime { // io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationRuntime|null[0]
     final suspend fun execute(io.dataloom.runtime.execution/SynchronizationExecutionContext, io.dataloom.runtime.execution/SynchronizationPipeline, io.dataloom.runtime.retry/ProtectedStorageOperations, io.dataloom.runtime.retry/ProtectedTransportOperations): io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationResult // io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationRuntime.execute|execute(io.dataloom.runtime.execution.SynchronizationExecutionContext;io.dataloom.runtime.execution.SynchronizationPipeline;io.dataloom.runtime.retry.ProtectedStorageOperations;io.dataloom.runtime.retry.ProtectedTransportOperations){}[0]
+}
+
+final object io.dataloom.runtime.observation.operational/SynchronizationOperationalEventBridge { // io.dataloom.runtime.observation.operational/SynchronizationOperationalEventBridge|null[0]
+    final fun toEnvelope(io.dataloom.api.synchronization/SynchronizationEvent): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.runtime.observation.operational/SynchronizationOperationalEventBridge.toEnvelope|toEnvelope(io.dataloom.api.synchronization.SynchronizationEvent){}[0]
 }
 
 final object io.dataloom.runtime.retry/DefaultCircuitBreakerFailureClassifier : io.dataloom.runtime.retry/CircuitBreakerFailureClassifier { // io.dataloom.runtime.retry/DefaultCircuitBreakerFailureClassifier|null[0]
