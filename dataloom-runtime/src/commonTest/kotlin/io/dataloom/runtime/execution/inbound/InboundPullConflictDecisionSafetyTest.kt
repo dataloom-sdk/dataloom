@@ -7,6 +7,7 @@ import io.dataloom.api.conflict.ConflictResolutionDecision
 import io.dataloom.api.conflict.ConflictType
 import io.dataloom.api.conflict.ResolvedConflictDecisionRecord
 import io.dataloom.api.conflict.SynchronizationConflict
+import io.dataloom.api.conflict.UnresolvedConflictRecord
 import io.dataloom.api.identifier.ChangeEventId
 import io.dataloom.api.identifier.ConflictId
 import io.dataloom.api.identifier.EntityId
@@ -50,6 +51,41 @@ class InboundPullConflictDecisionSafetyTest : ConflictDecisionApplicationFixture
         val failed = assertIs<SynchronizationResult.Failed>(result)
         assertEquals("DL-CONFLICT-DETECTOR-CONTRACT-VIOLATION", failed.error.code.value)
         assertEquals(0, storage.applyCallCount)
+        assertNull(resolvedStore.state(conflictId))
+    }
+
+    @Test
+    fun unresolvedDetectorContractMismatch_isNotDurablyRecorded() {
+        val alternateLocal = localEvent.copy(id = ChangeEventId("different-unresolved-local"))
+        val detector = FixedDetector(
+            ConflictDetectionResult.ConflictDetected(
+                SynchronizationConflict(
+                    id = conflictId,
+                    type = ConflictType.CONCURRENT_CHANGE,
+                    entity = entity,
+                    localChange = alternateLocal,
+                    remoteChange = remoteEvent,
+                ),
+            ),
+        )
+        val unresolvedStore = InMemoryDurableStore<ConflictId, UnresolvedConflictRecord>()
+        val resolvedStore = InMemoryDurableStore<ConflictId, ResolvedConflictDecisionRecord>()
+        val storage = storageWithCandidate(localEvent)
+        val pipeline = pipeline(
+            detector = detector,
+            resolver = null,
+            unresolvedStore = unresolvedStore,
+            resolvedStore = resolvedStore,
+        )
+
+        val result = runSuspend {
+            pipeline.execute(context(storage, transport(changeSet(remoteEvent))))
+        }
+
+        val failed = assertIs<SynchronizationResult.Failed>(result)
+        assertEquals("DL-CONFLICT-DETECTOR-CONTRACT-VIOLATION", failed.error.code.value)
+        assertEquals(0, storage.applyCallCount)
+        assertNull(unresolvedStore.state(conflictId))
         assertNull(resolvedStore.state(conflictId))
     }
 

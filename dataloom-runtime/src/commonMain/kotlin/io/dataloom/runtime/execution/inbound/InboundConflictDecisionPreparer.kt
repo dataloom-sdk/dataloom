@@ -123,10 +123,22 @@ internal class InboundConflictDecisionPreparer(
 
                 is ConflictOrchestrationResult.NoConflict -> effectiveEvents += remoteEvent
 
-                is ConflictOrchestrationResult.ResolverNotConfigured,
-                is ConflictOrchestrationResult.ResolverNotFound,
-                -> {
+                is ConflictOrchestrationResult.ResolverNotConfigured -> {
                     conflictCount++
+                    validateConflictInputs(localEvent, remoteEvent, orchestration.conflict)?.let {
+                        return InboundConflictPreparation.Blocked(it, conflictCount)
+                    }
+                    return InboundConflictPreparation.Blocked(
+                        unresolvedBarrierError(durable.unresolvedRecordOutcome),
+                        conflictCount,
+                    )
+                }
+
+                is ConflictOrchestrationResult.ResolverNotFound -> {
+                    conflictCount++
+                    validateConflictInputs(localEvent, remoteEvent, orchestration.conflict)?.let {
+                        return InboundConflictPreparation.Blocked(it, conflictCount)
+                    }
                     return InboundConflictPreparation.Blocked(
                         unresolvedBarrierError(durable.unresolvedRecordOutcome),
                         conflictCount,
@@ -188,14 +200,7 @@ internal class InboundConflictDecisionPreparer(
         result: ConflictOrchestrationResult.Resolved,
     ): DataLoomError? {
         val conflict = result.conflict
-        if (conflict.localChange != localEvent || conflict.remoteChange != remoteEvent) {
-            return error(
-                "DL-CONFLICT-DETECTOR-CONTRACT-VIOLATION",
-                ErrorCategory.CONFLICT,
-                Recoverability.NON_RECOVERABLE,
-                "Conflict detector returned changes that did not match the evaluated inputs.",
-            )
-        }
+        validateConflictInputs(localEvent, remoteEvent, conflict)?.let { return it }
         val merge = result.decision as? ConflictResolutionDecision.Merge ?: return null
         return if (
             merge.expectedEntity.type != conflict.entity.type ||
@@ -211,6 +216,22 @@ internal class InboundConflictDecisionPreparer(
             null
         }
     }
+
+    private fun validateConflictInputs(
+        localEvent: ChangeEvent,
+        remoteEvent: ChangeEvent,
+        conflict: io.dataloom.api.conflict.SynchronizationConflict,
+    ): DataLoomError? =
+        if (conflict.localChange != localEvent || conflict.remoteChange != remoteEvent) {
+            error(
+                "DL-CONFLICT-DETECTOR-CONTRACT-VIOLATION",
+                ErrorCategory.CONFLICT,
+                Recoverability.NON_RECOVERABLE,
+                "Conflict detector returned changes that did not match the evaluated inputs.",
+            )
+        } else {
+            null
+        }
 
     private fun resolvedBarrierError(
         outcome: DurableResolvedConflictDecisionRecordOutcome?,

@@ -57,16 +57,20 @@ public class DurableConflictDetectionCoordinator(
 
         when (result) {
             is ConflictOrchestrationResult.ResolverNotConfigured ->
-                unresolvedOutcome = recordUnresolved(
-                    conflict = result.conflict,
-                    reason = UnresolvedConflictReason.RESOLVER_NOT_CONFIGURED,
-                )
+                if (conflictMatchesDetection(request, result.conflict)) {
+                    unresolvedOutcome = recordUnresolved(
+                        conflict = result.conflict,
+                        reason = UnresolvedConflictReason.RESOLVER_NOT_CONFIGURED,
+                    )
+                }
 
             is ConflictOrchestrationResult.ResolverNotFound ->
-                unresolvedOutcome = recordUnresolved(
-                    conflict = result.conflict,
-                    reason = UnresolvedConflictReason.RESOLVER_NOT_FOUND,
-                )
+                if (conflictMatchesDetection(request, result.conflict)) {
+                    unresolvedOutcome = recordUnresolved(
+                        conflict = result.conflict,
+                        reason = UnresolvedConflictReason.RESOLVER_NOT_FOUND,
+                    )
+                }
 
             is ConflictOrchestrationResult.Resolved ->
                 if (isRecordableResolvedResult(request, result)) {
@@ -99,12 +103,8 @@ public class DurableConflictDetectionCoordinator(
         request: ConflictOrchestrationRequest,
         result: ConflictOrchestrationResult.Resolved,
     ): Boolean {
-        val detection = request.detectionRequest
         val conflict = result.conflict
-        if (
-            conflict.localChange != detection.localChange ||
-            conflict.remoteChange != detection.remoteChange
-        ) {
+        if (!conflictMatchesDetection(request, conflict)) {
             return false
         }
 
@@ -112,6 +112,16 @@ public class DurableConflictDetectionCoordinator(
             ?: return true
         return merge.expectedEntity.type == conflict.entity.type &&
             merge.expectedEntity.id == conflict.entity.id
+    }
+
+
+    private fun conflictMatchesDetection(
+        request: ConflictOrchestrationRequest,
+        conflict: SynchronizationConflict,
+    ): Boolean {
+        val detection = request.detectionRequest
+        return conflict.localChange == detection.localChange &&
+            conflict.remoteChange == detection.remoteChange
     }
 
     private suspend fun recordUnresolved(
