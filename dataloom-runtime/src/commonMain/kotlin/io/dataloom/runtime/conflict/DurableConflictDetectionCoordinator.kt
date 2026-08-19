@@ -10,77 +10,18 @@ import io.dataloom.api.conflict.ResolvedConflictDecisionKind
 import io.dataloom.api.conflict.ResolvedConflictDecisionRecord
 import io.dataloom.api.conflict.SynchronizationConflict
 import io.dataloom.api.conflict.UnresolvedConflictChangeSummary
-import io.dataloom.api.conflict.UnresolvedConflictRecord
 import io.dataloom.api.conflict.UnresolvedConflictReason
+import io.dataloom.api.conflict.UnresolvedConflictRecord
 import io.dataloom.api.identifier.ConflictResolverId
 import io.dataloom.api.time.DataLoomClock
 
 /**
- * Composes [SynchronizationConflictOrchestrator] with
- * [DurableUnresolvedConflictLog] and, optionally,
- * [DurableResolvedConflictDecisionLog]: the first real caller of the durable
- * unresolved-conflict log, closing the "available primitive, not adopted end
- * to end" gap both types previously documented, and — once
- * [resolvedConflictDecisionLog] is supplied — the first real caller of the
- * durable resolved-conflict-decision log too.
+ * Composes deterministic conflict detection/resolution with durable unresolved
+ * and optional resolved-decision recording.
  *
- * ## Why a separate coordinator, not a change to the orchestrator
- *
- * [SynchronizationConflictOrchestrator] is explicitly documented as never
- * applying anything "to storage, queues, or any synchronization pipeline."
- * This coordinator does not change that boundary or reach inside the
- * orchestrator — it wraps [detectAndResolve] from the outside, the same way
- * a caller composes any other side-effect-free component with a durable
- * store.
- *
- * ## What gets durably recorded
- *
- * The two *unresolved* outcomes —
- * [ConflictOrchestrationResult.ResolverNotConfigured] and
- * [ConflictOrchestrationResult.ResolverNotFound] — are passed to
- * [unresolvedConflictLog]. [ConflictOrchestrationResult.DetectorNotFound] and
- * [ConflictOrchestrationResult.NoConflict] are never durably recorded by
- * either log.
- *
- * [ConflictOrchestrationResult.Resolved] is passed to
- * [resolvedConflictDecisionLog] when one is supplied (`null` by default,
- * preserving byte-for-byte prior behavior for existing callers). Recording a
- * resolved decision never persists
- * [io.dataloom.api.conflict.ConflictResolutionDecision.Merge]'s payload — see
- * [ResolvedConflictDecisionRecord]'s "Avoiding the Merge payload landmine"
- * documentation.
- *
- * ## Durable-recording failures do not hide the orchestration result
- *
- * A [DurableUnresolvedConflictRecordOutcome.PersistenceFailure],
- * [DurableUnresolvedConflictRecordOutcome.ContentionLimitReached],
- * [DurableResolvedConflictDecisionRecordOutcome.PersistenceFailure], or
- * [DurableResolvedConflictDecisionRecordOutcome.ContentionLimitReached] does
- * not change or suppress the returned [ConflictOrchestrationResult] — the
- * caller still receives the real detection/resolution outcome and can decide
- * how to react to a durable-recording failure separately, via
- * [DurableConflictDetectionResult.unresolvedRecordOutcome] /
- * [DurableConflictDetectionResult.resolvedDecisionRecordOutcome]. This
- * mirrors [SynchronizationConflictOrchestrator]'s own posture for its
- * optional event emitter: "ordinary observer failures do not stop resolver
- * selection or resolution."
- *
- * ## Cancellation
- *
- * A thrown [kotlin.coroutines.cancellation.CancellationException] from
- * [orchestrator], [unresolvedConflictLog], or [resolvedConflictDecisionLog]
- * propagates normally.
- *
- * @param orchestrator the conflict detection/resolution orchestrator to wrap.
- * @param unresolvedConflictLog durable persistence for conflicts that could
- *   not be automatically resolved.
- * @param clock supplies the commit timestamp for each durably recorded
- *   conflict.
- * @param resolvedConflictDecisionLog optional durable persistence for
- *   conflicts a resolver genuinely resolved. `null` (the default) disables
- *   resolved-decision recording entirely — no lookup or record attempt is
- *   made — preserving prior behavior for callers constructed before this
- *   parameter existed.
+ * The coordinator does not apply a decision to application storage. It returns
+ * the exact orchestration result together with the exact durable-record
+ * outcome, allowing a caller to establish a fail-closed application barrier.
  */
 public class DurableConflictDetectionCoordinator(
     private val orchestrator: SynchronizationConflictOrchestrator,
@@ -88,17 +29,24 @@ public class DurableConflictDetectionCoordinator(
     private val clock: DataLoomClock,
     private val resolvedConflictDecisionLog: DurableResolvedConflictDecisionLog? = null,
 ) {
+    /**
+     * `true` only when resolved decisions have a durable commit-once log.
+     *
+     * This is intentionally module-internal. The inbound pipeline uses it to
+     * distinguish the historical observational mode from decision-application
+     * mode without adding another public configuration contract.
+     */
+    internal val hasResolvedDecisionLog: Boolean
+        get() = resolvedConflictDecisionLog != null
 
     /**
-     * Performs [SynchronizationConflictOrchestrator.detectAndResolve] and
-     * durably records the outcome when applicable: an unresolved outcome is
-     * always recorded via [unresolvedConflictLog]; a resolved outcome is
-     * recorded via [resolvedConflictDecisionLog] only when one was supplied.
+     * Detects and optionally resolves one conflict, then records whichever
+     * durable evidence applies.
      *
-     * @param request the [ConflictOrchestrationRequest] to evaluate.
-     * @return the exact [ConflictOrchestrationResult] from [orchestrator],
-     *   paired with whichever durable record outcome applies, or `null` when
-     *   the outcome did not require one.
+     * Cancellation from the orchestrator or either durable store propagates.
+     * A durable-record failure never replaces the real orchestration result;
+     * both are returned so the caller can fail closed when application depends
+     * on durable evidence.
      */
     public suspend fun detectAndResolve(
         request: ConflictOrchestrationRequest,
@@ -106,22 +54,64 @@ public class DurableConflictDetectionCoordinator(
         val result = orchestrator.detectAndResolve(request)
         var unresolvedOutcome: DurableUnresolvedConflictRecordOutcome? = null
         var resolvedOutcome: DurableResolvedConflictDecisionRecordOutcome? = null
+
         when (result) {
             is ConflictOrchestrationResult.ResolverNotConfigured ->
-                unresolvedOutcome = recordUnresolved(result.conflict, UnresolvedConflictReason.RESOLVER_NOT_CONFIGURED)
+                unresolvedOutcome = recordUnresolved(
+                    conflict = result.conflict,
+                    reason = UnresolvedConflictReason.RESOLVER_NOT_CONFIGURED,
+                )
+
             is ConflictOrchestrationResult.ResolverNotFound ->
-                unresolvedOutcome = recordUnresolved(result.conflict, UnresolvedConflictReason.RESOLVER_NOT_FOUND)
+                unresolvedOutcome = recordUnresolved(
+                    conflict = result.conflict,
+                    reason = UnresolvedConflictReason.RESOLVER_NOT_FOUND,
+                )
+
             is ConflictOrchestrationResult.Resolved ->
-                resolvedOutcome = recordResolved(result.conflict, result.decision, result.resolverId)
+                if (isRecordableResolvedResult(request, result)) {
+                    resolvedOutcome = recordResolved(
+                        conflict = result.conflict,
+                        decision = result.decision,
+                        resolverId = result.resolverId,
+                    )
+                }
+
             is ConflictOrchestrationResult.DetectorNotFound,
             is ConflictOrchestrationResult.NoConflict,
             -> Unit
         }
+
         return DurableConflictDetectionResult(
             orchestration = result,
             unresolvedRecordOutcome = unresolvedOutcome,
             resolvedDecisionRecordOutcome = resolvedOutcome,
         )
+    }
+
+    /**
+     * Rejects detector/resolver contract violations before they can poison the
+     * commit-once resolved-decision log. The exact invalid orchestration result
+     * still returns to the caller, which can fail with a specific contract
+     * diagnostic; only durable recording is suppressed.
+     */
+    private fun isRecordableResolvedResult(
+        request: ConflictOrchestrationRequest,
+        result: ConflictOrchestrationResult.Resolved,
+    ): Boolean {
+        val detection = request.detectionRequest
+        val conflict = result.conflict
+        if (
+            conflict.localChange != detection.localChange ||
+            conflict.remoteChange != detection.remoteChange
+        ) {
+            return false
+        }
+
+        val merge = result.decision as? ConflictResolutionDecision.Merge
+            ?: return true
+        return merge.expectedEntity.type == conflict.entity.type &&
+            merge.expectedEntity.id == conflict.entity.id
     }
 
     private suspend fun recordUnresolved(
@@ -155,50 +145,54 @@ public class DurableConflictDetectionCoordinator(
             resolverId = resolverId,
             decisionKind = decision.toKind(),
             decisionMetadata = decision.metadataValue(),
-            mergedChange = (decision as? ConflictResolutionDecision.Merge)?.resolvedChange?.toSummary(),
-            failureErrorCode = (decision as? ConflictResolutionDecision.Fail)?.error?.code?.value,
+            mergedChange = (decision as? ConflictResolutionDecision.Merge)
+                ?.resolvedChange
+                ?.toSummary(),
+            failureErrorCode = (decision as? ConflictResolutionDecision.Fail)
+                ?.error
+                ?.code
+                ?.value,
             committedAt = clock.now(),
         )
         return log.record(conflict.id, record)
     }
 
     private fun ChangeEvent.toSummary(): UnresolvedConflictChangeSummary =
-        UnresolvedConflictChangeSummary(changeEventId = id, operation = operation, metadata = metadata)
+        UnresolvedConflictChangeSummary(
+            changeEventId = id,
+            operation = operation,
+            metadata = metadata,
+        )
 
-    private fun ConflictResolutionDecision.toKind(): ResolvedConflictDecisionKind = when (this) {
-        is ConflictResolutionDecision.UseLocal -> ResolvedConflictDecisionKind.USE_LOCAL
-        is ConflictResolutionDecision.UseRemote -> ResolvedConflictDecisionKind.USE_REMOTE
-        is ConflictResolutionDecision.Merge -> ResolvedConflictDecisionKind.MERGE
-        is ConflictResolutionDecision.Defer -> ResolvedConflictDecisionKind.DEFER
-        is ConflictResolutionDecision.Fail -> ResolvedConflictDecisionKind.FAIL
-    }
+    private fun ConflictResolutionDecision.toKind(): ResolvedConflictDecisionKind =
+        when (this) {
+            is ConflictResolutionDecision.UseLocal ->
+                ResolvedConflictDecisionKind.USE_LOCAL
+            is ConflictResolutionDecision.UseRemote ->
+                ResolvedConflictDecisionKind.USE_REMOTE
+            is ConflictResolutionDecision.Merge ->
+                ResolvedConflictDecisionKind.MERGE
+            is ConflictResolutionDecision.Defer ->
+                ResolvedConflictDecisionKind.DEFER
+            is ConflictResolutionDecision.Fail ->
+                ResolvedConflictDecisionKind.FAIL
+        }
 
-    private fun ConflictResolutionDecision.metadataValue() = when (this) {
-        is ConflictResolutionDecision.UseLocal -> metadata
-        is ConflictResolutionDecision.UseRemote -> metadata
-        is ConflictResolutionDecision.Merge -> metadata
-        is ConflictResolutionDecision.Defer -> metadata
-        is ConflictResolutionDecision.Fail -> metadata
-    }
+    private fun ConflictResolutionDecision.metadataValue() =
+        when (this) {
+            is ConflictResolutionDecision.UseLocal -> metadata
+            is ConflictResolutionDecision.UseRemote -> metadata
+            is ConflictResolutionDecision.Merge -> metadata
+            is ConflictResolutionDecision.Defer -> metadata
+            is ConflictResolutionDecision.Fail -> metadata
+        }
 
-    override fun toString(): String = "DurableConflictDetectionCoordinator(orchestrator=$orchestrator)"
+    override fun toString(): String =
+        "DurableConflictDetectionCoordinator(orchestrator=$orchestrator)"
 }
 
 /**
- * Result of one [DurableConflictDetectionCoordinator.detectAndResolve] call.
- *
- * @param orchestration the exact [ConflictOrchestrationResult] returned by
- *   [SynchronizationConflictOrchestrator.detectAndResolve]. Never reinterpreted.
- * @param unresolvedRecordOutcome the [DurableUnresolvedConflictRecordOutcome]
- *   when [orchestration] was an unresolved outcome and a record attempt was
- *   made, or `null` when [orchestration] did not require one.
- * @param resolvedDecisionRecordOutcome the
- *   [DurableResolvedConflictDecisionRecordOutcome] when [orchestration] was
- *   [ConflictOrchestrationResult.Resolved] and a
- *   [DurableConflictDetectionCoordinator.resolvedConflictDecisionLog] was
- *   configured, or `null` when no record attempt was made (either
- *   [orchestration] was not [ConflictOrchestrationResult.Resolved], or no
- *   resolved-decision log was configured).
+ * Exact conflict orchestration result plus optional durable-record evidence.
  */
 public data class DurableConflictDetectionResult(
     public val orchestration: ConflictOrchestrationResult,
