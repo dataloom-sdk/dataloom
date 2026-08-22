@@ -187,9 +187,10 @@ join multiple entries into one text payload.
 - **No filtering or subscription delivery.**
 - **No enumeration across scopes.** A caller must already know which
   `OperationalEventOutboxScope` to read.
-- **One real wired caller so far — synchronization events only.**
-  `SynchronizationOperationalEventBridge` (`io.dataloom.runtime.observation.operational`)
-  maps every `SynchronizationEvent` variant (`Started`, `PhaseChanged`,
+- **Two real wired callers so far — synchronization events, and retry/circuit
+  administration commands.** `SynchronizationOperationalEventBridge`
+  (`io.dataloom.runtime.observation.operational`) maps every
+  `SynchronizationEvent` variant (`Started`, `PhaseChanged`,
   `ProgressUpdated`, `RetryScheduled`, `ConflictDetected`, `Completed`) to an
   `OperationalEventEnvelope` — classifying every field it places into
   `attributes` via `ClassifiedData`/`StrictDataLoomRedactor` as documented
@@ -203,14 +204,42 @@ join multiple entries into one text payload.
   durably appends the result after every dispatch, but only when the
   application opts in via `DataLoomBuilder.operationalEventOutboxConfiguration(DataLoomOperationalEventOutboxSpec)`;
   when it is not configured, no envelope is ever constructed or appended.
-  Bridging failures (envelope construction) and append outcomes other than
-  success (`Conflict`, `PersistenceFailure`, `ContentionLimitReached`) are
-  always swallowed — consistent with `StrategySynchronizationExecutionCoordinator`'s
-  own durable-diagnostics posture, a durable side-record must never change or
-  hide the real result of the operation it is describing. Every other
-  subsystem's events (retry/circuit administration, conflict resolution,
-  strategy decisions, queue lifecycle, and so on) remain unbridged; wiring
-  those is separate, larger follow-up work, consistent with
+
+  `RetryCircuitAdministrationOperationalEventBridge`
+  (`io.dataloom.runtime.observation.operational`) maps every terminal
+  `RetryAdministrationResult` (from `RetryAdministrationCoordinator`) and
+  `CircuitAdministrationResult` (from `CircuitAdministrationCoordinator`) —
+  the richer, already-audited domain types both coordinators' own class docs
+  describe as "authorized, idempotent, and audited" — to an
+  `OperationalEventEnvelope`, deriving `occurredAt` from the durable command
+  state's own already-computed `updatedAt` (or the original request's
+  `requestedAt`/a `ClockRegression` result's own `observedAt` when no durable
+  state exists yet) rather than reading a clock, and reusing each command's
+  own `commandId` unchanged as `correlationId` and (domain-prefixed and
+  sanitized, so the two independent `commandId` spaces can never collide in
+  one shared outbox scope) as the envelope's own `id`. `DefaultDataLoomRetryAdministration`/
+  `DefaultDataLoomCircuitAdministration` — the sole facade adapters over each
+  coordinator — call the bridge and durably append the result after every
+  `execute()` call, opt-in via
+  `DataLoomBuilder.retryCircuitAdministrationOperationalEventOutboxConfiguration(DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec)`,
+  a second, separate spec from the synchronization-events one (retry/circuit
+  administration commands carry no correlation/trace identity of their own
+  and are available independently of whether synchronization events are
+  bridged at all — see that spec's own class doc for the full rationale).
+  Configuring it alone does not enable either administration capability;
+  `retryAdministrationConfiguration`/`circuitAdministrationConfiguration`
+  must still be configured separately, and whichever of those two is
+  configured has its results bridged into the one shared outbox scope this
+  spec names.
+
+  For both bridges, bridging failures (envelope construction) and append
+  outcomes other than success (`Conflict`, `PersistenceFailure`,
+  `ContentionLimitReached`) are always swallowed — consistent with
+  `StrategySynchronizationExecutionCoordinator`'s own durable-diagnostics
+  posture, a durable side-record must never change or hide the real result of
+  the operation it is describing. Every other subsystem's events (conflict
+  resolution, strategy decisions, queue lifecycle, and so on) remain
+  unbridged; wiring those is separate, larger follow-up work, consistent with
   `DurableConfigurationHistory` and `DurablePolicyDecisionLog` each
   originally shipping without a real caller.
 

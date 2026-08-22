@@ -2903,6 +2903,7 @@ final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.
     final fun queueSubmissionEncoder(io.dataloom.runtime.submission/QueuedSynchronizationWorkEncoder): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.queueSubmissionEncoder|queueSubmissionEncoder(io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder){}[0]
     final fun queueWorkerConfiguration(io.dataloom.runtime.facade/DataLoomQueueWorkerSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.queueWorkerConfiguration|queueWorkerConfiguration(io.dataloom.runtime.facade.DataLoomQueueWorkerSpec){}[0]
     final fun retryAdministrationConfiguration(io.dataloom.runtime.facade/DataLoomRetryAdministrationSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.retryAdministrationConfiguration|retryAdministrationConfiguration(io.dataloom.runtime.facade.DataLoomRetryAdministrationSpec){}[0]
+    final fun retryCircuitAdministrationOperationalEventOutboxConfiguration(io.dataloom.runtime.facade/DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.retryCircuitAdministrationOperationalEventOutboxConfiguration|retryCircuitAdministrationOperationalEventOutboxConfiguration(io.dataloom.runtime.facade.DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec){}[0]
     final fun runtimeDependencies(io.dataloom.api.runtime/RuntimeDependencies): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.runtimeDependencies|runtimeDependencies(io.dataloom.api.runtime.RuntimeDependencies){}[0]
     final fun strategyDiagnosticsConfiguration(io.dataloom.runtime.facade/DataLoomStrategyDiagnosticsSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.strategyDiagnosticsConfiguration|strategyDiagnosticsConfiguration(io.dataloom.runtime.facade.DataLoomStrategyDiagnosticsSpec){}[0]
     final fun strategyProviderProtectionConfiguration(io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.strategyProviderProtectionConfiguration|strategyProviderProtectionConfiguration(io.dataloom.runtime.facade.DataLoomStrategyProviderProtectionSpec){}[0]
@@ -3039,6 +3040,19 @@ final class io.dataloom.runtime.facade/DataLoomRetryAdministrationSpec { // io.d
         final fun <get-stateStore>(): io.dataloom.api.retry/RetryAdministrationStateStore // io.dataloom.runtime.facade/DataLoomRetryAdministrationSpec.stateStore.<get-stateStore>|<get-stateStore>(){}[0]
 
     final fun toString(): kotlin/String // io.dataloom.runtime.facade/DataLoomRetryAdministrationSpec.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.facade/DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec { // io.dataloom.runtime.facade/DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec|null[0]
+    constructor <init>(io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState>, io.dataloom.api.operational/OperationalEventOutboxScope = ..., kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.runtime.facade/DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec.<init>|<init>(io.dataloom.api.state.DurableStateStore<io.dataloom.api.operational.OperationalEventOutboxScope,io.dataloom.api.operational.OperationalEventOutboxState>;io.dataloom.api.operational.OperationalEventOutboxScope;kotlin.Int;kotlin.Int){}[0]
+
+    final val maximumStateUpdateAttempts // io.dataloom.runtime.facade/DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec.maximumStateUpdateAttempts|{}maximumStateUpdateAttempts[0]
+        final fun <get-maximumStateUpdateAttempts>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec.maximumStateUpdateAttempts.<get-maximumStateUpdateAttempts>|<get-maximumStateUpdateAttempts>(){}[0]
+    final val schemaVersion // io.dataloom.runtime.facade/DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec.schemaVersion|{}schemaVersion[0]
+        final fun <get-schemaVersion>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec.schemaVersion.<get-schemaVersion>|<get-schemaVersion>(){}[0]
+    final val scope // io.dataloom.runtime.facade/DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec.scope|{}scope[0]
+        final fun <get-scope>(): io.dataloom.api.operational/OperationalEventOutboxScope // io.dataloom.runtime.facade/DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec.scope.<get-scope>|<get-scope>(){}[0]
+    final val store // io.dataloom.runtime.facade/DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec.store|{}store[0]
+        final fun <get-store>(): io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState> // io.dataloom.runtime.facade/DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec.store.<get-store>|<get-store>(){}[0]
 }
 
 final class io.dataloom.runtime.facade/DataLoomStorageProtectionSpec { // io.dataloom.runtime.facade/DataLoomStorageProtectionSpec|null[0]
@@ -4314,6 +4328,11 @@ final value class io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExp
 
 final object io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationRuntime { // io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationRuntime|null[0]
     final suspend fun execute(io.dataloom.runtime.execution/SynchronizationExecutionContext, io.dataloom.runtime.execution/SynchronizationPipeline, io.dataloom.runtime.retry/ProtectedStorageOperations, io.dataloom.runtime.retry/ProtectedTransportOperations): io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationResult // io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationRuntime.execute|execute(io.dataloom.runtime.execution.SynchronizationExecutionContext;io.dataloom.runtime.execution.SynchronizationPipeline;io.dataloom.runtime.retry.ProtectedStorageOperations;io.dataloom.runtime.retry.ProtectedTransportOperations){}[0]
+}
+
+final object io.dataloom.runtime.observation.operational/RetryCircuitAdministrationOperationalEventBridge { // io.dataloom.runtime.observation.operational/RetryCircuitAdministrationOperationalEventBridge|null[0]
+    final fun toEnvelope(io.dataloom.api.circuit/CircuitAdministrationRequest, io.dataloom.runtime.retry/CircuitAdministrationResult): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.runtime.observation.operational/RetryCircuitAdministrationOperationalEventBridge.toEnvelope|toEnvelope(io.dataloom.api.circuit.CircuitAdministrationRequest;io.dataloom.runtime.retry.CircuitAdministrationResult){}[0]
+    final fun toEnvelope(io.dataloom.api.retry/RetryAdministrationRequest, io.dataloom.runtime.retry/RetryAdministrationResult): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.runtime.observation.operational/RetryCircuitAdministrationOperationalEventBridge.toEnvelope|toEnvelope(io.dataloom.api.retry.RetryAdministrationRequest;io.dataloom.runtime.retry.RetryAdministrationResult){}[0]
 }
 
 final object io.dataloom.runtime.observation.operational/SynchronizationOperationalEventBridge { // io.dataloom.runtime.observation.operational/SynchronizationOperationalEventBridge|null[0]

@@ -156,6 +156,8 @@ public class DataLoomBuilder {
     private var conflictDetectionSpec: DataLoomConflictDetectionSpec? = null
     private var strategyDiagnosticsSpec: DataLoomStrategyDiagnosticsSpec? = null
     private var operationalEventOutboxSpec: DataLoomOperationalEventOutboxSpec? = null
+    private var retryCircuitAdministrationOperationalEventOutboxSpec:
+        DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec? = null
     private var built: Boolean = false
 
     // =========================================================================
@@ -337,6 +339,42 @@ public class DataLoomBuilder {
         spec: DataLoomOperationalEventOutboxSpec,
     ): DataLoomBuilder = apply {
         operationalEventOutboxSpec = spec
+    }
+
+    /**
+     * Enables the durable operational-event outbox bridge for retry- and
+     * circuit-administration commands: every terminal
+     * [io.dataloom.runtime.retry.RetryAdministrationResult] and
+     * [io.dataloom.runtime.retry.CircuitAdministrationResult] the runtime
+     * produces for a command executed through [DataLoomRetryAdministration]/
+     * [DataLoomCircuitAdministration] is translated into an
+     * [io.dataloom.api.operational.OperationalEventEnvelope] by
+     * [io.dataloom.runtime.observation.operational.RetryCircuitAdministrationOperationalEventBridge]
+     * and durably appended -- for operator visibility and debugging, never for
+     * replay or command continuation. See
+     * [DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec] for the
+     * full contract, including why this is a second, separate opt-in point
+     * rather than an extension of [DataLoomOperationalEventOutboxSpec].
+     *
+     * Configuring this spec alone does not enable either administration
+     * capability -- [retryAdministrationConfiguration] and/or
+     * [circuitAdministrationConfiguration] must still be called separately for
+     * [DataLoomRetryAdministration]/[DataLoomCircuitAdministration] to exist at
+     * all. Whichever of those two is configured has its results bridged.
+     *
+     * When this method is not called, behavior is unchanged from before it
+     * existed: no operational event envelope is ever constructed or appended
+     * for a retry- or circuit-administration command.
+     *
+     * @param spec the durable store (and optional scope/schema/retry tuning)
+     *   to use. See [DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec]
+     *   for the full contract.
+     * @return this builder for chaining.
+     */
+    public fun retryCircuitAdministrationOperationalEventOutboxConfiguration(
+        spec: DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec,
+    ): DataLoomBuilder = apply {
+        retryCircuitAdministrationOperationalEventOutboxSpec = spec
     }
 
     /**
@@ -842,6 +880,16 @@ public class DataLoomBuilder {
             )
         }
 
+        // --- 12b. Build optional retry/circuit-administration operational-event outbox ---
+        val retryCircuitAdministrationOperationalEventOutbox =
+            retryCircuitAdministrationOperationalEventOutboxSpec?.let { spec ->
+                DurableOperationalEventOutbox(
+                    store = spec.store,
+                    schemaVersion = spec.schemaVersion,
+                    maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
+                )
+            }
+
         // --- 13. Build optional retry-administration operations capability ---
         val retryAdministration = retryAdministrationSpec?.let { spec ->
             DefaultDataLoomRetryAdministration(
@@ -852,6 +900,8 @@ public class DataLoomBuilder {
                     executor = spec.executor,
                     maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
                 ),
+                operationalEventOutbox = retryCircuitAdministrationOperationalEventOutbox,
+                operationalEventOutboxScope = retryCircuitAdministrationOperationalEventOutboxSpec?.scope,
             )
         }
 
@@ -865,6 +915,8 @@ public class DataLoomBuilder {
                     executor = spec.executor,
                     maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
                 ),
+                operationalEventOutbox = retryCircuitAdministrationOperationalEventOutbox,
+                operationalEventOutboxScope = retryCircuitAdministrationOperationalEventOutboxSpec?.scope,
             )
         }
 

@@ -499,6 +499,7 @@ public final class io/dataloom/runtime/facade/DataLoomBuilder {
 	public final fun queueSubmissionEncoder (Lio/dataloom/runtime/submission/QueuedSynchronizationWorkEncoder;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun queueWorkerConfiguration (Lio/dataloom/runtime/facade/DataLoomQueueWorkerSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun retryAdministrationConfiguration (Lio/dataloom/runtime/facade/DataLoomRetryAdministrationSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
+	public final fun retryCircuitAdministrationOperationalEventOutboxConfiguration (Lio/dataloom/runtime/facade/DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun runtimeDependencies (Lio/dataloom/api/runtime/RuntimeDependencies;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun strategyDiagnosticsConfiguration (Lio/dataloom/runtime/facade/DataLoomStrategyDiagnosticsSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun strategyProviderProtectionConfiguration (Lio/dataloom/runtime/facade/DataLoomStrategyProviderProtectionSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
@@ -617,6 +618,15 @@ public final class io/dataloom/runtime/facade/DataLoomRetryAdministrationSpec {
 	public final fun getMaximumStateUpdateAttempts ()I
 	public final fun getStateStore ()Lio/dataloom/api/retry/RetryAdministrationStateStore;
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/facade/DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec {
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;Ljava/lang/String;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;Ljava/lang/String;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getMaximumStateUpdateAttempts ()I
+	public final fun getSchemaVersion ()I
+	public final fun getScope--IyNcac ()Ljava/lang/String;
+	public final fun getStore ()Lio/dataloom/api/state/DurableStateStore;
 }
 
 public final class io/dataloom/runtime/facade/DataLoomStorageProtectionSpec {
@@ -819,6 +829,12 @@ public final class io/dataloom/runtime/observation/SynchronizationObserverRegist
 	public final fun isEmpty ()Z
 	public final fun lookup-M_rkR4M (Ljava/lang/String;)Lio/dataloom/api/observation/SynchronizationObserver;
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/observation/operational/RetryCircuitAdministrationOperationalEventBridge {
+	public static final field INSTANCE Lio/dataloom/runtime/observation/operational/RetryCircuitAdministrationOperationalEventBridge;
+	public final fun toEnvelope (Lio/dataloom/api/circuit/CircuitAdministrationRequest;Lio/dataloom/runtime/retry/CircuitAdministrationResult;)Lio/dataloom/api/operational/OperationalEventEnvelope;
+	public final fun toEnvelope (Lio/dataloom/api/retry/RetryAdministrationRequest;Lio/dataloom/runtime/retry/RetryAdministrationResult;)Lio/dataloom/api/operational/OperationalEventEnvelope;
 }
 
 public final class io/dataloom/runtime/observation/operational/SynchronizationOperationalEventBridge {
