@@ -14,8 +14,8 @@ The `dataloom-storage-room` module contains a production Room-backed reference
 implementation of `StorageProvider` over a generic, application-agnostic
 schema:
 
-- `RoomStorageProvider` implements outbound reads, inbound apply, outbound
-  acknowledgement, and checkpoint read/write.
+- `RoomStorageProvider` implements outbound seeding, outbound reads, inbound
+  apply, outbound acknowledgement, and checkpoint read/write.
 - `DataLoomStorageDatabaseBuilder` constructs the Room database with schema
   export enabled and destructive migration disabled.
 - Payload bytes remain opaque. The module stores `DataLoomPayload` content type
@@ -48,6 +48,37 @@ yet.
 
 Persisted enum-like values use stable names, never ordinals. Changing a stored
 name is therefore a compatibility change.
+
+## Seeding outbound changes
+
+`RoomStorageProvider` exposes a public `persistOutboundChanges(changeSet)`
+method so applications can register outbound changes without reaching into the
+module's `internal` DAOs. It mirrors `SqlDelightStorageProvider`'s own
+`persistOutboundChanges` helper — application-agnostic, storing the exact
+`ChangeSet` supplied without interpreting payload content:
+
+```kotlin
+val changeSet = ChangeSet(
+    id = ChangeSetId("cs-invoice-001"),
+    events = listOf(
+        ChangeEvent(
+            id = ChangeEventId("evt-001"),
+            entity = EntityReference(EntityType("invoice"), EntityId("inv-9999")),
+            operation = ChangeOperation.CREATE,
+            payload = DataLoomPayload(
+                contentType = PayloadContentType("application/json"),
+                bytes = """{"amount":99.99}""".encodeToByteArray(),
+            ),
+        ),
+    ),
+)
+
+val result = storageProvider.persistOutboundChanges(changeSet)
+```
+
+The persisted change set becomes readable through `readOutboundChanges` and
+participates in `acknowledgeOutboundChanges` exactly like any other outbound
+change.
 
 ## Outbound reads and batching
 
