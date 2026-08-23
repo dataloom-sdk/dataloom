@@ -78,6 +78,62 @@ class RoomStorageProviderInstrumentedTest {
     }
 
     @Test
+    fun persistOutboundChangesIsGenuinelyReadableBackAndAcknowledgementStillDeletesIt() = runBlocking {
+        val changeSet = ChangeSet(
+            id = ChangeSetId("outbound-seeded-1"),
+            events = listOf(changeEvent("event-seeded-1", "customer", "customer-seeded-1")),
+            metadata = DataLoomMetadata.of(mapOf("origin" to "public-api")),
+        )
+
+        // Seeded exclusively through the public provider-level API — no direct
+        // DAO access — proving RoomStorageProvider itself can seed local
+        // pending outbound changes, mirroring SqlDelightStorageProvider.
+        val persistResult = provider.persistOutboundChanges(changeSet)
+        assertIs<ProviderOperationResult.Success<Unit>>(persistResult)
+
+        val readResult = provider.readOutboundChanges(
+            OutboundChangeReadRequest(
+                request = request(),
+                entityTypes = setOf(EntityType("customer")),
+            ),
+        )
+        val changes = assertIs<OutboundChangeReadResult.Changes>(
+            assertIs<ProviderOperationResult.Success<OutboundChangeReadResult>>(readResult).value,
+        )
+        assertEquals("outbound-seeded-1", changes.changeSet.id.value)
+        assertEquals(listOf("event-seeded-1"), changes.changeSet.events.map { it.id.value })
+        assertEquals("public-api", changes.changeSet.metadata["origin"])
+
+        // Acknowledgement/deletion behavior is unaffected by the new seeding path.
+        val ackResult = provider.acknowledgeOutboundChanges(
+            OutboundChangeAcknowledgementRequest(
+                request = request(),
+                acknowledgement = ChangeSetAcknowledgement(
+                    changeSetId = ChangeSetId("outbound-seeded-1"),
+                    events = listOf(
+                        ChangeEventAcknowledgement(
+                            eventId = ChangeEventId("event-seeded-1"),
+                            status = ChangeAcknowledgementStatus.ACCEPTED,
+                        ),
+                    ),
+                ),
+            ),
+        )
+        assertIs<ProviderOperationResult.Success<Unit>>(ackResult)
+
+        val rereadAfterAck = provider.readOutboundChanges(
+            OutboundChangeReadRequest(
+                request = request(),
+                entityTypes = setOf(EntityType("customer")),
+            ),
+        )
+        assertEquals(
+            OutboundChangeReadResult.NoChanges,
+            assertIs<ProviderOperationResult.Success<OutboundChangeReadResult>>(rereadAfterAck).value,
+        )
+    }
+
+    @Test
     fun readOutboundChangesHonorsMaxEventsAndHasMore() = runBlocking {
         val changeSet = ChangeSet(
             id = ChangeSetId("outbound-1"),

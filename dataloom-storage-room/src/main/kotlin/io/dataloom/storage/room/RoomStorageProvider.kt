@@ -1,5 +1,6 @@
 package io.dataloom.storage.room
 
+import io.dataloom.api.change.ChangeSet
 import io.dataloom.api.provider.ProviderDescriptor
 import io.dataloom.api.provider.ProviderHealth
 import io.dataloom.api.provider.ProviderHealthStatus
@@ -93,6 +94,21 @@ public class RoomStorageProvider(
 
     override suspend fun close(): ProviderOperationResult<Unit> =
         ProviderOperationResult.Success(Unit)
+
+    /**
+     * Persists outbound changes for later [readOutboundChanges] reads.
+     *
+     * This helper is intentionally application-agnostic and stores the exact
+     * [ChangeSet] values without interpreting payload content. It mirrors
+     * `SqlDelightStorageProvider.persistOutboundChanges` — the two reference
+     * storage providers now expose the same public seeding capability.
+     */
+    public suspend fun persistOutboundChanges(
+        changeSet: ChangeSet,
+    ): ProviderOperationResult<Unit> = executeDatabaseOperation {
+        outboundChangeDao.appendChangeSet(changeSet)
+        ProviderOperationResult.Success(Unit)
+    }
 
     override suspend fun readOutboundChanges(
         request: OutboundChangeReadRequest,

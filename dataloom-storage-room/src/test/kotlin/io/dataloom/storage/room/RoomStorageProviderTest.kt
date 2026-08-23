@@ -47,6 +47,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verifyBlocking
 import org.mockito.kotlin.whenever
 import org.mockito.kotlin.wheneverBlocking
 import kotlin.test.Test
@@ -77,6 +78,28 @@ class RoomStorageProviderTest {
     @Test
     fun `descriptor has storage type`() {
         assertEquals(ProviderType.STORAGE, provider.descriptor.type)
+    }
+
+    @Test
+    fun `persistOutboundChanges forwards change set to DAO`() = runBlocking {
+        val toPersist = changeSet("change-set-1", "event-1", "event-2")
+
+        val result = provider.persistOutboundChanges(toPersist)
+
+        val success = assertIs<ProviderOperationResult.Success<Unit>>(result)
+        assertEquals(Unit, success.value)
+        verifyBlocking(outboundChangeDao) { appendChangeSet(toPersist) }
+    }
+
+    @Test
+    fun `persistOutboundChanges maps unexpected DAO failure to sanitized database failure`() = runBlocking {
+        wheneverBlocking { outboundChangeDao.appendChangeSet(any()) }.thenThrow(IllegalStateException("sql details"))
+
+        val result = provider.persistOutboundChanges(changeSet("change-set-1", "event-1"))
+
+        val failure = assertIs<ProviderOperationResult.Failure>(result)
+        assertEquals("STORAGE_ROOM_DATABASE_FAILURE", failure.error.code.value)
+        assertEquals(null, failure.error.cause)
     }
 
     @Test
