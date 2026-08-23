@@ -187,8 +187,9 @@ join multiple entries into one text payload.
 - **No filtering or subscription delivery.**
 - **No enumeration across scopes.** A caller must already know which
   `OperationalEventOutboxScope` to read.
-- **Two real wired callers so far — synchronization events, and retry/circuit
-  administration commands.** `SynchronizationOperationalEventBridge`
+- **Three real wired callers so far — synchronization events, retry/circuit
+  administration commands, and strategy-decision diagnostics.**
+  `SynchronizationOperationalEventBridge`
   (`io.dataloom.runtime.observation.operational`) maps every
   `SynchronizationEvent` variant (`Started`, `PhaseChanged`,
   `ProgressUpdated`, `RetryScheduled`, `ConflictDetected`, `Completed`) to an
@@ -232,14 +233,42 @@ join multiple entries into one text payload.
   configured has its results bridged into the one shared outbox scope this
   spec names.
 
-  For both bridges, bridging failures (envelope construction) and append
+  `StrategyDecisionOperationalEventBridge`
+  (`io.dataloom.runtime.observation.operational`) maps the same
+  `io.dataloom.api.strategy.StrategyDecisionEvent`
+  `StrategySynchronizationExecutionCoordinator` already constructs and
+  durably records via `DurableStrategyDecisionEventLog` (see "Adoption:
+  strategy decision diagnostics" in
+  [durable-state-contracts.md](./durable-state-contracts.md)) to an
+  `OperationalEventEnvelope` — reusing the event's own already-computed
+  `committedAt` rather than reading a clock, and reusing the decision's own
+  `StrategyDecisionId` unchanged as `correlationId` and (sanitized and
+  bounded) as the envelope's own `id`. This is genuinely additive, not a
+  duplicate record: `DurableStrategyDecisionEventLog` is one mutable slot per
+  `StrategyDecisionId` with no ordering or enumeration across decisions and a
+  caller must already know the identifier to read it, while this bridge feeds
+  the same ordered, cross-subsystem outbox stream the other two bridges
+  above share — giving an operator one chronological timeline across
+  subsystems no single per-domain durable log provides alone.
+  `StrategySynchronizationExecutionCoordinator` calls the bridge and durably
+  appends the result immediately after every `DurableStrategyDecisionEventLog.record`
+  call, opt-in via a third, separate spec —
+  `DataLoomBuilder.strategyDecisionOperationalEventOutboxConfiguration(DataLoomStrategyDecisionOperationalEventOutboxSpec)`
+  — which has no effect unless `strategyDiagnosticsConfiguration` is also
+  configured, since a `StrategyDecisionEvent` is only ever constructed at all
+  when that separate capability is enabled (see that spec's own class doc for
+  the full rationale, mirroring why the retry/circuit spec above has no
+  effect without `retryAdministrationConfiguration`/
+  `circuitAdministrationConfiguration`).
+
+  For all three bridges, bridging failures (envelope construction) and append
   outcomes other than success (`Conflict`, `PersistenceFailure`,
   `ContentionLimitReached`) are always swallowed — consistent with
   `StrategySynchronizationExecutionCoordinator`'s own durable-diagnostics
   posture, a durable side-record must never change or hide the real result of
   the operation it is describing. Every other subsystem's events (conflict
-  resolution, strategy decisions, queue lifecycle, and so on) remain
-  unbridged; wiring those is separate, larger follow-up work, consistent with
+  resolution, queue lifecycle, and so on) remain unbridged; wiring those is
+  separate, larger follow-up work, consistent with
   `DurableConfigurationHistory` and `DurablePolicyDecisionLog` each
   originally shipping without a real caller.
 

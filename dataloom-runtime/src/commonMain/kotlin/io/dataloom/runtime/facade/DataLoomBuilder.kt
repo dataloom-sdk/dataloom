@@ -158,6 +158,7 @@ public class DataLoomBuilder {
     private var operationalEventOutboxSpec: DataLoomOperationalEventOutboxSpec? = null
     private var retryCircuitAdministrationOperationalEventOutboxSpec:
         DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec? = null
+    private var strategyDecisionOperationalEventOutboxSpec: DataLoomStrategyDecisionOperationalEventOutboxSpec? = null
     private var built: Boolean = false
 
     // =========================================================================
@@ -375,6 +376,44 @@ public class DataLoomBuilder {
         spec: DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec,
     ): DataLoomBuilder = apply {
         retryCircuitAdministrationOperationalEventOutboxSpec = spec
+    }
+
+    /**
+     * Enables the durable operational-event outbox bridge for strategy-decision
+     * diagnostics: every [io.dataloom.api.strategy.StrategyDecisionEvent]
+     * [io.dataloom.runtime.strategy.StrategySynchronizationExecutionCoordinator]
+     * already constructs and durably records via
+     * [io.dataloom.api.strategy.DurableStrategyDecisionEventLog] (see
+     * [strategyDiagnosticsConfiguration]) is also translated into an
+     * [io.dataloom.api.operational.OperationalEventEnvelope] by
+     * [io.dataloom.runtime.observation.operational.StrategyDecisionOperationalEventBridge]
+     * and durably appended -- for operator visibility and debugging, never for
+     * replay or strategy continuation. See
+     * [DataLoomStrategyDecisionOperationalEventOutboxSpec] for the full
+     * contract, including why this is a third, separate opt-in point rather
+     * than an extension of [DataLoomOperationalEventOutboxSpec]/
+     * [DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec], and why
+     * it has no effect unless [strategyDiagnosticsConfiguration] is also
+     * configured.
+     *
+     * Configuring this spec alone does not enable strategy-decision
+     * diagnostics -- [strategyDiagnosticsConfiguration] must still be called
+     * separately for a [io.dataloom.api.strategy.StrategyDecisionEvent] to
+     * ever be constructed at all.
+     *
+     * When this method is not called, behavior is unchanged from before it
+     * existed: no operational event envelope is ever constructed or appended
+     * for a strategy decision.
+     *
+     * @param spec the durable store (and optional scope/schema/retry tuning)
+     *   to use. See [DataLoomStrategyDecisionOperationalEventOutboxSpec] for
+     *   the full contract.
+     * @return this builder for chaining.
+     */
+    public fun strategyDecisionOperationalEventOutboxConfiguration(
+        spec: DataLoomStrategyDecisionOperationalEventOutboxSpec,
+    ): DataLoomBuilder = apply {
+        strategyDecisionOperationalEventOutboxSpec = spec
     }
 
     /**
@@ -777,6 +816,14 @@ public class DataLoomBuilder {
                 maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
             )
         }
+        // --- 8c. Build strategy-decision operational-event outbox (optional) ---
+        val strategyDecisionOperationalEventOutbox = strategyDecisionOperationalEventOutboxSpec?.let { spec ->
+            DurableOperationalEventOutbox(
+                store = spec.store,
+                schemaVersion = spec.schemaVersion,
+                maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
+            )
+        }
         val strategyExecutionCoordinator = StrategySynchronizationExecutionCoordinator(
             lifecycleCoordinator = lifecycleCoordinator,
             evaluator = BuiltInSynchronizationStrategyEvaluator(),
@@ -787,6 +834,8 @@ public class DataLoomBuilder {
             lifecycleEventEmitter = lifecycleEventEmitter,
             durableQueueWorkEncoder = queueSubmissionSpecValue?.encoder,
             strategyDecisionEventLog = strategyDecisionEventLog,
+            operationalEventOutbox = strategyDecisionOperationalEventOutbox,
+            operationalEventOutboxScope = strategyDecisionOperationalEventOutboxSpec?.scope,
         )
         val acceptedStrategyPlanCoordinator = AcceptedStrategyPlanExecutionCoordinator(
             lifecycleCoordinator = lifecycleCoordinator,
