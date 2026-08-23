@@ -361,7 +361,13 @@ requirement, listed among that gate's still-pending items.
   via the queue provider so durably admitted work can resume without
   re-evaluating current policy — Room v8/Apple v4 in the market-readiness
   dashboard). This log is never read back by any execution path; it exists
-  purely for operator visibility and debugging.
+  purely for operator visibility and debugging. `StrategyDecisionOperationalEventBridge`
+  (`io.dataloom.runtime.observation.operational`, see
+  [operational-envelope-redaction.md](./operational-envelope-redaction.md#durable-outbox-bounded-first-slice))
+  does not change this: `StrategySynchronizationExecutionCoordinator` bridges
+  the same in-memory `StrategyDecisionEvent` it already builds for `record`
+  into the separate DL-042 operational-event outbox immediately afterward —
+  it never reads this log back, and this log gains no new reader.
 - **Commit-once, with one deliberate deviation from every other adoption's
   "Conflict always means a caller bug" posture.** `record` never overwrites
   an existing entry, exactly like `DurablePolicyDecisionLog`/

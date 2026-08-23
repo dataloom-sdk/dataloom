@@ -1,11 +1,14 @@
 package io.dataloom.runtime.strategy
 
 import io.dataloom.api.execution.StrategyProviderSet
+import io.dataloom.api.operational.DurableOperationalEventOutbox
+import io.dataloom.api.operational.OperationalEventOutboxScope
 import io.dataloom.api.provider.ProviderLifecycleCoordinatorState
 import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
 import io.dataloom.api.strategy.DurableStrategyDecisionEventLog
 import io.dataloom.api.strategy.StrategyDecisionEvent
+import io.dataloom.api.strategy.StrategyDecisionId
 import io.dataloom.api.strategy.StrategyDecisionOutcomeKind
 import io.dataloom.api.strategy.StrategyDisposition
 import io.dataloom.api.strategy.StrategyEvaluationResult
@@ -20,7 +23,9 @@ import io.dataloom.core.provider.StrategyProviderResolutionResult
 import io.dataloom.core.provider.StrategyProviderResolver
 import io.dataloom.runtime.execution.SynchronizationPipelineRegistry
 import io.dataloom.runtime.execution.lifecycle.SynchronizationLifecycleEventEmitter
+import io.dataloom.runtime.observation.operational.StrategyDecisionOperationalEventBridge
 import io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder
+import kotlin.coroutines.cancellation.CancellationException
 
 /** Admits a strategy request before resolving or invoking any provider. */
 internal class StrategySynchronizationExecutionCoordinator(
@@ -33,6 +38,8 @@ internal class StrategySynchronizationExecutionCoordinator(
     private val lifecycleEventEmitter: SynchronizationLifecycleEventEmitter?,
     private val durableQueueWorkEncoder: QueuedSynchronizationWorkEncoder? = null,
     private val strategyDecisionEventLog: DurableStrategyDecisionEventLog? = null,
+    private val operationalEventOutbox: DurableOperationalEventOutbox? = null,
+    private val operationalEventOutboxScope: OperationalEventOutboxScope? = null,
 ) {
     private val durableQueueAdmitter = StrategyDurableQueueAdmitter(
         clock = clock,
@@ -52,7 +59,16 @@ internal class StrategySynchronizationExecutionCoordinator(
     /**
      * Delegates to [executeCore] for the real admission/dispatch logic, then
      * -- when [strategyDecisionEventLog] is configured -- durably records a
-     * payload-free [StrategyDecisionEvent] describing the terminal result.
+     * payload-free [StrategyDecisionEvent] describing the terminal result,
+     * and -- when [operationalEventOutbox] and [operationalEventOutboxScope]
+     * are also both configured -- bridges that same event into an
+     * [io.dataloom.api.operational.OperationalEventEnvelope] via
+     * [StrategyDecisionOperationalEventBridge] and durably appends it. See
+     * [io.dataloom.runtime.facade.DataLoomStrategyDecisionOperationalEventOutboxSpec]
+     * for why this bridge is opt-in on top of [strategyDecisionEventLog]
+     * rather than independently configurable: the event only ever exists
+     * when [strategyDecisionEventLog] is configured, so there is nothing to
+     * bridge otherwise.
      *
      * This is the single choke point every [execute] overload and every
      * `DEFER`-disposition path (via [handleDefer], itself only ever reached
@@ -79,6 +95,7 @@ internal class StrategySynchronizationExecutionCoordinator(
         val log = strategyDecisionEventLog ?: return
         val (outcomeKind, outcomeDetail) = result.toDecisionOutcome()
         val plan = result.evaluation.plan
+        val decisionId = result.evaluation.decisionId
         val event = StrategyDecisionEvent(
             planId = plan.id,
             requestedStrategy = plan.requestedStrategy,
@@ -93,7 +110,41 @@ internal class StrategySynchronizationExecutionCoordinator(
             outcomeDetail = outcomeDetail,
             committedAt = result.completedAt,
         )
-        log.record(result.evaluation.decisionId, event)
+        log.record(decisionId, event)
+        recordOperationalEvent(decisionId, event)
+    }
+
+    /**
+     * When [operationalEventOutbox] and [operationalEventOutboxScope] are
+     * both configured, bridges [event] into an
+     * [io.dataloom.api.operational.OperationalEventEnvelope] via
+     * [StrategyDecisionOperationalEventBridge] and durably appends it, after
+     * [event] has already been durably recorded by [strategyDecisionEventLog]
+     * (see [recordDecisionEvent]) -- never before, and never in a way that
+     * changes the [StrategySynchronizationExecutionResult] already returned
+     * to the caller.
+     *
+     * A durable-recording failure -- whether envelope construction throws, or
+     * [io.dataloom.api.operational.DurableOperationalEventOutbox.append]
+     * itself returns anything other than success -- is swallowed and never
+     * surfaces as a thrown exception; only [CancellationException] still
+     * propagates. Matches
+     * [io.dataloom.runtime.execution.lifecycle.DispatchingSynchronizationLifecycleEventEmitter.recordOperationalEvent]'s
+     * own posture exactly. When either collaborator is `null`, this method
+     * performs no work -- byte-for-byte the same behavior as before this
+     * bridge existed.
+     */
+    private suspend fun recordOperationalEvent(decisionId: StrategyDecisionId, event: StrategyDecisionEvent) {
+        val outbox = operationalEventOutbox ?: return
+        val scope = operationalEventOutboxScope ?: return
+        try {
+            val envelope = StrategyDecisionOperationalEventBridge.toEnvelope(decisionId, event)
+            outbox.append(scope, envelope)
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (ordinary: Exception) {
+            // Intentionally swallowed -- see method doc above.
+        }
     }
 
     /**
