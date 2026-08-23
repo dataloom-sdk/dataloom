@@ -187,8 +187,9 @@ join multiple entries into one text payload.
 - **No filtering or subscription delivery.**
 - **No enumeration across scopes.** A caller must already know which
   `OperationalEventOutboxScope` to read.
-- **Three real wired callers so far — synchronization events, retry/circuit
-  administration commands, and strategy-decision diagnostics.**
+- **Four real wired callers so far — synchronization events, retry/circuit
+  administration commands, strategy-decision diagnostics, and queue
+  lifecycle.**
   `SynchronizationOperationalEventBridge`
   (`io.dataloom.runtime.observation.operational`) maps every
   `SynchronizationEvent` variant (`Started`, `PhaseChanged`,
@@ -261,16 +262,46 @@ join multiple entries into one text payload.
   effect without `retryAdministrationConfiguration`/
   `circuitAdministrationConfiguration`).
 
-  For all three bridges, bridging failures (envelope construction) and append
+  `QueueLifecycleOperationalEventBridge`
+  (`io.dataloom.runtime.observation.operational`) maps
+  `io.dataloom.runtime.queue.QueueEntryExecutionOutcome` — the outcome
+  `DurableQueueExecutionProcessor` already computes once per acquired queue
+  entry and already uses to select which durable `QueueProvider` transition
+  to persist — to an `OperationalEventEnvelope`, one per witnessed
+  transition. `QueueEntryExecutionOutcome.Completed` already carries its own
+  `completedAt`, reused unchanged; the other four variants (`Reschedule`,
+  `Deferred`, `Failed`, `Cancelled`) carry no comparable timestamp, so the
+  bridge falls back to a `witnessedAt` instant its caller reads once, the
+  instant the transition was confirmed durably persisted. The envelope's `id`
+  is derived from the already-unique `(QueueEntryId, QueueLeaseId)` pair —
+  not `QueueEntryId` alone, since one entry legitimately passes through this
+  bridge more than once over its lifetime (leased, rescheduled, leased again,
+  completed) — and `correlationId`/`traceId`/`tenantId`/`workflowId` reuse
+  `QueueEntry.synchronizationRequest.context`/`.workflowId` unchanged, the
+  same reuse `SynchronizationOperationalEventBridge` already applies to the
+  same `SynchronizationRequest` shape. `QueueEntryTransitionObserver`
+  (`io.dataloom.runtime.queue`) is the new, optional hook
+  `DurableQueueExecutionProcessor` calls once per entry, only immediately
+  after that entry's transition has already been durably persisted — never
+  speculatively before, and never for an entry whose transition failed.
+  `QueueLifecycleOperationalEventRecorder` implements that hook, calls the
+  bridge, and durably appends the result, opt-in via a fourth, separate spec —
+  `DataLoomBuilder.queueLifecycleOperationalEventOutboxConfiguration(DataLoomQueueLifecycleOperationalEventOutboxSpec)`
+  — which has no effect unless `queueWorkerConfiguration` is also configured,
+  since a queue-entry transition is only ever witnessed at all when that
+  separate capability is enabled. This bridge covers only the non-circuit-
+  aware queue worker; the circuit-aware queue worker already records its own
+  separate, circuit-specific outcome evidence and is out of scope here.
+
+  For all four bridges, bridging failures (envelope construction) and append
   outcomes other than success (`Conflict`, `PersistenceFailure`,
   `ContentionLimitReached`) are always swallowed — consistent with
   `StrategySynchronizationExecutionCoordinator`'s own durable-diagnostics
   posture, a durable side-record must never change or hide the real result of
   the operation it is describing. Every other subsystem's events (conflict
-  resolution, queue lifecycle, and so on) remain unbridged; wiring those is
-  separate, larger follow-up work, consistent with
-  `DurableConfigurationHistory` and `DurablePolicyDecisionLog` each
-  originally shipping without a real caller.
+  resolution, and so on) remain unbridged; wiring those is separate, larger
+  follow-up work, consistent with `DurableConfigurationHistory` and
+  `DurablePolicyDecisionLog` each originally shipping without a real caller.
 
 ## Remaining V1 boundary
 

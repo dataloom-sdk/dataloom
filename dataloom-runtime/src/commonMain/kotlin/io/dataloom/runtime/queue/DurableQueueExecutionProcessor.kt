@@ -120,10 +120,16 @@ import io.dataloom.api.time.DataLoomInstant
  *   transitions. Required.
  * @param executionHandler the [QueueEntryExecutionHandler] invoked for each
  *   acquired entry. Required.
+ * @param transitionObserver optional [QueueEntryTransitionObserver] notified
+ *   once per entry, only after its transition has already been durably
+ *   persisted. Defaults to `null`, reproducing byte-for-byte the behavior
+ *   this processor had before this parameter existed. See
+ *   [QueueEntryTransitionObserver]'s own class doc for its exact contract.
  */
 public class DurableQueueExecutionProcessor(
     private val queueProvider: QueueProvider,
     private val executionHandler: QueueEntryExecutionHandler,
+    private val transitionObserver: QueueEntryTransitionObserver? = null,
 ) {
 
     /**
@@ -220,6 +226,7 @@ public class DurableQueueExecutionProcessor(
                         is QueueEntryExecutionOutcome.Failed -> failed++
                         is QueueEntryExecutionOutcome.Cancelled -> cancelled++
                     }
+                    transitionObserver?.onTransition(entry, leaseId, outcome)
                 }
                 is TransitionResult.Failure -> {
                     return QueueProcessingResult.QueueProviderFailure(
