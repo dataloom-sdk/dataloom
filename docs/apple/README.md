@@ -31,6 +31,7 @@ about the current Apple baseline. See
 |---|---|
 | [Apple targets](apple-targets.md) | Declared architectures, source sets, and host gating |
 | [Apple testing](apple-testing.md) | Current simulator coverage and missing platform qualification |
+| [Process termination investigation](process-termination-investigation.md) | Why a real, CI-executable Apple process kill/relaunch proof is not a bounded slice today, and what would need to exist first |
 | [Apple circuit store](circuit-state-store.md) | File-backed circuit/administration CAS, atomic mutation/receipt, integrity, and migration |
 | [Apple durable queue](queue-state-store.md) | Queue entries, leases, retry budgets, workflow deadlines, recovery, and integrity |
 | [Apple retry-administration store](retry-administration-state-store.md) | Authorized command CAS, immutable audit state, restart, and integrity |

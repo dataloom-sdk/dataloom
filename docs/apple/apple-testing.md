@@ -8,7 +8,8 @@
 
 [← Apple guide](README.md) ·
 [Apple targets](apple-targets.md) ·
-[Swift smoke fixture](../../apple-smoke/README.md)
+[Swift smoke fixture](../../apple-smoke/README.md) ·
+[Process termination investigation](process-termination-investigation.md)
 
 ## What the current lane proves
 
@@ -106,7 +107,7 @@ For local XCFramework and Swift commands, see
 |---|---|
 | KMP iOS consumer | External executable application using published-style variants |
 | Apple providers | Real connectivity, scheduling, persistence, security, and lifecycle tests |
-| Recovery | Interruption, process termination, lease expiry, relaunch, and migration |
+| Recovery | Interruption, process termination, lease expiry, relaunch, and migration — see the [process termination investigation](process-termination-investigation.md) for why this is not a bounded slice today |
 | Assets | Bounded streaming, cleanup, integrity, resume, and storage-pressure behavior |
 | Strategy profiles | Offline-first, remote-first, cache-first, network-only, hybrid, and adaptive parity |
 | Platform matrix | Approved device/simulator and degraded-capability coverage |
