@@ -5,9 +5,16 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.work.testing.WorkManagerTestInitHelper
 import io.dataloom.android.androidDataLoomProviders
 import io.dataloom.android.installAndroidProviders
+import io.dataloom.api.change.ChangeEvent
+import io.dataloom.api.change.ChangeSet
+import io.dataloom.api.change.EntityReference
 import io.dataloom.api.context.ExecutionContext
+import io.dataloom.api.identifier.ChangeEventId
+import io.dataloom.api.identifier.ChangeSetId
 import io.dataloom.api.identifier.ConflictId
 import io.dataloom.api.identifier.CorrelationId
+import io.dataloom.api.identifier.EntityId
+import io.dataloom.api.identifier.EntityType
 import io.dataloom.api.identifier.ExecutionId
 import io.dataloom.api.identifier.IdentifierGenerator
 import io.dataloom.api.identifier.QueueConsumerId
@@ -19,6 +26,7 @@ import io.dataloom.api.identifier.SynchronizationEventId
 import io.dataloom.api.identifier.SynchronizationObserverId
 import io.dataloom.api.identifier.SynchronizationSessionId
 import io.dataloom.api.identifier.WorkflowId
+import io.dataloom.api.model.ChangeOperation
 import io.dataloom.api.model.SynchronizationDirection
 import io.dataloom.api.model.SynchronizationMode
 import io.dataloom.api.model.SynchronizationRequest
@@ -48,6 +56,8 @@ import io.dataloom.api.runtime.RuntimeIdentifierGenerators
 import io.dataloom.api.scheduling.ExistingSchedulePolicy
 import io.dataloom.api.scheduling.ScheduleConstraints
 import io.dataloom.api.scheduling.SchedulingDelay
+import io.dataloom.api.storage.OutboundChangeReadRequest
+import io.dataloom.api.storage.OutboundChangeReadResult
 import io.dataloom.api.strategy.CacheFirstStrategyProfile
 import io.dataloom.api.strategy.StrategyCacheState
 import io.dataloom.api.strategy.StrategyConfigurationVersion
@@ -58,10 +68,11 @@ import io.dataloom.api.strategy.StrategyPlanId
 import io.dataloom.api.strategy.StrategyProfileId
 import io.dataloom.api.strategy.StrategyRuntimeEvidence
 import io.dataloom.api.strategy.StrategySynchronizationRequest
+import io.dataloom.api.synchronization.ChangeAcknowledgementStatus
+import io.dataloom.api.synchronization.ChangeEventAcknowledgement
 import io.dataloom.api.synchronization.ChangeSetAcknowledgement
 import io.dataloom.api.synchronization.SynchronizationEvent
 import io.dataloom.api.synchronization.SynchronizationResult
-import io.dataloom.api.synchronization.SynchronizationSkipReason
 import io.dataloom.api.time.DataLoomInstant
 import io.dataloom.api.time.SystemDataLoomClock
 import io.dataloom.api.transport.PullChangesRequest
@@ -83,6 +94,7 @@ import io.dataloom.runtime.submission.QueuedSynchronizationWorkEncodingResult
 import io.dataloom.runtime.worker.QueueWorkerConfiguration
 import io.dataloom.runtime.worker.QueueWorkerRunRequest
 import io.dataloom.runtime.worker.QueueWorkerRunResult
+import io.dataloom.storage.room.RoomStorageProvider
 import java.util.UUID
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -106,7 +118,8 @@ import kotlin.test.assertNotNull
  * This proves Android + cache-first only, and only its PUSH-direction
  * durable-deferral branch. iOS and the remaining built-in strategies
  * (network-only, remote-first, hybrid, adaptive) are explicitly deferred, not
- * silently claimed.
+ * silently claimed. iOS's own proof of this same branch is
+ * [IosReferenceConsumerCacheFirstQueueTest] (`#338`).
  *
  * ## Investigation: why cache-first's PUSH branch, not its documented PULL refresh branch
  *
@@ -149,12 +162,35 @@ import kotlin.test.assertNotNull
  * does not implement. No pivot to hybrid was necessary because cache-first's
  * PUSH branch is genuinely replayable today.)
  *
+ * ## `#341` closed the outbound-seeding gap this test used to document
+ *
+ * Earlier revisions of this file (`#337`) terminated in
+ * [SynchronizationResult.Skipped] with [SynchronizationSkipReason.NO_CHANGES]
+ * because `RoomStorageProvider` genuinely had no public API to seed local
+ * pending outbound changes: `OutboundChangeDao.appendChangeSet` was `internal`
+ * to `dataloom-storage-room`, and no `StorageProvider`/`DataLoom` facade
+ * method wrote to the outbound table at all. That was a real, honestly
+ * reported gap in the storage-provider contract, not a shortcut.
+ *
+ * `#341` closed it: `RoomStorageProvider` now exposes a public `suspend fun
+ * persistOutboundChanges(changeSet: ChangeSet): ProviderOperationResult<Unit>`,
+ * mirroring `SqlDelightStorageProvider`'s identical capability that iOS's
+ * `#338` proof already relied on. This revision seeds one real outbound
+ * [ChangeEvent] through that method before admission, so the terminal state
+ * proven here is now a genuine [SynchronizationResult.Succeeded] with one
+ * real event accepted by the (test-only) transport -- matching `#338`'s iOS
+ * bar exactly, on Android's own real storage provider.
+ *
  * ## What this proves
  *
  * [cacheFirstPushDeferralReplayedByQueueWorker] exercises the full
  * path, entirely through real, production DataLoom code:
  *
- * 1. **Admission, not synchronous execution.** [DataLoom.synchronize] for a
+ * 1. **A real outbound change is seeded first.** [RoomStorageProvider.persistOutboundChanges]
+ *    writes one real [ChangeEvent] into the same real Room database
+ *    [DataLoom.synchronize] and the later queue-worker replay both read
+ *    from.
+ * 2. **Admission, not synchronous execution.** [DataLoom.synchronize] for a
  *    `StrategySynchronizationRequest` built from [CacheFirstStrategyProfile]
  *    (`requireDurableRefresh = true`, direction `PUSH`, connectivity
  *    `UNAVAILABLE`) returns [StrategySynchronizationExecutionResult.Deferred]
@@ -163,65 +199,41 @@ import kotlin.test.assertNotNull
  *    [io.dataloom.queue.room.RoomQueueProvider] instead of running the
  *    pipeline synchronously. The test-only transport records zero
  *    `pushChanges` calls at this point, proving nothing executed yet.
- * 2. **Survives being read back out.** The queue entry is not merely
- *    written; step 3 acquires it back from the same real Room database via a
+ * 3. **Survives being read back out.** The queue entry is not merely
+ *    written; step 4 acquires it back from the same real Room database via a
  *    genuine `QueueProvider.acquire` call inside the queue-worker cycle.
- * 3. **A queue worker genuinely replays it.** [DataLoom.queueWorker]'s single
+ * 4. **A queue worker genuinely replays it.** [DataLoom.queueWorker]'s single
  *    `run(...)` call deterministically drives exactly one bounded
  *    acquire/execute/complete cycle. `AcceptedStrategyPlanExecutionCoordinator`
  *    resolves the real storage/transport providers from the queue entry's own
  *    persisted bindings and runs the real, registered
  *    `OutboundPushSynchronizationPipeline`, which genuinely calls
  *    `RoomStorageProvider.readOutboundChanges` against the real Room
- *    database.
- * 4. **The result is genuinely observable.** A [SynchronizationObserver]
+ *    database, genuinely pushes the seeded event through the test transport,
+ *    and genuinely calls `acknowledgeOutboundChanges`, which deletes the row.
+ * 5. **The result is genuinely observable.** A [SynchronizationObserver]
  *    registered through the real [DataLoomBuilder.observer] capability
  *    captures the terminal [SynchronizationEvent.Completed] emitted by that
- *    replay. [QueueProcessingResult.Processed.summary.completed] is asserted
- *    as one additional layer of evidence that the entry reached a real,
- *    durable terminal transition.
- *
- * ## Why the terminal result is `Skipped(NO_CHANGES)`, not an applied/pushed count
- *
- * Unlike `#325`'s offline-first proof (where the pulled `ChangeSet` is
- * caller-supplied through the test `TransportProvider`, so
- * `inboundEventsApplied == 1` is a genuine, non-trivial assertion),
- * cache-first's only real-provider-compatible durable branch is
- * PUSH-direction, and outbound content is *read from local storage*, not
- * supplied by the transport. `StorageProvider` -- the contract
- * `RoomStorageProvider` implements -- exposes `readOutboundChanges` and
- * `acknowledgeOutboundChanges` but genuinely has **no public API to seed
- * local pending outbound changes**: `OutboundChangeDao.appendChangeSet` and
- * the DAO itself are `internal` to `dataloom-storage-room` and are not
- * reachable from this module, and no `StorageProvider`/`DataLoom` facade
- * method writes to the outbound table at all. This looks like a genuine,
- * previously-undocumented gap in the current storage-provider contract, not
- * a shortcut chosen for convenience -- flagged for follow-up rather than
- * silently worked around with reflection or an invented test-only bypass.
- *
- * Given that constraint, this test's real, honestly-observed terminal state
- * is [SynchronizationResult.Skipped] with
- * [SynchronizationSkipReason.NO_CHANGES] -- a real Room query against a real,
- * empty outbound table, correctly finding nothing to push. Every structural
- * step above (durable admission, real persistence, real read-back, a real
- * one-cycle queue-worker replay through the real production coordinator
- * chain, and a real terminal event observed through the same observer wiring
- * `#325`'s proof used) is still genuinely exercised; only the "was there
- * content to move" bar is necessarily weaker than `#325`'s, for the reason
- * documented above. `transport.pushCalls` staying `0` throughout is asserted
- * as confirmation that the pipeline made a real, correct decision from a real
- * (empty) storage read -- not a stub standing in for one.
+ *    replay: [SynchronizationResult.Succeeded] with
+ *    `summary.outboundEventsAccepted == 1`.
+ *    [QueueProcessingResult.Processed.summary.completed] is asserted as one
+ *    additional layer of evidence that the entry reached a real, durable
+ *    terminal transition.
+ * 6. **The outbound row is genuinely gone afterward.** A direct
+ *    [RoomStorageProvider.readOutboundChanges] call after the replay returns
+ *    [OutboundChangeReadResult.NoChanges], confirming the acknowledgement was
+ *    not just returned but actually persisted back to real storage.
  *
  * ## What this does not prove
  *
- * iOS; the remaining four built-in strategies' own admission branches
- * (network-only cannot admit durable work at all; remote-first, hybrid, and
- * adaptive remain unexercised at this layer); a genuine non-empty outbound
- * push payload flowing through real storage (see above); retry,
- * circuit-breaker, or conflict-detection behavior during queue replay (this
- * entry always succeeds on its first attempt); a real WorkManager-triggered
- * background tick (this test calls `queueWorker.run(...)` directly,
- * deterministically); and a real managed-device emulator (Robolectric only).
+ * iOS (see `#338` for that platform's own proof); the remaining four
+ * built-in strategies' own admission branches (network-only cannot admit
+ * durable work at all; remote-first, hybrid, and adaptive remain unexercised
+ * at this layer); retry, circuit-breaker, or conflict-detection behavior
+ * during queue replay (this entry always succeeds on its first attempt); a
+ * real WorkManager-triggered background tick (this test calls
+ * `queueWorker.run(...)` directly, deterministically); and a real
+ * managed-device emulator (Robolectric only).
  */
 @RunWith(RobolectricTestRunner::class)
 class AndroidReferenceConsumerCacheFirstQueueRobolectricTest {
@@ -231,7 +243,7 @@ class AndroidReferenceConsumerCacheFirstQueueRobolectricTest {
         val context: Context = ApplicationProvider.getApplicationContext()
         WorkManagerTestInitHelper.initializeTestWorkManager(context)
 
-        val transport = CountingPushTransportProvider()
+        val transport = CountingAcceptingPushTransportProvider()
         val completedResults = mutableListOf<SynchronizationResult>()
         val observer = object : SynchronizationObserver {
             override val id: SynchronizationObserverId = SynchronizationObserverId("durable-queue-cache-first-replay-observer")
@@ -242,7 +254,37 @@ class AndroidReferenceConsumerCacheFirstQueueRobolectricTest {
             }
         }
 
-        val dataLoom = buildDurableQueueDataLoom(context, transport, observer)
+        val uniqueSuffix = UUID.randomUUID().toString().take(8)
+        val providers = androidDataLoomProviders(
+            context = context,
+            storageDatabaseName = "dq-storage-$uniqueSuffix.db",
+            queueDatabaseName = "dq-queue-$uniqueSuffix.db",
+        )
+        val storage: RoomStorageProvider = providers.storage
+
+        val seededEventId = ChangeEventId("cache-first-queue-event-$uniqueSuffix")
+        val seededChangeSet = ChangeSet(
+            id = ChangeSetId("cache-first-queue-change-set-$uniqueSuffix"),
+            events = listOf(
+                ChangeEvent(
+                    id = seededEventId,
+                    entity = EntityReference(
+                        type = EntityType("cache-first-queue-entity"),
+                        id = EntityId("cache-first-queue-entity-$uniqueSuffix"),
+                    ),
+                    operation = ChangeOperation.CREATE,
+                ),
+            ),
+        )
+
+        // Step 1: seed one real outbound change directly through the real
+        // Room storage provider -- see the class KDoc for why this is now a
+        // genuine capability on Android's real storage provider (#341),
+        // matching iOS's own #338 proof.
+        val seedResult = storage.persistOutboundChanges(seededChangeSet)
+        assertIs<ProviderOperationResult.Success<Unit>>(seedResult)
+
+        val dataLoom = buildDurableQueueDataLoom(providers, transport, observer)
         assertEquals(ProviderLifecycleResult.InitializeSuccess, dataLoom.initialize())
 
         val strategyRequest = StrategySynchronizationRequest(
@@ -270,14 +312,14 @@ class AndroidReferenceConsumerCacheFirstQueueRobolectricTest {
             input = StrategyOperationInput.ProviderBacked,
         )
 
-        // Step 1: durable admission -- must NOT execute synchronously.
+        // Step 2: durable admission -- must NOT execute synchronously.
         val admissionResult = dataLoom.synchronize(strategyRequest)
         val deferred = assertIs<StrategySynchronizationExecutionResult.Deferred>(admissionResult)
         assertNotNull(deferred.queueEntryId)
         assertEquals(0, transport.pushCalls)
         assertEquals(0, completedResults.size)
 
-        // Step 2 + 3: acquire the durably persisted entry back out of the
+        // Step 3 + 4: acquire the durably persisted entry back out of the
         // real Room queue database and replay it via exactly one
         // deterministic queue-worker cycle. See
         // AndroidReferenceConsumerDurableQueueRobolectricTest for why
@@ -304,14 +346,24 @@ class AndroidReferenceConsumerCacheFirstQueueRobolectricTest {
         val processingResult = assertIs<QueueProcessingResult.Processed>(processed.processingResult)
         assertEquals(1, processingResult.summary.completed)
 
-        // Step 4: the replay genuinely reached a real terminal transition,
-        // observed through the same production observer wiring #325's proof
-        // used. See the class KDoc for why Skipped(NO_CHANGES) -- not an
-        // applied/pushed count -- is the honest terminal state here.
+        // Step 5: the replay genuinely reached a real terminal transition,
+        // with the seeded content genuinely flowing through the transport --
+        // see the class KDoc for why Succeeded (not Skipped(NO_CHANGES)) is
+        // the honest terminal state here, matching #338's iOS proof.
         assertEquals(1, completedResults.size)
-        val skipped = assertIs<SynchronizationResult.Skipped>(completedResults.single())
-        assertEquals(SynchronizationSkipReason.NO_CHANGES, skipped.reason)
-        assertEquals(0, transport.pushCalls)
+        val succeeded = assertIs<SynchronizationResult.Succeeded>(completedResults.single())
+        assertEquals(1L, succeeded.summary.outboundEventsAccepted)
+        assertEquals(1L, succeeded.summary.outboundEventsRead)
+        assertEquals(1, transport.pushCalls)
+        assertEquals(seededEventId, transport.lastPushedEventId)
+
+        // Step 6: the acknowledged row is genuinely gone from real storage
+        // afterward -- one more layer of evidence beyond the observed event.
+        val postReplayRead = storage.readOutboundChanges(
+            OutboundChangeReadRequest(request = strategyRequest.request),
+        )
+        val postReplayResult = assertIs<ProviderOperationResult.Success<OutboundChangeReadResult>>(postReplayRead)
+        assertIs<OutboundChangeReadResult.NoChanges>(postReplayResult.value)
 
         assertEquals(ProviderLifecycleResult.ShutdownSuccess, dataLoom.shutdown())
     }
@@ -324,22 +376,16 @@ class AndroidReferenceConsumerCacheFirstQueueRobolectricTest {
      * [DataLoomBuilder.queueWorkerConfiguration] -- see
      * [AndroidReferenceConsumerDurableQueueRobolectricTest.buildDurableQueueDataLoom]
      * (`#325`) for why these two capabilities require explicit test-side
-     * wiring.
+     * wiring. Adapted to accept an already-constructed
+     * [io.dataloom.android.AndroidDataLoomProviders] so the calling test can
+     * seed real outbound content through [RoomStorageProvider] before
+     * [DataLoom] is built, mirroring `#338`'s iOS-side identical adaptation.
      */
     private fun buildDurableQueueDataLoom(
-        context: Context,
+        providers: io.dataloom.android.AndroidDataLoomProviders,
         transportProvider: TransportProvider,
         observer: SynchronizationObserver,
     ): DataLoom {
-        // A short (not full-UUID) suffix keeps the resulting database file
-        // path well under Windows' MAX_PATH limit -- see #325's identical
-        // comment for the same real, local, path-length constraint.
-        val uniqueSuffix = UUID.randomUUID().toString().take(8)
-        val providers = androidDataLoomProviders(
-            context = context,
-            storageDatabaseName = "dq-storage-$uniqueSuffix.db",
-            queueDatabaseName = "dq-queue-$uniqueSuffix.db",
-        )
         val bindings = SynchronizationProviderBindings(
             storageProviderId = providers.storage.descriptor.id,
             transportProviderId = transportProvider.descriptor.id,
@@ -383,7 +429,7 @@ class AndroidReferenceConsumerCacheFirstQueueRobolectricTest {
      * Reference [RuntimeDependencies] duplicated from
      * [AndroidReferenceConsumerDurableQueueRobolectricTest]'s own private
      * helper of the same shape -- real wall clock, UUID-backed identifier
-     * generators. Kept local to this test rather than reaching into that
+     * generators. Kept local to this file rather than reaching into that
      * file's private helper.
      */
     private fun referenceRuntimeDependencies(): RuntimeDependencies = RuntimeDependencies(
@@ -437,22 +483,26 @@ private object CacheFirstNeverRetryPolicy : RetryPolicy {
 }
 
 /**
- * Test-only [TransportProvider] that counts [pushChanges] calls and fails
- * deterministically if [pullChanges] is ever called -- this test exercises
- * the PUSH direction only. See the containing test class's KDoc for why
- * [pushChanges] is expected to be called zero times: the real
- * [io.dataloom.storage.room.RoomStorageProvider]'s outbound table is
- * genuinely empty (no public API exists to seed it), so the real
- * `OutboundPushSynchronizationPipeline` correctly never reaches the
- * transport at all.
+ * Test-only [TransportProvider] that counts [pushChanges] calls, records the
+ * last pushed event's identifier, and accepts every event it is asked to
+ * push -- proving durable admission does not execute synchronously (zero
+ * calls immediately after admission) and that the queue-worker replay
+ * genuinely invokes the real pipeline with the real seeded content (exactly
+ * one call, carrying the seeded event, after [DataLoom.queueWorker]'s
+ * `run(...)`). Pull is not exercised by this test and fails deterministically
+ * if ever called. Mirrors `IosReferenceConsumerCacheFirstQueueTest`'s
+ * `CountingAcceptingPushTransportProvider` (`#338`).
  */
-private class CountingPushTransportProvider : TransportProvider {
+private class CountingAcceptingPushTransportProvider : TransportProvider {
     var pushCalls: Int = 0
         private set
 
+    var lastPushedEventId: ChangeEventId? = null
+        private set
+
     override val descriptor: ProviderDescriptor = ProviderDescriptor(
-        id = ProviderId("io.dataloom.consumer.android.test.counting-push-transport"),
-        name = ProviderName("Counting Push Test Transport"),
+        id = ProviderId("io.dataloom.consumer.android.test.counting-accepting-push-transport"),
+        name = ProviderName("Counting Accepting Push Test Transport"),
         type = ProviderType.TRANSPORT,
         version = ProviderVersion("1.0.0"),
     )
@@ -470,16 +520,23 @@ private class CountingPushTransportProvider : TransportProvider {
         request: PushChangesRequest,
     ): ProviderOperationResult<ChangeSetAcknowledgement> {
         pushCalls++
-        error(
-            "CountingPushTransportProvider.pushChanges should never be called: the real " +
-                "RoomStorageProvider outbound table is empty for this test, so the real " +
-                "OutboundPushSynchronizationPipeline should short-circuit to Skipped(NO_CHANGES) " +
-                "before ever reaching the transport.",
+        val changeSet = request.changeSet
+        lastPushedEventId = changeSet.events.lastOrNull()?.id
+        return ProviderOperationResult.Success(
+            ChangeSetAcknowledgement(
+                changeSetId = changeSet.id,
+                events = changeSet.events.map { event ->
+                    ChangeEventAcknowledgement(
+                        eventId = event.id,
+                        status = ChangeAcknowledgementStatus.ACCEPTED,
+                    )
+                },
+            ),
         )
     }
 
     override suspend fun pullChanges(
         request: PullChangesRequest,
     ): ProviderOperationResult<PullChangesResult> =
-        error("CountingPushTransportProvider does not support pull.")
+        error("CountingAcceptingPushTransportProvider does not support pull.")
 }

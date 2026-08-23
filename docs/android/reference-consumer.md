@@ -117,14 +117,19 @@ acquires the entry back out of the real Room queue database and reaches
 plan through the real, registered `OutboundPushSynchronizationPipeline`,
 observed through the same real `SynchronizationObserver` wiring the fourth
 test uses. Because outbound content is read from local storage rather than
-supplied by the transport, and `StorageProvider` (the contract
-`RoomStorageProvider` implements) exposes no public API to seed local
-pending outbound changes, the genuine, honestly-observed terminal result
-here is `SynchronizationResult.Skipped(NO_CHANGES)` — a real Room query
-against a real, empty outbound table — rather than an applied/pushed count;
-see the test's own KDoc for the full investigation and reasoning. This
-covers Android + cache-first only, on top of the fourth test's Android +
-offline-first coverage; see "What remains open" below for what remains.
+supplied by the transport, this test first seeds one real outbound
+`ChangeEvent` directly through `RoomStorageProvider.persistOutboundChanges`
+(`#341` closed the earlier gap where `StorageProvider` exposed no public API
+to do this), so the genuine terminal result is
+`SynchronizationResult.Succeeded` — `summary.outboundEventsAccepted == 1`,
+`summary.outboundEventsRead == 1` — with the seeded event genuinely observed
+flowing through the test transport, and a direct post-replay
+`readOutboundChanges` call confirming the acknowledged row is genuinely gone
+from real storage afterward; see the test's own KDoc for the full
+investigation and reasoning. This covers Android + cache-first only, on top
+of the fourth test's Android + offline-first coverage, and now matches the
+iOS counterpart's (`IosReferenceConsumerCacheFirstQueueTest`, `#338`) same
+`Succeeded` bar; see "What remains open" below for what remains.
 
 ## Transport is intentionally illustrative
 
@@ -199,15 +204,14 @@ managed-device tests.
   cache-first admission-then-replay slices
   `AndroidReferenceConsumerDurableQueueRobolectricTest` and
   `AndroidReferenceConsumerCacheFirstQueueRobolectricTest` now prove
-  (above): iOS has no equivalent durable-queue proof for cache-first (only
-  offline-first, per `#334`); the other built-in strategies eligible for
-  durable admission (remote-first, hybrid) remain unexercised at this
-  layer on either platform, and cache-first's own genuinely non-empty
-  push-content path remains unproven (`StorageProvider` exposes no public
-  API to seed local pending outbound changes — see the fifth test's own
-  KDoc); and retry, circuit-breaker, and conflict-detection behavior during
-  queue replay itself remain unproven even for the two slices covered —
-  each proven entry always succeeds on its first attempt.
+  (above), both now matched by their own iOS counterparts
+  (`IosReferenceConsumerDurableQueueTest`, `#334`;
+  `IosReferenceConsumerCacheFirstQueueTest`, `#338`); the other built-in
+  strategies eligible for durable admission (remote-first, hybrid) remain
+  unexercised at this layer on either platform; and retry, circuit-breaker,
+  and conflict-detection behavior during queue replay itself remain
+  unproven even for the two slices covered — each proven entry always
+  succeeds on its first attempt.
 - Native Android and KMP Android+iOS consumers resolving staged/published
   artifacts rather than project includes — the same bar
   `runtime-external-consumer` also does not yet meet for the JVM path.
