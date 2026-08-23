@@ -4,7 +4,7 @@
 
 **Compile-time proof, a Robolectric-backed runtime proof, a real
 Gradle Managed Device emulator proof, and a Robolectric-backed
-durable-queue-admission-then-replay proof for one strategy — four staged
+durable-queue-admission-then-replay proof for two strategies — four staged
 slices of `#101` (DL-039A).** The
 `runtime-android-reference-consumer` module wires
 `AndroidConnectivityProvider`, `RoomStorageProvider`, `RoomQueueProvider`,
@@ -92,6 +92,40 @@ same bar the second test above established, now proven for the queued path
 too. This covers Android + offline-first only; see "What remains open"
 below for what it does not.
 
+A fifth test, `AndroidReferenceConsumerCacheFirstQueueRobolectricTest`
+(also a separate Robolectric test class in this module), proves the same
+admission-then-replay shape for a second strategy: cache-first. Investigation
+found that cache-first's *documented* durable-refresh branch
+(`docs/api/cache-first-strategy-execution.md`'s PULL/BIDIRECTIONAL
+`SERVE_LOCAL` + refresh shape) is not exercisable against the real,
+unmodified `RoomStorageProvider`, which implements only `StorageProvider`
+and not `StrategyLocalFallbackProvider` — the same real constraint the
+fourth test's own KDoc already documented as its reason for avoiding
+`SERVE_LOCAL`. `BuiltInSynchronizationStrategyEvaluator` has a second,
+previously-undocumented `ENQUEUE_DURABLE_WORK` branch for cache-first,
+reached for `SynchronizationDirection.PUSH` with connectivity `UNAVAILABLE`
+(`requireDurableRefresh = true`, the profile default): its durable
+continuation is exactly `[READ_LOCAL, PUSH_REMOTE]` — no `SERVE_LOCAL`, no
+`RECONCILE` — `AcceptedStrategyPlanExecutionCoordinator`'s supported PUSH
+replay shape, and compatible with the real `RoomStorageProvider` as-is. This
+test asserts, in order: (1) `DataLoom.synchronize(...)` returns
+`Deferred` with a real, non-null `queueEntryId` and zero calls to the test
+transport; (2) one deterministic `DataLoom.queueWorker.run(...)` cycle
+acquires the entry back out of the real Room queue database and reaches
+`QueueProcessingResult.Processed` with `summary.completed == 1`; and (3)
+`AcceptedStrategyPlanExecutionCoordinator` genuinely replays the admitted
+plan through the real, registered `OutboundPushSynchronizationPipeline`,
+observed through the same real `SynchronizationObserver` wiring the fourth
+test uses. Because outbound content is read from local storage rather than
+supplied by the transport, and `StorageProvider` (the contract
+`RoomStorageProvider` implements) exposes no public API to seed local
+pending outbound changes, the genuine, honestly-observed terminal result
+here is `SynchronizationResult.Skipped(NO_CHANGES)` — a real Room query
+against a real, empty outbound table — rather than an applied/pushed count;
+see the test's own KDoc for the full investigation and reasoning. This
+covers Android + cache-first only, on top of the fourth test's Android +
+offline-first coverage; see "What remains open" below for what remains.
+
 ## Transport is intentionally illustrative
 
 DataLoom does not ship a default transport — endpoint selection,
@@ -116,9 +150,10 @@ DATALOOM_ANDROID_BUILD=true ./gradlew :runtime-android-reference-consumer:check
 
 Verified for real (local Windows host): `compileDebugKotlin` succeeds
 (proving the whole provider-composition graph resolves and type-checks);
-`testDebugUnitTest` runs both `AndroidReferenceConsumerRobolectricTest`
-and `AndroidReferenceConsumerDurableQueueRobolectricTest` and passes
-(3 tests, 0 failures, 0 errors — confirmed via the JUnit XML report, not
+`testDebugUnitTest` runs `AndroidReferenceConsumerRobolectricTest`,
+`AndroidReferenceConsumerDurableQueueRobolectricTest`, and
+`AndroidReferenceConsumerCacheFirstQueueRobolectricTest`, and passes
+(4 tests, 0 failures, 0 errors — confirmed via the JUnit XML report, not
 just a green build); `compileDebugAndroidTestKotlin` and
 `assembleDebugAndroidTest` both succeed, producing a real, packaged
 instrumented-test APK; `lintDebug` passes; and the full repository's
@@ -160,14 +195,19 @@ managed-device tests.
   (`runtime-ios-reference-consumer`); neither platform has been proven on
   actual physical hardware.
 - Queue admission/retry/circuit/conflict behavior during a real
-  synchronization pass, beyond the one Android + offline-first
-  admission-then-replay slice `AndroidReferenceConsumerDurableQueueRobolectricTest`
-  now proves (above): iOS has no equivalent durable-queue proof at all; the
-  other built-in strategies eligible for durable admission (cache-first,
-  remote-first, hybrid) are unexercised at this layer; and retry,
-  circuit-breaker, and conflict-detection behavior during queue replay
-  itself remain unproven even for the one slice covered — the proven entry
-  always succeeds on its first attempt.
+  synchronization pass, beyond the Android + offline-first and Android +
+  cache-first admission-then-replay slices
+  `AndroidReferenceConsumerDurableQueueRobolectricTest` and
+  `AndroidReferenceConsumerCacheFirstQueueRobolectricTest` now prove
+  (above): iOS has no equivalent durable-queue proof for cache-first (only
+  offline-first, per `#334`); the other built-in strategies eligible for
+  durable admission (remote-first, hybrid) remain unexercised at this
+  layer on either platform, and cache-first's own genuinely non-empty
+  push-content path remains unproven (`StorageProvider` exposes no public
+  API to seed local pending outbound changes — see the fifth test's own
+  KDoc); and retry, circuit-breaker, and conflict-detection behavior during
+  queue replay itself remain unproven even for the two slices covered —
+  each proven entry always succeeds on its first attempt.
 - Native Android and KMP Android+iOS consumers resolving staged/published
   artifacts rather than project includes — the same bar
   `runtime-external-consumer` also does not yet meet for the JVM path.
