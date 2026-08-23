@@ -349,15 +349,173 @@ class CircuitBreakerDurableQueueExecutionProcessorTest {
         assertEquals(0, provider.completeCalls)
     }
 
+    // =========================================================================
+    // QueueEntryTransitionObserver (#96 circuit-aware queue-lifecycle outbox bridge)
+    // =========================================================================
+
+    private class RecordingTransitionObserver : QueueEntryTransitionObserver {
+        val witnessed = mutableListOf<Triple<QueueEntry, QueueLeaseId, QueueEntryExecutionOutcome>>()
+
+        override suspend fun onTransition(
+            entry: QueueEntry,
+            leaseId: QueueLeaseId,
+            outcome: QueueEntryExecutionOutcome,
+        ) {
+            witnessed.add(Triple(entry, leaseId, outcome))
+        }
+    }
+
+    @Test
+    fun `Default transitionObserver is null and changes nothing`() = runTest {
+        val entries = acquiredEntries(1)
+        val provider = RecordingQueueProvider(entries)
+        val handler = RecordingHandler(listOf(QueueEntryExecutionOutcome.Completed(completedAt)))
+        val processor = processor(provider, handler, MapCircuitStore())
+
+        val result = processor.process(processingRequest(maxEntries = 1))
+
+        assertIs<CircuitBreakerQueueProcessingResult.Processed>(result)
+    }
+
+    @Test
+    fun `Observer is notified once with the exact entry lease and outcome after a successful completion`() = runTest {
+        val entries = acquiredEntries(1)
+        val outcome = QueueEntryExecutionOutcome.Completed(completedAt)
+        val provider = RecordingQueueProvider(entries)
+        val handler = RecordingHandler(listOf(outcome))
+        val observer = RecordingTransitionObserver()
+        val processor = processor(provider, handler, MapCircuitStore(), observer)
+
+        processor.process(processingRequest(maxEntries = 1))
+
+        assertEquals(1, observer.witnessed.size)
+        val (observedEntry, observedLeaseId, observedOutcome) = observer.witnessed.single()
+        assertSame(entries.entries.single(), observedEntry)
+        assertEquals(leaseId, observedLeaseId)
+        assertSame(outcome, observedOutcome)
+    }
+
+    @Test
+    fun `Observer is notified once per entry for reschedule deferred failed and cancelled outcomes`() = runTest {
+        val entries = acquiredEntries(4)
+        val outcomes = listOf(
+            QueueEntryExecutionOutcome.Reschedule(
+                retryAttempt = RetryAttempt(1),
+                availableAt = DataLoomInstant(7_000L),
+                error = transitionError,
+            ),
+            QueueEntryExecutionOutcome.Deferred(
+                availableAt = DataLoomInstant(6_000L),
+                reason = QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET,
+            ),
+            QueueEntryExecutionOutcome.Failed(
+                error = transitionError,
+                disposition = QueueFailureDisposition.FAILED,
+            ),
+            QueueEntryExecutionOutcome.Cancelled(executionContext),
+        )
+        val provider = RecordingQueueProvider(entries)
+        val handler = RecordingHandler(outcomes)
+        val observer = RecordingTransitionObserver()
+        val processor = processor(provider, handler, MapCircuitStore(), observer)
+
+        processor.process(processingRequest(maxEntries = 4))
+
+        assertEquals(4, observer.witnessed.size)
+        assertEquals(entries.entries, observer.witnessed.map { it.first })
+        assertEquals(outcomes, observer.witnessed.map { it.third })
+    }
+
+    @Test
+    fun `Observer is notified even when the later circuit recording is unconfirmed`() = runTest {
+        val completionScope = scopes().completion
+        val storeError = error("CIRCUIT_COMPLETE_WRITE_FAILED", ErrorCategory.STORAGE)
+        val store = MapCircuitStore(
+            initialRecords = mapOf(
+                completionScope to closedFailureRecord(completionScope),
+            ),
+            compareFailures = mapOf(completionScope to storeError),
+        )
+        val entries = acquiredEntries(1)
+        val outcome = QueueEntryExecutionOutcome.Completed(completedAt)
+        val provider = RecordingQueueProvider(entries)
+        val handler = RecordingHandler(listOf(outcome))
+        val observer = RecordingTransitionObserver()
+        val processor = processor(provider, handler, store, observer)
+
+        val result = processor.process(processingRequest(maxEntries = 1))
+
+        // The provider-level transition genuinely succeeded and was durably
+        // persisted, so the observer already saw it -- independent of the
+        // circuit-state recording that is confirmed unaccepted below.
+        assertIs<CircuitBreakerQueueProcessingResult.CircuitRecordingUnconfirmed>(result)
+        assertEquals(1, observer.witnessed.size)
+        assertSame(entries.entries.single(), observer.witnessed.single().first)
+        assertSame(outcome, observer.witnessed.single().third)
+    }
+
+    @Test
+    fun `Observer is not notified when the provider transition fails`() = runTest {
+        val providerError = error("QUEUE_COMPLETE_FAILED", ErrorCategory.QUEUE)
+        val entries = acquiredEntries(1)
+        val provider = RecordingQueueProvider(
+            acquireResult = entries,
+            completeResult = ProviderOperationResult.Failure(providerError),
+        )
+        val handler = RecordingHandler(listOf(QueueEntryExecutionOutcome.Completed(completedAt)))
+        val observer = RecordingTransitionObserver()
+        val processor = processor(provider, handler, MapCircuitStore(), observer)
+
+        val result = processor.process(processingRequest(maxEntries = 1))
+
+        assertIs<CircuitBreakerQueueProcessingResult.ProviderFailure>(result)
+        assertEquals(0, observer.witnessed.size)
+    }
+
+    @Test
+    fun `Observer is not notified when a circuit rejection stops the transition before the provider runs`() = runTest {
+        val completionScope = scopes().completion
+        val store = MapCircuitStore(
+            initialRecords = mapOf(completionScope to openRecord(completionScope)),
+        )
+        val entries = acquiredEntries(1)
+        val provider = RecordingQueueProvider(entries)
+        val handler = RecordingHandler(listOf(QueueEntryExecutionOutcome.Completed(completedAt)))
+        val observer = RecordingTransitionObserver()
+        val processor = processor(provider, handler, store, observer)
+
+        val result = processor.process(processingRequest(maxEntries = 1))
+
+        assertIs<CircuitBreakerQueueProcessingResult.PreExecutionStopped>(result)
+        assertEquals(0, observer.witnessed.size)
+    }
+
+    @Test
+    fun `CancellationException from the observer propagates and is not swallowed`() = runTest {
+        val cancellation = CancellationException("Cancelled in observer")
+        val entries = acquiredEntries(1)
+        val provider = RecordingQueueProvider(entries)
+        val handler = RecordingHandler(listOf(QueueEntryExecutionOutcome.Completed(completedAt)))
+        val observer = QueueEntryTransitionObserver { _, _, _ -> throw cancellation }
+        val processor = processor(provider, handler, MapCircuitStore(), observer)
+
+        val thrown = assertFailsWith<CancellationException> {
+            processor.process(processingRequest(maxEntries = 1))
+        }
+        assertSame(cancellation, thrown)
+    }
+
     private fun processor(
         provider: QueueProvider,
         handler: QueueEntryExecutionHandler,
         store: CircuitBreakerStateStore,
+        transitionObserver: QueueEntryTransitionObserver? = null,
     ): CircuitBreakerDurableQueueExecutionProcessor =
         CircuitBreakerDurableQueueExecutionProcessor(
             queueOperationAdapter = adapter(provider, store),
             executionHandler = handler,
             scopes = scopes(),
+            transitionObserver = transitionObserver,
         )
 
     private fun adapter(

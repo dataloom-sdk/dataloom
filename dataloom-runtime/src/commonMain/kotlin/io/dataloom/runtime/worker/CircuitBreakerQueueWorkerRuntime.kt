@@ -7,6 +7,7 @@ import io.dataloom.api.time.DataLoomClock
 import io.dataloom.runtime.queue.CircuitBreakerDurableQueueExecutionProcessor
 import io.dataloom.runtime.queue.CircuitBreakerQueueProcessingEngine
 import io.dataloom.runtime.queue.QueueEntryExecutionHandler
+import io.dataloom.runtime.queue.QueueEntryTransitionObserver
 import io.dataloom.runtime.queue.QueueProcessingCircuitScopes
 import io.dataloom.runtime.retry.CircuitBreakerExecutionGate
 import io.dataloom.runtime.retry.CircuitBreakerFailureClassifier
@@ -25,6 +26,13 @@ import io.dataloom.runtime.retry.QueueCircuitBreakerFailureClassifier
  *
  * A timeout-enforcing queue-provider may be supplied to compose provider timeout
  * and circuit policy without losing durable ambiguity evidence.
+ *
+ * @param transitionObserver optional [QueueEntryTransitionObserver] passed
+ *   straight through to the assembled
+ *   [CircuitBreakerDurableQueueExecutionProcessor] -- see that class's own
+ *   KDoc on its own `transitionObserver` parameter for the exact contract.
+ *   Defaults to `null`, reproducing byte-for-byte the behavior this runtime
+ *   had before this parameter existed.
  */
 public object CircuitBreakerQueueWorkerRuntime {
 
@@ -40,6 +48,7 @@ public object CircuitBreakerQueueWorkerRuntime {
         configuration: QueueWorkerConfiguration,
         failureClassifier: CircuitBreakerFailureClassifier =
             QueueCircuitBreakerFailureClassifier,
+        transitionObserver: QueueEntryTransitionObserver? = null,
     ): CircuitBreakerQueueWorkerCoordinator {
         val adapter = CircuitBreakerQueueOperationAdapter(
             queueProvider = queueProvider,
@@ -50,6 +59,7 @@ public object CircuitBreakerQueueWorkerRuntime {
             queueOperationAdapter = adapter,
             executionHandler = executionHandler,
             scopes = processingScopes,
+            transitionObserver = transitionObserver,
         )
         return CircuitBreakerQueueWorkerCoordinator(
             queueOperationAdapter = adapter,
@@ -85,6 +95,7 @@ public object CircuitBreakerQueueWorkerRuntime {
             QueueCircuitBreakerFailureClassifier,
         schedulerFailureClassifier: CircuitBreakerFailureClassifier =
             DefaultCircuitBreakerFailureClassifier,
+        transitionObserver: QueueEntryTransitionObserver? = null,
     ): CircuitBreakerQueueWorkerCoordinator {
         val queueAdapter = CircuitBreakerQueueOperationAdapter(
             queueProvider = queueProvider,
@@ -95,6 +106,7 @@ public object CircuitBreakerQueueWorkerRuntime {
             queueOperationAdapter = queueAdapter,
             executionHandler = executionHandler,
             scopes = processingScopes,
+            transitionObserver = transitionObserver,
         )
         val protectedScheduler = checkNotNull(
             assembleQueueWorkerSchedulerProvider(
