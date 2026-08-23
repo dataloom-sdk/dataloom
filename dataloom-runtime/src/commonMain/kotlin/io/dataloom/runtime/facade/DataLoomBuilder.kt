@@ -41,7 +41,9 @@ import io.dataloom.runtime.execution.outbound.OutboundPushPipelineConfiguration
 import io.dataloom.runtime.execution.outbound.OutboundPushSynchronizationPipeline
 import io.dataloom.runtime.observation.SynchronizationEventDispatcher
 import io.dataloom.runtime.observation.SynchronizationObserverRegistry
+import io.dataloom.runtime.observation.operational.QueueLifecycleOperationalEventRecorder
 import io.dataloom.runtime.queue.DurableQueueExecutionProcessor
+import io.dataloom.runtime.queue.QueueEntryTransitionObserver
 import io.dataloom.runtime.queue.QueuedSynchronizationExecutionHandler
 import io.dataloom.runtime.retry.CircuitAdministrationCoordinator
 import io.dataloom.runtime.retry.CircuitBreakerCoordinator
@@ -159,6 +161,7 @@ public class DataLoomBuilder {
     private var retryCircuitAdministrationOperationalEventOutboxSpec:
         DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec? = null
     private var strategyDecisionOperationalEventOutboxSpec: DataLoomStrategyDecisionOperationalEventOutboxSpec? = null
+    private var queueLifecycleOperationalEventOutboxSpec: DataLoomQueueLifecycleOperationalEventOutboxSpec? = null
     private var built: Boolean = false
 
     // =========================================================================
@@ -414,6 +417,42 @@ public class DataLoomBuilder {
         spec: DataLoomStrategyDecisionOperationalEventOutboxSpec,
     ): DataLoomBuilder = apply {
         strategyDecisionOperationalEventOutboxSpec = spec
+    }
+
+    /**
+     * Enables the durable operational-event outbox bridge for queue lifecycle:
+     * every already-persisted durable queue-entry state transition
+     * [io.dataloom.runtime.queue.DurableQueueExecutionProcessor] computes and
+     * commits during a [queueWorkerConfiguration] processing cycle is also
+     * translated into an [io.dataloom.api.operational.OperationalEventEnvelope]
+     * by
+     * [io.dataloom.runtime.observation.operational.QueueLifecycleOperationalEventBridge]
+     * and durably appended -- for operator visibility and debugging, never
+     * for replay or queue continuation. See
+     * [DataLoomQueueLifecycleOperationalEventOutboxSpec] for the full
+     * contract, including why this is a fourth, separate opt-in point rather
+     * than an extension of an existing operational-event-outbox spec, and why
+     * it has no effect unless [queueWorkerConfiguration] is also configured.
+     *
+     * Configuring this spec alone does not enable the queue worker --
+     * [queueWorkerConfiguration] must still be called separately for a queue-
+     * entry transition to ever be persisted at all. This bridge covers only
+     * the non-circuit-aware queue worker; [circuitQueueWorkerConfiguration]'s
+     * transitions are not bridged by this spec.
+     *
+     * When this method is not called, behavior is unchanged from before it
+     * existed: no operational event envelope is ever constructed or appended
+     * for a queue-entry transition.
+     *
+     * @param spec the durable store (and optional scope/schema/retry tuning)
+     *   to use. See [DataLoomQueueLifecycleOperationalEventOutboxSpec] for the
+     *   full contract.
+     * @return this builder for chaining.
+     */
+    public fun queueLifecycleOperationalEventOutboxConfiguration(
+        spec: DataLoomQueueLifecycleOperationalEventOutboxSpec,
+    ): DataLoomBuilder = apply {
+        queueLifecycleOperationalEventOutboxSpec = spec
     }
 
     /**
@@ -880,6 +919,22 @@ public class DataLoomBuilder {
         }
 
         // --- 10. Build optional queue worker ---
+        // --- 10a. Build optional queue-lifecycle operational-event outbox ---
+        val queueLifecycleOperationalEventOutbox = queueLifecycleOperationalEventOutboxSpec?.let { spec ->
+            DurableOperationalEventOutbox(
+                store = spec.store,
+                schemaVersion = spec.schemaVersion,
+                maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
+            )
+        }
+        val queueLifecycleTransitionObserver = queueLifecycleOperationalEventOutbox?.let { outbox ->
+            val spec = checkNotNull(queueLifecycleOperationalEventOutboxSpec)
+            QueueLifecycleOperationalEventRecorder(
+                outbox = outbox,
+                scope = spec.scope,
+                clock = deps.clock,
+            )
+        }
         val queueWorker = queueWorkerSpec?.let { spec ->
             val legacyBindings = bindings
                 ?: throw DataLoomBuildException(
@@ -893,6 +948,7 @@ public class DataLoomBuilder {
                 deps = deps,
                 executionCoordinator = executionCoordinator,
                 acceptedStrategyPlanCoordinator = acceptedStrategyPlanCoordinator,
+                queueLifecycleTransitionObserver = queueLifecycleTransitionObserver,
             )
         }
 
@@ -1188,6 +1244,7 @@ public class DataLoomBuilder {
         deps: RuntimeDependencies,
         executionCoordinator: SynchronizationExecutionCoordinator,
         acceptedStrategyPlanCoordinator: AcceptedStrategyPlanExecutionCoordinator,
+        queueLifecycleTransitionObserver: QueueEntryTransitionObserver?,
     ): DataLoomQueueWorker {
         // Validate queue provider binding.
         val queueProviderId = bindings.queueProviderId
@@ -1251,11 +1308,13 @@ public class DataLoomBuilder {
                 clock = deps.clock,
                 configuration = spec.configuration,
                 queueProviderTimeout = queueProviderTimeout,
+                transitionObserver = queueLifecycleTransitionObserver,
             )
         } else {
             val queueProcessor = DurableQueueExecutionProcessor(
                 queueProvider = queueProvider,
                 executionHandler = executionHandler,
+                transitionObserver = queueLifecycleTransitionObserver,
             )
             QueueWorkerCoordinator(
                 queueProvider = queueProvider,

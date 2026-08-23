@@ -1592,4 +1592,150 @@ class DurableQueueExecutionProcessorTest {
         assertEquals(2, processed.summary.acquired)
         assertEquals(2, processed.summary.executed)
     }
+
+    // =========================================================================
+    // QueueEntryTransitionObserver (#96 queue-lifecycle outbox bridge)
+    // =========================================================================
+
+    private class RecordingTransitionObserver : QueueEntryTransitionObserver {
+        val witnessed = mutableListOf<Triple<QueueEntry, QueueLeaseId, QueueEntryExecutionOutcome>>()
+
+        override suspend fun onTransition(
+            entry: QueueEntry,
+            leaseId: QueueLeaseId,
+            outcome: QueueEntryExecutionOutcome,
+        ) {
+            witnessed.add(Triple(entry, leaseId, outcome))
+        }
+    }
+
+    @Test
+    fun `Default transitionObserver is null and changes nothing`() {
+        val entry = leasedEntry()
+        val provider = FakeQueueProvider(acquireResponse = entriesResult(entry))
+        val processor = DurableQueueExecutionProcessor(provider, CapturingHandler(QueueEntryExecutionOutcome.Completed(t2)))
+
+        val result = runSuspend { processor.process(sampleProcessingRequest) }
+
+        assertIs<QueueProcessingResult.Processed>(result)
+    }
+
+    @Test
+    fun `Observer is notified once with the exact entry lease and outcome after a successful completion`() {
+        val entry = leasedEntry(id = QueueEntryId("entry-observed"))
+        val outcome = QueueEntryExecutionOutcome.Completed(t2)
+        val provider = FakeQueueProvider(acquireResponse = entriesResult(entry, lease = sampleLease))
+        val observer = RecordingTransitionObserver()
+        val processor = DurableQueueExecutionProcessor(
+            queueProvider = provider,
+            executionHandler = CapturingHandler(outcome),
+            transitionObserver = observer,
+        )
+
+        runSuspend { processor.process(sampleProcessingRequest) }
+
+        assertEquals(1, observer.witnessed.size)
+        val (observedEntry, observedLeaseId, observedOutcome) = observer.witnessed.single()
+        assertSame(entry, observedEntry)
+        assertEquals(sampleLease.id, observedLeaseId)
+        assertSame(outcome, observedOutcome)
+    }
+
+    @Test
+    fun `Observer is notified once per entry for reschedule deferred failed and cancelled outcomes`() {
+        val rescheduleEntry = leasedEntry(id = QueueEntryId("entry-reschedule"))
+        val deferredEntry = leasedEntry(id = QueueEntryId("entry-deferred"))
+        val failedEntry = leasedEntry(id = QueueEntryId("entry-failed"))
+        val cancelledEntry = leasedEntry(id = QueueEntryId("entry-cancelled"))
+        val outcomes = listOf(
+            QueueEntryExecutionOutcome.Reschedule(RetryAttempt(1), t2, sampleError),
+            QueueEntryExecutionOutcome.Deferred(t2, QueueDeferralReason.CONNECTIVITY_REQUIREMENT_NOT_MET),
+            QueueEntryExecutionOutcome.Failed(sampleError, QueueFailureDisposition.FAILED),
+            QueueEntryExecutionOutcome.Cancelled(sampleContext),
+        )
+        val provider = FakeQueueProvider(
+            acquireResponse = entriesResult(rescheduleEntry, deferredEntry, failedEntry, cancelledEntry),
+        )
+        val observer = RecordingTransitionObserver()
+        val processor = DurableQueueExecutionProcessor(
+            queueProvider = provider,
+            executionHandler = MultiOutcomeHandler(outcomes),
+            transitionObserver = observer,
+        )
+
+        runSuspend { processor.process(sampleProcessingRequest) }
+
+        assertEquals(4, observer.witnessed.size)
+        assertEquals(
+            listOf(rescheduleEntry, deferredEntry, failedEntry, cancelledEntry),
+            observer.witnessed.map { it.first },
+        )
+        assertEquals(outcomes, observer.witnessed.map { it.third })
+    }
+
+    @Test
+    fun `Observer is not notified when the transition fails to persist`() {
+        val entry = leasedEntry()
+        val provider = FakeQueueProvider(
+            acquireResponse = entriesResult(entry),
+            completeResponse = failureResult(sampleError),
+        )
+        val observer = RecordingTransitionObserver()
+        val processor = DurableQueueExecutionProcessor(
+            queueProvider = provider,
+            executionHandler = CapturingHandler(QueueEntryExecutionOutcome.Completed(t2)),
+            transitionObserver = observer,
+        )
+
+        val result = runSuspend { processor.process(sampleProcessingRequest) }
+
+        assertIs<QueueProcessingResult.QueueProviderFailure>(result)
+        assertEquals(0, observer.witnessed.size)
+    }
+
+    @Test
+    fun `Observer is notified only for entries whose transition succeeded before a later failure`() {
+        val entry1 = leasedEntry(id = QueueEntryId("entry-001"))
+        val entry2 = leasedEntry(id = QueueEntryId("entry-002"))
+        val provider = object : FakeQueueProvider(acquireResponse = entriesResult(entry1, entry2)) {
+            var completions = 0
+            override suspend fun complete(request: QueueCompletionRequest): ProviderOperationResult<Unit> {
+                completions++
+                return if (completions == 1) {
+                    ProviderOperationResult.Success(Unit)
+                } else {
+                    ProviderOperationResult.Failure(sampleError)
+                }
+            }
+        }
+        val observer = RecordingTransitionObserver()
+        val processor = DurableQueueExecutionProcessor(
+            queueProvider = provider,
+            executionHandler = CapturingHandler(QueueEntryExecutionOutcome.Completed(t2)),
+            transitionObserver = observer,
+        )
+
+        runSuspend { processor.process(sampleProcessingRequest) }
+
+        assertEquals(1, observer.witnessed.size)
+        assertSame(entry1, observer.witnessed.single().first)
+    }
+
+    @Test
+    fun `CancellationException from the observer propagates and is not swallowed`() {
+        val cancellation = CancellationException("Cancelled in observer")
+        val entry = leasedEntry()
+        val provider = FakeQueueProvider(acquireResponse = entriesResult(entry))
+        val observer = QueueEntryTransitionObserver { _, _, _ -> throw cancellation }
+        val processor = DurableQueueExecutionProcessor(
+            queueProvider = provider,
+            executionHandler = CapturingHandler(QueueEntryExecutionOutcome.Completed(t2)),
+            transitionObserver = observer,
+        )
+
+        val thrown = assertFailsWith<CancellationException> {
+            runSuspend { processor.process(sampleProcessingRequest) }
+        }
+        assertSame(cancellation, thrown)
+    }
 }

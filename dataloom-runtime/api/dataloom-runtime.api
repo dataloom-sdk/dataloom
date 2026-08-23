@@ -495,6 +495,7 @@ public final class io/dataloom/runtime/facade/DataLoomBuilder {
 	public final fun provider (Lio/dataloom/api/provider/DataLoomProvider;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun providerProtectionConfiguration (Lio/dataloom/runtime/facade/DataLoomProviderProtectionSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun providers ([Lio/dataloom/api/provider/DataLoomProvider;)Lio/dataloom/runtime/facade/DataLoomBuilder;
+	public final fun queueLifecycleOperationalEventOutboxConfiguration (Lio/dataloom/runtime/facade/DataLoomQueueLifecycleOperationalEventOutboxSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun queueSubmissionConfiguration (Lio/dataloom/runtime/facade/DataLoomQueueSubmissionSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun queueSubmissionEncoder (Lio/dataloom/runtime/submission/QueuedSynchronizationWorkEncoder;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun queueWorkerConfiguration (Lio/dataloom/runtime/facade/DataLoomQueueWorkerSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
@@ -584,6 +585,15 @@ public final class io/dataloom/runtime/facade/DataLoomProviderProtectionSpec {
 	public final fun getStorage ()Lio/dataloom/runtime/facade/DataLoomStorageProtectionSpec;
 	public final fun getTransport ()Lio/dataloom/runtime/facade/DataLoomTransportProtectionSpec;
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/facade/DataLoomQueueLifecycleOperationalEventOutboxSpec {
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;Ljava/lang/String;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;Ljava/lang/String;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getMaximumStateUpdateAttempts ()I
+	public final fun getSchemaVersion ()I
+	public final fun getScope--IyNcac ()Ljava/lang/String;
+	public final fun getStore ()Lio/dataloom/api/state/DurableStateStore;
 }
 
 public final class io/dataloom/runtime/facade/DataLoomQueueSubmissionSpec {
@@ -838,6 +848,17 @@ public final class io/dataloom/runtime/observation/SynchronizationObserverRegist
 	public final fun getSize ()I
 	public final fun isEmpty ()Z
 	public final fun lookup-M_rkR4M (Ljava/lang/String;)Lio/dataloom/api/observation/SynchronizationObserver;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/observation/operational/QueueLifecycleOperationalEventBridge {
+	public static final field INSTANCE Lio/dataloom/runtime/observation/operational/QueueLifecycleOperationalEventBridge;
+	public final fun toEnvelope-uzDoztY (Lio/dataloom/api/queue/QueueEntry;Ljava/lang/String;Lio/dataloom/runtime/queue/QueueEntryExecutionOutcome;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/api/operational/OperationalEventEnvelope;
+}
+
+public final class io/dataloom/runtime/observation/operational/QueueLifecycleOperationalEventRecorder : io/dataloom/runtime/queue/QueueEntryTransitionObserver {
+	public synthetic fun <init> (Lio/dataloom/api/operational/DurableOperationalEventOutbox;Ljava/lang/String;Lio/dataloom/api/time/DataLoomClock;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun onTransition-uzDoztY (Lio/dataloom/api/queue/QueueEntry;Ljava/lang/String;Lio/dataloom/runtime/queue/QueueEntryExecutionOutcome;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -1322,7 +1343,8 @@ public final class io/dataloom/runtime/queue/CircuitBreakerQueueProcessingResult
 }
 
 public final class io/dataloom/runtime/queue/DurableQueueExecutionProcessor {
-	public fun <init> (Lio/dataloom/api/queue/QueueProvider;Lio/dataloom/runtime/queue/QueueEntryExecutionHandler;)V
+	public fun <init> (Lio/dataloom/api/queue/QueueProvider;Lio/dataloom/runtime/queue/QueueEntryExecutionHandler;Lio/dataloom/runtime/queue/QueueEntryTransitionObserver;)V
+	public synthetic fun <init> (Lio/dataloom/api/queue/QueueProvider;Lio/dataloom/runtime/queue/QueueEntryExecutionHandler;Lio/dataloom/runtime/queue/QueueEntryTransitionObserver;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun process (Lio/dataloom/runtime/queue/QueueProcessingRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
@@ -1475,6 +1497,10 @@ public final class io/dataloom/runtime/queue/QueueEntryExecutionOutcome$Reschedu
 	public final fun getRetryBudgetState ()Lio/dataloom/api/retry/RetryBudgetState;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/runtime/queue/QueueEntryTransitionObserver {
+	public abstract fun onTransition-uzDoztY (Lio/dataloom/api/queue/QueueEntry;Ljava/lang/String;Lio/dataloom/runtime/queue/QueueEntryExecutionOutcome;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/dataloom/runtime/queue/QueueProcessingCircuitScopes {
@@ -3383,7 +3409,8 @@ public final class io/dataloom/runtime/worker/QueueWorkerCoordinator {
 
 public final class io/dataloom/runtime/worker/QueueWorkerProviderTimeoutRuntime {
 	public static final field INSTANCE Lio/dataloom/runtime/worker/QueueWorkerProviderTimeoutRuntime;
-	public final fun create (Lio/dataloom/api/queue/QueueProvider;Lio/dataloom/runtime/queue/QueueEntryExecutionHandler;Lio/dataloom/api/scheduling/SchedulerProvider;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/worker/QueueWorkerConfiguration;Lio/dataloom/api/scheduling/SchedulingDelay;)Lio/dataloom/runtime/worker/QueueWorkerCoordinator;
+	public final fun create (Lio/dataloom/api/queue/QueueProvider;Lio/dataloom/runtime/queue/QueueEntryExecutionHandler;Lio/dataloom/api/scheduling/SchedulerProvider;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/worker/QueueWorkerConfiguration;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/runtime/queue/QueueEntryTransitionObserver;)Lio/dataloom/runtime/worker/QueueWorkerCoordinator;
+	public static synthetic fun create$default (Lio/dataloom/runtime/worker/QueueWorkerProviderTimeoutRuntime;Lio/dataloom/api/queue/QueueProvider;Lio/dataloom/runtime/queue/QueueEntryExecutionHandler;Lio/dataloom/api/scheduling/SchedulerProvider;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/worker/QueueWorkerConfiguration;Lio/dataloom/api/scheduling/SchedulingDelay;Lio/dataloom/runtime/queue/QueueEntryTransitionObserver;ILjava/lang/Object;)Lio/dataloom/runtime/worker/QueueWorkerCoordinator;
 }
 
 public final class io/dataloom/runtime/worker/QueueWorkerRunRequest {

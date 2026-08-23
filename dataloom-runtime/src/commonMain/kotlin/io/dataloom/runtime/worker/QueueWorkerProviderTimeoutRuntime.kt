@@ -6,6 +6,7 @@ import io.dataloom.api.scheduling.SchedulingDelay
 import io.dataloom.api.time.DataLoomClock
 import io.dataloom.runtime.queue.DurableQueueExecutionProcessor
 import io.dataloom.runtime.queue.QueueEntryExecutionHandler
+import io.dataloom.runtime.queue.QueueEntryTransitionObserver
 
 /**
  * Additive production assembly for a queue worker whose queue-provider
@@ -44,6 +45,7 @@ public object QueueWorkerProviderTimeoutRuntime {
         clock: DataLoomClock,
         configuration: QueueWorkerConfiguration,
         queueProviderTimeout: SchedulingDelay,
+        transitionObserver: QueueEntryTransitionObserver? = null,
     ): QueueWorkerCoordinator {
         val protectedQueueProvider = assembleQueueWorkerQueueProvider(
             queueProvider = queueProvider,
@@ -53,6 +55,7 @@ public object QueueWorkerProviderTimeoutRuntime {
         val processor = DurableQueueExecutionProcessor(
             queueProvider = protectedQueueProvider,
             executionHandler = executionHandler,
+            transitionObserver = transitionObserver,
         )
         return QueueWorkerCoordinator(
             queueProvider = protectedQueueProvider,
