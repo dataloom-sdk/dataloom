@@ -421,24 +421,39 @@ public class DataLoomBuilder {
 
     /**
      * Enables the durable operational-event outbox bridge for queue lifecycle:
-     * every already-persisted durable queue-entry state transition
-     * [io.dataloom.runtime.queue.DurableQueueExecutionProcessor] computes and
-     * commits during a [queueWorkerConfiguration] processing cycle is also
-     * translated into an [io.dataloom.api.operational.OperationalEventEnvelope]
-     * by
+     * every already-persisted durable queue-entry state transition either
+     * [io.dataloom.runtime.queue.DurableQueueExecutionProcessor] (backing
+     * [queueWorkerConfiguration]) or
+     * [io.dataloom.runtime.queue.CircuitBreakerDurableQueueExecutionProcessor]
+     * (backing [circuitQueueWorkerConfiguration]) computes and commits during
+     * a processing cycle is also translated into an
+     * [io.dataloom.api.operational.OperationalEventEnvelope] by
      * [io.dataloom.runtime.observation.operational.QueueLifecycleOperationalEventBridge]
      * and durably appended -- for operator visibility and debugging, never
      * for replay or queue continuation. See
      * [DataLoomQueueLifecycleOperationalEventOutboxSpec] for the full
      * contract, including why this is a fourth, separate opt-in point rather
      * than an extension of an existing operational-event-outbox spec, and why
-     * it has no effect unless [queueWorkerConfiguration] is also configured.
+     * it has no effect unless [queueWorkerConfiguration] or
+     * [circuitQueueWorkerConfiguration] is also configured.
      *
-     * Configuring this spec alone does not enable the queue worker --
-     * [queueWorkerConfiguration] must still be called separately for a queue-
-     * entry transition to ever be persisted at all. This bridge covers only
-     * the non-circuit-aware queue worker; [circuitQueueWorkerConfiguration]'s
-     * transitions are not bridged by this spec.
+     * Configuring this spec alone does not enable a queue worker --
+     * [queueWorkerConfiguration] or [circuitQueueWorkerConfiguration] must
+     * still be called separately for a queue-entry transition to ever be
+     * persisted at all. This one spec bridges both queue-worker paths: the
+     * non-circuit-aware processor
+     * ([io.dataloom.runtime.queue.DurableQueueExecutionProcessor], backing
+     * [queueWorkerConfiguration]) and the circuit-aware processor
+     * ([io.dataloom.runtime.queue.CircuitBreakerDurableQueueExecutionProcessor],
+     * backing [circuitQueueWorkerConfiguration]) both accept and notify the
+     * exact same [io.dataloom.runtime.queue.QueueEntryTransitionObserver],
+     * since both report the identical [io.dataloom.api.queue.QueueEntry]/
+     * [io.dataloom.api.identifier.QueueLeaseId]/
+     * [io.dataloom.runtime.queue.QueueEntryExecutionOutcome] shape per
+     * durably-persisted transition -- see
+     * [io.dataloom.runtime.queue.CircuitBreakerDurableQueueExecutionProcessor]'s
+     * own KDoc on its `transitionObserver` parameter for exactly when that
+     * notification fires relative to circuit-state recording.
      *
      * When this method is not called, behavior is unchanged from before it
      * existed: no operational event envelope is ever constructed or appended
@@ -967,6 +982,7 @@ public class DataLoomBuilder {
                 executionCoordinator = executionCoordinator,
                 acceptedStrategyPlanCoordinator = acceptedStrategyPlanCoordinator,
                 schedulerCircuitSpec = circuitQueueWorkerSchedulerSpec,
+                queueLifecycleTransitionObserver = queueLifecycleTransitionObserver,
             )
         }
 
@@ -1343,6 +1359,7 @@ public class DataLoomBuilder {
         executionCoordinator: SynchronizationExecutionCoordinator,
         acceptedStrategyPlanCoordinator: AcceptedStrategyPlanExecutionCoordinator,
         schedulerCircuitSpec: DataLoomCircuitQueueWorkerSchedulerSpec?,
+        queueLifecycleTransitionObserver: QueueEntryTransitionObserver?,
     ): DataLoomCircuitQueueWorker {
         val queueProviderId = bindings.queueProviderId
             ?: throw DataLoomBuildException(
@@ -1474,6 +1491,7 @@ public class DataLoomBuilder {
                 clock = deps.clock,
                 configuration = workerSpec.configuration,
                 failureClassifier = spec.failureClassifier,
+                transitionObserver = queueLifecycleTransitionObserver,
             )
         } else {
             val schedulerCircuitCoordinator = CircuitBreakerCoordinator(
@@ -1496,6 +1514,7 @@ public class DataLoomBuilder {
                 configuration = workerSpec.configuration,
                 queueFailureClassifier = spec.failureClassifier,
                 schedulerFailureClassifier = schedulerCircuitSpec.failureClassifier,
+                transitionObserver = queueLifecycleTransitionObserver,
             )
         }
         return DefaultDataLoomCircuitQueueWorker(workerCoordinator)

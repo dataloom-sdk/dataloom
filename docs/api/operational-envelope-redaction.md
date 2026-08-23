@@ -287,11 +287,20 @@ join multiple entries into one text payload.
   `QueueLifecycleOperationalEventRecorder` implements that hook, calls the
   bridge, and durably appends the result, opt-in via a fourth, separate spec —
   `DataLoomBuilder.queueLifecycleOperationalEventOutboxConfiguration(DataLoomQueueLifecycleOperationalEventOutboxSpec)`
-  — which has no effect unless `queueWorkerConfiguration` is also configured,
-  since a queue-entry transition is only ever witnessed at all when that
-  separate capability is enabled. This bridge covers only the non-circuit-
-  aware queue worker; the circuit-aware queue worker already records its own
-  separate, circuit-specific outcome evidence and is out of scope here.
+  — which has no effect unless `queueWorkerConfiguration` or
+  `circuitQueueWorkerConfiguration` is also configured, since a queue-entry
+  transition is only ever witnessed at all when one of those two separate
+  capabilities is enabled. This one spec bridges both queue-worker paths:
+  `CircuitBreakerDurableQueueExecutionProcessor` (the circuit-aware processor
+  backing `circuitQueueWorkerConfiguration`) additionally records its own
+  separate, circuit-specific outcome evidence (`QueueCircuitOperationRecord`),
+  but per acquired entry it also computes the exact same
+  `QueueEntryExecutionOutcome` the non-circuit-aware processor does, and
+  accepts and notifies the identical `QueueEntryTransitionObserver` —
+  immediately once that entry's transition's underlying `QueueProvider`
+  operation has already succeeded, independent of whether the entry's
+  separate circuit-state recording is later confirmed, since the real queue
+  transition is already durably persisted at that point either way.
 
   For all four bridges, bridging failures (envelope construction) and append
   outcomes other than success (`Conflict`, `PersistenceFailure`,

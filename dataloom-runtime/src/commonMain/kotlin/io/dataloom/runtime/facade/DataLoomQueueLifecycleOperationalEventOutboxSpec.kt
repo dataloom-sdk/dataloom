@@ -8,9 +8,12 @@ import io.dataloom.api.state.DurableStateStore
 /**
  * Application-owned configuration that turns on the durable operational-event
  * outbox bridge for queue lifecycle: every already-persisted durable queue-
- * entry state transition
- * [io.dataloom.runtime.queue.DurableQueueExecutionProcessor] computes and
- * commits during a queue-worker processing cycle (see
+ * entry state transition either
+ * [io.dataloom.runtime.queue.DurableQueueExecutionProcessor] (the non-
+ * circuit-aware queue worker) or
+ * [io.dataloom.runtime.queue.CircuitBreakerDurableQueueExecutionProcessor]
+ * (the circuit-aware queue worker) computes and commits during a queue-worker
+ * processing cycle (see
  * [io.dataloom.runtime.queue.QueueEntryTransitionObserver]) is also
  * translated into an [io.dataloom.api.operational.OperationalEventEnvelope]
  * by
@@ -37,15 +40,18 @@ import io.dataloom.api.state.DurableStateStore
  * - **Is it independently configurable from the other bridged domains?**
  *   Yes. A queue-entry transition is only ever witnessed by this bridge's
  *   [io.dataloom.runtime.queue.QueueEntryTransitionObserver] hook when
- *   [DataLoomBuilder.queueWorkerConfiguration] is also configured -- see
- *   [io.dataloom.runtime.queue.DurableQueueExecutionProcessor]'s own class
- *   doc, the sole place [io.dataloom.runtime.queue.QueueEntryExecutionOutcome]
- *   is computed and a transition observer is ever invoked. This spec's
- *   recorder therefore reuses that already-computed, already-persisted
- *   outcome rather than building a second one from scratch, which means
- *   configuring this spec without also configuring
- *   [DataLoomBuilder.queueWorkerConfiguration] has no effect -- there is
- *   never a transition to bridge. This mirrors exactly how
+ *   [DataLoomBuilder.queueWorkerConfiguration] or
+ *   [DataLoomBuilder.circuitQueueWorkerConfiguration] is also configured --
+ *   see [io.dataloom.runtime.queue.DurableQueueExecutionProcessor]'s and
+ *   [io.dataloom.runtime.queue.CircuitBreakerDurableQueueExecutionProcessor]'s
+ *   own class docs, the only two places
+ *   [io.dataloom.runtime.queue.QueueEntryExecutionOutcome] is computed and a
+ *   transition observer is ever invoked. This spec's recorder therefore
+ *   reuses that already-computed, already-persisted outcome rather than
+ *   building a second one from scratch, which means configuring this spec
+ *   without also configuring [DataLoomBuilder.queueWorkerConfiguration] or
+ *   [DataLoomBuilder.circuitQueueWorkerConfiguration] has no effect -- there
+ *   is never a transition to bridge. This mirrors exactly how
  *   [DataLoomStrategyDecisionOperationalEventOutboxSpec] alone, without
  *   [DataLoomBuilder.strategyDiagnosticsConfiguration], has no effect either.
  * - **Would sharing a scope/name conflate unrelated subsystems?** Yes. Queue
@@ -54,29 +60,47 @@ import io.dataloom.api.state.DurableStateStore
  *   admission/execution decisions -- exactly the reasoning that already
  *   justified three prior separate specs.
  *
- * This intentionally covers only [DataLoomBuilder.queueWorkerConfiguration]'s
- * non-circuit-aware queue worker --
+ * This covers both [DataLoomBuilder.queueWorkerConfiguration]'s non-circuit-
+ * aware queue worker and [DataLoomBuilder.circuitQueueWorkerConfiguration]'s
+ * circuit-aware queue worker. Unlike the retry/circuit *administration*
+ * (bridged) versus ordinary retry/circuit *execution* (not bridged) boundary
+ * drawn by
+ * [DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec], the
+ * circuit-aware queue processor is not out of scope here:
  * [io.dataloom.runtime.queue.CircuitBreakerDurableQueueExecutionProcessor]
- * (backing [DataLoomBuilder.circuitQueueWorkerConfiguration]) already records
- * its own separate, circuit-specific outcome evidence
- * ([io.dataloom.runtime.queue.QueueCircuitOperationRecord]) and is out of
- * scope for this bridge, the same kind of scoping boundary already drawn
- * between retry/circuit *administration* (bridged) and ordinary retry/circuit
- * *execution* (not bridged by that spec).
+ * (backing [DataLoomBuilder.circuitQueueWorkerConfiguration]) additionally
+ * records its own separate, circuit-specific outcome evidence
+ * ([io.dataloom.runtime.queue.QueueCircuitOperationRecord]), but per-entry it
+ * also computes the exact same
+ * [io.dataloom.runtime.queue.QueueEntryExecutionOutcome] the non-circuit-
+ * aware processor does, for the exact same acquired
+ * [io.dataloom.api.queue.QueueEntry] under the exact same
+ * [io.dataloom.api.identifier.QueueLeaseId], immediately after the
+ * underlying [io.dataloom.api.queue.QueueProvider] transition call has
+ * already succeeded. That per-entry information is exactly what this
+ * bridge's [io.dataloom.runtime.queue.QueueEntryTransitionObserver] hook
+ * needs, so both processors accept and notify the identical observer type --
+ * see
+ * [io.dataloom.runtime.queue.CircuitBreakerDurableQueueExecutionProcessor]'s
+ * own KDoc on its `transitionObserver` parameter for exactly when that
+ * notification fires relative to the processor's own circuit-state
+ * recording.
  *
  * When [DataLoomBuilder.queueLifecycleOperationalEventOutboxConfiguration] is
  * not called, behavior is unchanged from before this spec existed: no
  * [io.dataloom.api.operational.OperationalEventEnvelope] is ever constructed
- * or appended for a queue-entry transition, and
- * [io.dataloom.runtime.queue.DurableQueueExecutionProcessor] receives a
- * `null` transition observer -- byte-for-byte the same behavior as before
- * this spec existed.
+ * or appended for a queue-entry transition, and both
+ * [io.dataloom.runtime.queue.DurableQueueExecutionProcessor] and
+ * [io.dataloom.runtime.queue.CircuitBreakerDurableQueueExecutionProcessor]
+ * receive a `null` transition observer -- byte-for-byte the same behavior as
+ * before this spec existed.
  *
  * ## Ordering relative to the real durable transition
  *
- * [io.dataloom.runtime.queue.DurableQueueExecutionProcessor] always persists
- * the real [io.dataloom.api.queue.QueueProvider] transition before notifying
- * this bridge's observer, never the reverse -- see
+ * Both [io.dataloom.runtime.queue.DurableQueueExecutionProcessor] and
+ * [io.dataloom.runtime.queue.CircuitBreakerDurableQueueExecutionProcessor]
+ * always persist the real [io.dataloom.api.queue.QueueProvider] transition
+ * before notifying this bridge's observer, never the reverse -- see
  * [io.dataloom.runtime.queue.QueueEntryTransitionObserver]'s own "Only
  * genuinely persisted transitions are reported" -- and a bridging failure
  * never changes or hides the real

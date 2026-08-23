@@ -49,11 +49,30 @@ import io.dataloom.runtime.retry.QueueCircuitOperation
  *
  * Caller cancellation and unexpected handler, provider, or circuit-store
  * exceptions propagate unchanged.
+ *
+ * @param transitionObserver optional [QueueEntryTransitionObserver] notified
+ *   once per entry, only after its transition's underlying
+ *   [io.dataloom.api.queue.QueueProvider] operation has already succeeded (a
+ *   [io.dataloom.runtime.retry.CircuitProtectedOperationResult.Success] -- see
+ *   this class's own "Evidence model"). Notification does not wait for the
+ *   subsequent circuit-state recording to be accepted: the real queue
+ *   transition is already durably persisted at that point regardless of
+ *   whether the circuit bookkeeping for it is later confirmed, exactly as
+ *   [QueueProcessingSummary] already counts it before an unconfirmed later
+ *   circuit-state write is reported (see
+ *   [CircuitBreakerQueueProcessingResult.CircuitRecordingUnconfirmed]).
+ *   Defaults to `null`, reproducing byte-for-byte the behavior this processor
+ *   had before this parameter existed. See [QueueEntryTransitionObserver]'s
+ *   own class doc for its exact contract -- identical to the one
+ *   [DurableQueueExecutionProcessor] already honors, since both processors
+ *   report the same [QueueEntry]/[QueueLeaseId]/[QueueEntryExecutionOutcome]
+ *   shape.
  */
 public class CircuitBreakerDurableQueueExecutionProcessor(
     private val queueOperationAdapter: CircuitBreakerQueueOperationAdapter,
     private val executionHandler: QueueEntryExecutionHandler,
     private val scopes: QueueProcessingCircuitScopes,
+    private val transitionObserver: QueueEntryTransitionObserver? = null,
 ) {
 
     init {
@@ -248,6 +267,13 @@ public class CircuitBreakerDurableQueueExecutionProcessor(
                         is QueueEntryExecutionOutcome.Failed -> failed++
                         is QueueEntryExecutionOutcome.Cancelled -> cancelled++
                     }
+
+                    // The real QueueProvider transition already succeeded (this is a
+                    // CircuitProtectedOperationResult.Success), so the observer is
+                    // notified here regardless of whether the circuit-state recording
+                    // below is later confirmed -- see this class's own KDoc on
+                    // transitionObserver and CircuitRecordingUnconfirmed's own doc.
+                    transitionObserver?.onTransition(entry, leaseId, outcome)
 
                     val record = acceptedRecord(
                         operation = transition.operation,
