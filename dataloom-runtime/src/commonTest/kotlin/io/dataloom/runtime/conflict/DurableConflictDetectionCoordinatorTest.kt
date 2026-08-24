@@ -37,6 +37,10 @@ import io.dataloom.api.model.ChangeOperation
 import io.dataloom.api.model.SynchronizationDirection
 import io.dataloom.api.model.SynchronizationMode
 import io.dataloom.api.model.SynchronizationRequest
+import io.dataloom.api.operational.DurableOperationalEventOutbox
+import io.dataloom.api.operational.OperationalEventEnvelope
+import io.dataloom.api.operational.OperationalEventOutboxScope
+import io.dataloom.api.operational.OperationalEventOutboxState
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.state.DurableStateCompareAndSetRequest
 import io.dataloom.api.state.DurableStateCompareAndSetResult
@@ -49,6 +53,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 
 /**
@@ -317,11 +322,20 @@ class DurableConflictDetectionCoordinatorTest {
         resolver: ConflictResolver? = null,
         unresolvedConflictLog: DurableUnresolvedConflictLog = DurableUnresolvedConflictLog(InMemoryUnresolvedConflictStore()),
         resolvedConflictDecisionLog: DurableResolvedConflictDecisionLog? = null,
+        operationalEventOutbox: DurableOperationalEventOutbox? = null,
+        operationalEventOutboxScope: OperationalEventOutboxScope? = null,
     ): DurableConflictDetectionCoordinator {
         val detectorRegistry = ConflictDetectorRegistry(listOf(detector))
         val resolverRegistry = ConflictResolverRegistry(if (resolver == null) emptyList() else listOf(resolver))
         val orchestrator = SynchronizationConflictOrchestrator(detectorRegistry, resolverRegistry)
-        return DurableConflictDetectionCoordinator(orchestrator, unresolvedConflictLog, clock, resolvedConflictDecisionLog)
+        return DurableConflictDetectionCoordinator(
+            orchestrator,
+            unresolvedConflictLog,
+            clock,
+            resolvedConflictDecisionLog,
+            operationalEventOutbox,
+            operationalEventOutboxScope,
+        )
     }
 
     private fun request(bindings: ConflictOrchestrationBindings): ConflictOrchestrationRequest =
@@ -422,5 +436,175 @@ class DurableConflictDetectionCoordinatorTest {
             records[request.scope] = updated
             return ProviderOperationResult.Success(DurableStateCompareAndSetResult.Updated(updated))
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Operational-event outbox bridging (opt-in)
+    // -------------------------------------------------------------------------
+
+    private class InMemoryOperationalEventOutboxStore :
+        DurableStateStore<OperationalEventOutboxScope, OperationalEventOutboxState> {
+        private val records =
+            mutableMapOf<OperationalEventOutboxScope, DurableStateRecord<OperationalEventOutboxState>>()
+
+        override suspend fun load(
+            scope: OperationalEventOutboxScope,
+        ): ProviderOperationResult<DurableStateLoadResult<OperationalEventOutboxState>> {
+            val record = records[scope]
+            return ProviderOperationResult.Success(
+                if (record == null) DurableStateLoadResult.Missing else DurableStateLoadResult.Found(record),
+            )
+        }
+
+        override suspend fun compareAndSet(
+            request: DurableStateCompareAndSetRequest<OperationalEventOutboxScope, OperationalEventOutboxState>,
+        ): ProviderOperationResult<DurableStateCompareAndSetResult<OperationalEventOutboxState>> {
+            val current = records[request.scope]
+            if (current?.version != request.expectedVersion) {
+                return ProviderOperationResult.Success(DurableStateCompareAndSetResult.Conflict(current))
+            }
+            val updated = DurableStateRecord(
+                state = request.nextState,
+                version = (current?.version ?: -1L) + 1L,
+                schemaVersion = request.nextSchemaVersion,
+            )
+            records[request.scope] = updated
+            return ProviderOperationResult.Success(DurableStateCompareAndSetResult.Updated(updated))
+        }
+    }
+
+    @Test
+    fun unconfiguredOutbox_leavesNoTraceOfAnUnresolvedOutcome() = runTest {
+        // Neither operationalEventOutbox nor operationalEventOutboxScope supplied -- defaults to null/null.
+        val coordinator = coordinator(
+            detector = FakeDetector(detectorId, ConflictDetectionResult.ConflictDetected(sampleConflict)),
+            unresolvedConflictLog = DurableUnresolvedConflictLog(InMemoryUnresolvedConflictStore()),
+        )
+
+        val result = coordinator.detectAndResolve(
+            request(bindings = ConflictOrchestrationBindings(detectorId, resolverId = null)),
+        )
+
+        assertIs<ConflictOrchestrationResult.ResolverNotConfigured>(result.orchestration)
+        assertIs<DurableUnresolvedConflictRecordOutcome.Recorded>(result.unresolvedRecordOutcome)
+    }
+
+    @Test
+    fun configuredOutbox_durablyAppendsAnEnvelope_forAnUnresolvedOutcome() = runTest {
+        val outboxScope = OperationalEventOutboxScope("test-conflict-resolution-events")
+        val outbox = DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore())
+        val coordinator = coordinator(
+            detector = FakeDetector(detectorId, ConflictDetectionResult.ConflictDetected(sampleConflict)),
+            unresolvedConflictLog = DurableUnresolvedConflictLog(InMemoryUnresolvedConflictStore()),
+            operationalEventOutbox = outbox,
+            operationalEventOutboxScope = outboxScope,
+        )
+
+        val result = coordinator.detectAndResolve(
+            request(bindings = ConflictOrchestrationBindings(detectorId, resolverId = null)),
+        )
+
+        assertIs<ConflictOrchestrationResult.ResolverNotConfigured>(result.orchestration)
+        val entries = outbox.entries(outboxScope)
+        assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(entries)
+        assertEquals(1, entries.value.size)
+        assertEquals("dataloom.conflict.resolution.resolver_not_configured", entries.value[0].type.value)
+        assertEquals(CorrelationId(conflictId.value), entries.value[0].correlationId)
+    }
+
+    @Test
+    fun unconfiguredOutbox_leavesNoTraceOfAResolvedOutcome() = runTest {
+        val decision = ConflictResolutionDecision.UseRemote()
+        val resolvedLog = DurableResolvedConflictDecisionLog(InMemoryResolvedConflictDecisionStore())
+        val coordinator = coordinator(
+            detector = FakeDetector(detectorId, ConflictDetectionResult.ConflictDetected(sampleConflict)),
+            resolver = FakeResolver(resolverId, decision),
+            resolvedConflictDecisionLog = resolvedLog,
+        )
+
+        val result = coordinator.detectAndResolve(
+            request(bindings = ConflictOrchestrationBindings(detectorId, resolverId)),
+        )
+
+        assertIs<ConflictOrchestrationResult.Resolved>(result.orchestration)
+        assertIs<DurableResolvedConflictDecisionRecordOutcome.Recorded>(result.resolvedDecisionRecordOutcome)
+    }
+
+    @Test
+    fun configuredOutbox_durablyAppendsAnEnvelope_forAResolvedOutcome() = runTest {
+        val decision = ConflictResolutionDecision.UseRemote()
+        val resolvedLog = DurableResolvedConflictDecisionLog(InMemoryResolvedConflictDecisionStore())
+        val outboxScope = OperationalEventOutboxScope("test-conflict-resolution-events")
+        val outbox = DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore())
+        val coordinator = coordinator(
+            detector = FakeDetector(detectorId, ConflictDetectionResult.ConflictDetected(sampleConflict)),
+            resolver = FakeResolver(resolverId, decision),
+            resolvedConflictDecisionLog = resolvedLog,
+            operationalEventOutbox = outbox,
+            operationalEventOutboxScope = outboxScope,
+        )
+
+        val result = coordinator.detectAndResolve(
+            request(bindings = ConflictOrchestrationBindings(detectorId, resolverId)),
+        )
+
+        assertIs<ConflictOrchestrationResult.Resolved>(result.orchestration)
+        val entries = outbox.entries(outboxScope)
+        assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(entries)
+        assertEquals(1, entries.value.size)
+        assertEquals("dataloom.conflict.resolution.resolved.use_remote", entries.value[0].type.value)
+        assertEquals(CorrelationId(conflictId.value), entries.value[0].correlationId)
+    }
+
+    @Test
+    fun bridgingFailureNeverSuppressesTheRealOrchestrationResult() = runTest {
+        // operationalEventOutbox backed by a store that fails every call; the coordinator's own
+        // return value must be unaffected since bridging failures are swallowed.
+        val outboxScope = OperationalEventOutboxScope("test-conflict-resolution-events")
+        val outbox = DurableOperationalEventOutbox(FailingOperationalEventOutboxStore())
+        val coordinator = coordinator(
+            detector = FakeDetector(detectorId, ConflictDetectionResult.ConflictDetected(sampleConflict)),
+            unresolvedConflictLog = DurableUnresolvedConflictLog(InMemoryUnresolvedConflictStore()),
+            operationalEventOutbox = outbox,
+            operationalEventOutboxScope = outboxScope,
+        )
+
+        val result = coordinator.detectAndResolve(
+            request(bindings = ConflictOrchestrationBindings(detectorId, resolverId = null)),
+        )
+
+        assertIs<ConflictOrchestrationResult.ResolverNotConfigured>(result.orchestration)
+        assertIs<DurableUnresolvedConflictRecordOutcome.Recorded>(result.unresolvedRecordOutcome)
+    }
+
+    private class FailingOperationalEventOutboxStore :
+        DurableStateStore<OperationalEventOutboxScope, OperationalEventOutboxState> {
+        override suspend fun load(
+            scope: OperationalEventOutboxScope,
+        ): ProviderOperationResult<DurableStateLoadResult<OperationalEventOutboxState>> =
+            ProviderOperationResult.Failure(
+                object : DataLoomError {
+                    override val code = ErrorCode("CONFLICT_RESOLUTION_OUTBOX_TEST_FAILURE")
+                    override val category = ErrorCategory.STORAGE
+                    override val severity = ErrorSeverity.ERROR
+                    override val recoverability = Recoverability.RECOVERABLE
+                    override val message = "Simulated outbox store failure."
+                    override val cause: Throwable? = null
+                },
+            )
+
+        override suspend fun compareAndSet(
+            request: DurableStateCompareAndSetRequest<OperationalEventOutboxScope, OperationalEventOutboxState>,
+        ): ProviderOperationResult<DurableStateCompareAndSetResult<OperationalEventOutboxState>> =
+            ProviderOperationResult.Failure(
+                object : DataLoomError {
+                    override val code = ErrorCode("CONFLICT_RESOLUTION_OUTBOX_TEST_FAILURE")
+                    override val category = ErrorCategory.STORAGE
+                    override val severity = ErrorSeverity.ERROR
+                    override val recoverability = Recoverability.RECOVERABLE
+                    override val message = "Simulated outbox store failure."
+                    override val cause: Throwable? = null
+                },
+            )
     }
 }

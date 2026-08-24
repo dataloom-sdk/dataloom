@@ -341,9 +341,9 @@ therefore safe: the second call also reports `NotFound`.
 - **No filtering or subscription delivery.**
 - **No enumeration across scopes.** A caller must already know which
   `OperationalEventOutboxScope` to read.
-- **Four real wired callers so far — synchronization events, retry/circuit
-  administration commands, strategy-decision diagnostics, and queue
-  lifecycle.**
+- **Five real wired callers so far — synchronization events, retry/circuit
+  administration commands, strategy-decision diagnostics, queue lifecycle,
+  and conflict resolution.**
   `SynchronizationOperationalEventBridge`
   (`io.dataloom.runtime.observation.operational`) maps every
   `SynchronizationEvent` variant (`Started`, `PhaseChanged`,
@@ -456,15 +456,43 @@ therefore safe: the second call also reports `NotFound`.
   separate circuit-state recording is later confirmed, since the real queue
   transition is already durably persisted at that point either way.
 
-  For all four bridges, bridging failures (envelope construction) and append
+  `ConflictResolutionOperationalEventBridge`
+  (`io.dataloom.runtime.observation.operational`) maps the same
+  `io.dataloom.api.conflict.UnresolvedConflictRecord`/
+  `io.dataloom.api.conflict.ResolvedConflictDecisionRecord`
+  `DurableConflictDetectionCoordinator` already constructs and durably
+  records via `DurableUnresolvedConflictLog`/`DurableResolvedConflictDecisionLog`
+  to an `OperationalEventEnvelope` — reusing each record's own already-computed
+  `committedAt` rather than reading a clock, and reusing the conflict's own
+  `ConflictId` unchanged as `correlationId` and (domain-prefixed
+  `unresolved.`/`resolved.` and sanitized, so an unresolved outcome and a
+  later resolved outcome for the same `ConflictId` can never collide) as the
+  envelope's own `id`. This is genuinely additive, not a duplicate record, for
+  the same reason `StrategyDecisionOperationalEventBridge` is: each durable
+  conflict log is one mutable slot per `ConflictId` with no ordering or
+  enumeration across conflicts and a caller must already know the identifier
+  to read it, while this bridge feeds the same ordered, cross-subsystem outbox
+  stream the other four bridges above share.
+  `DurableConflictDetectionCoordinator` calls the bridge and durably appends
+  the result immediately after every `DurableUnresolvedConflictLog.record`/
+  `DurableResolvedConflictDecisionLog.record` call, using the exact record
+  each just received rather than re-deriving one from
+  `ConflictOrchestrationResult`, opt-in via a fifth, separate spec —
+  `DataLoomBuilder.conflictResolutionOperationalEventOutboxConfiguration(DataLoomConflictResolutionOperationalEventOutboxSpec)`
+  — which has no effect unless `conflictDetectionConfiguration` is also
+  configured, since neither durable record is ever constructed at all
+  otherwise (mirroring why the strategy-decision spec above has no effect
+  without `strategyDiagnosticsConfiguration`).
+
+  For all five bridges, bridging failures (envelope construction) and append
   outcomes other than success (`Conflict`, `PersistenceFailure`,
   `ContentionLimitReached`) are always swallowed — consistent with
   `StrategySynchronizationExecutionCoordinator`'s own durable-diagnostics
   posture, a durable side-record must never change or hide the real result of
-  the operation it is describing. Every other subsystem's events (conflict
-  resolution, and so on) remain unbridged; wiring those is separate, larger
-  follow-up work, consistent with `DurableConfigurationHistory` and
-  `DurablePolicyDecisionLog` each originally shipping without a real caller.
+  the operation it is describing. Every other subsystem's events (and so on)
+  remain unbridged; wiring those is separate, larger follow-up work,
+  consistent with `DurableConfigurationHistory` and `DurablePolicyDecisionLog`
+  each originally shipping without a real caller.
 
 ## Remaining V1 boundary
 

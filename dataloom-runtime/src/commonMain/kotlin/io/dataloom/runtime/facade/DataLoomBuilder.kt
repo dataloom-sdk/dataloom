@@ -162,6 +162,8 @@ public class DataLoomBuilder {
         DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec? = null
     private var strategyDecisionOperationalEventOutboxSpec: DataLoomStrategyDecisionOperationalEventOutboxSpec? = null
     private var queueLifecycleOperationalEventOutboxSpec: DataLoomQueueLifecycleOperationalEventOutboxSpec? = null
+    private var conflictResolutionOperationalEventOutboxSpec:
+        DataLoomConflictResolutionOperationalEventOutboxSpec? = null
     private var built: Boolean = false
 
     // =========================================================================
@@ -468,6 +470,45 @@ public class DataLoomBuilder {
         spec: DataLoomQueueLifecycleOperationalEventOutboxSpec,
     ): DataLoomBuilder = apply {
         queueLifecycleOperationalEventOutboxSpec = spec
+    }
+
+    /**
+     * Enables the durable operational-event outbox bridge for conflict
+     * resolution: every already-durably-recorded
+     * [io.dataloom.api.conflict.UnresolvedConflictRecord]/
+     * [io.dataloom.api.conflict.ResolvedConflictDecisionRecord]
+     * [io.dataloom.runtime.conflict.DurableConflictDetectionCoordinator]
+     * computes and commits via
+     * [io.dataloom.api.conflict.DurableUnresolvedConflictLog]/
+     * [io.dataloom.api.conflict.DurableResolvedConflictDecisionLog] (see
+     * [conflictDetectionConfiguration]) is also translated into an
+     * [io.dataloom.api.operational.OperationalEventEnvelope] by
+     * [io.dataloom.runtime.observation.operational.ConflictResolutionOperationalEventBridge]
+     * and durably appended -- for operator visibility and debugging, never
+     * for replay, decision continuation, or application of a decision to
+     * storage. See [DataLoomConflictResolutionOperationalEventOutboxSpec] for
+     * the full contract, including why this is a fifth, separate opt-in point
+     * rather than an extension of an existing operational-event-outbox spec,
+     * and why it has no effect unless [conflictDetectionConfiguration] is
+     * also configured.
+     *
+     * Configuring this spec alone does not enable conflict detection --
+     * [conflictDetectionConfiguration] must still be called separately for a
+     * conflict-resolution record to ever be constructed at all.
+     *
+     * When this method is not called, behavior is unchanged from before it
+     * existed: no operational event envelope is ever constructed or appended
+     * for a conflict-resolution outcome.
+     *
+     * @param spec the durable store (and optional scope/schema/retry tuning)
+     *   to use. See [DataLoomConflictResolutionOperationalEventOutboxSpec] for
+     *   the full contract.
+     * @return this builder for chaining.
+     */
+    public fun conflictResolutionOperationalEventOutboxConfiguration(
+        spec: DataLoomConflictResolutionOperationalEventOutboxSpec,
+    ): DataLoomBuilder = apply {
+        conflictResolutionOperationalEventOutboxSpec = spec
     }
 
     /**
@@ -810,7 +851,16 @@ public class DataLoomBuilder {
             null
         }
 
-        // --- 4b. Build conflict-detection configuration (optional) ---
+        // --- 4b. Build conflict-resolution operational-event outbox (optional) ---
+        val conflictResolutionOperationalEventOutbox = conflictResolutionOperationalEventOutboxSpec?.let { spec ->
+            DurableOperationalEventOutbox(
+                store = spec.store,
+                schemaVersion = spec.schemaVersion,
+                maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
+            )
+        }
+
+        // --- 4c. Build conflict-detection configuration (optional) ---
         val conflictDetectionConfig = conflictDetectionSpec?.let { spec ->
             InboundPullConflictDetectionConfiguration(
                 coordinator = DurableConflictDetectionCoordinator(
@@ -832,6 +882,8 @@ public class DataLoomBuilder {
                             maximumStateUpdateAttempts = spec.resolvedConflictDecisionLogMaximumStateUpdateAttempts,
                         )
                     },
+                    operationalEventOutbox = conflictResolutionOperationalEventOutbox,
+                    operationalEventOutboxScope = conflictResolutionOperationalEventOutboxSpec?.scope,
                 ),
                 bindings = spec.bindings,
             )
