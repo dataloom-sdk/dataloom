@@ -12,8 +12,13 @@ import io.dataloom.api.conflict.SynchronizationConflict
 import io.dataloom.api.conflict.UnresolvedConflictChangeSummary
 import io.dataloom.api.conflict.UnresolvedConflictReason
 import io.dataloom.api.conflict.UnresolvedConflictRecord
+import io.dataloom.api.identifier.ConflictId
 import io.dataloom.api.identifier.ConflictResolverId
+import io.dataloom.api.operational.DurableOperationalEventOutbox
+import io.dataloom.api.operational.OperationalEventOutboxScope
 import io.dataloom.api.time.DataLoomClock
+import io.dataloom.runtime.observation.operational.ConflictResolutionOperationalEventBridge
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Composes deterministic conflict detection/resolution with durable unresolved
@@ -22,12 +27,37 @@ import io.dataloom.api.time.DataLoomClock
  * The coordinator does not apply a decision to application storage. It returns
  * the exact orchestration result together with the exact durable-record
  * outcome, allowing a caller to establish a fail-closed application barrier.
+ *
+ * ## Operational-event outbox bridging (opt-in)
+ *
+ * When [operationalEventOutbox] and [operationalEventOutboxScope] are both
+ * configured, every [UnresolvedConflictRecord]/[ResolvedConflictDecisionRecord]
+ * this coordinator durably records is also bridged into an
+ * [io.dataloom.api.operational.OperationalEventEnvelope] by
+ * [ConflictResolutionOperationalEventBridge] and durably appended -- for
+ * operator visibility and debugging, never for replay or decision
+ * continuation. See
+ * [io.dataloom.runtime.facade.DataLoomConflictResolutionOperationalEventOutboxSpec]
+ * for the full opt-in contract. Bridging always happens immediately after the
+ * corresponding durable-record call, using the exact same record that call
+ * received -- never before, and never in a way that changes the
+ * [DurableConflictDetectionResult] this coordinator returns. A
+ * bridging failure -- whether envelope construction throws, or
+ * [io.dataloom.api.operational.DurableOperationalEventOutbox.append] itself
+ * returns anything other than success -- is swallowed and never surfaces as a
+ * thrown exception; only [CancellationException] still propagates. Matches
+ * [io.dataloom.runtime.strategy.StrategySynchronizationExecutionCoordinator]'s
+ * own `recordOperationalEvent` posture exactly. When either collaborator is
+ * `null`, no envelope is ever constructed or appended -- byte-for-byte the
+ * same behavior as before this bridge existed.
  */
 public class DurableConflictDetectionCoordinator(
     private val orchestrator: SynchronizationConflictOrchestrator,
     private val unresolvedConflictLog: DurableUnresolvedConflictLog,
     private val clock: DataLoomClock,
     private val resolvedConflictDecisionLog: DurableResolvedConflictDecisionLog? = null,
+    private val operationalEventOutbox: DurableOperationalEventOutbox? = null,
+    private val operationalEventOutboxScope: OperationalEventOutboxScope? = null,
 ) {
     /**
      * `true` only when resolved decisions have a durable commit-once log.
@@ -137,7 +167,9 @@ public class DurableConflictDetectionCoordinator(
             reason = reason,
             committedAt = clock.now(),
         )
-        return unresolvedConflictLog.record(conflict.id, record)
+        val outcome = unresolvedConflictLog.record(conflict.id, record)
+        recordOperationalEvent(conflict.id, record)
+        return outcome
     }
 
     private suspend fun recordResolved(
@@ -164,7 +196,51 @@ public class DurableConflictDetectionCoordinator(
                 ?.value,
             committedAt = clock.now(),
         )
-        return log.record(conflict.id, record)
+        val outcome = log.record(conflict.id, record)
+        recordOperationalEvent(conflict.id, record)
+        return outcome
+    }
+
+    /**
+     * When [operationalEventOutbox] and [operationalEventOutboxScope] are
+     * both configured, bridges [record] into an
+     * [io.dataloom.api.operational.OperationalEventEnvelope] via
+     * [ConflictResolutionOperationalEventBridge] and durably appends it. See
+     * this class's own class doc's "Operational-event outbox bridging
+     * (opt-in)".
+     */
+    private suspend fun recordOperationalEvent(conflictId: ConflictId, record: UnresolvedConflictRecord) {
+        val outbox = operationalEventOutbox ?: return
+        val scope = operationalEventOutboxScope ?: return
+        try {
+            val envelope = ConflictResolutionOperationalEventBridge.toEnvelope(conflictId, record)
+            outbox.append(scope, envelope)
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (ordinary: Exception) {
+            // Intentionally swallowed -- see class doc above.
+        }
+    }
+
+    /**
+     * When [operationalEventOutbox] and [operationalEventOutboxScope] are
+     * both configured, bridges [record] into an
+     * [io.dataloom.api.operational.OperationalEventEnvelope] via
+     * [ConflictResolutionOperationalEventBridge] and durably appends it. See
+     * this class's own class doc's "Operational-event outbox bridging
+     * (opt-in)".
+     */
+    private suspend fun recordOperationalEvent(conflictId: ConflictId, record: ResolvedConflictDecisionRecord) {
+        val outbox = operationalEventOutbox ?: return
+        val scope = operationalEventOutboxScope ?: return
+        try {
+            val envelope = ConflictResolutionOperationalEventBridge.toEnvelope(conflictId, record)
+            outbox.append(scope, envelope)
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (ordinary: Exception) {
+            // Intentionally swallowed -- see class doc above.
+        }
     }
 
     private fun ChangeEvent.toSummary(): UnresolvedConflictChangeSummary =

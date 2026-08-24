@@ -104,8 +104,8 @@ public final class io/dataloom/runtime/conflict/ConflictResolverRegistry {
 }
 
 public final class io/dataloom/runtime/conflict/DurableConflictDetectionCoordinator {
-	public fun <init> (Lio/dataloom/runtime/conflict/SynchronizationConflictOrchestrator;Lio/dataloom/api/conflict/DurableUnresolvedConflictLog;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/conflict/DurableResolvedConflictDecisionLog;)V
-	public synthetic fun <init> (Lio/dataloom/runtime/conflict/SynchronizationConflictOrchestrator;Lio/dataloom/api/conflict/DurableUnresolvedConflictLog;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/conflict/DurableResolvedConflictDecisionLog;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/conflict/SynchronizationConflictOrchestrator;Lio/dataloom/api/conflict/DurableUnresolvedConflictLog;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/conflict/DurableResolvedConflictDecisionLog;Lio/dataloom/api/operational/DurableOperationalEventOutbox;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/conflict/SynchronizationConflictOrchestrator;Lio/dataloom/api/conflict/DurableUnresolvedConflictLog;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/conflict/DurableResolvedConflictDecisionLog;Lio/dataloom/api/operational/DurableOperationalEventOutbox;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun detectAndResolve (Lio/dataloom/runtime/conflict/ConflictOrchestrationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun toString ()Ljava/lang/String;
 }
@@ -483,6 +483,7 @@ public final class io/dataloom/runtime/facade/DataLoomBuilder {
 	public final fun circuitQueueWorkerConfiguration (Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorkerSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun circuitQueueWorkerSchedulerConfiguration (Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorkerSchedulerSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun conflictDetectionConfiguration (Lio/dataloom/runtime/facade/DataLoomConflictDetectionSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
+	public final fun conflictResolutionOperationalEventOutboxConfiguration (Lio/dataloom/runtime/facade/DataLoomConflictResolutionOperationalEventOutboxSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun connectivityConfiguration (Lio/dataloom/runtime/connectivity/SynchronizationConnectivityConfiguration;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun defaultProviderBindings (Lio/dataloom/api/provider/SynchronizationProviderBindings;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun defaultStrategyProviderBindings (Lio/dataloom/api/provider/StrategyProviderBindings;)Lio/dataloom/runtime/facade/DataLoomBuilder;
@@ -557,6 +558,15 @@ public final class io/dataloom/runtime/facade/DataLoomConflictDetectionSpec {
 	public final fun getUnresolvedConflictLogMaximumStateUpdateAttempts ()I
 	public final fun getUnresolvedConflictLogSchemaVersion ()I
 	public final fun getUnresolvedConflictStore ()Lio/dataloom/api/state/DurableStateStore;
+}
+
+public final class io/dataloom/runtime/facade/DataLoomConflictResolutionOperationalEventOutboxSpec {
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;Ljava/lang/String;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;Ljava/lang/String;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getMaximumStateUpdateAttempts ()I
+	public final fun getSchemaVersion ()I
+	public final fun getScope--IyNcac ()Ljava/lang/String;
+	public final fun getStore ()Lio/dataloom/api/state/DurableStateStore;
 }
 
 public final class io/dataloom/runtime/facade/DataLoomOperationalEventOutboxSpec {
@@ -849,6 +859,12 @@ public final class io/dataloom/runtime/observation/SynchronizationObserverRegist
 	public final fun isEmpty ()Z
 	public final fun lookup-M_rkR4M (Ljava/lang/String;)Lio/dataloom/api/observation/SynchronizationObserver;
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/observation/operational/ConflictResolutionOperationalEventBridge {
+	public static final field INSTANCE Lio/dataloom/runtime/observation/operational/ConflictResolutionOperationalEventBridge;
+	public final fun toEnvelope-aFZlLws (Ljava/lang/String;Lio/dataloom/api/conflict/ResolvedConflictDecisionRecord;)Lio/dataloom/api/operational/OperationalEventEnvelope;
+	public final fun toEnvelope-aFZlLws (Ljava/lang/String;Lio/dataloom/api/conflict/UnresolvedConflictRecord;)Lio/dataloom/api/operational/OperationalEventEnvelope;
 }
 
 public final class io/dataloom/runtime/observation/operational/QueueLifecycleOperationalEventBridge {
