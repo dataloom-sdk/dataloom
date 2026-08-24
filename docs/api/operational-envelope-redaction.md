@@ -2,9 +2,10 @@
 
 Status: **available foundation**. The shared contracts, strict redactor,
 canonical V1 wire codec, and schema-upcast registry are implemented. A
-bounded first slice of durable persistence exists (see "Durable outbox"
-below); acknowledgement, replay, retention, filtering, and complete subsystem
-adapters remain V1 work.
+bounded first slice of durable persistence, including an opt-in count-based
+retention policy, exists (see "Durable outbox" below); acknowledgement,
+replay, age-based retention, filtering, and complete subsystem adapters
+remain V1 work.
 
 ## Purpose
 
@@ -177,13 +178,65 @@ the existing frozen `OperationalEnvelopeWireCodec` V1 frame — it never
 reinvents the envelope's own byte layout, only Base64-wraps each frame to
 join multiple entries into one text payload.
 
+### Retention policy
+
+`DurableOperationalEventOutbox` takes an optional `maximumRetainedEntries: Int?`
+constructor parameter, defaulting to `null`. `null` means no eviction —
+behavior byte-for-byte unchanged from before this parameter existed: entries
+accumulate without bound, limited only by `OperationalEventOutboxStateCodec`'s
+own overall-encoded-length safety limit (`MAX_ENTRY_COUNT` = 10,000 entries;
+4 MiB encoded). A caller that sets `maximumRetainedEntries` gets a bounded
+first slice of real retention instead:
+
+```kotlin
+val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 5_000)
+```
+
+Once an `append` would grow the retained entry count for a scope past
+`maximumRetainedEntries`, the oldest entries are evicted first — as many as
+needed to bring the retained count back down to the configured cap — as part
+of the very same compare-and-set write that persists the new entry, never a
+separate follow-up write. This mirrors `DurableConfigurationHistory`'s own
+`maxRetainedVersions` shape — a count-based cap enforced by trimming the
+oldest entries off an ordered list inside the same atomic update — which is
+this codebase's only existing precedent for bounding an ordered
+`DurableStateStore`-backed list.
+
+A count-based cap was chosen over an age-based one for two reasons. First,
+eviction driven purely by the list's own `size` needs no clock read and no
+dependency on `OperationalEventEnvelope.occurredAt` being trustworthy as a
+"now" reference — consistent with `OperationalEventEnvelope` itself
+documenting that it never reads a global clock and treats every time value as
+caller-supplied, not authoritative. Second, it composes directly with the
+outbox's own "ordered, oldest-first" contract: the entries to evict are
+always exactly the current list's leading elements, with no need to scan for
+an age boundary.
+
+`maximumRetainedEntries` is an optional constructor parameter rather than a
+required one, matching this codebase's existing "optional collaborator"
+pattern for additive, backward-compatible behavior (for example
+`QueueEntryTransitionObserver? = null` on the queue-execution processors) —
+existing callers that construct `DurableOperationalEventOutbox` without it
+see no behavior change at all.
+
+One accepted consequence: eviction only ever removes entries older than what
+`append` itself is adding, so it can never evict the entry an `append` call
+just persisted, but it can evict an entry whose identifier a caller might
+later try to append again. Once retention has evicted an entry, its
+`OperationalEventEnvelope.id` is no longer visible to `append`'s same-id
+`AlreadyAppended`/`Conflict` duplicate check — re-appending that identifier
+is indistinguishable from a genuinely new entry. That is a deliberate
+trade-off of bounding retention, not an oversight.
+
 ### What this does not do yet
 
 - **No acknowledgement or per-item removal.** `entries` always returns the
-  full retained list; there is no "mark consumed" operation.
-- **No retention or eviction policy.** Entries accumulate without bound
-  (bounded only by the codec's overall encoded-length safety limit, not by
-  business retention policy).
+  full retained list; there is no "mark consumed" operation. The only way an
+  entry stops being retained is the count-based retention policy described
+  below, when a caller opts into one.
+- **No age-based retention.** The retention policy (see "Retention policy"
+  below) is count-based only; there is no "evict entries older than duration
+  X" option.
 - **No filtering or subscription delivery.**
 - **No enumeration across scopes.** A caller must already know which
   `OperationalEventOutboxScope` to read.
@@ -317,9 +370,9 @@ join multiple entries into one text payload.
 This foundation does not yet provide:
 
 - payload classification, minimization, encoding, encryption, or integrity;
-- durable outbox acknowledgement, replay, retention, or cross-scope
-  enumeration (ordered append and single-scope read-back exist -- see
-  "Durable outbox" above);
+- durable outbox acknowledgement, replay, age-based retention, or
+  cross-scope enumeration (ordered append, single-scope read-back, and an
+  opt-in count-based retention policy exist -- see "Durable outbox" above);
 - subscription filtering or back-pressure delivery;
 - subsystem adapters for every event and administrative action;
 - policy-signature, residency, authorization, or tamper-evident audit storage;
