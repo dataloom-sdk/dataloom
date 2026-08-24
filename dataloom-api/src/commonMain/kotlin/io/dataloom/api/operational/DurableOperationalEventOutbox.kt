@@ -48,10 +48,11 @@ public value class OperationalEventOutboxScope(
  * append order (oldest first).
  *
  * This is a bounded first slice of DL-042's durable-outbox requirement --
- * ordered append plus "read everything currently persisted" only. It does
- * not implement acknowledgement, per-item removal, retention/eviction, or
- * filtered/subscription delivery; those remain separate, larger follow-up
- * work.
+ * ordered append, optional count-based retention (see
+ * [DurableOperationalEventOutbox]'s "Retention" documentation), and "read
+ * everything currently retained" only. It does not implement acknowledgement,
+ * per-item removal, or filtered/subscription delivery; those remain separate,
+ * larger follow-up work.
  */
 public data class OperationalEventOutboxState(
     public val entries: List<OperationalEventEnvelope>,
@@ -133,14 +134,51 @@ public sealed interface DurableOperationalEventOutboxAppendOutcome {
  * slice:
  *
  * - No acknowledgement or per-item removal -- [entries] always returns the
- *   full retained list; there is no "mark consumed" operation.
- * - No retention/eviction policy -- entries accumulate without bound.
+ *   full retained list; there is no "mark consumed" operation. The only way
+ *   an entry stops being retained is count-based [maximumRetainedEntries]
+ *   eviction -- see "Retention" below.
  * - No filtering or subscription delivery.
  * - No enumeration across scopes -- a caller must already know which
  *   [OperationalEventOutboxScope] to read.
  *
  * All of the above are real, separately-scoped follow-up work, not
  * oversights.
+ *
+ * ## Retention
+ *
+ * By default [maximumRetainedEntries] is `null` and behavior is byte-for-byte
+ * unchanged from before this policy existed: entries accumulate without
+ * bound, limited only by [OperationalEventOutboxStateCodec]'s own
+ * overall-encoded-length safety limit. A caller that sets
+ * [maximumRetainedEntries] gets a bounded first slice of real retention
+ * instead: once an [append] would grow [OperationalEventOutboxState.entries]
+ * past that count, the oldest entries are evicted first -- as many as needed
+ * to bring the retained count back down to [maximumRetainedEntries] -- as
+ * part of the very same compare-and-set write that persists the new entry,
+ * never a separate follow-up write. This mirrors
+ * [io.dataloom.api.configuration.DurableConfigurationHistory]'s own
+ * `maxRetainedVersions` shape -- a count-based cap enforced by trimming the
+ * oldest entries off an ordered list inside the same atomic update -- which
+ * is this codebase's only existing precedent for bounding an ordered
+ * [DurableStateStore]-backed list.
+ *
+ * A count-based cap was chosen over an age-based one: eviction happens
+ * entirely from the list's own `size`, so it needs no clock read and no
+ * dependency on [OperationalEventEnvelope.occurredAt] being trustworthy as a
+ * "now" reference -- consistent with [OperationalEventEnvelope] itself
+ * documenting that it "never reads a global clock" and treats every time
+ * value as caller-supplied, not authoritative. It also composes directly
+ * with the outbox's own "ordered, oldest-first" contract: the entries to
+ * evict are always exactly the current list's leading elements.
+ *
+ * Eviction only ever removes entries older than what [append] itself is
+ * adding, so it can never evict the entry an [append] call just persisted.
+ * An evicted entry's [OperationalEventEnvelope.id] is no longer visible to
+ * the same-id [DurableOperationalEventOutboxAppendOutcome.AlreadyAppended] /
+ * [DurableOperationalEventOutboxAppendOutcome.Conflict] duplicate check --
+ * once retention has evicted an entry, appending its identifier again is
+ * indistinguishable from a genuinely new entry. That is an accepted
+ * consequence of bounding retention, not an oversight.
  *
  * ## Idempotency
  *
@@ -164,15 +202,24 @@ public sealed interface DurableOperationalEventOutboxAppendOutcome {
  *   per [append] call before giving up with
  *   [DurableOperationalEventOutboxAppendOutcome.ContentionLimitReached]. Must
  *   be at least `1`.
+ * @param maximumRetainedEntries the maximum number of entries kept per scope,
+ *   including the one just appended. `null` (the default) means no
+ *   eviction -- byte-for-byte the same unbounded-accumulation behavior this
+ *   outbox had before this parameter existed. When non-null it must be at
+ *   least `1`; see this class's "Retention" documentation.
  */
 public class DurableOperationalEventOutbox(
     private val store: DurableStateStore<OperationalEventOutboxScope, OperationalEventOutboxState>,
     private val schemaVersion: Int = DEFAULT_SCHEMA_VERSION,
     private val maximumStateUpdateAttempts: Int = DEFAULT_MAX_STATE_UPDATE_ATTEMPTS,
+    private val maximumRetainedEntries: Int? = null,
 ) {
     init {
         require(maximumStateUpdateAttempts >= 1) {
             "maximumStateUpdateAttempts must be at least 1, but was $maximumStateUpdateAttempts."
+        }
+        require(maximumRetainedEntries == null || maximumRetainedEntries >= 1) {
+            "maximumRetainedEntries must be at least 1 when set, but was $maximumRetainedEntries."
         }
     }
 
@@ -213,12 +260,13 @@ public class DurableOperationalEventOutbox(
                     DurableOperationalEventOutboxAppendOutcome.Conflict(existing, envelope)
                 }
             }
+            val nextEntries = (currentState.entries + envelope).retainedByCap()
             when (
                 val result = store.compareAndSet(
                     DurableStateCompareAndSetRequest(
                         scope = scope,
                         expectedVersion = expectedVersion,
-                        nextState = OperationalEventOutboxState(currentState.entries + envelope),
+                        nextState = OperationalEventOutboxState(nextEntries),
                         nextSchemaVersion = schemaVersion,
                     ),
                 )
@@ -246,6 +294,16 @@ public class DurableOperationalEventOutbox(
             is DurableStateLoadResult.Missing -> null
             is DurableStateLoadResult.Found -> record.version
         }
+
+    /**
+     * Drops the oldest entries, if needed, so at most [maximumRetainedEntries]
+     * remain -- a no-op when [maximumRetainedEntries] is `null` or the list is
+     * already within the cap. See this class's "Retention" documentation.
+     */
+    private fun List<OperationalEventEnvelope>.retainedByCap(): List<OperationalEventEnvelope> {
+        val cap = maximumRetainedEntries ?: return this
+        return if (size > cap) subList(size - cap, size) else this
+    }
 
     private companion object {
         const val DEFAULT_SCHEMA_VERSION: Int = 1
