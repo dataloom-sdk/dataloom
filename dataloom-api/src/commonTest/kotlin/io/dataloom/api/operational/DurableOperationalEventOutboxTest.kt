@@ -23,8 +23,8 @@ import kotlinx.coroutines.test.runTest
 
 /**
  * Verifies [DurableOperationalEventOutbox]'s ordered-append, idempotent-retry,
- * and conflict-detection behavior -- the bounded first slice of DL-042's
- * durable-outbox requirement.
+ * conflict-detection, retention, and acknowledgement behavior -- the bounded
+ * first slice of DL-042's durable-outbox requirement.
  */
 class DurableOperationalEventOutboxTest {
 
@@ -285,6 +285,172 @@ class DurableOperationalEventOutboxTest {
     }
 
     @Test
+    fun acknowledgingAnExistingEntryRemovesItAndIsReflectedInASubsequentEntriesCall() = runTest {
+        val store = InMemoryOperationalEventOutboxStore()
+        val outbox = DurableOperationalEventOutbox(store)
+        val first = envelope("event-1")
+        val second = envelope("event-2")
+        outbox.append(scope, first)
+        outbox.append(scope, second)
+
+        val outcome = outbox.acknowledge(scope, first.id)
+
+        val acknowledged = assertIs<DurableOperationalEventOutboxAcknowledgeOutcome.Acknowledged>(outcome)
+        assertEquals(first, acknowledged.envelope)
+        val entries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
+        assertEquals(listOf(second), entries.value)
+    }
+
+    @Test
+    fun acknowledgementSurvivesAReloadOfTheSameStore() = runTest {
+        val store = InMemoryOperationalEventOutboxStore()
+        val outbox = DurableOperationalEventOutbox(store)
+        val envelope = envelope("event-1")
+        outbox.append(scope, envelope)
+
+        outbox.acknowledge(scope, envelope.id)
+
+        // A fresh DurableOperationalEventOutbox wrapping the same underlying
+        // store simulates a process restart: the removal already happened as
+        // part of the persisted state, not something recomputed on read.
+        val reopened = DurableOperationalEventOutbox(store)
+        val entries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(reopened.entries(scope))
+        assertEquals(emptyList(), entries.value)
+    }
+
+    @Test
+    fun acknowledgingANonexistentIdIsAWellDefinedNoOp() = runTest {
+        val outbox = DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore())
+
+        val outcome = outbox.acknowledge(scope, OperationalEventId("never-appended"))
+
+        assertIs<DurableOperationalEventOutboxAcknowledgeOutcome.NotFound>(outcome)
+    }
+
+    @Test
+    fun acknowledgingTheSameEntryTwiceIsIdempotentAndTheSecondCallReportsNotFound() = runTest {
+        val store = InMemoryOperationalEventOutboxStore()
+        val outbox = DurableOperationalEventOutbox(store)
+        val envelope = envelope("event-1")
+        outbox.append(scope, envelope)
+        assertIs<DurableOperationalEventOutboxAcknowledgeOutcome.Acknowledged>(outbox.acknowledge(scope, envelope.id))
+
+        val outcome = outbox.acknowledge(scope, envelope.id)
+
+        assertIs<DurableOperationalEventOutboxAcknowledgeOutcome.NotFound>(outcome)
+    }
+
+    @Test
+    fun acknowledgingAnEntryAlreadyEvictedByRetentionIsAWellDefinedNoOp() = runTest {
+        val store = InMemoryOperationalEventOutboxStore()
+        val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 1)
+        val evicted = envelope("event-1")
+        val displacing = envelope("event-2")
+        outbox.append(scope, evicted)
+        outbox.append(scope, displacing) // evicts "event-1"
+
+        val outcome = outbox.acknowledge(scope, evicted.id)
+
+        assertIs<DurableOperationalEventOutboxAcknowledgeOutcome.NotFound>(outcome)
+        val entries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
+        assertEquals(listOf(displacing), entries.value)
+    }
+
+    @Test
+    fun acknowledgingOneEntryDoesNotDisturbRetentionForSubsequentAppends() = runTest {
+        val store = InMemoryOperationalEventOutboxStore()
+        val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 2)
+        val first = envelope("event-1")
+        val second = envelope("event-2")
+        outbox.append(scope, first)
+        outbox.append(scope, second)
+
+        outbox.acknowledge(scope, first.id)
+        val third = envelope("event-3")
+        outbox.append(scope, third)
+
+        // Acknowledging "event-1" already dropped the retained count to 1;
+        // the cap of 2 is not yet exceeded by appending "event-3", so no
+        // further eviction happens.
+        val entries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
+        assertEquals(listOf(second, third), entries.value)
+    }
+
+    @Test
+    fun acknowledgeDistinctScopesAreIndependent() = runTest {
+        val store = InMemoryOperationalEventOutboxStore()
+        val outbox = DurableOperationalEventOutbox(store)
+        val other = OperationalEventOutboxScope("outbox-2")
+        val a = envelope("event-1")
+        val b = envelope("event-1") // same id, different scope -- distinct entries
+        outbox.append(scope, a)
+        outbox.append(other, b)
+
+        outbox.acknowledge(scope, a.id)
+
+        val scopeEntries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
+        val otherEntries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(other))
+        assertEquals(emptyList(), scopeEntries.value)
+        assertEquals(listOf(b), otherEntries.value)
+    }
+
+    @Test
+    fun acknowledgeReturnsPersistenceFailureWhenLoadFails() = runTest {
+        val outbox = DurableOperationalEventOutbox(FailingLoadStore())
+        val outcome = outbox.acknowledge(scope, OperationalEventId("event-1"))
+        assertIs<DurableOperationalEventOutboxAcknowledgeOutcome.PersistenceFailure>(outcome)
+    }
+
+    @Test
+    fun acknowledgeReturnsPersistenceFailureWhenCompareAndSetFails() = runTest {
+        val record = DurableStateRecord(
+            state = OperationalEventOutboxState(listOf(envelope("event-1"))),
+            version = 0L,
+            schemaVersion = 1,
+        )
+        val outbox = DurableOperationalEventOutbox(FoundStoreWithFailingCompareAndSet(record))
+
+        val outcome = outbox.acknowledge(scope, OperationalEventId("event-1"))
+
+        assertIs<DurableOperationalEventOutboxAcknowledgeOutcome.PersistenceFailure>(outcome)
+    }
+
+    @Test
+    fun acknowledgeReturnsContentionLimitReachedWhenTheRemovalRaceIsAlwaysLost() = runTest {
+        val record = DurableStateRecord(
+            state = OperationalEventOutboxState(listOf(envelope("event-1"))),
+            version = 0L,
+            schemaVersion = 1,
+        )
+        val outbox = DurableOperationalEventOutbox(
+            FoundStoreAlwaysConflicting(record),
+            maximumStateUpdateAttempts = 3,
+        )
+
+        val outcome = outbox.acknowledge(scope, OperationalEventId("event-1"))
+
+        assertIs<DurableOperationalEventOutboxAcknowledgeOutcome.ContentionLimitReached>(outcome)
+    }
+
+    @Test
+    fun acknowledgeRetriesAfterLosingTheRemovalRaceAndThenSucceeds() = runTest {
+        val envelope = envelope("event-1")
+        val record = DurableStateRecord(
+            state = OperationalEventOutboxState(listOf(envelope)),
+            version = 0L,
+            schemaVersion = 1,
+        )
+        val store = FoundStoreConflictOnceThenUpdates(record)
+        val outbox = DurableOperationalEventOutbox(store)
+
+        val outcome = outbox.acknowledge(scope, envelope.id)
+
+        val acknowledged = assertIs<DurableOperationalEventOutboxAcknowledgeOutcome.Acknowledged>(outcome)
+        assertEquals(envelope, acknowledged.envelope)
+        assertEquals(2, store.compareAndSetCalls)
+    }
+
+    @Test
     fun appendReturnsPersistenceFailureWhenLoadFails() = runTest {
         val outbox = DurableOperationalEventOutbox(FailingLoadStore())
         val outcome = outbox.append(scope, envelope("event-1"))
@@ -404,6 +570,78 @@ class DurableOperationalEventOutboxTest {
             request: DurableStateCompareAndSetRequest<OperationalEventOutboxScope, OperationalEventOutboxState>,
         ): ProviderOperationResult<DurableStateCompareAndSetResult<OperationalEventOutboxState>> =
             ProviderOperationResult.Success(DurableStateCompareAndSetResult.Conflict(null))
+    }
+
+    /** Reports [DurableStateLoadResult.Found] with [record] on every [load], and always fails [compareAndSet]. */
+    private class FoundStoreWithFailingCompareAndSet(
+        private val record: DurableStateRecord<OperationalEventOutboxState>,
+    ) : DurableStateStore<OperationalEventOutboxScope, OperationalEventOutboxState> {
+        override suspend fun load(
+            scope: OperationalEventOutboxScope,
+        ): ProviderOperationResult<DurableStateLoadResult<OperationalEventOutboxState>> =
+            ProviderOperationResult.Success(DurableStateLoadResult.Found(record))
+
+        override suspend fun compareAndSet(
+            request: DurableStateCompareAndSetRequest<OperationalEventOutboxScope, OperationalEventOutboxState>,
+        ): ProviderOperationResult<DurableStateCompareAndSetResult<OperationalEventOutboxState>> =
+            ProviderOperationResult.Failure(testError())
+    }
+
+    /**
+     * Reports [DurableStateLoadResult.Found] with [record] on every [load],
+     * and always loses [compareAndSet] with a
+     * [DurableStateCompareAndSetResult.Conflict] against the same [record] --
+     * simulating a removal race that is never won.
+     */
+    private class FoundStoreAlwaysConflicting(
+        private val record: DurableStateRecord<OperationalEventOutboxState>,
+    ) : DurableStateStore<OperationalEventOutboxScope, OperationalEventOutboxState> {
+        override suspend fun load(
+            scope: OperationalEventOutboxScope,
+        ): ProviderOperationResult<DurableStateLoadResult<OperationalEventOutboxState>> =
+            ProviderOperationResult.Success(DurableStateLoadResult.Found(record))
+
+        override suspend fun compareAndSet(
+            request: DurableStateCompareAndSetRequest<OperationalEventOutboxScope, OperationalEventOutboxState>,
+        ): ProviderOperationResult<DurableStateCompareAndSetResult<OperationalEventOutboxState>> =
+            ProviderOperationResult.Success(DurableStateCompareAndSetResult.Conflict(record))
+    }
+
+    /**
+     * Reports [DurableStateLoadResult.Found] with the same [record] on every
+     * [load] (the record itself never changes underneath this store), but
+     * loses the first [compareAndSet] race with a
+     * [DurableStateCompareAndSetResult.Conflict] before succeeding on the
+     * second -- simulating a concurrent writer's compare-and-set landing
+     * between this call's load and its own compareAndSet, without changing
+     * what the next load sees.
+     */
+    private class FoundStoreConflictOnceThenUpdates(
+        private val record: DurableStateRecord<OperationalEventOutboxState>,
+    ) : DurableStateStore<OperationalEventOutboxScope, OperationalEventOutboxState> {
+        var compareAndSetCalls: Int = 0
+            private set
+
+        override suspend fun load(
+            scope: OperationalEventOutboxScope,
+        ): ProviderOperationResult<DurableStateLoadResult<OperationalEventOutboxState>> =
+            ProviderOperationResult.Success(DurableStateLoadResult.Found(record))
+
+        override suspend fun compareAndSet(
+            request: DurableStateCompareAndSetRequest<OperationalEventOutboxScope, OperationalEventOutboxState>,
+        ): ProviderOperationResult<DurableStateCompareAndSetResult<OperationalEventOutboxState>> {
+            compareAndSetCalls += 1
+            return if (compareAndSetCalls == 1) {
+                ProviderOperationResult.Success(DurableStateCompareAndSetResult.Conflict(record))
+            } else {
+                val updated = DurableStateRecord(
+                    state = request.nextState,
+                    version = record.version + 1L,
+                    schemaVersion = request.nextSchemaVersion,
+                )
+                ProviderOperationResult.Success(DurableStateCompareAndSetResult.Updated(updated))
+            }
+        }
     }
 
     /**
