@@ -26,8 +26,14 @@ import org.junit.runner.RunWith
  * process kill/relaunch, but only ever runs one `:circuitproof` process at a
  * time -- open the circuit, kill it, relaunch it, read it back, all
  * sequential. This test instead drives two genuinely separate, real Android
- * OS processes (`:circuitprobea` and `:circuitprobeb`, both hosting the same
- * [CircuitBreakerProbeContentionContentProvider] class -- see
+ * OS processes (`:circuitprobea` and `:circuitprobeb`, hosting
+ * [CircuitBreakerProbeContentionContentProviderA] and
+ * [CircuitBreakerProbeContentionContentProviderB] respectively -- two
+ * genuinely different classes sharing logic only through their common
+ * [CircuitBreakerProbeContentionContentProviderBase], because Android's
+ * `PackageManagerService` does not support the same class declared twice
+ * under different authorities/processes at runtime, even though it compiles
+ * and packages cleanly -- see
  * `src/androidTest/AndroidManifest.xml`) to race for the same circuit's
  * single half-open probe permit at the same real wall-clock moment:
  *

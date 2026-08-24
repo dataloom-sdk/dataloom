@@ -2,18 +2,29 @@ package io.dataloom.queue.room
 
 /**
  * Shared method names, argument keys, and result-bundle keys used by
- * [CircuitBreakerProbeContentionContentProvider] and
+ * [CircuitBreakerProbeContentionContentProviderA],
+ * [CircuitBreakerProbeContentionContentProviderB], and
  * [AndroidCircuitBreakerProbeContentionInstrumentedTest] to exchange a real
  * genuine cross-process half-open probe contention proof across two separate
  * Android OS process boundaries.
  *
  * Unlike [CircuitBreakerProcessTerminationContract] (one second process,
- * called sequentially before/after a kill), this contract is served by the
- * *same* provider class declared twice in `src/androidTest/AndroidManifest.xml`
- * under two different authorities and two different `android:process` values
- * -- [AUTHORITY_A]/[PROCESS_SUFFIX_A] and [AUTHORITY_B]/[PROCESS_SUFFIX_B] --
+ * called sequentially before/after a kill), this contract is served by two
+ * genuinely different provider classes -- [CircuitBreakerProbeContentionContentProviderA]
+ * and [CircuitBreakerProbeContentionContentProviderB], both extending the
+ * shared [CircuitBreakerProbeContentionContentProviderBase] -- declared once
+ * each in `src/androidTest/AndroidManifest.xml` under two different
+ * authorities and two different `android:process` values --
+ * [AUTHORITY_A]/[PROCESS_SUFFIX_A] and [AUTHORITY_B]/[PROCESS_SUFFIX_B] --
  * so the test can drive two genuinely separate, concurrently-racing OS
- * processes against the same on-disk circuit-breaker database at once.
+ * processes against the same on-disk circuit-breaker database at once. Two
+ * distinct classes are required, not one class declared twice: Android's
+ * `PackageManagerService` addresses every component by `ComponentName`
+ * (package + class name) and only supports one live registration per
+ * `ComponentName` at runtime, even though a class declared twice in the
+ * manifest compiles and packages without error -- see
+ * [CircuitBreakerProbeContentionContentProviderBase]'s class doc for the
+ * real-device failure this was found by.
  *
  * Kept as plain string/const constants (not a shared interface) because the
  * two sides communicate only through [android.content.ContentResolver.call],

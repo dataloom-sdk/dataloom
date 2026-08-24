@@ -21,17 +21,28 @@
         circuit-breaker state, written and read through the real
         RoomQueueProvider production coordinator, not a test-only shortcut.
 
-        CircuitBreakerProbeContentionContentProvider is declared TWICE below,
-        under two different authorities and two different android:process
-        values (":circuitprobea" and ":circuitprobeb"), so Android hosts two
-        independent instances of the exact same class in two genuinely
-        separate OS processes at once. AndroidCircuitBreakerProbeContentionInstrumentedTest
-        races both processes against the same on-disk circuit-breaker
-        database to prove only one of them ever wins the single half-open
-        probe permit for a given generation, closing the "genuine
-        cross-process probe contention" gap the two providers above do not
-        cover (they only ever run one process at a time, sequentially,
-        before/after a kill).
+        CircuitBreakerProbeContentionContentProviderA and
+        CircuitBreakerProbeContentionContentProviderB are two genuinely
+        different classes (both extending the shared
+        CircuitBreakerProbeContentionContentProviderBase, which holds all the
+        actual proof logic) declared below under two different authorities
+        and two different android:process values (":circuitprobea" and
+        ":circuitprobeb"), so Android hosts two independent OS processes at
+        once. This MUST be two distinct classes, not the same class declared
+        twice: an earlier version of this file declared one class twice under
+        two authorities, which compiled and packaged cleanly (both
+        <provider> elements are present and correct in the built APK's
+        binary manifest) but failed on a real device with "Unknown
+        authority" for the second declaration and appears to have
+        destabilized the unrelated :circuitproof provider above in the same
+        test run; see CircuitBreakerProbeContentionContentProviderBase's
+        class doc for the full explanation.
+        AndroidCircuitBreakerProbeContentionInstrumentedTest races both
+        processes against the same on-disk circuit-breaker database to prove
+        only one of them ever wins the single half-open probe permit for a
+        given generation, closing the "genuine cross-process probe
+        contention" gap the two providers above do not cover (they only ever
+        run one process at a time, sequentially, before/after a kill).
     -->
     <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
 
@@ -47,12 +58,12 @@
             android:process=":retrybudgetproof"
             android:exported="false" />
         <provider
-            android:name="io.dataloom.queue.room.CircuitBreakerProbeContentionContentProvider"
+            android:name="io.dataloom.queue.room.CircuitBreakerProbeContentionContentProviderA"
             android:authorities="io.dataloom.queue.room.test.circuitprobea"
             android:process=":circuitprobea"
             android:exported="false" />
         <provider
-            android:name="io.dataloom.queue.room.CircuitBreakerProbeContentionContentProvider"
+            android:name="io.dataloom.queue.room.CircuitBreakerProbeContentionContentProviderB"
             android:authorities="io.dataloom.queue.room.test.circuitprobeb"
             android:process=":circuitprobeb"
             android:exported="false" />

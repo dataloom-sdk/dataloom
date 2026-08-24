@@ -26,22 +26,47 @@ import io.dataloom.runtime.retry.CircuitProtectedOperationResult
 import kotlinx.coroutines.runBlocking
 
 /**
- * Test-only [ContentProvider] declared *twice* in
- * `src/androidTest/AndroidManifest.xml` -- once under
- * [CircuitBreakerProbeContentionContract.AUTHORITY_A] /
- * [CircuitBreakerProbeContentionContract.PROCESS_SUFFIX_A], once under
- * [CircuitBreakerProbeContentionContract.AUTHORITY_B] /
- * [CircuitBreakerProbeContentionContract.PROCESS_SUFFIX_B] -- so Android
- * hosts two independent instances of this exact same class in two genuinely
- * separate OS processes. [AndroidCircuitBreakerProbeContentionInstrumentedTest]
- * uses that to prove that when both processes race to acquire the single
- * half-open probe permit for the same circuit scope against the same on-disk
- * database at (as close to) the same real wall-clock moment as two real OS
- * processes allow, exactly one wins and the other is genuinely rejected --
- * enforced by [RoomCircuitBreakerStateStore]'s real atomic
- * compare-and-set (a single `UPDATE ... WHERE record_version = :expectedVersion`
- * SQL statement Android's SQLite driver serializes across processes via its
- * own file locking), not a test-only mutex.
+ * Test-only shared base [ContentProvider] logic for the genuine
+ * cross-process half-open probe contention proof.
+ *
+ * IMPORTANT: this class is intentionally never declared in
+ * `src/androidTest/AndroidManifest.xml` itself, and must never be. Android's
+ * component model addresses every manifest component (`<activity>`,
+ * `<service>`, `<receiver>`, `<provider>`) by `ComponentName` -- the pair of
+ * package name and class name -- and `PackageManagerService`'s *runtime*
+ * component registration (not the manifest XML schema, and not AAPT2's
+ * binary manifest compilation, both of which happily accept it) assumes
+ * exactly one live registration per `ComponentName`. An earlier version of
+ * this proof declared a single concrete provider class twice in the
+ * manifest, under two different authorities/`android:process` values,
+ * intending to host two independent instances of it in two genuinely
+ * separate OS processes. That compiled and packaged cleanly -- `aapt2 dump
+ * xmltree` on the built APK showed both `<provider>` elements present and
+ * correct -- but failed on a real Gradle Managed Device with
+ * `IllegalArgumentException: Unknown authority ...` for the second
+ * declaration, and appears to have destabilized the same test APK's other,
+ * unrelated `:circuitproof` provider (used by
+ * [AndroidProcessTerminationCircuitBreakerInstrumentedTest]) in the same
+ * run. Neither compiling, dexing, resource-linking, nor inspecting the
+ * compiled manifest offline can surface this failure -- it is purely a
+ * `PackageManagerService` runtime phenomenon, only observable on a real
+ * device/emulator.
+ *
+ * The fix that actually gives each racing process a distinct, independently
+ * resolvable `ComponentName` is two genuinely different leaf classes --
+ * [CircuitBreakerProbeContentionContentProviderA] and
+ * [CircuitBreakerProbeContentionContentProviderB] -- each declared exactly
+ * once in the manifest under its own authority/`android:process`, both
+ * extending this shared base so the actual proof logic is written once.
+ * [AndroidCircuitBreakerProbeContentionInstrumentedTest] uses that to prove
+ * that when both processes race to acquire the single half-open probe
+ * permit for the same circuit scope against the same on-disk database at
+ * (as close to) the same real wall-clock moment as two real OS processes
+ * allow, exactly one wins and the other is genuinely rejected -- enforced by
+ * [RoomCircuitBreakerStateStore]'s real atomic compare-and-set (a single
+ * `UPDATE ... WHERE record_version = :expectedVersion` SQL statement
+ * Android's SQLite driver serializes across processes via its own file
+ * locking), not a test-only mutex.
  *
  * Every entry point opens a fresh [DataLoomRoomDatabase] connection to the
  * on-disk database named by the call argument and drives the real
@@ -52,16 +77,16 @@ import kotlinx.coroutines.runBlocking
  * processes have no shared in-memory clock to synchronize on; only real
  * system time is common between them.
  */
-public class CircuitBreakerProbeContentionContentProvider : ContentProvider() {
+public abstract class CircuitBreakerProbeContentionContentProviderBase : ContentProvider() {
 
     override fun onCreate(): Boolean = true
 
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle {
         val databaseName = requireNotNull(arg) {
-            "CircuitBreakerProbeContentionContentProvider requires a database name argument."
+            "CircuitBreakerProbeContentionContentProviderBase requires a database name argument."
         }
         val appContext = requireNotNull(context) {
-            "CircuitBreakerProbeContentionContentProvider has no attached Context."
+            "CircuitBreakerProbeContentionContentProviderBase has no attached Context."
         }
         return when (method) {
             CircuitBreakerProbeContentionContract.METHOD_WARM_UP -> {
@@ -76,7 +101,7 @@ public class CircuitBreakerProbeContentionContentProvider : ContentProvider() {
             CircuitBreakerProbeContentionContract.METHOD_READ_CIRCUIT_STATE -> {
                 runBlocking { readCircuitState(appContext, databaseName) }
             }
-            else -> error("Unknown CircuitBreakerProbeContentionContentProvider method: $method")
+            else -> error("Unknown CircuitBreakerProbeContentionContentProviderBase method: $method")
         }
     }
 
