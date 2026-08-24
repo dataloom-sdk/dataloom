@@ -1192,6 +1192,12 @@ public abstract interface class io/dataloom/runtime/observation/retry/RetryCircu
 	public abstract fun record (Lio/dataloom/runtime/observation/retry/RetryCircuitTraceSignal;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
+public final class io/dataloom/runtime/operational/DurableOperationalEventOutboxProcessor {
+	public fun <init> (Lio/dataloom/api/operational/DurableOperationalEventOutbox;)V
+	public final fun process-5u6OFic (Ljava/lang/String;ILio/dataloom/runtime/operational/OperationalEventOutboxEntryHandler;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun process-5u6OFic$default (Lio/dataloom/runtime/operational/DurableOperationalEventOutboxProcessor;Ljava/lang/String;ILio/dataloom/runtime/operational/OperationalEventOutboxEntryHandler;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
 public final class io/dataloom/runtime/operational/OperationalEnvelopeUpcastFailure : java/lang/Enum {
 	public static final field NO_UPCAST_PATH Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastFailure;
 	public static final field STEP_LIMIT_EXCEEDED Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastFailure;
@@ -1257,6 +1263,95 @@ public final class io/dataloom/runtime/operational/OperationalEnvelopeUpcasterRe
 	public final fun getSize ()I
 	public fun toString ()Ljava/lang/String;
 	public final fun upcast-FNXoiUE (Lio/dataloom/api/operational/OperationalEventEnvelope;I)Lio/dataloom/runtime/operational/OperationalEnvelopeUpcastResult;
+}
+
+public abstract interface class io/dataloom/runtime/operational/OperationalEventOutboxEntryHandler {
+	public abstract fun handle (Lio/dataloom/api/operational/OperationalEventEnvelope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/dataloom/runtime/operational/OperationalEventOutboxEntryOutcome {
+}
+
+public final class io/dataloom/runtime/operational/OperationalEventOutboxEntryOutcome$Failed : io/dataloom/runtime/operational/OperationalEventOutboxEntryOutcome {
+	public fun <init> ()V
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public synthetic fun <init> (Lio/dataloom/api/error/DataLoomError;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/runtime/operational/OperationalEventOutboxEntryOutcome$Failed;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/operational/OperationalEventOutboxEntryOutcome$Failed;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/runtime/operational/OperationalEventOutboxEntryOutcome$Failed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/operational/OperationalEventOutboxEntryOutcome$Processed : io/dataloom/runtime/operational/OperationalEventOutboxEntryOutcome {
+	public static final field INSTANCE Lio/dataloom/runtime/operational/OperationalEventOutboxEntryOutcome$Processed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/operational/OperationalEventOutboxEntryOutcome$Skipped : io/dataloom/runtime/operational/OperationalEventOutboxEntryOutcome {
+	public static final field INSTANCE Lio/dataloom/runtime/operational/OperationalEventOutboxEntryOutcome$Skipped;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/runtime/operational/OperationalEventOutboxProcessingResult {
+}
+
+public final class io/dataloom/runtime/operational/OperationalEventOutboxProcessingResult$NoWork : io/dataloom/runtime/operational/OperationalEventOutboxProcessingResult {
+	public static final field INSTANCE Lio/dataloom/runtime/operational/OperationalEventOutboxProcessingResult$NoWork;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/operational/OperationalEventOutboxProcessingResult$Processed : io/dataloom/runtime/operational/OperationalEventOutboxProcessingResult {
+	public fun <init> (Lio/dataloom/runtime/operational/OperationalEventOutboxProcessingSummary;)V
+	public final fun component1 ()Lio/dataloom/runtime/operational/OperationalEventOutboxProcessingSummary;
+	public final fun copy (Lio/dataloom/runtime/operational/OperationalEventOutboxProcessingSummary;)Lio/dataloom/runtime/operational/OperationalEventOutboxProcessingResult$Processed;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/operational/OperationalEventOutboxProcessingResult$Processed;Lio/dataloom/runtime/operational/OperationalEventOutboxProcessingSummary;ILjava/lang/Object;)Lio/dataloom/runtime/operational/OperationalEventOutboxProcessingResult$Processed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSummary ()Lio/dataloom/runtime/operational/OperationalEventOutboxProcessingSummary;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/operational/OperationalEventOutboxProcessingResult$ReadFailure : io/dataloom/runtime/operational/OperationalEventOutboxProcessingResult {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/runtime/operational/OperationalEventOutboxProcessingResult$ReadFailure;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/operational/OperationalEventOutboxProcessingResult$ReadFailure;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/runtime/operational/OperationalEventOutboxProcessingResult$ReadFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/operational/OperationalEventOutboxProcessingSummary {
+	public fun <init> (IIIIIII)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()I
+	public final fun component6 ()I
+	public final fun component7 ()I
+	public final fun copy (IIIIIII)Lio/dataloom/runtime/operational/OperationalEventOutboxProcessingSummary;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/operational/OperationalEventOutboxProcessingSummary;IIIIIIIILjava/lang/Object;)Lio/dataloom/runtime/operational/OperationalEventOutboxProcessingSummary;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAcknowledgeFailed ()I
+	public final fun getAcknowledgeRaced ()I
+	public final fun getAcknowledged ()I
+	public final fun getFailed ()I
+	public final fun getProcessed ()I
+	public final fun getRead ()I
+	public final fun getSkipped ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/dataloom/runtime/queue/CircuitBreakerDurableQueueExecutionProcessor {

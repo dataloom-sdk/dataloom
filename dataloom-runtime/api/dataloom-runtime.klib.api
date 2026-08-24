@@ -438,6 +438,10 @@ final enum class io.dataloom.runtime.worker/QueueWorkerWakeUpReason : kotlin/Enu
     final fun values(): kotlin/Array<io.dataloom.runtime.worker/QueueWorkerWakeUpReason> // io.dataloom.runtime.worker/QueueWorkerWakeUpReason.values|values#static(){}[0]
 }
 
+abstract fun interface io.dataloom.runtime.operational/OperationalEventOutboxEntryHandler { // io.dataloom.runtime.operational/OperationalEventOutboxEntryHandler|null[0]
+    abstract suspend fun handle(io.dataloom.api.operational/OperationalEventEnvelope): io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome // io.dataloom.runtime.operational/OperationalEventOutboxEntryHandler.handle|handle(io.dataloom.api.operational.OperationalEventEnvelope){}[0]
+}
+
 abstract fun interface io.dataloom.runtime.queue/QueueEntryExecutionHandler { // io.dataloom.runtime.queue/QueueEntryExecutionHandler|null[0]
     abstract suspend fun execute(io.dataloom.api.queue/QueueEntry): io.dataloom.runtime.queue/QueueEntryExecutionOutcome // io.dataloom.runtime.queue/QueueEntryExecutionHandler.execute|execute(io.dataloom.api.queue.QueueEntry){}[0]
 }
@@ -1030,6 +1034,67 @@ sealed interface io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Upcasted.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Upcasted.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult.Upcasted.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome { // io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome|null[0]
+    final class Failed : io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome { // io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome.Failed|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError? = ...) // io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome.Failed.<init>|<init>(io.dataloom.api.error.DataLoomError?){}[0]
+
+        final val error // io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome.Failed.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError? // io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome.Failed.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError? // io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome.Failed.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError? = ...): io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome.Failed // io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome.Failed.copy|copy(io.dataloom.api.error.DataLoomError?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome.Failed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome.Failed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome.Failed.toString|toString(){}[0]
+    }
+
+    final object Processed : io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome { // io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome.Processed|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome.Processed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome.Processed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome.Processed.toString|toString(){}[0]
+    }
+
+    final object Skipped : io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome { // io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome.Skipped|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome.Skipped.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome.Skipped.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.operational/OperationalEventOutboxEntryOutcome.Skipped.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult { // io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult|null[0]
+    final class Processed : io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult { // io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.Processed|null[0]
+        constructor <init>(io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary) // io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.Processed.<init>|<init>(io.dataloom.runtime.operational.OperationalEventOutboxProcessingSummary){}[0]
+
+        final val summary // io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.Processed.summary|{}summary[0]
+            final fun <get-summary>(): io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary // io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.Processed.summary.<get-summary>|<get-summary>(){}[0]
+
+        final fun component1(): io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary // io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.Processed.component1|component1(){}[0]
+        final fun copy(io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary = ...): io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.Processed // io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.Processed.copy|copy(io.dataloom.runtime.operational.OperationalEventOutboxProcessingSummary){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.Processed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.Processed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.Processed.toString|toString(){}[0]
+    }
+
+    final class ReadFailure : io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult { // io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.ReadFailure|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.ReadFailure.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.ReadFailure.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.ReadFailure.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.ReadFailure.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.ReadFailure // io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.ReadFailure.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.ReadFailure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.ReadFailure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.ReadFailure.toString|toString(){}[0]
+    }
+
+    final object NoWork : io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult { // io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.NoWork|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.NoWork.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.NoWork.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult.NoWork.toString|toString(){}[0]
     }
 }
 
@@ -3530,6 +3595,12 @@ final class io.dataloom.runtime.observation/SynchronizationObserverRegistry { //
     final fun toString(): kotlin/String // io.dataloom.runtime.observation/SynchronizationObserverRegistry.toString|toString(){}[0]
 }
 
+final class io.dataloom.runtime.operational/DurableOperationalEventOutboxProcessor { // io.dataloom.runtime.operational/DurableOperationalEventOutboxProcessor|null[0]
+    constructor <init>(io.dataloom.api.operational/DurableOperationalEventOutbox) // io.dataloom.runtime.operational/DurableOperationalEventOutboxProcessor.<init>|<init>(io.dataloom.api.operational.DurableOperationalEventOutbox){}[0]
+
+    final suspend fun process(io.dataloom.api.operational/OperationalEventOutboxScope, kotlin/Int = ..., io.dataloom.runtime.operational/OperationalEventOutboxEntryHandler): io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult // io.dataloom.runtime.operational/DurableOperationalEventOutboxProcessor.process|process(io.dataloom.api.operational.OperationalEventOutboxScope;kotlin.Int;io.dataloom.runtime.operational.OperationalEventOutboxEntryHandler){}[0]
+}
+
 final class io.dataloom.runtime.operational/OperationalEnvelopeUpcasterRegistry { // io.dataloom.runtime.operational/OperationalEnvelopeUpcasterRegistry|null[0]
     constructor <init>(kotlin.collections/Collection<io.dataloom.runtime.operational/OperationalEnvelopeUpcaster>) // io.dataloom.runtime.operational/OperationalEnvelopeUpcasterRegistry.<init>|<init>(kotlin.collections.Collection<io.dataloom.runtime.operational.OperationalEnvelopeUpcaster>){}[0]
 
@@ -3538,6 +3609,37 @@ final class io.dataloom.runtime.operational/OperationalEnvelopeUpcasterRegistry 
 
     final fun toString(): kotlin/String // io.dataloom.runtime.operational/OperationalEnvelopeUpcasterRegistry.toString|toString(){}[0]
     final fun upcast(io.dataloom.api.operational/OperationalEventEnvelope, io.dataloom.api.operational/OperationalSchemaVersion): io.dataloom.runtime.operational/OperationalEnvelopeUpcastResult // io.dataloom.runtime.operational/OperationalEnvelopeUpcasterRegistry.upcast|upcast(io.dataloom.api.operational.OperationalEventEnvelope;io.dataloom.api.operational.OperationalSchemaVersion){}[0]
+}
+
+final class io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary { // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary|null[0]
+    constructor <init>(kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int) // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.<init>|<init>(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+
+    final val acknowledgeFailed // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.acknowledgeFailed|{}acknowledgeFailed[0]
+        final fun <get-acknowledgeFailed>(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.acknowledgeFailed.<get-acknowledgeFailed>|<get-acknowledgeFailed>(){}[0]
+    final val acknowledgeRaced // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.acknowledgeRaced|{}acknowledgeRaced[0]
+        final fun <get-acknowledgeRaced>(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.acknowledgeRaced.<get-acknowledgeRaced>|<get-acknowledgeRaced>(){}[0]
+    final val acknowledged // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.acknowledged|{}acknowledged[0]
+        final fun <get-acknowledged>(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.acknowledged.<get-acknowledged>|<get-acknowledged>(){}[0]
+    final val failed // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.failed|{}failed[0]
+        final fun <get-failed>(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.failed.<get-failed>|<get-failed>(){}[0]
+    final val processed // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.processed|{}processed[0]
+        final fun <get-processed>(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.processed.<get-processed>|<get-processed>(){}[0]
+    final val read // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.read|{}read[0]
+        final fun <get-read>(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.read.<get-read>|<get-read>(){}[0]
+    final val skipped // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.skipped|{}skipped[0]
+        final fun <get-skipped>(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.skipped.<get-skipped>|<get-skipped>(){}[0]
+
+    final fun component1(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.component1|component1(){}[0]
+    final fun component2(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.component2|component2(){}[0]
+    final fun component3(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.component3|component3(){}[0]
+    final fun component4(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.component4|component4(){}[0]
+    final fun component5(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.component5|component5(){}[0]
+    final fun component6(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.component6|component6(){}[0]
+    final fun component7(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.component7|component7(){}[0]
+    final fun copy(kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...): io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.copy|copy(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.toString|toString(){}[0]
 }
 
 final class io.dataloom.runtime.queue/AppleFileQueueProvider : io.dataloom.api.queue/QueueProvider { // io.dataloom.runtime.queue/AppleFileQueueProvider|null[0]
