@@ -146,6 +146,145 @@ class DurableOperationalEventOutboxTest {
     }
 
     @Test
+    fun maximumRetainedEntriesBelowOneIsRejected() {
+        assertFailsWith<IllegalArgumentException> {
+            DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore(), maximumRetainedEntries = 0)
+        }
+    }
+
+    @Test
+    fun unconfiguredRetentionAccumulatesEveryAppendWithoutEviction() = runTest {
+        val store = InMemoryOperationalEventOutboxStore()
+        val outbox = DurableOperationalEventOutbox(store)
+        val envelopes = (1..5).map { envelope("event-$it") }
+
+        envelopes.forEach { outbox.append(scope, it) }
+
+        val entries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
+        assertEquals(envelopes, entries.value)
+    }
+
+    @Test
+    fun appendingUnderTheRetentionCapDoesNotEvictAnything() = runTest {
+        val store = InMemoryOperationalEventOutboxStore()
+        val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 3)
+        val envelopes = (1..3).map { envelope("event-$it") }
+
+        envelopes.forEach { outbox.append(scope, it) }
+
+        val entries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
+        assertEquals(envelopes, entries.value)
+    }
+
+    @Test
+    fun appendingAtTheRetentionCapDoesNotEvictAnything() = runTest {
+        val store = InMemoryOperationalEventOutboxStore()
+        val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 3)
+        val envelopes = (1..3).map { envelope("event-$it") }
+        envelopes.dropLast(1).forEach { outbox.append(scope, it) }
+
+        outbox.append(scope, envelopes.last())
+
+        val entries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
+        assertEquals(envelopes, entries.value)
+    }
+
+    @Test
+    fun appendingPastTheRetentionCapEvictsTheOldestEntriesFirst() = runTest {
+        val store = InMemoryOperationalEventOutboxStore()
+        val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 3)
+        val envelopes = (1..5).map { envelope("event-$it") }
+
+        envelopes.forEach { outbox.append(scope, it) }
+
+        val entries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
+        // Oldest-first list capped at 3: only the three most recently appended survive.
+        assertEquals(envelopes.takeLast(3), entries.value)
+    }
+
+    @Test
+    fun retentionCapOfOneKeepsOnlyTheMostRecentlyAppendedEntry() = runTest {
+        val store = InMemoryOperationalEventOutboxStore()
+        val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 1)
+        val first = envelope("event-1")
+        val second = envelope("event-2")
+
+        outbox.append(scope, first)
+        outbox.append(scope, second)
+
+        val entries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
+        assertEquals(listOf(second), entries.value)
+    }
+
+    @Test
+    fun retentionEvictionSurvivesAReloadOfTheSameStore() = runTest {
+        val store = InMemoryOperationalEventOutboxStore()
+        val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 2)
+        val envelopes = (1..3).map { envelope("event-$it") }
+        envelopes.forEach { outbox.append(scope, it) }
+
+        // A fresh DurableOperationalEventOutbox wrapping the same underlying
+        // store simulates a process restart: eviction already happened as
+        // part of the persisted state, not something recomputed on read.
+        val reopened = DurableOperationalEventOutbox(store, maximumRetainedEntries = 2)
+        val entries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(reopened.entries(scope))
+        assertEquals(envelopes.takeLast(2), entries.value)
+    }
+
+    @Test
+    fun retentionEvictsIndependentlyPerScope() = runTest {
+        val store = InMemoryOperationalEventOutboxStore()
+        val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 2)
+        val other = OperationalEventOutboxScope("outbox-2")
+        val scopeEnvelopes = (1..3).map { envelope("scope-event-$it") }
+        val otherEnvelopes = (1..2).map { envelope("other-event-$it") }
+
+        scopeEnvelopes.forEach { outbox.append(scope, it) }
+        otherEnvelopes.forEach { outbox.append(other, it) }
+
+        val scopeEntries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
+        val otherEntries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(other))
+        assertEquals(scopeEnvelopes.takeLast(2), scopeEntries.value)
+        assertEquals(otherEnvelopes, otherEntries.value)
+    }
+
+    @Test
+    fun appendingAnAlreadyEvictedIdIsTreatedAsANewAppendRatherThanIdempotentOrConflicting() = runTest {
+        val store = InMemoryOperationalEventOutboxStore()
+        val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 1)
+        val evicted = envelope("event-1")
+        val displacing = envelope("event-2")
+        outbox.append(scope, evicted)
+        outbox.append(scope, displacing) // evicts "event-1"
+
+        val outcome = outbox.append(scope, evicted)
+
+        // The id has already been evicted, so it is no longer visible to the
+        // duplicate-id check -- re-appending it is a fresh append, not
+        // AlreadyAppended or Conflict.
+        val appended = assertIs<DurableOperationalEventOutboxAppendOutcome.Appended>(outcome)
+        assertEquals(evicted, appended.envelope)
+        val entries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
+        assertEquals(listOf(evicted), entries.value)
+    }
+
+    @Test
+    fun retentionEvictionDoesNotAffectContentionRetryDiscipline() = runTest {
+        val envelope = envelope("event-1")
+        val winningRecord = DurableStateRecord(
+            state = OperationalEventOutboxState(listOf(envelope)),
+            version = 0L,
+            schemaVersion = 1,
+        )
+        val store = RaceThenConsistentStore(winningRecord)
+        val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 5)
+
+        val outcome = outbox.append(scope, envelope)
+
+        assertIs<DurableOperationalEventOutboxAppendOutcome.AlreadyAppended>(outcome)
+    }
+
+    @Test
     fun appendReturnsPersistenceFailureWhenLoadFails() = runTest {
         val outbox = DurableOperationalEventOutbox(FailingLoadStore())
         val outcome = outbox.append(scope, envelope("event-1"))
