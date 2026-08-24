@@ -3,9 +3,10 @@
 Status: **available foundation**. The shared contracts, strict redactor,
 canonical V1 wire codec, and schema-upcast registry are implemented. A
 bounded first slice of durable persistence exists, including opt-in
-count-based and age-based retention policies and operator-driven per-entry
-acknowledgement (see "Durable outbox" below); replay, filtering, and
-complete subsystem adapters remain V1 work.
+count-based and age-based retention policies, operator-driven per-entry
+acknowledgement, and an opt-in read-then-consume processing loop (see
+"Durable outbox" below); replay, filtering, and complete subsystem adapters
+remain V1 work.
 
 ## Purpose
 
@@ -336,6 +337,64 @@ reached two different ways -- `acknowledge` reports
 well-defined no-op rather than a failure. Acknowledging the same id twice is
 therefore safe: the second call also reports `NotFound`.
 
+### Read-then-consume processing (opt-in)
+
+`DurableOperationalEventOutboxProcessor` (`io.dataloom.runtime.operational`)
+is the first real read-then-consume loop over
+`DurableOperationalEventOutbox.entries`/`acknowledge` -- purely additive,
+opt-in usage of that already-public API. `DurableOperationalEventOutbox`
+itself is unmodified; nothing above changes for the five bridges, which still
+only ever append.
+
+```kotlin
+val processor = DurableOperationalEventOutboxProcessor(outbox)
+val result = processor.process(scope, maxEntries = 100) { envelope ->
+    val delivered = downstreamSink.deliver(envelope) // caller-owned side effect
+    if (delivered) {
+        OperationalEventOutboxEntryOutcome.Processed
+    } else {
+        OperationalEventOutboxEntryOutcome.Skipped
+    }
+}
+```
+
+One `process` call reads at most `maxEntries` currently-retained entries for
+`scope` (oldest first, exactly as `entries` already returns them), hands each
+to the caller-supplied `OperationalEventOutboxEntryHandler` sequentially, and
+acknowledges only the ones whose outcome is
+`OperationalEventOutboxEntryOutcome.Processed`. `Skipped` and `Failed` both
+leave the entry retained for a later pass -- distinct signals for a caller's
+own diagnostics (`OperationalEventOutboxProcessingSummary`), but treated
+identically by the loop. Entries beyond `maxEntries`, if any, are simply left
+for a later call; an empty scope is a no-op that never invokes the handler.
+
+This class lives in `dataloom-runtime`, not `dataloom-api`, deliberately:
+`dataloom-api`'s own module rules say it "must not contain runtime
+implementations," and a cycle that invokes an application-supplied handler
+and decides per-entry durable transitions from that handler's outcome is
+exactly that -- the same reasoning that already places
+`DurableQueueExecutionProcessor` in `dataloom-runtime` even though the
+`QueueProvider` it drives lives in `dataloom-api`. Unlike that queue
+processor's five-variant `QueueEntryExecutionOutcome` (lease/retry-attempt/
+dead-letter aware), `OperationalEventOutboxEntryOutcome` has exactly three
+variants and no queue semantics, matching this outbox's own "operator-driven
+dismissal, not work-queue completion" posture for `acknowledge` (see above).
+A per-entry acknowledgement failure does not stop the cycle either -- each
+`acknowledge` call is an independent, idempotent removal from a diagnostics
+sink, so `process` continues to the next entry and reports the failure
+through the summary instead.
+
+**Concurrency.** `entries` is a snapshot read, not a live view, so two
+concurrent `process` calls against the *same* scope may both read a batch
+containing the same entry and invoke the handler for it more than once
+combined. What they still guarantee, inherited directly from `acknowledge`'s
+own compare-and-set retry loop: no entry is ever lost, and no entry is ever
+double-acknowledged -- exactly one racing `acknowledge(scope, id)` call
+observes `Acknowledged`, the other observes `NotFound` once it reloads and
+finds the entry already gone. A caller whose handler has side effects that
+are not themselves idempotent must serialize `process` calls per scope
+itself; `process` calls against different scopes never interact.
+
 ### What this does not do yet
 
 - **No filtering or subscription delivery.**
@@ -501,8 +560,8 @@ This foundation does not yet provide:
 - payload classification, minimization, encoding, encryption, or integrity;
 - durable outbox replay or cross-scope enumeration (ordered append,
   single-scope read-back, opt-in count-based and age-based retention
-  policies, and operator-driven per-entry acknowledgement exist -- see
-  "Durable outbox" above);
+  policies, operator-driven per-entry acknowledgement, and an opt-in
+  read-then-consume processing loop all exist -- see "Durable outbox" above);
 - subscription filtering or back-pressure delivery;
 - subsystem adapters for every event and administrative action;
 - policy-signature, residency, authorization, or tamper-evident audit storage;
