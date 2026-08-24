@@ -1,3 +1,123 @@
+public final class io/dataloom/api/asset/AssetChunkDescriptor {
+	public fun <init> (IJJLio/dataloom/api/security/DataLoomDigest;)V
+	public final fun component1 ()I
+	public final fun component2 ()J
+	public final fun component3 ()J
+	public final fun component4 ()Lio/dataloom/api/security/DataLoomDigest;
+	public final fun copy (IJJLio/dataloom/api/security/DataLoomDigest;)Lio/dataloom/api/asset/AssetChunkDescriptor;
+	public static synthetic fun copy$default (Lio/dataloom/api/asset/AssetChunkDescriptor;IJJLio/dataloom/api/security/DataLoomDigest;ILjava/lang/Object;)Lio/dataloom/api/asset/AssetChunkDescriptor;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChecksum ()Lio/dataloom/api/security/DataLoomDigest;
+	public final fun getIndex ()I
+	public final fun getLengthBytes ()J
+	public final fun getOffsetBytes ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/asset/AssetChunkLayout {
+	public fun <init> (Ljava/util/List;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChunkCount ()I
+	public final fun getChunks ()Ljava/util/List;
+	public final fun getTotalSizeBytes ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/asset/AssetCompressionAlgorithm {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/asset/AssetCompressionAlgorithm;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/asset/AssetCompressionMetadata {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Long;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-aDT3bAo ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/Long;
+	public final fun copy-9DevuJs (Ljava/lang/String;Ljava/lang/Long;)Lio/dataloom/api/asset/AssetCompressionMetadata;
+	public static synthetic fun copy-9DevuJs$default (Lio/dataloom/api/asset/AssetCompressionMetadata;Ljava/lang/String;Ljava/lang/Long;ILjava/lang/Object;)Lio/dataloom/api/asset/AssetCompressionMetadata;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAlgorithm-aDT3bAo ()Ljava/lang/String;
+	public final fun getUncompressedSizeBytes ()Ljava/lang/Long;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/asset/AssetEncryptionAlgorithm {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/asset/AssetEncryptionAlgorithm;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/asset/AssetEncryptionMetadata {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;[BLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun copyNonceBytes ()[B
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAlgorithm-r1VcTaU ()Ljava/lang/String;
+	public final fun getKeyReference-iiCU0As ()Ljava/lang/String;
+	public final fun getNonceSize ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/asset/AssetManifest {
+	public synthetic fun <init> (Ljava/lang/String;JJLjava/lang/String;Lio/dataloom/api/security/DataLoomDigest;Lio/dataloom/api/asset/AssetChunkLayout;Lio/dataloom/api/asset/AssetCompressionMetadata;Lio/dataloom/api/asset/AssetEncryptionMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;JJLjava/lang/String;Lio/dataloom/api/security/DataLoomDigest;Lio/dataloom/api/asset/AssetChunkLayout;Lio/dataloom/api/asset/AssetCompressionMetadata;Lio/dataloom/api/asset/AssetEncryptionMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-T4MOV2g ()Ljava/lang/String;
+	public final fun component2 ()J
+	public final fun component3 ()J
+	public final fun component4-jD4WxIU ()Ljava/lang/String;
+	public final fun component5 ()Lio/dataloom/api/security/DataLoomDigest;
+	public final fun component6 ()Lio/dataloom/api/asset/AssetChunkLayout;
+	public final fun component7 ()Lio/dataloom/api/asset/AssetCompressionMetadata;
+	public final fun component8 ()Lio/dataloom/api/asset/AssetEncryptionMetadata;
+	public final fun copy-O8kqT2g (Ljava/lang/String;JJLjava/lang/String;Lio/dataloom/api/security/DataLoomDigest;Lio/dataloom/api/asset/AssetChunkLayout;Lio/dataloom/api/asset/AssetCompressionMetadata;Lio/dataloom/api/asset/AssetEncryptionMetadata;)Lio/dataloom/api/asset/AssetManifest;
+	public static synthetic fun copy-O8kqT2g$default (Lio/dataloom/api/asset/AssetManifest;Ljava/lang/String;JJLjava/lang/String;Lio/dataloom/api/security/DataLoomDigest;Lio/dataloom/api/asset/AssetChunkLayout;Lio/dataloom/api/asset/AssetCompressionMetadata;Lio/dataloom/api/asset/AssetEncryptionMetadata;ILjava/lang/Object;)Lio/dataloom/api/asset/AssetManifest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAssetId-T4MOV2g ()Ljava/lang/String;
+	public final fun getChecksum ()Lio/dataloom/api/security/DataLoomDigest;
+	public final fun getChunkLayout ()Lio/dataloom/api/asset/AssetChunkLayout;
+	public final fun getCompression ()Lio/dataloom/api/asset/AssetCompressionMetadata;
+	public final fun getEncryption ()Lio/dataloom/api/asset/AssetEncryptionMetadata;
+	public final fun getMediaType-jD4WxIU ()Ljava/lang/String;
+	public final fun getSizeBytes ()J
+	public final fun getVersion ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/asset/AssetMediaType {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/asset/AssetMediaType;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
 public final class io/dataloom/api/change/ChangeEvent {
 	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/change/EntityReference;Lio/dataloom/api/model/ChangeOperation;Lio/dataloom/api/payload/DataLoomPayload;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/change/EntityReference;Lio/dataloom/api/model/ChangeOperation;Lio/dataloom/api/payload/DataLoomPayload;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V

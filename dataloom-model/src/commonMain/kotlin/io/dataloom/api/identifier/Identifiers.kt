@@ -755,3 +755,41 @@ public value class PolicySetId(
 
     override fun toString(): String = value
 }
+
+/**
+ * Canonical identifier for a single versioned asset tracked by
+ * [io.dataloom.api.asset.AssetManifest].
+ *
+ * An [AssetId] identifies one binary object across its whole version
+ * history — successive [io.dataloom.api.asset.AssetManifest.version] values
+ * for the same [AssetId] describe successive revisions of the same logical
+ * asset, not different assets. DataLoom does not generate asset identifiers
+ * automatically; the caller or host integration is responsible for
+ * supplying a meaningful, stable value.
+ *
+ * Ownership: host application or integration.
+ *
+ * Constraints:
+ * - Value must not be blank or whitespace-only.
+ * - Valid input is preserved exactly as supplied.
+ * - No normalization or automatic generation is applied.
+ * - `toString()` returns the underlying value.
+ *
+ * Example placeholder values:
+ * ```
+ * invoice-2026-07-attachment-001
+ * profile-photo-user-example
+ * tenant-example-export-archive
+ * ```
+ */
+@JvmInline
+public value class AssetId(
+    /** Underlying asset identifier value. */
+    public val value: String,
+) {
+    init {
+        require(value.isNotBlank()) { "AssetId must not be blank." }
+    }
+
+    override fun toString(): String = value
+}
