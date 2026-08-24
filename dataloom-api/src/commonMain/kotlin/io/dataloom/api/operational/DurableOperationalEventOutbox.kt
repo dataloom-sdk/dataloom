@@ -48,11 +48,12 @@ public value class OperationalEventOutboxScope(
  * append order (oldest first).
  *
  * This is a bounded first slice of DL-042's durable-outbox requirement --
- * ordered append, optional count-based retention (see
- * [DurableOperationalEventOutbox]'s "Retention" documentation), and "read
- * everything currently retained" only. It does not implement acknowledgement,
- * per-item removal, or filtered/subscription delivery; those remain separate,
- * larger follow-up work.
+ * ordered append, optional count-based retention, operator-driven
+ * per-entry acknowledgement (see [DurableOperationalEventOutbox]'s
+ * "Retention" and "Acknowledgement" documentation), and "read everything
+ * currently retained" only. It does not implement filtered/subscription
+ * delivery or cross-scope enumeration; those remain separate, larger
+ * follow-up work.
  */
 public data class OperationalEventOutboxState(
     public val entries: List<OperationalEventEnvelope>,
@@ -102,6 +103,46 @@ public sealed interface DurableOperationalEventOutboxAppendOutcome {
 }
 
 /**
+ * Outcome of one [DurableOperationalEventOutbox.acknowledge] call. See that
+ * class's "Acknowledgement" documentation for what acknowledgement does and
+ * does not mean here.
+ */
+public sealed interface DurableOperationalEventOutboxAcknowledgeOutcome {
+
+    /**
+     * [envelope] -- the entry with the acknowledged [OperationalEventId] --
+     * was removed from the retained list. A subsequent [DurableOperationalEventOutbox.entries]
+     * call for the same scope no longer includes it.
+     */
+    public data class Acknowledged(
+        public val envelope: OperationalEventEnvelope,
+    ) : DurableOperationalEventOutboxAcknowledgeOutcome
+
+    /**
+     * No entry with the given [OperationalEventId] is currently retained for
+     * this scope -- because it was never appended, it was already
+     * acknowledged, or count-based retention already evicted it. A
+     * well-defined no-op, not a failure: nothing was persisted because there
+     * was nothing left to remove. Safe to treat acknowledgement as
+     * idempotent -- acknowledging the same id twice reports [Acknowledged]
+     * once and [NotFound] every time after.
+     */
+    public data object NotFound : DurableOperationalEventOutboxAcknowledgeOutcome
+
+    /** The underlying [DurableStateStore] failed. Nothing was persisted. */
+    public data class PersistenceFailure(
+        public val error: DataLoomError,
+    ) : DurableOperationalEventOutboxAcknowledgeOutcome
+
+    /**
+     * [DurableOperationalEventOutbox.maximumStateUpdateAttempts] consecutive
+     * compare-and-set attempts all lost the race to concurrent writers for
+     * the same scope. Nothing was persisted; the caller may retry.
+     */
+    public data object ContentionLimitReached : DurableOperationalEventOutboxAcknowledgeOutcome
+}
+
+/**
  * Durable, ordered-append event outbox for [OperationalEventEnvelope],
  * backed by a [DurableStateStore] -- a bounded first slice of DL-042's
  * durable-outbox requirement.
@@ -129,19 +170,16 @@ public sealed interface DurableOperationalEventOutboxAppendOutcome {
  * ## What this does and does not provide
  *
  * [append] durably persists one [OperationalEventEnvelope] so it survives a
- * process restart, and [entries] reads back everything currently persisted
- * for a scope, oldest first. That is the entire bounded scope of this first
+ * process restart, [entries] reads back everything currently retained for a
+ * scope, oldest first, and [acknowledge] lets a caller remove one entry it
+ * has already dealt with. That is the entire bounded scope of this first
  * slice:
  *
- * - No acknowledgement or per-item removal -- [entries] always returns the
- *   full retained list; there is no "mark consumed" operation. The only way
- *   an entry stops being retained is count-based [maximumRetainedEntries]
- *   eviction -- see "Retention" below.
  * - No filtering or subscription delivery.
  * - No enumeration across scopes -- a caller must already know which
  *   [OperationalEventOutboxScope] to read.
  *
- * All of the above are real, separately-scoped follow-up work, not
+ * Both of the above are real, separately-scoped follow-up work, not
  * oversights.
  *
  * ## Retention
@@ -179,6 +217,45 @@ public sealed interface DurableOperationalEventOutboxAppendOutcome {
  * once retention has evicted an entry, appending its identifier again is
  * indistinguishable from a genuinely new entry. That is an accepted
  * consequence of bounding retention, not an oversight.
+ *
+ * ## Acknowledgement
+ *
+ * [acknowledge] removes exactly one entry -- the one whose
+ * [OperationalEventEnvelope.id] matches -- from a scope's retained list, as
+ * part of one atomic compare-and-set write, using the same
+ * load-evaluate-compare-and-set retry loop [append] already uses.
+ *
+ * This is deliberately **operator-driven dismissal from view**, not
+ * work-queue completion. Every real caller of this outbox so far
+ * (`SynchronizationOperationalEventBridge`,
+ * `RetryCircuitAdministrationOperationalEventBridge`,
+ * `StrategyDecisionOperationalEventBridge`,
+ * `QueueLifecycleOperationalEventBridge`) durably appends an envelope as a
+ * side-record purely for operator visibility and debugging, after the real
+ * operation it describes has already happened -- it never reads [entries]
+ * back to decide what to do next, and append outcomes other than success are
+ * always swallowed rather than gated on. Nothing in this outbox's existing
+ * shape ever depended on an entry surviving until some future "processing"
+ * step, so [acknowledge] does not need to invent or enforce that guarantee
+ * either: it is the durable counterpart of an operator clearing a diagnostic
+ * entry they have already reviewed out of a dashboard list, not a queue
+ * consumer marking a work item done. A caller that genuinely needs
+ * lease/acquire/complete queue semantics still belongs on
+ * [io.dataloom.api.queue.QueueProvider], for the same reasons this class's
+ * own "Why [DurableStateStore], not [io.dataloom.api.queue.QueueProvider]"
+ * documentation above already gives.
+ *
+ * [acknowledge] composes with retention with no special-case handling
+ * needed: both operate on the exact same persisted
+ * [OperationalEventOutboxState.entries] list by producing a new list with
+ * some entries removed, so acknowledging an entry retention already evicted,
+ * or retention evicting an entry that was already acknowledged, are simply
+ * the same "entry no longer present" state reached two different ways --
+ * [acknowledge] reports [DurableOperationalEventOutboxAcknowledgeOutcome.NotFound]
+ * for the former, and a later [append] evicting further entries never
+ * revisits an id [acknowledge] already removed, mirroring how
+ * already-evicted ids are already invisible to [append]'s own duplicate-id
+ * check (see "Retention" above).
  *
  * ## Idempotency
  *
@@ -281,6 +358,47 @@ public class DurableOperationalEventOutbox(
             }
         }
         return DurableOperationalEventOutboxAppendOutcome.ContentionLimitReached
+    }
+
+    /**
+     * Removes the entry with [id] from [scope]'s retained list, if one is
+     * currently retained. See this class's "Acknowledgement" documentation
+     * for what this does and does not mean.
+     */
+    public suspend fun acknowledge(
+        scope: OperationalEventOutboxScope,
+        id: OperationalEventId,
+    ): DurableOperationalEventOutboxAcknowledgeOutcome {
+        repeat(maximumStateUpdateAttempts) {
+            val loaded = when (val result = store.load(scope)) {
+                is ProviderOperationResult.Failure -> return DurableOperationalEventOutboxAcknowledgeOutcome.PersistenceFailure(result.error)
+                is ProviderOperationResult.Success -> result.value
+            }
+            val expectedVersion = loaded.versionOrNull()
+            val currentState = loaded.stateOrEmpty()
+            val existing = currentState.entries.firstOrNull { it.id == id }
+                ?: return DurableOperationalEventOutboxAcknowledgeOutcome.NotFound
+            val nextEntries = currentState.entries.filterNot { it.id == id }
+            when (
+                val result = store.compareAndSet(
+                    DurableStateCompareAndSetRequest(
+                        scope = scope,
+                        expectedVersion = expectedVersion,
+                        nextState = OperationalEventOutboxState(nextEntries),
+                        nextSchemaVersion = schemaVersion,
+                    ),
+                )
+            ) {
+                is ProviderOperationResult.Failure ->
+                    return DurableOperationalEventOutboxAcknowledgeOutcome.PersistenceFailure(result.error)
+                is ProviderOperationResult.Success -> when (result.value) {
+                    is DurableStateCompareAndSetResult.Conflict -> Unit // lost the race; reload and retry
+                    is DurableStateCompareAndSetResult.Updated ->
+                        return DurableOperationalEventOutboxAcknowledgeOutcome.Acknowledged(existing)
+                }
+            }
+        }
+        return DurableOperationalEventOutboxAcknowledgeOutcome.ContentionLimitReached
     }
 
     private fun DurableStateLoadResult<OperationalEventOutboxState>.stateOrEmpty(): OperationalEventOutboxState =

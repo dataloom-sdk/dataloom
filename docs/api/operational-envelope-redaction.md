@@ -2,10 +2,10 @@
 
 Status: **available foundation**. The shared contracts, strict redactor,
 canonical V1 wire codec, and schema-upcast registry are implemented. A
-bounded first slice of durable persistence, including an opt-in count-based
-retention policy, exists (see "Durable outbox" below); acknowledgement,
-replay, age-based retention, filtering, and complete subsystem adapters
-remain V1 work.
+bounded first slice of durable persistence exists, including an opt-in
+count-based retention policy and operator-driven per-entry acknowledgement
+(see "Durable outbox" below); replay, age-based retention, filtering, and
+complete subsystem adapters remain V1 work.
 
 ## Purpose
 
@@ -151,6 +151,12 @@ when (val outcome = outbox.append(scope, envelope)) {
 }
 
 val persisted = outbox.entries(scope) // every envelope appended so far, oldest first
+
+when (val acknowledged = outbox.acknowledge(scope, envelope.id)) {
+    is DurableOperationalEventOutboxAcknowledgeOutcome.Acknowledged -> Unit // removed
+    is DurableOperationalEventOutboxAcknowledgeOutcome.NotFound -> Unit // already gone; safe no-op
+    else -> Unit // PersistenceFailure / ContentionLimitReached
+}
 ```
 
 ### Why this reuses `DurableStateStore`, not `QueueProvider`
@@ -228,14 +234,45 @@ later try to append again. Once retention has evicted an entry, its
 is indistinguishable from a genuinely new entry. That is a deliberate
 trade-off of bounding retention, not an oversight.
 
+### Acknowledgement
+
+`DurableOperationalEventOutbox.acknowledge(scope, id)` removes exactly one
+entry -- the one whose `OperationalEventEnvelope.id` matches -- from a
+scope's retained list, as part of one atomic compare-and-set write, using the
+same load-evaluate-compare-and-set retry loop `append` already uses:
+
+```kotlin
+val outcome = outbox.acknowledge(scope, envelope.id)
+```
+
+This is deliberately **operator-driven dismissal from view, not work-queue
+completion**. Every real caller of this outbox today (the four bridges
+documented below) durably appends an envelope purely for operator visibility
+and debugging, as a side-record of something that already happened -- none
+of them ever reads `entries` back to decide what to do next, and append
+outcomes other than success are always swallowed rather than gated on.
+`acknowledge` does not add or imply any "processing" contract this outbox
+never had: it is the durable counterpart of an operator clearing a
+diagnostic entry they have already reviewed out of a dashboard list. A
+caller that genuinely needs lease/acquire/complete work-queue semantics
+still belongs on `io.dataloom.api.queue.QueueProvider`, for the same reasons
+this outbox reuses `DurableStateStore` rather than `QueueProvider` in the
+first place (see above).
+
+`acknowledge` composes with retention with no special-case handling needed:
+both operate on the exact same persisted `OperationalEventOutboxState.entries`
+list by producing a new list with some entries removed. Acknowledging an
+entry retention already evicted, or retention evicting an entry that was
+already acknowledged, are simply the same "entry no longer present" state
+reached two different ways -- `acknowledge` reports
+`DurableOperationalEventOutboxAcknowledgeOutcome.NotFound` for the former, a
+well-defined no-op rather than a failure. Acknowledging the same id twice is
+therefore safe: the second call also reports `NotFound`.
+
 ### What this does not do yet
 
-- **No acknowledgement or per-item removal.** `entries` always returns the
-  full retained list; there is no "mark consumed" operation. The only way an
-  entry stops being retained is the count-based retention policy described
-  below, when a caller opts into one.
 - **No age-based retention.** The retention policy (see "Retention policy"
-  below) is count-based only; there is no "evict entries older than duration
+  above) is count-based only; there is no "evict entries older than duration
   X" option.
 - **No filtering or subscription delivery.**
 - **No enumeration across scopes.** A caller must already know which
@@ -370,9 +407,10 @@ trade-off of bounding retention, not an oversight.
 This foundation does not yet provide:
 
 - payload classification, minimization, encoding, encryption, or integrity;
-- durable outbox acknowledgement, replay, age-based retention, or
-  cross-scope enumeration (ordered append, single-scope read-back, and an
-  opt-in count-based retention policy exist -- see "Durable outbox" above);
+- durable outbox replay, age-based retention, or cross-scope enumeration
+  (ordered append, single-scope read-back, an opt-in count-based retention
+  policy, and operator-driven per-entry acknowledgement exist -- see
+  "Durable outbox" above);
 - subscription filtering or back-pressure delivery;
 - subsystem adapters for every event and administrative action;
 - policy-signature, residency, authorization, or tamper-evident audit storage;

@@ -1358,6 +1358,46 @@ sealed interface io.dataloom.api.conflict/DurableUnresolvedConflictRecordOutcome
     }
 }
 
+sealed interface io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome { // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome|null[0]
+    final class Acknowledged : io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome { // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.Acknowledged|null[0]
+        constructor <init>(io.dataloom.api.operational/OperationalEventEnvelope) // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.Acknowledged.<init>|<init>(io.dataloom.api.operational.OperationalEventEnvelope){}[0]
+
+        final val envelope // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.Acknowledged.envelope|{}envelope[0]
+            final fun <get-envelope>(): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.Acknowledged.envelope.<get-envelope>|<get-envelope>(){}[0]
+
+        final fun component1(): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.Acknowledged.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.operational/OperationalEventEnvelope = ...): io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.Acknowledged // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.Acknowledged.copy|copy(io.dataloom.api.operational.OperationalEventEnvelope){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.Acknowledged.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.Acknowledged.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.Acknowledged.toString|toString(){}[0]
+    }
+
+    final class PersistenceFailure : io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome { // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.PersistenceFailure|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.PersistenceFailure.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.PersistenceFailure.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.PersistenceFailure.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.PersistenceFailure.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.PersistenceFailure // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.PersistenceFailure.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.PersistenceFailure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.PersistenceFailure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.PersistenceFailure.toString|toString(){}[0]
+    }
+
+    final object ContentionLimitReached : io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome { // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.ContentionLimitReached|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.ContentionLimitReached.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.ContentionLimitReached.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.ContentionLimitReached.toString|toString(){}[0]
+    }
+
+    final object NotFound : io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome { // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.NotFound|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.NotFound.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.NotFound.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome.NotFound.toString|toString(){}[0]
+    }
+}
+
 sealed interface io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome { // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome|null[0]
     final class AlreadyAppended : io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome { // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.AlreadyAppended|null[0]
         constructor <init>(io.dataloom.api.operational/OperationalEventEnvelope) // io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome.AlreadyAppended.<init>|<init>(io.dataloom.api.operational.OperationalEventEnvelope){}[0]
@@ -3003,6 +3043,7 @@ final class io.dataloom.api.model/SynchronizationRequest { // io.dataloom.api.mo
 final class io.dataloom.api.operational/DurableOperationalEventOutbox { // io.dataloom.api.operational/DurableOperationalEventOutbox|null[0]
     constructor <init>(io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState>, kotlin/Int = ..., kotlin/Int = ..., kotlin/Int? = ...) // io.dataloom.api.operational/DurableOperationalEventOutbox.<init>|<init>(io.dataloom.api.state.DurableStateStore<io.dataloom.api.operational.OperationalEventOutboxScope,io.dataloom.api.operational.OperationalEventOutboxState>;kotlin.Int;kotlin.Int;kotlin.Int?){}[0]
 
+    final suspend fun acknowledge(io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventId): io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome // io.dataloom.api.operational/DurableOperationalEventOutbox.acknowledge|acknowledge(io.dataloom.api.operational.OperationalEventOutboxScope;io.dataloom.api.operational.OperationalEventId){}[0]
     final suspend fun append(io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventEnvelope): io.dataloom.api.operational/DurableOperationalEventOutboxAppendOutcome // io.dataloom.api.operational/DurableOperationalEventOutbox.append|append(io.dataloom.api.operational.OperationalEventOutboxScope;io.dataloom.api.operational.OperationalEventEnvelope){}[0]
     final suspend fun entries(io.dataloom.api.operational/OperationalEventOutboxScope): io.dataloom.api.provider/ProviderOperationResult<kotlin.collections/List<io.dataloom.api.operational/OperationalEventEnvelope>> // io.dataloom.api.operational/DurableOperationalEventOutbox.entries|entries(io.dataloom.api.operational.OperationalEventOutboxScope){}[0]
 }
