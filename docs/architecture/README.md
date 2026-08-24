@@ -60,6 +60,7 @@ flowchart TD
 |---|---|
 | [System overview](./system-overview.md) | What does DataLoom own now and at V1? |
 | [Module architecture](./modules.md) | Which module owns each type and which dependencies are legal? |
+| [Artifact graph/BOM gap analysis](./artifact-graph-bom-gap-analysis.md) | Precisely which ADR-0002 published/source modules exist, are publish-wired, or are missing — and why no bounded publication slice exists yet? |
 | [Platform strategy](./platform-strategy.md) | How do native Android, KMP Android, KMP iOS, and Swift distribution differ? |
 | [Runtime dependencies](./runtime-dependencies.md) | How are clocks, identifiers, and runtime dependencies injected? |
 | [Storage boundaries](./storage-boundaries.md) | What does persistent application storage provide? |
