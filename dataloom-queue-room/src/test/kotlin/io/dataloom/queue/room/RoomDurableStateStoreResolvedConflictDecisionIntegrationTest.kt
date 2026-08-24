@@ -4,6 +4,7 @@ import io.dataloom.api.change.EntityReference
 import io.dataloom.api.context.DataLoomMetadata
 import io.dataloom.api.conflict.ConflictType
 import io.dataloom.api.conflict.DurableResolvedConflictDecisionLog
+import io.dataloom.api.conflict.DurableResolvedConflictDecisionRecordOutcome
 import io.dataloom.api.conflict.ResolvedConflictDecisionKind
 import io.dataloom.api.conflict.ResolvedConflictDecisionRecord
 import io.dataloom.api.conflict.ResolvedConflictDecisionRecordCodec
@@ -102,6 +103,93 @@ class RoomDurableStateStoreResolvedConflictDecisionIntegrationTest {
             )
             val found = assertIs<DurableStateLoadResult.Found<ResolvedConflictDecisionRecord>>(loaded.value)
             assertEquals(record, found.record.state)
+        }
+    }
+
+    /**
+     * Restart proof: nothing but the encoded row (returned here by the mocked
+     * DAO, the same seam [RoomDurableStateStoreOperationalEventOutboxIntegrationTest]
+     * uses for its own reopened-store proof) survives a process restart. A
+     * freshly constructed [RoomDurableStateStore] instance -- sharing only the
+     * underlying [DataLoomRoomDatabase], never in-memory state from [store] --
+     * must still recover the previously committed [ResolvedConflictDecisionRecord].
+     */
+    @Test
+    fun restartReopensAFreshStoreInstanceAndRecoversThePreviouslyCommittedResolvedDecision() {
+        runBlocking {
+            val encodedKey = DurableResolvedConflictDecisionLog.KeyEncoder.encode(conflictId)
+            val persistedEntity = DurableStateEntity(
+                namespace = "resolved-conflict-decisions",
+                scopeKey = encodedKey,
+                statePayload = ResolvedConflictDecisionRecordCodec().encode(record),
+                schemaVersion = 1,
+                recordVersion = 0L,
+            )
+            whenever(dao.compareAndSet(eq(null), any())).thenReturn(
+                DurableStateCompareAndSetEntityResult.Updated(persistedEntity),
+            )
+            whenever(dao.load("resolved-conflict-decisions", encodedKey)).thenReturn(persistedEntity)
+
+            store.compareAndSet(DurableStateCompareAndSetRequest(conflictId, null, record, 1))
+
+            val reopenedStore = RoomDurableStateStore(
+                database,
+                "resolved-conflict-decisions",
+                DurableResolvedConflictDecisionLog.KeyEncoder,
+                ResolvedConflictDecisionRecordCodec(),
+            )
+            val loaded = assertIs<ProviderOperationResult.Success<DurableStateLoadResult<ResolvedConflictDecisionRecord>>>(
+                reopenedStore.load(conflictId),
+            )
+            val found = assertIs<DurableStateLoadResult.Found<ResolvedConflictDecisionRecord>>(loaded.value)
+            assertEquals(record, found.record.state)
+        }
+    }
+
+    /**
+     * Concurrency/duplicate-recording proof through the real generic Room
+     * store class, not [DurableResolvedConflictDecisionLogTest]'s abstract
+     * in-memory fake: two concurrent [DurableResolvedConflictDecisionLog.record]
+     * calls for the same [ConflictId] and the same underlying facts (a genuine
+     * duplicate-delivery/retry race, not a caller bug). The first call's
+     * insert wins; the second call's own initial [DurableStateDao.load] also
+     * observes no row yet (true concurrency), so it attempts its own insert,
+     * loses that race (`Conflict`), and -- per
+     * [DurableResolvedConflictDecisionLog.record]'s documented "lost the
+     * insert race; reload and re-evaluate" retry step -- reloads through the
+     * same real [RoomDurableStateStore] and converges on
+     * [DurableResolvedConflictDecisionRecordOutcome.AlreadyRecorded] rather
+     * than losing the decision or failing.
+     */
+    @Test
+    fun concurrentDuplicateRecordAttemptsConvergeToAlreadyRecordedThroughTheRealRoomStore() {
+        runBlocking {
+            val encodedKey = DurableResolvedConflictDecisionLog.KeyEncoder.encode(conflictId)
+            val persistedEntity = DurableStateEntity(
+                namespace = "resolved-conflict-decisions",
+                scopeKey = encodedKey,
+                statePayload = ResolvedConflictDecisionRecordCodec().encode(record),
+                schemaVersion = 1,
+                recordVersion = 0L,
+            )
+            // Both racers' own load() calls observe no row yet (true
+            // concurrency); the second racer's post-conflict reload observes
+            // whatever the first racer actually committed.
+            whenever(dao.load("resolved-conflict-decisions", encodedKey)).thenReturn(null, null, persistedEntity)
+            whenever(dao.compareAndSet(eq(null), any())).thenReturn(
+                DurableStateCompareAndSetEntityResult.Updated(persistedEntity),
+                DurableStateCompareAndSetEntityResult.Conflict(persistedEntity),
+            )
+
+            val log = DurableResolvedConflictDecisionLog(store)
+
+            val firstOutcome = log.record(conflictId, record)
+            val secondOutcome = log.record(conflictId, record)
+
+            val recorded = assertIs<DurableResolvedConflictDecisionRecordOutcome.Recorded>(firstOutcome)
+            assertEquals(record, recorded.record)
+            val alreadyRecorded = assertIs<DurableResolvedConflictDecisionRecordOutcome.AlreadyRecorded>(secondOutcome)
+            assertEquals(record, alreadyRecorded.record)
         }
     }
 }
