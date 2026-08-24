@@ -878,6 +878,72 @@ sealed interface <#A: out kotlin/Any> io.dataloom.api.state/DurableStateLoadResu
     }
 }
 
+sealed interface io.dataloom.api.asset/DurableAssetManifestApplyOutcome { // io.dataloom.api.asset/DurableAssetManifestApplyOutcome|null[0]
+    final class Applied : io.dataloom.api.asset/DurableAssetManifestApplyOutcome { // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.Applied|null[0]
+        constructor <init>(io.dataloom.api.asset/AssetManifest) // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.Applied.<init>|<init>(io.dataloom.api.asset.AssetManifest){}[0]
+
+        final val manifest // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.Applied.manifest|{}manifest[0]
+            final fun <get-manifest>(): io.dataloom.api.asset/AssetManifest // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.Applied.manifest.<get-manifest>|<get-manifest>(){}[0]
+
+        final fun component1(): io.dataloom.api.asset/AssetManifest // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.Applied.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.asset/AssetManifest = ...): io.dataloom.api.asset/DurableAssetManifestApplyOutcome.Applied // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.Applied.copy|copy(io.dataloom.api.asset.AssetManifest){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.Applied.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.Applied.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.Applied.toString|toString(){}[0]
+    }
+
+    final class AssetIdMismatch : io.dataloom.api.asset/DurableAssetManifestApplyOutcome { // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.AssetIdMismatch|null[0]
+        constructor <init>(io.dataloom.api.identifier/AssetId, io.dataloom.api.asset/AssetManifest) // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.AssetIdMismatch.<init>|<init>(io.dataloom.api.identifier.AssetId;io.dataloom.api.asset.AssetManifest){}[0]
+
+        final val manifest // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.AssetIdMismatch.manifest|{}manifest[0]
+            final fun <get-manifest>(): io.dataloom.api.asset/AssetManifest // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.AssetIdMismatch.manifest.<get-manifest>|<get-manifest>(){}[0]
+        final val scope // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.AssetIdMismatch.scope|{}scope[0]
+            final fun <get-scope>(): io.dataloom.api.identifier/AssetId // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.AssetIdMismatch.scope.<get-scope>|<get-scope>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/AssetId // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.AssetIdMismatch.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.asset/AssetManifest // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.AssetIdMismatch.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.identifier/AssetId = ..., io.dataloom.api.asset/AssetManifest = ...): io.dataloom.api.asset/DurableAssetManifestApplyOutcome.AssetIdMismatch // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.AssetIdMismatch.copy|copy(io.dataloom.api.identifier.AssetId;io.dataloom.api.asset.AssetManifest){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.AssetIdMismatch.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.AssetIdMismatch.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.AssetIdMismatch.toString|toString(){}[0]
+    }
+
+    final class PersistenceFailure : io.dataloom.api.asset/DurableAssetManifestApplyOutcome { // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.PersistenceFailure|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.PersistenceFailure.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.PersistenceFailure.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.PersistenceFailure.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.PersistenceFailure.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.api.asset/DurableAssetManifestApplyOutcome.PersistenceFailure // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.PersistenceFailure.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.PersistenceFailure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.PersistenceFailure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.PersistenceFailure.toString|toString(){}[0]
+    }
+
+    final class VersionNotMonotonic : io.dataloom.api.asset/DurableAssetManifestApplyOutcome { // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.VersionNotMonotonic|null[0]
+        constructor <init>(io.dataloom.api.asset/AssetManifest, kotlin/Long) // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.VersionNotMonotonic.<init>|<init>(io.dataloom.api.asset.AssetManifest;kotlin.Long){}[0]
+
+        final val currentVersion // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.VersionNotMonotonic.currentVersion|{}currentVersion[0]
+            final fun <get-currentVersion>(): kotlin/Long // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.VersionNotMonotonic.currentVersion.<get-currentVersion>|<get-currentVersion>(){}[0]
+        final val manifest // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.VersionNotMonotonic.manifest|{}manifest[0]
+            final fun <get-manifest>(): io.dataloom.api.asset/AssetManifest // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.VersionNotMonotonic.manifest.<get-manifest>|<get-manifest>(){}[0]
+
+        final fun component1(): io.dataloom.api.asset/AssetManifest // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.VersionNotMonotonic.component1|component1(){}[0]
+        final fun component2(): kotlin/Long // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.VersionNotMonotonic.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.asset/AssetManifest = ..., kotlin/Long = ...): io.dataloom.api.asset/DurableAssetManifestApplyOutcome.VersionNotMonotonic // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.VersionNotMonotonic.copy|copy(io.dataloom.api.asset.AssetManifest;kotlin.Long){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.VersionNotMonotonic.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.VersionNotMonotonic.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.VersionNotMonotonic.toString|toString(){}[0]
+    }
+
+    final object ContentionLimitReached : io.dataloom.api.asset/DurableAssetManifestApplyOutcome { // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.ContentionLimitReached|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.ContentionLimitReached.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.ContentionLimitReached.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.asset/DurableAssetManifestApplyOutcome.ContentionLimitReached.toString|toString(){}[0]
+    }
+}
+
 sealed interface io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision { // io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision|null[0]
     final class Authorized : io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision { // io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision.Authorized|null[0]
         constructor <init>(io.dataloom.api.circuit/CircuitAdministrationAuthorizationId) // io.dataloom.api.circuit/CircuitAdministrationAuthorizationDecision.Authorized.<init>|<init>(io.dataloom.api.circuit.CircuitAdministrationAuthorizationId){}[0]
@@ -2513,6 +2579,40 @@ final class io.dataloom.api.asset/AssetManifest { // io.dataloom.api.asset/Asset
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.asset/AssetManifest.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.asset/AssetManifest.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.asset/AssetManifest.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.asset/AssetManifestHistoryState { // io.dataloom.api.asset/AssetManifestHistoryState|null[0]
+    constructor <init>(kotlin.collections/List<io.dataloom.api.asset/AssetManifest>) // io.dataloom.api.asset/AssetManifestHistoryState.<init>|<init>(kotlin.collections.List<io.dataloom.api.asset.AssetManifest>){}[0]
+
+    final val retainedManifests // io.dataloom.api.asset/AssetManifestHistoryState.retainedManifests|{}retainedManifests[0]
+        final fun <get-retainedManifests>(): kotlin.collections/List<io.dataloom.api.asset/AssetManifest> // io.dataloom.api.asset/AssetManifestHistoryState.retainedManifests.<get-retainedManifests>|<get-retainedManifests>(){}[0]
+
+    final fun component1(): kotlin.collections/List<io.dataloom.api.asset/AssetManifest> // io.dataloom.api.asset/AssetManifestHistoryState.component1|component1(){}[0]
+    final fun copy(kotlin.collections/List<io.dataloom.api.asset/AssetManifest> = ...): io.dataloom.api.asset/AssetManifestHistoryState // io.dataloom.api.asset/AssetManifestHistoryState.copy|copy(kotlin.collections.List<io.dataloom.api.asset.AssetManifest>){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.asset/AssetManifestHistoryState.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.asset/AssetManifestHistoryState.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.asset/AssetManifestHistoryState.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.asset/AssetManifestHistoryStateCodec : io.dataloom.api.state/DurableStateCodec<io.dataloom.api.asset/AssetManifestHistoryState> { // io.dataloom.api.asset/AssetManifestHistoryStateCodec|null[0]
+    constructor <init>() // io.dataloom.api.asset/AssetManifestHistoryStateCodec.<init>|<init>(){}[0]
+
+    final fun decode(kotlin/String): io.dataloom.api.asset/AssetManifestHistoryState // io.dataloom.api.asset/AssetManifestHistoryStateCodec.decode|decode(kotlin.String){}[0]
+    final fun encode(io.dataloom.api.asset/AssetManifestHistoryState): kotlin/String // io.dataloom.api.asset/AssetManifestHistoryStateCodec.encode|encode(io.dataloom.api.asset.AssetManifestHistoryState){}[0]
+}
+
+final class io.dataloom.api.asset/DurableAssetManifestHistory { // io.dataloom.api.asset/DurableAssetManifestHistory|null[0]
+    constructor <init>(io.dataloom.api.state/DurableStateStore<io.dataloom.api.identifier/AssetId, io.dataloom.api.asset/AssetManifestHistoryState>, kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.api.asset/DurableAssetManifestHistory.<init>|<init>(io.dataloom.api.state.DurableStateStore<io.dataloom.api.identifier.AssetId,io.dataloom.api.asset.AssetManifestHistoryState>;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+
+    final suspend fun apply(io.dataloom.api.identifier/AssetId, io.dataloom.api.asset/AssetManifest): io.dataloom.api.asset/DurableAssetManifestApplyOutcome // io.dataloom.api.asset/DurableAssetManifestHistory.apply|apply(io.dataloom.api.identifier.AssetId;io.dataloom.api.asset.AssetManifest){}[0]
+    final suspend fun current(io.dataloom.api.identifier/AssetId): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.asset/AssetManifest?> // io.dataloom.api.asset/DurableAssetManifestHistory.current|current(io.dataloom.api.identifier.AssetId){}[0]
+    final suspend fun history(io.dataloom.api.identifier/AssetId): io.dataloom.api.provider/ProviderOperationResult<kotlin.collections/List<io.dataloom.api.asset/AssetManifest>> // io.dataloom.api.asset/DurableAssetManifestHistory.history|history(io.dataloom.api.identifier.AssetId){}[0]
+    final suspend fun retainedVersions(io.dataloom.api.identifier/AssetId): io.dataloom.api.provider/ProviderOperationResult<kotlin.collections/List<kotlin/Long>> // io.dataloom.api.asset/DurableAssetManifestHistory.retainedVersions|retainedVersions(io.dataloom.api.identifier.AssetId){}[0]
+
+    final object Companion { // io.dataloom.api.asset/DurableAssetManifestHistory.Companion|null[0]
+        final val KeyEncoder // io.dataloom.api.asset/DurableAssetManifestHistory.Companion.KeyEncoder|{}KeyEncoder[0]
+            final fun <get-KeyEncoder>(): io.dataloom.api.state/DurableStateScopeKeyEncoder<io.dataloom.api.identifier/AssetId> // io.dataloom.api.asset/DurableAssetManifestHistory.Companion.KeyEncoder.<get-KeyEncoder>|<get-KeyEncoder>(){}[0]
+    }
 }
 
 final class io.dataloom.api.change/ChangeEvent { // io.dataloom.api.change/ChangeEvent|null[0]
