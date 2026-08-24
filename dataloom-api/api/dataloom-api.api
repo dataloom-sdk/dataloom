@@ -1344,8 +1344,8 @@ public abstract interface class io/dataloom/api/observation/SynchronizationObser
 }
 
 public final class io/dataloom/api/operational/DurableOperationalEventOutbox {
-	public fun <init> (Lio/dataloom/api/state/DurableStateStore;IILjava/lang/Integer;)V
-	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;IILjava/lang/Integer;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;IILjava/lang/Integer;Lkotlin/time/Duration;Lio/dataloom/api/time/DataLoomClock;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;IILjava/lang/Integer;Lkotlin/time/Duration;Lio/dataloom/api/time/DataLoomClock;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun acknowledge-bv5EIFA (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun append-aDAAC7I (Ljava/lang/String;Lio/dataloom/api/operational/OperationalEventEnvelope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun entries-7ZrZbUU (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

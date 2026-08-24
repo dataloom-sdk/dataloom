@@ -7,7 +7,10 @@ import io.dataloom.api.state.DurableStateCompareAndSetResult
 import io.dataloom.api.state.DurableStateLoadResult
 import io.dataloom.api.state.DurableStateScopeKeyEncoder
 import io.dataloom.api.state.DurableStateStore
+import io.dataloom.api.time.DataLoomClock
+import io.dataloom.api.time.DataLoomInstant
 import kotlin.jvm.JvmInline
+import kotlin.time.Duration
 
 /**
  * Identifies which durable operational-event outbox stream a
@@ -48,12 +51,12 @@ public value class OperationalEventOutboxScope(
  * append order (oldest first).
  *
  * This is a bounded first slice of DL-042's durable-outbox requirement --
- * ordered append, optional count-based retention, operator-driven
- * per-entry acknowledgement (see [DurableOperationalEventOutbox]'s
- * "Retention" and "Acknowledgement" documentation), and "read everything
- * currently retained" only. It does not implement filtered/subscription
- * delivery or cross-scope enumeration; those remain separate, larger
- * follow-up work.
+ * ordered append, optional count-based and/or age-based retention,
+ * operator-driven per-entry acknowledgement (see
+ * [DurableOperationalEventOutbox]'s "Retention" and "Acknowledgement"
+ * documentation), and "read everything currently retained" only. It does
+ * not implement filtered/subscription delivery or cross-scope enumeration;
+ * those remain separate, larger follow-up work.
  */
 public data class OperationalEventOutboxState(
     public val entries: List<OperationalEventEnvelope>,
@@ -121,7 +124,8 @@ public sealed interface DurableOperationalEventOutboxAcknowledgeOutcome {
     /**
      * No entry with the given [OperationalEventId] is currently retained for
      * this scope -- because it was never appended, it was already
-     * acknowledged, or count-based retention already evicted it. A
+     * acknowledged, or count-based and/or age-based retention already evicted
+     * it. A
      * well-defined no-op, not a failure: nothing was persisted because there
      * was nothing left to remove. Safe to treat acknowledgement as
      * idempotent -- acknowledging the same id twice reports [Acknowledged]
@@ -184,39 +188,109 @@ public sealed interface DurableOperationalEventOutboxAcknowledgeOutcome {
  *
  * ## Retention
  *
- * By default [maximumRetainedEntries] is `null` and behavior is byte-for-byte
- * unchanged from before this policy existed: entries accumulate without
- * bound, limited only by [OperationalEventOutboxStateCodec]'s own
- * overall-encoded-length safety limit. A caller that sets
- * [maximumRetainedEntries] gets a bounded first slice of real retention
- * instead: once an [append] would grow [OperationalEventOutboxState.entries]
- * past that count, the oldest entries are evicted first -- as many as needed
- * to bring the retained count back down to [maximumRetainedEntries] -- as
+ * By default both [maximumRetainedEntries] and [maximumRetainedAge] are
+ * `null` and behavior is byte-for-byte unchanged from before either policy
+ * existed: entries accumulate without bound, limited only by
+ * [OperationalEventOutboxStateCodec]'s own overall-encoded-length safety
+ * limit. A caller may configure either policy alone, both together, or
+ * neither.
+ *
+ * Both policies share the same two eviction guarantees: eviction happens as
  * part of the very same compare-and-set write that persists the new entry,
- * never a separate follow-up write. This mirrors
- * [io.dataloom.api.configuration.DurableConfigurationHistory]'s own
+ * never a separate follow-up write, and it never evicts the entry an
+ * [append] call is itself adding. An evicted entry's
+ * [OperationalEventEnvelope.id] is no longer visible to the same-id
+ * [DurableOperationalEventOutboxAppendOutcome.AlreadyAppended] /
+ * [DurableOperationalEventOutboxAppendOutcome.Conflict] duplicate check --
+ * once either policy has evicted an entry, appending its identifier again is
+ * indistinguishable from a genuinely new entry. That is an accepted
+ * consequence of bounding retention, not an oversight.
+ *
+ * ### Count-based retention
+ *
+ * A caller that sets [maximumRetainedEntries] gets a bounded first slice of
+ * real retention: once an [append] would grow [OperationalEventOutboxState.entries]
+ * past that count, the oldest entries are evicted first -- as many as needed
+ * to bring the retained count back down to [maximumRetainedEntries]. This
+ * mirrors [io.dataloom.api.configuration.DurableConfigurationHistory]'s own
  * `maxRetainedVersions` shape -- a count-based cap enforced by trimming the
  * oldest entries off an ordered list inside the same atomic update -- which
  * is this codebase's only existing precedent for bounding an ordered
  * [DurableStateStore]-backed list.
  *
- * A count-based cap was chosen over an age-based one: eviction happens
- * entirely from the list's own `size`, so it needs no clock read and no
- * dependency on [OperationalEventEnvelope.occurredAt] being trustworthy as a
- * "now" reference -- consistent with [OperationalEventEnvelope] itself
- * documenting that it "never reads a global clock" and treats every time
- * value as caller-supplied, not authoritative. It also composes directly
- * with the outbox's own "ordered, oldest-first" contract: the entries to
- * evict are always exactly the current list's leading elements.
+ * Count-based eviction happens entirely from the list's own `size`/position,
+ * so it needs no clock read: the entries to evict are always exactly the
+ * current list's leading elements.
  *
- * Eviction only ever removes entries older than what [append] itself is
- * adding, so it can never evict the entry an [append] call just persisted.
- * An evicted entry's [OperationalEventEnvelope.id] is no longer visible to
- * the same-id [DurableOperationalEventOutboxAppendOutcome.AlreadyAppended] /
- * [DurableOperationalEventOutboxAppendOutcome.Conflict] duplicate check --
- * once retention has evicted an entry, appending its identifier again is
- * indistinguishable from a genuinely new entry. That is an accepted
- * consequence of bounding retention, not an oversight.
+ * ### Age-based retention
+ *
+ * A caller that sets [maximumRetainedAge] gets a second, independent bounded
+ * retention mode: on each [append], every already-persisted entry (never the
+ * entry this call is itself adding) whose [OperationalEventEnvelope.occurredAt]
+ * is older than [maximumRetainedAge] relative to [clock]'s current reading is
+ * evicted.
+ *
+ * Age-based eviction genuinely needs a "now" reference this class did not
+ * previously hold, since [OperationalEventEnvelope] never reads a clock
+ * itself. [clock] supplies that reference. It is read at most once per
+ * [append] call (never once per entry), and only when [maximumRetainedAge]
+ * is configured -- an outbox with [maximumRetainedAge] left `null` never
+ * touches [clock] even if one happens to be supplied. Setting
+ * [maximumRetainedAge] without also supplying [clock] is rejected at
+ * construction, since the age policy is meaningless without a "now"
+ * reference.
+ *
+ * This class previously argued a count-based cap over an age-based one
+ * specifically because eviction driven by `size` alone needs no clock and no
+ * dependency on `occurredAt` being a trustworthy "now" reference -- and that
+ * trade-off has not disappeared just because an age-based mode now also
+ * exists. [OperationalEventEnvelope] still documents that it "never reads a
+ * global clock" and treats every time value as caller-supplied, not
+ * authoritative: [maximumRetainedAge] takes `occurredAt` at face value as
+ * the event's stated occurrence time, so a caller that supplies an
+ * inaccurate, backdated, or clock-skewed `occurredAt` gets correspondingly
+ * inaccurate age-based eviction. This is a deliberate, documented trade-off
+ * -- reusing `occurredAt` rather than inventing a new per-entry "appended
+ * at" timestamp keeps [OperationalEventOutboxState]'s persisted shape
+ * completely unchanged, where a new field would have been a materially
+ * larger, separately-versioned schema change for what remains a bounded
+ * first slice. A caller whose events' `occurredAt` cannot be trusted as
+ * wall-clock-comparable should prefer [maximumRetainedEntries] instead, or
+ * configure both (see "Composing both policies" below) so a single runaway
+ * `occurredAt` value cannot defeat bounding entirely.
+ *
+ * Because `occurredAt` is caller-supplied and not guaranteed to align with
+ * append order, age-based eviction cannot reuse count-based retention's
+ * "always the leading elements" shortcut -- it evaluates every
+ * already-persisted entry's `occurredAt` against [clock]'s current reading,
+ * regardless of that entry's position in the list.
+ *
+ * Like count-based retention, age-based retention never evicts the entry an
+ * [append] call is itself adding, even if that entry's own `occurredAt` is
+ * already outside the retention window -- for example, a deliberate
+ * historical backfill. It still appears in [entries] immediately after that
+ * successful append, and only becomes a candidate for age-based eviction on
+ * a later [append] call, once it is no longer the entry being added.
+ *
+ * ### Composing both policies
+ *
+ * When both [maximumRetainedAge] and [maximumRetainedEntries] are
+ * configured, each [append] applies them in one fixed order, as part of the
+ * same compare-and-set write: age-based eviction runs first, over the
+ * already-persisted entries only; the new envelope is then appended; then
+ * count-based eviction runs over the resulting list. An entry evicted by
+ * either policy ends up evicted either way -- age-based eviction can remove
+ * entries count-based eviction alone would have kept (an old entry sitting
+ * well within the count cap), and count-based eviction can remove entries
+ * age-based eviction alone would have kept (a recent entry pushed out purely
+ * by volume). Running age-based eviction first, before the new envelope is
+ * even appended, means count-based eviction's own "keep the last N entries
+ * by append position" guarantee always operates on entries that have
+ * already survived the age check -- this fixed order is itself part of the
+ * contract, not an incidental implementation detail, precisely because
+ * `occurredAt` need not align with append order (see "Age-based retention"
+ * above), so evaluating the two policies in the opposite order could
+ * otherwise surface a different surviving set.
  *
  * ## Acknowledgement
  *
@@ -281,15 +355,25 @@ public sealed interface DurableOperationalEventOutboxAcknowledgeOutcome {
  *   be at least `1`.
  * @param maximumRetainedEntries the maximum number of entries kept per scope,
  *   including the one just appended. `null` (the default) means no
- *   eviction -- byte-for-byte the same unbounded-accumulation behavior this
- *   outbox had before this parameter existed. When non-null it must be at
- *   least `1`; see this class's "Retention" documentation.
+ *   count-based eviction -- byte-for-byte the same unbounded-accumulation
+ *   behavior this outbox had before this parameter existed. When non-null it
+ *   must be at least `1`; see this class's "Retention" documentation.
+ * @param maximumRetainedAge the maximum age, relative to [clock]'s current
+ *   reading, an already-persisted entry's [OperationalEventEnvelope.occurredAt]
+ *   may have before it is evicted. `null` (the default) means no age-based
+ *   eviction. When non-null it must be greater than zero, and [clock] must
+ *   be non-null; see this class's "Retention" documentation.
+ * @param clock supplies the current instant age-based eviction compares
+ *   entries against. Required (non-null) whenever [maximumRetainedAge] is
+ *   set; never read otherwise. `null` by default.
  */
 public class DurableOperationalEventOutbox(
     private val store: DurableStateStore<OperationalEventOutboxScope, OperationalEventOutboxState>,
     private val schemaVersion: Int = DEFAULT_SCHEMA_VERSION,
     private val maximumStateUpdateAttempts: Int = DEFAULT_MAX_STATE_UPDATE_ATTEMPTS,
     private val maximumRetainedEntries: Int? = null,
+    private val maximumRetainedAge: Duration? = null,
+    private val clock: DataLoomClock? = null,
 ) {
     init {
         require(maximumStateUpdateAttempts >= 1) {
@@ -297,6 +381,12 @@ public class DurableOperationalEventOutbox(
         }
         require(maximumRetainedEntries == null || maximumRetainedEntries >= 1) {
             "maximumRetainedEntries must be at least 1 when set, but was $maximumRetainedEntries."
+        }
+        require(maximumRetainedAge == null || maximumRetainedAge > Duration.ZERO) {
+            "maximumRetainedAge must be greater than zero when set, but was $maximumRetainedAge."
+        }
+        require(maximumRetainedAge == null || clock != null) {
+            "clock must be provided when maximumRetainedAge is set."
         }
     }
 
@@ -337,7 +427,8 @@ public class DurableOperationalEventOutbox(
                     DurableOperationalEventOutboxAppendOutcome.Conflict(existing, envelope)
                 }
             }
-            val nextEntries = (currentState.entries + envelope).retainedByCap()
+            val now: DataLoomInstant? = maximumRetainedAge?.let { clock?.now() }
+            val nextEntries = (currentState.entries.retainedByAge(now) + envelope).retainedByCap()
             when (
                 val result = store.compareAndSet(
                     DurableStateCompareAndSetRequest(
@@ -421,6 +512,21 @@ public class DurableOperationalEventOutbox(
     private fun List<OperationalEventEnvelope>.retainedByCap(): List<OperationalEventEnvelope> {
         val cap = maximumRetainedEntries ?: return this
         return if (size > cap) subList(size - cap, size) else this
+    }
+
+    /**
+     * Drops every entry whose [OperationalEventEnvelope.occurredAt] is older
+     * than [maximumRetainedAge] relative to [now] -- a no-op when
+     * [maximumRetainedAge] is `null` or [now] is unavailable (which only
+     * happens if [maximumRetainedAge] is `null`, given this class's own
+     * constructor validation). See this class's "Retention" documentation --
+     * this operates only on already-persisted entries, never the entry the
+     * current [append] call is itself adding.
+     */
+    private fun List<OperationalEventEnvelope>.retainedByAge(now: DataLoomInstant?): List<OperationalEventEnvelope> {
+        val maxAgeMillis = maximumRetainedAge?.inWholeMilliseconds ?: return this
+        val nowMillis = now?.epochMilliseconds ?: return this
+        return filter { nowMillis - it.occurredAt.epochMilliseconds <= maxAgeMillis }
     }
 
     private companion object {

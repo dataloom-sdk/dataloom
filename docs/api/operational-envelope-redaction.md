@@ -2,9 +2,9 @@
 
 Status: **available foundation**. The shared contracts, strict redactor,
 canonical V1 wire codec, and schema-upcast registry are implemented. A
-bounded first slice of durable persistence exists, including an opt-in
-count-based retention policy and operator-driven per-entry acknowledgement
-(see "Durable outbox" below); replay, age-based retention, filtering, and
+bounded first slice of durable persistence exists, including opt-in
+count-based and age-based retention policies and operator-driven per-entry
+acknowledgement (see "Durable outbox" below); replay, filtering, and
 complete subsystem adapters remain V1 work.
 
 ## Purpose
@@ -186,13 +186,29 @@ join multiple entries into one text payload.
 
 ### Retention policy
 
-`DurableOperationalEventOutbox` takes an optional `maximumRetainedEntries: Int?`
-constructor parameter, defaulting to `null`. `null` means no eviction —
-behavior byte-for-byte unchanged from before this parameter existed: entries
-accumulate without bound, limited only by `OperationalEventOutboxStateCodec`'s
-own overall-encoded-length safety limit (`MAX_ENTRY_COUNT` = 10,000 entries;
-4 MiB encoded). A caller that sets `maximumRetainedEntries` gets a bounded
-first slice of real retention instead:
+`DurableOperationalEventOutbox` takes two independent, optional retention
+constructor parameters — `maximumRetainedEntries: Int?` (count-based) and
+`maximumRetainedAge: Duration?` (age-based) — plus a `clock: DataLoomClock?`
+the age-based policy reads. All three default to `null`. With both
+retention parameters `null`, behavior is byte-for-byte unchanged from before
+either policy existed: entries accumulate without bound, limited only by
+`OperationalEventOutboxStateCodec`'s own overall-encoded-length safety limit
+(`MAX_ENTRY_COUNT` = 10,000 entries; 4 MiB encoded). A caller may configure
+either policy alone, both together, or neither.
+
+Both policies share the same two eviction guarantees: eviction happens as
+part of the very same compare-and-set write that persists the new entry,
+never a separate follow-up write, and it never evicts the entry an `append`
+call is itself adding. Once either policy has evicted an entry, its
+`OperationalEventEnvelope.id` is no longer visible to `append`'s same-id
+`AlreadyAppended`/`Conflict` duplicate check — re-appending that identifier
+is indistinguishable from a genuinely new entry. That is a deliberate
+trade-off of bounding retention, not an oversight.
+
+#### Count-based retention
+
+A caller that sets `maximumRetainedEntries` gets a bounded first slice of
+real retention:
 
 ```kotlin
 val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 5_000)
@@ -200,39 +216,90 @@ val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 5_000
 
 Once an `append` would grow the retained entry count for a scope past
 `maximumRetainedEntries`, the oldest entries are evicted first — as many as
-needed to bring the retained count back down to the configured cap — as part
-of the very same compare-and-set write that persists the new entry, never a
-separate follow-up write. This mirrors `DurableConfigurationHistory`'s own
-`maxRetainedVersions` shape — a count-based cap enforced by trimming the
-oldest entries off an ordered list inside the same atomic update — which is
-this codebase's only existing precedent for bounding an ordered
-`DurableStateStore`-backed list.
+needed to bring the retained count back down to the configured cap. This
+mirrors `DurableConfigurationHistory`'s own `maxRetainedVersions` shape — a
+count-based cap enforced by trimming the oldest entries off an ordered list
+inside the same atomic update — which is this codebase's only existing
+precedent for bounding an ordered `DurableStateStore`-backed list.
+Eviction driven purely by the list's own `size`/position needs no clock
+read: the entries to evict are always exactly the current list's leading
+elements.
 
-A count-based cap was chosen over an age-based one for two reasons. First,
-eviction driven purely by the list's own `size` needs no clock read and no
-dependency on `OperationalEventEnvelope.occurredAt` being trustworthy as a
-"now" reference — consistent with `OperationalEventEnvelope` itself
-documenting that it never reads a global clock and treats every time value as
-caller-supplied, not authoritative. Second, it composes directly with the
-outbox's own "ordered, oldest-first" contract: the entries to evict are
-always exactly the current list's leading elements, with no need to scan for
-an age boundary.
+#### Age-based retention
 
-`maximumRetainedEntries` is an optional constructor parameter rather than a
-required one, matching this codebase's existing "optional collaborator"
-pattern for additive, backward-compatible behavior (for example
-`QueueEntryTransitionObserver? = null` on the queue-execution processors) —
-existing callers that construct `DurableOperationalEventOutbox` without it
-see no behavior change at all.
+A caller that sets `maximumRetainedAge` gets a second, independent bounded
+retention mode. It must also supply `clock`, since age-based eviction
+needs a "now" reference `DurableOperationalEventOutbox` did not previously
+hold — `OperationalEventEnvelope` itself never reads a clock:
 
-One accepted consequence: eviction only ever removes entries older than what
-`append` itself is adding, so it can never evict the entry an `append` call
-just persisted, but it can evict an entry whose identifier a caller might
-later try to append again. Once retention has evicted an entry, its
-`OperationalEventEnvelope.id` is no longer visible to `append`'s same-id
-`AlreadyAppended`/`Conflict` duplicate check — re-appending that identifier
-is indistinguishable from a genuinely new entry. That is a deliberate
-trade-off of bounding retention, not an oversight.
+```kotlin
+val outbox = DurableOperationalEventOutbox(
+    store,
+    maximumRetainedAge = 30.days,
+    clock = SystemDataLoomClock(),
+)
+```
+
+On each `append`, every already-persisted entry (never the entry that call
+is itself adding) whose `OperationalEventEnvelope.occurredAt` is older than
+`maximumRetainedAge` relative to `clock`'s current reading is evicted, as
+part of that same compare-and-set write. `clock` is read at most once per
+`append` call, never once per entry, and only when `maximumRetainedAge` is
+configured.
+
+This class previously argued a count-based cap over an age-based one
+specifically because eviction driven by `size` alone needs no clock and no
+dependency on `occurredAt` being a trustworthy "now" reference — that
+trade-off has not disappeared just because an age-based mode now also
+exists. `OperationalEventEnvelope` still documents that it never reads a
+global clock and treats every time value as caller-supplied, not
+authoritative: `maximumRetainedAge` takes `occurredAt` at face value as the
+event's stated occurrence time, so a caller supplying an inaccurate,
+backdated, or clock-skewed `occurredAt` gets correspondingly inaccurate
+age-based eviction. Reusing `occurredAt` rather than inventing a new
+per-entry "appended at" timestamp was a deliberate choice: it keeps
+`OperationalEventOutboxState`'s persisted shape completely unchanged, where
+a new field would have been a materially larger, separately-versioned
+schema change for what remains a bounded first slice. A caller whose
+events' `occurredAt` cannot be trusted as wall-clock-comparable should
+prefer `maximumRetainedEntries` instead, or configure both so a single
+runaway `occurredAt` value cannot defeat bounding entirely.
+
+Because `occurredAt` is caller-supplied and not guaranteed to align with
+append order, age-based eviction cannot reuse count-based retention's
+"always the leading elements" shortcut — it evaluates every
+already-persisted entry's `occurredAt` regardless of position.
+
+Like count-based retention, age-based retention never evicts the entry an
+`append` call is itself adding, even if that entry's own `occurredAt` is
+already outside the retention window — for example, a deliberate historical
+backfill. It still appears in `entries` immediately after that successful
+append, and only becomes a candidate for age-based eviction on a later
+`append` call, once it is no longer the entry being added.
+
+#### Composing both policies
+
+When both are configured, each `append` applies them in one fixed order, as
+part of the same compare-and-set write: age-based eviction runs first, over
+the already-persisted entries only; the new envelope is then appended; then
+count-based eviction runs over the resulting list. An entry evicted by
+either policy ends up evicted either way — age-based eviction can remove
+entries count-based eviction alone would have kept (an old entry sitting
+well within the count cap), and count-based eviction can remove entries
+age-based eviction alone would have kept (a recent entry pushed out purely
+by volume). This fixed order is itself part of the contract, not an
+incidental implementation detail — since `occurredAt` need not align with
+append order, evaluating the two policies in the opposite order could
+otherwise surface a different surviving set.
+
+#### Optionality
+
+Both `maximumRetainedEntries` and `maximumRetainedAge` (with `clock`) are
+optional constructor parameters rather than required ones, matching this
+codebase's existing "optional collaborator" pattern for additive,
+backward-compatible behavior (for example `QueueEntryTransitionObserver? = null`
+on the queue-execution processors) — existing callers that construct
+`DurableOperationalEventOutbox` without them see no behavior change at all.
 
 ### Acknowledgement
 
@@ -271,9 +338,6 @@ therefore safe: the second call also reports `NotFound`.
 
 ### What this does not do yet
 
-- **No age-based retention.** The retention policy (see "Retention policy"
-  above) is count-based only; there is no "evict entries older than duration
-  X" option.
 - **No filtering or subscription delivery.**
 - **No enumeration across scopes.** A caller must already know which
   `OperationalEventOutboxScope` to read.
@@ -407,9 +471,9 @@ therefore safe: the second call also reports `NotFound`.
 This foundation does not yet provide:
 
 - payload classification, minimization, encoding, encryption, or integrity;
-- durable outbox replay, age-based retention, or cross-scope enumeration
-  (ordered append, single-scope read-back, an opt-in count-based retention
-  policy, and operator-driven per-entry acknowledgement exist -- see
+- durable outbox replay or cross-scope enumeration (ordered append,
+  single-scope read-back, opt-in count-based and age-based retention
+  policies, and operator-driven per-entry acknowledgement exist -- see
   "Durable outbox" above);
 - subscription filtering or back-pressure delivery;
 - subsystem adapters for every event and administrative action;

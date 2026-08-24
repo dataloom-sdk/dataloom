@@ -13,12 +13,15 @@ import io.dataloom.api.state.DurableStateCompareAndSetResult
 import io.dataloom.api.state.DurableStateLoadResult
 import io.dataloom.api.state.DurableStateRecord
 import io.dataloom.api.state.DurableStateStore
+import io.dataloom.api.time.DataLoomClock
 import io.dataloom.api.time.DataLoomInstant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.test.runTest
 
 /**
@@ -153,6 +156,27 @@ class DurableOperationalEventOutboxTest {
     }
 
     @Test
+    fun maximumRetainedAgeOfZeroIsRejected() {
+        assertFailsWith<IllegalArgumentException> {
+            DurableOperationalEventOutbox(
+                InMemoryOperationalEventOutboxStore(),
+                maximumRetainedAge = Duration.ZERO,
+                clock = StubDataLoomClock(DataLoomInstant(0L)),
+            )
+        }
+    }
+
+    @Test
+    fun maximumRetainedAgeWithoutAClockIsRejected() {
+        assertFailsWith<IllegalArgumentException> {
+            DurableOperationalEventOutbox(
+                InMemoryOperationalEventOutboxStore(),
+                maximumRetainedAge = 1_000L.milliseconds,
+            )
+        }
+    }
+
+    @Test
     fun unconfiguredRetentionAccumulatesEveryAppendWithoutEviction() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
         val outbox = DurableOperationalEventOutbox(store)
@@ -282,6 +306,136 @@ class DurableOperationalEventOutboxTest {
         val outcome = outbox.append(scope, envelope)
 
         assertIs<DurableOperationalEventOutboxAppendOutcome.AlreadyAppended>(outcome)
+    }
+
+    @Test
+    fun ageBasedRetentionEvictsEntriesOlderThanTheConfiguredAge() = runTest {
+        val store = InMemoryOperationalEventOutboxStore()
+        val clock = StubDataLoomClock(DataLoomInstant(0L))
+        val outbox = DurableOperationalEventOutbox(store, maximumRetainedAge = 100L.milliseconds, clock = clock)
+        val first = envelope("event-1", occurredAt = DataLoomInstant(0L))
+        outbox.append(scope, first)
+
+        clock.instant = DataLoomInstant(150L)
+        val second = envelope("event-2", occurredAt = DataLoomInstant(150L))
+        outbox.append(scope, second)
+
+        // "event-1" is 150ms old relative to the clock's reading at the
+        // second append -- older than the configured 100ms window -- so it
+        // is evicted as part of that same compare-and-set write.
+        val entries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
+        assertEquals(listOf(second), entries.value)
+    }
+
+    @Test
+    fun ageBasedRetentionKeepsEntriesStillWithinTheWindow() = runTest {
+        val store = InMemoryOperationalEventOutboxStore()
+        val clock = StubDataLoomClock(DataLoomInstant(0L))
+        val outbox = DurableOperationalEventOutbox(store, maximumRetainedAge = 100L.milliseconds, clock = clock)
+        val first = envelope("event-1", occurredAt = DataLoomInstant(0L))
+        outbox.append(scope, first)
+
+        clock.instant = DataLoomInstant(50L)
+        val second = envelope("event-2", occurredAt = DataLoomInstant(50L))
+        outbox.append(scope, second)
+
+        // "event-1" is only 50ms old relative to the clock's reading at the
+        // second append -- within the configured 100ms window -- so it
+        // survives.
+        val entries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
+        assertEquals(listOf(first, second), entries.value)
+    }
+
+    @Test
+    fun ageBasedRetentionNeverEvictsTheEntryTheCurrentAppendIsItselfAddingEvenIfAlreadyOutsideTheWindow() = runTest {
+        val store = InMemoryOperationalEventOutboxStore()
+        val clock = StubDataLoomClock(DataLoomInstant(1_000L))
+        val outbox = DurableOperationalEventOutbox(store, maximumRetainedAge = 100L.milliseconds, clock = clock)
+        val recent = envelope("event-recent", occurredAt = DataLoomInstant(1_000L))
+        outbox.append(scope, recent)
+
+        // A deliberate historical backfill: "event-backfill"'s own
+        // occurredAt is already far outside the retention window at the
+        // moment it is appended, but it is the entry this very append call
+        // is adding, so it is never a candidate for age-based eviction on
+        // this call.
+        val backfill = envelope("event-backfill", occurredAt = DataLoomInstant(0L))
+        val outcome = outbox.append(scope, backfill)
+
+        assertIs<DurableOperationalEventOutboxAppendOutcome.Appended>(outcome)
+        val entries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
+        assertEquals(listOf(recent, backfill), entries.value)
+
+        // On the *next* append, "event-backfill" is no longer the entry
+        // being added, so it becomes a candidate for age-based eviction and
+        // is evicted.
+        val third = envelope("event-3", occurredAt = DataLoomInstant(1_000L))
+        outbox.append(scope, third)
+        val laterEntries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
+        assertEquals(listOf(recent, third), laterEntries.value)
+    }
+
+    @Test
+    fun ageBasedRetentionEvictionSurvivesAReloadOfTheSameStore() = runTest {
+        val store = InMemoryOperationalEventOutboxStore()
+        val clock = StubDataLoomClock(DataLoomInstant(0L))
+        val outbox = DurableOperationalEventOutbox(store, maximumRetainedAge = 100L.milliseconds, clock = clock)
+        val first = envelope("event-1", occurredAt = DataLoomInstant(0L))
+        outbox.append(scope, first)
+
+        clock.instant = DataLoomInstant(200L)
+        val second = envelope("event-2", occurredAt = DataLoomInstant(200L))
+        outbox.append(scope, second)
+
+        // A fresh DurableOperationalEventOutbox wrapping the same underlying
+        // store simulates a process restart: eviction already happened as
+        // part of the persisted state, not something recomputed on read.
+        val reopened = DurableOperationalEventOutbox(
+            store,
+            maximumRetainedAge = 100L.milliseconds,
+            clock = StubDataLoomClock(DataLoomInstant(200L)),
+        )
+        val entries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(reopened.entries(scope))
+        assertEquals(listOf(second), entries.value)
+    }
+
+    @Test
+    fun bothRetentionPoliciesComposeSoAnEntryEvictedByEitherPolicyIsEvicted() = runTest {
+        val store = InMemoryOperationalEventOutboxStore()
+        val clock = StubDataLoomClock(DataLoomInstant(0L))
+        val outbox = DurableOperationalEventOutbox(
+            store,
+            maximumRetainedEntries = 2,
+            maximumRetainedAge = 100L.milliseconds,
+            clock = clock,
+        )
+        val a = envelope("event-a", occurredAt = DataLoomInstant(0L))
+        val b = envelope("event-b", occurredAt = DataLoomInstant(0L))
+        outbox.append(scope, a)
+        outbox.append(scope, b)
+        val afterAb = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
+        assertEquals(listOf(a, b), afterAb.value)
+
+        // Advance well past the age window; appending "event-c" evicts both
+        // "event-a" and "event-b" purely by age, even though the count cap
+        // of 2 was not yet exceeded -- age-based eviction removing entries
+        // count-based eviction alone would have kept.
+        clock.instant = DataLoomInstant(200L)
+        val c = envelope("event-c", occurredAt = DataLoomInstant(200L))
+        outbox.append(scope, c)
+        val afterC = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
+        assertEquals(listOf(c), afterC.value)
+
+        // Two more recent appends, all well within the age window, push the
+        // retained count past the cap of 2 -- count-based eviction removing
+        // an entry age-based eviction alone would have kept.
+        val d = envelope("event-d", occurredAt = DataLoomInstant(200L))
+        outbox.append(scope, d)
+        val e = envelope("event-e", occurredAt = DataLoomInstant(200L))
+        outbox.append(scope, e)
+
+        val finalEntries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
+        assertEquals(listOf(d, e), finalEntries.value)
     }
 
     @Test
@@ -490,13 +644,14 @@ class DurableOperationalEventOutboxTest {
     private fun envelope(
         id: String,
         correlationId: String = "correlation-1",
+        occurredAt: DataLoomInstant = DataLoomInstant(1_000L),
     ): OperationalEventEnvelope = OperationalEventEnvelope(
         id = OperationalEventId(id),
         type = OperationalEventType("dataloom.retry.scheduled"),
         source = OperationalEventSource("dataloom.runtime.retry"),
         category = OperationalEventCategory.TELEMETRY,
         schemaVersion = OperationalSchemaVersion(1),
-        occurredAt = DataLoomInstant(1_000L),
+        occurredAt = occurredAt,
         correlationId = CorrelationId(correlationId),
         payload = OperationalPayloadDescriptor(
             type = OperationalPayloadType("dataloom.retry.signal"),
@@ -505,6 +660,13 @@ class DurableOperationalEventOutboxTest {
             classification = DataClassification.INTERNAL,
         ),
     )
+
+    /** Reports whatever [DataLoomInstant] [instant] currently holds -- settable between calls to simulate the passage of time. */
+    private class StubDataLoomClock(
+        var instant: DataLoomInstant,
+    ) : DataLoomClock {
+        override fun now(): DataLoomInstant = instant
+    }
 
     private class InMemoryOperationalEventOutboxStore :
         DurableStateStore<OperationalEventOutboxScope, OperationalEventOutboxState> {
