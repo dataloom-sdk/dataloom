@@ -174,6 +174,7 @@ adapters, executable relaunch evidence, and end-to-end qualification remain open
 | [Circuit administration](./circuit-administration.md) | Partial V1 subsystem | Authorized/idempotent open, close, and reset coordination, production Android/Apple atomic execution, and optional `DataLoom` operations assembly. |
 | [Conflict contracts](./conflict-contracts.md) | Partial V1 subsystem | Custom detector, resolver, request, conflict, and decision contracts. |
 | [Conflict orchestration](./conflict-orchestration.md) | Partial V1 subsystem | Exact detector/resolver lookup and one-cycle decision orchestration. |
+| [Second conflict resolver investigation](./second-conflict-resolver-investigation.md) | Investigated, already shipped | Confirms the built-in policy catalog beyond `LastWriteWinsConflictResolver` (`#329`) already closes the "additional deterministic strategies" gap the `#95` row previously still listed as pending. |
 
 V1 retry work still requires complete offline-first, cache-first, hybrid, and adaptive strategy execution,
 remaining protocol integrations, circuit-administration observability, complete
