@@ -105,6 +105,20 @@ public final class io/dataloom/api/error/RetryDelayHintSource : java/lang/Enum {
 	public static fun values ()[Lio/dataloom/api/error/RetryDelayHintSource;
 }
 
+public final class io/dataloom/api/identifier/AssetId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/AssetId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
 public final class io/dataloom/api/identifier/ChangeEventId {
 	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/ChangeEventId;
 	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;

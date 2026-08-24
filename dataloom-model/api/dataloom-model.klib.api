@@ -283,6 +283,17 @@ final value class io.dataloom.api.error/ErrorCode { // io.dataloom.api.error/Err
     final fun toString(): kotlin/String // io.dataloom.api.error/ErrorCode.toString|toString(){}[0]
 }
 
+final value class io.dataloom.api.identifier/AssetId { // io.dataloom.api.identifier/AssetId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.identifier/AssetId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.identifier/AssetId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/AssetId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/AssetId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/AssetId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.identifier/AssetId.toString|toString(){}[0]
+}
+
 final value class io.dataloom.api.identifier/ChangeEventId { // io.dataloom.api.identifier/ChangeEventId|null[0]
     constructor <init>(kotlin/String) // io.dataloom.api.identifier/ChangeEventId.<init>|<init>(kotlin.String){}[0]
 

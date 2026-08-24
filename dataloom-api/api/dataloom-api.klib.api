@@ -2412,6 +2412,109 @@ final class <#A: kotlin/Any> io.dataloom.api.state/DurableStateRecord { // io.da
     final fun toString(): kotlin/String // io.dataloom.api.state/DurableStateRecord.toString|toString(){}[0]
 }
 
+final class io.dataloom.api.asset/AssetChunkDescriptor { // io.dataloom.api.asset/AssetChunkDescriptor|null[0]
+    constructor <init>(kotlin/Int, kotlin/Long, kotlin/Long, io.dataloom.api.security/DataLoomDigest) // io.dataloom.api.asset/AssetChunkDescriptor.<init>|<init>(kotlin.Int;kotlin.Long;kotlin.Long;io.dataloom.api.security.DataLoomDigest){}[0]
+
+    final val checksum // io.dataloom.api.asset/AssetChunkDescriptor.checksum|{}checksum[0]
+        final fun <get-checksum>(): io.dataloom.api.security/DataLoomDigest // io.dataloom.api.asset/AssetChunkDescriptor.checksum.<get-checksum>|<get-checksum>(){}[0]
+    final val index // io.dataloom.api.asset/AssetChunkDescriptor.index|{}index[0]
+        final fun <get-index>(): kotlin/Int // io.dataloom.api.asset/AssetChunkDescriptor.index.<get-index>|<get-index>(){}[0]
+    final val lengthBytes // io.dataloom.api.asset/AssetChunkDescriptor.lengthBytes|{}lengthBytes[0]
+        final fun <get-lengthBytes>(): kotlin/Long // io.dataloom.api.asset/AssetChunkDescriptor.lengthBytes.<get-lengthBytes>|<get-lengthBytes>(){}[0]
+    final val offsetBytes // io.dataloom.api.asset/AssetChunkDescriptor.offsetBytes|{}offsetBytes[0]
+        final fun <get-offsetBytes>(): kotlin/Long // io.dataloom.api.asset/AssetChunkDescriptor.offsetBytes.<get-offsetBytes>|<get-offsetBytes>(){}[0]
+
+    final fun component1(): kotlin/Int // io.dataloom.api.asset/AssetChunkDescriptor.component1|component1(){}[0]
+    final fun component2(): kotlin/Long // io.dataloom.api.asset/AssetChunkDescriptor.component2|component2(){}[0]
+    final fun component3(): kotlin/Long // io.dataloom.api.asset/AssetChunkDescriptor.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.security/DataLoomDigest // io.dataloom.api.asset/AssetChunkDescriptor.component4|component4(){}[0]
+    final fun copy(kotlin/Int = ..., kotlin/Long = ..., kotlin/Long = ..., io.dataloom.api.security/DataLoomDigest = ...): io.dataloom.api.asset/AssetChunkDescriptor // io.dataloom.api.asset/AssetChunkDescriptor.copy|copy(kotlin.Int;kotlin.Long;kotlin.Long;io.dataloom.api.security.DataLoomDigest){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.asset/AssetChunkDescriptor.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.asset/AssetChunkDescriptor.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.asset/AssetChunkDescriptor.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.asset/AssetChunkLayout { // io.dataloom.api.asset/AssetChunkLayout|null[0]
+    constructor <init>(kotlin.collections/List<io.dataloom.api.asset/AssetChunkDescriptor>) // io.dataloom.api.asset/AssetChunkLayout.<init>|<init>(kotlin.collections.List<io.dataloom.api.asset.AssetChunkDescriptor>){}[0]
+
+    final val chunkCount // io.dataloom.api.asset/AssetChunkLayout.chunkCount|{}chunkCount[0]
+        final fun <get-chunkCount>(): kotlin/Int // io.dataloom.api.asset/AssetChunkLayout.chunkCount.<get-chunkCount>|<get-chunkCount>(){}[0]
+    final val chunks // io.dataloom.api.asset/AssetChunkLayout.chunks|{}chunks[0]
+        final fun <get-chunks>(): kotlin.collections/List<io.dataloom.api.asset/AssetChunkDescriptor> // io.dataloom.api.asset/AssetChunkLayout.chunks.<get-chunks>|<get-chunks>(){}[0]
+    final val totalSizeBytes // io.dataloom.api.asset/AssetChunkLayout.totalSizeBytes|{}totalSizeBytes[0]
+        final fun <get-totalSizeBytes>(): kotlin/Long // io.dataloom.api.asset/AssetChunkLayout.totalSizeBytes.<get-totalSizeBytes>|<get-totalSizeBytes>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.asset/AssetChunkLayout.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.asset/AssetChunkLayout.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.asset/AssetChunkLayout.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.asset/AssetCompressionMetadata { // io.dataloom.api.asset/AssetCompressionMetadata|null[0]
+    constructor <init>(io.dataloom.api.asset/AssetCompressionAlgorithm, kotlin/Long? = ...) // io.dataloom.api.asset/AssetCompressionMetadata.<init>|<init>(io.dataloom.api.asset.AssetCompressionAlgorithm;kotlin.Long?){}[0]
+
+    final val algorithm // io.dataloom.api.asset/AssetCompressionMetadata.algorithm|{}algorithm[0]
+        final fun <get-algorithm>(): io.dataloom.api.asset/AssetCompressionAlgorithm // io.dataloom.api.asset/AssetCompressionMetadata.algorithm.<get-algorithm>|<get-algorithm>(){}[0]
+    final val uncompressedSizeBytes // io.dataloom.api.asset/AssetCompressionMetadata.uncompressedSizeBytes|{}uncompressedSizeBytes[0]
+        final fun <get-uncompressedSizeBytes>(): kotlin/Long? // io.dataloom.api.asset/AssetCompressionMetadata.uncompressedSizeBytes.<get-uncompressedSizeBytes>|<get-uncompressedSizeBytes>(){}[0]
+
+    final fun component1(): io.dataloom.api.asset/AssetCompressionAlgorithm // io.dataloom.api.asset/AssetCompressionMetadata.component1|component1(){}[0]
+    final fun component2(): kotlin/Long? // io.dataloom.api.asset/AssetCompressionMetadata.component2|component2(){}[0]
+    final fun copy(io.dataloom.api.asset/AssetCompressionAlgorithm = ..., kotlin/Long? = ...): io.dataloom.api.asset/AssetCompressionMetadata // io.dataloom.api.asset/AssetCompressionMetadata.copy|copy(io.dataloom.api.asset.AssetCompressionAlgorithm;kotlin.Long?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.asset/AssetCompressionMetadata.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.asset/AssetCompressionMetadata.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.asset/AssetCompressionMetadata.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.asset/AssetEncryptionMetadata { // io.dataloom.api.asset/AssetEncryptionMetadata|null[0]
+    constructor <init>(io.dataloom.api.asset/AssetEncryptionAlgorithm, io.dataloom.api.security/KeyReference, kotlin/ByteArray) // io.dataloom.api.asset/AssetEncryptionMetadata.<init>|<init>(io.dataloom.api.asset.AssetEncryptionAlgorithm;io.dataloom.api.security.KeyReference;kotlin.ByteArray){}[0]
+
+    final val algorithm // io.dataloom.api.asset/AssetEncryptionMetadata.algorithm|{}algorithm[0]
+        final fun <get-algorithm>(): io.dataloom.api.asset/AssetEncryptionAlgorithm // io.dataloom.api.asset/AssetEncryptionMetadata.algorithm.<get-algorithm>|<get-algorithm>(){}[0]
+    final val keyReference // io.dataloom.api.asset/AssetEncryptionMetadata.keyReference|{}keyReference[0]
+        final fun <get-keyReference>(): io.dataloom.api.security/KeyReference // io.dataloom.api.asset/AssetEncryptionMetadata.keyReference.<get-keyReference>|<get-keyReference>(){}[0]
+    final val nonceSize // io.dataloom.api.asset/AssetEncryptionMetadata.nonceSize|{}nonceSize[0]
+        final fun <get-nonceSize>(): kotlin/Int // io.dataloom.api.asset/AssetEncryptionMetadata.nonceSize.<get-nonceSize>|<get-nonceSize>(){}[0]
+
+    final fun copyNonceBytes(): kotlin/ByteArray // io.dataloom.api.asset/AssetEncryptionMetadata.copyNonceBytes|copyNonceBytes(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.asset/AssetEncryptionMetadata.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.asset/AssetEncryptionMetadata.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.asset/AssetEncryptionMetadata.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.asset/AssetManifest { // io.dataloom.api.asset/AssetManifest|null[0]
+    constructor <init>(io.dataloom.api.identifier/AssetId, kotlin/Long, kotlin/Long, io.dataloom.api.asset/AssetMediaType, io.dataloom.api.security/DataLoomDigest, io.dataloom.api.asset/AssetChunkLayout, io.dataloom.api.asset/AssetCompressionMetadata? = ..., io.dataloom.api.asset/AssetEncryptionMetadata? = ...) // io.dataloom.api.asset/AssetManifest.<init>|<init>(io.dataloom.api.identifier.AssetId;kotlin.Long;kotlin.Long;io.dataloom.api.asset.AssetMediaType;io.dataloom.api.security.DataLoomDigest;io.dataloom.api.asset.AssetChunkLayout;io.dataloom.api.asset.AssetCompressionMetadata?;io.dataloom.api.asset.AssetEncryptionMetadata?){}[0]
+
+    final val assetId // io.dataloom.api.asset/AssetManifest.assetId|{}assetId[0]
+        final fun <get-assetId>(): io.dataloom.api.identifier/AssetId // io.dataloom.api.asset/AssetManifest.assetId.<get-assetId>|<get-assetId>(){}[0]
+    final val checksum // io.dataloom.api.asset/AssetManifest.checksum|{}checksum[0]
+        final fun <get-checksum>(): io.dataloom.api.security/DataLoomDigest // io.dataloom.api.asset/AssetManifest.checksum.<get-checksum>|<get-checksum>(){}[0]
+    final val chunkLayout // io.dataloom.api.asset/AssetManifest.chunkLayout|{}chunkLayout[0]
+        final fun <get-chunkLayout>(): io.dataloom.api.asset/AssetChunkLayout // io.dataloom.api.asset/AssetManifest.chunkLayout.<get-chunkLayout>|<get-chunkLayout>(){}[0]
+    final val compression // io.dataloom.api.asset/AssetManifest.compression|{}compression[0]
+        final fun <get-compression>(): io.dataloom.api.asset/AssetCompressionMetadata? // io.dataloom.api.asset/AssetManifest.compression.<get-compression>|<get-compression>(){}[0]
+    final val encryption // io.dataloom.api.asset/AssetManifest.encryption|{}encryption[0]
+        final fun <get-encryption>(): io.dataloom.api.asset/AssetEncryptionMetadata? // io.dataloom.api.asset/AssetManifest.encryption.<get-encryption>|<get-encryption>(){}[0]
+    final val mediaType // io.dataloom.api.asset/AssetManifest.mediaType|{}mediaType[0]
+        final fun <get-mediaType>(): io.dataloom.api.asset/AssetMediaType // io.dataloom.api.asset/AssetManifest.mediaType.<get-mediaType>|<get-mediaType>(){}[0]
+    final val sizeBytes // io.dataloom.api.asset/AssetManifest.sizeBytes|{}sizeBytes[0]
+        final fun <get-sizeBytes>(): kotlin/Long // io.dataloom.api.asset/AssetManifest.sizeBytes.<get-sizeBytes>|<get-sizeBytes>(){}[0]
+    final val version // io.dataloom.api.asset/AssetManifest.version|{}version[0]
+        final fun <get-version>(): kotlin/Long // io.dataloom.api.asset/AssetManifest.version.<get-version>|<get-version>(){}[0]
+
+    final fun component1(): io.dataloom.api.identifier/AssetId // io.dataloom.api.asset/AssetManifest.component1|component1(){}[0]
+    final fun component2(): kotlin/Long // io.dataloom.api.asset/AssetManifest.component2|component2(){}[0]
+    final fun component3(): kotlin/Long // io.dataloom.api.asset/AssetManifest.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.asset/AssetMediaType // io.dataloom.api.asset/AssetManifest.component4|component4(){}[0]
+    final fun component5(): io.dataloom.api.security/DataLoomDigest // io.dataloom.api.asset/AssetManifest.component5|component5(){}[0]
+    final fun component6(): io.dataloom.api.asset/AssetChunkLayout // io.dataloom.api.asset/AssetManifest.component6|component6(){}[0]
+    final fun component7(): io.dataloom.api.asset/AssetCompressionMetadata? // io.dataloom.api.asset/AssetManifest.component7|component7(){}[0]
+    final fun component8(): io.dataloom.api.asset/AssetEncryptionMetadata? // io.dataloom.api.asset/AssetManifest.component8|component8(){}[0]
+    final fun copy(io.dataloom.api.identifier/AssetId = ..., kotlin/Long = ..., kotlin/Long = ..., io.dataloom.api.asset/AssetMediaType = ..., io.dataloom.api.security/DataLoomDigest = ..., io.dataloom.api.asset/AssetChunkLayout = ..., io.dataloom.api.asset/AssetCompressionMetadata? = ..., io.dataloom.api.asset/AssetEncryptionMetadata? = ...): io.dataloom.api.asset/AssetManifest // io.dataloom.api.asset/AssetManifest.copy|copy(io.dataloom.api.identifier.AssetId;kotlin.Long;kotlin.Long;io.dataloom.api.asset.AssetMediaType;io.dataloom.api.security.DataLoomDigest;io.dataloom.api.asset.AssetChunkLayout;io.dataloom.api.asset.AssetCompressionMetadata?;io.dataloom.api.asset.AssetEncryptionMetadata?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.asset/AssetManifest.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.asset/AssetManifest.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.asset/AssetManifest.toString|toString(){}[0]
+}
+
 final class io.dataloom.api.change/ChangeEvent { // io.dataloom.api.change/ChangeEvent|null[0]
     constructor <init>(io.dataloom.api.identifier/ChangeEventId, io.dataloom.api.change/EntityReference, io.dataloom.api.model/ChangeOperation, io.dataloom.api.payload/DataLoomPayload? = ..., io.dataloom.api.context/DataLoomMetadata = ...) // io.dataloom.api.change/ChangeEvent.<init>|<init>(io.dataloom.api.identifier.ChangeEventId;io.dataloom.api.change.EntityReference;io.dataloom.api.model.ChangeOperation;io.dataloom.api.payload.DataLoomPayload?;io.dataloom.api.context.DataLoomMetadata){}[0]
 
@@ -4772,6 +4875,39 @@ final class io.dataloom.api.transport/PushChangesRequest { // io.dataloom.api.tr
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.transport/PushChangesRequest.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.transport/PushChangesRequest.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.transport/PushChangesRequest.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.asset/AssetCompressionAlgorithm { // io.dataloom.api.asset/AssetCompressionAlgorithm|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.asset/AssetCompressionAlgorithm.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.asset/AssetCompressionAlgorithm.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.asset/AssetCompressionAlgorithm.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.asset/AssetCompressionAlgorithm.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.asset/AssetCompressionAlgorithm.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.asset/AssetCompressionAlgorithm.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.asset/AssetEncryptionAlgorithm { // io.dataloom.api.asset/AssetEncryptionAlgorithm|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.asset/AssetEncryptionAlgorithm.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.asset/AssetEncryptionAlgorithm.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.asset/AssetEncryptionAlgorithm.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.asset/AssetEncryptionAlgorithm.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.asset/AssetEncryptionAlgorithm.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.asset/AssetEncryptionAlgorithm.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.asset/AssetMediaType { // io.dataloom.api.asset/AssetMediaType|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.asset/AssetMediaType.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.asset/AssetMediaType.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.asset/AssetMediaType.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.asset/AssetMediaType.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.asset/AssetMediaType.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.asset/AssetMediaType.toString|toString(){}[0]
 }
 
 final value class io.dataloom.api.circuit/CircuitAdministrationAuthorizationId { // io.dataloom.api.circuit/CircuitAdministrationAuthorizationId|null[0]

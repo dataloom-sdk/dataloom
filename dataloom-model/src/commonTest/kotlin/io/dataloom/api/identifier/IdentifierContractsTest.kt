@@ -268,6 +268,16 @@ class IdentifierContractsTest {
         )
     }
 
+    @Test
+    fun `asset id satisfies canonical identifier behavior`() {
+        assertIdentifierBehavior(
+            create = ::AssetId,
+            extract = AssetId::value,
+            valid = "invoice-2026-07-attachment-001",
+            different = "profile-photo-user-example",
+        )
+    }
+
     private fun <T> assertIdentifierBehavior(
         create: (String) -> T,
         extract: (T) -> String,
