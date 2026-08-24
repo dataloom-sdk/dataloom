@@ -69,6 +69,25 @@ public enum class StrategyExecutionRejectionReason {
      * change.
      */
     HYBRID_LOCAL_PUSH_NOT_YET_SUPPORTED,
+
+    /**
+     * Strategy-admission policy evaluation (see
+     * [io.dataloom.runtime.facade.DataLoomStrategyAdmissionPolicySpec] /
+     * [io.dataloom.runtime.facade.DataLoomBuilder.strategyAdmissionPolicyConfiguration])
+     * is configured and produced a combined
+     * [io.dataloom.api.policy.PolicyDecision] whose
+     * [io.dataloom.api.policy.PolicyDecision.outcome] was not
+     * [io.dataloom.api.policy.PolicyCheckOutcome.Allow] -- a
+     * [io.dataloom.api.policy.PolicyCheckOutcome.Deny],
+     * [io.dataloom.api.policy.PolicyCheckOutcome.RequireUserAction], or
+     * [io.dataloom.api.policy.PolicyCheckOutcome.Defer]. This first bounded
+     * integration has no dedicated result variant distinguishing those three
+     * kinds -- only [io.dataloom.api.policy.PolicyCheckOutcome.Allow] means
+     * "evaluation may proceed" -- so every non-`Allow` outcome is reported
+     * uniformly as a rejection here; a future slice may add a richer mapping.
+     * Never produced when strategy-admission policy is not configured.
+     */
+    POLICY_DENIED,
 }
 
 /** Observable result of strategy admission and execution. */

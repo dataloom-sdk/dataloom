@@ -25,6 +25,7 @@ import io.dataloom.runtime.execution.bidirectional.BidirectionalSynchronizationP
 import io.dataloom.api.conflict.DurableResolvedConflictDecisionLog
 import io.dataloom.api.conflict.DurableUnresolvedConflictLog
 import io.dataloom.api.operational.DurableOperationalEventOutbox
+import io.dataloom.api.policy.DurablePolicyDecisionLog
 import io.dataloom.api.strategy.DurableStrategyDecisionEventLog
 import io.dataloom.runtime.conflict.ConflictDetectorRegistry
 import io.dataloom.runtime.conflict.ConflictResolverRegistry
@@ -57,6 +58,7 @@ import io.dataloom.runtime.retry.WorkflowTimeoutStateExecutor
 import io.dataloom.runtime.retry.TransportCircuitProtectionRuntime
 import io.dataloom.runtime.strategy.AcceptedStrategyPlanExecutionCoordinator
 import io.dataloom.runtime.strategy.BuiltInSynchronizationStrategyEvaluator
+import io.dataloom.runtime.strategy.StrategyAdmissionPolicyConfiguration
 import io.dataloom.runtime.strategy.StrategySynchronizationExecutionCoordinator
 import io.dataloom.runtime.submission.DataLoomQueueSubmission
 import io.dataloom.runtime.submission.DefaultDataLoomQueueSubmission
@@ -157,6 +159,7 @@ public class DataLoomBuilder {
     private var circuitAdministrationSpec: DataLoomCircuitAdministrationSpec? = null
     private var conflictDetectionSpec: DataLoomConflictDetectionSpec? = null
     private var strategyDiagnosticsSpec: DataLoomStrategyDiagnosticsSpec? = null
+    private var strategyAdmissionPolicySpec: DataLoomStrategyAdmissionPolicySpec? = null
     private var operationalEventOutboxSpec: DataLoomOperationalEventOutboxSpec? = null
     private var retryCircuitAdministrationOperationalEventOutboxSpec:
         DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec? = null
@@ -321,6 +324,35 @@ public class DataLoomBuilder {
         apply {
             strategyDiagnosticsSpec = spec
         }
+
+    /**
+     * Enables real strategy-admission policy evaluation: before
+     * [io.dataloom.runtime.strategy.StrategySynchronizationExecutionCoordinator]
+     * resolves or invokes any provider for a request, it evaluates the
+     * configured [io.dataloom.api.policy.PolicySet] via
+     * [io.dataloom.api.policy.PolicyEvaluator.evaluate] and admits the
+     * request only when the combined
+     * [io.dataloom.api.policy.PolicyDecision] outcome is
+     * [io.dataloom.api.policy.PolicyCheckOutcome.Allow] -- otherwise the
+     * request is rejected with
+     * [io.dataloom.runtime.strategy.StrategyExecutionRejectionReason.POLICY_DENIED].
+     * See [DataLoomStrategyAdmissionPolicySpec] for the full contract,
+     * including optional durable decision recording.
+     *
+     * When this method is not called, behavior is unchanged from before it
+     * existed: no policy is ever evaluated, and `POLICY_DENIED` is never
+     * produced.
+     *
+     * @param spec the policy set, evaluator, budget, configuration snapshot,
+     *   and optional durable decision-log store to use. See
+     *   [DataLoomStrategyAdmissionPolicySpec] for the full contract.
+     * @return this builder for chaining.
+     */
+    public fun strategyAdmissionPolicyConfiguration(
+        spec: DataLoomStrategyAdmissionPolicySpec,
+    ): DataLoomBuilder = apply {
+        strategyAdmissionPolicySpec = spec
+    }
 
     /**
      * Enables the durable operational-event outbox bridge for synchronization
@@ -930,6 +962,23 @@ public class DataLoomBuilder {
                 maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
             )
         }
+        // --- 8d. Build strategy-admission policy evaluation (optional) ---
+        val strategyAdmissionPolicyDecisionLog = strategyAdmissionPolicySpec?.decisionLogStore?.let { store ->
+            DurablePolicyDecisionLog(
+                store = store,
+                schemaVersion = strategyAdmissionPolicySpec!!.decisionLogSchemaVersion,
+                maximumStateUpdateAttempts = strategyAdmissionPolicySpec!!.decisionLogMaximumStateUpdateAttempts,
+            )
+        }
+        val strategyAdmissionPolicy = strategyAdmissionPolicySpec?.let { spec ->
+            StrategyAdmissionPolicyConfiguration(
+                evaluator = spec.evaluator,
+                policySet = spec.policySet,
+                budget = spec.budget,
+                configurationSnapshot = spec.configurationSnapshot,
+                decisionLog = strategyAdmissionPolicyDecisionLog,
+            )
+        }
         val strategyExecutionCoordinator = StrategySynchronizationExecutionCoordinator(
             lifecycleCoordinator = lifecycleCoordinator,
             evaluator = BuiltInSynchronizationStrategyEvaluator(),
@@ -942,6 +991,7 @@ public class DataLoomBuilder {
             strategyDecisionEventLog = strategyDecisionEventLog,
             operationalEventOutbox = strategyDecisionOperationalEventOutbox,
             operationalEventOutboxScope = strategyDecisionOperationalEventOutboxSpec?.scope,
+            admissionPolicy = strategyAdmissionPolicy,
         )
         val acceptedStrategyPlanCoordinator = AcceptedStrategyPlanExecutionCoordinator(
             lifecycleCoordinator = lifecycleCoordinator,

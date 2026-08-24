@@ -396,6 +396,7 @@ final enum class io.dataloom.runtime.strategy/StrategyExecutionRejectionReason :
     enum entry INCOMPATIBLE_INPUT // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.INCOMPATIBLE_INPUT|null[0]
     enum entry INCOMPATIBLE_TRIGGER // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.INCOMPATIBLE_TRIGGER|null[0]
     enum entry LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED|null[0]
+    enum entry POLICY_DENIED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.POLICY_DENIED|null[0]
     enum entry PROVIDERS_NOT_INITIALIZED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.PROVIDERS_NOT_INITIALIZED|null[0]
     enum entry PROVIDER_PROTECTION_NOT_CONFIGURED // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.PROVIDER_PROTECTION_NOT_CONFIGURED|null[0]
     enum entry PROVIDER_PROTECTION_SCOPE_MISMATCH // io.dataloom.runtime.strategy/StrategyExecutionRejectionReason.PROVIDER_PROTECTION_SCOPE_MISMATCH|null[0]
@@ -2911,6 +2912,7 @@ final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.
     final fun retryAdministrationConfiguration(io.dataloom.runtime.facade/DataLoomRetryAdministrationSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.retryAdministrationConfiguration|retryAdministrationConfiguration(io.dataloom.runtime.facade.DataLoomRetryAdministrationSpec){}[0]
     final fun retryCircuitAdministrationOperationalEventOutboxConfiguration(io.dataloom.runtime.facade/DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.retryCircuitAdministrationOperationalEventOutboxConfiguration|retryCircuitAdministrationOperationalEventOutboxConfiguration(io.dataloom.runtime.facade.DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec){}[0]
     final fun runtimeDependencies(io.dataloom.api.runtime/RuntimeDependencies): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.runtimeDependencies|runtimeDependencies(io.dataloom.api.runtime.RuntimeDependencies){}[0]
+    final fun strategyAdmissionPolicyConfiguration(io.dataloom.runtime.facade/DataLoomStrategyAdmissionPolicySpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.strategyAdmissionPolicyConfiguration|strategyAdmissionPolicyConfiguration(io.dataloom.runtime.facade.DataLoomStrategyAdmissionPolicySpec){}[0]
     final fun strategyDecisionOperationalEventOutboxConfiguration(io.dataloom.runtime.facade/DataLoomStrategyDecisionOperationalEventOutboxSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.strategyDecisionOperationalEventOutboxConfiguration|strategyDecisionOperationalEventOutboxConfiguration(io.dataloom.runtime.facade.DataLoomStrategyDecisionOperationalEventOutboxSpec){}[0]
     final fun strategyDiagnosticsConfiguration(io.dataloom.runtime.facade/DataLoomStrategyDiagnosticsSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.strategyDiagnosticsConfiguration|strategyDiagnosticsConfiguration(io.dataloom.runtime.facade.DataLoomStrategyDiagnosticsSpec){}[0]
     final fun strategyProviderProtectionConfiguration(io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.strategyProviderProtectionConfiguration|strategyProviderProtectionConfiguration(io.dataloom.runtime.facade.DataLoomStrategyProviderProtectionSpec){}[0]
@@ -3103,6 +3105,27 @@ final class io.dataloom.runtime.facade/DataLoomStorageProtectionSpec { // io.dat
         final fun <get-scopes>(): io.dataloom.runtime.retry/StorageCircuitScopes // io.dataloom.runtime.facade/DataLoomStorageProtectionSpec.scopes.<get-scopes>|<get-scopes>(){}[0]
 
     final fun toString(): kotlin/String // io.dataloom.runtime.facade/DataLoomStorageProtectionSpec.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.facade/DataLoomStrategyAdmissionPolicySpec { // io.dataloom.runtime.facade/DataLoomStrategyAdmissionPolicySpec|null[0]
+    constructor <init>(io.dataloom.api.policy/PolicySet, io.dataloom.api.policy/PolicyEvaluator, io.dataloom.api.policy/PolicyEvaluationBudget, io.dataloom.api.configuration/ConfigurationSnapshot, io.dataloom.api.state/DurableStateStore<io.dataloom.api.policy/PolicyDecisionScope, io.dataloom.api.policy/PolicyDecisionRecord>? = ..., kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.runtime.facade/DataLoomStrategyAdmissionPolicySpec.<init>|<init>(io.dataloom.api.policy.PolicySet;io.dataloom.api.policy.PolicyEvaluator;io.dataloom.api.policy.PolicyEvaluationBudget;io.dataloom.api.configuration.ConfigurationSnapshot;io.dataloom.api.state.DurableStateStore<io.dataloom.api.policy.PolicyDecisionScope,io.dataloom.api.policy.PolicyDecisionRecord>?;kotlin.Int;kotlin.Int){}[0]
+
+    final val budget // io.dataloom.runtime.facade/DataLoomStrategyAdmissionPolicySpec.budget|{}budget[0]
+        final fun <get-budget>(): io.dataloom.api.policy/PolicyEvaluationBudget // io.dataloom.runtime.facade/DataLoomStrategyAdmissionPolicySpec.budget.<get-budget>|<get-budget>(){}[0]
+    final val configurationSnapshot // io.dataloom.runtime.facade/DataLoomStrategyAdmissionPolicySpec.configurationSnapshot|{}configurationSnapshot[0]
+        final fun <get-configurationSnapshot>(): io.dataloom.api.configuration/ConfigurationSnapshot // io.dataloom.runtime.facade/DataLoomStrategyAdmissionPolicySpec.configurationSnapshot.<get-configurationSnapshot>|<get-configurationSnapshot>(){}[0]
+    final val decisionLogMaximumStateUpdateAttempts // io.dataloom.runtime.facade/DataLoomStrategyAdmissionPolicySpec.decisionLogMaximumStateUpdateAttempts|{}decisionLogMaximumStateUpdateAttempts[0]
+        final fun <get-decisionLogMaximumStateUpdateAttempts>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomStrategyAdmissionPolicySpec.decisionLogMaximumStateUpdateAttempts.<get-decisionLogMaximumStateUpdateAttempts>|<get-decisionLogMaximumStateUpdateAttempts>(){}[0]
+    final val decisionLogSchemaVersion // io.dataloom.runtime.facade/DataLoomStrategyAdmissionPolicySpec.decisionLogSchemaVersion|{}decisionLogSchemaVersion[0]
+        final fun <get-decisionLogSchemaVersion>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomStrategyAdmissionPolicySpec.decisionLogSchemaVersion.<get-decisionLogSchemaVersion>|<get-decisionLogSchemaVersion>(){}[0]
+    final val decisionLogStore // io.dataloom.runtime.facade/DataLoomStrategyAdmissionPolicySpec.decisionLogStore|{}decisionLogStore[0]
+        final fun <get-decisionLogStore>(): io.dataloom.api.state/DurableStateStore<io.dataloom.api.policy/PolicyDecisionScope, io.dataloom.api.policy/PolicyDecisionRecord>? // io.dataloom.runtime.facade/DataLoomStrategyAdmissionPolicySpec.decisionLogStore.<get-decisionLogStore>|<get-decisionLogStore>(){}[0]
+    final val evaluator // io.dataloom.runtime.facade/DataLoomStrategyAdmissionPolicySpec.evaluator|{}evaluator[0]
+        final fun <get-evaluator>(): io.dataloom.api.policy/PolicyEvaluator // io.dataloom.runtime.facade/DataLoomStrategyAdmissionPolicySpec.evaluator.<get-evaluator>|<get-evaluator>(){}[0]
+    final val policySet // io.dataloom.runtime.facade/DataLoomStrategyAdmissionPolicySpec.policySet|{}policySet[0]
+        final fun <get-policySet>(): io.dataloom.api.policy/PolicySet // io.dataloom.runtime.facade/DataLoomStrategyAdmissionPolicySpec.policySet.<get-policySet>|<get-policySet>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.runtime.facade/DataLoomStrategyAdmissionPolicySpec.toString|toString(){}[0]
 }
 
 final class io.dataloom.runtime.facade/DataLoomStrategyDecisionOperationalEventOutboxSpec { // io.dataloom.runtime.facade/DataLoomStrategyDecisionOperationalEventOutboxSpec|null[0]
