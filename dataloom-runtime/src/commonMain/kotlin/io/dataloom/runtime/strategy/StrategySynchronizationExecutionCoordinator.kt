@@ -3,6 +3,10 @@ package io.dataloom.runtime.strategy
 import io.dataloom.api.execution.StrategyProviderSet
 import io.dataloom.api.operational.DurableOperationalEventOutbox
 import io.dataloom.api.operational.OperationalEventOutboxScope
+import io.dataloom.api.policy.PolicyCheckOutcome
+import io.dataloom.api.policy.PolicyDecision
+import io.dataloom.api.policy.PolicyDecisionScope
+import io.dataloom.api.policy.PolicyEvaluationInput
 import io.dataloom.api.provider.ProviderLifecycleCoordinatorState
 import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
@@ -27,7 +31,34 @@ import io.dataloom.runtime.observation.operational.StrategyDecisionOperationalEv
 import io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder
 import kotlin.coroutines.cancellation.CancellationException
 
-/** Admits a strategy request before resolving or invoking any provider. */
+/**
+ * Admits a strategy request before resolving or invoking any provider.
+ *
+ * ## DL-039 strategy-admission policy evaluation (optional)
+ *
+ * When [admissionPolicy] is configured (see
+ * [io.dataloom.runtime.facade.DataLoomStrategyAdmissionPolicySpec] /
+ * `DataLoomBuilder.strategyAdmissionPolicyConfiguration`), every [execute]
+ * call evaluates [admissionPolicy]'s [io.dataloom.api.policy.PolicySet]
+ * against an [io.dataloom.api.policy.PolicyEvaluationInput] built from
+ * [StrategySynchronizationRequest.request]'s
+ * [io.dataloom.api.context.ExecutionContext] via
+ * [io.dataloom.api.policy.PolicyEvaluator.evaluate], before any provider is
+ * resolved -- the same "before resolving or invoking any provider" admission
+ * boundary this class already enforces for every other rejection reason.
+ * Only [io.dataloom.api.policy.PolicyCheckOutcome.Allow] admits the request;
+ * every other outcome kind produces
+ * [StrategySynchronizationExecutionResult.Rejected] with reason
+ * [StrategyExecutionRejectionReason.POLICY_DENIED]. When [admissionPolicy]
+ * also carries a [io.dataloom.api.policy.DurablePolicyDecisionLog], the
+ * combined [io.dataloom.api.policy.PolicyDecision] is durably committed --
+ * after it has already been used to decide admission, never blocking or
+ * altering that decision, and with a recording failure swallowed exactly
+ * like every other optional durable bridge in this class (only
+ * [CancellationException] still propagates). When [admissionPolicy] is
+ * `null`, [execute] performs no policy evaluation at all -- byte-for-byte
+ * the same behavior as before this feature existed.
+ */
 internal class StrategySynchronizationExecutionCoordinator(
     private val lifecycleCoordinator: ProviderLifecycleCoordinator,
     private val evaluator: BuiltInSynchronizationStrategyEvaluator,
@@ -40,6 +71,7 @@ internal class StrategySynchronizationExecutionCoordinator(
     private val strategyDecisionEventLog: DurableStrategyDecisionEventLog? = null,
     private val operationalEventOutbox: DurableOperationalEventOutbox? = null,
     private val operationalEventOutboxScope: OperationalEventOutboxScope? = null,
+    private val admissionPolicy: StrategyAdmissionPolicyConfiguration? = null,
 ) {
     private val durableQueueAdmitter = StrategyDurableQueueAdmitter(
         clock = clock,
@@ -184,6 +216,13 @@ internal class StrategySynchronizationExecutionCoordinator(
         providerBoundary: StrategyProviderExecutionBoundary,
     ): StrategySynchronizationExecutionResult {
         val evaluation = evaluator.evaluate(request.evaluationRequest())
+
+        if (!evaluateAdmissionPolicy(request)) {
+            return rejected(
+                evaluation = evaluation,
+                reason = StrategyExecutionRejectionReason.POLICY_DENIED,
+            )
+        }
 
         if (lifecycleCoordinator.state != ProviderLifecycleCoordinatorState.INITIALIZED) {
             return rejected(
@@ -479,6 +518,56 @@ internal class StrategySynchronizationExecutionCoordinator(
     private sealed interface ResolvedProviders {
         data class Prepared(val providers: StrategyProviderSet) : ResolvedProviders
         data class Rejected(val result: StrategySynchronizationExecutionResult) : ResolvedProviders
+    }
+
+    /**
+     * Returns `true` when [request] may proceed: either no [admissionPolicy]
+     * is configured, or the combined [PolicyDecision] it produces has an
+     * [PolicyCheckOutcome.Allow] outcome. See this class's own KDoc for the
+     * full contract, including the durable-recording bridge.
+     */
+    private suspend fun evaluateAdmissionPolicy(request: StrategySynchronizationRequest): Boolean {
+        val policy = admissionPolicy ?: return true
+        val input = PolicyEvaluationInput(
+            executionContext = request.request.context,
+            configurationSnapshot = policy.configurationSnapshot,
+        )
+        val decision = policy.evaluator.evaluate(policy.policySet, input, policy.budget)
+        recordAdmissionPolicyDecision(policy, request, decision)
+        return decision.outcome is PolicyCheckOutcome.Allow
+    }
+
+    /**
+     * When [policy] carries a [io.dataloom.api.policy.DurablePolicyDecisionLog],
+     * durably commits [decision] under a [PolicyDecisionScope] keyed by
+     * [decision]'s own [PolicyDecision.policySetId] and [request]'s
+     * [io.dataloom.api.context.ExecutionContext.executionId] -- after
+     * [decision] has already determined admission (see
+     * [evaluateAdmissionPolicy]), never blocking or altering it. A recording
+     * failure is swallowed and never surfaces as a thrown exception; only
+     * [CancellationException] still propagates. Matches this class's existing
+     * `recordOperationalEvent` posture exactly.
+     */
+    private suspend fun recordAdmissionPolicyDecision(
+        policy: StrategyAdmissionPolicyConfiguration,
+        request: StrategySynchronizationRequest,
+        decision: PolicyDecision,
+    ) {
+        val log = policy.decisionLog ?: return
+        try {
+            log.commit(
+                scope = PolicyDecisionScope(
+                    policySetId = decision.policySetId,
+                    executionId = request.request.context.executionId,
+                ),
+                decision = decision,
+                committedAt = clock.now(),
+            )
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (ordinary: Exception) {
+            // Intentionally swallowed -- see method doc above.
+        }
     }
 
     private fun rejected(
