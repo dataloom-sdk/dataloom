@@ -2,19 +2,22 @@
 
 [API reference index](./README.md)
 
-> **Status:** The contract exists, is proven implementable, and has four real
+> **Status:** The contract exists, is proven implementable, and has five real
 > domain adoptions end to end — configuration snapshot history, policy
-> decisions, unresolved conflicts, and strategy decision diagnostics — all
-> backed by the same production Room persistence implementation. Two of the
-> four are wired into a real caller:
+> decisions, unresolved conflicts, strategy decision diagnostics, and asset
+> manifest history — all backed by the same production Room persistence
+> implementation. Two of the five are wired into a real caller:
 > [unresolved conflicts](#adoption-unresolved-conflicts) into
 > `DurableConflictDetectionCoordinator` → `InboundPullSynchronizationPipeline`,
 > and [strategy decision diagnostics](#adoption-strategy-decision-diagnostics)
 > into `StrategySynchronizationExecutionCoordinator`, opt-in via
-> `DataLoomBuilder.strategyDiagnosticsConfiguration`. The other two remain
-> unwired because nothing yet calls the underlying evaluator/resolver they
-> would attach to. Other domains (events, assets, audit) have not adopted the
-> contract itself yet. A second platform implementation,
+> `DataLoomBuilder.strategyDiagnosticsConfiguration`. The other three remain
+> unwired: configuration/policy because nothing yet calls the underlying
+> evaluator/resolver they would attach to, and
+> [asset manifest history](#adoption-asset-manifest-history) because no
+> subsystem constructs real `AssetManifest` revisions yet. Other domains
+> (events, audit) have not adopted the contract itself yet. A second platform
+> implementation,
 > [`AppleFileDurableStateStore`](#applefiledurablestatestore-dataloom-runtime),
 > now also exists (`dataloom-runtime`, `iosMain`) — the contract is no longer
 > Room-only.
@@ -421,14 +424,64 @@ in-memory, or its own); `DataLoomBuilder` does not select one. When this
 method is not called, behavior is byte-for-byte unchanged from before this
 feature existed: no strategy decision event is ever recorded.
 
+## Adoption: asset manifest history
+
+[`DurableAssetManifestHistory`](./durable-asset-manifest-history.md)
+(`io.dataloom.api.asset`) is the fifth real domain adoption, and — like the
+other three non-`ConfigurationHistoryScope`/`PolicyDecisionScope` domains —
+reuses `RoomDurableStateStore` directly with zero new Room code.
+
+- **`TScope`** is `AssetId` — reused directly rather than composed into a new
+  wrapper type, matching `DurableUnresolvedConflictLog`'s reuse of
+  `ConflictId` and `DurableStrategyDecisionEventLog`'s reuse of
+  `StrategyDecisionId`. `AssetManifest.assetId` already identifies one
+  logical asset across its whole version history by design, so no new scope
+  type was needed.
+- **`TState`** is `AssetManifestHistoryState` — every currently retained
+  `AssetManifest` revision for an `AssetId`, oldest first, the same
+  list-valued shape `ConfigurationHistoryState` uses rather than one scope
+  key per revision (see [durable asset manifest history](./durable-asset-manifest-history.md#list-valued-state-per-assetid-not-one-scope-key-per-revision)
+  for why that shape was chosen over the alternative).
+- **Versioned, not commit-once**, like configuration snapshot history rather
+  than the three commit-once domains: `apply` accepts a candidate manifest
+  only when its `version` strictly exceeds the scope's current one —
+  `AssetManifest` itself never enforces this, so the durable log is what
+  adds the ordering discipline.
+- **One domain-specific check the other four adoptions have no equivalent
+  of**: `apply` also rejects a manifest whose own `assetId` does not match
+  the scope it was applied under (`DurableAssetManifestApplyOutcome.AssetIdMismatch`),
+  since `AssetManifest` — unlike `ConfigurationSnapshot`, `PolicyDecision`,
+  `UnresolvedConflictRecord`, or `StrategyDecisionEvent` — carries its own
+  identity field that must agree with the scope key.
+- **`AssetManifestHistoryStateCodec`** (`DurableStateCodec<AssetManifestHistoryState>`)
+  is the reference text codec. Unlike every other domain's codec in this
+  document, it cannot recompute a checksum from decoded fields to prove
+  integrity — `AssetManifest.checksum` is defined over the asset's actual
+  bytes, which this codec never sees. It instead relies on `AssetManifest`'s
+  and `AssetChunkLayout`'s own constructor validation to fail closed on
+  structurally corrupt decoded data. See
+  [durable asset manifest history](./durable-asset-manifest-history.md#integrity--a-different-shape-from-configurationhistorystatecodec)
+  for the full reasoning.
+- **`DurableAssetManifestHistory.KeyEncoder`** — since `AssetId` is a
+  pre-existing shared identifier this type did not introduce, its reference
+  key encoder is attached to the history class itself, matching
+  `DurableUnresolvedConflictLog.KeyEncoder`'s own reasoning.
+
+See [durable asset manifest history](./durable-asset-manifest-history.md) for
+`DurableAssetManifestHistory`'s own `apply`/`current`/`retainedVersions`/
+`history` semantics, including why `rollbackToLastKnownGood` was deliberately
+not carried over from `DurableConfigurationHistory`.
+
 ## What this does not do yet
 
-- **Wiring `DurableConfigurationHistory.apply` or `DurablePolicyDecisionLog.commit`
-  into a real call site.** Both remain available primitives with no real
-  caller — genuinely blocked, not just undone, since neither
-  `DataLoomConfigurationResolver.resolve` nor `PolicyEvaluator.evaluate` has
-  a real caller anywhere in `dataloom-runtime` to compose with yet. Wiring
-  either durable adapter in would currently mean inventing that caller too.
+- **Wiring `DurableConfigurationHistory.apply`, `DurablePolicyDecisionLog.commit`,
+  or `DurableAssetManifestHistory.apply` into a real call site.** All three
+  remain available primitives with no real caller — genuinely blocked, not
+  just undone, since neither `DataLoomConfigurationResolver.resolve` nor
+  `PolicyEvaluator.evaluate` has a real caller anywhere in `dataloom-runtime`
+  to compose with yet, and no subsystem constructs real `AssetManifest`
+  revisions at all yet. Wiring any of the three durable adapters in would
+  currently mean inventing that caller too.
 - **Wiring `DurableConflictDetectionCoordinator` into `BidirectionalSynchronizationPipeline`
   or `OutboundPushSynchronizationPipeline` directly.** Bidirectional inherits
   real counts through its inbound child once that child has conflict
@@ -437,14 +490,16 @@ feature existed: no strategy decision event is ever recorded.
 - **Durably persisting resolved `ConflictResolutionDecision`s**, including
   `Merge`'s payload — deliberately out of scope for
   `DurableUnresolvedConflictLog`; a separate, larger design question.
-- **Events, assets, and audit** durable state — real, separately-scoped
-  follow-up work; not started.
+- **Events and audit** durable state — real, separately-scoped follow-up
+  work; not started. (Assets now have a real adoption — asset manifest
+  *history* — but it is still an unwired primitive; see above.)
 - **Any real domain adopting `AppleFileDurableStateStore`.** The
   implementation exists and is verified (cross-compiled, unit-tested — see
   [above](#applefiledurablestatestore-dataloom-runtime)), but no domain has
-  wired it up as its Apple-platform `DurableStateStore` yet; all four real
+  wired it up as its Apple-platform `DurableStateStore` yet; all five real
   adoptions above (configuration history, policy decisions, unresolved
-  conflicts, strategy decision diagnostics) are still Room-only.
+  conflicts, strategy decision diagnostics, asset manifest history) are
+  still Room-only.
 - **SDK-wide adoption.** `DataLoomConfigurationHistory` (in-memory) is not
   superseded or removed by `DurableConfigurationHistory`, plain
   `PolicyDecision` values are not superseded by `PolicyDecisionRecord`,

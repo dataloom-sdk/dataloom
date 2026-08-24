@@ -68,10 +68,10 @@ public data class AssetManifest(
   and unencrypted respectively.
 - Never changes after construction. A new revision of the same logical
   asset is a new `AssetManifest` sharing `assetId` with a higher `version`;
-  nothing here enforces monotonicity across revisions — that is a future
-  durable-history concern (see
-  [durable state contracts](./durable-state-contracts.md)), not this
-  type's.
+  nothing here enforces monotonicity across revisions — that discipline now
+  lives one layer up, in
+  [`DurableAssetManifestHistory`](./durable-asset-manifest-history.md), not
+  this type.
 
 ---
 
@@ -243,11 +243,13 @@ the raw bytes for callers that need them).
 - **A fixed chunking algorithm.** `AssetChunkLayout` describes a result,
   not a chunking strategy; fixed-size, content-defined, or any other
   chunking approach can all produce a valid layout.
-- **Durable history, monotonic-version enforcement, or a real caller.**
-  No subsystem constructs an `AssetManifest` from real data yet, and no
-  durable store persists one — matching the same "primitive, not
-  pipeline" posture `ConfigurationSnapshot` and the integrity/key-reference
-  primitives shipped with before any consumer adopted them.
+- **A real caller.** No subsystem constructs an `AssetManifest` from real
+  data yet — matching the same "primitive, not pipeline" posture
+  `ConfigurationSnapshot` and the integrity/key-reference primitives shipped
+  with before any consumer adopted them. Durable, monotonic-version-enforced
+  history of applied revisions now exists — see
+  [durable asset manifest history](./durable-asset-manifest-history.md) —
+  but nothing yet calls it with real manifests.
 
 ---
 
