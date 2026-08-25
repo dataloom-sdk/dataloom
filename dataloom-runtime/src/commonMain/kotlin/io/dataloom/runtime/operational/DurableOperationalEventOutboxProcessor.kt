@@ -3,8 +3,11 @@ package io.dataloom.runtime.operational
 import io.dataloom.api.error.DataLoomError
 import io.dataloom.api.operational.DurableOperationalEventOutbox
 import io.dataloom.api.operational.DurableOperationalEventOutboxAcknowledgeOutcome
+import io.dataloom.api.operational.OperationalEventCategory
 import io.dataloom.api.operational.OperationalEventEnvelope
 import io.dataloom.api.operational.OperationalEventOutboxScope
+import io.dataloom.api.operational.OperationalEventSource
+import io.dataloom.api.operational.OperationalEventType
 import io.dataloom.api.provider.ProviderOperationResult
 
 /**
@@ -79,10 +82,59 @@ public fun interface OperationalEventOutboxEntryHandler {
 }
 
 /**
+ * Decides whether one [OperationalEventEnvelope] currently retained for a
+ * scope is handed to [OperationalEventOutboxEntryHandler] during a
+ * [DurableOperationalEventOutboxProcessor.process] cycle.
+ *
+ * A general predicate over the whole envelope, deliberately not a narrower,
+ * structured filter keyed on [OperationalEventType]/[OperationalEventCategory]/
+ * [OperationalEventSource] specifically: this codebase has no existing
+ * precedent for a closed, structured filter-criteria type over
+ * [OperationalEventEnvelope] or any sibling domain type, and inventing one
+ * here would mean guessing, ahead of any real caller, which of that
+ * envelope's several independent fields (`type`, `category`, `source`,
+ * `tenantId`, `workflowId`, ...) matter enough to deserve dedicated criteria
+ * fields and which do not. A general predicate needs no such guess and is
+ * strictly more expressive -- a caller wanting to filter on
+ * [OperationalEventType] or [OperationalEventCategory] alone writes
+ * `OperationalEventOutboxEntryFilter { it.type == someType }`, no more
+ * verbose than a structured equivalent would have been. This mirrors
+ * [OperationalEventOutboxEntryHandler]'s own fully-general single-method
+ * `fun interface` shape, and the same non-suspend, pure-decision shape
+ * [io.dataloom.runtime.retry.CircuitBreakerFailureClassifier] already
+ * establishes for "classify this already-in-hand domain value" -- unlike
+ * [OperationalEventOutboxEntryHandler.handle], [matches] inspects only an
+ * envelope's own already-decoded fields and performs no I/O, so it does not
+ * need to be `suspend`.
+ *
+ * See [DurableOperationalEventOutboxProcessor.process]'s "Filtering"
+ * documentation for exactly when and how this is evaluated relative to the
+ * `maxEntries` bound.
+ */
+public fun interface OperationalEventOutboxEntryFilter {
+
+    /**
+     * Returns `true` if [envelope] should be handed to the handler this
+     * cycle, `false` if it should be left retained, untouched, for a later
+     * pass.
+     */
+    public fun matches(envelope: OperationalEventEnvelope): Boolean
+}
+
+/**
  * Immutable counters describing one [DurableOperationalEventOutboxProcessor.process] cycle.
  *
  * @param read the number of entries handed to the handler this cycle -- at
  *   most the `maxEntries` bound passed to [DurableOperationalEventOutboxProcessor.process].
+ *   When a [OperationalEventOutboxEntryFilter] is configured, this counts only
+ *   entries the filter accepted; entries it rejected are never handed to the
+ *   handler and are counted in [filteredOut] instead.
+ * @param filteredOut entries currently retained for the requested scope that
+ *   [OperationalEventOutboxEntryFilter] excluded this cycle -- never handed to
+ *   the handler, left retained untouched, and not counted toward the
+ *   `maxEntries` bound (see [DurableOperationalEventOutboxProcessor.process]'s
+ *   "Filtering" documentation). Always `0` when no filter is configured, or
+ *   when the configured filter accepts every currently-retained entry.
  * @param processed entries whose handler outcome was [OperationalEventOutboxEntryOutcome.Processed].
  * @param skipped entries whose handler outcome was [OperationalEventOutboxEntryOutcome.Skipped].
  * @param failed entries whose handler outcome was [OperationalEventOutboxEntryOutcome.Failed].
@@ -103,6 +155,7 @@ public fun interface OperationalEventOutboxEntryHandler {
  */
 public data class OperationalEventOutboxProcessingSummary(
     public val read: Int,
+    public val filteredOut: Int,
     public val processed: Int,
     public val skipped: Int,
     public val failed: Int,
@@ -218,6 +271,42 @@ public sealed interface OperationalEventOutboxProcessingResult {
  * sequentially, one at a time. At most `maxEntries` of the retained list are
  * read; any beyond that bound are left for a later [process] call.
  *
+ * ## Filtering
+ *
+ * [process] accepts an optional [OperationalEventOutboxEntryFilter], evaluated
+ * against every entry [outbox] currently retains for [OperationalEventOutboxScope],
+ * *before* the `maxEntries` bound is applied -- not merely before [handler]
+ * sees an entry. A rejected entry is never handed to [handler], is left
+ * retained untouched for a later pass exactly as an entry beyond `maxEntries`
+ * already is, and does **not** count toward `maxEntries`: a caller filtering
+ * for a rare [OperationalEventType] is never starved by a batch full of
+ * common non-matching entries counting against its bound. Filtering happens
+ * entirely in memory over the list [DurableOperationalEventOutbox.entries]
+ * already returns -- [DurableOperationalEventOutbox] itself is unmodified
+ * and stores an entire scope's retained entries as one persisted document, so
+ * no read work is actually saved by filtering earlier; what filtering saves
+ * is [handler] invocations and acknowledgements for entries a caller never
+ * wanted to see.
+ *
+ * The default filter accepts every entry, making this parameter purely
+ * additive: an unconfigured [process] call reads and hands entries to
+ * [handler] exactly as it did before this parameter existed, and
+ * [OperationalEventOutboxProcessingSummary.filteredOut] is always `0`.
+ *
+ * When every currently-retained entry for the scope is rejected by
+ * [OperationalEventOutboxEntryFilter], [process] still returns
+ * [OperationalEventOutboxProcessingResult.Processed] with an all-zero
+ * [OperationalEventOutboxProcessingSummary] (`read` `0`, `filteredOut` equal
+ * to the retained count) -- not [OperationalEventOutboxProcessingResult.NoWork].
+ * [OperationalEventOutboxProcessingResult.NoWork]'s own documentation is
+ * specifically about [DurableOperationalEventOutbox.entries] itself returning
+ * nothing retained; conflating that with "nothing matched this cycle's
+ * filter" would erase a real, diagnostically useful distinction -- a caller
+ * whose filter is simply too narrow for what is actually being appended looks
+ * completely different from a caller whose scope is genuinely empty, and
+ * [filteredOut] on an otherwise-zero [OperationalEventOutboxProcessingSummary]
+ * is exactly how that first case stays visible.
+ *
  * ## Acknowledgement
  *
  * Only entries whose handler outcome is [OperationalEventOutboxEntryOutcome.Processed]
@@ -298,18 +387,26 @@ public class DurableOperationalEventOutboxProcessor(
      *
      * @param scope the [OperationalEventOutboxScope] to read and acknowledge
      *   into.
-     * @param maxEntries the maximum number of currently-retained entries to
-     *   read and hand to [handler] this cycle. Must be at least `1`. Defaults
-     *   to [DEFAULT_MAX_ENTRIES]. Entries beyond this bound, if any, are left
-     *   for a later [process] call.
-     * @param handler invoked once per read entry, sequentially, in the same
-     *   oldest-first order [DurableOperationalEventOutbox.entries] returns.
+     * @param maxEntries the maximum number of filter-accepted entries to read
+     *   and hand to [handler] this cycle. Must be at least `1`. Defaults to
+     *   [DEFAULT_MAX_ENTRIES]. Filter-accepted entries beyond this bound, if
+     *   any, are left for a later [process] call, exactly as entries [filter]
+     *   rejects already are -- see this class's "Filtering" documentation.
+     * @param filter decides which currently-retained entries this cycle
+     *   considers at all, evaluated before [maxEntries] is applied. Defaults
+     *   to a filter that accepts every entry, making this parameter purely
+     *   additive over unconfigured callers -- see this class's "Filtering"
+     *   documentation.
+     * @param handler invoked once per filter-accepted, read entry,
+     *   sequentially, in the same oldest-first order
+     *   [DurableOperationalEventOutbox.entries] returns.
      * @return an [OperationalEventOutboxProcessingResult] describing the
      *   terminal outcome of this cycle.
      */
     public suspend fun process(
         scope: OperationalEventOutboxScope,
         maxEntries: Int = DEFAULT_MAX_ENTRIES,
+        filter: OperationalEventOutboxEntryFilter = OperationalEventOutboxEntryFilter { true },
         handler: OperationalEventOutboxEntryHandler,
     ): OperationalEventOutboxProcessingResult {
         require(maxEntries >= 1) { "maxEntries must be at least 1, but was $maxEntries." }
@@ -322,7 +419,9 @@ public class DurableOperationalEventOutboxProcessor(
             return OperationalEventOutboxProcessingResult.NoWork
         }
 
-        val batch = allRetained.take(maxEntries)
+        val matching = allRetained.filter { filter.matches(it) }
+        val filteredOut = allRetained.size - matching.size
+        val batch = matching.take(maxEntries)
         var processed = 0
         var skipped = 0
         var failed = 0
@@ -350,6 +449,7 @@ public class DurableOperationalEventOutboxProcessor(
         return OperationalEventOutboxProcessingResult.Processed(
             OperationalEventOutboxProcessingSummary(
                 read = batch.size,
+                filteredOut = filteredOut,
                 processed = processed,
                 skipped = skipped,
                 failed = failed,
