@@ -3283,6 +3283,44 @@ final class io.dataloom.runtime.facade/DataLoomTransportProtectionSpec { // io.d
     final fun toString(): kotlin/String // io.dataloom.runtime.facade/DataLoomTransportProtectionSpec.toString|toString(){}[0]
 }
 
+final class io.dataloom.runtime.observation.health/DataLoomHealthSnapshot { // io.dataloom.runtime.observation.health/DataLoomHealthSnapshot|null[0]
+    constructor <init>(io.dataloom.api.provider/ProviderLifecycleCoordinatorState?, io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySnapshot?, kotlin.collections/Map<io.dataloom.api.provider/ProviderId, io.dataloom.runtime.observation.health/RedactedProviderHealth>) // io.dataloom.runtime.observation.health/DataLoomHealthSnapshot.<init>|<init>(io.dataloom.api.provider.ProviderLifecycleCoordinatorState?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetrySnapshot?;kotlin.collections.Map<io.dataloom.api.provider.ProviderId,io.dataloom.runtime.observation.health.RedactedProviderHealth>){}[0]
+
+    final val providerHealth // io.dataloom.runtime.observation.health/DataLoomHealthSnapshot.providerHealth|{}providerHealth[0]
+        final fun <get-providerHealth>(): kotlin.collections/Map<io.dataloom.api.provider/ProviderId, io.dataloom.runtime.observation.health/RedactedProviderHealth> // io.dataloom.runtime.observation.health/DataLoomHealthSnapshot.providerHealth.<get-providerHealth>|<get-providerHealth>(){}[0]
+    final val providerLifecycleState // io.dataloom.runtime.observation.health/DataLoomHealthSnapshot.providerLifecycleState|{}providerLifecycleState[0]
+        final fun <get-providerLifecycleState>(): io.dataloom.api.provider/ProviderLifecycleCoordinatorState? // io.dataloom.runtime.observation.health/DataLoomHealthSnapshot.providerLifecycleState.<get-providerLifecycleState>|<get-providerLifecycleState>(){}[0]
+    final val retryCircuitTelemetry // io.dataloom.runtime.observation.health/DataLoomHealthSnapshot.retryCircuitTelemetry|{}retryCircuitTelemetry[0]
+        final fun <get-retryCircuitTelemetry>(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySnapshot? // io.dataloom.runtime.observation.health/DataLoomHealthSnapshot.retryCircuitTelemetry.<get-retryCircuitTelemetry>|<get-retryCircuitTelemetry>(){}[0]
+
+    final fun component1(): io.dataloom.api.provider/ProviderLifecycleCoordinatorState? // io.dataloom.runtime.observation.health/DataLoomHealthSnapshot.component1|component1(){}[0]
+    final fun component2(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySnapshot? // io.dataloom.runtime.observation.health/DataLoomHealthSnapshot.component2|component2(){}[0]
+    final fun component3(): kotlin.collections/Map<io.dataloom.api.provider/ProviderId, io.dataloom.runtime.observation.health/RedactedProviderHealth> // io.dataloom.runtime.observation.health/DataLoomHealthSnapshot.component3|component3(){}[0]
+    final fun copy(io.dataloom.api.provider/ProviderLifecycleCoordinatorState? = ..., io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySnapshot? = ..., kotlin.collections/Map<io.dataloom.api.provider/ProviderId, io.dataloom.runtime.observation.health/RedactedProviderHealth> = ...): io.dataloom.runtime.observation.health/DataLoomHealthSnapshot // io.dataloom.runtime.observation.health/DataLoomHealthSnapshot.copy|copy(io.dataloom.api.provider.ProviderLifecycleCoordinatorState?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetrySnapshot?;kotlin.collections.Map<io.dataloom.api.provider.ProviderId,io.dataloom.runtime.observation.health.RedactedProviderHealth>){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.observation.health/DataLoomHealthSnapshot.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.observation.health/DataLoomHealthSnapshot.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.observation.health/DataLoomHealthSnapshot.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.observation.health/RedactedProviderHealth { // io.dataloom.runtime.observation.health/RedactedProviderHealth|null[0]
+    constructor <init>(io.dataloom.api.provider/ProviderHealthStatus, io.dataloom.api.security/RedactedAttributes, kotlin/Int) // io.dataloom.runtime.observation.health/RedactedProviderHealth.<init>|<init>(io.dataloom.api.provider.ProviderHealthStatus;io.dataloom.api.security.RedactedAttributes;kotlin.Int){}[0]
+
+    final val detailFieldCount // io.dataloom.runtime.observation.health/RedactedProviderHealth.detailFieldCount|{}detailFieldCount[0]
+        final fun <get-detailFieldCount>(): kotlin/Int // io.dataloom.runtime.observation.health/RedactedProviderHealth.detailFieldCount.<get-detailFieldCount>|<get-detailFieldCount>(){}[0]
+    final val errorAttributes // io.dataloom.runtime.observation.health/RedactedProviderHealth.errorAttributes|{}errorAttributes[0]
+        final fun <get-errorAttributes>(): io.dataloom.api.security/RedactedAttributes // io.dataloom.runtime.observation.health/RedactedProviderHealth.errorAttributes.<get-errorAttributes>|<get-errorAttributes>(){}[0]
+    final val status // io.dataloom.runtime.observation.health/RedactedProviderHealth.status|{}status[0]
+        final fun <get-status>(): io.dataloom.api.provider/ProviderHealthStatus // io.dataloom.runtime.observation.health/RedactedProviderHealth.status.<get-status>|<get-status>(){}[0]
+
+    final fun component1(): io.dataloom.api.provider/ProviderHealthStatus // io.dataloom.runtime.observation.health/RedactedProviderHealth.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.security/RedactedAttributes // io.dataloom.runtime.observation.health/RedactedProviderHealth.component2|component2(){}[0]
+    final fun component3(): kotlin/Int // io.dataloom.runtime.observation.health/RedactedProviderHealth.component3|component3(){}[0]
+    final fun copy(io.dataloom.api.provider/ProviderHealthStatus = ..., io.dataloom.api.security/RedactedAttributes = ..., kotlin/Int = ...): io.dataloom.runtime.observation.health/RedactedProviderHealth // io.dataloom.runtime.observation.health/RedactedProviderHealth.copy|copy(io.dataloom.api.provider.ProviderHealthStatus;io.dataloom.api.security.RedactedAttributes;kotlin.Int){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.observation.health/RedactedProviderHealth.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.observation.health/RedactedProviderHealth.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.observation.health/RedactedProviderHealth.toString|toString(){}[0]
+}
+
 final class io.dataloom.runtime.observation.operational/QueueLifecycleOperationalEventRecorder : io.dataloom.runtime.queue/QueueEntryTransitionObserver { // io.dataloom.runtime.observation.operational/QueueLifecycleOperationalEventRecorder|null[0]
     constructor <init>(io.dataloom.api.operational/DurableOperationalEventOutbox, io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.time/DataLoomClock) // io.dataloom.runtime.observation.operational/QueueLifecycleOperationalEventRecorder.<init>|<init>(io.dataloom.api.operational.DurableOperationalEventOutbox;io.dataloom.api.operational.OperationalEventOutboxScope;io.dataloom.api.time.DataLoomClock){}[0]
 
@@ -4594,3 +4632,5 @@ final object io.dataloom.runtime.worker/CircuitBreakerQueueWorkerRuntime { // io
 final object io.dataloom.runtime.worker/QueueWorkerProviderTimeoutRuntime { // io.dataloom.runtime.worker/QueueWorkerProviderTimeoutRuntime|null[0]
     final fun create(io.dataloom.api.queue/QueueProvider, io.dataloom.runtime.queue/QueueEntryExecutionHandler, io.dataloom.api.scheduling/SchedulerProvider?, io.dataloom.api.time/DataLoomClock, io.dataloom.runtime.worker/QueueWorkerConfiguration, io.dataloom.api.scheduling/SchedulingDelay, io.dataloom.runtime.queue/QueueEntryTransitionObserver? = ...): io.dataloom.runtime.worker/QueueWorkerCoordinator // io.dataloom.runtime.worker/QueueWorkerProviderTimeoutRuntime.create|create(io.dataloom.api.queue.QueueProvider;io.dataloom.runtime.queue.QueueEntryExecutionHandler;io.dataloom.api.scheduling.SchedulerProvider?;io.dataloom.api.time.DataLoomClock;io.dataloom.runtime.worker.QueueWorkerConfiguration;io.dataloom.api.scheduling.SchedulingDelay;io.dataloom.runtime.queue.QueueEntryTransitionObserver?){}[0]
 }
+
+final fun io.dataloom.runtime.observation.health/dataLoomHealthSnapshot(io.dataloom.api.provider/ProviderLifecycleCoordinatorState? = ..., io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySnapshot? = ..., kotlin.collections/Map<io.dataloom.api.provider/ProviderId, io.dataloom.api.provider/ProviderHealth> = ..., io.dataloom.api.security/DataLoomRedactor = ...): io.dataloom.runtime.observation.health/DataLoomHealthSnapshot // io.dataloom.runtime.observation.health/dataLoomHealthSnapshot|dataLoomHealthSnapshot(io.dataloom.api.provider.ProviderLifecycleCoordinatorState?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetrySnapshot?;kotlin.collections.Map<io.dataloom.api.provider.ProviderId,io.dataloom.api.provider.ProviderHealth>;io.dataloom.api.security.DataLoomRedactor){}[0]
