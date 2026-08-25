@@ -395,9 +395,49 @@ finds the entry already gone. A caller whose handler has side effects that
 are not themselves idempotent must serialize `process` calls per scope
 itself; `process` calls against different scopes never interact.
 
+**Filtering (opt-in).** `process` accepts an optional `filter:
+OperationalEventOutboxEntryFilter` -- a single-method `fun interface`
+(`matches(envelope): Boolean`), the same general-predicate shape `handler`
+itself already has, evaluated against every currently-retained entry for the
+scope *before* `maxEntries` is applied:
+
+```kotlin
+val result = processor.process(
+    scope = scope,
+    maxEntries = 100,
+    filter = OperationalEventOutboxEntryFilter { it.category == OperationalEventCategory.AUDIT },
+) { envelope -> /* only AUDIT entries reach here */ }
+```
+
+A rejected entry is never handed to `handler`, is left retained untouched for
+a later pass, and -- deliberately -- does not count toward `maxEntries`, so a
+filter for a rare `OperationalEventType`/`OperationalEventCategory` is never
+starved by a batch full of common non-matching entries counting against the
+bound. `DurableOperationalEventOutbox` itself is unmodified: it already loads
+a scope's entire retained list as one persisted document per `entries` call,
+so filtering earlier (inside that class) would save no read work, only move
+the same in-memory `List.filter` into a class whose own documentation already
+scopes filtering out as separate follow-up work. The default filter accepts
+every entry, so an unconfigured `process` call reads and hands entries to
+`handler` exactly as it did before this parameter existed;
+`OperationalEventOutboxProcessingSummary.filteredOut` is a new counter,
+always `0` in that unconfigured case. When every retained entry is rejected,
+`process` still returns `Processed` with an all-zero summary
+(`read` `0`, `filteredOut` equal to the retained count) rather than `NoWork`
+-- `NoWork` stays reserved for "nothing retained at all," so a caller whose
+filter is simply too narrow stays distinguishable from a caller whose scope
+is genuinely empty. A general predicate was chosen over a narrower, structured
+filter keyed on specific envelope fields (type/category/source) because no
+such structured filter-criteria type exists anywhere else in this codebase,
+and a predicate is strictly more expressive without requiring a guess, ahead
+of any real caller, about which fields deserve dedicated criteria.
+
 ### What this does not do yet
 
-- **No filtering or subscription delivery.**
+- **No subscription/push delivery.** `process` is still a caller-invoked pull
+  loop -- filtering (above) narrows what one `process` cycle acts on, it does
+  not add a live subscription that calls a caller back as matching entries
+  are appended.
 - **No enumeration across scopes.** A caller must already know which
   `OperationalEventOutboxScope` to read.
 - **Five real wired callers so far — synchronization events, retry/circuit
