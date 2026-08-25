@@ -1023,6 +1023,41 @@ public final class io/dataloom/runtime/observation/SynchronizationObserverRegist
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/runtime/observation/health/DataLoomHealthSnapshot {
+	public fun <init> (Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySnapshot;Ljava/util/Map;)V
+	public final fun component1 ()Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;
+	public final fun component2 ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySnapshot;
+	public final fun component3 ()Ljava/util/Map;
+	public final fun copy (Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySnapshot;Ljava/util/Map;)Lio/dataloom/runtime/observation/health/DataLoomHealthSnapshot;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/observation/health/DataLoomHealthSnapshot;Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySnapshot;Ljava/util/Map;ILjava/lang/Object;)Lio/dataloom/runtime/observation/health/DataLoomHealthSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getProviderHealth ()Ljava/util/Map;
+	public final fun getProviderLifecycleState ()Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;
+	public final fun getRetryCircuitTelemetry ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySnapshot;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/observation/health/DataLoomHealthSnapshotKt {
+	public static final fun dataLoomHealthSnapshot (Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySnapshot;Ljava/util/Map;Lio/dataloom/api/security/DataLoomRedactor;)Lio/dataloom/runtime/observation/health/DataLoomHealthSnapshot;
+	public static synthetic fun dataLoomHealthSnapshot$default (Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySnapshot;Ljava/util/Map;Lio/dataloom/api/security/DataLoomRedactor;ILjava/lang/Object;)Lio/dataloom/runtime/observation/health/DataLoomHealthSnapshot;
+}
+
+public final class io/dataloom/runtime/observation/health/RedactedProviderHealth {
+	public fun <init> (Lio/dataloom/api/provider/ProviderHealthStatus;Lio/dataloom/api/security/RedactedAttributes;I)V
+	public final fun component1 ()Lio/dataloom/api/provider/ProviderHealthStatus;
+	public final fun component2 ()Lio/dataloom/api/security/RedactedAttributes;
+	public final fun component3 ()I
+	public final fun copy (Lio/dataloom/api/provider/ProviderHealthStatus;Lio/dataloom/api/security/RedactedAttributes;I)Lio/dataloom/runtime/observation/health/RedactedProviderHealth;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/observation/health/RedactedProviderHealth;Lio/dataloom/api/provider/ProviderHealthStatus;Lio/dataloom/api/security/RedactedAttributes;IILjava/lang/Object;)Lio/dataloom/runtime/observation/health/RedactedProviderHealth;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDetailFieldCount ()I
+	public final fun getErrorAttributes ()Lio/dataloom/api/security/RedactedAttributes;
+	public final fun getStatus ()Lio/dataloom/api/provider/ProviderHealthStatus;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/runtime/observation/operational/ConflictResolutionOperationalEventBridge {
 	public static final field INSTANCE Lio/dataloom/runtime/observation/operational/ConflictResolutionOperationalEventBridge;
 	public final fun toEnvelope-aFZlLws (Ljava/lang/String;Lio/dataloom/api/conflict/ResolvedConflictDecisionRecord;)Lio/dataloom/api/operational/OperationalEventEnvelope;
