@@ -846,6 +846,293 @@ public final class io/dataloom/api/configuration/DurableConfigurationRollbackOut
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/api/conflict/AuthorizedConflictAdministrationCommand {
+	public synthetic fun <init> (Lio/dataloom/api/conflict/ConflictAdministrationRequest;Ljava/lang/String;Lio/dataloom/api/conflict/UnresolvedConflictRecord;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/conflict/ConflictAdministrationRequest;
+	public final fun component2-TJfn21M ()Ljava/lang/String;
+	public final fun component3 ()Lio/dataloom/api/conflict/UnresolvedConflictRecord;
+	public final fun copy-SbYS-jM (Lio/dataloom/api/conflict/ConflictAdministrationRequest;Ljava/lang/String;Lio/dataloom/api/conflict/UnresolvedConflictRecord;)Lio/dataloom/api/conflict/AuthorizedConflictAdministrationCommand;
+	public static synthetic fun copy-SbYS-jM$default (Lio/dataloom/api/conflict/AuthorizedConflictAdministrationCommand;Lio/dataloom/api/conflict/ConflictAdministrationRequest;Ljava/lang/String;Lio/dataloom/api/conflict/UnresolvedConflictRecord;ILjava/lang/Object;)Lio/dataloom/api/conflict/AuthorizedConflictAdministrationCommand;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAuthorizationId-TJfn21M ()Ljava/lang/String;
+	public final fun getRequest ()Lio/dataloom/api/conflict/ConflictAdministrationRequest;
+	public final fun getUnresolvedRecord ()Lio/dataloom/api/conflict/UnresolvedConflictRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/conflict/ConflictAdministrationAuthorizationDecision {
+}
+
+public final class io/dataloom/api/conflict/ConflictAdministrationAuthorizationDecision$Authorized : io/dataloom/api/conflict/ConflictAdministrationAuthorizationDecision {
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-TJfn21M ()Ljava/lang/String;
+	public final fun copy-VbnvZdU (Ljava/lang/String;)Lio/dataloom/api/conflict/ConflictAdministrationAuthorizationDecision$Authorized;
+	public static synthetic fun copy-VbnvZdU$default (Lio/dataloom/api/conflict/ConflictAdministrationAuthorizationDecision$Authorized;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictAdministrationAuthorizationDecision$Authorized;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAuthorizationId-TJfn21M ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictAdministrationAuthorizationDecision$Denied : io/dataloom/api/conflict/ConflictAdministrationAuthorizationDecision {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lio/dataloom/api/conflict/ConflictAdministrationAuthorizationDecision$Denied;
+	public static synthetic fun copy$default (Lio/dataloom/api/conflict/ConflictAdministrationAuthorizationDecision$Denied;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictAdministrationAuthorizationDecision$Denied;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReasonCode ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictAdministrationAuthorizationId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/conflict/ConflictAdministrationAuthorizationId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/conflict/ConflictAdministrationAuthorizer {
+	public abstract fun authorize (Lio/dataloom/api/conflict/ConflictAdministrationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/api/conflict/ConflictAdministrationCommandId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/conflict/ConflictAdministrationCommandId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictAdministrationCommandState {
+	public synthetic fun <init> (Lio/dataloom/api/conflict/ConflictAdministrationRequest;Lio/dataloom/api/conflict/ConflictAdministrationCommandStatus;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Lio/dataloom/api/conflict/ConflictAdministrationFailureSnapshot;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/conflict/ConflictAdministrationRequest;Lio/dataloom/api/conflict/ConflictAdministrationCommandStatus;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Lio/dataloom/api/conflict/ConflictAdministrationFailureSnapshot;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/conflict/ConflictAdministrationRequest;
+	public final fun component2 ()Lio/dataloom/api/conflict/ConflictAdministrationCommandStatus;
+	public final fun component3-aSecFvk ()Ljava/lang/String;
+	public final fun component4 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Lio/dataloom/api/conflict/ConflictAdministrationFailureSnapshot;
+	public final fun copy-P3njC2Y (Lio/dataloom/api/conflict/ConflictAdministrationRequest;Lio/dataloom/api/conflict/ConflictAdministrationCommandStatus;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Lio/dataloom/api/conflict/ConflictAdministrationFailureSnapshot;)Lio/dataloom/api/conflict/ConflictAdministrationCommandState;
+	public static synthetic fun copy-P3njC2Y$default (Lio/dataloom/api/conflict/ConflictAdministrationCommandState;Lio/dataloom/api/conflict/ConflictAdministrationRequest;Lio/dataloom/api/conflict/ConflictAdministrationCommandStatus;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Lio/dataloom/api/conflict/ConflictAdministrationFailureSnapshot;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictAdministrationCommandState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAuthorizationId-aSecFvk ()Ljava/lang/String;
+	public final fun getExecutionFailure ()Lio/dataloom/api/conflict/ConflictAdministrationFailureSnapshot;
+	public final fun getRejectionReasonCode ()Ljava/lang/String;
+	public final fun getRequest ()Lio/dataloom/api/conflict/ConflictAdministrationRequest;
+	public final fun getStatus ()Lio/dataloom/api/conflict/ConflictAdministrationCommandStatus;
+	public final fun getUpdatedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictAdministrationCommandStatus : java/lang/Enum {
+	public static final field AUTHORIZATION_DENIED Lio/dataloom/api/conflict/ConflictAdministrationCommandStatus;
+	public static final field AUTHORIZED Lio/dataloom/api/conflict/ConflictAdministrationCommandStatus;
+	public static final field EXECUTION_FAILED Lio/dataloom/api/conflict/ConflictAdministrationCommandStatus;
+	public static final field EXECUTION_REJECTED Lio/dataloom/api/conflict/ConflictAdministrationCommandStatus;
+	public static final field POLICY_REJECTED Lio/dataloom/api/conflict/ConflictAdministrationCommandStatus;
+	public static final field SUCCEEDED Lio/dataloom/api/conflict/ConflictAdministrationCommandStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/conflict/ConflictAdministrationCommandStatus;
+	public static fun values ()[Lio/dataloom/api/conflict/ConflictAdministrationCommandStatus;
+}
+
+public final class io/dataloom/api/conflict/ConflictAdministrationCompareAndSetRequest {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Long;Lio/dataloom/api/conflict/ConflictAdministrationCommandState;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-2_kwmeA ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/Long;
+	public final fun component3 ()Lio/dataloom/api/conflict/ConflictAdministrationCommandState;
+	public final fun copy-dUzxRFA (Ljava/lang/String;Ljava/lang/Long;Lio/dataloom/api/conflict/ConflictAdministrationCommandState;)Lio/dataloom/api/conflict/ConflictAdministrationCompareAndSetRequest;
+	public static synthetic fun copy-dUzxRFA$default (Lio/dataloom/api/conflict/ConflictAdministrationCompareAndSetRequest;Ljava/lang/String;Ljava/lang/Long;Lio/dataloom/api/conflict/ConflictAdministrationCommandState;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictAdministrationCompareAndSetRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCommandId-2_kwmeA ()Ljava/lang/String;
+	public final fun getExpectedVersion ()Ljava/lang/Long;
+	public final fun getNextState ()Lio/dataloom/api/conflict/ConflictAdministrationCommandState;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/conflict/ConflictAdministrationCompareAndSetResult {
+}
+
+public final class io/dataloom/api/conflict/ConflictAdministrationCompareAndSetResult$Conflict : io/dataloom/api/conflict/ConflictAdministrationCompareAndSetResult {
+	public fun <init> (Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;)Lio/dataloom/api/conflict/ConflictAdministrationCompareAndSetResult$Conflict;
+	public static synthetic fun copy$default (Lio/dataloom/api/conflict/ConflictAdministrationCompareAndSetResult$Conflict;Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictAdministrationCompareAndSetResult$Conflict;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCurrent ()Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictAdministrationCompareAndSetResult$Updated : io/dataloom/api/conflict/ConflictAdministrationCompareAndSetResult {
+	public fun <init> (Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;)Lio/dataloom/api/conflict/ConflictAdministrationCompareAndSetResult$Updated;
+	public static synthetic fun copy$default (Lio/dataloom/api/conflict/ConflictAdministrationCompareAndSetResult$Updated;Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictAdministrationCompareAndSetResult$Updated;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/conflict/ConflictAdministrationExecutionResult {
+}
+
+public final class io/dataloom/api/conflict/ConflictAdministrationExecutionResult$Applied : io/dataloom/api/conflict/ConflictAdministrationExecutionResult {
+	public static final field INSTANCE Lio/dataloom/api/conflict/ConflictAdministrationExecutionResult$Applied;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictAdministrationExecutionResult$Failed : io/dataloom/api/conflict/ConflictAdministrationExecutionResult {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/api/conflict/ConflictAdministrationExecutionResult$Failed;
+	public static synthetic fun copy$default (Lio/dataloom/api/conflict/ConflictAdministrationExecutionResult$Failed;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictAdministrationExecutionResult$Failed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictAdministrationExecutionResult$Rejected : io/dataloom/api/conflict/ConflictAdministrationExecutionResult {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lio/dataloom/api/conflict/ConflictAdministrationExecutionResult$Rejected;
+	public static synthetic fun copy$default (Lio/dataloom/api/conflict/ConflictAdministrationExecutionResult$Rejected;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictAdministrationExecutionResult$Rejected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReasonCode ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/conflict/ConflictAdministrationExecutor {
+	public abstract fun execute (Lio/dataloom/api/conflict/AuthorizedConflictAdministrationCommand;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/api/conflict/ConflictAdministrationFailureSnapshot {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/error/ErrorCategory;Lio/dataloom/api/error/ErrorSeverity;Lio/dataloom/api/error/Recoverability;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-7tkViRw ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/error/ErrorCategory;
+	public final fun component3 ()Lio/dataloom/api/error/ErrorSeverity;
+	public final fun component4 ()Lio/dataloom/api/error/Recoverability;
+	public final fun copy-CyM4FxY (Ljava/lang/String;Lio/dataloom/api/error/ErrorCategory;Lio/dataloom/api/error/ErrorSeverity;Lio/dataloom/api/error/Recoverability;)Lio/dataloom/api/conflict/ConflictAdministrationFailureSnapshot;
+	public static synthetic fun copy-CyM4FxY$default (Lio/dataloom/api/conflict/ConflictAdministrationFailureSnapshot;Ljava/lang/String;Lio/dataloom/api/error/ErrorCategory;Lio/dataloom/api/error/ErrorSeverity;Lio/dataloom/api/error/Recoverability;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictAdministrationFailureSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCategory ()Lio/dataloom/api/error/ErrorCategory;
+	public final fun getCode-7tkViRw ()Ljava/lang/String;
+	public final fun getRecoverability ()Lio/dataloom/api/error/Recoverability;
+	public final fun getSeverity ()Lio/dataloom/api/error/ErrorSeverity;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/conflict/ConflictAdministrationLoadResult {
+}
+
+public final class io/dataloom/api/conflict/ConflictAdministrationLoadResult$Found : io/dataloom/api/conflict/ConflictAdministrationLoadResult {
+	public fun <init> (Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;)Lio/dataloom/api/conflict/ConflictAdministrationLoadResult$Found;
+	public static synthetic fun copy$default (Lio/dataloom/api/conflict/ConflictAdministrationLoadResult$Found;Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictAdministrationLoadResult$Found;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictAdministrationLoadResult$Missing : io/dataloom/api/conflict/ConflictAdministrationLoadResult {
+	public static final field INSTANCE Lio/dataloom/api/conflict/ConflictAdministrationLoadResult$Missing;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictAdministrationPrincipalId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/conflict/ConflictAdministrationPrincipalId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictAdministrationReason {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/conflict/ConflictAdministrationReason;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictAdministrationRequest {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/conflict/ConflictResolutionDecision;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-2_kwmeA ()Ljava/lang/String;
+	public final fun component2-AkQi5Yo ()Ljava/lang/String;
+	public final fun component3-aS8_ASQ ()Ljava/lang/String;
+	public final fun component4 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component5 ()Lio/dataloom/api/conflict/ConflictResolutionDecision;
+	public final fun component6-bZQyE88 ()Ljava/lang/String;
+	public final fun copy-IaROSCw (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/conflict/ConflictResolutionDecision;Ljava/lang/String;)Lio/dataloom/api/conflict/ConflictAdministrationRequest;
+	public static synthetic fun copy-IaROSCw$default (Lio/dataloom/api/conflict/ConflictAdministrationRequest;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/conflict/ConflictResolutionDecision;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictAdministrationRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCommandId-2_kwmeA ()Ljava/lang/String;
+	public final fun getConflictId-AkQi5Yo ()Ljava/lang/String;
+	public final fun getDecision ()Lio/dataloom/api/conflict/ConflictResolutionDecision;
+	public final fun getPrincipalId-aS8_ASQ ()Ljava/lang/String;
+	public final fun getReason-bZQyE88 ()Ljava/lang/String;
+	public final fun getRequestedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictAdministrationStateRecord {
+	public fun <init> (Lio/dataloom/api/conflict/ConflictAdministrationCommandState;J)V
+	public final fun component1 ()Lio/dataloom/api/conflict/ConflictAdministrationCommandState;
+	public final fun component2 ()J
+	public final fun copy (Lio/dataloom/api/conflict/ConflictAdministrationCommandState;J)Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;
+	public static synthetic fun copy$default (Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;Lio/dataloom/api/conflict/ConflictAdministrationCommandState;JILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getState ()Lio/dataloom/api/conflict/ConflictAdministrationCommandState;
+	public final fun getVersion ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/conflict/ConflictAdministrationStateStore {
+	public abstract fun compareAndSet (Lio/dataloom/api/conflict/ConflictAdministrationCompareAndSetRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun load-VNWyzY8 (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
 public final class io/dataloom/api/conflict/ConflictDetectionRequest {
 	public fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/context/DataLoomMetadata;)V
 	public synthetic fun <init> (Lio/dataloom/api/model/SynchronizationRequest;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/change/ChangeEvent;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
