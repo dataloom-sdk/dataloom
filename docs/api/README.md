@@ -200,15 +200,20 @@ protection, quarantine, and metrics.
 | [Runtime lifecycle events](./runtime-lifecycle-events.md) | Available foundation | Started, phase, and completed runtime integration. |
 | [Runtime operational events](./runtime-operational-events.md) | Available foundation | Selected progress, scheduler-backed retry, and conflict event integration. |
 | [Retry and circuit telemetry](./retry-circuit-telemetry.md) | Partial V1 subsystem | Bounded exporter isolation, fixed-cardinality metrics, structured-log/trace adapters, redacted health snapshots, and retry/circuit/admin wrappers. |
+| [Health snapshot](./health-snapshot.md) | Bounded first slice | Pure, synchronous, redacted point-in-time aggregation of provider lifecycle state, retry/circuit telemetry, and caller-supplied provider health. |
 
 The compatibility synchronization-event path remains synchronous and
 in-process. Retry/circuit telemetry now has bounded exporter-isolated delivery,
 fixed-cardinality metrics, structured-log/trace adapters, and a redacted local
 health snapshot. A canonical versioned envelope and shared redaction boundary
-now exist. V1 still requires durable delivery/outbox, replay, filtering,
+now exist. `dataLoomHealthSnapshot` now aggregates that retry/circuit read
+model with provider lifecycle state and caller-supplied provider health into
+one redacted, point-in-time value type -- durable-outbox and queue-worker
+state are not included since neither exposes a synchronous read path today.
+V1 still requires durable delivery/outbox, replay, filtering,
 authoritative ordering, wire compatibility/upcasting, event persistence, complete
-subsystem instrumentation, health aggregation, and an operational read
-model/reference dashboard.
+subsystem instrumentation, health aggregation across every subsystem, and an
+operational read model/reference dashboard.
 
 ## Mandatory V1 target and open gaps
 
