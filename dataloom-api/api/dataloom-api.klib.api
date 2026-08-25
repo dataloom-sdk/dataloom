@@ -59,6 +59,21 @@ final enum class io.dataloom.api.circuit/CircuitBreakerScopeKind : kotlin/Enum<i
     final fun values(): kotlin/Array<io.dataloom.api.circuit/CircuitBreakerScopeKind> // io.dataloom.api.circuit/CircuitBreakerScopeKind.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.api.conflict/ConflictAdministrationCommandStatus : kotlin/Enum<io.dataloom.api.conflict/ConflictAdministrationCommandStatus> { // io.dataloom.api.conflict/ConflictAdministrationCommandStatus|null[0]
+    enum entry AUTHORIZATION_DENIED // io.dataloom.api.conflict/ConflictAdministrationCommandStatus.AUTHORIZATION_DENIED|null[0]
+    enum entry AUTHORIZED // io.dataloom.api.conflict/ConflictAdministrationCommandStatus.AUTHORIZED|null[0]
+    enum entry EXECUTION_FAILED // io.dataloom.api.conflict/ConflictAdministrationCommandStatus.EXECUTION_FAILED|null[0]
+    enum entry EXECUTION_REJECTED // io.dataloom.api.conflict/ConflictAdministrationCommandStatus.EXECUTION_REJECTED|null[0]
+    enum entry POLICY_REJECTED // io.dataloom.api.conflict/ConflictAdministrationCommandStatus.POLICY_REJECTED|null[0]
+    enum entry SUCCEEDED // io.dataloom.api.conflict/ConflictAdministrationCommandStatus.SUCCEEDED|null[0]
+
+    final val entries // io.dataloom.api.conflict/ConflictAdministrationCommandStatus.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.conflict/ConflictAdministrationCommandStatus> // io.dataloom.api.conflict/ConflictAdministrationCommandStatus.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.conflict/ConflictAdministrationCommandStatus // io.dataloom.api.conflict/ConflictAdministrationCommandStatus.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.conflict/ConflictAdministrationCommandStatus> // io.dataloom.api.conflict/ConflictAdministrationCommandStatus.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.api.conflict/ConflictType : kotlin/Enum<io.dataloom.api.conflict/ConflictType> { // io.dataloom.api.conflict/ConflictType|null[0]
     enum entry CONCURRENT_CHANGE // io.dataloom.api.conflict/ConflictType.CONCURRENT_CHANGE|null[0]
     enum entry CREATE_COLLISION // io.dataloom.api.conflict/ConflictType.CREATE_COLLISION|null[0]
@@ -693,6 +708,19 @@ abstract interface io.dataloom.api.circuit/CircuitBreakerStateStore { // io.data
     abstract suspend fun load(io.dataloom.api.circuit/CircuitBreakerScope): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.circuit/CircuitBreakerLoadResult> // io.dataloom.api.circuit/CircuitBreakerStateStore.load|load(io.dataloom.api.circuit.CircuitBreakerScope){}[0]
 }
 
+abstract interface io.dataloom.api.conflict/ConflictAdministrationAuthorizer { // io.dataloom.api.conflict/ConflictAdministrationAuthorizer|null[0]
+    abstract suspend fun authorize(io.dataloom.api.conflict/ConflictAdministrationRequest): io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision // io.dataloom.api.conflict/ConflictAdministrationAuthorizer.authorize|authorize(io.dataloom.api.conflict.ConflictAdministrationRequest){}[0]
+}
+
+abstract interface io.dataloom.api.conflict/ConflictAdministrationExecutor { // io.dataloom.api.conflict/ConflictAdministrationExecutor|null[0]
+    abstract suspend fun execute(io.dataloom.api.conflict/AuthorizedConflictAdministrationCommand): io.dataloom.api.conflict/ConflictAdministrationExecutionResult // io.dataloom.api.conflict/ConflictAdministrationExecutor.execute|execute(io.dataloom.api.conflict.AuthorizedConflictAdministrationCommand){}[0]
+}
+
+abstract interface io.dataloom.api.conflict/ConflictAdministrationStateStore { // io.dataloom.api.conflict/ConflictAdministrationStateStore|null[0]
+    abstract suspend fun compareAndSet(io.dataloom.api.conflict/ConflictAdministrationCompareAndSetRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult> // io.dataloom.api.conflict/ConflictAdministrationStateStore.compareAndSet|compareAndSet(io.dataloom.api.conflict.ConflictAdministrationCompareAndSetRequest){}[0]
+    abstract suspend fun load(io.dataloom.api.conflict/ConflictAdministrationCommandId): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.conflict/ConflictAdministrationLoadResult> // io.dataloom.api.conflict/ConflictAdministrationStateStore.load|load(io.dataloom.api.conflict.ConflictAdministrationCommandId){}[0]
+}
+
 abstract interface io.dataloom.api.conflict/ConflictDetector { // io.dataloom.api.conflict/ConflictDetector|null[0]
     abstract val id // io.dataloom.api.conflict/ConflictDetector.id|{}id[0]
         abstract fun <get-id>(): io.dataloom.api.identifier/ConflictDetectorId // io.dataloom.api.conflict/ConflictDetector.id.<get-id>|<get-id>(){}[0]
@@ -1198,6 +1226,117 @@ sealed interface io.dataloom.api.configuration/DurableConfigurationRollbackOutco
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.NoEarlierSnapshot.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.NoEarlierSnapshot.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.api.configuration/DurableConfigurationRollbackOutcome.NoEarlierSnapshot.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision { // io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision|null[0]
+    final class Authorized : io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision { // io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision.Authorized|null[0]
+        constructor <init>(io.dataloom.api.conflict/ConflictAdministrationAuthorizationId) // io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision.Authorized.<init>|<init>(io.dataloom.api.conflict.ConflictAdministrationAuthorizationId){}[0]
+
+        final val authorizationId // io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision.Authorized.authorizationId|{}authorizationId[0]
+            final fun <get-authorizationId>(): io.dataloom.api.conflict/ConflictAdministrationAuthorizationId // io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision.Authorized.authorizationId.<get-authorizationId>|<get-authorizationId>(){}[0]
+
+        final fun component1(): io.dataloom.api.conflict/ConflictAdministrationAuthorizationId // io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision.Authorized.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.conflict/ConflictAdministrationAuthorizationId = ...): io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision.Authorized // io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision.Authorized.copy|copy(io.dataloom.api.conflict.ConflictAdministrationAuthorizationId){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision.Authorized.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision.Authorized.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision.Authorized.toString|toString(){}[0]
+    }
+
+    final class Denied : io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision { // io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision.Denied|null[0]
+        constructor <init>(kotlin/String) // io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision.Denied.<init>|<init>(kotlin.String){}[0]
+
+        final val reasonCode // io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision.Denied.reasonCode|{}reasonCode[0]
+            final fun <get-reasonCode>(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision.Denied.reasonCode.<get-reasonCode>|<get-reasonCode>(){}[0]
+
+        final fun component1(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision.Denied.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision.Denied // io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision.Denied.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision.Denied.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision.Denied.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationAuthorizationDecision.Denied.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult { // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult|null[0]
+    final class Conflict : io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult { // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult.Conflict|null[0]
+        constructor <init>(io.dataloom.api.conflict/ConflictAdministrationStateRecord?) // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult.Conflict.<init>|<init>(io.dataloom.api.conflict.ConflictAdministrationStateRecord?){}[0]
+
+        final val current // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult.Conflict.current|{}current[0]
+            final fun <get-current>(): io.dataloom.api.conflict/ConflictAdministrationStateRecord? // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult.Conflict.current.<get-current>|<get-current>(){}[0]
+
+        final fun component1(): io.dataloom.api.conflict/ConflictAdministrationStateRecord? // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult.Conflict.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.conflict/ConflictAdministrationStateRecord? = ...): io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult.Conflict // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult.Conflict.copy|copy(io.dataloom.api.conflict.ConflictAdministrationStateRecord?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult.Conflict.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult.Conflict.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult.Conflict.toString|toString(){}[0]
+    }
+
+    final class Updated : io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult { // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult.Updated|null[0]
+        constructor <init>(io.dataloom.api.conflict/ConflictAdministrationStateRecord) // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult.Updated.<init>|<init>(io.dataloom.api.conflict.ConflictAdministrationStateRecord){}[0]
+
+        final val record // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult.Updated.record|{}record[0]
+            final fun <get-record>(): io.dataloom.api.conflict/ConflictAdministrationStateRecord // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult.Updated.record.<get-record>|<get-record>(){}[0]
+
+        final fun component1(): io.dataloom.api.conflict/ConflictAdministrationStateRecord // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult.Updated.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.conflict/ConflictAdministrationStateRecord = ...): io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult.Updated // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult.Updated.copy|copy(io.dataloom.api.conflict.ConflictAdministrationStateRecord){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult.Updated.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult.Updated.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetResult.Updated.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.conflict/ConflictAdministrationExecutionResult { // io.dataloom.api.conflict/ConflictAdministrationExecutionResult|null[0]
+    final class Failed : io.dataloom.api.conflict/ConflictAdministrationExecutionResult { // io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Failed|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Failed.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Failed.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Failed.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Failed.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Failed // io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Failed.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Failed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Failed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Failed.toString|toString(){}[0]
+    }
+
+    final class Rejected : io.dataloom.api.conflict/ConflictAdministrationExecutionResult { // io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Rejected|null[0]
+        constructor <init>(kotlin/String) // io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Rejected.<init>|<init>(kotlin.String){}[0]
+
+        final val reasonCode // io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Rejected.reasonCode|{}reasonCode[0]
+            final fun <get-reasonCode>(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Rejected.reasonCode.<get-reasonCode>|<get-reasonCode>(){}[0]
+
+        final fun component1(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Rejected.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Rejected // io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Rejected.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Rejected.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Rejected.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Rejected.toString|toString(){}[0]
+    }
+
+    final object Applied : io.dataloom.api.conflict/ConflictAdministrationExecutionResult { // io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Applied|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Applied.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Applied.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationExecutionResult.Applied.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.api.conflict/ConflictAdministrationLoadResult { // io.dataloom.api.conflict/ConflictAdministrationLoadResult|null[0]
+    final class Found : io.dataloom.api.conflict/ConflictAdministrationLoadResult { // io.dataloom.api.conflict/ConflictAdministrationLoadResult.Found|null[0]
+        constructor <init>(io.dataloom.api.conflict/ConflictAdministrationStateRecord) // io.dataloom.api.conflict/ConflictAdministrationLoadResult.Found.<init>|<init>(io.dataloom.api.conflict.ConflictAdministrationStateRecord){}[0]
+
+        final val record // io.dataloom.api.conflict/ConflictAdministrationLoadResult.Found.record|{}record[0]
+            final fun <get-record>(): io.dataloom.api.conflict/ConflictAdministrationStateRecord // io.dataloom.api.conflict/ConflictAdministrationLoadResult.Found.record.<get-record>|<get-record>(){}[0]
+
+        final fun component1(): io.dataloom.api.conflict/ConflictAdministrationStateRecord // io.dataloom.api.conflict/ConflictAdministrationLoadResult.Found.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.conflict/ConflictAdministrationStateRecord = ...): io.dataloom.api.conflict/ConflictAdministrationLoadResult.Found // io.dataloom.api.conflict/ConflictAdministrationLoadResult.Found.copy|copy(io.dataloom.api.conflict.ConflictAdministrationStateRecord){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.conflict/ConflictAdministrationLoadResult.Found.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.conflict/ConflictAdministrationLoadResult.Found.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationLoadResult.Found.toString|toString(){}[0]
+    }
+
+    final object Missing : io.dataloom.api.conflict/ConflictAdministrationLoadResult { // io.dataloom.api.conflict/ConflictAdministrationLoadResult.Missing|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.conflict/ConflictAdministrationLoadResult.Missing.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.conflict/ConflictAdministrationLoadResult.Missing.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationLoadResult.Missing.toString|toString(){}[0]
     }
 }
 
@@ -2941,6 +3080,138 @@ final class io.dataloom.api.configuration/DurableConfigurationHistory { // io.da
     final suspend fun current(io.dataloom.api.configuration/ConfigurationHistoryScope): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.configuration/ConfigurationSnapshot?> // io.dataloom.api.configuration/DurableConfigurationHistory.current|current(io.dataloom.api.configuration.ConfigurationHistoryScope){}[0]
     final suspend fun retainedVersions(io.dataloom.api.configuration/ConfigurationHistoryScope): io.dataloom.api.provider/ProviderOperationResult<kotlin.collections/List<kotlin/Long>> // io.dataloom.api.configuration/DurableConfigurationHistory.retainedVersions|retainedVersions(io.dataloom.api.configuration.ConfigurationHistoryScope){}[0]
     final suspend fun rollbackToLastKnownGood(io.dataloom.api.configuration/ConfigurationHistoryScope): io.dataloom.api.configuration/DurableConfigurationRollbackOutcome // io.dataloom.api.configuration/DurableConfigurationHistory.rollbackToLastKnownGood|rollbackToLastKnownGood(io.dataloom.api.configuration.ConfigurationHistoryScope){}[0]
+}
+
+final class io.dataloom.api.conflict/AuthorizedConflictAdministrationCommand { // io.dataloom.api.conflict/AuthorizedConflictAdministrationCommand|null[0]
+    constructor <init>(io.dataloom.api.conflict/ConflictAdministrationRequest, io.dataloom.api.conflict/ConflictAdministrationAuthorizationId, io.dataloom.api.conflict/UnresolvedConflictRecord) // io.dataloom.api.conflict/AuthorizedConflictAdministrationCommand.<init>|<init>(io.dataloom.api.conflict.ConflictAdministrationRequest;io.dataloom.api.conflict.ConflictAdministrationAuthorizationId;io.dataloom.api.conflict.UnresolvedConflictRecord){}[0]
+
+    final val authorizationId // io.dataloom.api.conflict/AuthorizedConflictAdministrationCommand.authorizationId|{}authorizationId[0]
+        final fun <get-authorizationId>(): io.dataloom.api.conflict/ConflictAdministrationAuthorizationId // io.dataloom.api.conflict/AuthorizedConflictAdministrationCommand.authorizationId.<get-authorizationId>|<get-authorizationId>(){}[0]
+    final val request // io.dataloom.api.conflict/AuthorizedConflictAdministrationCommand.request|{}request[0]
+        final fun <get-request>(): io.dataloom.api.conflict/ConflictAdministrationRequest // io.dataloom.api.conflict/AuthorizedConflictAdministrationCommand.request.<get-request>|<get-request>(){}[0]
+    final val unresolvedRecord // io.dataloom.api.conflict/AuthorizedConflictAdministrationCommand.unresolvedRecord|{}unresolvedRecord[0]
+        final fun <get-unresolvedRecord>(): io.dataloom.api.conflict/UnresolvedConflictRecord // io.dataloom.api.conflict/AuthorizedConflictAdministrationCommand.unresolvedRecord.<get-unresolvedRecord>|<get-unresolvedRecord>(){}[0]
+
+    final fun component1(): io.dataloom.api.conflict/ConflictAdministrationRequest // io.dataloom.api.conflict/AuthorizedConflictAdministrationCommand.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.conflict/ConflictAdministrationAuthorizationId // io.dataloom.api.conflict/AuthorizedConflictAdministrationCommand.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.conflict/UnresolvedConflictRecord // io.dataloom.api.conflict/AuthorizedConflictAdministrationCommand.component3|component3(){}[0]
+    final fun copy(io.dataloom.api.conflict/ConflictAdministrationRequest = ..., io.dataloom.api.conflict/ConflictAdministrationAuthorizationId = ..., io.dataloom.api.conflict/UnresolvedConflictRecord = ...): io.dataloom.api.conflict/AuthorizedConflictAdministrationCommand // io.dataloom.api.conflict/AuthorizedConflictAdministrationCommand.copy|copy(io.dataloom.api.conflict.ConflictAdministrationRequest;io.dataloom.api.conflict.ConflictAdministrationAuthorizationId;io.dataloom.api.conflict.UnresolvedConflictRecord){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.conflict/AuthorizedConflictAdministrationCommand.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.conflict/AuthorizedConflictAdministrationCommand.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.conflict/AuthorizedConflictAdministrationCommand.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.conflict/ConflictAdministrationCommandState { // io.dataloom.api.conflict/ConflictAdministrationCommandState|null[0]
+    constructor <init>(io.dataloom.api.conflict/ConflictAdministrationRequest, io.dataloom.api.conflict/ConflictAdministrationCommandStatus, io.dataloom.api.conflict/ConflictAdministrationAuthorizationId?, io.dataloom.api.time/DataLoomInstant, kotlin/String? = ..., io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot? = ...) // io.dataloom.api.conflict/ConflictAdministrationCommandState.<init>|<init>(io.dataloom.api.conflict.ConflictAdministrationRequest;io.dataloom.api.conflict.ConflictAdministrationCommandStatus;io.dataloom.api.conflict.ConflictAdministrationAuthorizationId?;io.dataloom.api.time.DataLoomInstant;kotlin.String?;io.dataloom.api.conflict.ConflictAdministrationFailureSnapshot?){}[0]
+
+    final val authorizationId // io.dataloom.api.conflict/ConflictAdministrationCommandState.authorizationId|{}authorizationId[0]
+        final fun <get-authorizationId>(): io.dataloom.api.conflict/ConflictAdministrationAuthorizationId? // io.dataloom.api.conflict/ConflictAdministrationCommandState.authorizationId.<get-authorizationId>|<get-authorizationId>(){}[0]
+    final val executionFailure // io.dataloom.api.conflict/ConflictAdministrationCommandState.executionFailure|{}executionFailure[0]
+        final fun <get-executionFailure>(): io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot? // io.dataloom.api.conflict/ConflictAdministrationCommandState.executionFailure.<get-executionFailure>|<get-executionFailure>(){}[0]
+    final val rejectionReasonCode // io.dataloom.api.conflict/ConflictAdministrationCommandState.rejectionReasonCode|{}rejectionReasonCode[0]
+        final fun <get-rejectionReasonCode>(): kotlin/String? // io.dataloom.api.conflict/ConflictAdministrationCommandState.rejectionReasonCode.<get-rejectionReasonCode>|<get-rejectionReasonCode>(){}[0]
+    final val request // io.dataloom.api.conflict/ConflictAdministrationCommandState.request|{}request[0]
+        final fun <get-request>(): io.dataloom.api.conflict/ConflictAdministrationRequest // io.dataloom.api.conflict/ConflictAdministrationCommandState.request.<get-request>|<get-request>(){}[0]
+    final val status // io.dataloom.api.conflict/ConflictAdministrationCommandState.status|{}status[0]
+        final fun <get-status>(): io.dataloom.api.conflict/ConflictAdministrationCommandStatus // io.dataloom.api.conflict/ConflictAdministrationCommandState.status.<get-status>|<get-status>(){}[0]
+    final val updatedAt // io.dataloom.api.conflict/ConflictAdministrationCommandState.updatedAt|{}updatedAt[0]
+        final fun <get-updatedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.conflict/ConflictAdministrationCommandState.updatedAt.<get-updatedAt>|<get-updatedAt>(){}[0]
+
+    final fun component1(): io.dataloom.api.conflict/ConflictAdministrationRequest // io.dataloom.api.conflict/ConflictAdministrationCommandState.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.conflict/ConflictAdministrationCommandStatus // io.dataloom.api.conflict/ConflictAdministrationCommandState.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.conflict/ConflictAdministrationAuthorizationId? // io.dataloom.api.conflict/ConflictAdministrationCommandState.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.conflict/ConflictAdministrationCommandState.component4|component4(){}[0]
+    final fun component5(): kotlin/String? // io.dataloom.api.conflict/ConflictAdministrationCommandState.component5|component5(){}[0]
+    final fun component6(): io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot? // io.dataloom.api.conflict/ConflictAdministrationCommandState.component6|component6(){}[0]
+    final fun copy(io.dataloom.api.conflict/ConflictAdministrationRequest = ..., io.dataloom.api.conflict/ConflictAdministrationCommandStatus = ..., io.dataloom.api.conflict/ConflictAdministrationAuthorizationId? = ..., io.dataloom.api.time/DataLoomInstant = ..., kotlin/String? = ..., io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot? = ...): io.dataloom.api.conflict/ConflictAdministrationCommandState // io.dataloom.api.conflict/ConflictAdministrationCommandState.copy|copy(io.dataloom.api.conflict.ConflictAdministrationRequest;io.dataloom.api.conflict.ConflictAdministrationCommandStatus;io.dataloom.api.conflict.ConflictAdministrationAuthorizationId?;io.dataloom.api.time.DataLoomInstant;kotlin.String?;io.dataloom.api.conflict.ConflictAdministrationFailureSnapshot?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.conflict/ConflictAdministrationCommandState.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.conflict/ConflictAdministrationCommandState.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationCommandState.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.conflict/ConflictAdministrationCompareAndSetRequest { // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetRequest|null[0]
+    constructor <init>(io.dataloom.api.conflict/ConflictAdministrationCommandId, kotlin/Long?, io.dataloom.api.conflict/ConflictAdministrationCommandState) // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetRequest.<init>|<init>(io.dataloom.api.conflict.ConflictAdministrationCommandId;kotlin.Long?;io.dataloom.api.conflict.ConflictAdministrationCommandState){}[0]
+
+    final val commandId // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetRequest.commandId|{}commandId[0]
+        final fun <get-commandId>(): io.dataloom.api.conflict/ConflictAdministrationCommandId // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetRequest.commandId.<get-commandId>|<get-commandId>(){}[0]
+    final val expectedVersion // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetRequest.expectedVersion|{}expectedVersion[0]
+        final fun <get-expectedVersion>(): kotlin/Long? // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetRequest.expectedVersion.<get-expectedVersion>|<get-expectedVersion>(){}[0]
+    final val nextState // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetRequest.nextState|{}nextState[0]
+        final fun <get-nextState>(): io.dataloom.api.conflict/ConflictAdministrationCommandState // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetRequest.nextState.<get-nextState>|<get-nextState>(){}[0]
+
+    final fun component1(): io.dataloom.api.conflict/ConflictAdministrationCommandId // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetRequest.component1|component1(){}[0]
+    final fun component2(): kotlin/Long? // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetRequest.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.conflict/ConflictAdministrationCommandState // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetRequest.component3|component3(){}[0]
+    final fun copy(io.dataloom.api.conflict/ConflictAdministrationCommandId = ..., kotlin/Long? = ..., io.dataloom.api.conflict/ConflictAdministrationCommandState = ...): io.dataloom.api.conflict/ConflictAdministrationCompareAndSetRequest // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetRequest.copy|copy(io.dataloom.api.conflict.ConflictAdministrationCommandId;kotlin.Long?;io.dataloom.api.conflict.ConflictAdministrationCommandState){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetRequest.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetRequest.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationCompareAndSetRequest.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot { // io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot|null[0]
+    constructor <init>(io.dataloom.api.error/ErrorCode, io.dataloom.api.error/ErrorCategory, io.dataloom.api.error/ErrorSeverity, io.dataloom.api.error/Recoverability) // io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot.<init>|<init>(io.dataloom.api.error.ErrorCode;io.dataloom.api.error.ErrorCategory;io.dataloom.api.error.ErrorSeverity;io.dataloom.api.error.Recoverability){}[0]
+
+    final val category // io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot.category|{}category[0]
+        final fun <get-category>(): io.dataloom.api.error/ErrorCategory // io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot.category.<get-category>|<get-category>(){}[0]
+    final val code // io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot.code|{}code[0]
+        final fun <get-code>(): io.dataloom.api.error/ErrorCode // io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot.code.<get-code>|<get-code>(){}[0]
+    final val recoverability // io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot.recoverability|{}recoverability[0]
+        final fun <get-recoverability>(): io.dataloom.api.error/Recoverability // io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot.recoverability.<get-recoverability>|<get-recoverability>(){}[0]
+    final val severity // io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot.severity|{}severity[0]
+        final fun <get-severity>(): io.dataloom.api.error/ErrorSeverity // io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot.severity.<get-severity>|<get-severity>(){}[0]
+
+    final fun component1(): io.dataloom.api.error/ErrorCode // io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.error/ErrorCategory // io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.error/ErrorSeverity // io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.error/Recoverability // io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot.component4|component4(){}[0]
+    final fun copy(io.dataloom.api.error/ErrorCode = ..., io.dataloom.api.error/ErrorCategory = ..., io.dataloom.api.error/ErrorSeverity = ..., io.dataloom.api.error/Recoverability = ...): io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot // io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot.copy|copy(io.dataloom.api.error.ErrorCode;io.dataloom.api.error.ErrorCategory;io.dataloom.api.error.ErrorSeverity;io.dataloom.api.error.Recoverability){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationFailureSnapshot.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.conflict/ConflictAdministrationRequest { // io.dataloom.api.conflict/ConflictAdministrationRequest|null[0]
+    constructor <init>(io.dataloom.api.conflict/ConflictAdministrationCommandId, io.dataloom.api.identifier/ConflictId, io.dataloom.api.conflict/ConflictAdministrationPrincipalId, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.conflict/ConflictResolutionDecision, io.dataloom.api.conflict/ConflictAdministrationReason) // io.dataloom.api.conflict/ConflictAdministrationRequest.<init>|<init>(io.dataloom.api.conflict.ConflictAdministrationCommandId;io.dataloom.api.identifier.ConflictId;io.dataloom.api.conflict.ConflictAdministrationPrincipalId;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.conflict.ConflictResolutionDecision;io.dataloom.api.conflict.ConflictAdministrationReason){}[0]
+
+    final val commandId // io.dataloom.api.conflict/ConflictAdministrationRequest.commandId|{}commandId[0]
+        final fun <get-commandId>(): io.dataloom.api.conflict/ConflictAdministrationCommandId // io.dataloom.api.conflict/ConflictAdministrationRequest.commandId.<get-commandId>|<get-commandId>(){}[0]
+    final val conflictId // io.dataloom.api.conflict/ConflictAdministrationRequest.conflictId|{}conflictId[0]
+        final fun <get-conflictId>(): io.dataloom.api.identifier/ConflictId // io.dataloom.api.conflict/ConflictAdministrationRequest.conflictId.<get-conflictId>|<get-conflictId>(){}[0]
+    final val decision // io.dataloom.api.conflict/ConflictAdministrationRequest.decision|{}decision[0]
+        final fun <get-decision>(): io.dataloom.api.conflict/ConflictResolutionDecision // io.dataloom.api.conflict/ConflictAdministrationRequest.decision.<get-decision>|<get-decision>(){}[0]
+    final val principalId // io.dataloom.api.conflict/ConflictAdministrationRequest.principalId|{}principalId[0]
+        final fun <get-principalId>(): io.dataloom.api.conflict/ConflictAdministrationPrincipalId // io.dataloom.api.conflict/ConflictAdministrationRequest.principalId.<get-principalId>|<get-principalId>(){}[0]
+    final val reason // io.dataloom.api.conflict/ConflictAdministrationRequest.reason|{}reason[0]
+        final fun <get-reason>(): io.dataloom.api.conflict/ConflictAdministrationReason // io.dataloom.api.conflict/ConflictAdministrationRequest.reason.<get-reason>|<get-reason>(){}[0]
+    final val requestedAt // io.dataloom.api.conflict/ConflictAdministrationRequest.requestedAt|{}requestedAt[0]
+        final fun <get-requestedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.conflict/ConflictAdministrationRequest.requestedAt.<get-requestedAt>|<get-requestedAt>(){}[0]
+
+    final fun component1(): io.dataloom.api.conflict/ConflictAdministrationCommandId // io.dataloom.api.conflict/ConflictAdministrationRequest.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.identifier/ConflictId // io.dataloom.api.conflict/ConflictAdministrationRequest.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.conflict/ConflictAdministrationPrincipalId // io.dataloom.api.conflict/ConflictAdministrationRequest.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.conflict/ConflictAdministrationRequest.component4|component4(){}[0]
+    final fun component5(): io.dataloom.api.conflict/ConflictResolutionDecision // io.dataloom.api.conflict/ConflictAdministrationRequest.component5|component5(){}[0]
+    final fun component6(): io.dataloom.api.conflict/ConflictAdministrationReason // io.dataloom.api.conflict/ConflictAdministrationRequest.component6|component6(){}[0]
+    final fun copy(io.dataloom.api.conflict/ConflictAdministrationCommandId = ..., io.dataloom.api.identifier/ConflictId = ..., io.dataloom.api.conflict/ConflictAdministrationPrincipalId = ..., io.dataloom.api.time/DataLoomInstant = ..., io.dataloom.api.conflict/ConflictResolutionDecision = ..., io.dataloom.api.conflict/ConflictAdministrationReason = ...): io.dataloom.api.conflict/ConflictAdministrationRequest // io.dataloom.api.conflict/ConflictAdministrationRequest.copy|copy(io.dataloom.api.conflict.ConflictAdministrationCommandId;io.dataloom.api.identifier.ConflictId;io.dataloom.api.conflict.ConflictAdministrationPrincipalId;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.conflict.ConflictResolutionDecision;io.dataloom.api.conflict.ConflictAdministrationReason){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.conflict/ConflictAdministrationRequest.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.conflict/ConflictAdministrationRequest.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationRequest.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.conflict/ConflictAdministrationStateRecord { // io.dataloom.api.conflict/ConflictAdministrationStateRecord|null[0]
+    constructor <init>(io.dataloom.api.conflict/ConflictAdministrationCommandState, kotlin/Long) // io.dataloom.api.conflict/ConflictAdministrationStateRecord.<init>|<init>(io.dataloom.api.conflict.ConflictAdministrationCommandState;kotlin.Long){}[0]
+
+    final val state // io.dataloom.api.conflict/ConflictAdministrationStateRecord.state|{}state[0]
+        final fun <get-state>(): io.dataloom.api.conflict/ConflictAdministrationCommandState // io.dataloom.api.conflict/ConflictAdministrationStateRecord.state.<get-state>|<get-state>(){}[0]
+    final val version // io.dataloom.api.conflict/ConflictAdministrationStateRecord.version|{}version[0]
+        final fun <get-version>(): kotlin/Long // io.dataloom.api.conflict/ConflictAdministrationStateRecord.version.<get-version>|<get-version>(){}[0]
+
+    final fun component1(): io.dataloom.api.conflict/ConflictAdministrationCommandState // io.dataloom.api.conflict/ConflictAdministrationStateRecord.component1|component1(){}[0]
+    final fun component2(): kotlin/Long // io.dataloom.api.conflict/ConflictAdministrationStateRecord.component2|component2(){}[0]
+    final fun copy(io.dataloom.api.conflict/ConflictAdministrationCommandState = ..., kotlin/Long = ...): io.dataloom.api.conflict/ConflictAdministrationStateRecord // io.dataloom.api.conflict/ConflictAdministrationStateRecord.copy|copy(io.dataloom.api.conflict.ConflictAdministrationCommandState;kotlin.Long){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.conflict/ConflictAdministrationStateRecord.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.conflict/ConflictAdministrationStateRecord.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationStateRecord.toString|toString(){}[0]
 }
 
 final class io.dataloom.api.conflict/ConflictDetectionRequest { // io.dataloom.api.conflict/ConflictDetectionRequest|null[0]
@@ -5068,6 +5339,50 @@ final value class io.dataloom.api.configuration/ConfigurationHistoryScope { // i
         final val KeyEncoder // io.dataloom.api.configuration/ConfigurationHistoryScope.Companion.KeyEncoder|{}KeyEncoder[0]
             final fun <get-KeyEncoder>(): io.dataloom.api.state/DurableStateScopeKeyEncoder<io.dataloom.api.configuration/ConfigurationHistoryScope> // io.dataloom.api.configuration/ConfigurationHistoryScope.Companion.KeyEncoder.<get-KeyEncoder>|<get-KeyEncoder>(){}[0]
     }
+}
+
+final value class io.dataloom.api.conflict/ConflictAdministrationAuthorizationId { // io.dataloom.api.conflict/ConflictAdministrationAuthorizationId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.conflict/ConflictAdministrationAuthorizationId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.conflict/ConflictAdministrationAuthorizationId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationAuthorizationId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.conflict/ConflictAdministrationAuthorizationId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.conflict/ConflictAdministrationAuthorizationId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationAuthorizationId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.conflict/ConflictAdministrationCommandId { // io.dataloom.api.conflict/ConflictAdministrationCommandId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.conflict/ConflictAdministrationCommandId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.conflict/ConflictAdministrationCommandId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationCommandId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.conflict/ConflictAdministrationCommandId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.conflict/ConflictAdministrationCommandId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationCommandId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.conflict/ConflictAdministrationPrincipalId { // io.dataloom.api.conflict/ConflictAdministrationPrincipalId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.conflict/ConflictAdministrationPrincipalId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.conflict/ConflictAdministrationPrincipalId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationPrincipalId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.conflict/ConflictAdministrationPrincipalId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.conflict/ConflictAdministrationPrincipalId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationPrincipalId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.api.conflict/ConflictAdministrationReason { // io.dataloom.api.conflict/ConflictAdministrationReason|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.api.conflict/ConflictAdministrationReason.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.api.conflict/ConflictAdministrationReason.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationReason.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.conflict/ConflictAdministrationReason.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.conflict/ConflictAdministrationReason.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.conflict/ConflictAdministrationReason.toString|toString(){}[0]
 }
 
 final value class io.dataloom.api.operational/OperationalEventId { // io.dataloom.api.operational/OperationalEventId|null[0]

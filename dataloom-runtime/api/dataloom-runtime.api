@@ -1,3 +1,128 @@
+public final class io/dataloom/runtime/conflict/ConflictAdministrationCoordinator {
+	public static final field Companion Lio/dataloom/runtime/conflict/ConflictAdministrationCoordinator$Companion;
+	public fun <init> (Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/conflict/ConflictAdministrationAuthorizer;Lio/dataloom/api/conflict/ConflictAdministrationStateStore;Lio/dataloom/api/conflict/ConflictAdministrationExecutor;Lio/dataloom/api/conflict/DurableUnresolvedConflictLog;Lio/dataloom/api/conflict/DurableResolvedConflictDecisionLog;I)V
+	public synthetic fun <init> (Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/conflict/ConflictAdministrationAuthorizer;Lio/dataloom/api/conflict/ConflictAdministrationStateStore;Lio/dataloom/api/conflict/ConflictAdministrationExecutor;Lio/dataloom/api/conflict/DurableUnresolvedConflictLog;Lio/dataloom/api/conflict/DurableResolvedConflictDecisionLog;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun execute (Lio/dataloom/api/conflict/ConflictAdministrationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/conflict/ConflictAdministrationCoordinator$Companion {
+}
+
+public abstract interface class io/dataloom/runtime/conflict/ConflictAdministrationResult {
+}
+
+public final class io/dataloom/runtime/conflict/ConflictAdministrationResult$AuthorizationDenied : io/dataloom/runtime/conflict/ConflictAdministrationResult {
+	public fun <init> (Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;)Lio/dataloom/runtime/conflict/ConflictAdministrationResult$AuthorizationDenied;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/conflict/ConflictAdministrationResult$AuthorizationDenied;Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/runtime/conflict/ConflictAdministrationResult$AuthorizationDenied;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/conflict/ConflictAdministrationResult$ClockRegression : io/dataloom/runtime/conflict/ConflictAdministrationResult {
+	public fun <init> (Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;)V
+	public final fun component1 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy (Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/runtime/conflict/ConflictAdministrationResult$ClockRegression;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/conflict/ConflictAdministrationResult$ClockRegression;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/runtime/conflict/ConflictAdministrationResult$ClockRegression;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getObservedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getPersistedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/conflict/ConflictAdministrationResult$CommandConflict : io/dataloom/runtime/conflict/ConflictAdministrationResult {
+	public fun <init> (Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;)Lio/dataloom/runtime/conflict/ConflictAdministrationResult$CommandConflict;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/conflict/ConflictAdministrationResult$CommandConflict;Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/runtime/conflict/ConflictAdministrationResult$CommandConflict;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExisting ()Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/conflict/ConflictAdministrationResult$ContentionLimitReached : io/dataloom/runtime/conflict/ConflictAdministrationResult {
+	public static final field INSTANCE Lio/dataloom/runtime/conflict/ConflictAdministrationResult$ContentionLimitReached;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/conflict/ConflictAdministrationResult$ExecutionFailed : io/dataloom/runtime/conflict/ConflictAdministrationResult {
+	public fun <init> (Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;)Lio/dataloom/runtime/conflict/ConflictAdministrationResult$ExecutionFailed;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/conflict/ConflictAdministrationResult$ExecutionFailed;Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/runtime/conflict/ConflictAdministrationResult$ExecutionFailed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/conflict/ConflictAdministrationResult$ExecutionRecordingUnconfirmed : io/dataloom/runtime/conflict/ConflictAdministrationResult {
+	public fun <init> (Lio/dataloom/api/conflict/AuthorizedConflictAdministrationCommand;Lio/dataloom/api/conflict/ConflictAdministrationExecutionResult;Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/conflict/AuthorizedConflictAdministrationCommand;
+	public final fun component2 ()Lio/dataloom/api/conflict/ConflictAdministrationExecutionResult;
+	public final fun component3 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/conflict/AuthorizedConflictAdministrationCommand;Lio/dataloom/api/conflict/ConflictAdministrationExecutionResult;Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/runtime/conflict/ConflictAdministrationResult$ExecutionRecordingUnconfirmed;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/conflict/ConflictAdministrationResult$ExecutionRecordingUnconfirmed;Lio/dataloom/api/conflict/AuthorizedConflictAdministrationCommand;Lio/dataloom/api/conflict/ConflictAdministrationExecutionResult;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/runtime/conflict/ConflictAdministrationResult$ExecutionRecordingUnconfirmed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCommand ()Lio/dataloom/api/conflict/AuthorizedConflictAdministrationCommand;
+	public final fun getExecutionResult ()Lio/dataloom/api/conflict/ConflictAdministrationExecutionResult;
+	public final fun getPersistenceError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/conflict/ConflictAdministrationResult$ExecutionRejected : io/dataloom/runtime/conflict/ConflictAdministrationResult {
+	public fun <init> (Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;)Lio/dataloom/runtime/conflict/ConflictAdministrationResult$ExecutionRejected;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/conflict/ConflictAdministrationResult$ExecutionRejected;Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/runtime/conflict/ConflictAdministrationResult$ExecutionRejected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/conflict/ConflictAdministrationResult$PersistenceFailure : io/dataloom/runtime/conflict/ConflictAdministrationResult {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/runtime/conflict/ConflictAdministrationResult$PersistenceFailure;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/conflict/ConflictAdministrationResult$PersistenceFailure;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/runtime/conflict/ConflictAdministrationResult$PersistenceFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/conflict/ConflictAdministrationResult$PolicyRejected : io/dataloom/runtime/conflict/ConflictAdministrationResult {
+	public fun <init> (Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;)Lio/dataloom/runtime/conflict/ConflictAdministrationResult$PolicyRejected;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/conflict/ConflictAdministrationResult$PolicyRejected;Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/runtime/conflict/ConflictAdministrationResult$PolicyRejected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/conflict/ConflictAdministrationResult$Succeeded : io/dataloom/runtime/conflict/ConflictAdministrationResult {
+	public fun <init> (Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;)V
+	public final fun component1 ()Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;
+	public final fun copy (Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;)Lio/dataloom/runtime/conflict/ConflictAdministrationResult$Succeeded;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/conflict/ConflictAdministrationResult$Succeeded;Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;ILjava/lang/Object;)Lio/dataloom/runtime/conflict/ConflictAdministrationResult$Succeeded;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/conflict/ConflictAdministrationStateRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/runtime/conflict/ConflictDetectorRegistry {
 	public fun <init> (Ljava/util/Collection;)V
 	public final fun getDetectors ()Ljava/util/List;
@@ -447,6 +572,7 @@ public final class io/dataloom/runtime/execution/protection/ProviderProtectionPr
 public abstract interface class io/dataloom/runtime/facade/DataLoom {
 	public fun getCircuitAdministration ()Lio/dataloom/runtime/facade/DataLoomCircuitAdministration;
 	public fun getCircuitQueueWorker ()Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorker;
+	public fun getConflictAdministration ()Lio/dataloom/runtime/facade/DataLoomConflictAdministration;
 	public fun getProtectedStrategySynchronization ()Lio/dataloom/runtime/facade/DataLoomProtectedStrategySynchronization;
 	public fun getProtectedSynchronization ()Lio/dataloom/runtime/facade/DataLoomProtectedSynchronization;
 	public abstract fun getProviderLifecycleState ()Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;
@@ -466,6 +592,7 @@ public abstract interface class io/dataloom/runtime/facade/DataLoom {
 public final class io/dataloom/runtime/facade/DataLoom$DefaultImpls {
 	public static fun getCircuitAdministration (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomCircuitAdministration;
 	public static fun getCircuitQueueWorker (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorker;
+	public static fun getConflictAdministration (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomConflictAdministration;
 	public static fun getProtectedStrategySynchronization (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomProtectedStrategySynchronization;
 	public static fun getProtectedSynchronization (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomProtectedSynchronization;
 	public static fun getRetryAdministration (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomRetryAdministration;
@@ -482,6 +609,7 @@ public final class io/dataloom/runtime/facade/DataLoomBuilder {
 	public final fun circuitAdministrationConfiguration (Lio/dataloom/runtime/facade/DataLoomCircuitAdministrationSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun circuitQueueWorkerConfiguration (Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorkerSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun circuitQueueWorkerSchedulerConfiguration (Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorkerSchedulerSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
+	public final fun conflictAdministrationConfiguration (Lio/dataloom/runtime/facade/DataLoomConflictAdministrationSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun conflictDetectionConfiguration (Lio/dataloom/runtime/facade/DataLoomConflictDetectionSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun conflictResolutionOperationalEventOutboxConfiguration (Lio/dataloom/runtime/facade/DataLoomConflictResolutionOperationalEventOutboxSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun connectivityConfiguration (Lio/dataloom/runtime/connectivity/SynchronizationConnectivityConfiguration;)Lio/dataloom/runtime/facade/DataLoomBuilder;
@@ -545,6 +673,26 @@ public final class io/dataloom/runtime/facade/DataLoomCircuitQueueWorkerSpec {
 	public final fun getProcessingScopes ()Lio/dataloom/runtime/queue/QueueProcessingCircuitScopes;
 	public final fun getRecoveryScope ()Lio/dataloom/api/circuit/CircuitBreakerScope;
 	public final fun getWorkerSpec ()Lio/dataloom/runtime/facade/DataLoomQueueWorkerSpec;
+}
+
+public abstract interface class io/dataloom/runtime/facade/DataLoomConflictAdministration {
+	public abstract fun execute (Lio/dataloom/api/conflict/ConflictAdministrationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/facade/DataLoomConflictAdministrationSpec {
+	public fun <init> (Lio/dataloom/api/conflict/ConflictAdministrationAuthorizer;Lio/dataloom/api/conflict/ConflictAdministrationStateStore;Lio/dataloom/api/conflict/ConflictAdministrationExecutor;Lio/dataloom/api/state/DurableStateStore;Lio/dataloom/api/state/DurableStateStore;IIIII)V
+	public synthetic fun <init> (Lio/dataloom/api/conflict/ConflictAdministrationAuthorizer;Lio/dataloom/api/conflict/ConflictAdministrationStateStore;Lio/dataloom/api/conflict/ConflictAdministrationExecutor;Lio/dataloom/api/state/DurableStateStore;Lio/dataloom/api/state/DurableStateStore;IIIIIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAuthorizer ()Lio/dataloom/api/conflict/ConflictAdministrationAuthorizer;
+	public final fun getExecutor ()Lio/dataloom/api/conflict/ConflictAdministrationExecutor;
+	public final fun getMaximumStateUpdateAttempts ()I
+	public final fun getResolvedConflictDecisionLogMaximumStateUpdateAttempts ()I
+	public final fun getResolvedConflictDecisionLogSchemaVersion ()I
+	public final fun getResolvedConflictDecisionStore ()Lio/dataloom/api/state/DurableStateStore;
+	public final fun getStateStore ()Lio/dataloom/api/conflict/ConflictAdministrationStateStore;
+	public final fun getUnresolvedConflictLogMaximumStateUpdateAttempts ()I
+	public final fun getUnresolvedConflictLogSchemaVersion ()I
+	public final fun getUnresolvedConflictStore ()Lio/dataloom/api/state/DurableStateStore;
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/dataloom/runtime/facade/DataLoomConflictDetectionSpec {

@@ -11,9 +11,10 @@ of DL-041, but it is not the completion claim for issue
 
 Still required for the full gate are decision application and convergence,
 standard detector utilities, entity/workflow/tenant/global precedence,
-loop/non-convergence quarantine, authorized manual-resolution operations,
-complete audit/metrics/retry integration, AC-FUNC-002, and mandatory-platform
-qualification.
+loop/non-convergence quarantine, complete audit/metrics/retry integration,
+AC-FUNC-002, and mandatory-platform qualification. Authorized manual
+conflict-resolution operations now ship as a bounded first slice — see
+"Authorized manual conflict-resolution operations" below.
 
 ## Built-in policy catalog
 
@@ -163,6 +164,82 @@ does not yet atomically apply every decision, update checkpoints, and prove
 convergence. That transactional application boundary remains a release-blocking
 part of #95.
 
+## Authorized manual conflict-resolution operations
+
+`ConflictAdministrationCoordinator` (`io.dataloom.runtime.conflict`) is a
+bounded first slice of "authorized manual operations" for a conflict already
+durably recorded as unresolved (`UnresolvedConflictRecord`, reason
+`RESOLVER_NOT_CONFIGURED` or `RESOLVER_NOT_FOUND`). It is a deliberately
+separate application path from the internal `InboundConflictDecisionPreparer`
+described above: that preparer only ever applies a decision to the exact live
+`ChangeSet` batch that produced it, inside one inbound pull. By the time an
+operator gets around to deciding an already-durably-recorded unresolved
+conflict, that batch is no longer live — the pull that detected it already
+returned `SynchronizationResult.Failed` without advancing its checkpoint, and
+this coordinator never touches that pipeline, a `ChangeSet`, or a
+`StorageProvider` directly.
+
+### Authorization
+
+Mirrors the `RetryAdministrationAuthorizer`/`CircuitAdministrationAuthorizer`
+pattern already established for administrative retry and circuit commands: a
+host-supplied `ConflictAdministrationAuthorizer` collaborator, deny-by-default,
+with no DataLoom-invented identity or permission system. A denied command is
+durably recorded as `AUTHORIZATION_DENIED` and never reaches eligibility
+checking or the executor.
+
+### Eligibility
+
+A command is eligible only when `DurableUnresolvedConflictLog` currently holds
+an `UnresolvedConflictRecord` for the target `ConflictId` and
+`DurableResolvedConflictDecisionLog` does not already hold a decision for it.
+Both a nonexistent conflict ID and an already-resolved one are well-defined,
+durably recorded `POLICY_REJECTED` outcomes (`CONFLICT_NOT_UNRESOLVED` and
+`CONFLICT_ALREADY_RESOLVED` respectively) rather than a thrown exception or a
+silent no-op. A `Merge` decision whose `expectedEntity` does not match the
+recorded conflict's entity is rejected the same way
+(`MERGE_ENTITY_MISMATCH`), mirroring `InboundConflictDecisionPreparer`'s own
+merge-contract check.
+
+### Application: a host-owned executor, not a DataLoom-owned one
+
+Neither `DurableUnresolvedConflictLog` nor `DurableResolvedConflictDecisionLog`
+durably retains `ChangeEvent` payload content — by design. Applying a decision
+therefore requires payload content this coordinator does not have. Exactly
+like `RetryAdministrationExecutor` already does for administrative retry, a
+host-supplied `ConflictAdministrationExecutor` owns retrieving whatever real
+payload the decision requires (a local cache, a fresh re-fetch from the
+remote provider, or the host's own storage) and owns deciding whether the
+target entity is still eligible given anything that may have changed since
+the conflict was originally detected. DataLoom does not perform
+freshness/staleness checking on the executor's behalf — that check was
+identified as needing more design than a single bounded slice should invent
+unilaterally, so it is delegated to the same host-owned boundary the retry
+precedent already establishes, rather than designed here.
+
+### Durable recording
+
+A successful `ConflictAdministrationExecutor.execute` is recorded into
+`DurableResolvedConflictDecisionLog` by reusing the existing
+`ResolvedConflictDecisionRecord` — with the requesting principal encoded as a
+sentinel `ConflictResolverId` (`"manual:<principalId>"`) rather than a real
+`ConflictResolver.id` — instead of inventing a new durable-record type for
+manual decisions. A durable-recording race between two different commands
+resolving the same conflict surfaces as `EXECUTION_FAILED` rather than a false
+success.
+
+### Wiring
+
+`DataLoomBuilder.conflictAdministrationConfiguration(DataLoomConflictAdministrationSpec)`
+assembles `DataLoom.conflictAdministration`. `DataLoomConflictAdministrationSpec`
+requires an authorizer, a command state store, an executor, and both durable
+conflict stores (`unresolvedConflictStore`/`resolvedConflictDecisionStore`) —
+supply the same stores passed to `DataLoomConflictDetectionSpec` when live
+conflict detection is also enabled, so administration and live detection agree
+on the same durable facts. Omitting `conflictAdministrationConfiguration`
+leaves `DataLoom.conflictAdministration` `null`; every other capability's
+behavior is unchanged.
+
 ## Safety and determinism rules
 
 - Built-ins perform no I/O, clock reads, randomness, provider calls, queue
@@ -185,7 +262,6 @@ The following are not claimed by this page:
 - entity > workflow > tenant > global policy precedence;
 - fingerprints, bounded attempts, loop detection, convergence limits, and
   quarantine;
-- query/authorize/resolve operations for manual conflicts;
 - complete immutable audit, metrics, events, redaction certification, and retry
   integration;
 - restart, duplicate, concurrent-resolution, and migration qualification;

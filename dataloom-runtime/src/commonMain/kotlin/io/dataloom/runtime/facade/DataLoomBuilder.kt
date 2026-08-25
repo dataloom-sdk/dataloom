@@ -27,6 +27,7 @@ import io.dataloom.api.conflict.DurableUnresolvedConflictLog
 import io.dataloom.api.operational.DurableOperationalEventOutbox
 import io.dataloom.api.policy.DurablePolicyDecisionLog
 import io.dataloom.api.strategy.DurableStrategyDecisionEventLog
+import io.dataloom.runtime.conflict.ConflictAdministrationCoordinator
 import io.dataloom.runtime.conflict.ConflictDetectorRegistry
 import io.dataloom.runtime.conflict.ConflictResolverRegistry
 import io.dataloom.runtime.conflict.DurableConflictDetectionCoordinator
@@ -158,6 +159,7 @@ public class DataLoomBuilder {
     private var retryAdministrationSpec: DataLoomRetryAdministrationSpec? = null
     private var circuitAdministrationSpec: DataLoomCircuitAdministrationSpec? = null
     private var conflictDetectionSpec: DataLoomConflictDetectionSpec? = null
+    private var conflictAdministrationSpec: DataLoomConflictAdministrationSpec? = null
     private var strategyDiagnosticsSpec: DataLoomStrategyDiagnosticsSpec? = null
     private var strategyAdmissionPolicySpec: DataLoomStrategyAdmissionPolicySpec? = null
     private var operationalEventOutboxSpec: DataLoomOperationalEventOutboxSpec? = null
@@ -304,6 +306,33 @@ public class DataLoomBuilder {
         apply {
             conflictDetectionSpec = spec
         }
+
+    /**
+     * Enables the optional authorized manual conflict-resolution operations
+     * capability -- applying a decision to an
+     * [io.dataloom.api.conflict.UnresolvedConflictRecord] already durably
+     * recorded, after the live inbound pull that detected it has already
+     * failed closed. See [DataLoomConflictAdministrationSpec] for the full
+     * contract, including why [DataLoomConflictAdministrationSpec.unresolvedConflictStore]
+     * and [DataLoomConflictAdministrationSpec.resolvedConflictDecisionStore]
+     * should be the same durable stores supplied to
+     * [conflictDetectionConfiguration] when both capabilities are enabled.
+     *
+     * The supplied collaborators are retained by immutable reference and are
+     * not invoked during [build]. The runtime clock from
+     * [runtimeDependencies] is used for authorization, command-state,
+     * eligibility, and terminal execution evidence when a command is
+     * executed.
+     *
+     * @param spec explicit host authorization, durable command-state,
+     *   decision-application, durable-log, and contention-bound configuration.
+     * @return this builder for chaining.
+     */
+    public fun conflictAdministrationConfiguration(
+        spec: DataLoomConflictAdministrationSpec,
+    ): DataLoomBuilder = apply {
+        conflictAdministrationSpec = spec
+    }
 
     /**
      * Enables durable strategy-decision diagnostics: a payload-free audit
@@ -1143,6 +1172,29 @@ public class DataLoomBuilder {
             )
         }
 
+        // --- 14b. Build optional conflict-administration operations capability ---
+        val conflictAdministration = conflictAdministrationSpec?.let { spec ->
+            DefaultDataLoomConflictAdministration(
+                coordinator = ConflictAdministrationCoordinator(
+                    clock = deps.clock,
+                    authorizer = spec.authorizer,
+                    stateStore = spec.stateStore,
+                    executor = spec.executor,
+                    unresolvedConflictLog = DurableUnresolvedConflictLog(
+                        store = spec.unresolvedConflictStore,
+                        schemaVersion = spec.unresolvedConflictLogSchemaVersion,
+                        maximumStateUpdateAttempts = spec.unresolvedConflictLogMaximumStateUpdateAttempts,
+                    ),
+                    resolvedConflictDecisionLog = DurableResolvedConflictDecisionLog(
+                        store = spec.resolvedConflictDecisionStore,
+                        schemaVersion = spec.resolvedConflictDecisionLogSchemaVersion,
+                        maximumStateUpdateAttempts = spec.resolvedConflictDecisionLogMaximumStateUpdateAttempts,
+                    ),
+                    maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
+                ),
+            )
+        }
+
         return DefaultDataLoom(
             lifecycleCoordinator = lifecycleCoordinator,
             executionCoordinator = executionCoordinator,
@@ -1157,6 +1209,7 @@ public class DataLoomBuilder {
             queueSubmission = queueSubmission,
             retryAdministration = retryAdministration,
             circuitAdministration = circuitAdministration,
+            conflictAdministration = conflictAdministration,
         )
     }
 
