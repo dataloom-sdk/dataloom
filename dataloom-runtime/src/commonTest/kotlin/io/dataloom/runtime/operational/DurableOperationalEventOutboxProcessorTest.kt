@@ -80,6 +80,7 @@ class DurableOperationalEventOutboxProcessorTest {
 
         val summary = assertIs<OperationalEventOutboxProcessingResult.Processed>(result).summary
         assertEquals(3, summary.read)
+        assertEquals(0, summary.filteredOut)
         assertEquals(1, summary.processed)
         assertEquals(1, summary.skipped)
         assertEquals(1, summary.failed)
@@ -117,10 +118,118 @@ class DurableOperationalEventOutboxProcessorTest {
 
         val summary = assertIs<OperationalEventOutboxProcessingResult.Processed>(result).summary
         assertEquals(2, summary.read)
+        assertEquals(0, summary.filteredOut)
         assertEquals(2, summary.acknowledged)
         val remaining = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
         // The two oldest were acknowledged; the three newest are left for a later pass.
         assertEquals(envelopes.drop(2), remaining.value)
+    }
+
+    @Test
+    fun unconfiguredFilterAcceptsEveryEntryAndReportsZeroFilteredOut() = runTest {
+        val store = InMemoryOperationalEventOutboxStore()
+        val outbox = DurableOperationalEventOutbox(store)
+        val envelopes = (1..3).map { envelope("event-$it") }
+        envelopes.forEach { outbox.append(scope, it) }
+        val processor = DurableOperationalEventOutboxProcessor(outbox)
+
+        // No `filter` argument -- exercises the default value directly.
+        val result = processor.process(scope) { OperationalEventOutboxEntryOutcome.Processed }
+
+        val summary = assertIs<OperationalEventOutboxProcessingResult.Processed>(result).summary
+        assertEquals(3, summary.read)
+        assertEquals(0, summary.filteredOut)
+        assertEquals(3, summary.acknowledged)
+        val remaining = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
+        assertEquals(emptyList(), remaining.value)
+    }
+
+    @Test
+    fun aConfiguredFilterProcessesOnlyMatchingEntriesAndLeavesNonMatchingEntriesRetainedUntouched() = runTest {
+        val store = InMemoryOperationalEventOutboxStore()
+        val outbox = DurableOperationalEventOutbox(store)
+        val matchingType = OperationalEventType("dataloom.test.matching")
+        val otherType = OperationalEventType("dataloom.test.other")
+        val matchingOne = envelope("event-matching-1", type = matchingType)
+        val nonMatching = envelope("event-other", type = otherType)
+        val matchingTwo = envelope("event-matching-2", type = matchingType)
+        listOf(matchingOne, nonMatching, matchingTwo).forEach { outbox.append(scope, it) }
+        val processor = DurableOperationalEventOutboxProcessor(outbox)
+        val seen = mutableListOf<OperationalEventId>()
+
+        val result = processor.process(
+            scope = scope,
+            filter = OperationalEventOutboxEntryFilter { it.type == matchingType },
+        ) { current -> seen.add(current.id); OperationalEventOutboxEntryOutcome.Processed }
+
+        val summary = assertIs<OperationalEventOutboxProcessingResult.Processed>(result).summary
+        assertEquals(2, summary.read)
+        assertEquals(1, summary.filteredOut)
+        assertEquals(2, summary.processed)
+        assertEquals(2, summary.acknowledged)
+        assertEquals(listOf(matchingOne.id, matchingTwo.id), seen)
+
+        // The non-matching entry was never handed to the handler and stays retained, untouched.
+        val remaining = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
+        assertEquals(listOf(nonMatching), remaining.value)
+    }
+
+    @Test
+    fun rejectedEntriesDoNotCountAgainstMaxEntriesSoARareFilterIsNotStarvedByCommonEntries() = runTest {
+        val store = InMemoryOperationalEventOutboxStore()
+        val outbox = DurableOperationalEventOutbox(store)
+        val rareType = OperationalEventType("dataloom.test.rare")
+        val commonType = OperationalEventType("dataloom.test.common")
+        // Five common (non-matching) entries appended first, then two rare (matching) ones.
+        val commonEnvelopes = (1..5).map { envelope("event-common-$it", type = commonType) }
+        val rareEnvelopes = (1..2).map { envelope("event-rare-$it", type = rareType) }
+        (commonEnvelopes + rareEnvelopes).forEach { outbox.append(scope, it) }
+        val processor = DurableOperationalEventOutboxProcessor(outbox)
+
+        // maxEntries is smaller than the total retained count, but both rare
+        // entries must still be processed since the five common entries
+        // ahead of them in the list are filtered out before the bound is applied.
+        val result = processor.process(
+            scope = scope,
+            maxEntries = 2,
+            filter = OperationalEventOutboxEntryFilter { it.type == rareType },
+        ) { OperationalEventOutboxEntryOutcome.Processed }
+
+        val summary = assertIs<OperationalEventOutboxProcessingResult.Processed>(result).summary
+        assertEquals(2, summary.read)
+        assertEquals(5, summary.filteredOut)
+        assertEquals(2, summary.processed)
+        assertEquals(2, summary.acknowledged)
+        val remaining = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
+        assertEquals(commonEnvelopes, remaining.value)
+    }
+
+    @Test
+    fun everyRetainedEntryFilteredOutReturnsProcessedWithAnAllZeroSummaryNotNoWork() = runTest {
+        val store = InMemoryOperationalEventOutboxStore()
+        val outbox = DurableOperationalEventOutbox(store)
+        val envelopes = (1..3).map { envelope("event-$it") }
+        envelopes.forEach { outbox.append(scope, it) }
+        val processor = DurableOperationalEventOutboxProcessor(outbox)
+        var invocations = 0
+
+        val result = processor.process(
+            scope = scope,
+            filter = OperationalEventOutboxEntryFilter { false },
+        ) { invocations++; OperationalEventOutboxEntryOutcome.Processed }
+
+        val summary = assertIs<OperationalEventOutboxProcessingResult.Processed>(result).summary
+        assertEquals(0, invocations)
+        assertEquals(0, summary.read)
+        assertEquals(3, summary.filteredOut)
+        assertEquals(0, summary.processed)
+        assertEquals(0, summary.skipped)
+        assertEquals(0, summary.failed)
+        assertEquals(0, summary.acknowledged)
+        assertEquals(0, summary.acknowledgeRaced)
+        assertEquals(0, summary.acknowledgeFailed)
+        val remaining = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
+        assertEquals(envelopes, remaining.value)
     }
 
     @Test
@@ -245,9 +354,10 @@ class DurableOperationalEventOutboxProcessorTest {
     private fun envelope(
         id: String,
         correlationId: String = "correlation-1",
+        type: OperationalEventType = OperationalEventType("dataloom.test.event"),
     ): OperationalEventEnvelope = OperationalEventEnvelope(
         id = OperationalEventId(id),
-        type = OperationalEventType("dataloom.test.event"),
+        type = type,
         source = OperationalEventSource("dataloom.runtime.test"),
         category = OperationalEventCategory.TELEMETRY,
         schemaVersion = OperationalSchemaVersion(1),
