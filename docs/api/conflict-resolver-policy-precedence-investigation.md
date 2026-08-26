@@ -177,6 +177,76 @@ all, but tenant ID is genuinely optional and not guaranteed by every host
 today, so a tenant tier's fallback behavior when `tenantId` is absent is an
 additional open design question beyond what this investigation resolves.
 
+## Postscript (2026-08-26): `#367`'s manual administration does not close this gap
+
+`#367` shipped `ConflictAdministrationCoordinator`
+(`dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/conflict/ConflictAdministrationCoordinator.kt`)
+and `ConflictAdministrationRequest`
+(`dataloom-api/src/commonMain/kotlin/io/dataloom/api/conflict/ConflictAdministration.kt`)
+after this document was written, giving Finding 3's "no existing caller"
+argument a genuinely new caller to check against — `#362` (this document) had
+no such caller when it was written. This postscript records that check
+rather than leaving it ambiguous.
+
+**The two mechanisms are structurally disjoint, confirmed by reading, not
+just by design intent.** `ConflictAdministrationRequest` carries a
+`decision: ConflictResolutionDecision` supplied directly by the caller (an
+operator, through whatever host-owned UI or tool constructs the request) —
+the field is populated before `ConflictAdministrationCoordinator.execute` is
+ever called, and the coordinator never derives it from anything. Read in
+full, `ConflictAdministrationCoordinator` (all 459 lines), its supporting
+`Eligibility`/outcome sealed types, `DefaultDataLoomConflictAdministration`,
+and `DataLoomConflictAdministrationSpec`: none of them imports, references,
+or calls `ConflictResolverRegistry` or `ConflictResolver` in any form. A
+repository-wide search for `ConflictResolverRegistry`/`resolverRegistry`
+returns exactly four hits — `ConflictResolverRegistry.kt` itself,
+`SynchronizationConflictOrchestrator.kt`, and its two result/status support
+files — and `ConflictAdministrationCoordinator.kt` is not among them.
+
+Concretely, where `SynchronizationConflictOrchestrator` (the automatic,
+live-inbound-pull path `#362` examined) calls
+`resolverRegistry.lookup(resolverId)` to pick a `ConflictResolver` and then
+invokes its `resolve()`, `ConflictAdministrationCoordinator` instead takes
+`request.decision` as-is (rejecting only `Defer`, which is not a terminal
+outcome — see `ConflictAdministrationRequest`'s own class doc) and hands it
+straight to a host-owned `ConflictAdministrationExecutor.execute(...)`. There
+is no selection step at all in this path for the registry's exact-ID lookup
+to be extended, generalized, or routed by entity type — the "which resolver
+handles this" question `#362` found unreachable never arises here, because
+no resolver is ever selected. The decision already exists, per request,
+before the coordinator does anything.
+
+**Conclusion: `#362`'s finding stands untouched.** `#367` closes a different
+gap — durable, authorized, idempotent application of an operator's
+already-made decision to an already-recorded unresolved conflict — not
+`#362`'s gap, which was the live pipeline's automatic, policy-driven
+selection of *which* resolver to run by entity type (or workflow/tenant)
+before a human is involved at all. These are two deliberately separate
+mechanisms (see `ConflictAdministrationCoordinator`'s own "Relationship to
+the live inbound pipeline" class doc, which independently confirms the same
+separation from the live-pipeline side), not the same gap approached from a
+second angle, so `#367` does not incidentally supply the missing caller
+`#362`'s Finding 3 needed. `#95`'s policy-precedence gap is still open.
+
+**A smaller, adjacent question was also checked and rejected as
+speculative:** could `ConflictAdministrationRequest` grow room for a future
+per-entity-type *default* decision (e.g. "always `UseRemote` for entity type
+X without an operator manually intervening each time")? No — as read,
+`ConflictAdministrationRequest` carries only `conflictId` (not an entity type
+of its own; entity type is recovered from the durable
+`UnresolvedConflictRecord` during eligibility checking, after the request
+already exists) and a single already-made `decision`. Removing the "an
+operator supplies `decision` per request" step so a default could apply
+automatically by entity type would mean inventing a new, non-operator
+caller that decides policy by entity type before durably recording
+anything — which is exactly the same automatic, policy-driven,
+entity-type-scoped selection problem `#362` already found un-bounded (a real
+design decision spanning configuration shape and fallback behavior, not a
+mechanical wiring task), just relocated from `ConflictResolverRegistry` to
+`ConflictAdministrationRequest`. No decision-free, non-speculative shape for
+it exists today, so — consistent with this document's own discipline of not
+forcing a slice to justify a round — nothing is proposed here.
+
 ## Correction applied
 
 `docs/status/market-readiness.md`'s `#95` row:
@@ -188,9 +258,10 @@ additional open design question beyond what this investigation resolves.
   investigation, matching `#354`'s precedent for a no-implementation
   investigation outcome.
 
-The `#95` percentage is unchanged (55%). This is a documentation-accuracy
-change recording what was investigated and why nothing was implemented, not a
-delivery of new functionality.
+The `#95` percentage is unchanged (55% at the time; see the postscript above
+for the 2026-08-26 re-check, which also does not change the percentage).
+This is a documentation-accuracy change recording what was investigated and
+why nothing was implemented, not a delivery of new functionality.
 
 ## References
 
@@ -199,5 +270,7 @@ delivery of new functionality.
 - [`DataLoomConflictDetectionSpec`](../../dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/facade/DataLoomConflictDetectionSpec.kt)
 - [`SynchronizationRequest`](../../dataloom-api/src/commonMain/kotlin/io/dataloom/api/model/SynchronizationRequest.kt)
 - [`ExecutionContext`](../../dataloom-api/src/commonMain/kotlin/io/dataloom/api/context/ExecutionContext.kt)
+- [`ConflictAdministrationCoordinator`](../../dataloom-runtime/src/commonMain/kotlin/io/dataloom/runtime/conflict/ConflictAdministrationCoordinator.kt) (`#367`, checked in the postscript above)
+- [`ConflictAdministration.kt`](../../dataloom-api/src/commonMain/kotlin/io/dataloom/api/conflict/ConflictAdministration.kt) (`#367`, checked in the postscript above)
 - [Second conflict resolver investigation](./second-conflict-resolver-investigation.md)
 - [Conflict resolution strategies](./conflict-resolution-strategies.md)
