@@ -201,6 +201,7 @@ protection, quarantine, and metrics.
 | [Runtime operational events](./runtime-operational-events.md) | Available foundation | Selected progress, scheduler-backed retry, and conflict event integration. |
 | [Retry and circuit telemetry](./retry-circuit-telemetry.md) | Partial V1 subsystem | Bounded exporter isolation, fixed-cardinality metrics, structured-log/trace adapters, redacted health snapshots, and retry/circuit/admin wrappers. |
 | [Health snapshot](./health-snapshot.md) | Bounded first slice | Pure, synchronous, redacted point-in-time aggregation of provider lifecycle state, retry/circuit telemetry, and caller-supplied provider health. |
+| [Durable outbox replay investigation](./outbox-replay-investigation.md) | Investigated, no code needed | Re-presenting currently-retained `Skipped`/`Failed` entries is already fully covered by calling `DurableOperationalEventOutboxProcessor.process` again; replaying an already-*acknowledged* entry is impossible by construction today (`acknowledge` deletes, never soft-deletes) and would need a real retention/schema design decision on `DurableOperationalEventOutbox` itself, not a bounded slice. |
 
 The compatibility synchronization-event path remains synchronous and
 in-process. Retry/circuit telemetry now has bounded exporter-isolated delivery,

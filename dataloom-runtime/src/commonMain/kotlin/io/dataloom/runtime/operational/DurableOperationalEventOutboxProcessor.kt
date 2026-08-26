@@ -364,6 +364,35 @@ public sealed interface OperationalEventOutboxProcessingResult {
  * reasoning [io.dataloom.api.operational.DurableOperationalEventOutbox]
  * already documents for `append`/`acknowledge` across scopes.
  *
+ * ## Replay
+ *
+ * "Replaying" entries a prior [process] cycle's [handler] reported
+ * [OperationalEventOutboxEntryOutcome.Skipped] or
+ * [OperationalEventOutboxEntryOutcome.Failed] for needs no dedicated API --
+ * simply call [process] again. Those entries were never acknowledged, so they
+ * remain retained in their original position, and because
+ * [io.dataloom.api.operational.DurableOperationalEventOutbox.entries] always
+ * returns entries oldest first and a later `append` only ever adds newer
+ * entries after them, a `Skipped`/`Failed` entry stays among the *oldest*
+ * currently-retained, filter-accepted entries -- it is therefore
+ * re-presented at or near the front of the very next [process] call's batch,
+ * ahead of anything appended since, as long as `maxEntries` is large enough
+ * to reach it. A caller does not need to track which entries to retry;
+ * ordinary reprocessing already does the right thing.
+ *
+ * This class deliberately does **not** provide replay of an already-
+ * *acknowledged* entry -- that is a fundamentally different, larger question
+ * this class does not attempt to answer. See
+ * [io.dataloom.api.operational.DurableOperationalEventOutbox]'s own
+ * "Acknowledgement" documentation: `acknowledge` deletes an entry from the
+ * persisted list outright (no soft-delete, no retained history), matching
+ * its "operator-driven dismissal from view, not work-queue completion"
+ * posture. Making an acknowledged entry replayable would require a real
+ * design change to that class itself -- retaining acknowledged entries
+ * somewhere, with its own retention-duration and access-control questions --
+ * not an addition to this processor. See
+ * `docs/api/outbox-replay-investigation.md` for the full investigation.
+ *
  * ## Cancellation
  *
  * [kotlin.coroutines.cancellation.CancellationException] from [handler] or
