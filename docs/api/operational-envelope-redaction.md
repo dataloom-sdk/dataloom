@@ -4,9 +4,12 @@ Status: **available foundation**. The shared contracts, strict redactor,
 canonical V1 wire codec, and schema-upcast registry are implemented. A
 bounded first slice of durable persistence exists, including opt-in
 count-based and age-based retention policies, operator-driven per-entry
-acknowledgement, and an opt-in read-then-consume processing loop (see
-"Durable outbox" below); replay, filtering, and complete subsystem adapters
-remain V1 work.
+acknowledgement, an opt-in read-then-consume processing loop, and bounded
+opt-in filtering of that loop's entries (see "Durable outbox" below).
+Replaying currently-retained, never-acknowledged entries needs no new
+capability -- see "Replay" below. Replaying already-*acknowledged* entries
+would need a real design change to this outbox's core acknowledge-deletes
+semantics (see "Replay"), and complete subsystem adapters remain V1 work.
 
 ## Purpose
 
@@ -432,6 +435,41 @@ such structured filter-criteria type exists anywhere else in this codebase,
 and a predicate is strictly more expressive without requiring a guess, ahead
 of any real caller, about which fields deserve dedicated criteria.
 
+### Replay
+
+"Replay" was investigated
+([`outbox-replay-investigation.md`](outbox-replay-investigation.md)) rather
+than assumed to name a bounded implementation task, since it had never been
+defined beyond the single word itself. Two readings, both settled:
+
+- **Re-presenting currently-retained entries a handler already reported
+  `Skipped`/`Failed` for.** Already fully covered by calling `process` again
+  -- no new API. `OperationalEventOutboxEntryOutcome.Skipped`/`Failed` both
+  leave the entry retained, `entries` always returns oldest-first, and
+  `append` only ever adds newer entries after it, so a `Skipped`/`Failed`
+  entry stays among the oldest currently-retained entries and is
+  re-presented at or near the front of the very next `process` call's batch,
+  ahead of anything appended since. A narrower, ID-scoped `replay(scope,
+  ids)` entry point would add nothing over this: the same ordering already
+  guarantees those specific entries surface first, so it would be a second
+  way to express what calling `process` with a sufficient `maxEntries`
+  already does.
+- **Re-presenting an already-*acknowledged* entry.** Impossible by
+  construction today, not merely unimplemented: `acknowledge` removes the
+  entry from `OperationalEventOutboxState.entries` -- this outbox's only
+  persisted storage for it -- via `filterNot`, in the same compare-and-set
+  write that performs the acknowledgement. There is no soft-delete flag and
+  no separate history/archive state to read an acknowledged entry back from.
+  This matches `acknowledge`'s own "operator-driven dismissal from view, not
+  work-queue completion" semantics (see "Acknowledgement" above) -- an
+  operator "un-clearing" an entry they already dismissed is a materially
+  different guarantee than anything `acknowledge` currently promises.
+  Enabling this would need a real design change to
+  `DurableOperationalEventOutbox` itself (retaining acknowledged entries in
+  a second, separately-retained state, with its own retention-duration and
+  access-control questions, and a persisted-schema change) -- a genuine,
+  separately-scoped follow-up, not a bounded slice on top of the processor.
+
 ### What this does not do yet
 
 - **No subscription/push delivery.** `process` is still a caller-invoked pull
@@ -440,6 +478,10 @@ of any real caller, about which fields deserve dedicated criteria.
   are appended.
 - **No enumeration across scopes.** A caller must already know which
   `OperationalEventOutboxScope` to read.
+- **No replay of already-acknowledged entries.** See "Replay" above --
+  `acknowledge` deletes, it does not soft-delete, so there is nothing to
+  replay without a real retention/schema design change to
+  `DurableOperationalEventOutbox` itself.
 - **Five real wired callers so far — synchronization events, retry/circuit
   administration commands, strategy-decision diagnostics, queue lifecycle,
   and conflict resolution.**
@@ -598,11 +640,14 @@ of any real caller, about which fields deserve dedicated criteria.
 This foundation does not yet provide:
 
 - payload classification, minimization, encoding, encryption, or integrity;
-- durable outbox replay or cross-scope enumeration (ordered append,
-  single-scope read-back, opt-in count-based and age-based retention
-  policies, operator-driven per-entry acknowledgement, and an opt-in
-  read-then-consume processing loop all exist -- see "Durable outbox" above);
-- subscription filtering or back-pressure delivery;
+- durable outbox replay of already-*acknowledged* entries, or cross-scope
+  enumeration (ordered append, single-scope read-back, opt-in count-based and
+  age-based retention policies, operator-driven per-entry acknowledgement, an
+  opt-in read-then-consume processing loop, and bounded opt-in filtering of
+  that loop all exist -- see "Durable outbox" above; replaying
+  currently-retained, never-acknowledged entries needs no new capability
+  either, see "Replay" above);
+- subscription/push delivery or back-pressure;
 - subsystem adapters for every event and administrative action;
 - policy-signature, residency, authorization, or tamper-evident audit storage;
 - the operational read model or deployable reference dashboard.
