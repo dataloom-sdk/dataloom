@@ -133,7 +133,7 @@ import kotlin.test.assertIs
  * rejects this branch with `LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED`, since
  * `RoomStorageProvider` implements only `StorageProvider`, not
  * `StrategyLocalFallbackProvider`. That part is re-confirmed here, for real,
- * not just repeated -- [cacheFirstPullRefreshRejectsSynchronouslyButStillAdmitsDurably]
+ * not just repeated -- [cacheFirstPullAdmitsDurablyDespiteSyncRejection]
  * asserts the genuine `Rejected(LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED)`
  * outcome from a real `DataLoom.synchronize` call.
  *
@@ -184,7 +184,7 @@ import kotlin.test.assertIs
  *
  * ## What this proves
  *
- * [cacheFirstPullRefreshRejectsSynchronouslyButStillAdmitsDurably] exercises
+ * [cacheFirstPullAdmitsDurablyDespiteSyncRejection] exercises
  * both halves of this branch honestly, through real, unmodified production
  * code:
  *
@@ -229,7 +229,7 @@ import kotlin.test.assertIs
 class AndroidReferenceConsumerCacheFirstPullQueueRobolectricTest {
 
     @Test
-    fun cacheFirstPullRefreshRejectsSynchronouslyButStillAdmitsDurably() = runTest {
+    fun cacheFirstPullAdmitsDurablyDespiteSyncRejection() = runTest {
         val context: Context = ApplicationProvider.getApplicationContext()
         WorkManagerTestInitHelper.initializeTestWorkManager(context)
 
@@ -357,8 +357,8 @@ class AndroidReferenceConsumerCacheFirstPullQueueRobolectricTest {
         val uniqueSuffix = UUID.randomUUID().toString().take(8)
         val providers = androidDataLoomProviders(
             context = context,
-            storageDatabaseName = "dq-cfp-storage-$uniqueSuffix.db",
-            queueDatabaseName = "dq-cfp-queue-$uniqueSuffix.db",
+            storageDatabaseName = "cfp-s-$uniqueSuffix.db",
+            queueDatabaseName = "cfp-q-$uniqueSuffix.db",
         )
         val bindings = SynchronizationProviderBindings(
             storageProviderId = providers.storage.descriptor.id,
