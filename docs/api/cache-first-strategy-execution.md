@@ -75,9 +75,35 @@ true, the evaluator's `refreshOperations()` produces
 (`ENQUEUE_DURABLE_WORK in evaluation.plan.operations`) and hands it to
 `StrategyDurableQueueAdmitter`, an opt-in capability — see
 [durable-queue-admission.md](durable-queue-admission.md) for the full
-design. Serving local state and admitting the refresh durably both happen:
-the terminal `ServedFromCache` carries a non-null `durableQueueEntryId`
-when admission succeeds.
+design. Serving local state and admitting the refresh durably are *meant*
+to both happen: the terminal `ServedFromCache` carries a non-null
+`durableQueueEntryId` when admission succeeds and the local serve also
+succeeds.
+
+**Real ordering, and a real, narrow gap when the storage provider does not
+implement `StrategyLocalFallbackProvider`.** `CacheFirstStrategyExecutor
+.execute` processes `ENQUEUE_DURABLE_WORK` *before* attempting
+`SERVE_LOCAL` — durable admission is not conditioned on the local serve
+succeeding. Against a storage provider that does not implement
+`StrategyLocalFallbackProvider` (the real, unmodified `RoomStorageProvider`
+included — see "Local-state consistency" above), admission still succeeds
+for real, writing a genuine `QueueEntry` to the real queue provider, and
+only then does the subsequent `SERVE_LOCAL` attempt fail and the whole call
+return `Rejected(LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED)` — not the
+`ServedFromCache(durableQueueEntryId = ...)` shape this section otherwise
+describes. `Rejected` carries no `queueEntryId` field, so a caller has no
+way to discover that entry's identifier from the return value; the entry
+itself is nonetheless real and was proven genuinely replayable to a real
+`SynchronizationResult.Succeeded` by
+`AndroidReferenceConsumerCacheFirstPullQueueRobolectricTest` (`#101`),
+because `deriveDurableContinuation`'s `CacheFirstStrategyProfile` arm for
+PULL/BIDIRECTIONAL never includes `SERVE_LOCAL` in the persisted
+continuation (`remoteOperations(direction, persistRemote = true)`, the same
+shape offline-first's/remote-first's/hybrid's own durable continuations
+already use) — only the *immediate*, synchronous plan does. No public API
+in this codebase today returns the caller a way to find that orphaned
+entry's identifier; that is a real, out-of-scope-for-now gap this
+investigation surfaced rather than fixed.
 
 **When no `QueuedSynchronizationWorkEncoder` is configured** (the default —
 `DataLoomBuilder.queueSubmissionEncoder`/`queueSubmissionConfiguration`
