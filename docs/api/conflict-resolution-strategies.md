@@ -179,6 +179,17 @@ returned `SynchronizationResult.Failed` without advancing its checkpoint, and
 this coordinator never touches that pipeline, a `ChangeSet`, or a
 `StorageProvider` directly.
 
+**Does not close the policy-precedence gap.** `ConflictAdministrationRequest`
+already carries an explicit `decision: ConflictResolutionDecision` supplied
+by the caller before the coordinator runs — there is no resolver-selection
+step in this path at all, so it has no bearing on
+[entity > workflow > tenant > global precedence](./conflict-resolver-policy-precedence-investigation.md),
+which is about the live pipeline's *automatic* selection of which
+`ConflictResolver` to run via `ConflictResolverRegistry.lookup`. Confirmed by
+reading: `ConflictAdministrationCoordinator` never references
+`ConflictResolverRegistry` or `ConflictResolver`. See that document's
+2026-08-26 postscript for the full check.
+
 ### Authorization
 
 Mirrors the `RetryAdministrationAuthorizer`/`CircuitAdministrationAuthorizer`
