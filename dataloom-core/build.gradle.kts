@@ -17,6 +17,7 @@ kotlin {
             dependencies {
                 implementation(project(":dataloom-model"))
                 implementation(project(":dataloom-provider-api"))
+                implementation(project(":dataloom-plugin-api"))
                 implementation(project(":dataloom-api"))
             }
         }

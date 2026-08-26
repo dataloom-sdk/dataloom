@@ -33,6 +33,7 @@ build-infrastructure included build.
 flowchart TD
     model[dataloom-model]
     providerApi[dataloom-provider-api]
+    pluginApi[dataloom-plugin-api]
     api[dataloom-api]
     core[dataloom-core]
     runtime[dataloom-runtime]
@@ -58,6 +59,7 @@ flowchart TD
     providerApi --> api
     model --> core
     providerApi --> core
+    pluginApi --> core
     api --> core
     model --> runtime
     providerApi --> runtime
@@ -114,7 +116,7 @@ Apple distribution boundary.
 |---|---|---|
 | `dataloom-model` | Library module | Dependency-root canonical models; first slice contains clock primitives |
 | `dataloom-provider-api` | Library module | Minimal provider lifecycle, descriptor, binding, and registry contracts |
-| `dataloom-plugin-api` | Library module | Plugin manifest, permission, lifecycle-label, hook-point, and execution-bounds SPI contracts, zero behavior ([details](../api/plugin-api.md)) |
+| `dataloom-plugin-api` | Library module | Plugin manifest, permission, lifecycle-label, hook-point, and execution-bounds SPI contracts, zero behavior itself ([details](../api/plugin-api.md)); consumed by `dataloom-core`'s registration/lifecycle-state engine ([details](../api/plugin-registry.md)) |
 | `dataloom-config` | Library module | Typed configuration values/keys/schema/sources, versioned immutable snapshots, and deterministic precedence/rollback history — moved out of `dataloom-api` (`#93`), which now depends on it |
 | `dataloom-api` | Library module | Current public contracts, models, and error types |
 | `dataloom-core` | Library module | Internal platform-independent foundation |
@@ -254,14 +256,20 @@ Rules:
 ### `dataloom-core`
 
 Provides internal, platform-independent foundations shared across runtime
-components. Future content includes:
+components, including provider registration/lifecycle coordination
+(`io.dataloom.core.provider`) and, since `#98`'s first bounded runtime
+slice, plugin registration/lifecycle-state tracking
+(`io.dataloom.core.plugin`: `PluginRegistry`, `PluginLifecycleTransitions`,
+`PluginLifecycleStateTracker` — see
+[`plugin-registry.md`](../api/plugin-registry.md)). Future content includes:
 
 - Internal utilities used by `dataloom-runtime`
 - Shared internal models and helpers
 
 Rules:
 
-- May depend on `dataloom-model`, `dataloom-provider-api`, and `dataloom-api`.
+- May depend on `dataloom-model`, `dataloom-provider-api`,
+  `dataloom-plugin-api`, and `dataloom-api`.
 - Must not depend on `dataloom-runtime`.
 - Must not depend on `dataloom-testing`.
 - Internal implementation details must not be exposed as public API.

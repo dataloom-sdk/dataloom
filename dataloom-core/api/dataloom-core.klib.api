@@ -61,6 +61,27 @@ sealed interface io.dataloom.core.provider/StrategyProviderResolutionResult { //
     }
 }
 
+final class io.dataloom.core.plugin/PluginLifecycleStateTracker { // io.dataloom.core.plugin/PluginLifecycleStateTracker|null[0]
+    constructor <init>(io.dataloom.core.plugin/PluginRegistry) // io.dataloom.core.plugin/PluginLifecycleStateTracker.<init>|<init>(io.dataloom.core.plugin.PluginRegistry){}[0]
+
+    final fun stateOf(io.dataloom.api.plugin/PluginId): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.core.plugin/PluginLifecycleStateTracker.stateOf|stateOf(io.dataloom.api.plugin.PluginId){}[0]
+    final fun transition(io.dataloom.api.plugin/PluginId, io.dataloom.api.plugin/PluginLifecycleState): io.dataloom.core.plugin/PluginLifecycleTransitionResult // io.dataloom.core.plugin/PluginLifecycleStateTracker.transition|transition(io.dataloom.api.plugin.PluginId;io.dataloom.api.plugin.PluginLifecycleState){}[0]
+}
+
+final class io.dataloom.core.plugin/PluginRegistry { // io.dataloom.core.plugin/PluginRegistry|null[0]
+    constructor <init>(kotlin.collections/List<io.dataloom.api.plugin/DataLoomPlugin>) // io.dataloom.core.plugin/PluginRegistry.<init>|<init>(kotlin.collections.List<io.dataloom.api.plugin.DataLoomPlugin>){}[0]
+
+    final val plugins // io.dataloom.core.plugin/PluginRegistry.plugins|{}plugins[0]
+        final fun <get-plugins>(): kotlin.collections/List<io.dataloom.api.plugin/DataLoomPlugin> // io.dataloom.core.plugin/PluginRegistry.plugins.<get-plugins>|<get-plugins>(){}[0]
+    final val resolutionOrder // io.dataloom.core.plugin/PluginRegistry.resolutionOrder|{}resolutionOrder[0]
+        final fun <get-resolutionOrder>(): kotlin.collections/List<io.dataloom.api.plugin/PluginId> // io.dataloom.core.plugin/PluginRegistry.resolutionOrder.<get-resolutionOrder>|<get-resolutionOrder>(){}[0]
+    final val size // io.dataloom.core.plugin/PluginRegistry.size|{}size[0]
+        final fun <get-size>(): kotlin/Int // io.dataloom.core.plugin/PluginRegistry.size.<get-size>|<get-size>(){}[0]
+
+    final fun findById(io.dataloom.api.plugin/PluginId): io.dataloom.api.plugin/DataLoomPlugin? // io.dataloom.core.plugin/PluginRegistry.findById|findById(io.dataloom.api.plugin.PluginId){}[0]
+    final fun isEmpty(): kotlin/Boolean // io.dataloom.core.plugin/PluginRegistry.isEmpty|isEmpty(){}[0]
+}
+
 final class io.dataloom.core.provider/ProviderLifecycleCoordinator { // io.dataloom.core.provider/ProviderLifecycleCoordinator|null[0]
     constructor <init>(io.dataloom.core.provider/ProviderRegistry, io.dataloom.api.provider/ProviderInitializationContext) // io.dataloom.core.provider/ProviderLifecycleCoordinator.<init>|<init>(io.dataloom.core.provider.ProviderRegistry;io.dataloom.api.provider.ProviderInitializationContext){}[0]
 
@@ -136,4 +157,46 @@ final class io.dataloom.core.provider/SynchronizationProviderResolver { // io.da
     constructor <init>(io.dataloom.core.provider/ProviderRegistry) // io.dataloom.core.provider/SynchronizationProviderResolver.<init>|<init>(io.dataloom.core.provider.ProviderRegistry){}[0]
 
     final fun resolve(io.dataloom.api.provider/SynchronizationProviderBindings): io.dataloom.core.provider/ProviderResolutionResult // io.dataloom.core.provider/SynchronizationProviderResolver.resolve|resolve(io.dataloom.api.provider.SynchronizationProviderBindings){}[0]
+}
+
+sealed class io.dataloom.core.plugin/PluginLifecycleTransitionResult { // io.dataloom.core.plugin/PluginLifecycleTransitionResult|null[0]
+    final class Allowed : io.dataloom.core.plugin/PluginLifecycleTransitionResult { // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Allowed|null[0]
+        constructor <init>(io.dataloom.api.plugin/PluginLifecycleState, io.dataloom.api.plugin/PluginLifecycleState) // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Allowed.<init>|<init>(io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.api.plugin.PluginLifecycleState){}[0]
+
+        final val from // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Allowed.from|{}from[0]
+            final fun <get-from>(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Allowed.from.<get-from>|<get-from>(){}[0]
+        final val to // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Allowed.to|{}to[0]
+            final fun <get-to>(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Allowed.to.<get-to>|<get-to>(){}[0]
+
+        final fun component1(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Allowed.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Allowed.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.plugin/PluginLifecycleState = ..., io.dataloom.api.plugin/PluginLifecycleState = ...): io.dataloom.core.plugin/PluginLifecycleTransitionResult.Allowed // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Allowed.copy|copy(io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.api.plugin.PluginLifecycleState){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Allowed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Allowed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Allowed.toString|toString(){}[0]
+    }
+
+    final class Rejected : io.dataloom.core.plugin/PluginLifecycleTransitionResult { // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Rejected|null[0]
+        constructor <init>(io.dataloom.api.plugin/PluginLifecycleState, io.dataloom.api.plugin/PluginLifecycleState, kotlin/String) // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Rejected.<init>|<init>(io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.api.plugin.PluginLifecycleState;kotlin.String){}[0]
+
+        final val from // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Rejected.from|{}from[0]
+            final fun <get-from>(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Rejected.from.<get-from>|<get-from>(){}[0]
+        final val reason // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Rejected.reason|{}reason[0]
+            final fun <get-reason>(): kotlin/String // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Rejected.reason.<get-reason>|<get-reason>(){}[0]
+        final val to // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Rejected.to|{}to[0]
+            final fun <get-to>(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Rejected.to.<get-to>|<get-to>(){}[0]
+
+        final fun component1(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Rejected.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Rejected.component2|component2(){}[0]
+        final fun component3(): kotlin/String // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Rejected.component3|component3(){}[0]
+        final fun copy(io.dataloom.api.plugin/PluginLifecycleState = ..., io.dataloom.api.plugin/PluginLifecycleState = ..., kotlin/String = ...): io.dataloom.core.plugin/PluginLifecycleTransitionResult.Rejected // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Rejected.copy|copy(io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.api.plugin.PluginLifecycleState;kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Rejected.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Rejected.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Rejected.toString|toString(){}[0]
+    }
+}
+
+final object io.dataloom.core.plugin/PluginLifecycleTransitions { // io.dataloom.core.plugin/PluginLifecycleTransitions|null[0]
+    final fun isLegal(io.dataloom.api.plugin/PluginLifecycleState, io.dataloom.api.plugin/PluginLifecycleState): kotlin/Boolean // io.dataloom.core.plugin/PluginLifecycleTransitions.isLegal|isLegal(io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.api.plugin.PluginLifecycleState){}[0]
+    final fun validate(io.dataloom.api.plugin/PluginLifecycleState, io.dataloom.api.plugin/PluginLifecycleState): io.dataloom.core.plugin/PluginLifecycleTransitionResult // io.dataloom.core.plugin/PluginLifecycleTransitions.validate|validate(io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.api.plugin.PluginLifecycleState){}[0]
 }
