@@ -26,6 +26,7 @@ local attempt.
 | `LOCAL` selected, BIDIRECTIONAL | `operations = [READ_LOCAL, SERVE_LOCAL]` | Same as above — `READ_LOCAL` documents that the push side is locally accepted with no remote push attempted; `SERVE_LOCAL` covers the pull side. |
 | `LOCAL` selected, PUSH | `operations = [READ_LOCAL]` | Terminal result is `AcceptedLocally` — accepting local intent is genuinely the entire outcome. See "Transport-free PUSH" below. |
 | `LOCAL` selected as an explicit fallback from a `REMOTE` primary, `reconcileAfterFallback = true` (the default) | `operations` includes `ENQUEUE_DURABLE_WORK` and `RECONCILE` | Admitted via `StrategyDurableQueueAdmitter` when configured; rejected with the shared `DURABLE_REFRESH_NOT_YET_SUPPORTED` reason otherwise. See "Durable queue admission" below. |
+| Connectivity `UNKNOWN`/`NOT_EVALUATED`, `primarySource = REMOTE`, `unknownConnectivityPolicy = DEFER` (not the default `ATTEMPT_REMOTE`) | `operations = [ENQUEUE_DURABLE_WORK]` (`StrategyDisposition.DEFER`) | Routed through the same `unknownConnectivityResult` helper `evaluateRemoteFirst`/`evaluateNetworkOnly` use. Admitted via `StrategyDurableQueueAdmitter` and genuinely replayable against the real, unmodified `RoomStorageProvider` — see "Durable queue admission for the connectivity-unknown branch" below. |
 
 ## Honoring `persistRemoteResult`
 
@@ -116,6 +117,47 @@ existed: the branch is rejected with the same shared
 cache-first/offline-first use. To get synchronous hybrid fallback behavior
 without configuring an encoder at all, construct `HybridStrategyProfile`
 with `reconcileAfterFallback = false`.
+
+**Status:** genuinely blocked against the real, unmodified `RoomStorageProvider`/
+`SqlDelightStorageProvider` — `RECONCILE` is present in both the immediate
+`operations` and the durable continuation for this branch with no way to
+avoid it (see the table above), requiring `StrategyReconciliationProvider`,
+and this branch's `SERVE_LOCAL` operation additionally requires
+`StrategyLocalFallbackProvider` — neither reference storage provider
+implements either capability. A real admission-then-replay proof of this
+specific branch needs either a fake/expanded storage provider or new
+coordinator support, not a same-shaped drop-in.
+
+## Durable queue admission for the connectivity-unknown branch
+
+Separately from the reconciled-fallback branch above, `evaluateHybrid`
+routes connectivity-`UNKNOWN`/`NOT_EVALUATED` evidence through the same
+`unknownConnectivityResult` helper `evaluateRemoteFirst`/`evaluateNetworkOnly`
+already use, whenever `primarySource = HybridSource.REMOTE` and
+`unknownConnectivityPolicy != ATTEMPT_REMOTE`. With
+`unknownConnectivityPolicy = DEFER`, the plan is `StrategyDisposition.DEFER`
+with `operations = [ENQUEUE_DURABLE_WORK]` only — no `SERVE_LOCAL`.
+
+`deriveDurableContinuation`'s `HybridStrategyProfile` arm freezes this
+branch's continuation as `remoteOperations(direction, persistRemote =
+profile.persistRemoteResult)`, appending `RECONCILE` only when
+`profile.reconcileAfterFallback` is `true`. With `reconcileAfterFallback =
+false` (not this profile's default), the continuation carries neither
+`RECONCILE` nor `SERVE_LOCAL`, and — unlike `RemoteFirstStrategyProfile` —
+hybrid's `continuationFallback` is `null` unconditionally, for every field
+combination, since `deriveDurableContinuation`'s fallback `when` only
+produces a non-null `StrategyFallbackPlan` for `RemoteFirstStrategyProfile`.
+Neither `StrategyLocalFallbackProvider` nor `StrategyReconciliationProvider`
+is ever required to replay this branch.
+
+**Status:** proven for real against the real, unmodified `RoomStorageProvider`
+via `AndroidReferenceConsumerHybridQueueRobolectricTest` (`#101`,
+2026-08-26) — durable admission with zero transport calls, a real
+Room-backed queue read-back, and one deterministic `queueWorker.run(...)`
+replay through `AcceptedStrategyPlanExecutionCoordinator` and the real
+`InboundPullSynchronizationPipeline`, reaching a genuine
+`SynchronizationResult.Succeeded` (`summary.inboundEventsApplied == 1`). No
+equivalent iOS proof exists yet.
 
 ## Coordinator wiring
 
