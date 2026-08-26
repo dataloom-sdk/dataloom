@@ -90,7 +90,7 @@ time before it flips.
 | 4 | [DL-041 conflict engine](https://github.com/dataloom-sdk/dataloom/issues/95) | IN PROGRESS | 40% |
 | 5 | [DL-042 events, observability, health, dashboard](https://github.com/dataloom-sdk/dataloom/issues/96) | IN PROGRESS | 45% |
 | 6 | [DL-043 asset synchronization](https://github.com/dataloom-sdk/dataloom/issues/97) | NOT STARTED | 0% |
-| 7 | [DL-044 plugin platform](https://github.com/dataloom-sdk/dataloom/issues/98) | NOT STARTED | 15% |
+| 7 | [DL-044 plugin platform](https://github.com/dataloom-sdk/dataloom/issues/98) | PARTIAL | 25% |
 | 8 | [DL-045 enterprise governance](https://github.com/dataloom-sdk/dataloom/issues/99) | NOT STARTED | 10% |
 | 9 | [DL-046 immutable V1 release](https://github.com/dataloom-sdk/dataloom/issues/100) | BLOCKED / NO-GO | 10% |
 
@@ -98,6 +98,7 @@ time before it flips.
 
 **Recent highlights** (newest first):
 
+- 2026-08-26 — `#98`'s first real runtime slice: `PluginRegistry` (deny-by-default registration, dependency-graph validation/ordering, cycle rejection) and `PluginLifecycleTransitions`/`PluginLifecycleStateTracker` (lifecycle state-machine enforcement), in `dataloom-core`
 - 2026-08-18 — Real Android durable-queue-admission-then-replay proof for offline-first — `AndroidReferenceConsumerDurableQueueRobolectricTest` (`#325`)
 - 2026-08-18 — `SynchronizationOperationalEventBridge` wires the durable operational-event outbox to real synchronization events, opt-in via `DataLoomBuilder.operationalEventOutboxConfiguration` (`#324`)
 - 2026-08-17 — Real Android circuit-breaker process kill/relaunch proof via a genuine second `:circuitproof` process (`#323`)

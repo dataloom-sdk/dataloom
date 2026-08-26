@@ -2,23 +2,31 @@
 
 ## Status
 
-**SPI contracts only — the plugin lifecycle engine does not exist yet.**
-This module is `#93` (DL-039 foundations)'s bounded slice toward the
-"plugin API" line in its required scope ("Freeze the V1 published artifact
-graph and ownership boundaries, including the intended ... plugin API ...").
-It exists to freeze the *shape* of a plugin's identity, manifest,
-permission requests, lifecycle labels, extension points, and execution
-bounds — matching ADR-0002's own description of `dataloom-plugin-api` as a
-"Stable SPI: Plugin manifest, hooks, permissions, lifecycle, compatibility,
-and bounded-execution contracts."
+**SPI contracts only — this module itself contains no behavior.** This
+module is `#93` (DL-039 foundations)'s bounded slice toward the "plugin
+API" line in its required scope ("Freeze the V1 published artifact graph
+and ownership boundaries, including the intended ... plugin API ..."). It
+exists to freeze the *shape* of a plugin's identity, manifest, permission
+requests, lifecycle labels, extension points, and execution bounds —
+matching ADR-0002's own description of `dataloom-plugin-api` as a "Stable
+SPI: Plugin manifest, hooks, permissions, lifecycle, compatibility, and
+bounded-execution contracts."
 
-It deliberately contains **zero behavior**: no plugin discovery, loading,
-registration, deny-by-default enablement, permission enforcement,
+It deliberately contains **zero behavior itself**: no plugin discovery,
+loading, registration, deny-by-default enablement, permission enforcement,
 dependency-cycle validation, compatibility-range comparison, timeout
 cancellation, concurrency limiting, failure isolation/bulkheading, hot
-disable, or audit recording. All of that is `#98` (DL-044 plugin
-platform)'s job, built on top of these contracts — its own issue text says
-"Implement after the relevant `#93` ... slices," confirming this ordering.
+disable, or audit recording. Most of that remains `#98` (DL-044 plugin
+platform)'s open job, built on top of these contracts — its own issue text
+says "Implement after the relevant `#93` ... slices," confirming this
+ordering. `#98` has now shipped its first bounded slice on top of these
+contracts, in `dataloom-core` rather than this module: deny-by-default
+registration, dependency-graph validation/resolution ordering/cycle
+rejection, and lifecycle state-machine transition enforcement — see
+[Plugin registry and lifecycle state tracking](./plugin-registry.md).
+Permission enforcement, execution-bounds enforcement, compatibility
+validation, hook-point dispatch, hot disable, audit, and certification
+remain unbuilt.
 
 ## What exists here
 

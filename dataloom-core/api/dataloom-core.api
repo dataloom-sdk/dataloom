@@ -1,3 +1,55 @@
+public final class io/dataloom/core/plugin/PluginLifecycleStateTracker {
+	public fun <init> (Lio/dataloom/core/plugin/PluginRegistry;)V
+	public final fun stateOf-WWrLh4Q (Ljava/lang/String;)Lio/dataloom/api/plugin/PluginLifecycleState;
+	public final fun transition-fMNmWBQ (Ljava/lang/String;Lio/dataloom/api/plugin/PluginLifecycleState;)Lio/dataloom/core/plugin/PluginLifecycleTransitionResult;
+}
+
+public abstract class io/dataloom/core/plugin/PluginLifecycleTransitionResult {
+}
+
+public final class io/dataloom/core/plugin/PluginLifecycleTransitionResult$Allowed : io/dataloom/core/plugin/PluginLifecycleTransitionResult {
+	public fun <init> (Lio/dataloom/api/plugin/PluginLifecycleState;Lio/dataloom/api/plugin/PluginLifecycleState;)V
+	public final fun component1 ()Lio/dataloom/api/plugin/PluginLifecycleState;
+	public final fun component2 ()Lio/dataloom/api/plugin/PluginLifecycleState;
+	public final fun copy (Lio/dataloom/api/plugin/PluginLifecycleState;Lio/dataloom/api/plugin/PluginLifecycleState;)Lio/dataloom/core/plugin/PluginLifecycleTransitionResult$Allowed;
+	public static synthetic fun copy$default (Lio/dataloom/core/plugin/PluginLifecycleTransitionResult$Allowed;Lio/dataloom/api/plugin/PluginLifecycleState;Lio/dataloom/api/plugin/PluginLifecycleState;ILjava/lang/Object;)Lio/dataloom/core/plugin/PluginLifecycleTransitionResult$Allowed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFrom ()Lio/dataloom/api/plugin/PluginLifecycleState;
+	public final fun getTo ()Lio/dataloom/api/plugin/PluginLifecycleState;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/core/plugin/PluginLifecycleTransitionResult$Rejected : io/dataloom/core/plugin/PluginLifecycleTransitionResult {
+	public fun <init> (Lio/dataloom/api/plugin/PluginLifecycleState;Lio/dataloom/api/plugin/PluginLifecycleState;Ljava/lang/String;)V
+	public final fun component1 ()Lio/dataloom/api/plugin/PluginLifecycleState;
+	public final fun component2 ()Lio/dataloom/api/plugin/PluginLifecycleState;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lio/dataloom/api/plugin/PluginLifecycleState;Lio/dataloom/api/plugin/PluginLifecycleState;Ljava/lang/String;)Lio/dataloom/core/plugin/PluginLifecycleTransitionResult$Rejected;
+	public static synthetic fun copy$default (Lio/dataloom/core/plugin/PluginLifecycleTransitionResult$Rejected;Lio/dataloom/api/plugin/PluginLifecycleState;Lio/dataloom/api/plugin/PluginLifecycleState;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/core/plugin/PluginLifecycleTransitionResult$Rejected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFrom ()Lio/dataloom/api/plugin/PluginLifecycleState;
+	public final fun getReason ()Ljava/lang/String;
+	public final fun getTo ()Lio/dataloom/api/plugin/PluginLifecycleState;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/core/plugin/PluginLifecycleTransitions {
+	public static final field INSTANCE Lio/dataloom/core/plugin/PluginLifecycleTransitions;
+	public final fun isLegal (Lio/dataloom/api/plugin/PluginLifecycleState;Lio/dataloom/api/plugin/PluginLifecycleState;)Z
+	public final fun validate (Lio/dataloom/api/plugin/PluginLifecycleState;Lio/dataloom/api/plugin/PluginLifecycleState;)Lio/dataloom/core/plugin/PluginLifecycleTransitionResult;
+}
+
+public final class io/dataloom/core/plugin/PluginRegistry {
+	public fun <init> (Ljava/util/List;)V
+	public final fun findById-WWrLh4Q (Ljava/lang/String;)Lio/dataloom/api/plugin/DataLoomPlugin;
+	public final fun getPlugins ()Ljava/util/List;
+	public final fun getResolutionOrder ()Ljava/util/List;
+	public final fun getSize ()I
+	public final fun isEmpty ()Z
+}
+
 public final class io/dataloom/core/provider/ProviderLifecycleCoordinator {
 	public fun <init> (Lio/dataloom/core/provider/ProviderRegistry;Lio/dataloom/api/provider/ProviderInitializationContext;)V
 	public final fun getState ()Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;
