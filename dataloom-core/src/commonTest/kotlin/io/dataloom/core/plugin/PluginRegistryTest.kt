@@ -208,7 +208,7 @@ class PluginRegistryTest {
     }
 
     @Test
-    fun `diamond dependency graph resolves each node exactly once, deps before dependents`() {
+    fun `diamond dependency graph resolves each node exactly once deps before dependents`() {
         // d depends on b and c; b and c both depend on a.
         val a = plugin("a")
         val b = plugin("b", dependsOn = setOf("a"))
