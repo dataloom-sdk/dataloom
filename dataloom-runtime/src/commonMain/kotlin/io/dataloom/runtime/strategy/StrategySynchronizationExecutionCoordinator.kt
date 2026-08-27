@@ -11,6 +11,7 @@ import io.dataloom.api.provider.ProviderLifecycleCoordinatorState
 import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
 import io.dataloom.api.strategy.DurableStrategyDecisionEventLog
+import io.dataloom.api.strategy.DurableStrategyDecisionOutcomeHistory
 import io.dataloom.api.strategy.StrategyDecisionEvent
 import io.dataloom.api.strategy.StrategyDecisionId
 import io.dataloom.api.strategy.StrategyDecisionOutcomeKind
@@ -58,6 +59,27 @@ import kotlin.coroutines.cancellation.CancellationException
  * [CancellationException] still propagates). When [admissionPolicy] is
  * `null`, [execute] performs no policy evaluation at all -- byte-for-byte
  * the same behavior as before this feature existed.
+ *
+ * ## Per-attempt outcome history (optional)
+ *
+ * When [strategyDecisionOutcomeHistory] is configured -- and only when
+ * [strategyDecisionEventLog] is *also* configured, the same "no effect
+ * unless the diagnostics log itself is configured" posture
+ * [io.dataloom.runtime.facade.DataLoomStrategyDecisionOperationalEventOutboxSpec]
+ * already documents for the operational-event bridge, since the
+ * [StrategyDecisionEvent] this appends is the exact one [strategyDecisionEventLog]
+ * already built, never a second, independently constructed one -- the same
+ * event is also appended to [io.dataloom.api.strategy.DurableStrategyDecisionOutcomeHistory]
+ * after [strategyDecisionEventLog] has already recorded it, never before.
+ * Unlike [strategyDecisionEventLog]'s commit-once single slot, every attempt
+ * is retained here, so a caller can see the full sequence of outcomes a
+ * retried [StrategyDecisionId] actually produced, not just the first one. A
+ * recording failure never changes or hides the real
+ * [StrategySynchronizationExecutionResult] this class returns, matching
+ * every other optional durable bridge here (only [CancellationException]
+ * still propagates). When [strategyDecisionOutcomeHistory] is `null`,
+ * [execute] never appends to it -- byte-for-byte the same behavior as before
+ * this feature existed.
  */
 internal class StrategySynchronizationExecutionCoordinator(
     private val lifecycleCoordinator: ProviderLifecycleCoordinator,
@@ -69,6 +91,7 @@ internal class StrategySynchronizationExecutionCoordinator(
     private val lifecycleEventEmitter: SynchronizationLifecycleEventEmitter?,
     private val durableQueueWorkEncoder: QueuedSynchronizationWorkEncoder? = null,
     private val strategyDecisionEventLog: DurableStrategyDecisionEventLog? = null,
+    private val strategyDecisionOutcomeHistory: DurableStrategyDecisionOutcomeHistory? = null,
     private val operationalEventOutbox: DurableOperationalEventOutbox? = null,
     private val operationalEventOutboxScope: OperationalEventOutboxScope? = null,
     private val admissionPolicy: StrategyAdmissionPolicyConfiguration? = null,
@@ -143,7 +166,31 @@ internal class StrategySynchronizationExecutionCoordinator(
             committedAt = result.completedAt,
         )
         log.record(decisionId, event)
+        recordOutcomeHistoryAttempt(decisionId, event)
         recordOperationalEvent(decisionId, event)
+    }
+
+    /**
+     * When [strategyDecisionOutcomeHistory] is configured, appends [event] as
+     * a new per-attempt entry for [decisionId], after [strategyDecisionEventLog]
+     * has already recorded it (this method is only ever reached from
+     * [recordDecisionEvent], which is itself only reached once [strategyDecisionEventLog]
+     * is non-null -- see this class's own "Per-attempt outcome history
+     * (optional)" documentation). [DurableStrategyDecisionOutcomeHistory.append]
+     * reports every failure mode -- underlying store failure or exhausted
+     * contention retries -- as a
+     * [io.dataloom.api.strategy.DurableStrategyDecisionOutcomeAppendOutcome]
+     * value rather than throwing, the same non-throwing contract
+     * [strategyDecisionEventLog]'s own `record` call above already relies on
+     * without a `try`/`catch`, so a durable-recording failure here never
+     * changes or hides the real [StrategySynchronizationExecutionResult]
+     * already computed. Only [kotlin.coroutines.cancellation.CancellationException]
+     * propagates, exactly as it would from any other suspend call in this
+     * method.
+     */
+    private suspend fun recordOutcomeHistoryAttempt(decisionId: StrategyDecisionId, event: StrategyDecisionEvent) {
+        val history = strategyDecisionOutcomeHistory ?: return
+        history.append(decisionId, event)
     }
 
     /**

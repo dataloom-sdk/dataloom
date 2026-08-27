@@ -2042,6 +2042,43 @@ sealed interface io.dataloom.api.storage/OutboundChangeReadResult { // io.datalo
     }
 }
 
+sealed interface io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome { // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome|null[0]
+    final class Appended : io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome { // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.Appended|null[0]
+        constructor <init>(io.dataloom.api.strategy/StrategyDecisionEvent, kotlin/Int) // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.Appended.<init>|<init>(io.dataloom.api.strategy.StrategyDecisionEvent;kotlin.Int){}[0]
+
+        final val event // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.Appended.event|{}event[0]
+            final fun <get-event>(): io.dataloom.api.strategy/StrategyDecisionEvent // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.Appended.event.<get-event>|<get-event>(){}[0]
+        final val retainedCount // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.Appended.retainedCount|{}retainedCount[0]
+            final fun <get-retainedCount>(): kotlin/Int // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.Appended.retainedCount.<get-retainedCount>|<get-retainedCount>(){}[0]
+
+        final fun component1(): io.dataloom.api.strategy/StrategyDecisionEvent // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.Appended.component1|component1(){}[0]
+        final fun component2(): kotlin/Int // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.Appended.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.strategy/StrategyDecisionEvent = ..., kotlin/Int = ...): io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.Appended // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.Appended.copy|copy(io.dataloom.api.strategy.StrategyDecisionEvent;kotlin.Int){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.Appended.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.Appended.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.Appended.toString|toString(){}[0]
+    }
+
+    final class PersistenceFailure : io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome { // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.PersistenceFailure|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.PersistenceFailure.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.PersistenceFailure.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.PersistenceFailure.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.PersistenceFailure.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.PersistenceFailure // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.PersistenceFailure.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.PersistenceFailure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.PersistenceFailure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.PersistenceFailure.toString|toString(){}[0]
+    }
+
+    final object ContentionLimitReached : io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome { // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.ContentionLimitReached|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.ContentionLimitReached.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.ContentionLimitReached.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome.ContentionLimitReached.toString|toString(){}[0]
+    }
+}
+
 sealed interface io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome { // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome|null[0]
     final class AlreadyRecorded : io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome { // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.AlreadyRecorded|null[0]
         constructor <init>(io.dataloom.api.strategy/StrategyDecisionEvent) // io.dataloom.api.strategy/DurableStrategyDecisionRecordOutcome.AlreadyRecorded.<init>|<init>(io.dataloom.api.strategy.StrategyDecisionEvent){}[0]
@@ -4626,6 +4663,18 @@ final class io.dataloom.api.strategy/DurableStrategyDecisionEventLog { // io.dat
     }
 }
 
+final class io.dataloom.api.strategy/DurableStrategyDecisionOutcomeHistory { // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeHistory|null[0]
+    constructor <init>(io.dataloom.api.state/DurableStateStore<io.dataloom.api.strategy/StrategyDecisionId, io.dataloom.api.strategy/StrategyDecisionOutcomeHistoryState>, kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeHistory.<init>|<init>(io.dataloom.api.state.DurableStateStore<io.dataloom.api.strategy.StrategyDecisionId,io.dataloom.api.strategy.StrategyDecisionOutcomeHistoryState>;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+
+    final suspend fun append(io.dataloom.api.strategy/StrategyDecisionId, io.dataloom.api.strategy/StrategyDecisionEvent): io.dataloom.api.strategy/DurableStrategyDecisionOutcomeAppendOutcome // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeHistory.append|append(io.dataloom.api.strategy.StrategyDecisionId;io.dataloom.api.strategy.StrategyDecisionEvent){}[0]
+    final suspend fun history(io.dataloom.api.strategy/StrategyDecisionId): io.dataloom.api.provider/ProviderOperationResult<kotlin.collections/List<io.dataloom.api.strategy/StrategyDecisionEvent>> // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeHistory.history|history(io.dataloom.api.strategy.StrategyDecisionId){}[0]
+
+    final object Companion { // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeHistory.Companion|null[0]
+        final val KeyEncoder // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeHistory.Companion.KeyEncoder|{}KeyEncoder[0]
+            final fun <get-KeyEncoder>(): io.dataloom.api.state/DurableStateScopeKeyEncoder<io.dataloom.api.strategy/StrategyDecisionId> // io.dataloom.api.strategy/DurableStrategyDecisionOutcomeHistory.Companion.KeyEncoder.<get-KeyEncoder>|<get-KeyEncoder>(){}[0]
+    }
+}
+
 final class io.dataloom.api.strategy/HybridStrategyProfile : io.dataloom.api.strategy/SynchronizationStrategyProfile { // io.dataloom.api.strategy/HybridStrategyProfile|null[0]
     constructor <init>(io.dataloom.api.strategy/StrategyProfileId, io.dataloom.api.strategy/StrategyConfigurationVersion, io.dataloom.api.strategy/HybridSource, io.dataloom.api.strategy/HybridSource, kotlin/Boolean = ..., kotlin/Boolean = ..., io.dataloom.api.strategy/UnknownConnectivityPolicy = ...) // io.dataloom.api.strategy/HybridStrategyProfile.<init>|<init>(io.dataloom.api.strategy.StrategyProfileId;io.dataloom.api.strategy.StrategyConfigurationVersion;io.dataloom.api.strategy.HybridSource;io.dataloom.api.strategy.HybridSource;kotlin.Boolean;kotlin.Boolean;io.dataloom.api.strategy.UnknownConnectivityPolicy){}[0]
 
@@ -4809,6 +4858,26 @@ final class io.dataloom.api.strategy/StrategyDecisionEventCodec : io.dataloom.ap
 
     final fun decode(kotlin/String): io.dataloom.api.strategy/StrategyDecisionEvent // io.dataloom.api.strategy/StrategyDecisionEventCodec.decode|decode(kotlin.String){}[0]
     final fun encode(io.dataloom.api.strategy/StrategyDecisionEvent): kotlin/String // io.dataloom.api.strategy/StrategyDecisionEventCodec.encode|encode(io.dataloom.api.strategy.StrategyDecisionEvent){}[0]
+}
+
+final class io.dataloom.api.strategy/StrategyDecisionOutcomeHistoryState { // io.dataloom.api.strategy/StrategyDecisionOutcomeHistoryState|null[0]
+    constructor <init>(kotlin.collections/List<io.dataloom.api.strategy/StrategyDecisionEvent>) // io.dataloom.api.strategy/StrategyDecisionOutcomeHistoryState.<init>|<init>(kotlin.collections.List<io.dataloom.api.strategy.StrategyDecisionEvent>){}[0]
+
+    final val retainedAttempts // io.dataloom.api.strategy/StrategyDecisionOutcomeHistoryState.retainedAttempts|{}retainedAttempts[0]
+        final fun <get-retainedAttempts>(): kotlin.collections/List<io.dataloom.api.strategy/StrategyDecisionEvent> // io.dataloom.api.strategy/StrategyDecisionOutcomeHistoryState.retainedAttempts.<get-retainedAttempts>|<get-retainedAttempts>(){}[0]
+
+    final fun component1(): kotlin.collections/List<io.dataloom.api.strategy/StrategyDecisionEvent> // io.dataloom.api.strategy/StrategyDecisionOutcomeHistoryState.component1|component1(){}[0]
+    final fun copy(kotlin.collections/List<io.dataloom.api.strategy/StrategyDecisionEvent> = ...): io.dataloom.api.strategy/StrategyDecisionOutcomeHistoryState // io.dataloom.api.strategy/StrategyDecisionOutcomeHistoryState.copy|copy(kotlin.collections.List<io.dataloom.api.strategy.StrategyDecisionEvent>){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyDecisionOutcomeHistoryState.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyDecisionOutcomeHistoryState.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyDecisionOutcomeHistoryState.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.strategy/StrategyDecisionOutcomeHistoryStateCodec : io.dataloom.api.state/DurableStateCodec<io.dataloom.api.strategy/StrategyDecisionOutcomeHistoryState> { // io.dataloom.api.strategy/StrategyDecisionOutcomeHistoryStateCodec|null[0]
+    constructor <init>() // io.dataloom.api.strategy/StrategyDecisionOutcomeHistoryStateCodec.<init>|<init>(){}[0]
+
+    final fun decode(kotlin/String): io.dataloom.api.strategy/StrategyDecisionOutcomeHistoryState // io.dataloom.api.strategy/StrategyDecisionOutcomeHistoryStateCodec.decode|decode(kotlin.String){}[0]
+    final fun encode(io.dataloom.api.strategy/StrategyDecisionOutcomeHistoryState): kotlin/String // io.dataloom.api.strategy/StrategyDecisionOutcomeHistoryStateCodec.encode|encode(io.dataloom.api.strategy.StrategyDecisionOutcomeHistoryState){}[0]
 }
 
 final class io.dataloom.api.strategy/StrategyDurableContinuationPlan { // io.dataloom.api.strategy/StrategyDurableContinuationPlan|null[0]

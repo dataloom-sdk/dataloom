@@ -633,6 +633,7 @@ public final class io/dataloom/runtime/facade/DataLoomBuilder {
 	public final fun runtimeDependencies (Lio/dataloom/api/runtime/RuntimeDependencies;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun strategyAdmissionPolicyConfiguration (Lio/dataloom/runtime/facade/DataLoomStrategyAdmissionPolicySpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun strategyDecisionOperationalEventOutboxConfiguration (Lio/dataloom/runtime/facade/DataLoomStrategyDecisionOperationalEventOutboxSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
+	public final fun strategyDecisionOutcomeHistoryConfiguration (Lio/dataloom/runtime/facade/DataLoomStrategyDecisionOutcomeHistorySpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun strategyDiagnosticsConfiguration (Lio/dataloom/runtime/facade/DataLoomStrategyDiagnosticsSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun strategyProviderProtectionConfiguration (Lio/dataloom/runtime/facade/DataLoomStrategyProviderProtectionSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 }
@@ -829,6 +830,15 @@ public final class io/dataloom/runtime/facade/DataLoomStrategyDecisionOperationa
 	public final fun getMaximumStateUpdateAttempts ()I
 	public final fun getSchemaVersion ()I
 	public final fun getScope--IyNcac ()Ljava/lang/String;
+	public final fun getStore ()Lio/dataloom/api/state/DurableStateStore;
+}
+
+public final class io/dataloom/runtime/facade/DataLoomStrategyDecisionOutcomeHistorySpec {
+	public fun <init> (Lio/dataloom/api/state/DurableStateStore;III)V
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;IIIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getMaxRetainedAttempts ()I
+	public final fun getMaximumStateUpdateAttempts ()I
+	public final fun getSchemaVersion ()I
 	public final fun getStore ()Lio/dataloom/api/state/DurableStateStore;
 }
 

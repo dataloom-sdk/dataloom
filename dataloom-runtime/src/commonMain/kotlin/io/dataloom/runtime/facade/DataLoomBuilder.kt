@@ -27,6 +27,7 @@ import io.dataloom.api.conflict.DurableUnresolvedConflictLog
 import io.dataloom.api.operational.DurableOperationalEventOutbox
 import io.dataloom.api.policy.DurablePolicyDecisionLog
 import io.dataloom.api.strategy.DurableStrategyDecisionEventLog
+import io.dataloom.api.strategy.DurableStrategyDecisionOutcomeHistory
 import io.dataloom.runtime.conflict.ConflictAdministrationCoordinator
 import io.dataloom.runtime.conflict.ConflictDetectorRegistry
 import io.dataloom.runtime.conflict.ConflictResolverRegistry
@@ -161,6 +162,7 @@ public class DataLoomBuilder {
     private var conflictDetectionSpec: DataLoomConflictDetectionSpec? = null
     private var conflictAdministrationSpec: DataLoomConflictAdministrationSpec? = null
     private var strategyDiagnosticsSpec: DataLoomStrategyDiagnosticsSpec? = null
+    private var strategyDecisionOutcomeHistorySpec: DataLoomStrategyDecisionOutcomeHistorySpec? = null
     private var strategyAdmissionPolicySpec: DataLoomStrategyAdmissionPolicySpec? = null
     private var operationalEventOutboxSpec: DataLoomOperationalEventOutboxSpec? = null
     private var retryCircuitAdministrationOperationalEventOutboxSpec:
@@ -353,6 +355,40 @@ public class DataLoomBuilder {
         apply {
             strategyDiagnosticsSpec = spec
         }
+
+    /**
+     * Enables durable per-attempt strategy-decision outcome history: every
+     * terminal-outcome attempt
+     * [io.dataloom.runtime.strategy.StrategySynchronizationExecutionCoordinator]
+     * already records via
+     * [io.dataloom.api.strategy.DurableStrategyDecisionEventLog] (see
+     * [strategyDiagnosticsConfiguration]) is also appended to
+     * [io.dataloom.api.strategy.DurableStrategyDecisionOutcomeHistory] -- for
+     * operator visibility and debugging, never for replay or continuation.
+     * See [DataLoomStrategyDecisionOutcomeHistorySpec] for the full contract,
+     * including why this is a separate opt-in point rather than an extension
+     * of [DataLoomStrategyDiagnosticsSpec], and why it has no effect unless
+     * [strategyDiagnosticsConfiguration] is also configured.
+     *
+     * Configuring this spec alone does not enable strategy-decision
+     * diagnostics -- [strategyDiagnosticsConfiguration] must still be called
+     * separately for a [io.dataloom.api.strategy.StrategyDecisionEvent] to
+     * ever be constructed at all.
+     *
+     * When this method is not called, behavior is unchanged from before it
+     * existed: no attempt is ever appended to a
+     * [io.dataloom.api.strategy.DurableStrategyDecisionOutcomeHistory].
+     *
+     * @param spec the durable store (and optional retention/schema/retry
+     *   tuning) to use. See [DataLoomStrategyDecisionOutcomeHistorySpec] for
+     *   the full contract.
+     * @return this builder for chaining.
+     */
+    public fun strategyDecisionOutcomeHistoryConfiguration(
+        spec: DataLoomStrategyDecisionOutcomeHistorySpec,
+    ): DataLoomBuilder = apply {
+        strategyDecisionOutcomeHistorySpec = spec
+    }
 
     /**
      * Enables real strategy-admission policy evaluation: before
@@ -983,6 +1019,15 @@ public class DataLoomBuilder {
                 maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
             )
         }
+        // --- 8b-2. Build strategy-decision outcome history (optional) ---
+        val strategyDecisionOutcomeHistory = strategyDecisionOutcomeHistorySpec?.let { spec ->
+            DurableStrategyDecisionOutcomeHistory(
+                store = spec.store,
+                maxRetainedAttempts = spec.maxRetainedAttempts,
+                schemaVersion = spec.schemaVersion,
+                maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
+            )
+        }
         // --- 8c. Build strategy-decision operational-event outbox (optional) ---
         val strategyDecisionOperationalEventOutbox = strategyDecisionOperationalEventOutboxSpec?.let { spec ->
             DurableOperationalEventOutbox(
@@ -1018,6 +1063,7 @@ public class DataLoomBuilder {
             lifecycleEventEmitter = lifecycleEventEmitter,
             durableQueueWorkEncoder = queueSubmissionSpecValue?.encoder,
             strategyDecisionEventLog = strategyDecisionEventLog,
+            strategyDecisionOutcomeHistory = strategyDecisionOutcomeHistory,
             operationalEventOutbox = strategyDecisionOperationalEventOutbox,
             operationalEventOutboxScope = strategyDecisionOperationalEventOutboxSpec?.scope,
             admissionPolicy = strategyAdmissionPolicy,

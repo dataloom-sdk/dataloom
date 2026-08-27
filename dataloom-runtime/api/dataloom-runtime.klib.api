@@ -3132,6 +3132,7 @@ final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.
     final fun runtimeDependencies(io.dataloom.api.runtime/RuntimeDependencies): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.runtimeDependencies|runtimeDependencies(io.dataloom.api.runtime.RuntimeDependencies){}[0]
     final fun strategyAdmissionPolicyConfiguration(io.dataloom.runtime.facade/DataLoomStrategyAdmissionPolicySpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.strategyAdmissionPolicyConfiguration|strategyAdmissionPolicyConfiguration(io.dataloom.runtime.facade.DataLoomStrategyAdmissionPolicySpec){}[0]
     final fun strategyDecisionOperationalEventOutboxConfiguration(io.dataloom.runtime.facade/DataLoomStrategyDecisionOperationalEventOutboxSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.strategyDecisionOperationalEventOutboxConfiguration|strategyDecisionOperationalEventOutboxConfiguration(io.dataloom.runtime.facade.DataLoomStrategyDecisionOperationalEventOutboxSpec){}[0]
+    final fun strategyDecisionOutcomeHistoryConfiguration(io.dataloom.runtime.facade/DataLoomStrategyDecisionOutcomeHistorySpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.strategyDecisionOutcomeHistoryConfiguration|strategyDecisionOutcomeHistoryConfiguration(io.dataloom.runtime.facade.DataLoomStrategyDecisionOutcomeHistorySpec){}[0]
     final fun strategyDiagnosticsConfiguration(io.dataloom.runtime.facade/DataLoomStrategyDiagnosticsSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.strategyDiagnosticsConfiguration|strategyDiagnosticsConfiguration(io.dataloom.runtime.facade.DataLoomStrategyDiagnosticsSpec){}[0]
     final fun strategyProviderProtectionConfiguration(io.dataloom.runtime.facade/DataLoomStrategyProviderProtectionSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.strategyProviderProtectionConfiguration|strategyProviderProtectionConfiguration(io.dataloom.runtime.facade.DataLoomStrategyProviderProtectionSpec){}[0]
 }
@@ -3384,6 +3385,19 @@ final class io.dataloom.runtime.facade/DataLoomStrategyDecisionOperationalEventO
         final fun <get-scope>(): io.dataloom.api.operational/OperationalEventOutboxScope // io.dataloom.runtime.facade/DataLoomStrategyDecisionOperationalEventOutboxSpec.scope.<get-scope>|<get-scope>(){}[0]
     final val store // io.dataloom.runtime.facade/DataLoomStrategyDecisionOperationalEventOutboxSpec.store|{}store[0]
         final fun <get-store>(): io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState> // io.dataloom.runtime.facade/DataLoomStrategyDecisionOperationalEventOutboxSpec.store.<get-store>|<get-store>(){}[0]
+}
+
+final class io.dataloom.runtime.facade/DataLoomStrategyDecisionOutcomeHistorySpec { // io.dataloom.runtime.facade/DataLoomStrategyDecisionOutcomeHistorySpec|null[0]
+    constructor <init>(io.dataloom.api.state/DurableStateStore<io.dataloom.api.strategy/StrategyDecisionId, io.dataloom.api.strategy/StrategyDecisionOutcomeHistoryState>, kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.runtime.facade/DataLoomStrategyDecisionOutcomeHistorySpec.<init>|<init>(io.dataloom.api.state.DurableStateStore<io.dataloom.api.strategy.StrategyDecisionId,io.dataloom.api.strategy.StrategyDecisionOutcomeHistoryState>;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+
+    final val maxRetainedAttempts // io.dataloom.runtime.facade/DataLoomStrategyDecisionOutcomeHistorySpec.maxRetainedAttempts|{}maxRetainedAttempts[0]
+        final fun <get-maxRetainedAttempts>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomStrategyDecisionOutcomeHistorySpec.maxRetainedAttempts.<get-maxRetainedAttempts>|<get-maxRetainedAttempts>(){}[0]
+    final val maximumStateUpdateAttempts // io.dataloom.runtime.facade/DataLoomStrategyDecisionOutcomeHistorySpec.maximumStateUpdateAttempts|{}maximumStateUpdateAttempts[0]
+        final fun <get-maximumStateUpdateAttempts>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomStrategyDecisionOutcomeHistorySpec.maximumStateUpdateAttempts.<get-maximumStateUpdateAttempts>|<get-maximumStateUpdateAttempts>(){}[0]
+    final val schemaVersion // io.dataloom.runtime.facade/DataLoomStrategyDecisionOutcomeHistorySpec.schemaVersion|{}schemaVersion[0]
+        final fun <get-schemaVersion>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomStrategyDecisionOutcomeHistorySpec.schemaVersion.<get-schemaVersion>|<get-schemaVersion>(){}[0]
+    final val store // io.dataloom.runtime.facade/DataLoomStrategyDecisionOutcomeHistorySpec.store|{}store[0]
+        final fun <get-store>(): io.dataloom.api.state/DurableStateStore<io.dataloom.api.strategy/StrategyDecisionId, io.dataloom.api.strategy/StrategyDecisionOutcomeHistoryState> // io.dataloom.runtime.facade/DataLoomStrategyDecisionOutcomeHistorySpec.store.<get-store>|<get-store>(){}[0]
 }
 
 final class io.dataloom.runtime.facade/DataLoomStrategyDiagnosticsSpec { // io.dataloom.runtime.facade/DataLoomStrategyDiagnosticsSpec|null[0]
