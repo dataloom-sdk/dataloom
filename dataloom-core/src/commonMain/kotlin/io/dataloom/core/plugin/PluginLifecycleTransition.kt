@@ -1,10 +1,13 @@
 package io.dataloom.core.plugin
 
 import io.dataloom.api.plugin.PluginLifecycleState
+import io.dataloom.api.plugin.PluginPermission
 
 /**
  * Outcome of requesting a [PluginLifecycleState] transition against
- * [PluginLifecycleTransitions].
+ * [PluginLifecycleTransitions], or, for the capability-aware
+ * [PluginLifecycleStateTracker.transition] overload, against a plugin's
+ * declared permissions.
  */
 public sealed class PluginLifecycleTransitionResult {
 
@@ -19,6 +22,22 @@ public sealed class PluginLifecycleTransitionResult {
         public val from: PluginLifecycleState,
         public val to: PluginLifecycleState,
         public val reason: String,
+    ) : PluginLifecycleTransitionResult()
+
+    /**
+     * The requested transition is structurally legal, but was denied because
+     * the caller-supplied grant does not hold every capability the plugin's
+     * manifest declares as a required [PluginPermission].
+     *
+     * Returned only by [PluginLifecycleStateTracker]'s capability-aware
+     * `transition(id, target, grantedCapabilities)` overload — the
+     * structural-only [PluginLifecycleTransitions.validate] never returns
+     * this variant, since it has no notion of grants at all.
+     */
+    public data class PermissionDenied(
+        public val from: PluginLifecycleState,
+        public val to: PluginLifecycleState,
+        public val missingPermissions: Set<PluginPermission>,
     ) : PluginLifecycleTransitionResult()
 }
 

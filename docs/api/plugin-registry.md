@@ -18,6 +18,10 @@ This is a genuinely bounded slice of `#98`, not the whole gate. See
 [What remains open](#what-remains-open) below for everything this slice
 does not do.
 
+**Update (2026-08-26):** the "permission enforcement genuinely is blocked"
+finding immediately below has since been re-checked and found stale — see
+[Permission-grant enforcement](#permission-grant-enforcement).
+
 ## Why this slice, now
 
 [`docs/api/plugin-platform-first-slice-investigation.md`](./plugin-platform-first-slice-investigation.md)
@@ -34,11 +38,15 @@ prior prose summary, per this session's own standing discipline after
 `BuiltInSynchronizationStrategyEvaluator` conflations were found in `#93`/
 `#95`) shows the bucket was not uniform:
 
-- **Permission enforcement** genuinely is blocked: `dataloom-plugin-api`
-  cannot depend on `dataloom-api`'s policy foundation yet (confirmed in
-  `dataloom-plugin-api/build.gradle.kts`'s own dependency block — `api(project(":dataloom-model"))`
-  only), so routing a `PluginPermission` through a real grant decision has
-  no foundation to call yet.
+- **Permission enforcement** was originally found blocked here on
+  `dataloom-plugin-api` lacking a dependency path to the policy foundation.
+  Re-checked directly against source (round 23) and found stale: the engine
+  this permission check needs to live in is not `dataloom-plugin-api` at all
+  — it is `dataloom-core`, this page's own module, which already depends on
+  both `dataloom-plugin-api` (`PluginPermission`) and `dataloom-model`
+  (`Capability`/`GrantedCapabilities`/`isAuthorized`) directly. No new module
+  dependency was actually needed. See
+  [Permission-grant enforcement](#permission-grant-enforcement) below.
 - **Compatibility validation** genuinely is blocked on an undecided design
   question, not just unbuilt: `RuntimeVersion` (`dataloom-model`) is a
   plain non-blank `String` with no guaranteed semantic-version shape.
@@ -68,7 +76,8 @@ prior prose summary, per this session's own standing discipline after
 |---|---|---|
 | `PluginRegistry` | `PluginRegistry.kt` | Immutable registry of `DataLoomPlugin` instances. Rejects duplicate `PluginId`s and unresolved dependencies at construction; computes a deterministic, dependency-respecting `resolutionOrder` (dependencies before dependents, ties broken by registration order); rejects dependency cycles (including self-dependency) with the full cycle path in the exception message. |
 | `PluginLifecycleTransitions` | `PluginLifecycleTransition.kt` | Stateless object enforcing which `PluginLifecycleState` transitions are structurally legal, mirroring `PluginLifecycleState`'s own documented `LOADED → VALIDATED → INITIALIZING → ACTIVE ⇄ DEGRADED → DISABLED → UNLOADED` order plus explicit failure-escape edges to `DISABLED` from every pre-`ACTIVE` state. |
-| `PluginLifecycleStateTracker` | `PluginLifecycleStateTracker.kt` | Tracks each plugin in a `PluginRegistry` through its `PluginLifecycleState`, starting every plugin at `LOADED` (never implicitly `ACTIVE`) and enforcing `PluginLifecycleTransitions` on every `transition` call. |
+| `PluginLifecycleStateTracker` | `PluginLifecycleStateTracker.kt` | Tracks each plugin in a `PluginRegistry` through its `PluginLifecycleState`, starting every plugin at `LOADED` (never implicitly `ACTIVE`) and enforcing `PluginLifecycleTransitions` on every `transition` call. Its capability-aware `transition` overload also enforces permission grants — see [Permission-grant enforcement](#permission-grant-enforcement). |
+| `PluginPermission.asCapability()` | `PluginPermissionEnforcement.kt` | Extension function mapping a `PluginPermission` label onto a `Capability` of the same label, connecting `dataloom-plugin-api`'s permission contract to `dataloom-model`'s least-privilege primitive. |
 
 ## Deny-by-default registration and enablement
 
@@ -129,14 +138,72 @@ depended-upon plugin's actual `PluginManifest.version` — that is
 compatibility validation, and per the section above it is blocked on an
 undecided canonical version-format question.
 
+## Permission-grant enforcement
+
+`PluginLifecycleStateTracker` has a second, capability-aware `transition`
+overload:
+
+```kotlin
+public fun transition(
+    id: PluginId,
+    target: PluginLifecycleState,
+    grantedCapabilities: GrantedCapabilities,
+): PluginLifecycleTransitionResult
+```
+
+Structural legality is still checked first via `PluginLifecycleTransitions`,
+exactly as the two-argument overload already does — an illegal transition
+returns `Rejected` and no permission check runs at all.
+
+When the requested `target` is specifically `PluginLifecycleState.ACTIVE`
+(covering both the ordinary `INITIALIZING -> ACTIVE` path and the
+`DEGRADED -> ACTIVE` recovery edge), the tracker additionally requires
+`grantedCapabilities` to hold every one of the plugin's declared
+`PluginManifest.permissions`, checked via `isAuthorized` after mapping each
+`PluginPermission` onto a `Capability` of the same label with
+`asCapability()`. `ACTIVE` is the one state in which a plugin actually
+executes — every earlier state is preparatory per `PluginLifecycleState`'s
+own KDoc — so gating there is the one point that actually protects
+something.
+
+- If every declared permission is held, the transition proceeds exactly as
+  the two-argument overload would: tracked state updates to `target` and
+  `Allowed` is returned.
+- If any declared permission is missing, tracked state is left unchanged
+  and `PluginLifecycleTransitionResult.PermissionDenied(from, to,
+  missingPermissions)` is returned, naming exactly which permissions were
+  missing — never a partial grant, never a silent downgrade.
+- A plugin with no declared permissions (`PluginManifest.permissions`
+  empty) always passes this check regardless of what is granted — there is
+  nothing to authorize.
+- Non-`ACTIVE` targets (`VALIDATED`, `INITIALIZING`, `DISABLED`, `UNLOADED`)
+  are never gated on permissions at all, even with the three-argument
+  overload — only entry into `ACTIVE` is.
+
+This method never throws for an illegal transition or a denied permission
+set — the same "reject, don't throw" posture the two-argument overload
+already establishes.
+
+### What this does not do
+
+- **Does not decide who may call `transition` at all.** This is
+  authentication/authorization of the *caller requesting a transition*,
+  not the *plugin's own declared capabilities* — `#98`'s "authorized hot
+  disable" acceptance criterion remains open and is a separate concern.
+- **Does not perform denied-operation diagnostics beyond naming missing
+  permissions at transition time.** There is no ongoing enforcement once a
+  plugin is `ACTIVE` — no per-invocation capability check, since there is
+  no plugin invocation mechanism yet (`DataLoomPlugin`'s lifecycle
+  callbacks are not frozen — see `docs/api/plugin-api.md`).
+- **Does not audit denied or granted transitions.** Audit records remain
+  an open `#98` item.
+
 ## What remains open
 
 Everything this slice does not cover remains exactly as
-`plugin-platform-first-slice-investigation.md` described it:
+`plugin-platform-first-slice-investigation.md` described it, except
+permission enforcement (now shipped, see above):
 
-- **Permission enforcement** with denied-operation diagnostics — blocked
-  on `dataloom-plugin-api` gaining a dependency path to the policy
-  foundation.
 - **Execution-bounds enforcement** — actual timeout cancellation,
   concurrency limiting, and failure isolation/bulkheading over
   `PluginExecutionBounds`' declared numbers. Not blocked on anything
@@ -150,8 +217,10 @@ Everything this slice does not cover remains exactly as
   adopting a plugin extension point.
 - **Authorized hot disable, audit records, and the certification kit** —
   each its own unstarted design surface (who may request a transition and
-  under what authorization; what an audit record schema looks like; what a
-  repeatable certification kit emits as evidence).
+  under what authorization — distinct from what a permitted caller's
+  plugin may do once `ACTIVE`, which permission-grant enforcement above
+  now covers; what an audit record schema looks like; what a repeatable
+  certification kit emits as evidence).
 - **A reference non-provider plugin** — demonstrating the full lifecycle
   end to end needs the still-open items above (execution-bounds
   enforcement, at minimum) to exist first.
@@ -180,9 +249,15 @@ real safety boundary once actually invoked).
 
 ## Verification
 
-- `dataloom-core:jvmTest` (`io.dataloom.core.plugin.*`): 43 tests, 0
+- `dataloom-core:jvmTest` (`io.dataloom.core.plugin.*`): 53 tests, 0
   failures (`PluginRegistryTest`: 16, `PluginLifecycleTransitionsTest`: 17,
-  `PluginLifecycleStateTrackerTest`: 10).
+  `PluginLifecycleStateTrackerTest`: 18, `PluginPermissionEnforcementTest`: 2).
+- `compileTestKotlinIosArm64`/`compileTestKotlinIosSimulatorArm64`/
+  `compileTestKotlinIosX64` (`-Pdataloom.appleKlibCrossCompile=true`):
+  independently re-verified clean on all three targets, including test
+  sources — `checkKotlinAbi` alone does not compile test sources, a lesson
+  from a real Kotlin/Native-only test-compilation failure found in this
+  page's own prior round.
 - `checkKotlinAbi -Pdataloom.appleKlibCrossCompile=true`: additive-only
   baseline change to `dataloom-core`'s JVM `.api` and Kotlin/Native
   `.klib.api` baselines; no other module's baseline changed.
