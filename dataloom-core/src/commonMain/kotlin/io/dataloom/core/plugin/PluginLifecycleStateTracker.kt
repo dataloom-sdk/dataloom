@@ -2,6 +2,8 @@ package io.dataloom.core.plugin
 
 import io.dataloom.api.plugin.PluginId
 import io.dataloom.api.plugin.PluginLifecycleState
+import io.dataloom.api.security.GrantedCapabilities
+import io.dataloom.api.security.isAuthorized
 
 /**
  * Tracks each plugin registered in a [PluginRegistry] through its
@@ -24,13 +26,20 @@ import io.dataloom.api.plugin.PluginLifecycleState
  *
  * ## What this does not do
  *
- * [PluginLifecycleStateTracker] enforces transition *legality* only. It
- * does not decide whether the *caller* requesting a transition is
- * authorized to do so (`#98`'s "authorized hot disable" acceptance
- * criterion is still open), does not perform any actual plugin
- * initialization/shutdown work (there is no [io.dataloom.api.plugin.DataLoomPlugin]
- * lifecycle callback to invoke — those signatures are not yet frozen, per
- * `docs/api/plugin-api.md`), and does not write audit records.
+ * [PluginLifecycleStateTracker] enforces transition *legality* only via its
+ * two-argument [transition] overload. Its three-argument, capability-aware
+ * [transition] overload additionally enforces that a plugin's declared
+ * [io.dataloom.api.plugin.PluginPermission]s are held by a caller-supplied
+ * [GrantedCapabilities] before allowing a transition *into*
+ * [PluginLifecycleState.ACTIVE] — see that overload's own KDoc. Neither
+ * overload decides whether the *caller* requesting a transition is
+ * authorized to request it at all (`#98`'s "authorized hot disable"
+ * acceptance criterion is still open — that is about who may call
+ * [transition], not what a plugin may do once `ACTIVE`), does not perform
+ * any actual plugin initialization/shutdown work (there is no
+ * [io.dataloom.api.plugin.DataLoomPlugin] lifecycle callback to invoke —
+ * those signatures are not yet frozen, per `docs/api/plugin-api.md`), and
+ * does not write audit records.
  *
  * ## Thread-safety boundary
  *
@@ -80,5 +89,81 @@ public class PluginLifecycleStateTracker(private val registry: PluginRegistry) {
             states[id] = target
         }
         return result
+    }
+
+    /**
+     * Requests a transition of [id]'s tracked state to [target], additionally
+     * enforcing that [grantedCapabilities] holds every capability the
+     * plugin's [io.dataloom.api.plugin.PluginManifest.permissions] declares,
+     * whenever [target] is [PluginLifecycleState.ACTIVE].
+     *
+     * ## Why gate on `ACTIVE` specifically
+     *
+     * [PluginLifecycleState.ACTIVE] is the one state in which a plugin
+     * actually executes — every earlier state (`LOADED`, `VALIDATED`,
+     * `INITIALIZING`) is preparatory and performs no plugin-owned work per
+     * [PluginLifecycleState]'s own KDoc. Gating permission enforcement on
+     * entry to `ACTIVE` (covering both `INITIALIZING -> ACTIVE` and the
+     * `DEGRADED -> ACTIVE` recovery edge) is therefore the one point that
+     * actually protects something, mirroring this same tracker's own
+     * deny-by-default posture for lifecycle state itself: a plugin never
+     * reaches `ACTIVE` by default, and now it never reaches `ACTIVE` holding
+     * less than its full declared permission set by default either.
+     *
+     * ## Result
+     *
+     * - If the requested transition is not structurally legal per
+     *   [PluginLifecycleTransitions], that [PluginLifecycleTransitionResult.Rejected]
+     *   is returned unchanged and no permission check runs — structural
+     *   legality is checked first.
+     * - If [target] is [PluginLifecycleState.ACTIVE] and [grantedCapabilities]
+     *   does not hold every one of the plugin's declared permissions (checked
+     *   via [io.dataloom.api.security.isAuthorized], mapping each
+     *   [io.dataloom.api.plugin.PluginPermission] onto an
+     *   [io.dataloom.api.security.Capability] of the same label via
+     *   [asCapability]), [PluginLifecycleTransitionResult.PermissionDenied] is
+     *   returned naming exactly the missing permissions, and the tracked
+     *   state is left unchanged — the same "reject, don't throw, leave state
+     *   alone" posture the two-argument overload already establishes for
+     *   structural rejection.
+     * - Otherwise the tracked state for [id] is updated to [target] and
+     *   [PluginLifecycleTransitionResult.Allowed] is returned.
+     *
+     * This method never throws for an illegal transition or a denied
+     * permission set.
+     *
+     * @throws IllegalArgumentException if [id] is not registered in
+     *   [registry].
+     */
+    public fun transition(
+        id: PluginId,
+        target: PluginLifecycleState,
+        grantedCapabilities: GrantedCapabilities,
+    ): PluginLifecycleTransitionResult {
+        val current = stateOf(id)
+        val structuralResult = PluginLifecycleTransitions.validate(current, target)
+        if (structuralResult !is PluginLifecycleTransitionResult.Allowed) {
+            return structuralResult
+        }
+
+        if (target == PluginLifecycleState.ACTIVE) {
+            val manifest = requireNotNull(registry.findById(id)) {
+                "PluginLifecycleStateTracker: '$id' is tracked but not found in its registry."
+            }.manifest
+            val requestedCapabilities = manifest.permissions.mapTo(mutableSetOf()) { it.asCapability() }
+            if (!isAuthorized(requestedCapabilities, grantedCapabilities)) {
+                val missingPermissions = manifest.permissions.filterTo(mutableSetOf()) { permission ->
+                    !grantedCapabilities.holds(permission.asCapability())
+                }
+                return PluginLifecycleTransitionResult.PermissionDenied(
+                    from = current,
+                    to = target,
+                    missingPermissions = missingPermissions,
+                )
+            }
+        }
+
+        states[id] = target
+        return structuralResult
     }
 }
