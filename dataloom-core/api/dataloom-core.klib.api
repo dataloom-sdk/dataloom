@@ -6,6 +6,53 @@
 // - Show declarations: true
 
 // Library unique name: <dataloom:dataloom-core>
+sealed interface <#A: out kotlin/Any?> io.dataloom.core.plugin/PluginExecutionBoundsResult { // io.dataloom.core.plugin/PluginExecutionBoundsResult|null[0]
+    final class <#A1: kotlin/Any?> Completed : io.dataloom.core.plugin/PluginExecutionBoundsResult<#A1> { // io.dataloom.core.plugin/PluginExecutionBoundsResult.Completed|null[0]
+        constructor <init>(#A1) // io.dataloom.core.plugin/PluginExecutionBoundsResult.Completed.<init>|<init>(1:0){}[0]
+
+        final val value // io.dataloom.core.plugin/PluginExecutionBoundsResult.Completed.value|{}value[0]
+            final fun <get-value>(): #A1 // io.dataloom.core.plugin/PluginExecutionBoundsResult.Completed.value.<get-value>|<get-value>(){}[0]
+
+        final fun component1(): #A1 // io.dataloom.core.plugin/PluginExecutionBoundsResult.Completed.component1|component1(){}[0]
+        final fun copy(#A1 = ...): io.dataloom.core.plugin/PluginExecutionBoundsResult.Completed<#A1> // io.dataloom.core.plugin/PluginExecutionBoundsResult.Completed.copy|copy(1:0){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.core.plugin/PluginExecutionBoundsResult.Completed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.core.plugin/PluginExecutionBoundsResult.Completed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.core.plugin/PluginExecutionBoundsResult.Completed.toString|toString(){}[0]
+    }
+
+    final class ConcurrencyLimitExceeded : io.dataloom.core.plugin/PluginExecutionBoundsResult<kotlin/Nothing> { // io.dataloom.core.plugin/PluginExecutionBoundsResult.ConcurrencyLimitExceeded|null[0]
+        constructor <init>(io.dataloom.api.plugin/PluginId, kotlin/Int) // io.dataloom.core.plugin/PluginExecutionBoundsResult.ConcurrencyLimitExceeded.<init>|<init>(io.dataloom.api.plugin.PluginId;kotlin.Int){}[0]
+
+        final val maximumConcurrentInvocations // io.dataloom.core.plugin/PluginExecutionBoundsResult.ConcurrencyLimitExceeded.maximumConcurrentInvocations|{}maximumConcurrentInvocations[0]
+            final fun <get-maximumConcurrentInvocations>(): kotlin/Int // io.dataloom.core.plugin/PluginExecutionBoundsResult.ConcurrencyLimitExceeded.maximumConcurrentInvocations.<get-maximumConcurrentInvocations>|<get-maximumConcurrentInvocations>(){}[0]
+        final val pluginId // io.dataloom.core.plugin/PluginExecutionBoundsResult.ConcurrencyLimitExceeded.pluginId|{}pluginId[0]
+            final fun <get-pluginId>(): io.dataloom.api.plugin/PluginId // io.dataloom.core.plugin/PluginExecutionBoundsResult.ConcurrencyLimitExceeded.pluginId.<get-pluginId>|<get-pluginId>(){}[0]
+
+        final fun component1(): io.dataloom.api.plugin/PluginId // io.dataloom.core.plugin/PluginExecutionBoundsResult.ConcurrencyLimitExceeded.component1|component1(){}[0]
+        final fun component2(): kotlin/Int // io.dataloom.core.plugin/PluginExecutionBoundsResult.ConcurrencyLimitExceeded.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.plugin/PluginId = ..., kotlin/Int = ...): io.dataloom.core.plugin/PluginExecutionBoundsResult.ConcurrencyLimitExceeded // io.dataloom.core.plugin/PluginExecutionBoundsResult.ConcurrencyLimitExceeded.copy|copy(io.dataloom.api.plugin.PluginId;kotlin.Int){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.core.plugin/PluginExecutionBoundsResult.ConcurrencyLimitExceeded.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.core.plugin/PluginExecutionBoundsResult.ConcurrencyLimitExceeded.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.core.plugin/PluginExecutionBoundsResult.ConcurrencyLimitExceeded.toString|toString(){}[0]
+    }
+
+    final class TimedOut : io.dataloom.core.plugin/PluginExecutionBoundsResult<kotlin/Nothing> { // io.dataloom.core.plugin/PluginExecutionBoundsResult.TimedOut|null[0]
+        constructor <init>(io.dataloom.api.plugin/PluginId, kotlin/Long) // io.dataloom.core.plugin/PluginExecutionBoundsResult.TimedOut.<init>|<init>(io.dataloom.api.plugin.PluginId;kotlin.Long){}[0]
+
+        final val maximumExecutionMillis // io.dataloom.core.plugin/PluginExecutionBoundsResult.TimedOut.maximumExecutionMillis|{}maximumExecutionMillis[0]
+            final fun <get-maximumExecutionMillis>(): kotlin/Long // io.dataloom.core.plugin/PluginExecutionBoundsResult.TimedOut.maximumExecutionMillis.<get-maximumExecutionMillis>|<get-maximumExecutionMillis>(){}[0]
+        final val pluginId // io.dataloom.core.plugin/PluginExecutionBoundsResult.TimedOut.pluginId|{}pluginId[0]
+            final fun <get-pluginId>(): io.dataloom.api.plugin/PluginId // io.dataloom.core.plugin/PluginExecutionBoundsResult.TimedOut.pluginId.<get-pluginId>|<get-pluginId>(){}[0]
+
+        final fun component1(): io.dataloom.api.plugin/PluginId // io.dataloom.core.plugin/PluginExecutionBoundsResult.TimedOut.component1|component1(){}[0]
+        final fun component2(): kotlin/Long // io.dataloom.core.plugin/PluginExecutionBoundsResult.TimedOut.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.plugin/PluginId = ..., kotlin/Long = ...): io.dataloom.core.plugin/PluginExecutionBoundsResult.TimedOut // io.dataloom.core.plugin/PluginExecutionBoundsResult.TimedOut.copy|copy(io.dataloom.api.plugin.PluginId;kotlin.Long){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.core.plugin/PluginExecutionBoundsResult.TimedOut.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.core.plugin/PluginExecutionBoundsResult.TimedOut.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.core.plugin/PluginExecutionBoundsResult.TimedOut.toString|toString(){}[0]
+    }
+}
+
 sealed interface io.dataloom.core.provider/ProviderResolutionResult { // io.dataloom.core.provider/ProviderResolutionResult|null[0]
     final class Failure : io.dataloom.core.provider/ProviderResolutionResult { // io.dataloom.core.provider/ProviderResolutionResult.Failure|null[0]
         constructor <init>(kotlin.collections/List<io.dataloom.api.provider/ProviderBindingFailure>) // io.dataloom.core.provider/ProviderResolutionResult.Failure.<init>|<init>(kotlin.collections.List<io.dataloom.api.provider.ProviderBindingFailure>){}[0]
@@ -59,6 +106,12 @@ sealed interface io.dataloom.core.provider/StrategyProviderResolutionResult { //
         final fun hashCode(): kotlin/Int // io.dataloom.core.provider/StrategyProviderResolutionResult.Success.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.core.provider/StrategyProviderResolutionResult.Success.toString|toString(){}[0]
     }
+}
+
+final class io.dataloom.core.plugin/PluginExecutionBoundsEnforcer { // io.dataloom.core.plugin/PluginExecutionBoundsEnforcer|null[0]
+    constructor <init>(io.dataloom.core.plugin/PluginRegistry) // io.dataloom.core.plugin/PluginExecutionBoundsEnforcer.<init>|<init>(io.dataloom.core.plugin.PluginRegistry){}[0]
+
+    final suspend fun <#A1: kotlin/Any?> execute(io.dataloom.api.plugin/PluginId, kotlin.coroutines/SuspendFunction0<#A1>): io.dataloom.core.plugin/PluginExecutionBoundsResult<#A1> // io.dataloom.core.plugin/PluginExecutionBoundsEnforcer.execute|execute(io.dataloom.api.plugin.PluginId;kotlin.coroutines.SuspendFunction0<0:0>){0§<kotlin.Any?>}[0]
 }
 
 final class io.dataloom.core.plugin/PluginLifecycleStateTracker { // io.dataloom.core.plugin/PluginLifecycleStateTracker|null[0]

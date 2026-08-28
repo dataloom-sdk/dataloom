@@ -10,9 +10,9 @@ compatibility-range/dependency/execution-bounds/hook-point/lifecycle-label
 *contract shapes* with zero behavior, by design — that module's own
 `build.gradle.kts` says the loading/registration/enforcement/isolation
 engine is `#98`'s job, built on top of those contracts. This page documents
-that engine's first slice: `io.dataloom.core.plugin.PluginRegistry`,
-`PluginLifecycleTransitions`, and `PluginLifecycleStateTracker`
-(`dataloom-core`).
+that engine's growing slice: `io.dataloom.core.plugin.PluginRegistry`,
+`PluginLifecycleTransitions`, `PluginLifecycleStateTracker`, and
+`PluginExecutionBoundsEnforcer` (`dataloom-core`).
 
 This is a genuinely bounded slice of `#98`, not the whole gate. See
 [What remains open](#what-remains-open) below for everything this slice
@@ -21,6 +21,12 @@ does not do.
 **Update (2026-08-26):** the "permission enforcement genuinely is blocked"
 finding immediately below has since been re-checked and found stale — see
 [Permission-grant enforcement](#permission-grant-enforcement).
+
+**Update (2026-08-28):** execution-bounds enforcement — timeout cancellation
+and concurrency limiting over `PluginExecutionBounds` — has shipped. See
+[Execution-bounds enforcement](#execution-bounds-enforcement). Compatibility
+validation and hook-point dispatch were re-checked directly against source
+this round and remain genuinely blocked exactly as described below.
 
 ## Why this slice, now
 
@@ -78,6 +84,7 @@ prior prose summary, per this session's own standing discipline after
 | `PluginLifecycleTransitions` | `PluginLifecycleTransition.kt` | Stateless object enforcing which `PluginLifecycleState` transitions are structurally legal, mirroring `PluginLifecycleState`'s own documented `LOADED → VALIDATED → INITIALIZING → ACTIVE ⇄ DEGRADED → DISABLED → UNLOADED` order plus explicit failure-escape edges to `DISABLED` from every pre-`ACTIVE` state. |
 | `PluginLifecycleStateTracker` | `PluginLifecycleStateTracker.kt` | Tracks each plugin in a `PluginRegistry` through its `PluginLifecycleState`, starting every plugin at `LOADED` (never implicitly `ACTIVE`) and enforcing `PluginLifecycleTransitions` on every `transition` call. Its capability-aware `transition` overload also enforces permission grants — see [Permission-grant enforcement](#permission-grant-enforcement). |
 | `PluginPermission.asCapability()` | `PluginPermissionEnforcement.kt` | Extension function mapping a `PluginPermission` label onto a `Capability` of the same label, connecting `dataloom-plugin-api`'s permission contract to `dataloom-model`'s least-privilege primitive. |
+| `PluginExecutionBoundsEnforcer` | `PluginExecutionBoundsEnforcement.kt` | Wraps an arbitrary `suspend () -> T` invocation of a registered plugin with coroutine-cancellation timeout enforcement (`maximumExecutionMillis`) and per-plugin concurrency limiting (`maximumConcurrentInvocations`), returning a non-throwing `PluginExecutionBoundsResult`. See [Execution-bounds enforcement](#execution-bounds-enforcement). |
 
 ## Deny-by-default registration and enablement
 
@@ -198,60 +205,184 @@ already establishes.
 - **Does not audit denied or granted transitions.** Audit records remain
   an open `#98` item.
 
+## Execution-bounds enforcement
+
+`io.dataloom.core.plugin.PluginExecutionBoundsEnforcer` wraps an arbitrary
+plugin invocation with the timeout cancellation and concurrency limiting
+`docs/api/plugin-registry.md`'s own prior round named as the most promising
+remaining bounded slice, precisely because it has a directly analogous
+precedent already shipped in this codebase:
+`io.dataloom.runtime.retry.TimeoutEnforcingSchedulerProvider`, which wraps
+every `SchedulerProvider` call in coroutine-cancellation timeout enforcement
+via `CoroutineRetryTimeoutExecutor`'s `kotlinx.coroutines.withTimeoutOrNull`,
+converting an expired timeout into a canonical, non-throwing failure result.
+
+```kotlin
+public class PluginExecutionBoundsEnforcer(private val registry: PluginRegistry) {
+    public suspend fun <T> execute(
+        id: PluginId,
+        operation: suspend () -> T,
+    ): PluginExecutionBoundsResult<T>
+}
+```
+
+### Why a generic `operation` parameter, not a `DataLoomPlugin` callback
+
+`DataLoomPlugin` deliberately declares no lifecycle or hook-invocation
+callback methods yet — see `docs/api/plugin-api.md`: those signatures depend
+on the execution context this engine designs and are not frozen. Unlike
+`SchedulerProvider`, there is today no fixed "invoke this plugin" method to
+decorate. `execute` is therefore written generically over any
+`suspend () -> T` block representing one invocation of the plugin
+registered under a given `PluginId`. When a real invocation call site exists
+(hook-point dispatch, still blocked — see
+[What remains open](#what-remains-open)), it is expected to route its
+invocation through this type rather than reimplementing bounds enforcement.
+
+### Timeout enforcement
+
+`PluginExecutionBounds.maximumExecutionMillis` is enforced with
+`kotlinx.coroutines.withTimeoutOrNull` — the exact mechanism
+`CoroutineRetryTimeoutExecutor` uses for providers. An operation that blocks
+without a suspension or other cancellation checkpoint cannot be preempted by
+this timeout, the same documented limitation that executor already carries.
+A timed-out invocation returns `PluginExecutionBoundsResult.TimedOut(pluginId,
+maximumExecutionMillis)` rather than throwing.
+
+### Concurrency limiting
+
+`PluginExecutionBounds.maximumConcurrentInvocations` is enforced with one
+`kotlinx.coroutines.sync.Semaphore` per registered plugin, built once,
+immutably, at construction from the registry's registered plugins. A call
+that would exceed the ceiling is rejected immediately
+(`Semaphore.tryAcquire()` returning `false`, before `operation` is ever
+invoked) rather than suspended to wait for a free slot: a fail-fast
+bulkhead, not a queue, so one busy or slow plugin cannot silently stall an
+unrelated caller. A rejected call returns
+`PluginExecutionBoundsResult.ConcurrencyLimitExceeded(pluginId,
+maximumConcurrentInvocations)`. Each plugin's ceiling is independent — one
+plugin at capacity never affects another plugin's own invocations.
+
+The acquired concurrency slot is always released before `execute` returns,
+including when `operation` throws, times out, or is cancelled.
+
+### What this does not do
+
+- **Does not check `PluginLifecycleState`.** This type enforces declared
+  time/concurrency bounds only, independent of `PluginLifecycleStateTracker`.
+  It does not require a plugin to be `ACTIVE` before running `operation`,
+  and — this is a deliberate, investigated omission, not an oversight — it
+  does not decide what happens to an already-in-flight invocation when a
+  plugin's tracked state changes mid-execution (for example
+  `ACTIVE -> DEGRADED` or `ACTIVE -> DISABLED`).
+
+  This was investigated as a candidate open design question before shipping
+  this slice, per this session's own "resolve it or flag it, don't assume"
+  discipline, and found to be a genuine open question rather than a
+  mechanical extension: `io.dataloom.core.provider.ProviderLifecycleCoordinator`,
+  the precedent this gate's own lifecycle types already follow, has no
+  analogous "cancel work in flight when state changes" behavior to mirror
+  either — it only documents that `CancellationException` during its own
+  `initialize`/`shutdown` calls propagates normally with an undefined
+  post-cancellation state, not a policy for cancelling unrelated in-flight
+  work on a state transition. More fundamentally, there is no real
+  invocation call site at all today — hook-point dispatch remains blocked
+  (see [What remains open](#what-remains-open)) — so there is no concrete
+  in-flight invocation this scenario could apply to yet, and inventing an
+  answer unilaterally here, ahead of any real caller, would be exactly the
+  kind of speculative design this project avoids building ahead of a
+  concrete consumer. Wiring this enforcer together with
+  `PluginLifecycleStateTracker` is left to whichever future slice adds a
+  real invocation call site, once that call site's own semantics make the
+  question concrete instead of hypothetical.
+- **Does not perform failure isolation/bulkheading beyond concurrency
+  limiting.** A plugin operation throwing an ordinary exception propagates
+  normally, uncaught — exactly as `TimeoutEnforcingSchedulerProvider` leaves
+  "unexpected programming exceptions" to propagate rather than converting
+  them into a bounded result.
+- **Does not audit timeout or concurrency-rejection events.** Audit records
+  remain an open `#98` item.
+
+### Thread-safety
+
+Unlike `PluginLifecycleStateTracker` (which requires callers to serialize
+`transition` calls), `execute` is safe to call concurrently, for the same or
+different plugin IDs: `kotlinx.coroutines.sync.Semaphore` is itself safe
+under concurrent `tryAcquire`/`release`, and the per-plugin semaphore map is
+built once, immutably, at construction — concurrency limiting is this
+type's whole purpose, so it must tolerate the concurrent calls it exists to
+bound.
+
+### Module dependency change
+
+`dataloom-core` did not previously depend on `kotlinx-coroutines-core` at
+compile time (its existing `suspend fun`s use only `kotlin.coroutines`
+stdlib types). Real cancellation-capable timeout enforcement needs
+`withTimeoutOrNull`, and real concurrency limiting needs
+`kotlinx.coroutines.sync.Semaphore`, both of which live in that artifact —
+so `dataloom-core/build.gradle.kts` now declares
+`implementation(libs.kotlinx.coroutines.core)`, the same dependency
+`dataloom-runtime` already declares for the same purpose. This is an
+external-library addition only; no new DataLoom module dependency was
+added, and `dataloom-core`'s documented module-dependency rules
+(`docs/architecture/modules.md`: may depend on `dataloom-model`,
+`dataloom-provider-api`, `dataloom-plugin-api`, `dataloom-api`; must not
+depend on `dataloom-runtime` or `dataloom-testing`) are unaffected.
+
 ## What remains open
 
 Everything this slice does not cover remains exactly as
 `plugin-platform-first-slice-investigation.md` described it, except
-permission enforcement (now shipped, see above):
+permission enforcement and execution-bounds enforcement (both now shipped,
+see above):
 
-- **Execution-bounds enforcement** — actual timeout cancellation,
-  concurrency limiting, and failure isolation/bulkheading over
-  `PluginExecutionBounds`' declared numbers. Not blocked on anything
-  external, but deliberately left to a future slice to keep this one
-  bounded — see [Deliberately deferred](#deliberately-deferred-not-blocked)
-  below.
-- **Compatibility validation before activation** — blocked on a canonical,
-  parseable `RuntimeVersion` format decision.
-- **Hook-point callback signatures and dispatch** — blocked on the
-  consuming subsystems (`#93` policy, `#95`, `#96`, the runtime pipeline)
-  adopting a plugin extension point.
+- **Compatibility validation before activation** — re-checked directly
+  against source this round (every `RuntimeVersion(...)` construction site
+  repository-wide), not just assumed still accurate: still blocked on a
+  canonical, parseable `RuntimeVersion` format decision. Current call sites
+  still use `"1.0.0"`, `"runtime-1.0.0"`, `"1.2.3"`, and plain
+  `"2.0.0"`/`"1.2.3"` inconsistently, confirming the same finding
+  `plugin-platform-first-slice-investigation.md` and this page's earlier
+  rounds already made.
+- **Hook-point callback signatures and dispatch** — re-checked directly
+  against source this round (a repository-wide search for `PluginHookPoint`):
+  still referenced only inside `dataloom-plugin-api` itself and its own
+  documentation, with zero adoption by any consuming subsystem (`#93`
+  policy, `#95`, `#96`, the runtime pipeline). Still genuinely blocked,
+  unchanged.
 - **Authorized hot disable, audit records, and the certification kit** —
   each its own unstarted design surface (who may request a transition and
   under what authorization — distinct from what a permitted caller's
   plugin may do once `ACTIVE`, which permission-grant enforcement above
   now covers; what an audit record schema looks like; what a repeatable
   certification kit emits as evidence).
+- **Wiring `PluginExecutionBoundsEnforcer` to `PluginLifecycleStateTracker`**
+  — see [What this does not do](#what-this-does-not-do-1) above: a genuine
+  open design question (what happens to an in-flight invocation on a state
+  transition away from `ACTIVE`), deliberately left unresolved until a real
+  invocation call site exists to make it concrete.
 - **A reference non-provider plugin** — demonstrating the full lifecycle
-  end to end needs the still-open items above (execution-bounds
-  enforcement, at minimum) to exist first.
-
-### Deliberately deferred, not blocked
-
-Execution-bounds enforcement (timeout/concurrency wrapping over
-`PluginExecutionBounds`) has a directly analogous precedent already in this
-codebase (`io.dataloom.runtime.retry.TimeoutEnforcingSchedulerProvider`)
-and is not blocked on any open design question. It is left out of this
-slice deliberately, to keep this change reviewable as one cohesive unit
-(registry + state machine + dependency graph) rather than growing it into
-every remaining bounded item at once — a genuinely separate follow-up
-slice, not a "found it blocked" conclusion.
+  end to end needs a real invocation call site (hook-point dispatch) to
+  exist first; execution-bounds enforcement alone is not sufficient without
+  something that actually calls a plugin.
 
 ## No wiring into `DataLoomBuilder` yet
 
-`PluginRegistry`/`PluginLifecycleStateTracker` are not referenced from
-`DataLoomBuilder` or any other composition root. There is still no
-application-facing way to register a plugin with the DataLoom runtime —
-these types are `#98`'s internal engine building blocks, verified in
-isolation, not yet a public plugin-registration API. Wiring a public
-registration surface is separate follow-up work, likely gated on
-execution-bounds enforcement existing first (an unenforced plugin has no
-real safety boundary once actually invoked).
+`PluginRegistry`/`PluginLifecycleStateTracker`/`PluginExecutionBoundsEnforcer`
+are not referenced from `DataLoomBuilder` or any other composition root.
+There is still no application-facing way to register a plugin with the
+DataLoom runtime — these types are `#98`'s internal engine building blocks,
+verified in isolation, not yet a public plugin-registration API. Wiring a
+public registration surface is separate follow-up work, still likely gated
+on hook-point dispatch existing first (execution-bounds enforcement alone
+has nothing to wrap without a real invocation call site).
 
 ## Verification
 
-- `dataloom-core:jvmTest` (`io.dataloom.core.plugin.*`): 53 tests, 0
+- `dataloom-core:jvmTest` (`io.dataloom.core.plugin.*`): 63 tests, 0
   failures (`PluginRegistryTest`: 16, `PluginLifecycleTransitionsTest`: 17,
-  `PluginLifecycleStateTrackerTest`: 18, `PluginPermissionEnforcementTest`: 2).
+  `PluginLifecycleStateTrackerTest`: 18, `PluginPermissionEnforcementTest`: 2,
+  `PluginExecutionBoundsEnforcerTest`: 10).
 - `compileTestKotlinIosArm64`/`compileTestKotlinIosSimulatorArm64`/
   `compileTestKotlinIosX64` (`-Pdataloom.appleKlibCrossCompile=true`):
   independently re-verified clean on all three targets, including test
@@ -260,7 +391,9 @@ real safety boundary once actually invoked).
   page's own prior round.
 - `checkKotlinAbi -Pdataloom.appleKlibCrossCompile=true`: additive-only
   baseline change to `dataloom-core`'s JVM `.api` and Kotlin/Native
-  `.klib.api` baselines; no other module's baseline changed.
+  `.klib.api` baselines; no other module's baseline changed. `updateKotlinAbi`
+  run and the diff reviewed (purely new `PluginExecutionBoundsEnforcer`/
+  `PluginExecutionBoundsResult` declarations, nothing removed or changed).
 
 ## References
 
@@ -273,4 +406,9 @@ real safety boundary once actually invoked).
   `io.dataloom.core.provider.ProviderRegistry`/`ProviderLifecycleCoordinator` —
   the directly analogous, already-shipped precedent this slice follows for
   providers instead of plugins.
+- `io.dataloom.runtime.retry.TimeoutEnforcingSchedulerProvider`/
+  `CoroutineRetryTimeoutExecutor` (`dataloom-runtime`) — the directly
+  analogous, already-shipped precedent
+  [Execution-bounds enforcement](#execution-bounds-enforcement) above
+  follows for plugins instead of scheduler providers.
 - GitHub issue `#98` — DL-044 plugin platform implementation gate.

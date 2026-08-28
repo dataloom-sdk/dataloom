@@ -258,9 +258,10 @@ Rules:
 Provides internal, platform-independent foundations shared across runtime
 components, including provider registration/lifecycle coordination
 (`io.dataloom.core.provider`) and, since `#98`'s first bounded runtime
-slice, plugin registration/lifecycle-state tracking
-(`io.dataloom.core.plugin`: `PluginRegistry`, `PluginLifecycleTransitions`,
-`PluginLifecycleStateTracker` — see
+slice, plugin registration/lifecycle-state tracking and execution-bounds
+enforcement (`io.dataloom.core.plugin`: `PluginRegistry`,
+`PluginLifecycleTransitions`, `PluginLifecycleStateTracker`,
+`PluginExecutionBoundsEnforcer` — see
 [`plugin-registry.md`](../api/plugin-registry.md)). Future content includes:
 
 - Internal utilities used by `dataloom-runtime`
