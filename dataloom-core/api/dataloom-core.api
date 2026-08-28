@@ -1,6 +1,7 @@
 public final class io/dataloom/core/plugin/PluginLifecycleStateTracker {
 	public fun <init> (Lio/dataloom/core/plugin/PluginRegistry;)V
 	public final fun stateOf-WWrLh4Q (Ljava/lang/String;)Lio/dataloom/api/plugin/PluginLifecycleState;
+	public final fun transition-dkBeV0E (Ljava/lang/String;Lio/dataloom/api/plugin/PluginLifecycleState;Lio/dataloom/api/security/GrantedCapabilities;)Lio/dataloom/core/plugin/PluginLifecycleTransitionResult;
 	public final fun transition-fMNmWBQ (Ljava/lang/String;Lio/dataloom/api/plugin/PluginLifecycleState;)Lio/dataloom/core/plugin/PluginLifecycleTransitionResult;
 }
 
@@ -15,6 +16,21 @@ public final class io/dataloom/core/plugin/PluginLifecycleTransitionResult$Allow
 	public static synthetic fun copy$default (Lio/dataloom/core/plugin/PluginLifecycleTransitionResult$Allowed;Lio/dataloom/api/plugin/PluginLifecycleState;Lio/dataloom/api/plugin/PluginLifecycleState;ILjava/lang/Object;)Lio/dataloom/core/plugin/PluginLifecycleTransitionResult$Allowed;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getFrom ()Lio/dataloom/api/plugin/PluginLifecycleState;
+	public final fun getTo ()Lio/dataloom/api/plugin/PluginLifecycleState;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/core/plugin/PluginLifecycleTransitionResult$PermissionDenied : io/dataloom/core/plugin/PluginLifecycleTransitionResult {
+	public fun <init> (Lio/dataloom/api/plugin/PluginLifecycleState;Lio/dataloom/api/plugin/PluginLifecycleState;Ljava/util/Set;)V
+	public final fun component1 ()Lio/dataloom/api/plugin/PluginLifecycleState;
+	public final fun component2 ()Lio/dataloom/api/plugin/PluginLifecycleState;
+	public final fun component3 ()Ljava/util/Set;
+	public final fun copy (Lio/dataloom/api/plugin/PluginLifecycleState;Lio/dataloom/api/plugin/PluginLifecycleState;Ljava/util/Set;)Lio/dataloom/core/plugin/PluginLifecycleTransitionResult$PermissionDenied;
+	public static synthetic fun copy$default (Lio/dataloom/core/plugin/PluginLifecycleTransitionResult$PermissionDenied;Lio/dataloom/api/plugin/PluginLifecycleState;Lio/dataloom/api/plugin/PluginLifecycleState;Ljava/util/Set;ILjava/lang/Object;)Lio/dataloom/core/plugin/PluginLifecycleTransitionResult$PermissionDenied;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFrom ()Lio/dataloom/api/plugin/PluginLifecycleState;
+	public final fun getMissingPermissions ()Ljava/util/Set;
 	public final fun getTo ()Lio/dataloom/api/plugin/PluginLifecycleState;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
@@ -39,6 +55,10 @@ public final class io/dataloom/core/plugin/PluginLifecycleTransitions {
 	public static final field INSTANCE Lio/dataloom/core/plugin/PluginLifecycleTransitions;
 	public final fun isLegal (Lio/dataloom/api/plugin/PluginLifecycleState;Lio/dataloom/api/plugin/PluginLifecycleState;)Z
 	public final fun validate (Lio/dataloom/api/plugin/PluginLifecycleState;Lio/dataloom/api/plugin/PluginLifecycleState;)Lio/dataloom/core/plugin/PluginLifecycleTransitionResult;
+}
+
+public final class io/dataloom/core/plugin/PluginPermissionEnforcementKt {
+	public static final fun asCapability-N6nwYdI (Ljava/lang/String;)Ljava/lang/String;
 }
 
 public final class io/dataloom/core/plugin/PluginRegistry {

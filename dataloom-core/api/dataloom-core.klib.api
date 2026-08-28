@@ -66,6 +66,7 @@ final class io.dataloom.core.plugin/PluginLifecycleStateTracker { // io.dataloom
 
     final fun stateOf(io.dataloom.api.plugin/PluginId): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.core.plugin/PluginLifecycleStateTracker.stateOf|stateOf(io.dataloom.api.plugin.PluginId){}[0]
     final fun transition(io.dataloom.api.plugin/PluginId, io.dataloom.api.plugin/PluginLifecycleState): io.dataloom.core.plugin/PluginLifecycleTransitionResult // io.dataloom.core.plugin/PluginLifecycleStateTracker.transition|transition(io.dataloom.api.plugin.PluginId;io.dataloom.api.plugin.PluginLifecycleState){}[0]
+    final fun transition(io.dataloom.api.plugin/PluginId, io.dataloom.api.plugin/PluginLifecycleState, io.dataloom.api.security/GrantedCapabilities): io.dataloom.core.plugin/PluginLifecycleTransitionResult // io.dataloom.core.plugin/PluginLifecycleStateTracker.transition|transition(io.dataloom.api.plugin.PluginId;io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.api.security.GrantedCapabilities){}[0]
 }
 
 final class io.dataloom.core.plugin/PluginRegistry { // io.dataloom.core.plugin/PluginRegistry|null[0]
@@ -176,6 +177,25 @@ sealed class io.dataloom.core.plugin/PluginLifecycleTransitionResult { // io.dat
         final fun toString(): kotlin/String // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Allowed.toString|toString(){}[0]
     }
 
+    final class PermissionDenied : io.dataloom.core.plugin/PluginLifecycleTransitionResult { // io.dataloom.core.plugin/PluginLifecycleTransitionResult.PermissionDenied|null[0]
+        constructor <init>(io.dataloom.api.plugin/PluginLifecycleState, io.dataloom.api.plugin/PluginLifecycleState, kotlin.collections/Set<io.dataloom.api.plugin/PluginPermission>) // io.dataloom.core.plugin/PluginLifecycleTransitionResult.PermissionDenied.<init>|<init>(io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.api.plugin.PluginLifecycleState;kotlin.collections.Set<io.dataloom.api.plugin.PluginPermission>){}[0]
+
+        final val from // io.dataloom.core.plugin/PluginLifecycleTransitionResult.PermissionDenied.from|{}from[0]
+            final fun <get-from>(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.core.plugin/PluginLifecycleTransitionResult.PermissionDenied.from.<get-from>|<get-from>(){}[0]
+        final val missingPermissions // io.dataloom.core.plugin/PluginLifecycleTransitionResult.PermissionDenied.missingPermissions|{}missingPermissions[0]
+            final fun <get-missingPermissions>(): kotlin.collections/Set<io.dataloom.api.plugin/PluginPermission> // io.dataloom.core.plugin/PluginLifecycleTransitionResult.PermissionDenied.missingPermissions.<get-missingPermissions>|<get-missingPermissions>(){}[0]
+        final val to // io.dataloom.core.plugin/PluginLifecycleTransitionResult.PermissionDenied.to|{}to[0]
+            final fun <get-to>(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.core.plugin/PluginLifecycleTransitionResult.PermissionDenied.to.<get-to>|<get-to>(){}[0]
+
+        final fun component1(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.core.plugin/PluginLifecycleTransitionResult.PermissionDenied.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.core.plugin/PluginLifecycleTransitionResult.PermissionDenied.component2|component2(){}[0]
+        final fun component3(): kotlin.collections/Set<io.dataloom.api.plugin/PluginPermission> // io.dataloom.core.plugin/PluginLifecycleTransitionResult.PermissionDenied.component3|component3(){}[0]
+        final fun copy(io.dataloom.api.plugin/PluginLifecycleState = ..., io.dataloom.api.plugin/PluginLifecycleState = ..., kotlin.collections/Set<io.dataloom.api.plugin/PluginPermission> = ...): io.dataloom.core.plugin/PluginLifecycleTransitionResult.PermissionDenied // io.dataloom.core.plugin/PluginLifecycleTransitionResult.PermissionDenied.copy|copy(io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.api.plugin.PluginLifecycleState;kotlin.collections.Set<io.dataloom.api.plugin.PluginPermission>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.core.plugin/PluginLifecycleTransitionResult.PermissionDenied.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.core.plugin/PluginLifecycleTransitionResult.PermissionDenied.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.core.plugin/PluginLifecycleTransitionResult.PermissionDenied.toString|toString(){}[0]
+    }
+
     final class Rejected : io.dataloom.core.plugin/PluginLifecycleTransitionResult { // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Rejected|null[0]
         constructor <init>(io.dataloom.api.plugin/PluginLifecycleState, io.dataloom.api.plugin/PluginLifecycleState, kotlin/String) // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Rejected.<init>|<init>(io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.api.plugin.PluginLifecycleState;kotlin.String){}[0]
 
@@ -200,3 +220,5 @@ final object io.dataloom.core.plugin/PluginLifecycleTransitions { // io.dataloom
     final fun isLegal(io.dataloom.api.plugin/PluginLifecycleState, io.dataloom.api.plugin/PluginLifecycleState): kotlin/Boolean // io.dataloom.core.plugin/PluginLifecycleTransitions.isLegal|isLegal(io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.api.plugin.PluginLifecycleState){}[0]
     final fun validate(io.dataloom.api.plugin/PluginLifecycleState, io.dataloom.api.plugin/PluginLifecycleState): io.dataloom.core.plugin/PluginLifecycleTransitionResult // io.dataloom.core.plugin/PluginLifecycleTransitions.validate|validate(io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.api.plugin.PluginLifecycleState){}[0]
 }
+
+final fun (io.dataloom.api.plugin/PluginPermission).io.dataloom.core.plugin/asCapability(): io.dataloom.api.security/Capability // io.dataloom.core.plugin/asCapability|asCapability@io.dataloom.api.plugin.PluginPermission(){}[0]
