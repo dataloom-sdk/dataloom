@@ -1,3 +1,48 @@
+public final class io/dataloom/core/plugin/PluginExecutionBoundsEnforcer {
+	public fun <init> (Lio/dataloom/core/plugin/PluginRegistry;)V
+	public final fun execute-dkBeV0E (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/dataloom/core/plugin/PluginExecutionBoundsResult {
+}
+
+public final class io/dataloom/core/plugin/PluginExecutionBoundsResult$Completed : io/dataloom/core/plugin/PluginExecutionBoundsResult {
+	public fun <init> (Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/Object;)Lio/dataloom/core/plugin/PluginExecutionBoundsResult$Completed;
+	public static synthetic fun copy$default (Lio/dataloom/core/plugin/PluginExecutionBoundsResult$Completed;Ljava/lang/Object;ILjava/lang/Object;)Lio/dataloom/core/plugin/PluginExecutionBoundsResult$Completed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/core/plugin/PluginExecutionBoundsResult$ConcurrencyLimitExceeded : io/dataloom/core/plugin/PluginExecutionBoundsResult {
+	public synthetic fun <init> (Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-zTuMttM ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun copy-fMNmWBQ (Ljava/lang/String;I)Lio/dataloom/core/plugin/PluginExecutionBoundsResult$ConcurrencyLimitExceeded;
+	public static synthetic fun copy-fMNmWBQ$default (Lio/dataloom/core/plugin/PluginExecutionBoundsResult$ConcurrencyLimitExceeded;Ljava/lang/String;IILjava/lang/Object;)Lio/dataloom/core/plugin/PluginExecutionBoundsResult$ConcurrencyLimitExceeded;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaximumConcurrentInvocations ()I
+	public final fun getPluginId-zTuMttM ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/core/plugin/PluginExecutionBoundsResult$TimedOut : io/dataloom/core/plugin/PluginExecutionBoundsResult {
+	public synthetic fun <init> (Ljava/lang/String;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-zTuMttM ()Ljava/lang/String;
+	public final fun component2 ()J
+	public final fun copy-fMNmWBQ (Ljava/lang/String;J)Lio/dataloom/core/plugin/PluginExecutionBoundsResult$TimedOut;
+	public static synthetic fun copy-fMNmWBQ$default (Lio/dataloom/core/plugin/PluginExecutionBoundsResult$TimedOut;Ljava/lang/String;JILjava/lang/Object;)Lio/dataloom/core/plugin/PluginExecutionBoundsResult$TimedOut;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaximumExecutionMillis ()J
+	public final fun getPluginId-zTuMttM ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/core/plugin/PluginLifecycleStateTracker {
 	public fun <init> (Lio/dataloom/core/plugin/PluginRegistry;)V
 	public final fun stateOf-WWrLh4Q (Ljava/lang/String;)Lio/dataloom/api/plugin/PluginLifecycleState;
