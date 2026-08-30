@@ -6,6 +6,10 @@
 // - Show declarations: true
 
 // Library unique name: <dataloom:dataloom-core>
+abstract interface io.dataloom.core.plugin/PluginLifecycleAdministrationAuthorizer { // io.dataloom.core.plugin/PluginLifecycleAdministrationAuthorizer|null[0]
+    abstract suspend fun authorize(io.dataloom.core.plugin/PluginLifecycleTransitionRequest): io.dataloom.core.plugin/PluginLifecycleAdministrationAuthorizationDecision // io.dataloom.core.plugin/PluginLifecycleAdministrationAuthorizer.authorize|authorize(io.dataloom.core.plugin.PluginLifecycleTransitionRequest){}[0]
+}
+
 sealed interface <#A: out kotlin/Any?> io.dataloom.core.plugin/PluginExecutionBoundsResult { // io.dataloom.core.plugin/PluginExecutionBoundsResult|null[0]
     final class <#A1: kotlin/Any?> Completed : io.dataloom.core.plugin/PluginExecutionBoundsResult<#A1> { // io.dataloom.core.plugin/PluginExecutionBoundsResult.Completed|null[0]
         constructor <init>(#A1) // io.dataloom.core.plugin/PluginExecutionBoundsResult.Completed.<init>|<init>(1:0){}[0]
@@ -50,6 +54,27 @@ sealed interface <#A: out kotlin/Any?> io.dataloom.core.plugin/PluginExecutionBo
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.core.plugin/PluginExecutionBoundsResult.TimedOut.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.core.plugin/PluginExecutionBoundsResult.TimedOut.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.core.plugin/PluginExecutionBoundsResult.TimedOut.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.core.plugin/PluginLifecycleAdministrationAuthorizationDecision { // io.dataloom.core.plugin/PluginLifecycleAdministrationAuthorizationDecision|null[0]
+    final class Denied : io.dataloom.core.plugin/PluginLifecycleAdministrationAuthorizationDecision { // io.dataloom.core.plugin/PluginLifecycleAdministrationAuthorizationDecision.Denied|null[0]
+        constructor <init>(kotlin/String) // io.dataloom.core.plugin/PluginLifecycleAdministrationAuthorizationDecision.Denied.<init>|<init>(kotlin.String){}[0]
+
+        final val reasonCode // io.dataloom.core.plugin/PluginLifecycleAdministrationAuthorizationDecision.Denied.reasonCode|{}reasonCode[0]
+            final fun <get-reasonCode>(): kotlin/String // io.dataloom.core.plugin/PluginLifecycleAdministrationAuthorizationDecision.Denied.reasonCode.<get-reasonCode>|<get-reasonCode>(){}[0]
+
+        final fun component1(): kotlin/String // io.dataloom.core.plugin/PluginLifecycleAdministrationAuthorizationDecision.Denied.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): io.dataloom.core.plugin/PluginLifecycleAdministrationAuthorizationDecision.Denied // io.dataloom.core.plugin/PluginLifecycleAdministrationAuthorizationDecision.Denied.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.core.plugin/PluginLifecycleAdministrationAuthorizationDecision.Denied.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.core.plugin/PluginLifecycleAdministrationAuthorizationDecision.Denied.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.core.plugin/PluginLifecycleAdministrationAuthorizationDecision.Denied.toString|toString(){}[0]
+    }
+
+    final object Authorized : io.dataloom.core.plugin/PluginLifecycleAdministrationAuthorizationDecision { // io.dataloom.core.plugin/PluginLifecycleAdministrationAuthorizationDecision.Authorized|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.core.plugin/PluginLifecycleAdministrationAuthorizationDecision.Authorized.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.core.plugin/PluginLifecycleAdministrationAuthorizationDecision.Authorized.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.core.plugin/PluginLifecycleAdministrationAuthorizationDecision.Authorized.toString|toString(){}[0]
     }
 }
 
@@ -120,6 +145,35 @@ final class io.dataloom.core.plugin/PluginLifecycleStateTracker { // io.dataloom
     final fun stateOf(io.dataloom.api.plugin/PluginId): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.core.plugin/PluginLifecycleStateTracker.stateOf|stateOf(io.dataloom.api.plugin.PluginId){}[0]
     final fun transition(io.dataloom.api.plugin/PluginId, io.dataloom.api.plugin/PluginLifecycleState): io.dataloom.core.plugin/PluginLifecycleTransitionResult // io.dataloom.core.plugin/PluginLifecycleStateTracker.transition|transition(io.dataloom.api.plugin.PluginId;io.dataloom.api.plugin.PluginLifecycleState){}[0]
     final fun transition(io.dataloom.api.plugin/PluginId, io.dataloom.api.plugin/PluginLifecycleState, io.dataloom.api.security/GrantedCapabilities): io.dataloom.core.plugin/PluginLifecycleTransitionResult // io.dataloom.core.plugin/PluginLifecycleStateTracker.transition|transition(io.dataloom.api.plugin.PluginId;io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.api.security.GrantedCapabilities){}[0]
+    final suspend fun transition(io.dataloom.core.plugin/PluginLifecycleTransitionRequest, io.dataloom.core.plugin/PluginLifecycleAdministrationAuthorizer): io.dataloom.core.plugin/PluginLifecycleTransitionResult // io.dataloom.core.plugin/PluginLifecycleStateTracker.transition|transition(io.dataloom.core.plugin.PluginLifecycleTransitionRequest;io.dataloom.core.plugin.PluginLifecycleAdministrationAuthorizer){}[0]
+}
+
+final class io.dataloom.core.plugin/PluginLifecycleTransitionRequest { // io.dataloom.core.plugin/PluginLifecycleTransitionRequest|null[0]
+    constructor <init>(io.dataloom.core.plugin/PluginLifecycleAdministrationCommandId, io.dataloom.api.plugin/PluginId, io.dataloom.api.plugin/PluginLifecycleState, io.dataloom.core.plugin/PluginLifecycleAdministrationPrincipalId, io.dataloom.api.time/DataLoomInstant, io.dataloom.core.plugin/PluginLifecycleAdministrationReason) // io.dataloom.core.plugin/PluginLifecycleTransitionRequest.<init>|<init>(io.dataloom.core.plugin.PluginLifecycleAdministrationCommandId;io.dataloom.api.plugin.PluginId;io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.core.plugin.PluginLifecycleAdministrationPrincipalId;io.dataloom.api.time.DataLoomInstant;io.dataloom.core.plugin.PluginLifecycleAdministrationReason){}[0]
+
+    final val commandId // io.dataloom.core.plugin/PluginLifecycleTransitionRequest.commandId|{}commandId[0]
+        final fun <get-commandId>(): io.dataloom.core.plugin/PluginLifecycleAdministrationCommandId // io.dataloom.core.plugin/PluginLifecycleTransitionRequest.commandId.<get-commandId>|<get-commandId>(){}[0]
+    final val pluginId // io.dataloom.core.plugin/PluginLifecycleTransitionRequest.pluginId|{}pluginId[0]
+        final fun <get-pluginId>(): io.dataloom.api.plugin/PluginId // io.dataloom.core.plugin/PluginLifecycleTransitionRequest.pluginId.<get-pluginId>|<get-pluginId>(){}[0]
+    final val principalId // io.dataloom.core.plugin/PluginLifecycleTransitionRequest.principalId|{}principalId[0]
+        final fun <get-principalId>(): io.dataloom.core.plugin/PluginLifecycleAdministrationPrincipalId // io.dataloom.core.plugin/PluginLifecycleTransitionRequest.principalId.<get-principalId>|<get-principalId>(){}[0]
+    final val reason // io.dataloom.core.plugin/PluginLifecycleTransitionRequest.reason|{}reason[0]
+        final fun <get-reason>(): io.dataloom.core.plugin/PluginLifecycleAdministrationReason // io.dataloom.core.plugin/PluginLifecycleTransitionRequest.reason.<get-reason>|<get-reason>(){}[0]
+    final val requestedAt // io.dataloom.core.plugin/PluginLifecycleTransitionRequest.requestedAt|{}requestedAt[0]
+        final fun <get-requestedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.core.plugin/PluginLifecycleTransitionRequest.requestedAt.<get-requestedAt>|<get-requestedAt>(){}[0]
+    final val target // io.dataloom.core.plugin/PluginLifecycleTransitionRequest.target|{}target[0]
+        final fun <get-target>(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.core.plugin/PluginLifecycleTransitionRequest.target.<get-target>|<get-target>(){}[0]
+
+    final fun component1(): io.dataloom.core.plugin/PluginLifecycleAdministrationCommandId // io.dataloom.core.plugin/PluginLifecycleTransitionRequest.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.plugin/PluginId // io.dataloom.core.plugin/PluginLifecycleTransitionRequest.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.core.plugin/PluginLifecycleTransitionRequest.component3|component3(){}[0]
+    final fun component4(): io.dataloom.core.plugin/PluginLifecycleAdministrationPrincipalId // io.dataloom.core.plugin/PluginLifecycleTransitionRequest.component4|component4(){}[0]
+    final fun component5(): io.dataloom.api.time/DataLoomInstant // io.dataloom.core.plugin/PluginLifecycleTransitionRequest.component5|component5(){}[0]
+    final fun component6(): io.dataloom.core.plugin/PluginLifecycleAdministrationReason // io.dataloom.core.plugin/PluginLifecycleTransitionRequest.component6|component6(){}[0]
+    final fun copy(io.dataloom.core.plugin/PluginLifecycleAdministrationCommandId = ..., io.dataloom.api.plugin/PluginId = ..., io.dataloom.api.plugin/PluginLifecycleState = ..., io.dataloom.core.plugin/PluginLifecycleAdministrationPrincipalId = ..., io.dataloom.api.time/DataLoomInstant = ..., io.dataloom.core.plugin/PluginLifecycleAdministrationReason = ...): io.dataloom.core.plugin/PluginLifecycleTransitionRequest // io.dataloom.core.plugin/PluginLifecycleTransitionRequest.copy|copy(io.dataloom.core.plugin.PluginLifecycleAdministrationCommandId;io.dataloom.api.plugin.PluginId;io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.core.plugin.PluginLifecycleAdministrationPrincipalId;io.dataloom.api.time.DataLoomInstant;io.dataloom.core.plugin.PluginLifecycleAdministrationReason){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.core.plugin/PluginLifecycleTransitionRequest.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.core.plugin/PluginLifecycleTransitionRequest.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.core.plugin/PluginLifecycleTransitionRequest.toString|toString(){}[0]
 }
 
 final class io.dataloom.core.plugin/PluginRegistry { // io.dataloom.core.plugin/PluginRegistry|null[0]
@@ -213,6 +267,39 @@ final class io.dataloom.core.provider/SynchronizationProviderResolver { // io.da
     final fun resolve(io.dataloom.api.provider/SynchronizationProviderBindings): io.dataloom.core.provider/ProviderResolutionResult // io.dataloom.core.provider/SynchronizationProviderResolver.resolve|resolve(io.dataloom.api.provider.SynchronizationProviderBindings){}[0]
 }
 
+final value class io.dataloom.core.plugin/PluginLifecycleAdministrationCommandId { // io.dataloom.core.plugin/PluginLifecycleAdministrationCommandId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.core.plugin/PluginLifecycleAdministrationCommandId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.core.plugin/PluginLifecycleAdministrationCommandId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.core.plugin/PluginLifecycleAdministrationCommandId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.core.plugin/PluginLifecycleAdministrationCommandId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.core.plugin/PluginLifecycleAdministrationCommandId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.core.plugin/PluginLifecycleAdministrationCommandId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.core.plugin/PluginLifecycleAdministrationPrincipalId { // io.dataloom.core.plugin/PluginLifecycleAdministrationPrincipalId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.core.plugin/PluginLifecycleAdministrationPrincipalId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.core.plugin/PluginLifecycleAdministrationPrincipalId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.core.plugin/PluginLifecycleAdministrationPrincipalId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.core.plugin/PluginLifecycleAdministrationPrincipalId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.core.plugin/PluginLifecycleAdministrationPrincipalId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.core.plugin/PluginLifecycleAdministrationPrincipalId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.core.plugin/PluginLifecycleAdministrationReason { // io.dataloom.core.plugin/PluginLifecycleAdministrationReason|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.core.plugin/PluginLifecycleAdministrationReason.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.core.plugin/PluginLifecycleAdministrationReason.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.core.plugin/PluginLifecycleAdministrationReason.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.core.plugin/PluginLifecycleAdministrationReason.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.core.plugin/PluginLifecycleAdministrationReason.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.core.plugin/PluginLifecycleAdministrationReason.toString|toString(){}[0]
+}
+
 sealed class io.dataloom.core.plugin/PluginLifecycleTransitionResult { // io.dataloom.core.plugin/PluginLifecycleTransitionResult|null[0]
     final class Allowed : io.dataloom.core.plugin/PluginLifecycleTransitionResult { // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Allowed|null[0]
         constructor <init>(io.dataloom.api.plugin/PluginLifecycleState, io.dataloom.api.plugin/PluginLifecycleState) // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Allowed.<init>|<init>(io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.api.plugin.PluginLifecycleState){}[0]
@@ -228,6 +315,25 @@ sealed class io.dataloom.core.plugin/PluginLifecycleTransitionResult { // io.dat
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Allowed.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Allowed.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Allowed.toString|toString(){}[0]
+    }
+
+    final class AuthorizationDenied : io.dataloom.core.plugin/PluginLifecycleTransitionResult { // io.dataloom.core.plugin/PluginLifecycleTransitionResult.AuthorizationDenied|null[0]
+        constructor <init>(io.dataloom.api.plugin/PluginLifecycleState, io.dataloom.api.plugin/PluginLifecycleState, kotlin/String) // io.dataloom.core.plugin/PluginLifecycleTransitionResult.AuthorizationDenied.<init>|<init>(io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.api.plugin.PluginLifecycleState;kotlin.String){}[0]
+
+        final val from // io.dataloom.core.plugin/PluginLifecycleTransitionResult.AuthorizationDenied.from|{}from[0]
+            final fun <get-from>(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.core.plugin/PluginLifecycleTransitionResult.AuthorizationDenied.from.<get-from>|<get-from>(){}[0]
+        final val reasonCode // io.dataloom.core.plugin/PluginLifecycleTransitionResult.AuthorizationDenied.reasonCode|{}reasonCode[0]
+            final fun <get-reasonCode>(): kotlin/String // io.dataloom.core.plugin/PluginLifecycleTransitionResult.AuthorizationDenied.reasonCode.<get-reasonCode>|<get-reasonCode>(){}[0]
+        final val to // io.dataloom.core.plugin/PluginLifecycleTransitionResult.AuthorizationDenied.to|{}to[0]
+            final fun <get-to>(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.core.plugin/PluginLifecycleTransitionResult.AuthorizationDenied.to.<get-to>|<get-to>(){}[0]
+
+        final fun component1(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.core.plugin/PluginLifecycleTransitionResult.AuthorizationDenied.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.core.plugin/PluginLifecycleTransitionResult.AuthorizationDenied.component2|component2(){}[0]
+        final fun component3(): kotlin/String // io.dataloom.core.plugin/PluginLifecycleTransitionResult.AuthorizationDenied.component3|component3(){}[0]
+        final fun copy(io.dataloom.api.plugin/PluginLifecycleState = ..., io.dataloom.api.plugin/PluginLifecycleState = ..., kotlin/String = ...): io.dataloom.core.plugin/PluginLifecycleTransitionResult.AuthorizationDenied // io.dataloom.core.plugin/PluginLifecycleTransitionResult.AuthorizationDenied.copy|copy(io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.api.plugin.PluginLifecycleState;kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.core.plugin/PluginLifecycleTransitionResult.AuthorizationDenied.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.core.plugin/PluginLifecycleTransitionResult.AuthorizationDenied.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.core.plugin/PluginLifecycleTransitionResult.AuthorizationDenied.toString|toString(){}[0]
     }
 
     final class PermissionDenied : io.dataloom.core.plugin/PluginLifecycleTransitionResult { // io.dataloom.core.plugin/PluginLifecycleTransitionResult.PermissionDenied|null[0]
@@ -267,6 +373,10 @@ sealed class io.dataloom.core.plugin/PluginLifecycleTransitionResult { // io.dat
         final fun hashCode(): kotlin/Int // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Rejected.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.core.plugin/PluginLifecycleTransitionResult.Rejected.toString|toString(){}[0]
     }
+}
+
+final object io.dataloom.core.plugin/PluginLifecycleAdministrationOperationalEventBridge { // io.dataloom.core.plugin/PluginLifecycleAdministrationOperationalEventBridge|null[0]
+    final fun toEnvelope(io.dataloom.core.plugin/PluginLifecycleTransitionRequest, io.dataloom.core.plugin/PluginLifecycleTransitionResult): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.core.plugin/PluginLifecycleAdministrationOperationalEventBridge.toEnvelope|toEnvelope(io.dataloom.core.plugin.PluginLifecycleTransitionRequest;io.dataloom.core.plugin.PluginLifecycleTransitionResult){}[0]
 }
 
 final object io.dataloom.core.plugin/PluginLifecycleTransitions { // io.dataloom.core.plugin/PluginLifecycleTransitions|null[0]
