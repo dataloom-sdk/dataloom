@@ -39,6 +39,22 @@ public sealed class PluginLifecycleTransitionResult {
         public val to: PluginLifecycleState,
         public val missingPermissions: Set<PluginPermission>,
     ) : PluginLifecycleTransitionResult()
+
+    /**
+     * The requested transition is structurally legal, but the *caller*
+     * requesting it was denied by a host-supplied
+     * [PluginLifecycleAdministrationAuthorizer] -- `#98`'s "authorized hot
+     * disable" acceptance criterion. Distinct from [PermissionDenied], which
+     * is about the *plugin's own* declared permissions, not who is asking.
+     *
+     * Returned only by [PluginLifecycleStateTracker]'s authorizer-aware
+     * `transition(request, authorizer)` overload.
+     */
+    public data class AuthorizationDenied(
+        public val from: PluginLifecycleState,
+        public val to: PluginLifecycleState,
+        public val reasonCode: String,
+    ) : PluginLifecycleTransitionResult()
 }
 
 /**

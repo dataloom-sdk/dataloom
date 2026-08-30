@@ -31,15 +31,18 @@ import io.dataloom.api.security.isAuthorized
  * [transition] overload additionally enforces that a plugin's declared
  * [io.dataloom.api.plugin.PluginPermission]s are held by a caller-supplied
  * [GrantedCapabilities] before allowing a transition *into*
- * [PluginLifecycleState.ACTIVE] — see that overload's own KDoc. Neither
- * overload decides whether the *caller* requesting a transition is
- * authorized to request it at all (`#98`'s "authorized hot disable"
- * acceptance criterion is still open — that is about who may call
- * [transition], not what a plugin may do once `ACTIVE`), does not perform
+ * [PluginLifecycleState.ACTIVE] — see that overload's own KDoc. Its
+ * authorizer-aware `transition(request, authorizer)` overload separately
+ * enforces whether the *caller* requesting a transition is authorized to
+ * request it at all — `#98`'s "authorized hot disable" acceptance criterion
+ * — see that overload's own KDoc and
+ * [PluginLifecycleAdministrationAuthorizer]. None of these overloads perform
  * any actual plugin initialization/shutdown work (there is no
  * [io.dataloom.api.plugin.DataLoomPlugin] lifecycle callback to invoke —
  * those signatures are not yet frozen, per `docs/api/plugin-api.md`), and
- * does not write audit records.
+ * none write audit records themselves — see
+ * [PluginLifecycleAdministrationOperationalEventBridge] for turning a
+ * transition request and result into a durable audit record.
  *
  * ## Thread-safety boundary
  *
@@ -165,5 +168,71 @@ public class PluginLifecycleStateTracker(private val registry: PluginRegistry) {
 
         states[id] = target
         return structuralResult
+    }
+
+    /**
+     * Requests a transition of [PluginLifecycleTransitionRequest.pluginId]'s
+     * tracked state to [PluginLifecycleTransitionRequest.target], additionally
+     * requiring [authorizer] to authorize the *caller* making the request —
+     * `#98`'s "authorized hot disable" acceptance criterion.
+     *
+     * ## Order of checks
+     *
+     * 1. Structural legality is checked first, exactly as the two-argument
+     *    overload does: an illegal transition returns
+     *    [PluginLifecycleTransitionResult.Rejected] immediately and
+     *    [authorizer] is never called. A caller is never asked to authorize a
+     *    request this tracker would have rejected anyway.
+     * 2. Only once the transition is structurally legal is [authorizer]
+     *    consulted. A [PluginLifecycleAdministrationAuthorizationDecision.Denied]
+     *    result leaves tracked state unchanged and returns
+     *    [PluginLifecycleTransitionResult.AuthorizationDenied] naming the
+     *    denial's reason code.
+     * 3. Otherwise tracked state is updated to the requested target and
+     *    [PluginLifecycleTransitionResult.Allowed] is returned.
+     *
+     * This method never throws for an illegal transition or a denied
+     * authorization — the same "reject, don't throw, leave state alone"
+     * posture the other two overloads already establish.
+     *
+     * ## Relationship to the capability-aware overload
+     *
+     * This overload does not perform the capability-aware overload's
+     * permission check against [PluginLifecycleState.ACTIVE] — the two
+     * concerns are orthogonal (who may ask, versus what the plugin itself
+     * may do once active) and are deliberately not fused into one overload,
+     * mirroring how this page's own documentation already distinguishes
+     * them. A caller that needs both protections for entry into `ACTIVE`
+     * calls both overloads' checks itself before applying the transition, or
+     * a future slice may compose them once a real call site makes the
+     * composition concrete.
+     *
+     * @throws IllegalArgumentException if
+     *   [PluginLifecycleTransitionRequest.pluginId] is not registered in
+     *   [registry].
+     */
+    public suspend fun transition(
+        request: PluginLifecycleTransitionRequest,
+        authorizer: PluginLifecycleAdministrationAuthorizer,
+    ): PluginLifecycleTransitionResult {
+        val current = stateOf(request.pluginId)
+        val structuralResult = PluginLifecycleTransitions.validate(current, request.target)
+        if (structuralResult !is PluginLifecycleTransitionResult.Allowed) {
+            return structuralResult
+        }
+
+        return when (val decision = authorizer.authorize(request)) {
+            is PluginLifecycleAdministrationAuthorizationDecision.Denied -> {
+                PluginLifecycleTransitionResult.AuthorizationDenied(
+                    from = current,
+                    to = request.target,
+                    reasonCode = decision.reasonCode,
+                )
+            }
+            PluginLifecycleAdministrationAuthorizationDecision.Authorized -> {
+                states[request.pluginId] = request.target
+                structuralResult
+            }
+        }
     }
 }
