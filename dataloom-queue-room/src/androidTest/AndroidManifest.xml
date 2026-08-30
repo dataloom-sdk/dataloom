@@ -43,6 +43,13 @@
         given generation, closing the "genuine cross-process probe
         contention" gap the two providers above do not cover (they only ever
         run one process at a time, sequentially, before/after a kill).
+
+        ConflictLogProcessTerminationContentProvider runs in its own
+        ":conflictproof" process for the equivalent proof against
+        io.dataloom.api.conflict.DurableUnresolvedConflictLog (#95's
+        conflict-engine gate), written and read through the real
+        RoomDurableStateStore-backed production persistence path, not a
+        test-only shortcut.
     -->
     <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
 
@@ -66,6 +73,11 @@
             android:name="io.dataloom.queue.room.CircuitBreakerProbeContentionContentProviderB"
             android:authorities="io.dataloom.queue.room.test.circuitprobeb"
             android:process=":circuitprobeb"
+            android:exported="false" />
+        <provider
+            android:name="io.dataloom.queue.room.ConflictLogProcessTerminationContentProvider"
+            android:authorities="io.dataloom.queue.room.test.conflictproof"
+            android:process=":conflictproof"
             android:exported="false" />
     </application>
 </manifest>
