@@ -96,20 +96,6 @@ time before it flips.
 
 *Est. completion is a rough, human-judged progress signal (see the [full dashboard](./docs/status/market-readiness.md#full-v1-gate-table) for methodology) — the `Status` column remains authoritative for gate acceptance.*
 
-**Recent highlights** (newest first):
-
-- 2026-08-27 — `#102`'s full per-attempt outcome history for strategy-decision diagnostics — `DurableStrategyDecisionOutcomeHistory`, the append-only counterpart to `DurableStrategyDecisionEventLog`'s commit-once single slot, wired into `StrategySynchronizationExecutionCoordinator` via opt-in `DataLoomBuilder.strategyDecisionOutcomeHistoryConfiguration`
-- 2026-08-26 — `#98`'s first real runtime slice: `PluginRegistry` (deny-by-default registration, dependency-graph validation/ordering, cycle rejection) and `PluginLifecycleTransitions`/`PluginLifecycleStateTracker` (lifecycle state-machine enforcement), in `dataloom-core`
-- 2026-08-18 — Real Android durable-queue-admission-then-replay proof for offline-first — `AndroidReferenceConsumerDurableQueueRobolectricTest` (`#325`)
-- 2026-08-18 — `SynchronizationOperationalEventBridge` wires the durable operational-event outbox to real synchronization events, opt-in via `DataLoomBuilder.operationalEventOutboxConfiguration` (`#324`)
-- 2026-08-17 — Real Android circuit-breaker process kill/relaunch proof via a genuine second `:circuitproof` process (`#323`)
-- 2026-08-17 — `ProviderProtectionStorageBridge`'s `readLocalConflictCandidate` circuit-protection gap closed, with a required (breaking) `StorageCircuitScopes` scope addition (`#322`)
-- 2026-08-17 — Durable strategy-decision diagnostics — `DurableStrategyDecisionEventLog`, wired into `StrategySynchronizationExecutionCoordinator` (`#321`)
-- 2026-08-17 — `MessageContentRedactor`, a defense-in-depth free-text redaction primitive for `DataLoomError.message` and similar diagnostic content (`#317`)
-- 2026-08-16 — `DataStoreStorageProvider` adopts `readLocalConflictCandidate` — all four reference providers now adopt it (`#315`)
-- 2026-08-16 — `FileStorageProvider` adopts `readLocalConflictCandidate`, the third reference provider to do so (`#313`)
-- 2026-08-16 — `SqlDelightStorageProvider` adopts `readLocalConflictCandidate`, the second reference provider to do so, after Room (`#311`)
-
 The full dated log (every entry back to project start), per-gate evidence
 citations, adoption-readiness table, market-evidence gates, and execution
 order live in the
