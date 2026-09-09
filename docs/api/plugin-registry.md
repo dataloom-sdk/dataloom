@@ -39,6 +39,15 @@ below. The certification kit, `DataLoomBuilder` wiring, hook-point dispatch,
 and compatibility validation remain exactly as described in
 [What remains open](#what-remains-open).
 
+**Update (2026-09-09):** `DataLoomBuilder` wiring was investigated directly
+against source this round (not left as a standing "still unwired" note) and
+found blocked by a concrete, mechanically enforced module-ownership rule,
+not merely undesigned — see
+[No wiring into `DataLoomBuilder` yet](#no-wiring-into-dataloombuilder-yet)
+below and
+[`docs/api/plugin-platform-databuilder-wiring-investigation.md`](./plugin-platform-databuilder-wiring-investigation.md)
+for the full analysis. No code changed.
+
 ## Why this slice, now
 
 [`docs/api/plugin-platform-first-slice-investigation.md`](./plugin-platform-first-slice-investigation.md)
@@ -539,10 +548,28 @@ see above):
 from `DataLoomBuilder` or any other composition root. There is still no
 application-facing way to register a plugin with the DataLoom runtime —
 these types are `#98`'s internal engine building blocks, verified in
-isolation, not yet a public plugin-registration API. Wiring a public
-registration surface is separate follow-up work, still likely gated on
-hook-point dispatch existing first (execution-bounds enforcement alone has
-nothing to wrap without a real invocation call site).
+isolation, not yet a public plugin-registration API.
+
+**Update (2026-09-09):** this was investigated directly, not left as a
+standing "still unwired" note — see
+[`docs/api/plugin-platform-databuilder-wiring-investigation.md`](./plugin-platform-databuilder-wiring-investigation.md).
+The wiring is not merely unbuilt: it is a **build failure today** under
+`dataloom-runtime`'s own enforced `checkPublicAbiBoundaries` task, because
+every result/request/decision type this engine has shipped
+(`PluginLifecycleTransitionResult`, `PluginExecutionBoundsResult`,
+`PluginLifecycleTransitionRequest`,
+`PluginLifecycleAdministrationAuthorizationDecision`) lives in the
+forbidden `io.dataloom.core.plugin` namespace, unlike the analogous provider
+precedent (`ProviderLifecycleResult`/`ProviderLifecycleCoordinatorState`),
+which deliberately lives in `dataloom-api` specifically so
+`dataloom-runtime` can expose it. Resolving this needs a real
+module-ownership decision (relocate these types, accepting a breaking-shaped
+diff to `dataloom-core`'s already-additive-only ABI baseline; or build and
+permanently maintain a duplicate translation layer inside
+`dataloom-runtime`) that no round to date has made. Wiring a public
+registration surface is separate follow-up work, gated on that decision as
+well as on hook-point dispatch existing first (execution-bounds enforcement
+alone has nothing to wrap without a real invocation call site).
 
 ## Verification
 
