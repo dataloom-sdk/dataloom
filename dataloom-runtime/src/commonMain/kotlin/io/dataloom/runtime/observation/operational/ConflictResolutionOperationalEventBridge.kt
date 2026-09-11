@@ -1,10 +1,13 @@
 package io.dataloom.runtime.observation.operational
 
+import io.dataloom.api.conflict.ConflictAdministrationRequest
+import io.dataloom.api.conflict.ConflictResolutionDecision
 import io.dataloom.api.conflict.ResolvedConflictDecisionKind
 import io.dataloom.api.conflict.ResolvedConflictDecisionRecord
 import io.dataloom.api.conflict.UnresolvedConflictChangeSummary
 import io.dataloom.api.conflict.UnresolvedConflictReason
 import io.dataloom.api.conflict.UnresolvedConflictRecord
+import io.dataloom.api.error.DataLoomError
 import io.dataloom.api.identifier.ConflictId
 import io.dataloom.api.identifier.CorrelationId
 import io.dataloom.api.operational.OperationalEventCategory
@@ -21,6 +24,8 @@ import io.dataloom.api.security.ClassifiedDataValue
 import io.dataloom.api.security.DataClassification
 import io.dataloom.api.security.RedactedAttributes
 import io.dataloom.api.security.StrictDataLoomRedactor
+import io.dataloom.api.time.DataLoomInstant
+import io.dataloom.runtime.conflict.ConflictAdministrationResult
 
 /**
  * Stateless bridge from [UnresolvedConflictRecord]/[ResolvedConflictDecisionRecord]
@@ -131,6 +136,42 @@ import io.dataloom.api.security.StrictDataLoomRedactor
  * [SynchronizationOperationalEventBridge] already gives every caller-supplied
  * metadata map it encounters.
  *
+ * ## Administration commands share this bridge, under a third domain prefix
+ *
+ * [io.dataloom.runtime.conflict.ConflictAdministrationCoordinator] (the
+ * authorized manual conflict-resolution capability, `#367`) durably records
+ * every terminal [ConflictAdministrationResult] exactly like
+ * [RetryAdministrationResult]/[io.dataloom.runtime.retry.CircuitAdministrationResult]
+ * -- an audited administration command, not an automatic detection/resolution
+ * outcome -- so [toEnvelope] for [ConflictAdministrationRequest]/
+ * [ConflictAdministrationResult] follows
+ * [RetryCircuitAdministrationOperationalEventBridge]'s administration-command
+ * shape (category [OperationalEventCategory.AUDIT], envelope identity and
+ * correlation derived from the command's own
+ * [ConflictAdministrationRequest.commandId], never a fresh clock read or a
+ * generated identifier) rather than this object's own unresolved/resolved
+ * detection-outcome shape (category [OperationalEventCategory.DIAGNOSTIC],
+ * identity derived from [ConflictId]). A bridged administration command uses
+ * a distinct `administration.`-prefixed [OperationalEventId] and a distinct
+ * source/payload type from both the `unresolved.`/`resolved.` detection
+ * outcomes this object already bridges -- three domain prefixes sharing one
+ * object because all three describe the same conflict-engine subsystem, the
+ * same reasoning [RetryCircuitAdministrationOperationalEventBridge] already
+ * applies to share one object between retry- and circuit-administration
+ * commands. This bridge is reused rather than duplicated into a new object
+ * specifically so an application enabling both
+ * [io.dataloom.runtime.facade.DataLoomBuilder.conflictDetectionConfiguration]
+ * and [io.dataloom.runtime.facade.DataLoomBuilder.conflictAdministrationConfiguration]
+ * gets one coherent conflict-engine event stream through the single existing
+ * [io.dataloom.runtime.facade.DataLoomBuilder.conflictResolutionOperationalEventOutboxConfiguration]
+ * opt-in point, not a second one to separately configure.
+ *
+ * [ConflictAdministrationRequest.reason] (caller-supplied free-text
+ * justification) is never included, the same treatment
+ * [RetryCircuitAdministrationOperationalEventBridge] already gives
+ * [io.dataloom.api.retry.RetryAdministrationReason]/
+ * [io.dataloom.api.circuit.CircuitAdministrationReason].
+ *
  * ## Payload descriptor
  *
  * Content-free, following [SynchronizationOperationalEventBridge]'s own
@@ -141,15 +182,22 @@ public object ConflictResolutionOperationalEventBridge {
 
     private const val SOURCE_VALUE: String = "dataloom.runtime.conflict.resolution"
     private const val PAYLOAD_TYPE_VALUE: String = "dataloom.conflict.resolution.event"
+    private const val ADMINISTRATION_SOURCE_VALUE: String = "dataloom.runtime.conflict.administration"
+    private const val ADMINISTRATION_PAYLOAD_TYPE_VALUE: String = "dataloom.conflict.administration.event"
     private const val PAYLOAD_ENCODING_VALUE: String = "none"
     private const val MAX_OPERATIONAL_TOKEN_LENGTH: Int = 128
+    private const val MAX_ERROR_MESSAGE_LENGTH: Int = 4_096
     private const val UNRESOLVED_ID_PREFIX: String = "unresolved."
     private const val RESOLVED_ID_PREFIX: String = "resolved."
+    private const val ADMINISTRATION_ID_PREFIX: String = "administration."
 
     private val SOURCE: OperationalEventSource = OperationalEventSource(SOURCE_VALUE)
+    private val ADMINISTRATION_SOURCE: OperationalEventSource = OperationalEventSource(ADMINISTRATION_SOURCE_VALUE)
     private val ENVELOPE_SCHEMA_VERSION: OperationalSchemaVersion = OperationalSchemaVersion(1)
     private val PAYLOAD_SCHEMA_VERSION: OperationalSchemaVersion = OperationalSchemaVersion(1)
     private val PAYLOAD_TYPE: OperationalPayloadType = OperationalPayloadType(PAYLOAD_TYPE_VALUE)
+    private val ADMINISTRATION_PAYLOAD_TYPE: OperationalPayloadType =
+        OperationalPayloadType(ADMINISTRATION_PAYLOAD_TYPE_VALUE)
     private val PAYLOAD_ENCODING: OperationalPayloadEncoding = OperationalPayloadEncoding(PAYLOAD_ENCODING_VALUE)
 
     private val redactor: StrictDataLoomRedactor = StrictDataLoomRedactor()
@@ -228,6 +276,43 @@ public object ConflictResolutionOperationalEventBridge {
     }
 
     /**
+     * Maps one authorized manual-conflict-administration command's [request]
+     * and terminal [result] to an [OperationalEventEnvelope]. See this
+     * object's class doc's "Administration commands share this bridge, under
+     * a third domain prefix".
+     *
+     * May throw [IllegalArgumentException] if a derived envelope field fails
+     * its own validation. Every caller in this codebase wraps this call so
+     * such a failure is swallowed rather than allowed to affect the
+     * administration result it is describing -- see
+     * [io.dataloom.runtime.facade.DefaultDataLoomConflictAdministration].
+     */
+    public fun toEnvelope(
+        request: ConflictAdministrationRequest,
+        result: ConflictAdministrationResult,
+    ): OperationalEventEnvelope {
+        val attributes: RedactedAttributes =
+            redactor.redact(ClassifiedData.of(administrationAttributesFor(request, result))).attributes
+        return OperationalEventEnvelope(
+            id = operationalEventId(ADMINISTRATION_ID_PREFIX, request.commandId.value),
+            type = OperationalEventType(administrationEventTypeValue(result)),
+            source = ADMINISTRATION_SOURCE,
+            category = OperationalEventCategory.AUDIT,
+            schemaVersion = ENVELOPE_SCHEMA_VERSION,
+            occurredAt = administrationOccurredAt(request, result),
+            correlationId = CorrelationId(request.commandId.value),
+            payload = OperationalPayloadDescriptor(
+                type = ADMINISTRATION_PAYLOAD_TYPE,
+                schemaVersion = PAYLOAD_SCHEMA_VERSION,
+                encoding = PAYLOAD_ENCODING,
+                classification = DataClassification.INTERNAL,
+                encodedSizeBytes = null,
+            ),
+            attributes = attributes,
+        )
+    }
+
+    /**
      * Derives a stable, unique, domain-prefixed [OperationalEventId] from
      * [conflictId] rather than generating a new identifier. See this object's
      * class doc's "Unresolved and resolved outcomes never share an
@@ -244,8 +329,17 @@ public object ConflictResolutionOperationalEventBridge {
      * [io.dataloom.api.operational.DurableOperationalEventOutboxAppendOutcome.Conflict]
      * rather than overwriting the earlier entry.
      */
-    private fun operationalEventId(prefix: String, conflictId: ConflictId): OperationalEventId {
-        val sanitized = conflictId.value
+    private fun operationalEventId(prefix: String, conflictId: ConflictId): OperationalEventId =
+        operationalEventId(prefix, conflictId.value)
+
+    /**
+     * Same derivation as the [ConflictId]-typed overload, over a raw command
+     * identifier -- used by the administration-command [toEnvelope], whose
+     * identity is [ConflictAdministrationRequest.commandId], not a
+     * [ConflictId]. See that overload's class doc.
+     */
+    private fun operationalEventId(prefix: String, rawValue: String): OperationalEventId {
+        val sanitized = rawValue
             .map { character -> if (isAllowedOperationalTokenCharacter(character)) character else '_' }
             .joinToString(separator = "")
         val combined = "$prefix$sanitized".take(MAX_OPERATIONAL_TOKEN_LENGTH)
@@ -274,6 +368,151 @@ public object ConflictResolutionOperationalEventBridge {
         ResolvedConflictDecisionKind.DEFER -> "dataloom.conflict.resolution.resolved.defer"
         ResolvedConflictDecisionKind.FAIL -> "dataloom.conflict.resolution.resolved.fail"
     }
+
+    /**
+     * Mirrors [RetryCircuitAdministrationOperationalEventBridge]'s own
+     * `retryOccurredAt`: a terminal command's durable `updatedAt`/`observedAt`
+     * when a durable record exists, [ConflictAdministrationRequest.requestedAt]
+     * for the outcomes that never reach one -- never a fresh clock read.
+     */
+    private fun administrationOccurredAt(
+        request: ConflictAdministrationRequest,
+        result: ConflictAdministrationResult,
+    ): DataLoomInstant = when (result) {
+        is ConflictAdministrationResult.Succeeded -> result.record.state.updatedAt
+        is ConflictAdministrationResult.AuthorizationDenied -> result.record.state.updatedAt
+        is ConflictAdministrationResult.PolicyRejected -> result.record.state.updatedAt
+        is ConflictAdministrationResult.ExecutionRejected -> result.record.state.updatedAt
+        is ConflictAdministrationResult.ExecutionFailed -> result.record.state.updatedAt
+        is ConflictAdministrationResult.CommandConflict -> result.existing.state.updatedAt
+        is ConflictAdministrationResult.PersistenceFailure -> request.requestedAt
+        is ConflictAdministrationResult.ExecutionRecordingUnconfirmed -> request.requestedAt
+        is ConflictAdministrationResult.ClockRegression -> result.observedAt
+        ConflictAdministrationResult.ContentionLimitReached -> request.requestedAt
+    }
+
+    private fun administrationEventTypeValue(result: ConflictAdministrationResult): String = when (result) {
+        is ConflictAdministrationResult.Succeeded -> "dataloom.conflict.administration.succeeded"
+        is ConflictAdministrationResult.AuthorizationDenied -> "dataloom.conflict.administration.authorization_denied"
+        is ConflictAdministrationResult.PolicyRejected -> "dataloom.conflict.administration.policy_rejected"
+        is ConflictAdministrationResult.ExecutionRejected -> "dataloom.conflict.administration.execution_rejected"
+        is ConflictAdministrationResult.ExecutionFailed -> "dataloom.conflict.administration.execution_failed"
+        is ConflictAdministrationResult.CommandConflict -> "dataloom.conflict.administration.command_conflict"
+        is ConflictAdministrationResult.PersistenceFailure -> "dataloom.conflict.administration.persistence_failure"
+        is ConflictAdministrationResult.ExecutionRecordingUnconfirmed ->
+            "dataloom.conflict.administration.execution_recording_unconfirmed"
+        is ConflictAdministrationResult.ClockRegression -> "dataloom.conflict.administration.clock_regression"
+        ConflictAdministrationResult.ContentionLimitReached ->
+            "dataloom.conflict.administration.contention_limit_reached"
+    }
+
+    private fun administrationAttributesFor(
+        request: ConflictAdministrationRequest,
+        result: ConflictAdministrationResult,
+    ): Map<String, ClassifiedDataValue> {
+        val attributes = linkedMapOf<String, ClassifiedDataValue>()
+        attributes["request.conflictId"] = ClassifiedDataValue(request.conflictId.value, DataClassification.INTERNAL)
+        attributes["request.principalId"] =
+            ClassifiedDataValue(request.principalId.value, DataClassification.INTERNAL)
+        attributes["request.decisionKind"] =
+            ClassifiedDataValue(decisionKindLabel(request.decision), DataClassification.PUBLIC)
+        // request.reason is caller-supplied free text -- never included, matching
+        // RetryCircuitAdministrationOperationalEventBridge's treatment of
+        // RetryAdministrationReason/CircuitAdministrationReason.
+
+        when (result) {
+            is ConflictAdministrationResult.Succeeded -> {
+                attributes["result.authorizationId"] = maskedId(result.record.state.authorizationId?.value)
+            }
+            is ConflictAdministrationResult.AuthorizationDenied -> {
+                attributes["result.rejectionReasonCode"] = maskedId(result.record.state.rejectionReasonCode)
+            }
+            is ConflictAdministrationResult.PolicyRejected -> {
+                attributes["result.authorizationId"] = maskedId(result.record.state.authorizationId?.value)
+                attributes["result.rejectionReasonCode"] = maskedId(result.record.state.rejectionReasonCode)
+            }
+            is ConflictAdministrationResult.ExecutionRejected -> {
+                attributes["result.authorizationId"] = maskedId(result.record.state.authorizationId?.value)
+                attributes["result.rejectionReasonCode"] = maskedId(result.record.state.rejectionReasonCode)
+            }
+            is ConflictAdministrationResult.ExecutionFailed -> {
+                attributes["result.authorizationId"] = maskedId(result.record.state.authorizationId?.value)
+                val failure = checkNotNull(result.record.state.executionFailure)
+                attributes["result.executionFailure.code"] =
+                    ClassifiedDataValue(failure.code.value, DataClassification.PUBLIC)
+                attributes["result.executionFailure.category"] =
+                    ClassifiedDataValue(failure.category.name, DataClassification.PUBLIC)
+                attributes["result.executionFailure.severity"] =
+                    ClassifiedDataValue(failure.severity.name, DataClassification.PUBLIC)
+                attributes["result.executionFailure.recoverability"] =
+                    ClassifiedDataValue(failure.recoverability.name, DataClassification.PUBLIC)
+            }
+            is ConflictAdministrationResult.CommandConflict -> {
+                attributes["result.existingStatus"] =
+                    ClassifiedDataValue(result.existing.state.status.name, DataClassification.PUBLIC)
+            }
+            is ConflictAdministrationResult.PersistenceFailure -> {
+                putErrorAttributes(attributes, "result.error", result.error)
+            }
+            is ConflictAdministrationResult.ExecutionRecordingUnconfirmed -> {
+                putErrorAttributes(attributes, "result.persistenceError", result.persistenceError)
+            }
+            is ConflictAdministrationResult.ClockRegression -> {
+                attributes["result.persistedAtEpochMillis"] =
+                    ClassifiedDataValue(result.persistedAt.epochMilliseconds.toString(), DataClassification.PUBLIC)
+            }
+            ConflictAdministrationResult.ContentionLimitReached -> Unit
+        }
+        return attributes
+    }
+
+    /**
+     * [ConflictResolutionDecision] is a small closed sealed interface (like
+     * [ResolvedConflictDecisionKind]), so its variant name is `PUBLIC`.
+     * [ConflictResolutionDecision.Defer] is structurally excluded by
+     * [ConflictAdministrationRequest]'s own constructor invariant but is
+     * still handled here rather than asserted unreachable, since this
+     * function has no access to that invariant at the type level.
+     */
+    private fun decisionKindLabel(decision: ConflictResolutionDecision): String = when (decision) {
+        is ConflictResolutionDecision.UseLocal -> "USE_LOCAL"
+        is ConflictResolutionDecision.UseRemote -> "USE_REMOTE"
+        is ConflictResolutionDecision.Merge -> "MERGE"
+        is ConflictResolutionDecision.Fail -> "FAIL"
+        is ConflictResolutionDecision.Defer -> "DEFER"
+    }
+
+    /**
+     * Mirrors [RetryCircuitAdministrationOperationalEventBridge]'s own
+     * `putErrorAttributes`: `code`/`category`/`severity`/`recoverability` are
+     * closed, stable vocabularies (`PUBLIC`); `message` is unstructured free
+     * text (`CONFIDENTIAL`, removed outright by the default redaction
+     * policy); `cause` is never included.
+     */
+    private fun putErrorAttributes(
+        attributes: MutableMap<String, ClassifiedDataValue>,
+        prefix: String,
+        error: DataLoomError,
+    ) {
+        attributes["$prefix.code"] = ClassifiedDataValue(error.code.value, DataClassification.PUBLIC)
+        attributes["$prefix.category"] = ClassifiedDataValue(error.category.name, DataClassification.PUBLIC)
+        attributes["$prefix.severity"] = ClassifiedDataValue(error.severity.name, DataClassification.PUBLIC)
+        attributes["$prefix.recoverability"] =
+            ClassifiedDataValue(error.recoverability.name, DataClassification.PUBLIC)
+        attributes["$prefix.message"] = ClassifiedDataValue(
+            error.message.take(MAX_ERROR_MESSAGE_LENGTH),
+            DataClassification.CONFIDENTIAL,
+        )
+    }
+
+    /**
+     * Wraps a nullable host-supplied identifier/reason-code string as an
+     * `INTERNAL`-masked attribute, or a bounded empty-string placeholder when
+     * absent -- mirrors
+     * [RetryCircuitAdministrationOperationalEventBridge.maskedId] exactly.
+     */
+    private fun maskedId(value: String?): ClassifiedDataValue =
+        ClassifiedDataValue(value.orEmpty(), DataClassification.INTERNAL)
 
     private fun classifiedAttributesFor(record: UnresolvedConflictRecord): Map<String, ClassifiedDataValue> {
         val attributes = linkedMapOf<String, ClassifiedDataValue>()

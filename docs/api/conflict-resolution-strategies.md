@@ -11,10 +11,14 @@ of DL-041, but it is not the completion claim for issue
 
 Still required for the full gate are decision application and convergence,
 standard detector utilities, entity/workflow/tenant/global precedence,
-loop/non-convergence quarantine, complete audit/metrics/retry integration,
+loop/non-convergence quarantine, complete metrics/retry integration,
 AC-FUNC-002, and mandatory-platform qualification. Authorized manual
 conflict-resolution operations now ship as a bounded first slice — see
-"Authorized manual conflict-resolution operations" below.
+"Authorized manual conflict-resolution operations" below — and administration
+commands are now also bridged into the durable operational-event outbox
+(see "Operational-event bridging" below), closing the audit/event half of the
+"complete audit/metrics/retry integration" gap for this one command surface;
+metrics and retry integration remain open.
 
 ## Built-in policy catalog
 
@@ -251,6 +255,29 @@ on the same durable facts. Omitting `conflictAdministrationConfiguration`
 leaves `DataLoom.conflictAdministration` `null`; every other capability's
 behavior is unchanged.
 
+### Operational-event bridging
+
+Every terminal `ConflictAdministrationResult` an executed command produces is
+also bridged into the durable operational-event outbox when
+`DataLoomBuilder.conflictResolutionOperationalEventOutboxConfiguration` is
+separately configured — the same existing DL-042 opt-in point conflict
+detection's own `UnresolvedConflictRecord`/`ResolvedConflictDecisionRecord`
+outcomes already use, since both describe the same conflict-engine subsystem.
+`ConflictResolutionOperationalEventBridge.toEnvelope(ConflictAdministrationRequest,
+ConflictAdministrationResult)` maps a command following
+`RetryCircuitAdministrationOperationalEventBridge`'s administration-command
+shape exactly (`OperationalEventCategory.AUDIT`, identity and correlation
+derived from `ConflictAdministrationRequest.commandId`, an
+`administration.`-prefixed `OperationalEventId` distinct from the
+`unresolved.`/`resolved.` detection-outcome prefixes the bridge already used).
+Previously `DefaultDataLoomConflictAdministration` had no operational-event
+bridge at all — its own class doc named this explicitly as a "genuinely
+separate, later-scoped follow-up" left out of the original `#367` slice; this
+closes it. Configuring the outbox spec alone still does not enable either
+producer — `conflictDetectionConfiguration` and/or
+`conflictAdministrationConfiguration` must still be configured separately for
+an outcome to exist to bridge.
+
 ## Safety and determinism rules
 
 - Built-ins perform no I/O, clock reads, randomness, provider calls, queue
@@ -273,8 +300,10 @@ The following are not claimed by this page:
 - entity > workflow > tenant > global policy precedence;
 - fingerprints, bounded attempts, loop detection, convergence limits, and
   quarantine;
-- complete immutable audit, metrics, events, redaction certification, and retry
-  integration;
+- complete metrics and retry integration (immutable audit/event bridging is
+  now shipped for both automatic conflict-detection outcomes and authorized
+  manual conflict-administration commands — see "Operational-event bridging"
+  above);
 - restart, duplicate, concurrent-resolution, and migration qualification;
 - AC-FUNC-002 and equivalent native Android, KMP Android, and KMP iOS evidence.
 

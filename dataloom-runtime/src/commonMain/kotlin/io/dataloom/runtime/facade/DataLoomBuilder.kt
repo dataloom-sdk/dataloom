@@ -326,6 +326,14 @@ public class DataLoomBuilder {
      * eligibility, and terminal execution evidence when a command is
      * executed.
      *
+     * Every terminal result an executed command produces is also bridged
+     * into the durable operational-event outbox when
+     * [conflictResolutionOperationalEventOutboxConfiguration] is separately
+     * configured -- the same existing opt-in point conflict-detection
+     * outcomes already use, since both describe the same conflict-engine
+     * subsystem. See [DataLoomConflictResolutionOperationalEventOutboxSpec]
+     * for the full contract.
+     *
      * @param spec explicit host authorization, durable command-state,
      *   decision-application, durable-log, and contention-bound configuration.
      * @return this builder for chaining.
@@ -570,32 +578,39 @@ public class DataLoomBuilder {
     }
 
     /**
-     * Enables the durable operational-event outbox bridge for conflict
-     * resolution: every already-durably-recorded
+     * Enables the durable operational-event outbox bridge for the conflict
+     * engine: every already-durably-recorded
      * [io.dataloom.api.conflict.UnresolvedConflictRecord]/
      * [io.dataloom.api.conflict.ResolvedConflictDecisionRecord]
      * [io.dataloom.runtime.conflict.DurableConflictDetectionCoordinator]
      * computes and commits via
      * [io.dataloom.api.conflict.DurableUnresolvedConflictLog]/
      * [io.dataloom.api.conflict.DurableResolvedConflictDecisionLog] (see
-     * [conflictDetectionConfiguration]) is also translated into an
-     * [io.dataloom.api.operational.OperationalEventEnvelope] by
+     * [conflictDetectionConfiguration]), and every terminal
+     * [io.dataloom.runtime.conflict.ConflictAdministrationResult]
+     * [io.dataloom.runtime.conflict.ConflictAdministrationCoordinator]
+     * produces for a command executed through [DataLoomConflictAdministration]
+     * (see [conflictAdministrationConfiguration]), are both also translated
+     * into an [io.dataloom.api.operational.OperationalEventEnvelope] by
      * [io.dataloom.runtime.observation.operational.ConflictResolutionOperationalEventBridge]
      * and durably appended -- for operator visibility and debugging, never
      * for replay, decision continuation, or application of a decision to
      * storage. See [DataLoomConflictResolutionOperationalEventOutboxSpec] for
      * the full contract, including why this is a fifth, separate opt-in point
      * rather than an extension of an existing operational-event-outbox spec,
-     * and why it has no effect unless [conflictDetectionConfiguration] is
-     * also configured.
+     * and why it has no effect unless [conflictDetectionConfiguration] and/or
+     * [conflictAdministrationConfiguration] is also configured.
      *
-     * Configuring this spec alone does not enable conflict detection --
-     * [conflictDetectionConfiguration] must still be called separately for a
-     * conflict-resolution record to ever be constructed at all.
+     * Configuring this spec alone does not enable conflict detection or
+     * conflict administration -- [conflictDetectionConfiguration] and/or
+     * [conflictAdministrationConfiguration] must still be called separately
+     * for a bridgeable outcome to ever be constructed at all. Either one
+     * configured alone still has its own outcomes bridged through this same
+     * spec.
      *
      * When this method is not called, behavior is unchanged from before it
      * existed: no operational event envelope is ever constructed or appended
-     * for a conflict-resolution outcome.
+     * for a conflict-resolution outcome or a conflict-administration command.
      *
      * @param spec the durable store (and optional scope/schema/retry tuning)
      *   to use. See [DataLoomConflictResolutionOperationalEventOutboxSpec] for
@@ -1238,6 +1253,8 @@ public class DataLoomBuilder {
                     ),
                     maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
                 ),
+                operationalEventOutbox = conflictResolutionOperationalEventOutbox,
+                operationalEventOutboxScope = conflictResolutionOperationalEventOutboxSpec?.scope,
             )
         }
 

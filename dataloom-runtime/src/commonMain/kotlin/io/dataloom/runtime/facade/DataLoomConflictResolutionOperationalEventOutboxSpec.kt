@@ -7,13 +7,16 @@ import io.dataloom.api.state.DurableStateStore
 
 /**
  * Application-owned configuration that turns on the durable operational-event
- * outbox bridge for conflict resolution: every
+ * outbox bridge for the conflict engine: every
  * [io.dataloom.api.conflict.UnresolvedConflictRecord]/
  * [io.dataloom.api.conflict.ResolvedConflictDecisionRecord]
  * [io.dataloom.runtime.conflict.DurableConflictDetectionCoordinator] already
  * constructs and durably records via
  * [io.dataloom.api.conflict.DurableUnresolvedConflictLog]/
- * [io.dataloom.api.conflict.DurableResolvedConflictDecisionLog] is also
+ * [io.dataloom.api.conflict.DurableResolvedConflictDecisionLog], and every
+ * terminal [io.dataloom.runtime.conflict.ConflictAdministrationResult]
+ * [io.dataloom.runtime.conflict.ConflictAdministrationCoordinator] produces
+ * for an authorized manual conflict-resolution command, are both also
  * translated into an [io.dataloom.api.operational.OperationalEventEnvelope] by
  * [io.dataloom.runtime.observation.operational.ConflictResolutionOperationalEventBridge]
  * and durably appended to [DurableOperationalEventOutbox] -- for operator
@@ -27,27 +30,41 @@ import io.dataloom.api.state.DurableStateStore
  * doc already asks of a candidate shared spec:
  *
  * - **Does this domain have its own correlation identity?** Yes --
- *   [io.dataloom.api.identifier.ConflictId] -- but it is a single,
- *   independent identifier space, distinct from every other bridged domain's
- *   own identifier space.
+ *   [io.dataloom.api.identifier.ConflictId] for detection outcomes,
+ *   [io.dataloom.api.conflict.ConflictAdministrationCommandId] for
+ *   administration commands -- two independent identifier spaces, each
+ *   distinct from every other bridged domain's own identifier space, and
+ *   from each other (see the bridge's own class doc's "Administration
+ *   commands share this bridge, under a third domain prefix" for why they
+ *   share one spec and one bridge object despite that).
  * - **Is it independently configurable from the other bridged domains?**
- *   Partially. An [io.dataloom.api.conflict.UnresolvedConflictRecord]/
+ *   Partially, for each of the two producers this spec now bridges. An
+ *   [io.dataloom.api.conflict.UnresolvedConflictRecord]/
  *   [io.dataloom.api.conflict.ResolvedConflictDecisionRecord] is only ever
  *   constructed at all when [DataLoomBuilder.conflictDetectionConfiguration]
  *   is also configured -- see
  *   [io.dataloom.runtime.conflict.DurableConflictDetectionCoordinator]'s
  *   `recordUnresolved`/`recordResolved`, the sole places either record is
- *   built. This spec's bridge therefore reuses those already-constructed
- *   records rather than building new ones from scratch (see the bridge's own
- *   class doc for why re-deriving them from
- *   [io.dataloom.runtime.conflict.ConflictOrchestrationResult] would be
- *   redundant, not additive), which means configuring this spec without also
- *   configuring [DataLoomBuilder.conflictDetectionConfiguration] has no
- *   effect -- there is never a record to bridge. This mirrors exactly how
+ *   built. A [io.dataloom.runtime.conflict.ConflictAdministrationResult] is
+ *   only ever produced when [DataLoomBuilder.conflictAdministrationConfiguration]
+ *   is also configured. This spec's bridge therefore reuses those
+ *   already-constructed records/results rather than building new ones from
+ *   scratch (see the bridge's own class doc for why re-deriving detection
+ *   outcomes from [io.dataloom.runtime.conflict.ConflictOrchestrationResult]
+ *   would be redundant, not additive), which means configuring this spec
+ *   without configuring either
+ *   [DataLoomBuilder.conflictDetectionConfiguration] or
+ *   [DataLoomBuilder.conflictAdministrationConfiguration] has no effect --
+ *   there is never an outcome to bridge; configuring exactly one of the two
+ *   still has that one producer's outcomes bridged. This mirrors exactly how
  *   [DataLoomStrategyDecisionOperationalEventOutboxSpec] alone, without
- *   [DataLoomBuilder.strategyDiagnosticsConfiguration], has no effect either.
+ *   [DataLoomBuilder.strategyDiagnosticsConfiguration], has no effect either,
+ *   and how [DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec]
+ *   itself already bridges two independently configurable producers (retry-
+ *   and circuit-administration) through one shared spec.
  * - **Would sharing a scope/name conflate unrelated subsystems?** Yes.
- *   Conflict resolution is a semantically distinct subsystem from
+ *   Conflict resolution and conflict administration are the same
+ *   conflict-engine subsystem, but a semantically distinct one from
  *   synchronization lifecycle events, retry/circuit administration commands,
  *   strategy-decision diagnostics, and queue lifecycle -- the same reasoning
  *   that already justified four separate specs for those four domains rather
@@ -56,7 +73,8 @@ import io.dataloom.api.state.DurableStateStore
  * When [DataLoomBuilder.conflictResolutionOperationalEventOutboxConfiguration]
  * is not called, behavior is unchanged from before this spec existed: no
  * [io.dataloom.api.operational.OperationalEventEnvelope] is ever constructed
- * or appended for a conflict-resolution outcome.
+ * or appended for a conflict-resolution outcome or a conflict-administration
+ * command.
  *
  * ## Ordering relative to the durable conflict logs
  *
