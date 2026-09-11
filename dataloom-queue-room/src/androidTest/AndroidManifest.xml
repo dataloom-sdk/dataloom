@@ -57,6 +57,29 @@
         (#95's conflict-engine gate), the sibling durable domain
         ConflictLogProcessTerminationContentProvider's own class doc named as
         "expected to behave the same way but ... not separately proven here".
+
+        UnresolvedConflictContentionContentProviderA and
+        UnresolvedConflictContentionContentProviderB are the conflict-engine
+        analogue of the CircuitBreakerProbeContentionContentProviderA/B pair:
+        two genuinely different classes (both extending the shared
+        UnresolvedConflictContentionContentProviderBase, which holds all the
+        actual proof logic) declared below under two different authorities and
+        two different android:process values (":unresolvedconflictca" and
+        ":unresolvedconflictcb"), so Android hosts two independent OS
+        processes at once. This MUST be two distinct classes, not the same
+        class declared twice; see
+        CircuitBreakerProbeContentionContentProviderBase's class doc for the
+        real-device "Unknown authority" failure that trap was found by.
+        AndroidUnresolvedConflictLogContentionInstrumentedTest races both
+        processes to DurableUnresolvedConflictLog.record the same ConflictId
+        against the same on-disk durable-state database to prove exactly one
+        of them newly records it and the other observes AlreadyRecorded
+        (never two Recorded, never a corrupted row), enforced by
+        RoomDurableStateStore's real compare-and-set, closing the
+        "cross-process contention for a concurrent conflict record" gap the
+        two :conflictproof/:resolvedconflictproof providers above do not
+        cover (they only ever run one process at a time, sequentially,
+        before/after a kill).
     -->
     <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
 
@@ -90,6 +113,16 @@
             android:name="io.dataloom.queue.room.ResolvedConflictDecisionLogProcessTerminationContentProvider"
             android:authorities="io.dataloom.queue.room.test.resolvedconflictproof"
             android:process=":resolvedconflictproof"
+            android:exported="false" />
+        <provider
+            android:name="io.dataloom.queue.room.UnresolvedConflictContentionContentProviderA"
+            android:authorities="io.dataloom.queue.room.test.unresolvedconflictca"
+            android:process=":unresolvedconflictca"
+            android:exported="false" />
+        <provider
+            android:name="io.dataloom.queue.room.UnresolvedConflictContentionContentProviderB"
+            android:authorities="io.dataloom.queue.room.test.unresolvedconflictcb"
+            android:process=":unresolvedconflictcb"
             android:exported="false" />
     </application>
 </manifest>
