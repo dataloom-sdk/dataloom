@@ -143,4 +143,17 @@ if (isAppleHost || isAppleKlibCrossCompileEnabled) {
     // its consuming code lives in src/iosMain and depends on that module.
     // See docs/apple/reference-consumer.md.
     include(":runtime-ios-reference-consumer")
+
+    // dataloom-scheduler-bgtask -- Apple BackgroundTasks counterpart to
+    // dataloom-scheduler-workmanager's DataLoomCoroutineWorker/
+    // DataLoomWorkerFactory bridge (#101 / DL-039A): DataLoomBackgroundTaskHandler
+    // executes one queueWorker.run() cycle from inside a host app's
+    // BGTaskScheduler launch handler and reports completion back to the
+    // platform via BGTask.setTaskCompletedWithSuccess. A separate module from
+    // dataloom-platform-ios because it must reference BGTask directly through
+    // its public API, which dataloom-platform-ios's own build rules forbid.
+    // Gated the same way as dataloom-platform-ios above since it declares
+    // only iosArm64/iosSimulatorArm64/iosX64 targets. See
+    // docs/apple/background-task-handler.md.
+    include(":dataloom-scheduler-bgtask")
 }
