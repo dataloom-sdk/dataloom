@@ -1,0 +1,17 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <dataloom:dataloom-scheduler-bgtask>
+abstract fun interface io.dataloom.scheduler.bgtask/QueueWorkerRunRequestFactory { // io.dataloom.scheduler.bgtask/QueueWorkerRunRequestFactory|null[0]
+    abstract fun create(): io.dataloom.runtime.worker/QueueWorkerRunRequest // io.dataloom.scheduler.bgtask/QueueWorkerRunRequestFactory.create|create(){}[0]
+}
+
+final class io.dataloom.scheduler.bgtask/DataLoomBackgroundTaskHandler { // io.dataloom.scheduler.bgtask/DataLoomBackgroundTaskHandler|null[0]
+    constructor <init>(io.dataloom.runtime.facade/DataLoomQueueWorker, io.dataloom.scheduler.bgtask/QueueWorkerRunRequestFactory, kotlinx.coroutines/CoroutineScope = ...) // io.dataloom.scheduler.bgtask/DataLoomBackgroundTaskHandler.<init>|<init>(io.dataloom.runtime.facade.DataLoomQueueWorker;io.dataloom.scheduler.bgtask.QueueWorkerRunRequestFactory;kotlinx.coroutines.CoroutineScope){}[0]
+
+    final fun handle(platform.BackgroundTasks/BGTask) // io.dataloom.scheduler.bgtask/DataLoomBackgroundTaskHandler.handle|handle(platform.BackgroundTasks.BGTask){}[0]
+}
