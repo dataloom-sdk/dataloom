@@ -1,6 +1,16 @@
 package io.dataloom.runtime.observation.operational
 
 import io.dataloom.api.change.EntityReference
+import io.dataloom.api.conflict.ConflictAdministrationAuthorizationId
+import io.dataloom.api.conflict.ConflictAdministrationCommandId
+import io.dataloom.api.conflict.ConflictAdministrationCommandState
+import io.dataloom.api.conflict.ConflictAdministrationCommandStatus
+import io.dataloom.api.conflict.ConflictAdministrationFailureSnapshot
+import io.dataloom.api.conflict.ConflictAdministrationPrincipalId
+import io.dataloom.api.conflict.ConflictAdministrationReason
+import io.dataloom.api.conflict.ConflictAdministrationRequest
+import io.dataloom.api.conflict.ConflictAdministrationStateRecord
+import io.dataloom.api.conflict.ConflictResolutionDecision
 import io.dataloom.api.conflict.ConflictType
 import io.dataloom.api.conflict.ResolvedConflictDecisionKind
 import io.dataloom.api.conflict.ResolvedConflictDecisionRecord
@@ -8,6 +18,11 @@ import io.dataloom.api.conflict.UnresolvedConflictChangeSummary
 import io.dataloom.api.conflict.UnresolvedConflictReason
 import io.dataloom.api.conflict.UnresolvedConflictRecord
 import io.dataloom.api.context.DataLoomMetadata
+import io.dataloom.api.error.DataLoomError
+import io.dataloom.api.error.ErrorCategory
+import io.dataloom.api.error.ErrorCode
+import io.dataloom.api.error.ErrorSeverity
+import io.dataloom.api.error.Recoverability
 import io.dataloom.api.identifier.ChangeEventId
 import io.dataloom.api.identifier.ConflictId
 import io.dataloom.api.identifier.ConflictResolverId
@@ -17,6 +32,7 @@ import io.dataloom.api.identifier.EntityType
 import io.dataloom.api.model.ChangeOperation
 import io.dataloom.api.operational.OperationalEventCategory
 import io.dataloom.api.time.DataLoomInstant
+import io.dataloom.runtime.conflict.ConflictAdministrationResult
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -259,5 +275,239 @@ class ConflictResolutionOperationalEventBridgeTest {
 
     private fun assertNotEqual(rawValue: String, redactedValue: String?) {
         assertTrue(redactedValue != null && redactedValue != rawValue, "Expected redaction of '$rawValue'.")
+    }
+
+    // -------------------------------------------------------------------------
+    // Administration commands
+    // -------------------------------------------------------------------------
+
+    private fun administrationRequest(
+        commandIdValue: String = "admin-cmd-001",
+        conflictIdValue: String = "conflict-admin-001",
+        principalIdValue: String = "principal-should-be-masked",
+        decision: ConflictResolutionDecision = ConflictResolutionDecision.UseLocal(),
+        requestedAtEpochMs: Long = 700L,
+    ): ConflictAdministrationRequest = ConflictAdministrationRequest(
+        commandId = ConflictAdministrationCommandId(commandIdValue),
+        conflictId = ConflictId(conflictIdValue),
+        principalId = ConflictAdministrationPrincipalId(principalIdValue),
+        requestedAt = DataLoomInstant(requestedAtEpochMs),
+        decision = decision,
+        reason = ConflictAdministrationReason("investigated and decided-should-not-appear"),
+    )
+
+    private fun administrationState(
+        request: ConflictAdministrationRequest,
+        status: ConflictAdministrationCommandStatus,
+        authorizationId: ConflictAdministrationAuthorizationId? = ConflictAdministrationAuthorizationId("auth-001"),
+        updatedAtEpochMs: Long = 1_200L,
+        rejectionReasonCode: String? = null,
+        executionFailure: ConflictAdministrationFailureSnapshot? = null,
+    ): ConflictAdministrationCommandState = ConflictAdministrationCommandState(
+        request = request,
+        status = status,
+        authorizationId = authorizationId,
+        updatedAt = DataLoomInstant(updatedAtEpochMs),
+        rejectionReasonCode = rejectionReasonCode,
+        executionFailure = executionFailure,
+    )
+
+    private fun administrationRecord(state: ConflictAdministrationCommandState, version: Long = 0L) =
+        ConflictAdministrationStateRecord(state = state, version = version)
+
+    private data class FakeAdministrationError(
+        override val code: ErrorCode = ErrorCode("DL-FAKE-CONFLICT-ADMIN"),
+        override val category: ErrorCategory = ErrorCategory.STATE,
+        override val severity: ErrorSeverity = ErrorSeverity.ERROR,
+        override val recoverability: Recoverability = Recoverability.RECOVERABLE,
+        override val message: String = "raw-sensitive-message-should-be-removed",
+        override val cause: Throwable? = null,
+    ) : DataLoomError
+
+    @Test
+    fun administrationToEnvelope_reusesCommandIdAsCorrelationId_neverInventsOne() {
+        val request = administrationRequest(commandIdValue = "admin-corr-001")
+        val state = administrationState(request, ConflictAdministrationCommandStatus.SUCCEEDED)
+        val result = ConflictAdministrationResult.Succeeded(administrationRecord(state))
+        val envelope = ConflictResolutionOperationalEventBridge.toEnvelope(request, result)
+        assertEquals(CorrelationId("admin-corr-001"), envelope.correlationId)
+    }
+
+    @Test
+    fun administrationToEnvelope_category_isAudit() {
+        val request = administrationRequest()
+        val state = administrationState(request, ConflictAdministrationCommandStatus.SUCCEEDED)
+        val result = ConflictAdministrationResult.Succeeded(administrationRecord(state))
+        val envelope = ConflictResolutionOperationalEventBridge.toEnvelope(request, result)
+        assertEquals(OperationalEventCategory.AUDIT, envelope.category)
+    }
+
+    @Test
+    fun administrationToEnvelope_succeeded_reusesRecordUpdatedAt_neverReadsAClock() {
+        val request = administrationRequest()
+        val state = administrationState(
+            request,
+            ConflictAdministrationCommandStatus.SUCCEEDED,
+            updatedAtEpochMs = 55_000L,
+        )
+        val result = ConflictAdministrationResult.Succeeded(administrationRecord(state))
+        val envelope = ConflictResolutionOperationalEventBridge.toEnvelope(request, result)
+        assertEquals(DataLoomInstant(55_000L), envelope.occurredAt)
+        assertEquals("dataloom.conflict.administration.succeeded", envelope.type.value)
+    }
+
+    @Test
+    fun administrationToEnvelope_persistenceFailure_reusesRequestedAt_hasNoRecord() {
+        val request = administrationRequest(requestedAtEpochMs = 321L)
+        val result = ConflictAdministrationResult.PersistenceFailure(FakeAdministrationError())
+        val envelope = ConflictResolutionOperationalEventBridge.toEnvelope(request, result)
+        assertEquals(DataLoomInstant(321L), envelope.occurredAt)
+        assertEquals("dataloom.conflict.administration.persistence_failure", envelope.type.value)
+    }
+
+    @Test
+    fun administrationToEnvelope_clockRegression_reusesObservedAt() {
+        val request = administrationRequest()
+        val result = ConflictAdministrationResult.ClockRegression(
+            observedAt = DataLoomInstant(10L),
+            persistedAt = DataLoomInstant(20L),
+        )
+        val envelope = ConflictResolutionOperationalEventBridge.toEnvelope(request, result)
+        assertEquals(DataLoomInstant(10L), envelope.occurredAt)
+        assertEquals("20", envelope.attributes["result.persistedAtEpochMillis"])
+    }
+
+    @Test
+    fun administrationToEnvelope_sanitizesDisallowedCharactersInCommandId() {
+        val request = administrationRequest(commandIdValue = "admin cmd 1!#weird")
+        val state = administrationState(request, ConflictAdministrationCommandStatus.SUCCEEDED)
+        val result = ConflictAdministrationResult.Succeeded(administrationRecord(state))
+        val envelope = ConflictResolutionOperationalEventBridge.toEnvelope(request, result)
+        assertTrue(envelope.id.value.none { it == ' ' || it == '!' || it == '#' })
+    }
+
+    @Test
+    fun administrationToEnvelope_isPureAndDeterministic() {
+        val request = administrationRequest()
+        val state = administrationState(request, ConflictAdministrationCommandStatus.SUCCEEDED)
+        val result = ConflictAdministrationResult.Succeeded(administrationRecord(state))
+        val first = ConflictResolutionOperationalEventBridge.toEnvelope(request, result)
+        val second = ConflictResolutionOperationalEventBridge.toEnvelope(request, result)
+        assertEquals(first, second)
+    }
+
+    @Test
+    fun administrationToEnvelope_neverCollidesWithUnresolvedOrResolvedEnvelopeIds() {
+        // A command whose commandId happens to equal an unrelated conflictId's raw value.
+        val sharedRawValue = "shared-raw-identifier"
+        val request = administrationRequest(commandIdValue = sharedRawValue)
+        val state = administrationState(request, ConflictAdministrationCommandStatus.SUCCEEDED)
+        val adminEnvelope = ConflictResolutionOperationalEventBridge.toEnvelope(
+            request,
+            ConflictAdministrationResult.Succeeded(administrationRecord(state)),
+        )
+        val conflictId = ConflictId(sharedRawValue)
+        val unresolvedEnvelope = ConflictResolutionOperationalEventBridge.toEnvelope(conflictId, unresolvedRecord())
+        val resolvedEnvelope = ConflictResolutionOperationalEventBridge.toEnvelope(conflictId, resolvedRecord())
+        assertTrue(adminEnvelope.id != unresolvedEnvelope.id)
+        assertTrue(adminEnvelope.id != resolvedEnvelope.id)
+    }
+
+    @Test
+    fun administrationToEnvelope_excludesCallerSuppliedReason() {
+        val request = administrationRequest()
+        val state = administrationState(request, ConflictAdministrationCommandStatus.SUCCEEDED)
+        val result = ConflictAdministrationResult.Succeeded(administrationRecord(state))
+        val envelope = ConflictResolutionOperationalEventBridge.toEnvelope(request, result)
+        assertTrue(envelope.attributes.entries.values.none { it == "investigated and decided-should-not-appear" })
+    }
+
+    @Test
+    fun administrationToEnvelope_masksPrincipalIdAndConflictId_neverKeepsRawValue() {
+        val request = administrationRequest(
+            principalIdValue = "principal-should-be-masked",
+            conflictIdValue = "conflict-should-be-masked",
+        )
+        val state = administrationState(request, ConflictAdministrationCommandStatus.SUCCEEDED)
+        val result = ConflictAdministrationResult.Succeeded(administrationRecord(state))
+        val envelope = ConflictResolutionOperationalEventBridge.toEnvelope(request, result)
+        assertNotEqual("principal-should-be-masked", envelope.attributes["request.principalId"])
+        assertNotEqual("conflict-should-be-masked", envelope.attributes["request.conflictId"])
+    }
+
+    @Test
+    fun administrationToEnvelope_keepsDecisionKind() {
+        val request = administrationRequest(decision = ConflictResolutionDecision.UseRemote())
+        val state = administrationState(request, ConflictAdministrationCommandStatus.SUCCEEDED)
+        val result = ConflictAdministrationResult.Succeeded(administrationRecord(state))
+        val envelope = ConflictResolutionOperationalEventBridge.toEnvelope(request, result)
+        assertEquals("USE_REMOTE", envelope.attributes["request.decisionKind"])
+    }
+
+    @Test
+    fun administrationToEnvelope_authorizationDenied_typeAndMaskedReasonCode() {
+        val request = administrationRequest()
+        val state = administrationState(
+            request,
+            ConflictAdministrationCommandStatus.AUTHORIZATION_DENIED,
+            authorizationId = null,
+            rejectionReasonCode = "NOT_AUTHORIZED",
+        )
+        val result = ConflictAdministrationResult.AuthorizationDenied(administrationRecord(state))
+        val envelope = ConflictResolutionOperationalEventBridge.toEnvelope(request, result)
+        assertEquals("dataloom.conflict.administration.authorization_denied", envelope.type.value)
+        assertNotEqual("NOT_AUTHORIZED", envelope.attributes["result.rejectionReasonCode"])
+    }
+
+    @Test
+    fun administrationToEnvelope_executionFailed_keepsClosedFailureVocabulary() {
+        val request = administrationRequest()
+        val state = administrationState(
+            request,
+            ConflictAdministrationCommandStatus.EXECUTION_FAILED,
+            executionFailure = ConflictAdministrationFailureSnapshot(
+                code = ErrorCode("DL-CONFLICT-ADMINISTRATION-NON-CONVERGENT"),
+                category = ErrorCategory.CONFLICT,
+                severity = ErrorSeverity.ERROR,
+                recoverability = Recoverability.NON_RECOVERABLE,
+            ),
+        )
+        val result = ConflictAdministrationResult.ExecutionFailed(administrationRecord(state))
+        val envelope = ConflictResolutionOperationalEventBridge.toEnvelope(request, result)
+        assertEquals("dataloom.conflict.administration.execution_failed", envelope.type.value)
+        assertEquals("DL-CONFLICT-ADMINISTRATION-NON-CONVERGENT", envelope.attributes["result.executionFailure.code"])
+        assertEquals("CONFLICT", envelope.attributes["result.executionFailure.category"])
+    }
+
+    @Test
+    fun administrationToEnvelope_persistenceFailure_removesRawErrorMessage() {
+        val request = administrationRequest()
+        val result = ConflictAdministrationResult.PersistenceFailure(FakeAdministrationError())
+        val envelope = ConflictResolutionOperationalEventBridge.toEnvelope(request, result)
+        // CONFIDENTIAL classification is removed outright by the default redaction
+        // policy, not masked to a different string -- see putErrorAttributes' own doc.
+        assertNull(envelope.attributes["result.error.message"])
+        assertEquals("DL-FAKE-CONFLICT-ADMIN", envelope.attributes["result.error.code"])
+    }
+
+    @Test
+    fun administrationToEnvelope_commandConflict_keepsExistingStatus() {
+        val request = administrationRequest()
+        val existingState = administrationState(request, ConflictAdministrationCommandStatus.SUCCEEDED)
+        val result = ConflictAdministrationResult.CommandConflict(administrationRecord(existingState))
+        val envelope = ConflictResolutionOperationalEventBridge.toEnvelope(request, result)
+        assertEquals("dataloom.conflict.administration.command_conflict", envelope.type.value)
+        assertEquals("SUCCEEDED", envelope.attributes["result.existingStatus"])
+    }
+
+    @Test
+    fun administrationToEnvelope_contentionLimitReached_typeAndRequestedAt() {
+        val request = administrationRequest(requestedAtEpochMs = 42L)
+        val envelope = ConflictResolutionOperationalEventBridge.toEnvelope(
+            request,
+            ConflictAdministrationResult.ContentionLimitReached,
+        )
+        assertEquals("dataloom.conflict.administration.contention_limit_reached", envelope.type.value)
+        assertEquals(DataLoomInstant(42L), envelope.occurredAt)
     }
 }

@@ -264,8 +264,11 @@ Issue #95 remains open for at least:
 - entity, workflow, tenant, and global policy precedence;
 - fingerprints, bounded attempts, convergence limits, loop detection, and
   quarantine;
-- authorized query/resolve/manual operations;
-- complete event, metric, retry, redaction, and immutable audit integration;
+- authorized query/resolve/manual operations (a bounded first slice, including
+  operational-event/audit bridging, now ships — see
+  [conflict-resolution-strategies.md](./conflict-resolution-strategies.md)'s
+  "Authorized manual conflict-resolution operations"/"Operational-event
+  bridging"); complete metric and retry integration remain open;
 - restart, migration, duplicate, contention, and concurrent-resolution tests;
 - AC-FUNC-002; and
 - native Android, KMP Android, and KMP iOS parity qualification on one reviewed

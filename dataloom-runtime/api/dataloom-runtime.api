@@ -1070,6 +1070,7 @@ public final class io/dataloom/runtime/observation/health/RedactedProviderHealth
 
 public final class io/dataloom/runtime/observation/operational/ConflictResolutionOperationalEventBridge {
 	public static final field INSTANCE Lio/dataloom/runtime/observation/operational/ConflictResolutionOperationalEventBridge;
+	public final fun toEnvelope (Lio/dataloom/api/conflict/ConflictAdministrationRequest;Lio/dataloom/runtime/conflict/ConflictAdministrationResult;)Lio/dataloom/api/operational/OperationalEventEnvelope;
 	public final fun toEnvelope-aFZlLws (Ljava/lang/String;Lio/dataloom/api/conflict/ResolvedConflictDecisionRecord;)Lio/dataloom/api/operational/OperationalEventEnvelope;
 	public final fun toEnvelope-aFZlLws (Ljava/lang/String;Lio/dataloom/api/conflict/UnresolvedConflictRecord;)Lio/dataloom/api/operational/OperationalEventEnvelope;
 }
