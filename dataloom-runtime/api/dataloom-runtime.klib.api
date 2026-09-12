@@ -4744,6 +4744,7 @@ final object io.dataloom.runtime.execution.protection/ProviderProtectedSynchroni
 }
 
 final object io.dataloom.runtime.observation.operational/ConflictResolutionOperationalEventBridge { // io.dataloom.runtime.observation.operational/ConflictResolutionOperationalEventBridge|null[0]
+    final fun toEnvelope(io.dataloom.api.conflict/ConflictAdministrationRequest, io.dataloom.runtime.conflict/ConflictAdministrationResult): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.runtime.observation.operational/ConflictResolutionOperationalEventBridge.toEnvelope|toEnvelope(io.dataloom.api.conflict.ConflictAdministrationRequest;io.dataloom.runtime.conflict.ConflictAdministrationResult){}[0]
     final fun toEnvelope(io.dataloom.api.identifier/ConflictId, io.dataloom.api.conflict/ResolvedConflictDecisionRecord): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.runtime.observation.operational/ConflictResolutionOperationalEventBridge.toEnvelope|toEnvelope(io.dataloom.api.identifier.ConflictId;io.dataloom.api.conflict.ResolvedConflictDecisionRecord){}[0]
     final fun toEnvelope(io.dataloom.api.identifier/ConflictId, io.dataloom.api.conflict/UnresolvedConflictRecord): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.runtime.observation.operational/ConflictResolutionOperationalEventBridge.toEnvelope|toEnvelope(io.dataloom.api.identifier.ConflictId;io.dataloom.api.conflict.UnresolvedConflictRecord){}[0]
 }
