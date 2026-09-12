@@ -2,13 +2,16 @@
 
 ## Status
 
-**Attempted and confirmed blocked (2026-08-14).** This documents a real,
-reproduced Gradle plugin-resolution conflict in this repository's current
-Kotlin `2.4.10` / AGP `9.1.0` combination, so a future attempt does not
-re-discover the same dead end from scratch. This is not a decision to stop
-pursuing `#101`'s "explicit Android KMP variant" acceptance criterion
-permanently — it is a record of what has been tried and ruled out, so the
-next attempt starts from a different angle.
+**Attempted and confirmed blocked (2026-08-14; re-attempted and confirmed
+still blocked with two newer version pairings, 2026-09-12).** This documents
+a real, reproduced Gradle plugin-resolution conflict, so a future attempt
+does not re-discover the same dead end from scratch. This is not a decision
+to stop pursuing `#101`'s "explicit Android KMP variant" acceptance
+criterion permanently — it is a record of what has been tried and ruled
+out, so the next attempt starts from a different angle. As of round 31
+(2026-09-12), both of this doc's own previously-open candidate directions
+have now been tried and ruled out — see "Round 31 re-attempt" below; only
+the sibling-module-split architectural alternative remains untried.
 
 ## What was attempted
 
@@ -78,22 +81,82 @@ would need deeper Gradle internals investigation (dependency insight
 reports on the root build's buildscript classpath, or testing a different
 Kotlin/AGP version pair) than was budgeted for this pass.
 
+## Round 31 re-attempt (2026-09-12): version bump tested, ruled out
+
+This round's assignment was specifically this doc's own first candidate
+direction: try a newer/older Kotlin/AGP pairing in a disposable, isolated
+experiment. Attempted on the same isolated `dataloom-model` probe this doc
+already used, with two version pairings:
+
+1. **`kotlin = "2.4.20"` / `agp = "9.4.0"`** — did not even reach the
+   original conflict: AGP `9.4.0` requires Gradle `9.6.0` or newer, and this
+   repository's wrapper is pinned to `9.5.0`
+   (`gradle/wrapper/gradle-wrapper.properties`). Bumping the Gradle wrapper
+   itself is a repo-wide change affecting every CI workflow and module, far
+   outside a disposable single-module probe's scope, so this pairing was
+   abandoned rather than pursued further this round.
+2. **`kotlin = "2.4.20"` / `agp = "9.2.0"`** (compatible with Gradle `9.5.0`)
+   — reproduced the **identical** `"already on the classpath with an unknown
+   version, so compatibility cannot be checked"` failure, byte-for-byte the
+   same error this doc already documented at `2.4.10`/`9.1.0`. Tested both
+   with and without a matching `useModule` mapping for
+   `com.android.kotlin.multiplatform.library` (mirroring this doc's own
+   already-ruled-out variation 1) — identical result either way.
+
+This doc's second candidate direction (`build-logic`'s `implementation(libs.
+kotlin.gradlePlugin)` transitively pulling in AGP integration classes) was
+also re-checked directly this round: `build-logic/build.gradle.kts` depends
+on nothing but `libs.kotlin.gradlePlugin` and `gradleTestKit()`, and a
+repository-wide search of `DataLoomKotlinMultiplatformLibraryPlugin.java`
+(the one convention plugin `build-logic` publishes) for any `android`/
+`Android` reference returns zero matches — the convention plugin itself
+does not touch Android at all, ruling this candidate out too, not just
+narrowing it.
+
+**Conclusion: this is not a version-specific bug.** Both of this doc's own
+named candidate directions have now been tried and ruled out. The
+conflict reproduces identically across at least three AGP versions
+(`9.1.0`, `9.2.0`, confirmed; `9.4.0` untested due to the separate Gradle-
+version floor) and is not sourced from this repository's own build-logic
+convention plugin. The remaining, most likely explanation is architectural:
+AGP's `com.android.tools.build:gradle` artifact appears to expose
+`com.android.library` and `com.android.kotlin.multiplatform.library` as
+two plugin IDs that cannot both be resolved-and-applied — even to
+completely different, unrelated Gradle subprojects in the same build represented
+by two build invocations run independently — implying the conflict may be
+inherent to how Gradle's plugin classloading interns the underlying AGP
+module once *any* project in the build graph has ever requested it under
+either ID, not something this repository's configuration can route around
+with a different version pairing.
+
 ## Candidate directions for a future attempt
 
-- Try a newer/older Kotlin Gradle plugin or AGP version pairing in a
-  disposable, isolated experiment (not a repo-wide upgrade) to see if the
-  conflict is version-specific.
-- Investigate whether `build-logic`'s `implementation(libs.kotlin.
+- ~~Try a newer/older Kotlin Gradle plugin or AGP version pairing~~ —
+  **tried and ruled out, round 31 (2026-09-12), see above.**
+- ~~Investigate whether `build-logic`'s `implementation(libs.kotlin.
   gradlePlugin)` dependency itself transitively pulls in AGP integration
-  classes — inspect via `./gradlew :build-logic:dependencies` or
-  `buildEnvironment`.
+  classes~~ — **checked directly and ruled out, round 31 (2026-09-12), see
+  above:** `build-logic` has no Android dependency or reference anywhere.
 - Consider whether the shared modules need the Android variant on the
   *same* Gradle module at all, or whether a sibling-module split (the
   proven, already-shipped SQLDelight pattern — see
   `dataloom-storage-sqldelight` / `dataloom-storage-sqldelight-android`)
   is the more realistic path for the whole shared-module graph, accepting
   that `#101`'s acceptance criterion may need to be satisfied by paired
-  modules rather than one module exposing every target.
+  modules rather than one module exposing every target. **This is now the
+  only remaining named candidate direction that has not been tried or
+  ruled out** — it sidesteps the conflict entirely rather than resolving
+  it, by never applying `com.android.kotlin.multiplatform.library` and
+  `com.android.library` from the same artifact resolution in a way that
+  triggers it; a future attempt should investigate whether a sibling
+  Android-only module (mirroring `dataloom-storage-sqldelight-android`'s
+  shape) can satisfy `#101`'s "expose an explicit Android variant" language
+  without one Gradle module claiming both plugin identities.
+- A deeper Gradle-internals investigation (a `--stacktrace` capture through
+  `DefaultPluginRequestApplicator`, or filing/searching a public AGP/Gradle
+  issue tracker for this exact error string) was not attempted this round
+  and remains open as a longer-shot path to a real fix rather than a
+  workaround.
 
 ## What is not blocked
 
