@@ -10,12 +10,13 @@ public final class io/dataloom/storage/sqldelight/SqlDelightStorageDatabase$Comp
 	public final fun fromDriver (Lapp/cash/sqldelight/db/SqlDriver;)Lio/dataloom/storage/sqldelight/SqlDelightStorageDatabase;
 }
 
-public final class io/dataloom/storage/sqldelight/SqlDelightStorageProvider : io/dataloom/api/storage/StorageProvider {
+public final class io/dataloom/storage/sqldelight/SqlDelightStorageProvider : io/dataloom/api/storage/StorageProvider, io/dataloom/api/strategy/StrategyLocalFallbackProvider, io/dataloom/api/strategy/StrategyReconciliationProvider {
 	public fun <init> (Lio/dataloom/storage/sqldelight/SqlDelightStorageDatabase;Lio/dataloom/api/provider/ProviderDescriptor;)V
 	public synthetic fun <init> (Lio/dataloom/storage/sqldelight/SqlDelightStorageDatabase;Lio/dataloom/api/provider/ProviderDescriptor;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun acknowledgeOutboundChanges (Lio/dataloom/api/synchronization/OutboundChangeAcknowledgementRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun applyInboundChanges (Lio/dataloom/api/storage/InboundChangeApplyRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun evaluateLocalFallback (Lio/dataloom/api/strategy/StrategyLocalFallbackRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
 	public fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -23,6 +24,7 @@ public final class io/dataloom/storage/sqldelight/SqlDelightStorageProvider : io
 	public fun readCheckpoint (Lio/dataloom/api/synchronization/CheckpointReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun readLocalConflictCandidate (Lio/dataloom/api/storage/LocalConflictCandidateReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun readOutboundChanges (Lio/dataloom/api/storage/OutboundChangeReadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun reconcileStrategy (Lio/dataloom/api/strategy/StrategyReconciliationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun writeCheckpoint (Lio/dataloom/api/synchronization/CheckpointWriteRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
@@ -56,6 +58,8 @@ public final class io/dataloom/storage/sqldelight/internal/DataLoomStorageQuerie
 	public final fun deleteOutboundByEventId (Ljava/lang/String;)Lapp/cash/sqldelight/db/QueryResult;
 	public final fun insertOrReplaceInboundAppliedChange (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[BLjava/lang/String;)Lapp/cash/sqldelight/db/QueryResult;
 	public final fun insertOrReplaceOutboundChange (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[BLjava/lang/String;Ljava/lang/String;)Lapp/cash/sqldelight/db/QueryResult;
+	public final fun selectAnyCheckpointExists ()Lapp/cash/sqldelight/Query;
+	public final fun selectAnyInboundAppliedExists ()Lapp/cash/sqldelight/Query;
 	public final fun selectCheckpointByKey (Ljava/lang/String;)Lapp/cash/sqldelight/Query;
 	public final fun selectCheckpointByKey (Ljava/lang/String;Lkotlin/jvm/functions/Function3;)Lapp/cash/sqldelight/Query;
 	public final fun selectEligibleOutboundChanges ()Lapp/cash/sqldelight/Query;

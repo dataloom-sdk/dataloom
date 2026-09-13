@@ -83,7 +83,6 @@ import io.dataloom.runtime.queue.QueueProcessingResult
 import io.dataloom.runtime.queue.QueuedSynchronizationWork
 import io.dataloom.runtime.queue.QueuedSynchronizationWorkResolution
 import io.dataloom.runtime.queue.QueuedSynchronizationWorkResolver
-import io.dataloom.runtime.strategy.StrategyExecutionRejectionReason
 import io.dataloom.runtime.strategy.StrategySynchronizationExecutionResult
 import io.dataloom.runtime.submission.QueuedSynchronizationSubmission
 import io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder
@@ -98,18 +97,18 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 
 /**
  * Robolectric-backed runtime proof that cache-first's own PULL-direction
- * `SERVE_LOCAL`-refresh durable branch -- the one branch `#101`'s
- * market-readiness row (and `#337`'s own KDoc) documented as "genuinely not
- * exercisable against the real, unmodified `RoomStorageProvider`" -- is, once
- * checked branch-by-branch exactly as `#368`/`#371` re-checked remote-first
- * and hybrid, only *half* blocked: the branch's synchronous half is
- * genuinely blocked (confirmed here, not just repeated), but its durable
- * continuation is genuinely replayable and was never actually exercised.
+ * `SERVE_LOCAL`-refresh durable branch is now genuinely exercisable
+ * end-to-end, both halves, closing the gap this test previously documented
+ * (through `#337`/`#371`) as "the branch's synchronous half is genuinely
+ * blocked": `RoomStorageProvider` now implements `StrategyLocalFallbackProvider`
+ * (this round's change), so `CacheFirstStrategyExecutor.serveLocal` no longer
+ * rejects with `LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED`.
  *
- * ## Investigation: re-verifying, not trusting, the prior "not exercisable" claim
+ * ## Branch shape (unchanged from `#337`'s original investigation)
  *
  * `BuiltInSynchronizationStrategyEvaluator.evaluateCacheFirst` reaches
  * `ENQUEUE_DURABLE_WORK` for PULL/BIDIRECTIONAL in exactly two places, both
@@ -129,80 +128,47 @@ import kotlin.test.assertIs
  * -- no field needs to be set away from its default to reach it, unlike the
  * FRESH variant which needs `refreshOnFreshHit = true` explicitly.
  *
- * `#337`'s KDoc correctly observed that `CacheFirstStrategyExecutor.serveLocal`
- * rejects this branch with `LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED`, since
- * `RoomStorageProvider` implements only `StorageProvider`, not
- * `StrategyLocalFallbackProvider`. That part is re-confirmed here, for real,
- * not just repeated -- [cacheFirstPullAdmitsDurablyDespiteSyncRejection]
- * asserts the genuine `Rejected(LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED)`
- * outcome from a real `DataLoom.synchronize` call.
+ * The durable continuation
+ * (`BuiltInSynchronizationStrategyEvaluator.deriveDurableContinuation`'s
+ * `CacheFirstStrategyProfile` arm for PULL/BIDIRECTIONAL) is
+ * `remoteOperations(direction, persistRemote = true)` -- for PULL,
+ * `[READ_CHECKPOINT, PULL_REMOTE, PERSIST_REMOTE]`, with no `SERVE_LOCAL` and
+ * no `fallbackPlan` (`deriveDurableContinuation`'s `continuationFallback`
+ * `when` block only ever produces a non-null `StrategyFallbackPlan` for
+ * `RemoteFirstStrategyProfile`). This is byte-for-byte the same continuation
+ * shape `#325` (offline-first), `#368` (remote-first), and `#371` (hybrid)
+ * already proved replayable, requiring only `STORAGE`/`TRANSPORT` -- so this
+ * half was never actually blocked by the `StrategyLocalFallbackProvider` gap
+ * at all, only the *synchronous* half was.
  *
- * But `#337`'s KDoc also stated that `AcceptedStrategyPlanExecutionCoordinator
- * .validateReplayProviders` "rejects any plan whose operations include
- * `SERVE_LOCAL`" -- conflating the *immediate* plan's `operations` (which do
- * include `SERVE_LOCAL`) with the *durable continuation*'s `operations`
- * (which do not). Reading `BuiltInSynchronizationStrategyEvaluator
- * .deriveDurableContinuation`'s `CacheFirstStrategyProfile` arm for
- * PULL/BIDIRECTIONAL precisely:
- *
- * ```
- * is CacheFirstStrategyProfile -> when (request.direction) {
- *     SynchronizationDirection.PUSH -> listOf(READ_LOCAL, PUSH_REMOTE)
- *     SynchronizationDirection.PULL,
- *     SynchronizationDirection.BIDIRECTIONAL,
- *     -> remoteOperations(request.direction, persistRemote = true)
- * }
- * ```
- *
- * For PULL this is `[READ_CHECKPOINT, PULL_REMOTE, PERSIST_REMOTE]` --
- * `SERVE_LOCAL` never appears in the continuation at all. The durable
- * refresh is designed to *replace* the synchronous local serve with a
- * genuine remote pull-and-persist, not to repeat it later. This is
- * byte-for-byte the same continuation shape `#325` (offline-first), `#368`
- * (remote-first), and `#371` (hybrid) already proved replayable.
- * `validateReplayProviders` (in `AcceptedStrategyPlanExecutionCoordinator`)
- * checks `continuation.fallbackPlan`/`continuation.operations` -- not the
- * original plan's `operations` -- and `deriveDurableContinuation`'s
- * `continuationFallback` `when` block only ever produces a non-null
- * `StrategyFallbackPlan` for `RemoteFirstStrategyProfile`, so cache-first's
- * continuation never carries one either. Neither `StrategyLocalFallbackProvider`
- * nor `StrategyReconciliationProvider` is required to replay this branch's
- * continuation -- only `STORAGE`/`TRANSPORT`, which the real, unmodified
- * `RoomStorageProvider`/test transport already satisfy.
- *
- * Separately, `CacheFirstStrategyExecutor.execute` processes
- * `ENQUEUE_DURABLE_WORK` *before* it attempts `SERVE_LOCAL`: it calls
- * `StrategyDurableQueueAdmitter.admit` first (a real, unconditional write to
- * the real `RoomQueueProvider` -- `StrategyQueueAdmissionEvaluator.evaluate`
- * never inspects `SERVE_LOCAL` or checks for `StrategyLocalFallbackProvider`,
- * only disposition/`ENQUEUE_DURABLE_WORK`/`QUEUE` capability/durable
- * continuation presence), and only *then* attempts `serveLocal`, which fails
- * and returns `Rejected` -- a result type with no `queueEntryId` field, so
- * the caller has no way to discover the entry's identifier from the return
- * value. The entry is nonetheless genuinely, durably persisted before that
- * failure.
+ * `CacheFirstStrategyExecutor.execute` processes `ENQUEUE_DURABLE_WORK`
+ * *before* it attempts `SERVE_LOCAL`: it calls `StrategyDurableQueueAdmitter
+ * .admit` first (a real, unconditional write to the real `RoomQueueProvider`),
+ * and only *then* attempts `serveLocal`, which now genuinely succeeds against
+ * a seeded checkpoint and returns `ServedFromCache` carrying that
+ * `durableQueueEntryId`.
  *
  * ## What this proves
  *
- * [cacheFirstPullAdmitsDurablyDespiteSyncRejection] exercises
- * both halves of this branch honestly, through real, unmodified production
- * code:
+ * [cacheFirstPullServesLocallyThenReplaysDurableRefresh] exercises both
+ * halves of this branch honestly, through real, unmodified production code
+ * plus the new `RoomStorageProvider.evaluateLocalFallback` capability:
  *
- * 1. A real `DataLoom.synchronize` call for a completely-default
- *    `CacheFirstStrategyProfile` PULL request against a `STALE` cache
- *    returns a genuine `Rejected(LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED)` --
- *    the synchronous half is confirmed, not assumed, still blocked. Zero
- *    transport calls occur.
- * 2. Despite that top-level rejection, exactly one real queue entry was
- *    durably admitted underneath it: [DataLoom.queueWorker]'s `run(...)`
- *    (which acquires *any* pending entries via a real `QueueProvider.acquire`
- *    call -- never by a caller-supplied identifier, so the discarded
- *    `queueEntryId` is not actually needed to find it) genuinely acquires
- *    that orphaned entry and completes it.
- * 3. `AcceptedStrategyPlanExecutionCoordinator` genuinely replays the
- *    persisted `durableContinuation` -- not `SERVE_LOCAL` at all, a real
- *    `InboundPullSynchronizationPipeline` run against real Room storage --
- *    reaching a genuine `SynchronizationResult.Succeeded`
+ * 1. One real checkpoint is seeded directly through
+ *    `RoomStorageProvider.writeCheckpoint` first, corroborating the
+ *    `StrategyCacheState.STALE` evidence supplied below with genuine
+ *    synchronized local state -- `evaluateLocalFallback` is a real existence
+ *    check, not satisfied by evaluation evidence alone.
+ * 2. A real `DataLoom.synchronize` call for a completely-default
+ *    `CacheFirstStrategyProfile` PULL request against that seeded `STALE`
+ *    cache now returns a genuine `ServedFromCache` with a real, discoverable
+ *    `durableQueueEntryId` -- zero transport calls occur.
+ * 3. That durably admitted refresh continuation is read back out of the real
+ *    Room-backed queue and replayed through one deterministic
+ *    `DataLoom.queueWorker.run(...)` cycle, with
+ *    `AcceptedStrategyPlanExecutionCoordinator` genuinely running the real
+ *    `InboundPullSynchronizationPipeline` against real Room storage, reaching
+ *    a genuine `SynchronizationResult.Succeeded`
  *    (`summary.inboundEventsApplied == 1`), observed via a real
  *    `SynchronizationObserver`, exactly the bar `#325`/`#368`/`#371`
  *    established for their own PULL continuations.
@@ -217,19 +183,18 @@ import kotlin.test.assertIs
  *
  * ## What this does not prove
  *
- * A public API path that actually returns this durably-admitted entry's
- * `queueEntryId` to the caller (none exists today -- `Rejected` has no such
- * field; this is a real, narrow gap this investigation surfaced but is out
- * of scope to fix here); iOS; BIDIRECTIONAL directly (covered by inspection
- * above); retry/circuit-breaker/conflict-detection behavior during replay;
- * a real WorkManager-triggered background tick; a real managed-device
- * emulator (Robolectric only).
+ * iOS (the real `SqlDelightStorageProvider` gained the identical capability
+ * this round and is covered by its own `commonTest`/`jvmTest` coverage, but
+ * not by an `IosReferenceConsumer*` end-to-end proof); BIDIRECTIONAL directly
+ * (covered by inspection above); retry/circuit-breaker/conflict-detection
+ * behavior during replay; a real WorkManager-triggered background tick; a
+ * real managed-device emulator (Robolectric only).
  */
 @RunWith(RobolectricTestRunner::class)
 class AndroidReferenceConsumerCacheFirstPullQueueRobolectricTest {
 
     @Test
-    fun cacheFirstPullAdmitsDurablyDespiteSyncRejection() = runTest {
+    fun cacheFirstPullServesLocallyThenReplaysDurableRefresh() = runTest {
         val context: Context = ApplicationProvider.getApplicationContext()
         WorkManagerTestInitHelper.initializeTestWorkManager(context)
 
@@ -258,7 +223,41 @@ class AndroidReferenceConsumerCacheFirstPullQueueRobolectricTest {
             }
         }
 
-        val dataLoom = buildDurableQueueDataLoom(context, transport, observer)
+        val providers = androidDataLoomProviders(
+            context = context,
+            storageDatabaseName = "cfp-s-${UUID.randomUUID().toString().take(8)}.db",
+            queueDatabaseName = "cfp-q-${UUID.randomUUID().toString().take(8)}.db",
+        )
+
+        // The real, unmodified RoomStorageProvider's evaluateLocalFallback is a
+        // genuine existence check over its own infrastructure tables -- it is
+        // not seeded implicitly by evaluation evidence alone. Seed one real
+        // checkpoint first (before building/initializing DataLoom) so this
+        // branch's SERVE_LOCAL step (now genuinely reachable, not rejected --
+        // see the class KDoc) reports synchronized local state is actually
+        // Available, matching the StrategyCacheState.STALE evidence supplied
+        // below.
+        val seedResult = providers.storage.writeCheckpoint(
+            io.dataloom.api.synchronization.CheckpointWriteRequest(
+                request = SynchronizationRequest(
+                    workflowId = WorkflowId("durable-queue-cache-first-pull-seed-workflow"),
+                    sessionId = SynchronizationSessionId("durable-queue-cache-first-pull-seed-session"),
+                    direction = SynchronizationDirection.PULL,
+                    mode = SynchronizationMode.FULL,
+                    context = ExecutionContext(
+                        executionId = ExecutionId("durable-queue-cache-first-pull-seed-execution"),
+                        correlationId = CorrelationId("durable-queue-cache-first-pull-seed-correlation"),
+                    ),
+                ),
+                checkpoint = io.dataloom.api.synchronization.SynchronizationCheckpoint(
+                    key = io.dataloom.api.identifier.CheckpointKey("cache-first-pull-seed-checkpoint"),
+                    token = io.dataloom.api.identifier.CheckpointToken("cache-first-pull-seed-token"),
+                ),
+            ),
+        )
+        assertEquals(ProviderOperationResult.Success(Unit), seedResult)
+
+        val dataLoom = buildDurableQueueDataLoom(providers, transport, observer)
         assertEquals(ProviderLifecycleResult.InitializeSuccess, dataLoom.initialize())
 
         // A completely default CacheFirstStrategyProfile: staleCachePolicy
@@ -289,24 +288,26 @@ class AndroidReferenceConsumerCacheFirstPullQueueRobolectricTest {
             input = StrategyOperationInput.ProviderBacked,
         )
 
-        // Step 1: the synchronous half is genuinely, honestly blocked -- not
-        // Deferred/DurablyEnqueued with a discoverable queueEntryId, but a
-        // real Rejected, confirming (not merely repeating) #337's finding.
+        // Step 1: the synchronous half now genuinely succeeds -- RoomStorageProvider
+        // implements StrategyLocalFallbackProvider as of this round (closing the
+        // gap this test previously documented as blocked; see the class KDoc),
+        // so evaluateLocalFallback finds the checkpoint seeded above and reports
+        // StrategyLocalFallbackResult.Available. CacheFirstStrategyExecutor.execute
+        // admits the durable refresh continuation first, then genuinely serves
+        // local state, returning ServedFromCache with a real, discoverable
+        // durableQueueEntryId.
         val admissionResult = dataLoom.synchronize(strategyRequest)
-        val rejected = assertIs<StrategySynchronizationExecutionResult.Rejected>(admissionResult)
-        assertEquals(
-            StrategyExecutionRejectionReason.LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED,
-            rejected.reason,
-        )
+        val served = assertIs<StrategySynchronizationExecutionResult.ServedFromCache>(admissionResult)
+        assertEquals(StrategyCacheState.STALE, served.cacheState)
+        val queueEntryId = assertNotNull(served.durableQueueEntryId)
         assertEquals(0, transport.pullCalls)
         assertEquals(0, completedResults.size)
 
-        // Step 2 + 3: despite that top-level Rejected, one real queue entry
-        // was durably admitted underneath it before the SERVE_LOCAL failure
-        // -- CacheFirstStrategyExecutor.execute admits ENQUEUE_DURABLE_WORK
-        // first, then attempts SERVE_LOCAL. queueWorker.run acquires ANY
-        // pending entries (never by a caller-known identifier), so the
-        // discarded queueEntryId is not needed to find it.
+        // Step 2 + 3: the durably admitted refresh continuation is read back
+        // out of the real Room queue and replayed. queueWorker.run acquires
+        // ANY pending entries (never by a caller-known identifier), but the
+        // identifier is available this time regardless (unlike the previous
+        // Rejected outcome this test used to document).
         val acquiredAt = DataLoomInstant(epochMilliseconds = System.currentTimeMillis())
         val runResult = dataLoom.queueWorker!!.run(
             QueueWorkerRunRequest(
@@ -336,6 +337,7 @@ class AndroidReferenceConsumerCacheFirstPullQueueRobolectricTest {
         assertEquals(1, completedResults.size)
         val succeeded = assertIs<SynchronizationResult.Succeeded>(completedResults.single())
         assertEquals(1L, succeeded.summary.inboundEventsApplied)
+        assertNotNull(queueEntryId)
 
         assertEquals(ProviderLifecycleResult.ShutdownSuccess, dataLoom.shutdown())
     }
@@ -350,16 +352,10 @@ class AndroidReferenceConsumerCacheFirstPullQueueRobolectricTest {
      * wiring.
      */
     private fun buildDurableQueueDataLoom(
-        context: Context,
+        providers: io.dataloom.android.AndroidDataLoomProviders,
         transportProvider: TransportProvider,
         observer: SynchronizationObserver,
     ): DataLoom {
-        val uniqueSuffix = UUID.randomUUID().toString().take(8)
-        val providers = androidDataLoomProviders(
-            context = context,
-            storageDatabaseName = "cfp-s-$uniqueSuffix.db",
-            queueDatabaseName = "cfp-q-$uniqueSuffix.db",
-        )
         val bindings = SynchronizationProviderBindings(
             storageProviderId = providers.storage.descriptor.id,
             transportProviderId = transportProvider.descriptor.id,

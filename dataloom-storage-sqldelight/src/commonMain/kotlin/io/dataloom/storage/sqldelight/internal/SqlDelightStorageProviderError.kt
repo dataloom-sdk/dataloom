@@ -17,6 +17,16 @@ internal object SqlDelightStorageProviderError {
         cause = cause,
     )
 
+    fun reconciliationCheckpointMissing(): DataLoomError = StorageError(
+        code = ErrorCode("STORAGE_RECONCILIATION_CHECKPOINT_MISSING"),
+        category = ErrorCategory.STATE,
+        severity = ErrorSeverity.ERROR,
+        recoverability = Recoverability.NON_RECOVERABLE,
+        message = "Reconciliation evidence reported a completed remote persistence step " +
+            "but no checkpoint was found.",
+        cause = null,
+    )
+
     private data class StorageError(
         override val code: ErrorCode,
         override val category: ErrorCategory,
