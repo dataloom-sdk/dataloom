@@ -118,15 +118,25 @@ cache-first/offline-first use. To get synchronous hybrid fallback behavior
 without configuring an encoder at all, construct `HybridStrategyProfile`
 with `reconcileAfterFallback = false`.
 
-**Status:** genuinely blocked against the real, unmodified `RoomStorageProvider`/
-`SqlDelightStorageProvider` — `RECONCILE` is present in both the immediate
-`operations` and the durable continuation for this branch with no way to
-avoid it (see the table above), requiring `StrategyReconciliationProvider`,
-and this branch's `SERVE_LOCAL` operation additionally requires
-`StrategyLocalFallbackProvider` — neither reference storage provider
-implements either capability. A real admission-then-replay proof of this
-specific branch needs either a fake/expanded storage provider or new
-coordinator support, not a same-shaped drop-in.
+**Status:** now genuinely exercisable end-to-end. `RECONCILE` is present in
+both the immediate `operations` and the durable continuation for this branch
+with no way to avoid it (see the table above), requiring
+`StrategyReconciliationProvider`, and this branch's `SERVE_LOCAL` operation
+additionally requires `StrategyLocalFallbackProvider`. Both `RoomStorageProvider`
+and `SqlDelightStorageProvider` now implement both capabilities as bounded,
+domain-agnostic existence checks over their own infrastructure tables (never
+business merge logic) — see `RoomStorageProvider.evaluateLocalFallback`/
+`reconcileStrategy` and their SQLDelight counterparts.
+`AndroidReferenceConsumerHybridReconcileQueueRobolectricTest` proves this
+specific branch for real: durable admission with zero transport calls, a
+genuine synchronous `ServedFromCache` (after seeding one real checkpoint so
+`evaluateLocalFallback` reports `Available`), a real Room-backed queue
+read-back, and one deterministic `queueWorker.run(...)` replay through
+`AcceptedStrategyPlanExecutionCoordinator` and the real
+`InboundPullSynchronizationPipeline`, with `reconcileStrategy` confirming the
+checkpoint `PERSIST_REMOTE` just wrote and reporting `Applied`, reaching a
+genuine `SynchronizationResult.Succeeded` (`summary.inboundEventsApplied ==
+1`). iOS proof of this specific branch remains a follow-up.
 
 ## Durable queue admission for the connectivity-unknown branch
 

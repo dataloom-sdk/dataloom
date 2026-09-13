@@ -80,30 +80,35 @@ to both happen: the terminal `ServedFromCache` carries a non-null
 `durableQueueEntryId` when admission succeeds and the local serve also
 succeeds.
 
-**Real ordering, and a real, narrow gap when the storage provider does not
-implement `StrategyLocalFallbackProvider`.** `CacheFirstStrategyExecutor
-.execute` processes `ENQUEUE_DURABLE_WORK` *before* attempting
-`SERVE_LOCAL` — durable admission is not conditioned on the local serve
-succeeding. Against a storage provider that does not implement
-`StrategyLocalFallbackProvider` (the real, unmodified `RoomStorageProvider`
-included — see "Local-state consistency" above), admission still succeeds
-for real, writing a genuine `QueueEntry` to the real queue provider, and
-only then does the subsequent `SERVE_LOCAL` attempt fail and the whole call
-return `Rejected(LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED)` — not the
-`ServedFromCache(durableQueueEntryId = ...)` shape this section otherwise
-describes. `Rejected` carries no `queueEntryId` field, so a caller has no
-way to discover that entry's identifier from the return value; the entry
-itself is nonetheless real and was proven genuinely replayable to a real
-`SynchronizationResult.Succeeded` by
-`AndroidReferenceConsumerCacheFirstPullQueueRobolectricTest` (`#101`),
-because `deriveDurableContinuation`'s `CacheFirstStrategyProfile` arm for
-PULL/BIDIRECTIONAL never includes `SERVE_LOCAL` in the persisted
+**Real ordering.** `CacheFirstStrategyExecutor.execute` processes
+`ENQUEUE_DURABLE_WORK` *before* attempting `SERVE_LOCAL` — durable admission
+is not conditioned on the local serve succeeding. Both `RoomStorageProvider`
+and `SqlDelightStorageProvider` now implement `StrategyLocalFallbackProvider`
+(see "Local-state consistency" above), so against the real, unmodified
+reference storage providers, admission succeeds for real, writing a genuine
+`QueueEntry` to the real queue provider, and the subsequent `SERVE_LOCAL`
+attempt then also succeeds against genuinely synchronized local state,
+returning the `ServedFromCache(durableQueueEntryId = ...)` shape this section
+describes — proven by
+`AndroidReferenceConsumerCacheFirstPullQueueRobolectricTest` (`#101`), which
+seeds one real checkpoint first so `evaluateLocalFallback` reports
+`Available`. Against a storage provider that does *not* implement
+`StrategyLocalFallbackProvider`, or one that does but genuinely has no
+synchronized local state despite evidence claiming `FRESH`/`STALE`, the whole
+call instead returns `Rejected(LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED)` or
+the `DL-STRATEGY-CACHE-FIRST-LOCAL-STATE-MISMATCH` contract error
+respectively — not the `ServedFromCache` shape — and since `Rejected` carries
+no `queueEntryId` field, a caller has no way to discover that already-durably-admitted
+entry's identifier from the return value in that case. The entry itself is
+nonetheless real and replayable regardless of which outcome the synchronous
+half reaches, because `deriveDurableContinuation`'s `CacheFirstStrategyProfile`
+arm for PULL/BIDIRECTIONAL never includes `SERVE_LOCAL` in the persisted
 continuation (`remoteOperations(direction, persistRemote = true)`, the same
 shape offline-first's/remote-first's/hybrid's own durable continuations
-already use) — only the *immediate*, synchronous plan does. No public API
-in this codebase today returns the caller a way to find that orphaned
-entry's identifier; that is a real, out-of-scope-for-now gap this
-investigation surfaced rather than fixed.
+already use) — only the *immediate*, synchronous plan does. No public API in
+this codebase today returns the caller a way to find that entry's identifier
+when the synchronous half fails; that remains a real, out-of-scope-for-now
+gap.
 
 **When no `QueuedSynchronizationWorkEncoder` is configured** (the default —
 `DataLoomBuilder.queueSubmissionEncoder`/`queueSubmissionConfiguration`

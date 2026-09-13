@@ -126,17 +126,21 @@ import kotlin.test.assertNotNull
  * `docs/api/cache-first-strategy-execution.md` documents cache-first's
  * durable-refresh branch as a PULL/BIDIRECTIONAL `SERVE_LOCAL` +
  * `ENQUEUE_DURABLE_WORK` shape (`requireDurableRefresh = true`, cache
- * `FRESH`/`STALE`). That branch is genuinely **not** exercisable against the
- * real production Android storage provider: `RoomStorageProvider` does not
- * implement `StrategyLocalFallbackProvider` (confirmed by reading
- * `dataloom-storage-room`'s `RoomStorageProvider.kt` -- it implements only
- * `StorageProvider`), and both `CacheFirstStrategyExecutor.serveLocal` and
+ * `FRESH`/`STALE`). At the time of this investigation, that branch's
+ * synchronous half was genuinely **not** exercisable against the real
+ * production Android storage provider: `RoomStorageProvider` did not
+ * implement `StrategyLocalFallbackProvider`, and both
+ * `CacheFirstStrategyExecutor.serveLocal` and
  * `AcceptedStrategyPlanExecutionCoordinator.validateReplayProviders` reject
  * any plan whose operations include `SERVE_LOCAL` with
  * `LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED` when the resolved storage provider
  * doesn't implement that capability -- exactly the same real constraint
  * `#325`'s own KDoc already documented as its reason for avoiding
- * `SERVE_LOCAL` entirely.
+ * `SERVE_LOCAL` entirely. `RoomStorageProvider` now implements
+ * `StrategyLocalFallbackProvider` (a later round's change) -- see
+ * `AndroidReferenceConsumerCacheFirstPullQueueRobolectricTest`, which proves
+ * that branch's synchronous half now genuinely succeeds. This test's own
+ * PUSH-direction branch (below) is unaffected either way.
  *
  * `BuiltInSynchronizationStrategyEvaluator.evaluateCacheFirstPush` reaches a
  * *second*, separate `ENQUEUE_DURABLE_WORK` branch that the docs page does

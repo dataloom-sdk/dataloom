@@ -26,6 +26,19 @@ import io.dataloom.api.storage.LocalConflictCandidateReadRequest
 import io.dataloom.api.storage.LocalConflictCandidateReadResult
 import io.dataloom.api.storage.OutboundChangeReadRequest
 import io.dataloom.api.storage.OutboundChangeReadResult
+import io.dataloom.api.strategy.StrategyCacheState
+import io.dataloom.api.strategy.StrategyConfigurationVersion
+import io.dataloom.api.strategy.StrategyDecisionId
+import io.dataloom.api.strategy.StrategyLocalFallbackProvider
+import io.dataloom.api.strategy.StrategyLocalFallbackRequest
+import io.dataloom.api.strategy.StrategyLocalFallbackResult
+import io.dataloom.api.strategy.StrategyOperation
+import io.dataloom.api.strategy.StrategyPlanId
+import io.dataloom.api.strategy.StrategyProfileId
+import io.dataloom.api.strategy.StrategyReconciliationProvider
+import io.dataloom.api.strategy.StrategyReconciliationRequest
+import io.dataloom.api.strategy.StrategyReconciliationResult
+import io.dataloom.api.strategy.StrategyRemoteOutcome
 import io.dataloom.api.synchronization.ChangeAcknowledgementStatus
 import io.dataloom.api.synchronization.ChangeEventAcknowledgement
 import io.dataloom.api.synchronization.ChangeSetAcknowledgement
@@ -78,6 +91,106 @@ class RoomStorageProviderTest {
     @Test
     fun `descriptor has storage type`() {
         assertEquals(ProviderType.STORAGE, provider.descriptor.type)
+    }
+
+    @Test
+    fun `provider implements both strategy provider capability interfaces`() {
+        assertIs<StrategyLocalFallbackProvider>(provider)
+        assertIs<StrategyReconciliationProvider>(provider)
+    }
+
+    @Test
+    fun `evaluateLocalFallback reports Unavailable when no checkpoint or inbound state exists`() = runBlocking {
+        whenever(checkpointDao.hasAny()).thenReturn(false)
+        whenever(inboundChangeDao.hasAnyChangeSet()).thenReturn(false)
+
+        val result = provider.evaluateLocalFallback(localFallbackRequest(StrategyCacheState.FRESH))
+
+        val success = assertIs<ProviderOperationResult.Success<StrategyLocalFallbackResult>>(result)
+        val unavailable = assertIs<StrategyLocalFallbackResult.Unavailable>(success.value)
+        assertEquals(StrategyCacheState.MISSING, unavailable.cacheState)
+    }
+
+    @Test
+    fun `evaluateLocalFallback reports Available echoing a FRESH evaluated cache state`() = runBlocking {
+        whenever(checkpointDao.hasAny()).thenReturn(true)
+        whenever(inboundChangeDao.hasAnyChangeSet()).thenReturn(false)
+
+        val result = provider.evaluateLocalFallback(localFallbackRequest(StrategyCacheState.FRESH))
+
+        val success = assertIs<ProviderOperationResult.Success<StrategyLocalFallbackResult>>(result)
+        val available = assertIs<StrategyLocalFallbackResult.Available>(success.value)
+        assertEquals(StrategyCacheState.FRESH, available.cacheState)
+    }
+
+    @Test
+    fun `evaluateLocalFallback reports Available from inbound state alone, without a checkpoint`() = runBlocking {
+        whenever(checkpointDao.hasAny()).thenReturn(false)
+        whenever(inboundChangeDao.hasAnyChangeSet()).thenReturn(true)
+
+        val result = provider.evaluateLocalFallback(localFallbackRequest(StrategyCacheState.STALE))
+
+        val success = assertIs<ProviderOperationResult.Success<StrategyLocalFallbackResult>>(result)
+        val available = assertIs<StrategyLocalFallbackResult.Available>(success.value)
+        assertEquals(StrategyCacheState.STALE, available.cacheState)
+    }
+
+    @Test
+    fun `evaluateLocalFallback falls back to STALE when evaluated cache state is not FRESH or STALE`() = runBlocking {
+        whenever(checkpointDao.hasAny()).thenReturn(true)
+        whenever(inboundChangeDao.hasAnyChangeSet()).thenReturn(false)
+
+        val result = provider.evaluateLocalFallback(localFallbackRequest(StrategyCacheState.UNKNOWN))
+
+        val success = assertIs<ProviderOperationResult.Success<StrategyLocalFallbackResult>>(result)
+        val available = assertIs<StrategyLocalFallbackResult.Available>(success.value)
+        assertEquals(StrategyCacheState.STALE, available.cacheState)
+    }
+
+    @Test
+    fun `reconcileStrategy reports NotRequired when evidence has no remote persistence step`() = runBlocking {
+        val result = provider.reconcileStrategy(
+            reconciliationRequest(listOf(StrategyOperation.READ_LOCAL, StrategyOperation.PUSH_REMOTE)),
+        )
+
+        val success = assertIs<ProviderOperationResult.Success<StrategyReconciliationResult>>(result)
+        assertEquals(StrategyReconciliationResult.NotRequired, success.value)
+    }
+
+    @Test
+    fun `reconcileStrategy reports Applied when a checkpoint exists after remote persistence`() = runBlocking {
+        whenever(checkpointDao.hasAny()).thenReturn(true)
+
+        val result = provider.reconcileStrategy(
+            reconciliationRequest(
+                listOf(
+                    StrategyOperation.READ_CHECKPOINT,
+                    StrategyOperation.PULL_REMOTE,
+                    StrategyOperation.PERSIST_REMOTE,
+                ),
+            ),
+        )
+
+        val success = assertIs<ProviderOperationResult.Success<StrategyReconciliationResult>>(result)
+        assertEquals(StrategyReconciliationResult.Applied, success.value)
+    }
+
+    @Test
+    fun `reconcileStrategy fails loudly when remote persistence evidence has no matching checkpoint`() = runBlocking {
+        whenever(checkpointDao.hasAny()).thenReturn(false)
+
+        val result = provider.reconcileStrategy(
+            reconciliationRequest(
+                listOf(
+                    StrategyOperation.READ_CHECKPOINT,
+                    StrategyOperation.PULL_REMOTE,
+                    StrategyOperation.PERSIST_REMOTE,
+                ),
+            ),
+        )
+
+        val failure = assertIs<ProviderOperationResult.Failure>(result)
+        assertEquals("STORAGE_ROOM_RECONCILIATION_CHECKPOINT_MISSING", failure.error.code.value)
     }
 
     @Test
@@ -285,6 +398,30 @@ class RoomStorageProviderTest {
     ): ChangeSet = ChangeSet(
         id = ChangeSetId(changeSetId),
         events = eventIds.map(::changeEvent),
+    )
+
+    private fun localFallbackRequest(
+        evaluatedCacheState: StrategyCacheState,
+    ): StrategyLocalFallbackRequest = StrategyLocalFallbackRequest(
+        request = request(),
+        decisionId = StrategyDecisionId("decision-1"),
+        planId = StrategyPlanId("plan-1"),
+        profileId = StrategyProfileId("profile-1"),
+        configurationVersion = StrategyConfigurationVersion(1L),
+        remoteOutcome = StrategyRemoteOutcome.UNAVAILABLE,
+        remoteAttempted = true,
+        evaluatedCacheState = evaluatedCacheState,
+    )
+
+    private fun reconciliationRequest(
+        completedOperations: List<StrategyOperation>,
+    ): StrategyReconciliationRequest = StrategyReconciliationRequest(
+        request = request(),
+        decisionId = StrategyDecisionId("decision-1"),
+        planId = StrategyPlanId("plan-1"),
+        profileId = StrategyProfileId("profile-1"),
+        configurationVersion = StrategyConfigurationVersion(1L),
+        completedOperations = completedOperations,
     )
 
     private fun changeEvent(eventId: String): ChangeEvent = ChangeEvent(

@@ -46,6 +46,15 @@ internal object StorageProviderError {
         message = "The inbound change set conflicts with existing durable state.",
     )
 
+    fun reconciliationCheckpointMissing(): DataLoomError = error(
+        code = "STORAGE_ROOM_RECONCILIATION_CHECKPOINT_MISSING",
+        category = ErrorCategory.STATE,
+        severity = ErrorSeverity.ERROR,
+        recoverability = Recoverability.NON_RECOVERABLE,
+        message = "Reconciliation evidence reported a completed remote persistence step " +
+            "but no checkpoint was found.",
+    )
+
     private fun error(
         code: String,
         category: ErrorCategory,
