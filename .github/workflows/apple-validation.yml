@@ -145,3 +145,257 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
             SKIP_INSTALL=YES
+
+  # ---------------------------------------------------------------------
+  # Apple Simulator process-termination/relaunch proof (#94)
+  # ---------------------------------------------------------------------
+  #
+  # A separate job from apple-validate above so a failure here (this is new,
+  # never-run-before infrastructure -- see docs/apple/process-termination-proof.md)
+  # cannot fail the existing, already-proven XCFramework/Swift-smoke checks,
+  # and vice versa.
+  #
+  # This job builds a real, launchable iOS Simulator app
+  # (apple-process-termination-proof-app/) that performs one genuine
+  # production circuit-breaker write via AppleFileCircuitBreakerStateStore on
+  # launch, installs and launches it on a real Simulator device, kills it
+  # with `xcrun simctl terminate` (a genuine OS-level process kill -- not an
+  # in-process simulation), relaunches it, and confirms the persisted
+  # circuit-breaker state file survived by reading it directly from the
+  # Simulator's app-container filesystem, from outside the app process,
+  # before the kill and after the relaunch.
+  #
+  # Everything in this job is new and has never run on real macOS CI before
+  # this PR. See docs/apple/process-termination-proof.md for exactly what
+  # could and could not be verified from a Windows development host prior to
+  # this job's first real run, and for the specific format/label
+  # uncertainties this script's polling steps were deliberately written to
+  # tolerate (grep-based substring matches rather than exact-format
+  # assertions) rather than assume.
+  apple-process-termination-proof:
+    name: Apple Simulator process-termination/relaunch proof (circuit breaker)
+    runs-on: macos-15
+    timeout-minutes: 30
+    # This entire job is new, unverified infrastructure (see the job-level
+    # comment above and docs/apple/process-termination-proof.md). It must not
+    # block merges of unrelated work while it is first proven out on real
+    # macOS CI -- flip this to false only once a real green run has been
+    # observed on this exact job.
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Assemble the process-termination-proof XCFramework
+        run: >-
+          ./gradlew
+          :apple-process-termination-proof:assembleDataLoomProcessTerminationProofReleaseXCFramework
+          --configuration-cache
+          --stacktrace
+          --console=plain
+
+      - name: Copy XCFramework into the proof app's project directory
+        run: |
+          set -euo pipefail
+          SRC="apple-process-termination-proof/build/XCFrameworks/release/DataLoomProcessTerminationProof.xcframework"
+          DEST="apple-process-termination-proof-app/DataLoomProcessTerminationProof.xcframework"
+          echo "=== Copying $SRC -> $DEST ==="
+          ls -la "$SRC"
+          rm -rf "$DEST"
+          cp -R "$SRC" "$DEST"
+
+      - name: Build the proof app for the iOS Simulator
+        run: |
+          set -euo pipefail
+          cd apple-process-termination-proof-app
+          xcodebuild build \
+            -project ProcessTerminationProofApp.xcodeproj \
+            -scheme ProcessTerminationProofApp \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Create and boot a dedicated Simulator device
+        id: boot_simulator
+        run: |
+          set -euo pipefail
+          RUNTIMES_JSON=$(xcrun simctl list runtimes --json)
+          RUNTIME_ID=$(echo "$RUNTIMES_JSON" \
+            | jq -r '[.runtimes[] | select(.isAvailable and (.identifier | startswith("com.apple.CoreSimulator.SimRuntime.iOS")))] | sort_by(.version) | last | .identifier')
+          if [ -z "$RUNTIME_ID" ] || [ "$RUNTIME_ID" = "null" ]; then
+            echo "ERROR: no available iOS simulator runtime found." >&2
+            xcrun simctl list runtimes
+            exit 1
+          fi
+          echo "Selected runtime: $RUNTIME_ID"
+
+          # Pick a device type from the *selected runtime's own*
+          # supportedDeviceTypes list, not from the global device-type list
+          # independently. A naive global pick (even sorted "last") can
+          # select a device type the runtime doesn't actually support --
+          # e.g. lexicographic sort puts "iPhone 6s Plus" after "iPhone 17
+          # Pro Max" (since '6' > '1' as characters), and old device types
+          # like the 6s Plus are dropped from newer iOS runtimes'
+          # compatibility list entirely. Restricting the candidate pool to
+          # this runtime's own supportedDeviceTypes guarantees whatever is
+          # chosen is actually creatable against $RUNTIME_ID.
+          DEVICETYPE_ID=$(echo "$RUNTIMES_JSON" \
+            | jq -r --arg rid "$RUNTIME_ID" '
+                [.runtimes[] | select(.identifier == $rid) | .supportedDeviceTypes[]
+                  | select(.name | contains("iPhone"))]
+                | last | .identifier')
+          if [ -z "$DEVICETYPE_ID" ] || [ "$DEVICETYPE_ID" = "null" ]; then
+            echo "ERROR: no iPhone simulator device type supported by runtime $RUNTIME_ID." >&2
+            echo "$RUNTIMES_JSON" | jq --arg rid "$RUNTIME_ID" '.runtimes[] | select(.identifier == $rid)'
+            exit 1
+          fi
+          echo "Selected device type: $DEVICETYPE_ID"
+
+          DEVICE_ID=$(xcrun simctl create ProcessTerminationProofDevice "$DEVICETYPE_ID" "$RUNTIME_ID")
+          echo "Created device: $DEVICE_ID"
+          echo "device_id=$DEVICE_ID" >> "$GITHUB_OUTPUT"
+
+          xcrun simctl boot "$DEVICE_ID" || true
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+
+      - name: Install, launch, kill, relaunch, and verify persisted state
+        env:
+          DEVICE_ID: ${{ steps.boot_simulator.outputs.device_id }}
+          BUNDLE_ID: io.dataloom.processterminationproof.app
+        run: |
+          set -euo pipefail
+          APP_PATH="apple-process-termination-proof-app/build/Build/Products/Debug-iphonesimulator/ProcessTerminationProofApp.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "ERROR: built app not found at $APP_PATH" >&2
+            find apple-process-termination-proof-app/build/Build/Products -maxdepth 3 || true
+            exit 1
+          fi
+
+          xcrun simctl install "$DEVICE_ID" "$APP_PATH"
+
+          echo "=== First launch (pre-kill) ==="
+          LAUNCH_1=$(xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID")
+          echo "$LAUNCH_1"
+          PID_1=$(echo "$LAUNCH_1" | sed -n 's/^.*: *\([0-9][0-9]*\)$/\1/p')
+          if [ -z "$PID_1" ]; then
+            echo "ERROR: could not parse a pid from 'simctl launch' output: $LAUNCH_1" >&2
+            exit 1
+          fi
+          echo "First launch pid: $PID_1"
+
+          CONTAINER_DATA=$(xcrun simctl get_app_container "$DEVICE_ID" "$BUNDLE_ID" data)
+          STATE_FILE="$CONTAINER_DATA/Documents/CircuitProof/dataloom-circuit-state-v1.tsv"
+          echo "Resolved on-disk state file: $STATE_FILE"
+
+          echo "=== Waiting for the app's real production write to land on disk ==="
+          WROTE_STATE=0
+          for _ in $(seq 1 30); do
+            if [ -f "$STATE_FILE" ]; then
+              WROTE_STATE=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$WROTE_STATE" != "1" ]; then
+            echo "ERROR: circuit-breaker state file never appeared within 30s: $STATE_FILE" >&2
+            exit 1
+          fi
+          STATE_BEFORE_KILL=$(cat "$STATE_FILE")
+          echo "--- Persisted state before kill ---"
+          echo "$STATE_BEFORE_KILL"
+
+          echo "=== Killing the app with a genuine OS-level 'xcrun simctl terminate' ==="
+          xcrun simctl terminate "$DEVICE_ID" "$BUNDLE_ID" || true
+
+          echo "=== Polling until the OS confirms the process is actually gone ==="
+          # simctl has no single "is this bundle id's process still running"
+          # query; this polls `launchctl list` inside the simulator's launchd
+          # for any entry mentioning the bundle id, matching this repository's
+          # "fail loudly on a timeout rather than assume success" testing
+          # discipline (see AndroidProcessTerminationCircuitBreakerInstrumentedTest's
+          # equivalent ActivityManager.getRunningAppProcesses poll). The exact
+          # launchctl label format for a simulator app process was not
+          # verified ahead of time (no macOS host was available) -- this
+          # deliberately greps for the bundle id as a substring rather than
+          # asserting an exact label shape.
+          TERMINATED=0
+          for _ in $(seq 1 30); do
+            if ! xcrun simctl spawn "$DEVICE_ID" launchctl list 2>/dev/null | grep -q "$BUNDLE_ID"; then
+              TERMINATED=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$TERMINATED" != "1" ]; then
+            echo "ERROR: process for $BUNDLE_ID did not disappear from launchctl list within 30s." >&2
+            xcrun simctl spawn "$DEVICE_ID" launchctl list || true
+            exit 1
+          fi
+
+          echo "=== Relaunching (must be a genuinely new OS process) ==="
+          LAUNCH_2=$(xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID")
+          echo "$LAUNCH_2"
+          PID_2=$(echo "$LAUNCH_2" | sed -n 's/^.*: *\([0-9][0-9]*\)$/\1/p')
+          if [ -z "$PID_2" ]; then
+            echo "ERROR: could not parse a pid from the relaunch 'simctl launch' output: $LAUNCH_2" >&2
+            exit 1
+          fi
+          echo "Relaunch pid: $PID_2"
+
+          if [ "$PID_1" = "$PID_2" ]; then
+            echo "ERROR: relaunch pid ($PID_2) is identical to the pre-kill pid ($PID_1)." >&2
+            echo "This would mean simctl terminate/launch did not produce a genuinely new OS process." >&2
+            exit 1
+          fi
+
+          echo "=== Reading persisted state back from the relaunched process's container ==="
+          sleep 2
+          if [ ! -f "$STATE_FILE" ]; then
+            echo "ERROR: state file disappeared after relaunch: $STATE_FILE" >&2
+            exit 1
+          fi
+          STATE_AFTER_RELAUNCH=$(cat "$STATE_FILE")
+          echo "--- Persisted state after kill + relaunch ---"
+          echo "$STATE_AFTER_RELAUNCH"
+
+          if [ "$STATE_BEFORE_KILL" != "$STATE_AFTER_RELAUNCH" ]; then
+            echo "ERROR: persisted circuit-breaker state changed across a genuine OS process kill/relaunch." >&2
+            diff <(echo "$STATE_BEFORE_KILL") <(echo "$STATE_AFTER_RELAUNCH") || true
+            exit 1
+          fi
+
+          echo "OK: circuit-breaker state survived a genuine 'xcrun simctl terminate' + relaunch."
+          echo "    pid before kill: $PID_1"
+          echo "    pid after relaunch: $PID_2"
+
+      - name: Clean up the Simulator device
+        if: always()
+        env:
+          DEVICE_ID: ${{ steps.boot_simulator.outputs.device_id }}
+          BUNDLE_ID: io.dataloom.processterminationproof.app
+        run: |
+          if [ -n "${DEVICE_ID:-}" ]; then
+            xcrun simctl terminate "$DEVICE_ID" "$BUNDLE_ID" || true
+            xcrun simctl shutdown "$DEVICE_ID" || true
+            xcrun simctl delete "$DEVICE_ID" || true
+          fi

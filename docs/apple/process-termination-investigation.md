@@ -13,6 +13,18 @@ is unchanged by this document: "Prove real Apple process termination/relaunch"
 remains listed as still pending, exactly as it already read before this
 investigation.
 
+> [!NOTE]
+> **2026-09-12 update:** a later round built the three pieces this
+> document's "What would need to exist first" section names below — a real,
+> launchable iOS Simulator app target, a new `xcrun simctl`-based CI script
+> step, and an external-state-read mechanism via `simctl get_app_container`.
+> See [`docs/apple/process-termination-proof.md`](process-termination-proof.md)
+> for exactly what was built and, critically, exactly what remains unverified
+> until it runs on real macOS CI — this document's own conclusion below
+> (the hardware/environment was never the actual blocker, only this missing
+> scaffolding) is what motivated that attempt, not a reversal of it. `#94`'s
+> row percentage remains unchanged until a real green CI run is observed.
+
 ## What this compares against
 
 `#323`/`#327` proved genuine Android OS process kill/relaunch for the
