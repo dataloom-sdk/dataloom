@@ -276,6 +276,44 @@ Everything that requires an actual macOS host, Xcode, or the iOS Simulator:
   `macos-*` images, but this was not independently re-confirmed against the
   exact current image revision.
 
+## Update: first real macOS CI run (2026-09-12)
+
+This job ran for real on a `macos-15` GitHub Actions runner for the first
+time on this PR. Results, resolving several of the unknowns named above:
+
+- **The hand-authored `.xcodeproj` built successfully on first open** —
+  `xcodebuild build` reported `** BUILD SUCCEEDED **` with no scheme-related
+  or project-repair errors, despite this project never having been opened by
+  Xcode.app and carrying no checked-in `xcshareddata`/`xcuserdata` scheme
+  file. The "never verified whether Xcode accepts this file without repair"
+  concern above is resolved: it does.
+- **`jq` is confirmed present** on the current `macos-15` runner image —
+  both the runtime and device-type `simctl ... --json | jq` queries executed
+  and returned real values.
+- **The XCFramework output path assumption was exactly correct**:
+  `apple-process-termination-proof/build/XCFrameworks/release/DataLoomProcessTerminationProof.xcframework`
+  was the real path Gradle wrote to, matching `dataloom-apple`'s own proven
+  layout as predicted.
+- **A real, genuine bug was found and fixed**: `xcrun simctl create` failed
+  with `Incompatible device` (`SimError` code 403). Root cause: the
+  device-type selection picked a device type independently from the global
+  `simctl list devicetypes --json` list, sorted lexicographically and taking
+  `last` — which selected `iPhone 6s Plus` over every modern iPhone, since
+  `'6'` sorts after `'1'` as a character (`"iPhone 17 Pro Max"` <
+  `"iPhone 6s Plus"` lexicographically), and old device types like the 6s
+  Plus are dropped from newer iOS runtimes' compatibility list entirely —
+  exactly what `Incompatible device` reported. Fixed by restricting the
+  candidate device types to the *selected runtime's own*
+  `supportedDeviceTypes` array (from the same `simctl list runtimes --json`
+  payload already fetched), guaranteeing whatever is chosen is actually
+  creatable against that runtime.
+- **Still unverified after this run** (the fix above was not yet re-run on
+  CI at the time of this update): the app install/launch, kill/relaunch,
+  `launchctl list` label format, and `simctl launch` pid-format assumptions
+  — the job failed before reaching any of those steps. These remain exactly
+  as uncertain as originally documented above until the device-selection fix
+  produces a run that reaches them.
+
 ## What remains open after this PR, even once CI infrastructure is proven
 
 - **Retry-budget state** (`AndroidProcessTerminationRetryBudgetInstrumentedTest`'s
