@@ -239,7 +239,8 @@ jobs:
         id: boot_simulator
         run: |
           set -euo pipefail
-          RUNTIME_ID=$(xcrun simctl list runtimes --json \
+          RUNTIMES_JSON=$(xcrun simctl list runtimes --json)
+          RUNTIME_ID=$(echo "$RUNTIMES_JSON" \
             | jq -r '[.runtimes[] | select(.isAvailable and (.identifier | startswith("com.apple.CoreSimulator.SimRuntime.iOS")))] | sort_by(.version) | last | .identifier')
           if [ -z "$RUNTIME_ID" ] || [ "$RUNTIME_ID" = "null" ]; then
             echo "ERROR: no available iOS simulator runtime found." >&2
@@ -248,11 +249,24 @@ jobs:
           fi
           echo "Selected runtime: $RUNTIME_ID"
 
-          DEVICETYPE_ID=$(xcrun simctl list devicetypes --json \
-            | jq -r '[.devicetypes[] | select(.identifier | contains("iPhone"))] | last | .identifier')
+          # Pick a device type from the *selected runtime's own*
+          # supportedDeviceTypes list, not from the global device-type list
+          # independently. A naive global pick (even sorted "last") can
+          # select a device type the runtime doesn't actually support --
+          # e.g. lexicographic sort puts "iPhone 6s Plus" after "iPhone 17
+          # Pro Max" (since '6' > '1' as characters), and old device types
+          # like the 6s Plus are dropped from newer iOS runtimes'
+          # compatibility list entirely. Restricting the candidate pool to
+          # this runtime's own supportedDeviceTypes guarantees whatever is
+          # chosen is actually creatable against $RUNTIME_ID.
+          DEVICETYPE_ID=$(echo "$RUNTIMES_JSON" \
+            | jq -r --arg rid "$RUNTIME_ID" '
+                [.runtimes[] | select(.identifier == $rid) | .supportedDeviceTypes[]
+                  | select(.name | contains("iPhone"))]
+                | last | .identifier')
           if [ -z "$DEVICETYPE_ID" ] || [ "$DEVICETYPE_ID" = "null" ]; then
-            echo "ERROR: no iPhone simulator device type found." >&2
-            xcrun simctl list devicetypes
+            echo "ERROR: no iPhone simulator device type supported by runtime $RUNTIME_ID." >&2
+            echo "$RUNTIMES_JSON" | jq --arg rid "$RUNTIME_ID" '.runtimes[] | select(.identifier == $rid)'
             exit 1
           fi
           echo "Selected device type: $DEVICETYPE_ID"
