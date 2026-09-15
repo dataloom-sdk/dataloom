@@ -30,6 +30,14 @@ import io.dataloom.api.storage.LocalConflictCandidateReadResult
 import io.dataloom.api.storage.OutboundChangeReadRequest
 import io.dataloom.api.storage.OutboundChangeReadResult
 import io.dataloom.api.storage.StorageProvider
+import io.dataloom.api.strategy.StrategyCacheState
+import io.dataloom.api.strategy.StrategyLocalFallbackProvider
+import io.dataloom.api.strategy.StrategyLocalFallbackRequest
+import io.dataloom.api.strategy.StrategyLocalFallbackResult
+import io.dataloom.api.strategy.StrategyOperation
+import io.dataloom.api.strategy.StrategyReconciliationProvider
+import io.dataloom.api.strategy.StrategyReconciliationRequest
+import io.dataloom.api.strategy.StrategyReconciliationResult
 import io.dataloom.api.synchronization.ChangeAcknowledgementStatus
 import io.dataloom.api.synchronization.CheckpointReadRequest
 import io.dataloom.api.synchronization.CheckpointWriteRequest
@@ -67,11 +75,18 @@ import kotlin.coroutines.cancellation.CancellationException
  * retain-everything behavior for this narrow purpose. When multiple
  * outbound rows remain for the same entity, the highest `sequence` (the
  * most recently inserted) is returned.
+ *
+ * ## [StrategyLocalFallbackProvider]/[StrategyReconciliationProvider]
+ *
+ * Both are implemented as bounded, domain-agnostic existence checks over
+ * this provider's own infrastructure tables — never entity payloads or
+ * business merge decisions. See [evaluateLocalFallback] and
+ * [reconcileStrategy] for the exact, narrow signal each reports.
  */
 public class SqlDelightStorageProvider(
     private val storage: SqlDelightStorageDatabase,
     override val descriptor: ProviderDescriptor = defaultDescriptor(),
-) : StorageProvider {
+) : StorageProvider, StrategyLocalFallbackProvider, StrategyReconciliationProvider {
     private val queries = storage.database.dataLoomStorageQueries
 
     override suspend fun initialize(
@@ -227,6 +242,96 @@ public class SqlDelightStorageProvider(
                 checkpoint_key = request.checkpoint.key.value,
                 checkpoint_token = request.checkpoint.token.value,
                 checkpoint_metadata = encodeMetadata(request.checkpoint.metadata),
+            )
+        }
+    }
+
+    /**
+     * Reports whether this provider currently holds synchronized local state,
+     * independent of and never trusting [StrategyLocalFallbackRequest
+     * .evaluatedCacheState] alone — that field reflects evidence captured at
+     * strategy-evaluation time, which for a durably queued continuation may
+     * be significantly stale by the time this method actually runs.
+     *
+     * The signal is a bounded existence check over this provider's own two
+     * infrastructure tables: a checkpoint has been persisted by
+     * [writeCheckpoint], or at least one inbound change set has been applied
+     * by [applyInboundChanges]. Either is real evidence that a remote
+     * synchronization has previously landed local state; neither reads
+     * entity identifiers, payloads, or checkpoint tokens. When available,
+     * [request]'s own [StrategyLocalFallbackRequest.evaluatedCacheState] is
+     * echoed back if it is [StrategyCacheState.FRESH] or
+     * [StrategyCacheState.STALE] (the only two states
+     * [StrategyLocalFallbackResult.Available] accepts); otherwise
+     * [StrategyCacheState.STALE] is reported, since a provider-level
+     * existence check alone can never independently establish
+     * [StrategyCacheState.FRESH] without an application-owned freshness
+     * policy DataLoom does not own.
+     */
+    override suspend fun evaluateLocalFallback(
+        request: StrategyLocalFallbackRequest,
+    ): ProviderOperationResult<StrategyLocalFallbackResult> = runStorageOperation {
+        val hasSynchronizedLocalState = queries.selectAnyCheckpointExists().executeAsOne() ||
+            queries.selectAnyInboundAppliedExists().executeAsOne()
+        if (hasSynchronizedLocalState) {
+            val cacheState = request.evaluatedCacheState.takeIf {
+                it == StrategyCacheState.FRESH || it == StrategyCacheState.STALE
+            } ?: StrategyCacheState.STALE
+            StrategyLocalFallbackResult.Available(cacheState)
+        } else {
+            StrategyLocalFallbackResult.Unavailable(StrategyCacheState.MISSING)
+        }
+    }
+
+    /**
+     * Bounded, domain-agnostic confirmation hook for the built-in `RECONCILE`
+     * operation — never a merge or conflict-resolution pipeline.
+     *
+     * By the time `AcceptedStrategyPlanExecutionCoordinator` invokes this
+     * method, every provider-level effect an accepted plan's `RECONCILE`
+     * operation stands after — pushing or pulling remote changes, persisting
+     * them, serving local state — has already completed through this
+     * provider's own ordinary [readOutboundChanges]/[applyInboundChanges]/
+     * [writeCheckpoint] methods earlier in the same execution. There is no
+     * additional entity-level merge left for a generic, payload-free storage
+     * provider to perform: [request] carries only bounded plan identity and a
+     * [StrategyOperation] evidence list, deliberately no entity identifiers
+     * or payloads, so any actual business-merge action here would mean
+     * inventing rules DataLoom does not own (see
+     * `docs/architecture/system-overview.md`'s "Product boundary").
+     *
+     * What this method does verify for real: when the completed evidence
+     * includes [StrategyOperation.PERSIST_REMOTE] — meaning the plan's own
+     * remote-persisting step should have just landed a checkpoint — it
+     * confirms one now exists, returning [StrategyReconciliationResult
+     * .Applied] when it does and a real [ProviderOperationResult.Failure]
+     * when it unexpectedly does not (a genuine storage inconsistency worth
+     * surfacing rather than silently swallowing). When the evidence has no
+     * remote-persisting step (for example a pure `PUSH` continuation, which
+     * has nothing checkpoint-shaped to confirm), reconciliation reports
+     * [StrategyReconciliationResult.NotRequired] — existing state already
+     * satisfies the accepted plan, exactly as that result's own contract
+     * describes.
+     */
+    override suspend fun reconcileStrategy(
+        request: StrategyReconciliationRequest,
+    ): ProviderOperationResult<StrategyReconciliationResult> {
+        if (StrategyOperation.PERSIST_REMOTE !in request.completedOperations) {
+            return ProviderOperationResult.Success(StrategyReconciliationResult.NotRequired)
+        }
+        return try {
+            if (queries.selectAnyCheckpointExists().executeAsOne()) {
+                ProviderOperationResult.Success(StrategyReconciliationResult.Applied)
+            } else {
+                ProviderOperationResult.Failure(
+                    SqlDelightStorageProviderError.reconciliationCheckpointMissing(),
+                )
+            }
+        } catch (cancellationException: CancellationException) {
+            throw cancellationException
+        } catch (throwable: Throwable) {
+            ProviderOperationResult.Failure(
+                SqlDelightStorageProviderError.databaseFailure(throwable),
             )
         }
     }

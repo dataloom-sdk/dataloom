@@ -391,6 +391,16 @@ internal abstract class InboundChangeDao {
         """,
     )
     internal abstract suspend fun readStoredEvents(changeSetId: String): List<InboundChangeEventEntity>
+
+    /**
+     * Domain-agnostic existence check: has any inbound change set ever been
+     * durably applied by [applyChangeSet]. Used only by
+     * [io.dataloom.storage.room.RoomStorageProvider.evaluateLocalFallback] to
+     * corroborate that synchronized local state genuinely exists — it never
+     * reads change-set content or entity identifiers.
+     */
+    @Query("SELECT EXISTS(SELECT 1 FROM inbound_change_sets)")
+    internal abstract suspend fun hasAnyChangeSet(): Boolean
 }
 
 @Dao
@@ -407,6 +417,18 @@ internal interface StorageCheckpointDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: StorageCheckpointEntity)
+
+    /**
+     * Domain-agnostic existence check: has any checkpoint ever been persisted
+     * by [upsert], regardless of key. Used by
+     * [io.dataloom.storage.room.RoomStorageProvider.evaluateLocalFallback]
+     * (as one signal of synchronized local-state availability) and
+     * [io.dataloom.storage.room.RoomStorageProvider.reconcileStrategy] (to
+     * confirm a remote-persisting continuation genuinely landed a
+     * checkpoint) — it never reads checkpoint tokens or metadata.
+     */
+    @Query("SELECT EXISTS(SELECT 1 FROM storage_checkpoints)")
+    suspend fun hasAny(): Boolean
 }
 
 private fun InboundChangeSetEntity.contentEquals(other: InboundChangeSetEntity): Boolean =

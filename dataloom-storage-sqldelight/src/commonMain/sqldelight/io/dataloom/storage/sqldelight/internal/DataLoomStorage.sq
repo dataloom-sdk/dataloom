@@ -149,3 +149,14 @@ VALUES (?, ?, ?)
 ON CONFLICT(checkpoint_key) DO UPDATE SET
     checkpoint_token = excluded.checkpoint_token,
     checkpoint_metadata = excluded.checkpoint_metadata;
+
+-- Domain-agnostic existence checks used only by
+-- StrategyLocalFallbackProvider/StrategyReconciliationProvider support in
+-- SqlDelightStorageProvider: they report whether synchronized local state
+-- exists at all, never checkpoint tokens, entity identifiers, or payloads.
+
+selectAnyCheckpointExists:
+SELECT EXISTS(SELECT 1 FROM checkpoints);
+
+selectAnyInboundAppliedExists:
+SELECT EXISTS(SELECT 1 FROM inbound_changes_applied);
