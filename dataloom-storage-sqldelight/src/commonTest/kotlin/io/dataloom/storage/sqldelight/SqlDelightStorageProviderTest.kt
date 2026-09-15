@@ -12,6 +12,12 @@ import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.storage.LocalConflictCandidateReadRequest
 import io.dataloom.api.storage.LocalConflictCandidateReadResult
 import io.dataloom.api.storage.OutboundChangeReadResult
+import io.dataloom.api.strategy.StrategyCacheState
+import io.dataloom.api.strategy.StrategyLocalFallbackProvider
+import io.dataloom.api.strategy.StrategyLocalFallbackResult
+import io.dataloom.api.strategy.StrategyOperation
+import io.dataloom.api.strategy.StrategyReconciliationProvider
+import io.dataloom.api.strategy.StrategyReconciliationResult
 import io.dataloom.api.synchronization.ChangeAcknowledgementStatus
 import kotlin.coroutines.startCoroutine
 import kotlin.test.Test
@@ -249,6 +255,133 @@ class SqlDelightStorageProviderTest {
         assertEquals(ProviderOperationResult.Success(Unit), firstResult)
         assertEquals(ProviderOperationResult.Success(Unit), secondResult)
         assertEquals(ProviderOperationResult.Success(secondWrite.checkpoint), readResult)
+    }
+
+    @Test
+    fun `provider implements both strategy provider capability interfaces`() {
+        val provider = SqlDelightStorageProvider(createTestSqlDelightStorageDatabase())
+        assertIs<StrategyLocalFallbackProvider>(provider)
+        assertIs<StrategyReconciliationProvider>(provider)
+    }
+
+    @Test
+    fun `evaluateLocalFallback reports Unavailable on an empty database`() {
+        val provider = SqlDelightStorageProvider(createTestSqlDelightStorageDatabase())
+
+        val result = runSuspend {
+            provider.evaluateLocalFallback(sampleLocalFallbackRequest(evaluatedCacheState = StrategyCacheState.FRESH))
+        }
+
+        val success = assertIs<ProviderOperationResult.Success<StrategyLocalFallbackResult>>(result)
+        val unavailable = assertIs<StrategyLocalFallbackResult.Unavailable>(success.value)
+        assertEquals(StrategyCacheState.MISSING, unavailable.cacheState)
+    }
+
+    @Test
+    fun `evaluateLocalFallback reports Available echoing a FRESH evaluated cache state once a checkpoint exists`() {
+        val provider = SqlDelightStorageProvider(createTestSqlDelightStorageDatabase())
+        runSuspend { provider.writeCheckpoint(sampleCheckpointWriteRequest()) }
+
+        val result = runSuspend {
+            provider.evaluateLocalFallback(sampleLocalFallbackRequest(evaluatedCacheState = StrategyCacheState.FRESH))
+        }
+
+        val success = assertIs<ProviderOperationResult.Success<StrategyLocalFallbackResult>>(result)
+        val available = assertIs<StrategyLocalFallbackResult.Available>(success.value)
+        assertEquals(StrategyCacheState.FRESH, available.cacheState)
+    }
+
+    @Test
+    fun `evaluateLocalFallback reports Available from applied inbound state alone without a checkpoint`() {
+        val provider = SqlDelightStorageProvider(createTestSqlDelightStorageDatabase())
+        runSuspend {
+            provider.applyInboundChanges(
+                sampleInboundApplyRequest(
+                    changeSet = sampleChangeSet(changeSetId = "inbound-fallback", eventIds = listOf("event-fallback")),
+                ),
+            )
+        }
+
+        val result = runSuspend {
+            provider.evaluateLocalFallback(sampleLocalFallbackRequest(evaluatedCacheState = StrategyCacheState.STALE))
+        }
+
+        val success = assertIs<ProviderOperationResult.Success<StrategyLocalFallbackResult>>(result)
+        val available = assertIs<StrategyLocalFallbackResult.Available>(success.value)
+        assertEquals(StrategyCacheState.STALE, available.cacheState)
+    }
+
+    @Test
+    fun `evaluateLocalFallback falls back to STALE when evaluated cache state is not FRESH or STALE`() {
+        val provider = SqlDelightStorageProvider(createTestSqlDelightStorageDatabase())
+        runSuspend { provider.writeCheckpoint(sampleCheckpointWriteRequest()) }
+
+        val result = runSuspend {
+            provider.evaluateLocalFallback(
+                sampleLocalFallbackRequest(evaluatedCacheState = StrategyCacheState.UNKNOWN),
+            )
+        }
+
+        val success = assertIs<ProviderOperationResult.Success<StrategyLocalFallbackResult>>(result)
+        val available = assertIs<StrategyLocalFallbackResult.Available>(success.value)
+        assertEquals(StrategyCacheState.STALE, available.cacheState)
+    }
+
+    @Test
+    fun `reconcileStrategy reports NotRequired when evidence has no remote persistence step`() {
+        val provider = SqlDelightStorageProvider(createTestSqlDelightStorageDatabase())
+
+        val result = runSuspend {
+            provider.reconcileStrategy(
+                sampleReconciliationRequest(
+                    completedOperations = listOf(StrategyOperation.READ_LOCAL, StrategyOperation.PUSH_REMOTE),
+                ),
+            )
+        }
+
+        val success = assertIs<ProviderOperationResult.Success<StrategyReconciliationResult>>(result)
+        assertEquals(StrategyReconciliationResult.NotRequired, success.value)
+    }
+
+    @Test
+    fun `reconcileStrategy reports Applied when a checkpoint exists after remote persistence`() {
+        val provider = SqlDelightStorageProvider(createTestSqlDelightStorageDatabase())
+        runSuspend { provider.writeCheckpoint(sampleCheckpointWriteRequest()) }
+
+        val result = runSuspend {
+            provider.reconcileStrategy(
+                sampleReconciliationRequest(
+                    completedOperations = listOf(
+                        StrategyOperation.READ_CHECKPOINT,
+                        StrategyOperation.PULL_REMOTE,
+                        StrategyOperation.PERSIST_REMOTE,
+                    ),
+                ),
+            )
+        }
+
+        val success = assertIs<ProviderOperationResult.Success<StrategyReconciliationResult>>(result)
+        assertEquals(StrategyReconciliationResult.Applied, success.value)
+    }
+
+    @Test
+    fun `reconcileStrategy fails loudly when remote persistence evidence has no matching checkpoint`() {
+        val provider = SqlDelightStorageProvider(createTestSqlDelightStorageDatabase())
+
+        val result = runSuspend {
+            provider.reconcileStrategy(
+                sampleReconciliationRequest(
+                    completedOperations = listOf(
+                        StrategyOperation.READ_CHECKPOINT,
+                        StrategyOperation.PULL_REMOTE,
+                        StrategyOperation.PERSIST_REMOTE,
+                    ),
+                ),
+            )
+        }
+
+        val failure = assertIs<ProviderOperationResult.Failure>(result)
+        assertEquals("STORAGE_RECONCILIATION_CHECKPOINT_MISSING", failure.error.code.value)
     }
 }
 

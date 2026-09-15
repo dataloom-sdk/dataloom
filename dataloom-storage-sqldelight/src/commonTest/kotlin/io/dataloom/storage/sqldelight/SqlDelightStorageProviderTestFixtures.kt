@@ -23,6 +23,15 @@ import io.dataloom.api.payload.EntityVersion
 import io.dataloom.api.payload.PayloadContentType
 import io.dataloom.api.storage.InboundChangeApplyRequest
 import io.dataloom.api.storage.OutboundChangeReadRequest
+import io.dataloom.api.strategy.StrategyCacheState
+import io.dataloom.api.strategy.StrategyConfigurationVersion
+import io.dataloom.api.strategy.StrategyDecisionId
+import io.dataloom.api.strategy.StrategyLocalFallbackRequest
+import io.dataloom.api.strategy.StrategyOperation
+import io.dataloom.api.strategy.StrategyPlanId
+import io.dataloom.api.strategy.StrategyProfileId
+import io.dataloom.api.strategy.StrategyReconciliationRequest
+import io.dataloom.api.strategy.StrategyRemoteOutcome
 import io.dataloom.api.synchronization.ChangeAcknowledgementStatus
 import io.dataloom.api.synchronization.ChangeEventAcknowledgement
 import io.dataloom.api.synchronization.ChangeSetAcknowledgement
@@ -115,6 +124,32 @@ internal fun sampleCheckpointReadRequest(
 ): CheckpointReadRequest = CheckpointReadRequest(
     request = sampleSynchronizationRequest(suffix),
     key = CheckpointKey("checkpoint-$suffix"),
+)
+
+internal fun sampleLocalFallbackRequest(
+    suffix: String = "001",
+    evaluatedCacheState: StrategyCacheState,
+): StrategyLocalFallbackRequest = StrategyLocalFallbackRequest(
+    request = sampleSynchronizationRequest(suffix),
+    decisionId = StrategyDecisionId("decision-$suffix"),
+    planId = StrategyPlanId("plan-$suffix"),
+    profileId = StrategyProfileId("profile-$suffix"),
+    configurationVersion = StrategyConfigurationVersion(1L),
+    remoteOutcome = StrategyRemoteOutcome.UNAVAILABLE,
+    remoteAttempted = true,
+    evaluatedCacheState = evaluatedCacheState,
+)
+
+internal fun sampleReconciliationRequest(
+    suffix: String = "001",
+    completedOperations: List<StrategyOperation>,
+): StrategyReconciliationRequest = StrategyReconciliationRequest(
+    request = sampleSynchronizationRequest(suffix),
+    decisionId = StrategyDecisionId("decision-$suffix"),
+    planId = StrategyPlanId("plan-$suffix"),
+    profileId = StrategyProfileId("profile-$suffix"),
+    configurationVersion = StrategyConfigurationVersion(1L),
+    completedOperations = completedOperations,
 )
 
 internal expect fun createTestSqlDelightStorageDatabase(): SqlDelightStorageDatabase

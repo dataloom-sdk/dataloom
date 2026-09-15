@@ -8,6 +8,8 @@ import io.dataloom.api.change.EntityReference
 import io.dataloom.api.context.ExecutionContext
 import io.dataloom.api.identifier.ChangeEventId
 import io.dataloom.api.identifier.ChangeSetId
+import io.dataloom.api.identifier.CheckpointKey
+import io.dataloom.api.identifier.CheckpointToken
 import io.dataloom.api.identifier.ConflictId
 import io.dataloom.api.identifier.CorrelationId
 import io.dataloom.api.identifier.EntityId
@@ -66,6 +68,8 @@ import io.dataloom.api.strategy.StrategyProfileId
 import io.dataloom.api.strategy.StrategyRuntimeEvidence
 import io.dataloom.api.strategy.StrategySynchronizationRequest
 import io.dataloom.api.synchronization.ChangeSetAcknowledgement
+import io.dataloom.api.synchronization.CheckpointWriteRequest
+import io.dataloom.api.synchronization.SynchronizationCheckpoint
 import io.dataloom.api.synchronization.SynchronizationEvent
 import io.dataloom.api.synchronization.SynchronizationResult
 import io.dataloom.api.time.AppleDataLoomClock
@@ -84,7 +88,6 @@ import io.dataloom.runtime.queue.QueueProcessingResult
 import io.dataloom.runtime.queue.QueuedSynchronizationWork
 import io.dataloom.runtime.queue.QueuedSynchronizationWorkResolution
 import io.dataloom.runtime.queue.QueuedSynchronizationWorkResolver
-import io.dataloom.runtime.strategy.StrategyExecutionRejectionReason
 import io.dataloom.runtime.strategy.StrategySynchronizationExecutionResult
 import io.dataloom.runtime.submission.QueuedSynchronizationSubmission
 import io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder
@@ -96,6 +99,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import platform.Foundation.NSTemporaryDirectory
 import platform.Foundation.NSUUID
 
@@ -103,10 +107,12 @@ import platform.Foundation.NSUUID
  * Kotlin/Native iOS Simulator runtime proof for cache-first's own
  * PULL-direction `SERVE_LOCAL`-refresh durable branch -- the iOS counterpart
  * to `AndroidReferenceConsumerCacheFirstPullQueueRobolectricTest` (`#101`
- * market-readiness row, closing this gate's own "iOS proof of the PULL
- * branch remains a follow-up" line).
+ * market-readiness row), now genuinely exercisable end-to-end on both
+ * halves: `SqlDelightStorageProvider` implements `StrategyLocalFallbackProvider`
+ * as of this round's change, so `CacheFirstStrategyExecutor.serveLocal` no
+ * longer rejects with `LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED` here either.
  *
- * ## Investigation: the same branch, re-verified for iOS's real storage provider
+ * ## Branch shape (unchanged from the original investigation)
  *
  * `BuiltInSynchronizationStrategyEvaluator.evaluateCacheFirst` is `commonMain`
  * code -- identical on every platform. For `SynchronizationDirection.PULL`
@@ -117,14 +123,7 @@ import platform.Foundation.NSUUID
  * reaches this branch with no field set away from its default, exactly as the
  * Android proof documents.
  *
- * `CacheFirstStrategyExecutor.serveLocal` rejects this branch synchronously
- * with `LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED` on any real storage provider
- * that implements only `StorageProvider`. Reading `dataloom-storage-sqldelight`'s
- * `SqlDelightStorageProvider` confirms the identical constraint holds on iOS:
- * it implements only `StorageProvider`, with no `StrategyLocalFallbackProvider`
- * conformance -- the same real gap `RoomStorageProvider` has on Android.
- *
- * But `BuiltInSynchronizationStrategyEvaluator.deriveDurableContinuation`'s
+ * `BuiltInSynchronizationStrategyEvaluator.deriveDurableContinuation`'s
  * `CacheFirstStrategyProfile` arm for PULL/BIDIRECTIONAL never includes
  * `SERVE_LOCAL` -- it is exactly `remoteOperations(direction, persistRemote =
  * true)`, `[READ_CHECKPOINT, PULL_REMOTE, PERSIST_REMOTE]` for PULL --
@@ -134,36 +133,35 @@ import platform.Foundation.NSUUID
  * immediate plan's, so neither `StrategyLocalFallbackProvider` nor
  * `StrategyReconciliationProvider` is required to replay it -- only
  * `STORAGE`/`TRANSPORT`, which the real, unmodified `SqlDelightStorageProvider`/
- * test transport already satisfy. This is `commonMain` planner logic already
- * proven identical across platforms; this test exists to prove it against a
- * real Kotlin/Native iOS Simulator runtime rather than leave it claimed only
- * by inspection.
+ * test transport already satisfy.
  *
- * Separately, `CacheFirstStrategyExecutor.execute` processes
- * `ENQUEUE_DURABLE_WORK` *before* it attempts `SERVE_LOCAL` -- the queue entry
- * is genuinely, durably persisted through the real `AppleFileQueueProvider`
- * before the synchronous rejection is ever returned to the caller.
+ * `CacheFirstStrategyExecutor.execute` processes `ENQUEUE_DURABLE_WORK`
+ * *before* it attempts `SERVE_LOCAL` -- the queue entry is genuinely, durably
+ * persisted through the real `AppleFileQueueProvider` first, and only then is
+ * `serveLocal` attempted, which now genuinely succeeds against a seeded
+ * checkpoint.
  *
  * ## What this proves
  *
- * [cacheFirstPullAdmitsDurablyDespiteSyncRejection] exercises both halves
- * honestly, through real, unmodified production code, on a real Kotlin/Native
- * iOS Simulator runtime:
+ * [cacheFirstPullServesLocallyThenReplaysDurableRefresh] exercises both
+ * halves honestly, through real, unmodified production code plus the new
+ * `SqlDelightStorageProvider.evaluateLocalFallback` capability, on a real
+ * Kotlin/Native iOS Simulator runtime:
  *
- * 1. A real `DataLoom.synchronize` call for a completely-default
- *    `CacheFirstStrategyProfile` PULL request against a `STALE` cache returns
- *    a genuine `Rejected(LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED)` -- the
- *    synchronous half is confirmed blocked on iOS too, not assumed from the
- *    Android finding. Zero transport calls occur.
- * 2. Despite that top-level rejection, exactly one real queue entry was
- *    durably admitted underneath it, genuinely acquired back out of the real
- *    on-disk `AppleFileQueueProvider` snapshot by [DataLoom.queueWorker]'s
- *    `run(...)` (which acquires *any* pending entry, never by a caller-known
- *    identifier -- `Rejected` carries no `queueEntryId` field at all).
- * 3. `AcceptedStrategyPlanExecutionCoordinator` genuinely replays the
- *    persisted `durableContinuation` -- never `SERVE_LOCAL` -- a real
- *    `InboundPullSynchronizationPipeline` run against real SQLDelight
- *    storage, reaching a genuine `SynchronizationResult.Succeeded`
+ * 1. One real checkpoint is seeded directly through
+ *    `SqlDelightStorageProvider.writeCheckpoint` first, corroborating the
+ *    `StrategyCacheState.STALE` evidence supplied below with genuine
+ *    synchronized local state -- `evaluateLocalFallback` is a real existence
+ *    check, not satisfied by evaluation evidence alone.
+ * 2. A real `DataLoom.synchronize` call for a completely-default
+ *    `CacheFirstStrategyProfile` PULL request against that seeded `STALE`
+ *    cache now returns a genuine `ServedFromCache` with a real, discoverable
+ *    `durableQueueEntryId` on iOS too -- zero transport calls occur.
+ * 3. That durably admitted refresh continuation is genuinely acquired back
+ *    out of the real on-disk `AppleFileQueueProvider` snapshot by
+ *    [DataLoom.queueWorker]'s `run(...)` and replayed via the real
+ *    `InboundPullSynchronizationPipeline` against real SQLDelight storage,
+ *    reaching a genuine `SynchronizationResult.Succeeded`
  *    (`summary.inboundEventsApplied == 1`), observed via a real
  *    `SynchronizationObserver`.
  *
@@ -176,9 +174,6 @@ import platform.Foundation.NSUUID
  *
  * ## What this does not prove
  *
- * A public API path that actually returns this durably-admitted entry's
- * `queueEntryId` to the caller (none exists today -- the same real, narrow
- * gap the Android proof already surfaced and left out of scope);
  * retry/circuit-breaker/conflict-detection behavior during replay; a real
  * background-scheduler-triggered tick (no Apple `WorkManager` counterpart
  * exists yet); a physical device (Simulator only).
@@ -198,7 +193,7 @@ import platform.Foundation.NSUUID
 class IosReferenceConsumerCacheFirstPullQueueTest {
 
     @Test
-    fun cacheFirstPullAdmitsDurablyDespiteSyncRejection() = runTest {
+    fun cacheFirstPullServesLocallyThenReplaysDurableRefresh() = runTest {
         val runId = NSUUID().UUIDString
         val directoryPath = buildString {
             append(NSTemporaryDirectory().trimEnd('/'))
@@ -238,6 +233,33 @@ class IosReferenceConsumerCacheFirstPullQueueTest {
             queueFileName = "dataloom-queue-cache-first-pull-queue-$runId.tsv",
         )
 
+        // The real, unmodified SqlDelightStorageProvider's evaluateLocalFallback
+        // is a genuine existence check over its own infrastructure tables -- it
+        // is not seeded implicitly by evaluation evidence alone. Seed one real
+        // checkpoint first (before initializing DataLoom) so this branch's
+        // SERVE_LOCAL step (now genuinely reachable, not rejected -- see the
+        // class KDoc) reports synchronized local state is actually Available,
+        // matching the StrategyCacheState.STALE evidence supplied below.
+        val seedResult = providers.storage.writeCheckpoint(
+            CheckpointWriteRequest(
+                request = SynchronizationRequest(
+                    workflowId = WorkflowId("durable-queue-cache-first-pull-seed-workflow-$runId"),
+                    sessionId = SynchronizationSessionId("durable-queue-cache-first-pull-seed-session-$runId"),
+                    direction = SynchronizationDirection.PULL,
+                    mode = SynchronizationMode.FULL,
+                    context = ExecutionContext(
+                        executionId = ExecutionId("durable-queue-cache-first-pull-seed-execution-$runId"),
+                        correlationId = CorrelationId("durable-queue-cache-first-pull-seed-correlation-$runId"),
+                    ),
+                ),
+                checkpoint = SynchronizationCheckpoint(
+                    key = CheckpointKey("cache-first-pull-seed-checkpoint-$runId"),
+                    token = CheckpointToken("cache-first-pull-seed-token-$runId"),
+                ),
+            ),
+        )
+        assertEquals(ProviderOperationResult.Success(Unit), seedResult)
+
         val dataLoom = buildDurableQueueDataLoom(
             providers = providers,
             transportProvider = transport,
@@ -273,24 +295,25 @@ class IosReferenceConsumerCacheFirstPullQueueTest {
             input = StrategyOperationInput.ProviderBacked,
         )
 
-        // Step 1: the synchronous half is genuinely, honestly blocked on iOS
-        // too -- not Deferred with a discoverable queueEntryId, but a real
-        // Rejected, mirroring the Android proof for the real SqlDelightStorageProvider.
+        // Step 1: the synchronous half now genuinely succeeds on iOS too --
+        // SqlDelightStorageProvider implements StrategyLocalFallbackProvider as
+        // of this round, so evaluateLocalFallback finds the checkpoint seeded
+        // above and reports StrategyLocalFallbackResult.Available.
+        // CacheFirstStrategyExecutor.execute admits the durable refresh
+        // continuation first, then genuinely serves local state, returning
+        // ServedFromCache with a real, discoverable durableQueueEntryId.
         val admissionResult = dataLoom.synchronize(strategyRequest)
-        val rejected = assertIs<StrategySynchronizationExecutionResult.Rejected>(admissionResult)
-        assertEquals(
-            StrategyExecutionRejectionReason.LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED,
-            rejected.reason,
-        )
+        val served = assertIs<StrategySynchronizationExecutionResult.ServedFromCache>(admissionResult)
+        assertEquals(StrategyCacheState.STALE, served.cacheState)
+        val queueEntryId = assertNotNull(served.durableQueueEntryId)
         assertEquals(0, transport.pullCalls)
         assertEquals(0, completedResults.size)
 
-        // Step 2 + 3: despite that top-level Rejected, one real queue entry
-        // was durably admitted underneath it before the SERVE_LOCAL failure
-        // -- CacheFirstStrategyExecutor.execute admits ENQUEUE_DURABLE_WORK
-        // first, then attempts SERVE_LOCAL. queueWorker.run acquires ANY
-        // pending entries (never by a caller-known identifier), so the
-        // discarded queueEntryId is not needed to find it.
+        // Step 2 + 3: the durably admitted refresh continuation is genuinely
+        // acquired back out of the real on-disk AppleFileQueueProvider snapshot.
+        // queueWorker.run acquires ANY pending entries (never by a caller-known
+        // identifier), but the identifier is available this time regardless
+        // (unlike the previous Rejected outcome this test used to document).
         val acquiredAt = AppleDataLoomClock().now()
         val runResult = dataLoom.queueWorker!!.run(
             QueueWorkerRunRequest(
@@ -320,6 +343,7 @@ class IosReferenceConsumerCacheFirstPullQueueTest {
         assertEquals(1, completedResults.size)
         val succeeded = assertIs<SynchronizationResult.Succeeded>(completedResults.single())
         assertEquals(1L, succeeded.summary.inboundEventsApplied)
+        assertNotNull(queueEntryId)
 
         assertEquals(ProviderLifecycleResult.ShutdownSuccess, dataLoom.shutdown())
     }

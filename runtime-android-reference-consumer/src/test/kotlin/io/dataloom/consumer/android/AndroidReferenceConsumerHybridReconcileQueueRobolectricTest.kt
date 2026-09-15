@@ -11,6 +11,8 @@ import io.dataloom.api.change.EntityReference
 import io.dataloom.api.context.ExecutionContext
 import io.dataloom.api.identifier.ChangeEventId
 import io.dataloom.api.identifier.ChangeSetId
+import io.dataloom.api.identifier.CheckpointKey
+import io.dataloom.api.identifier.CheckpointToken
 import io.dataloom.api.identifier.ConflictId
 import io.dataloom.api.identifier.CorrelationId
 import io.dataloom.api.identifier.EntityId
@@ -56,7 +58,8 @@ import io.dataloom.api.runtime.RuntimeIdentifierGenerators
 import io.dataloom.api.scheduling.ExistingSchedulePolicy
 import io.dataloom.api.scheduling.ScheduleConstraints
 import io.dataloom.api.scheduling.SchedulingDelay
-import io.dataloom.api.strategy.RemoteFirstStrategyProfile
+import io.dataloom.api.strategy.HybridSource
+import io.dataloom.api.strategy.HybridStrategyProfile
 import io.dataloom.api.strategy.StrategyCacheState
 import io.dataloom.api.strategy.StrategyConfigurationVersion
 import io.dataloom.api.strategy.StrategyConnectivity
@@ -66,8 +69,9 @@ import io.dataloom.api.strategy.StrategyPlanId
 import io.dataloom.api.strategy.StrategyProfileId
 import io.dataloom.api.strategy.StrategyRuntimeEvidence
 import io.dataloom.api.strategy.StrategySynchronizationRequest
-import io.dataloom.api.strategy.UnknownConnectivityPolicy
 import io.dataloom.api.synchronization.ChangeSetAcknowledgement
+import io.dataloom.api.synchronization.CheckpointWriteRequest
+import io.dataloom.api.synchronization.SynchronizationCheckpoint
 import io.dataloom.api.synchronization.SynchronizationEvent
 import io.dataloom.api.synchronization.SynchronizationResult
 import io.dataloom.api.time.DataLoomInstant
@@ -101,149 +105,95 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 
 /**
- * Robolectric-backed runtime proof that a real, durably admitted **remote-first**
- * strategy plan survives being read back out of a real Room-backed queue and is
- * genuinely replayed by a real `DataLoomQueueWorker` cycle -- the third built-in
- * strategy `#101`'s market-readiness row named as sharing
- * `StrategyDurableQueueAdmitter` machinery with offline-first
- * ([AndroidReferenceConsumerDurableQueueRobolectricTest], `#325`) and cache-first
- * ([AndroidReferenceConsumerCacheFirstQueueRobolectricTest], `#337`/`#342`) but
- * "unexercised at this admission-then-replay layer."
- *
- * ## Scope: one platform, one additional strategy
- *
- * This proves Android + remote-first only, and only its connectivity-`UNKNOWN`
- * durable-defer branch. iOS and the remaining built-in strategies (network-only,
- * cache-first's PULL refresh branch, hybrid, adaptive) are explicitly deferred,
- * not silently claimed.
- *
- * ## Investigation: why remote-first's connectivity-UNKNOWN branch, not its
- * connectivity-UNAVAILABLE local-fallback branch
- *
- * `BuiltInSynchronizationStrategyEvaluator.evaluateRemoteFirst`'s
- * connectivity-`UNAVAILABLE` branch (`profile.fallbackOn` containing
- * `UNAVAILABLE` plus a fresh/stale cache) reaches `EXECUTE` with
- * `localFallbackOperations` -- `SERVE_LOCAL` for PULL -- immediately,
- * synchronously, with **no** `ENQUEUE_DURABLE_WORK` at all. It never durably
- * admits anything, so it cannot be this proof's branch.
- *
- * The genuinely durable branch is reached only through
- * `unknownConnectivityResult`: when `request.evidence.connectivity` is
- * `UNKNOWN` (or `NOT_EVALUATED`) and
- * `RemoteFirstStrategyProfile.unknownConnectivityPolicy = DEFER` (not the
- * default `ATTEMPT_REMOTE`), the plan is `StrategyDisposition.DEFER` with
- * `operations = [ENQUEUE_DURABLE_WORK]`, and `deriveDurableContinuation`
- * freezes the continuation for a `RemoteFirstStrategyProfile` as
- * `remoteOperations(direction, persistRemote = profile.persistRemoteResult)`
- * -- for PULL with the default `persistRemoteResult = true`, exactly
- * `[READ_CHECKPOINT, PULL_REMOTE, PERSIST_REMOTE]`. This is byte-for-byte the
- * same continuation shape `#325`'s offline-first proof already exercises, and
- * `AcceptedStrategyPlanExecutionCoordinator.validateReplayPlanStructure`
- * accepts it as one of its supported PULL sequences.
- *
- * Critically, `deriveDurableContinuation`'s own `continuationFallback` for a
- * `RemoteFirstStrategyProfile` is `remoteFallbackPlan(profile, direction)`,
- * which returns `null` whenever `profile.fallbackOn.isEmpty()` --
- * `StrategyDurableContinuationEvaluationTest.remoteFirstUnknownConnectivityFreezesTypedFallbackBranch`
- * (`dataloom-runtime`'s own commonTest,
- * `io.dataloom.runtime.strategy.StrategyDurableContinuationEvaluationTest`)
- * exercises the *other* shape, with
- * `fallbackOn = setOf(UNAVAILABLE)`, which freezes a non-null `fallbackPlan`
- * and therefore requires `SERVE_LOCAL`/`StrategyLocalFallbackProvider` at
- * replay -- exactly the real capability gap `RoomStorageProvider` does not
- * implement, and the same reason offline-first's own KDoc (`#325`) and
- * cache-first's own KDoc (`#337`) both avoided a `SERVE_LOCAL`-carrying
- * branch. This test instead uses the profile's default `fallbackOn =
- * emptySet()`, so `remoteFallbackPlan` returns `null`,
- * `continuation.fallbackPlan` is `null`, and
- * `AcceptedStrategyPlanExecutionCoordinator.validateReplayProviders` never
- * requires `StrategyLocalFallbackProvider` at all -- the remote-first analogue
- * of offline-first's own MISSING-cache/no-`SERVE_LOCAL` choice and
- * cache-first's own PUSH-branch choice. No `RECONCILE` is ever present either
- * (only offline-first's and hybrid's continuations can carry it), so
- * `StrategyReconciliationProvider` is never required. This is therefore the
- * **only** remote-first branch that reaches `ENQUEUE_DURABLE_WORK` while
- * staying compatible with the real, unmodified `RoomStorageProvider`.
- *
- * (Hybrid was not reconsidered here -- `#337`'s own KDoc already investigated
- * and rejected hybrid's durable branches for this same real-storage-provider
- * reason, and this test's job was only to determine remote-first's status.)
+ * Robolectric-backed runtime proof that hybrid's own explicit-fallback
+ * branch — `HybridSource.LOCAL` selected as an explicit fallback from a
+ * `REMOTE` primary, with `reconcileAfterFallback = true` (the default) — is
+ * now genuinely exercisable end-to-end, closing the gap `#101`'s
+ * market-readiness row and
+ * [AndroidReferenceConsumerHybridQueueRobolectricTest]'s own KDoc both
+ * named as blocked: that branch's `operations` and durable continuation
+ * both always carry `RECONCILE` alongside `ENQUEUE_DURABLE_WORK`
+ * (`BuiltInSynchronizationStrategyEvaluator.evaluateHybrid`/
+ * `deriveDurableContinuation`), and its immediate operations also carry
+ * `SERVE_LOCAL` — requiring both `StrategyLocalFallbackProvider` and
+ * `StrategyReconciliationProvider`, neither of which the real
+ * `RoomStorageProvider` implemented until now.
  *
  * ## What this proves
  *
- * [remoteFirstDeferralReplayedByQueueWorker] exercises the
- * full path, entirely through real, production DataLoom code:
+ * With `RoomStorageProvider` now implementing both capability interfaces
+ * (this round's change), the identical `HybridStrategyProfile` /
+ * `StrategyRuntimeEvidence` combination
+ * [AndroidReferenceConsumerHybridQueueRobolectricTest]'s own KDoc
+ * documented as blocked genuinely completes end-to-end:
  *
- * 1. **Admission, not synchronous execution.** [DataLoom.synchronize] for a
- *    `StrategySynchronizationRequest` built from [RemoteFirstStrategyProfile]
- *    (`unknownConnectivityPolicy = DEFER`, `fallbackOn` empty, direction
- *    `PULL`, connectivity `UNKNOWN`) returns
- *    [StrategySynchronizationExecutionResult.Deferred] with a real, non-null
- *    `queueEntryId` -- `StrategyDurableQueueAdmitter` durably persists the
- *    accepted plan via the real [io.dataloom.queue.room.RoomQueueProvider]
- *    instead of running the pipeline synchronously. The test-only transport
- *    records zero `pullChanges` calls at this point, proving nothing executed
- *    yet.
- * 2. **Survives being read back out.** The queue entry is not merely
- *    written; step 3 acquires it back from the same real Room database via a
- *    genuine `QueueProvider.acquire` call inside the queue-worker cycle.
- * 3. **A queue worker genuinely replays it.** [DataLoom.queueWorker]'s single
- *    `run(...)` call deterministically drives exactly one bounded
- *    acquire/execute/complete cycle. `AcceptedStrategyPlanExecutionCoordinator`
- *    resolves the real storage/transport providers from the queue entry's own
- *    persisted bindings and runs the real, registered
- *    `InboundPullSynchronizationPipeline` against the real Room database and
- *    the test transport.
- * 4. **The result is genuinely observable.** A [SynchronizationObserver]
- *    registered through the real [DataLoomBuilder.observer] capability
- *    captures the terminal [SynchronizationEvent.Completed] emitted by that
- *    replay and asserts `summary.inboundEventsApplied == 1` -- the same bar
- *    `#325`'s offline-first proof established.
- *    [QueueProcessingResult.Processed.summary.completed] is asserted as one
- *    additional layer of evidence that the entry reached a real, durable
- *    terminal transition.
+ * 1. **Synchronous half.** With `primarySource = REMOTE` and connectivity
+ *    `UNAVAILABLE`, `evaluateHybrid` selects `HybridSource.LOCAL` as an
+ *    explicit fallback (`usedFallback = true`), producing
+ *    `operations = [SERVE_LOCAL, ENQUEUE_DURABLE_WORK, RECONCILE]` and
+ *    `StrategyDisposition.SERVE_AND_REFRESH`. `HybridStrategyExecutor`
+ *    durably admits the continuation first (a real `queueEntryId`, zero
+ *    transport calls), then genuinely calls
+ *    `RoomStorageProvider.evaluateLocalFallback` — seeded beforehand with
+ *    one real applied inbound change set so the provider's own existence
+ *    check reports [io.dataloom.api.strategy.StrategyLocalFallbackResult
+ *    .Available] rather than failing the evaluator/provider consistency
+ *    check — and returns
+ *    [StrategySynchronizationExecutionResult.ServedFromCache] carrying that
+ *    `queueEntryId`.
+ * 2. **Durable half.** The admitted continuation is exactly
+ *    `remoteOperations(PULL, persistRemote = true) + RECONCILE` =
+ *    `[READ_CHECKPOINT, PULL_REMOTE, PERSIST_REMOTE, RECONCILE]`. Reading
+ *    the entry back out of the real Room-backed queue and replaying it
+ *    through one deterministic `DataLoom.queueWorker.run(...)` cycle
+ *    genuinely drives `AcceptedStrategyPlanExecutionCoordinator` (no longer
+ *    rejected at `validateReplayProviders` since `RoomStorageProvider` now
+ *    satisfies both capability checks) through the real, registered
+ *    `InboundPullSynchronizationPipeline` against real Room storage, then
+ *    genuinely calls `RoomStorageProvider.reconcileStrategy` — which
+ *    confirms the checkpoint `PERSIST_REMOTE` just wrote actually exists
+ *    and reports `Applied` — to a genuinely observed
+ *    `SynchronizationResult.Succeeded` (`summary.inboundEventsApplied == 1`)
+ *    via a real `SynchronizationObserver`, the same bar `#325`/`#368`/`#371`
+ *    established for every other durable branch this suite proves.
  *
  * ## What this does not prove
  *
- * iOS (no equivalent Apple proof of this branch exists yet); remote-first's
- * own `fallbackOn`-carrying durable branch (requires
- * `StrategyLocalFallbackProvider`, which `RoomStorageProvider` now
- * implements -- see `AndroidReferenceConsumerCacheFirstPullQueueRobolectricTest`/
- * `AndroidReferenceConsumerHybridReconcileQueueRobolectricTest` for that
- * capability proven against other strategies' own branches -- a dedicated
- * admission-then-replay proof of *this specific* remote-first branch remains
- * a follow-up, not silently claimed); retry, circuit-breaker,
- * or conflict-detection behavior during queue replay (this entry always
+ * iOS (no equivalent Apple proof of this branch exists yet — the real
+ * `SqlDelightStorageProvider` gained the identical capability this round
+ * and is covered by its own `commonTest`/`jvmTest` coverage, but not by an
+ * `IosReferenceConsumer*` end-to-end proof); retry, circuit-breaker, or
+ * conflict-detection behavior during queue replay (this entry always
  * succeeds on its first attempt); a real WorkManager-triggered background
  * tick (this test calls `queueWorker.run(...)` directly, deterministically);
  * and a real managed-device emulator (Robolectric only).
  */
 @RunWith(RobolectricTestRunner::class)
-class AndroidReferenceConsumerRemoteFirstQueueRobolectricTest {
+class AndroidReferenceConsumerHybridReconcileQueueRobolectricTest {
 
     @Test
-    fun remoteFirstDeferralReplayedByQueueWorker() = runTest {
+    fun hybridReconcileQueueWorkerReplay() = runTest {
         val context: Context = ApplicationProvider.getApplicationContext()
         WorkManagerTestInitHelper.initializeTestWorkManager(context)
 
         val changeSet = ChangeSet(
-            id = ChangeSetId("remote-first-queue-change-set-1"),
+            id = ChangeSetId("hybrid-reconcile-queue-change-set-1"),
             events = listOf(
                 ChangeEvent(
-                    id = ChangeEventId("remote-first-queue-event-1"),
+                    id = ChangeEventId("hybrid-reconcile-queue-event-1"),
                     entity = EntityReference(
-                        type = EntityType("remote-first-queue-entity"),
-                        id = EntityId("remote-first-queue-entity-1"),
+                        type = EntityType("hybrid-reconcile-queue-entity"),
+                        id = EntityId("hybrid-reconcile-queue-entity-1"),
                     ),
                     operation = ChangeOperation.CREATE,
                 ),
             ),
         )
-        val transport = CountingOneChangeSetRemoteFirstTransportProvider(changeSet)
+        val transport = CountingOneChangeSetHybridReconciliationTransportProvider(changeSet)
         val completedResults = mutableListOf<SynchronizationResult>()
         val observer = object : SynchronizationObserver {
             override val id: SynchronizationObserverId =
-                SynchronizationObserverId("durable-queue-remote-first-replay-observer")
+                SynchronizationObserverId("durable-queue-hybrid-reconcile-replay-observer")
             override fun onEvent(event: SynchronizationEvent) {
                 if (event is SynchronizationEvent.Completed) {
                     completedResults += event.result
@@ -251,55 +201,83 @@ class AndroidReferenceConsumerRemoteFirstQueueRobolectricTest {
             }
         }
 
-        val dataLoom = buildDurableQueueDataLoom(context, transport, observer)
+        val providers = androidTestProviders(context)
+
+        // The real, unmodified RoomStorageProvider's evaluateLocalFallback is a
+        // genuine existence check over its own infrastructure tables -- it is
+        // not seeded implicitly by evaluation evidence alone. Seed one real
+        // checkpoint first (before building/initializing DataLoom, matching
+        // AndroidReferenceConsumerCacheFirstQueueRobolectricTest's own
+        // established seed-then-initialize ordering) so this branch's
+        // SERVE_LOCAL step (still genuinely exercised, not bypassed) reports
+        // synchronized local state is actually Available, matching the
+        // StrategyCacheState.STALE evidence supplied below.
+        val seedResult = providers.storage.writeCheckpoint(
+            CheckpointWriteRequest(
+                request = seedRequest(),
+                checkpoint = SynchronizationCheckpoint(
+                    key = CheckpointKey("hybrid-reconcile-seed-checkpoint"),
+                    token = CheckpointToken("hybrid-reconcile-seed-token"),
+                ),
+            ),
+        )
+        assertEquals(ProviderOperationResult.Success(Unit), seedResult)
+
+        val dataLoom = buildDurableQueueDataLoom(providers, transport, observer)
         assertEquals(ProviderLifecycleResult.InitializeSuccess, dataLoom.initialize())
 
         val strategyRequest = StrategySynchronizationRequest(
             request = SynchronizationRequest(
-                workflowId = WorkflowId("durable-queue-remote-first-workflow-1"),
-                sessionId = SynchronizationSessionId("durable-queue-remote-first-session-1"),
+                workflowId = WorkflowId("durable-queue-hybrid-reconcile-workflow-1"),
+                sessionId = SynchronizationSessionId("durable-queue-hybrid-reconcile-session-1"),
                 direction = SynchronizationDirection.PULL,
                 mode = SynchronizationMode.FULL,
                 context = ExecutionContext(
-                    executionId = ExecutionId("durable-queue-remote-first-execution-1"),
-                    correlationId = CorrelationId("durable-queue-remote-first-correlation-1"),
+                    executionId = ExecutionId("durable-queue-hybrid-reconcile-execution-1"),
+                    correlationId = CorrelationId("durable-queue-hybrid-reconcile-correlation-1"),
                 ),
             ),
-            decisionId = StrategyDecisionId("durable-queue-remote-first-decision-1"),
-            planId = StrategyPlanId("durable-queue-remote-first-plan-1"),
-            profile = RemoteFirstStrategyProfile(
-                id = StrategyProfileId("durable-queue-remote-first-profile"),
+            decisionId = StrategyDecisionId("durable-queue-hybrid-reconcile-decision-1"),
+            planId = StrategyPlanId("durable-queue-hybrid-reconcile-plan-1"),
+            profile = HybridStrategyProfile(
+                id = StrategyProfileId("durable-queue-hybrid-reconcile-profile"),
                 configurationVersion = StrategyConfigurationVersion(1L),
-                fallbackOn = emptySet(),
+                primarySource = HybridSource.REMOTE,
+                fallbackSource = HybridSource.LOCAL,
                 persistRemoteResult = true,
-                unknownConnectivityPolicy = UnknownConnectivityPolicy.DEFER,
+                // reconcileAfterFallback defaults to true -- this is exactly
+                // the branch that requires StrategyReconciliationProvider.
             ),
             evidence = StrategyRuntimeEvidence(
-                connectivity = StrategyConnectivity.UNKNOWN,
-                cacheState = StrategyCacheState.MISSING,
+                connectivity = StrategyConnectivity.UNAVAILABLE,
+                cacheState = StrategyCacheState.STALE,
             ),
             input = StrategyOperationInput.ProviderBacked,
         )
 
-        // Step 1: durable admission -- must NOT execute synchronously.
-        val admissionResult = dataLoom.synchronize(strategyRequest)
-        val deferred = assertIs<StrategySynchronizationExecutionResult.Deferred>(admissionResult)
-        assertNotNull(deferred.queueEntryId)
+        // Step 1: the synchronous half -- SERVE_LOCAL succeeds via the real
+        // RoomStorageProvider.evaluateLocalFallback, and the deferred remote
+        // catch-up (carrying RECONCILE) is durably admitted alongside it.
+        // Zero transport calls yet.
+        val servedResult = dataLoom.synchronize(strategyRequest)
+        val served = assertIs<StrategySynchronizationExecutionResult.ServedFromCache>(servedResult)
+        assertEquals(StrategyCacheState.STALE, served.cacheState)
+        val queueEntryId = assertNotNull(served.durableQueueEntryId)
         assertEquals(0, transport.pullCalls)
         assertEquals(0, completedResults.size)
 
-        // Step 2 + 3: acquire the durably persisted entry back out of the
-        // real Room queue database and replay it via exactly one
-        // deterministic queue-worker cycle. See
-        // AndroidReferenceConsumerDurableQueueRobolectricTest for why
-        // acquiredAt must be a real wall-clock "now".
+        // Step 2 + 3: acquire the durably persisted continuation back out of
+        // the real Room queue database and replay it through exactly one
+        // deterministic queue-worker cycle -- now genuinely reaching
+        // AcceptedStrategyPlanExecutionCoordinator's RECONCILE step instead
+        // of being rejected at validateReplayProviders.
         val acquiredAt = DataLoomInstant(epochMilliseconds = System.currentTimeMillis())
         val runResult = dataLoom.queueWorker!!.run(
             QueueWorkerRunRequest(
                 processingRequest = QueueProcessingRequest(
                     acquireRequest = QueueAcquireRequest(
-                        consumerId = QueueConsumerId("robolectric-durable-queue-remote-first-consumer"),
-                        leaseId = QueueLeaseId("robolectric-durable-queue-remote-first-lease"),
+                        consumerId = QueueConsumerId("robolectric-durable-queue-hybrid-reconcile-consumer"),
+                        leaseId = QueueLeaseId("robolectric-durable-queue-hybrid-reconcile-lease"),
                         acquiredAt = acquiredAt,
                         leaseExpiresAt = DataLoomInstant(
                             epochMilliseconds = acquiredAt.epochMilliseconds + 60_000L,
@@ -315,16 +293,35 @@ class AndroidReferenceConsumerRemoteFirstQueueRobolectricTest {
         val processingResult = assertIs<QueueProcessingResult.Processed>(processed.processingResult)
         assertEquals(1, processingResult.summary.completed)
 
-        // Step 4: the replayed result is genuinely observable -- the
-        // inbound event reached real storage, not just a "succeeded" queue
-        // outcome.
+        // Step 4: the replayed result is genuinely observable, and
+        // reconcileStrategy's own Applied confirmation (checkpoint now
+        // exists after PERSIST_REMOTE) did not turn the result into a
+        // failure.
         assertEquals(1, transport.pullCalls)
         assertEquals(1, completedResults.size)
         val succeeded = assertIs<SynchronizationResult.Succeeded>(completedResults.single())
         assertEquals(1L, succeeded.summary.inboundEventsApplied)
+        assertNotNull(queueEntryId)
 
         assertEquals(ProviderLifecycleResult.ShutdownSuccess, dataLoom.shutdown())
     }
+
+    private fun seedRequest(): SynchronizationRequest = SynchronizationRequest(
+        workflowId = WorkflowId("durable-queue-hybrid-reconcile-seed-workflow"),
+        sessionId = SynchronizationSessionId("durable-queue-hybrid-reconcile-seed-session"),
+        direction = SynchronizationDirection.PULL,
+        mode = SynchronizationMode.FULL,
+        context = ExecutionContext(
+            executionId = ExecutionId("durable-queue-hybrid-reconcile-seed-execution"),
+            correlationId = CorrelationId("durable-queue-hybrid-reconcile-seed-correlation"),
+        ),
+    )
+
+    private fun androidTestProviders(context: Context) = androidDataLoomProviders(
+        context = context,
+        storageDatabaseName = "dq-hyr-storage-${UUID.randomUUID().toString().take(8)}.db",
+        queueDatabaseName = "dq-hyr-queue-${UUID.randomUUID().toString().take(8)}.db",
+    )
 
     /**
      * Assembles a real [DataLoom] instance from the exact same production
@@ -332,23 +329,15 @@ class AndroidReferenceConsumerRemoteFirstQueueRobolectricTest {
      * [installAndroidProviders] every other reference-consumer test uses,
      * additionally opting into [DataLoomBuilder.queueSubmissionEncoder] and
      * [DataLoomBuilder.queueWorkerConfiguration] -- see
-     * [AndroidReferenceConsumerDurableQueueRobolectricTest.buildDurableQueueDataLoom]
+     * `AndroidReferenceConsumerDurableQueueRobolectricTest.buildDurableQueueDataLoom`
      * (`#325`) for why these two capabilities require explicit test-side
      * wiring.
      */
     private fun buildDurableQueueDataLoom(
-        context: Context,
+        providers: io.dataloom.android.AndroidDataLoomProviders,
         transportProvider: TransportProvider,
         observer: SynchronizationObserver,
     ): DataLoom {
-        // See AndroidReferenceConsumerDurableQueueRobolectricTest for why a
-        // short (not full-UUID) suffix is used for the database file names.
-        val uniqueSuffix = UUID.randomUUID().toString().take(8)
-        val providers = androidDataLoomProviders(
-            context = context,
-            storageDatabaseName = "dq-rf-storage-$uniqueSuffix.db",
-            queueDatabaseName = "dq-rf-queue-$uniqueSuffix.db",
-        )
         val bindings = SynchronizationProviderBindings(
             storageProviderId = providers.storage.descriptor.id,
             transportProviderId = transportProvider.descriptor.id,
@@ -361,7 +350,7 @@ class AndroidReferenceConsumerRemoteFirstQueueRobolectricTest {
             .runtimeDependencies(referenceRuntimeDependencies())
             .installAndroidProviders(providers, transportProvider)
             .observer(observer)
-            .queueSubmissionEncoder(RemoteFirstPassthroughQueuedSynchronizationWorkEncoder)
+            .queueSubmissionEncoder(HybridReconciliationPassthroughQueuedSynchronizationWorkEncoder)
             .queueWorkerConfiguration(
                 DataLoomQueueWorkerSpec(
                     workResolver = QueuedSynchronizationWorkResolver { entry ->
@@ -374,10 +363,10 @@ class AndroidReferenceConsumerRemoteFirstQueueRobolectricTest {
                             ),
                         )
                     },
-                    retryPolicy = RemoteFirstNeverRetryPolicy,
-                    retryOperation = RetryOperation("robolectric.durable-queue-remote-first-replay"),
+                    retryPolicy = HybridReconciliationNeverRetryPolicy,
+                    retryOperation = RetryOperation("robolectric.durable-queue-hybrid-reconcile-replay"),
                     configuration = QueueWorkerConfiguration(
-                        scheduleId = ScheduleId("robolectric-durable-queue-remote-first-worker"),
+                        scheduleId = ScheduleId("robolectric-durable-queue-hybrid-reconcile-worker"),
                         constraints = ScheduleConstraints(),
                         existingSchedulePolicy = ExistingSchedulePolicy.REPLACE,
                         continuationDelay = SchedulingDelay.ZERO,
@@ -390,7 +379,7 @@ class AndroidReferenceConsumerRemoteFirstQueueRobolectricTest {
 
     /**
      * Reference [RuntimeDependencies] duplicated from
-     * [AndroidReferenceConsumerDurableQueueRobolectricTest]'s own private
+     * `AndroidReferenceConsumerDurableQueueRobolectricTest`'s own private
      * helper of the same shape -- real wall clock, UUID-backed identifier
      * generators. Kept local to this file rather than reaching into that
      * file's private helper.
@@ -413,13 +402,13 @@ class AndroidReferenceConsumerRemoteFirstQueueRobolectricTest {
 
 /**
  * Test-only [QueuedSynchronizationWorkEncoder], identical in shape to
- * `AndroidReferenceConsumerDurableQueueRobolectricTest`'s own
- * `PassthroughQueuedSynchronizationWorkEncoder` (`#325`) -- no byte
- * serialization is needed because [QueueEntry] already carries
+ * `AndroidReferenceConsumerHybridQueueRobolectricTest`'s own
+ * `HybridPassthroughQueuedSynchronizationWorkEncoder` (`#325`/`#371`) -- no
+ * byte serialization is needed because [QueueEntry] already carries
  * [QueueEntry.synchronizationRequest], [QueueEntry.strategyDecision], and
  * [QueueEntry.strategyPlan] as typed fields.
  */
-private object RemoteFirstPassthroughQueuedSynchronizationWorkEncoder : QueuedSynchronizationWorkEncoder {
+private object HybridReconciliationPassthroughQueuedSynchronizationWorkEncoder : QueuedSynchronizationWorkEncoder {
     override fun encode(
         submission: QueuedSynchronizationSubmission,
     ): QueuedSynchronizationWorkEncodingResult =
@@ -439,8 +428,8 @@ private object RemoteFirstPassthroughQueuedSynchronizationWorkEncoder : QueuedSy
 }
 
 /** Test-only [RetryPolicy] that always stops -- this entry always succeeds on its first attempt. */
-private object RemoteFirstNeverRetryPolicy : RetryPolicy {
-    override val id: RetryPolicyId = RetryPolicyId("robolectric-durable-queue-remote-first-never-retry")
+private object HybridReconciliationNeverRetryPolicy : RetryPolicy {
+    override val id: RetryPolicyId = RetryPolicyId("robolectric-durable-queue-hybrid-reconcile-never-retry")
     override fun evaluate(request: RetryEvaluationRequest): RetryDecision =
         RetryDecision.Stop(RetryStopReason.POLICY_REJECTED)
 }
@@ -453,15 +442,17 @@ private object RemoteFirstNeverRetryPolicy : RetryPolicy {
  * call after [DataLoom.queueWorker]'s `run(...)`). Push is not exercised by
  * this test and fails deterministically if ever called.
  */
-private class CountingOneChangeSetRemoteFirstTransportProvider(
+private class CountingOneChangeSetHybridReconciliationTransportProvider(
     private val changeSet: ChangeSet,
 ) : TransportProvider {
     var pullCalls: Int = 0
         private set
 
     override val descriptor: ProviderDescriptor = ProviderDescriptor(
-        id = ProviderId("io.dataloom.consumer.android.test.counting-one-change-set-remote-first-transport"),
-        name = ProviderName("Counting One-Change-Set Remote-First Test Transport"),
+        id = ProviderId(
+            "io.dataloom.consumer.android.test.counting-one-change-set-hybrid-reconciliation-transport",
+        ),
+        name = ProviderName("Counting One-Change-Set Hybrid Reconciliation Test Transport"),
         type = ProviderType.TRANSPORT,
         version = ProviderVersion("1.0.0"),
     )
@@ -478,7 +469,7 @@ private class CountingOneChangeSetRemoteFirstTransportProvider(
     override suspend fun pushChanges(
         request: PushChangesRequest,
     ): ProviderOperationResult<ChangeSetAcknowledgement> =
-        error("CountingOneChangeSetRemoteFirstTransportProvider does not support push.")
+        error("CountingOneChangeSetHybridReconciliationTransportProvider does not support push.")
 
     override suspend fun pullChanges(
         request: PullChangesRequest,
