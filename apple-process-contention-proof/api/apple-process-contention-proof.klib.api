@@ -1,0 +1,27 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <dataloom:apple-process-contention-proof>
+final class io.dataloom.processcontentionproof/ProcessContentionProofResult { // io.dataloom.processcontentionproof/ProcessContentionProofResult|null[0]
+    constructor <init>(kotlin/String, kotlin/String, kotlin/Long) // io.dataloom.processcontentionproof/ProcessContentionProofResult.<init>|<init>(kotlin.String;kotlin.String;kotlin.Long){}[0]
+
+    final val outcome // io.dataloom.processcontentionproof/ProcessContentionProofResult.outcome|{}outcome[0]
+        final fun <get-outcome>(): kotlin/String // io.dataloom.processcontentionproof/ProcessContentionProofResult.outcome.<get-outcome>|<get-outcome>(){}[0]
+    final val probeGeneration // io.dataloom.processcontentionproof/ProcessContentionProofResult.probeGeneration|{}probeGeneration[0]
+        final fun <get-probeGeneration>(): kotlin/Long // io.dataloom.processcontentionproof/ProcessContentionProofResult.probeGeneration.<get-probeGeneration>|<get-probeGeneration>(){}[0]
+    final val rejectionReason // io.dataloom.processcontentionproof/ProcessContentionProofResult.rejectionReason|{}rejectionReason[0]
+        final fun <get-rejectionReason>(): kotlin/String // io.dataloom.processcontentionproof/ProcessContentionProofResult.rejectionReason.<get-rejectionReason>|<get-rejectionReason>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.processcontentionproof/ProcessContentionProofResult.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.processcontentionproof/ProcessContentionProofResult.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.processcontentionproof/ProcessContentionProofResult.toString|toString(){}[0]
+}
+
+final object io.dataloom.processcontentionproof/AppleCircuitBreakerProbeContentionProof { // io.dataloom.processcontentionproof/AppleCircuitBreakerProbeContentionProof|null[0]
+    final fun openCircuitAndSignalReady(kotlin/String, kotlin/String) // io.dataloom.processcontentionproof/AppleCircuitBreakerProbeContentionProof.openCircuitAndSignalReady|openCircuitAndSignalReady(kotlin.String;kotlin.String){}[0]
+    final fun waitForGoSignalThenAttemptProbe(kotlin/String, kotlin/String, kotlin/Int = ...): io.dataloom.processcontentionproof/ProcessContentionProofResult // io.dataloom.processcontentionproof/AppleCircuitBreakerProbeContentionProof.waitForGoSignalThenAttemptProbe|waitForGoSignalThenAttemptProbe(kotlin.String;kotlin.String;kotlin.Int){}[0]
+}
