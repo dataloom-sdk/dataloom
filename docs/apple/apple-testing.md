@@ -107,7 +107,7 @@ For local XCFramework and Swift commands, see
 |---|---|
 | KMP iOS consumer | External executable application using published-style variants |
 | Apple providers | Real connectivity, scheduling, persistence, security, and lifecycle tests |
-| Recovery | Interruption, process termination, lease expiry, relaunch, and migration — see the [process termination investigation](process-termination-investigation.md) for why this is not a bounded slice today |
+| Recovery | Interruption, process termination, lease expiry, relaunch, and migration — see the [process termination investigation](process-termination-investigation.md) for why this was not a bounded slice, and the [process termination CI proof](process-termination-proof.md) for new, unverified scaffolding built toward the circuit-breaker slice of it |
 | Assets | Bounded streaming, cleanup, integrity, resume, and storage-pressure behavior |
 | Strategy profiles | Offline-first, remote-first, cache-first, network-only, hybrid, and adaptive parity |
 | Platform matrix | Approved device/simulator and degraded-capability coverage |

@@ -1,0 +1,31 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <dataloom:apple-process-termination-proof>
+final class io.dataloom.processterminationproof/ProcessTerminationProofState { // io.dataloom.processterminationproof/ProcessTerminationProofState|null[0]
+    constructor <init>(kotlin/String, kotlin/Int, kotlin/Long, kotlin/Long, kotlin/Long) // io.dataloom.processterminationproof/ProcessTerminationProofState.<init>|<init>(kotlin.String;kotlin.Int;kotlin.Long;kotlin.Long;kotlin.Long){}[0]
+
+    final val consecutiveFailures // io.dataloom.processterminationproof/ProcessTerminationProofState.consecutiveFailures|{}consecutiveFailures[0]
+        final fun <get-consecutiveFailures>(): kotlin/Int // io.dataloom.processterminationproof/ProcessTerminationProofState.consecutiveFailures.<get-consecutiveFailures>|<get-consecutiveFailures>(){}[0]
+    final val openUntilEpochMillis // io.dataloom.processterminationproof/ProcessTerminationProofState.openUntilEpochMillis|{}openUntilEpochMillis[0]
+        final fun <get-openUntilEpochMillis>(): kotlin/Long // io.dataloom.processterminationproof/ProcessTerminationProofState.openUntilEpochMillis.<get-openUntilEpochMillis>|<get-openUntilEpochMillis>(){}[0]
+    final val phase // io.dataloom.processterminationproof/ProcessTerminationProofState.phase|{}phase[0]
+        final fun <get-phase>(): kotlin/String // io.dataloom.processterminationproof/ProcessTerminationProofState.phase.<get-phase>|<get-phase>(){}[0]
+    final val probeGeneration // io.dataloom.processterminationproof/ProcessTerminationProofState.probeGeneration|{}probeGeneration[0]
+        final fun <get-probeGeneration>(): kotlin/Long // io.dataloom.processterminationproof/ProcessTerminationProofState.probeGeneration.<get-probeGeneration>|<get-probeGeneration>(){}[0]
+    final val version // io.dataloom.processterminationproof/ProcessTerminationProofState.version|{}version[0]
+        final fun <get-version>(): kotlin/Long // io.dataloom.processterminationproof/ProcessTerminationProofState.version.<get-version>|<get-version>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.processterminationproof/ProcessTerminationProofState.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.processterminationproof/ProcessTerminationProofState.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.processterminationproof/ProcessTerminationProofState.toString|toString(){}[0]
+}
+
+final object io.dataloom.processterminationproof/AppleCircuitBreakerProcessTerminationProof { // io.dataloom.processterminationproof/AppleCircuitBreakerProcessTerminationProof|null[0]
+    final fun openCircuitAndPersist(kotlin/String): io.dataloom.processterminationproof/ProcessTerminationProofState // io.dataloom.processterminationproof/AppleCircuitBreakerProcessTerminationProof.openCircuitAndPersist|openCircuitAndPersist(kotlin.String){}[0]
+    final fun readPersistedState(kotlin/String): io.dataloom.processterminationproof/ProcessTerminationProofState? // io.dataloom.processterminationproof/AppleCircuitBreakerProcessTerminationProof.readPersistedState|readPersistedState(kotlin.String){}[0]
+}

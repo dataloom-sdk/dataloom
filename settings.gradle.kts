@@ -156,4 +156,13 @@ if (isAppleHost || isAppleKlibCrossCompileEnabled) {
     // only iosArm64/iosSimulatorArm64/iosX64 targets. See
     // docs/apple/background-task-handler.md.
     include(":dataloom-scheduler-bgtask")
+
+    // apple-process-termination-proof -- narrow Kotlin/Native module backing
+    // the real, launchable iOS Simulator app used to prove genuine Apple
+    // process kill/relaunch survival for circuit-breaker state (#94). Not a
+    // production distribution module and never exported by dataloom-apple's
+    // XCFramework. Gated the same way as the modules above since it declares
+    // only iosArm64/iosSimulatorArm64/iosX64 targets. See
+    // docs/apple/process-termination-proof.md.
+    include(":apple-process-termination-proof")
 }

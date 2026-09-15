@@ -58,3 +58,11 @@ dataloom-apple/build/XCFrameworks/
 # Swift Package Manager build artifacts produced by the apple-smoke fixture.
 apple-smoke/.build/
 apple-smoke/DataLoom.xcframework/
+
+# Xcode per-user state, never checked in.
+xcuserdata/
+*.xcuserstate
+
+# apple-process-termination-proof-app: generated framework input (mirrors
+# apple-smoke/DataLoom.xcframework/ above) and xcodebuild output.
+apple-process-termination-proof-app/DataLoomProcessTerminationProof.xcframework/
