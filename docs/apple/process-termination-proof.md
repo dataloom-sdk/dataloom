@@ -314,6 +314,31 @@ time on this PR. Results, resolving several of the unknowns named above:
   as uncertain as originally documented above until the device-selection fix
   produces a run that reaches them.
 
+## Update: fully genuine green run (2026-09-13)
+
+The device-type-selection fix above produced a complete, fully genuine
+end-to-end pass on run `34730220519` — every remaining named unknown is now
+resolved:
+
+- App install/launch/kill/relaunch all succeeded for real.
+- `simctl launch`'s `<bundle-id>: <pid>` format parsed correctly on both
+  launches — real pids `13881` (before kill) and `14307` (after relaunch),
+  genuinely distinct.
+- The `launchctl list`-grep polling strategy for confirming a genuine kill
+  worked as designed — no timeout, no false pass.
+- The persisted circuit-breaker state file, read directly from the
+  Simulator's app-container filesystem from outside the app process, was
+  byte-identical before the kill and after the relaunch.
+- Code signing (`CODE_SIGNING_ALLOWED=NO`) and `jq` presence were both
+  non-issues, as this document's first-run update already found.
+
+This closes every item this document's original "What was NOT, and could
+not be, verified" section named. `continue-on-error: true` has been removed
+from the job in `.github/workflows/apple-validation.yml` — this is now a
+required check like every other job in `apple-validation.yml`. `#94`'s
+market-readiness row is bumped accordingly (see that gate's own row for the
+exact wording).
+
 ## What remains open after this PR, even once CI infrastructure is proven
 
 - **Retry-budget state** (`AndroidProcessTerminationRetryBudgetInstrumentedTest`'s

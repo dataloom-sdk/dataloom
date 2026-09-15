@@ -176,12 +176,12 @@ jobs:
     name: Apple Simulator process-termination/relaunch proof (circuit breaker)
     runs-on: macos-15
     timeout-minutes: 30
-    # This entire job is new, unverified infrastructure (see the job-level
-    # comment above and docs/apple/process-termination-proof.md). It must not
-    # block merges of unrelated work while it is first proven out on real
-    # macOS CI -- flip this to false only once a real green run has been
-    # observed on this exact job.
-    continue-on-error: true
+    # A genuine, fully green end-to-end run of this exact job was observed
+    # on run 34730220519 (2026-09-13), after the device-type-selection fix:
+    # real distinct pids before/after a genuine `xcrun simctl terminate` +
+    # relaunch (13881 -> 14307), persisted circuit-breaker state confirmed
+    # byte-identical. Now a required check like every other job in this
+    # workflow -- continue-on-error is no longer needed.
 
     steps:
       - name: Checkout repository
