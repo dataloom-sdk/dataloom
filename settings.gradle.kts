@@ -165,4 +165,16 @@ if (isAppleHost || isAppleKlibCrossCompileEnabled) {
     // only iosArm64/iosSimulatorArm64/iosX64 targets. See
     // docs/apple/process-termination-proof.md.
     include(":apple-process-termination-proof")
+
+    // apple-process-contention-proof -- narrow Kotlin/Native module backing
+    // two real, independently launched iOS Simulator apps used to prove
+    // genuine Apple cross-process contention for the circuit-breaker
+    // half-open probe permit (#94/#95), the Apple counterpart to
+    // AndroidCircuitBreakerProbeContentionInstrumentedTest. Not a production
+    // distribution module and never exported by dataloom-apple's
+    // XCFramework. Gated the same way as the modules above since it
+    // declares only iosArm64/iosSimulatorArm64/iosX64 targets. See
+    // docs/apple/cross-process-contention-investigation.md and
+    // docs/apple/process-contention-proof.md.
+    include(":apple-process-contention-proof")
 }

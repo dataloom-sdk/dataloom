@@ -546,11 +546,18 @@ applying identically here since this reuses the same infrastructure shape:
 ## What remains open after this PR, even once CI infrastructure is proven
 
 - **Cross-process probe contention** (`AndroidCircuitBreakerProbeContentionInstrumentedTest`'s
-  Apple counterpart) remains genuinely blocked for the reason
-  `process-termination-investigation.md` already names: iOS has no
+  Apple counterpart) was, at the time this document was originally written,
+  believed genuinely blocked for the reason
+  `process-termination-investigation.md` names: iOS has no
   `android:process`-equivalent mechanism to host two genuinely independent
-  processes inside one app bundle on demand, so this proof shape does not
-  transfer even once single-process kill/relaunch is proven.
+  processes inside one app bundle on demand. **Superseded 2026-09-15:** see
+  [`docs/apple/cross-process-contention-investigation.md`](cross-process-contention-investigation.md)
+  and [`docs/apple/process-contention-proof.md`](process-contention-proof.md)
+  -- a structurally different mechanism (the iOS Simulator's own lack of
+  app-container sandboxing, not an `android:process` equivalent) was found
+  and acted on, and new, CI-unverified `apple-process-contention-proof`
+  infrastructure now exists for exactly this proof. Not yet confirmed on
+  real macOS CI as of this update.
 - **The full `CircuitBreakerExecutionGate`/`CircuitBreakerCoordinator` pair**
   is not exercised by this proof app (see the scope-reduction note under
   "What this builds" above) — only direct `AppleFileCircuitBreakerStateStore`

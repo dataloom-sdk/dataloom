@@ -671,3 +671,355 @@ jobs:
             xcrun simctl shutdown "$DEVICE_ID" || true
             xcrun simctl delete "$DEVICE_ID" || true
           fi
+
+  # Apple Simulator cross-process probe-contention proof (#94/#95)
+  # ---------------------------------------------------------------------
+  #
+  # A separate job from both apple-validate and apple-process-termination-proof
+  # above, for the same reason apple-process-termination-proof was kept
+  # separate from apple-validate: this is new, never-run-before infrastructure
+  # (see docs/apple/cross-process-contention-investigation.md and
+  # docs/apple/process-contention-proof.md) and must not risk either
+  # already-proven job.
+  #
+  # This job builds and installs TWO real, independently bundle-identified
+  # iOS Simulator apps (ProcessContentionProofAppA / ...AppB,
+  # apple-process-contention-proof-app/) from the same shared Swift source
+  # and Kotlin/Native module, launches both as genuinely separate OS
+  # processes pointed at the same shared host-filesystem directory (possible
+  # without an Apple Developer Program "App Groups" entitlement only because
+  # the iOS Simulator does not sandbox apps against the host Mac's
+  # filesystem the way a real device does -- see the investigation doc),
+  # releases them together via a shared "go" marker file once both are
+  # confirmed alive and waiting, and asserts that exactly one of the two
+  # real, independently-launched processes wins the circuit breaker's single
+  # half-open probe permit through AppleFileCircuitBreakerStateStore's real
+  # flock-based compare-and-set -- never a test-only mutex -- mirroring
+  # AndroidCircuitBreakerProbeContentionInstrumentedTest's own assertions.
+  #
+  # Everything in this job is new and has never run on real macOS CI before
+  # this PR. continue-on-error is set for exactly that reason and must not be
+  # removed until a real green run is observed (matching
+  # apple-process-termination-proof's own now-superseded initial posture --
+  # see that job's git history and docs/apple/process-termination-proof.md's
+  # "Update: first real macOS CI run" section for the shape that precedent
+  # took).
+  apple-process-contention-proof:
+    name: Apple Simulator cross-process probe-contention proof (circuit breaker)
+    runs-on: macos-15
+    timeout-minutes: 30
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Assemble the process-contention-proof XCFramework
+        run: >-
+          ./gradlew
+          :apple-process-contention-proof:assembleDataLoomProcessContentionProofReleaseXCFramework
+          --configuration-cache
+          --stacktrace
+          --console=plain
+
+      - name: Copy XCFramework into the proof app's project directory
+        run: |
+          set -euo pipefail
+          SRC="apple-process-contention-proof/build/XCFrameworks/release/DataLoomProcessContentionProof.xcframework"
+          DEST="apple-process-contention-proof-app/DataLoomProcessContentionProof.xcframework"
+          echo "=== Copying $SRC -> $DEST ==="
+          ls -la "$SRC"
+          rm -rf "$DEST"
+          cp -R "$SRC" "$DEST"
+
+      - name: Build both proof apps for the iOS Simulator
+        run: |
+          set -euo pipefail
+          cd apple-process-contention-proof-app
+          for SCHEME in ProcessContentionProofAppA ProcessContentionProofAppB; do
+            echo "=== Building $SCHEME ==="
+            xcodebuild build \
+              -project ProcessContentionProofApp.xcodeproj \
+              -scheme "$SCHEME" \
+              -configuration Debug \
+              -sdk iphonesimulator \
+              -derivedDataPath build \
+              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGN_IDENTITY=""
+          done
+
+      - name: Create and boot a dedicated Simulator device
+        id: boot_simulator
+        run: |
+          set -euo pipefail
+          RUNTIMES_JSON=$(xcrun simctl list runtimes --json)
+          RUNTIME_ID=$(echo "$RUNTIMES_JSON" \
+            | jq -r '[.runtimes[] | select(.isAvailable and (.identifier | startswith("com.apple.CoreSimulator.SimRuntime.iOS")))] | sort_by(.version) | last | .identifier')
+          if [ -z "$RUNTIME_ID" ] || [ "$RUNTIME_ID" = "null" ]; then
+            echo "ERROR: no available iOS simulator runtime found." >&2
+            xcrun simctl list runtimes
+            exit 1
+          fi
+          echo "Selected runtime: $RUNTIME_ID"
+
+          # See apple-process-termination-proof's own identical step for why
+          # candidates are restricted to this runtime's own
+          # supportedDeviceTypes rather than picked from the global
+          # device-type list: a naive global pick can select a device type
+          # the runtime doesn't actually support (that job's own first real
+          # CI run caught exactly this).
+          DEVICETYPE_ID=$(echo "$RUNTIMES_JSON" \
+            | jq -r --arg rid "$RUNTIME_ID" '
+                [.runtimes[] | select(.identifier == $rid) | .supportedDeviceTypes[]
+                  | select(.name | contains("iPhone"))]
+                | last | .identifier')
+          if [ -z "$DEVICETYPE_ID" ] || [ "$DEVICETYPE_ID" = "null" ]; then
+            echo "ERROR: no iPhone simulator device type supported by runtime $RUNTIME_ID." >&2
+            echo "$RUNTIMES_JSON" | jq --arg rid "$RUNTIME_ID" '.runtimes[] | select(.identifier == $rid)'
+            exit 1
+          fi
+          echo "Selected device type: $DEVICETYPE_ID"
+
+          DEVICE_ID=$(xcrun simctl create ProcessContentionProofDevice "$DEVICETYPE_ID" "$RUNTIME_ID")
+          echo "Created device: $DEVICE_ID"
+          echo "device_id=$DEVICE_ID" >> "$GITHUB_OUTPUT"
+
+          xcrun simctl boot "$DEVICE_ID" || true
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+
+      - name: Install both apps, race them, and verify exactly one winner
+        env:
+          DEVICE_ID: ${{ steps.boot_simulator.outputs.device_id }}
+          BUNDLE_ID_A: io.dataloom.processcontentionproof.appa
+          BUNDLE_ID_B: io.dataloom.processcontentionproof.appb
+        run: |
+          set -euo pipefail
+          APP_A_PATH="apple-process-contention-proof-app/build/Build/Products/Debug-iphonesimulator/ProcessContentionProofAppA.app"
+          APP_B_PATH="apple-process-contention-proof-app/build/Build/Products/Debug-iphonesimulator/ProcessContentionProofAppB.app"
+          for APP_PATH in "$APP_A_PATH" "$APP_B_PATH"; do
+            if [ ! -d "$APP_PATH" ]; then
+              echo "ERROR: built app not found at $APP_PATH" >&2
+              find apple-process-contention-proof-app/build/Build/Products -maxdepth 3 || true
+              exit 1
+            fi
+          done
+
+          xcrun simctl install "$DEVICE_ID" "$APP_A_PATH"
+          xcrun simctl install "$DEVICE_ID" "$APP_B_PATH"
+
+          # A plain host-filesystem directory, not a Simulator app-container
+          # path -- this is the concrete consequence of the Simulator's lack
+          # of app sandboxing this proof relies on (see
+          # docs/apple/cross-process-contention-investigation.md): both
+          # independently bundle-identified apps, and this very shell
+          # script, all read and write the same real directory on the
+          # runner's own filesystem with no App Groups entitlement, no
+          # simctl get_app_container resolution, and no provisioning profile
+          # involved.
+          SHARED_DIR="${RUNNER_TEMP}/dataloom-cross-process-proof"
+          rm -rf "$SHARED_DIR"
+          mkdir -p "$SHARED_DIR"
+          READY_A="$SHARED_DIR/ready-a.marker"
+          READY_B="$SHARED_DIR/ready-b.marker"
+          GO_SIGNAL="$SHARED_DIR/go.marker"
+          RESULT_A="$SHARED_DIR/result-a.tsv"
+          RESULT_B="$SHARED_DIR/result-b.tsv"
+          echo "Shared host directory: $SHARED_DIR"
+
+          echo "=== Launching app A (opens the circuit, then waits for the go signal) ==="
+          export SIMCTL_CHILD_DATALOOM_ROLE="A"
+          export SIMCTL_CHILD_DATALOOM_SHARED_DIR="$SHARED_DIR"
+          export SIMCTL_CHILD_DATALOOM_READY_MARKER="$READY_A"
+          export SIMCTL_CHILD_DATALOOM_GO_SIGNAL="$GO_SIGNAL"
+          export SIMCTL_CHILD_DATALOOM_RESULT_FILE="$RESULT_A"
+          LAUNCH_A=$(xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID_A")
+          echo "$LAUNCH_A"
+          PID_A=$(echo "$LAUNCH_A" | sed -n 's/^.*: *\([0-9][0-9]*\)$/\1/p')
+          if [ -z "$PID_A" ]; then
+            echo "ERROR: could not parse a pid from app A's 'simctl launch' output: $LAUNCH_A" >&2
+            exit 1
+          fi
+          echo "App A pid: $PID_A"
+
+          echo "=== Waiting for app A to finish opening the circuit ==="
+          READY_A_SEEN=0
+          for _ in $(seq 1 30); do
+            if [ -f "$READY_A" ]; then
+              READY_A_SEEN=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$READY_A_SEEN" != "1" ]; then
+            echo "ERROR: app A's ready marker never appeared within 30s: $READY_A" >&2
+            exit 1
+          fi
+
+          # Real wall-clock sleep past the 400ms openDuration, comfortably
+          # exceeded already by the polling above but made explicit here to
+          # not depend on that incidental timing.
+          sleep 2
+
+          echo "=== Launching app B (the non-opening racer) ==="
+          unset SIMCTL_CHILD_DATALOOM_ROLE
+          export SIMCTL_CHILD_DATALOOM_ROLE="B"
+          export SIMCTL_CHILD_DATALOOM_READY_MARKER="$READY_B"
+          export SIMCTL_CHILD_DATALOOM_RESULT_FILE="$RESULT_B"
+          # SIMCTL_CHILD_DATALOOM_SHARED_DIR and SIMCTL_CHILD_DATALOOM_GO_SIGNAL
+          # are unchanged from app A's launch above -- both apps must race on
+          # the exact same shared directory and the exact same go signal.
+          LAUNCH_B=$(xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID_B")
+          echo "$LAUNCH_B"
+          PID_B=$(echo "$LAUNCH_B" | sed -n 's/^.*: *\([0-9][0-9]*\)$/\1/p')
+          if [ -z "$PID_B" ]; then
+            echo "ERROR: could not parse a pid from app B's 'simctl launch' output: $LAUNCH_B" >&2
+            exit 1
+          fi
+          echo "App B pid: $PID_B"
+
+          if [ "$PID_A" = "$PID_B" ]; then
+            echo "ERROR: app A and app B were launched with the identical pid ($PID_A) -- they are not genuinely separate OS processes." >&2
+            exit 1
+          fi
+
+          echo "=== Waiting for app B to be alive and polling ==="
+          READY_B_SEEN=0
+          for _ in $(seq 1 30); do
+            if [ -f "$READY_B" ]; then
+              READY_B_SEEN=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$READY_B_SEEN" != "1" ]; then
+            echo "ERROR: app B's ready marker never appeared within 30s: $READY_B" >&2
+            exit 1
+          fi
+
+          echo "=== Both processes confirmed alive and waiting -- releasing them together ==="
+          touch "$GO_SIGNAL"
+
+          echo "=== Waiting for both processes' results ==="
+          RESULTS_SEEN=0
+          for _ in $(seq 1 30); do
+            if [ -f "$RESULT_A" ] && [ -f "$RESULT_B" ]; then
+              RESULTS_SEEN=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$RESULTS_SEEN" != "1" ]; then
+            echo "ERROR: one or both result files never appeared within 30s (A: $RESULT_A, B: $RESULT_B)." >&2
+            [ -f "$RESULT_A" ] && { echo "--- result-a.tsv ---"; cat "$RESULT_A"; } || echo "result-a.tsv missing"
+            [ -f "$RESULT_B" ] && { echo "--- result-b.tsv ---"; cat "$RESULT_B"; } || echo "result-b.tsv missing"
+            exit 1
+          fi
+
+          # Deliberately NOT `IFS=$'\t' read -r a b c < file`: bash's `read`
+          # treats tab as one of its built-in "IFS whitespace" characters
+          # regardless of what IFS is explicitly set to, so it collapses
+          # consecutive tabs and strips a leading/trailing empty field --
+          # exactly the shape a winning ALLOWED result produces (its own
+          # rejectionReason field is empty: "ALLOWED\t\t1"). That silently
+          # shifted the real generation value into the reason variable and
+          # left the generation variable empty, which this script did not
+          # catch until this exact bug was found on a genuine CI run below.
+          # `cut` with an explicit tab delimiter treats every tab as a
+          # literal, non-collapsing field separator instead.
+          OUTCOME_A=$(cut -d$'\t' -f1 "$RESULT_A")
+          REASON_A=$(cut -d$'\t' -f2 "$RESULT_A")
+          GENERATION_A=$(cut -d$'\t' -f3 "$RESULT_A")
+          OUTCOME_B=$(cut -d$'\t' -f1 "$RESULT_B")
+          REASON_B=$(cut -d$'\t' -f2 "$RESULT_B")
+          GENERATION_B=$(cut -d$'\t' -f3 "$RESULT_B")
+          echo "App A result: outcome=$OUTCOME_A reason=$REASON_A generation=$GENERATION_A"
+          echo "App B result: outcome=$OUTCOME_B reason=$REASON_B generation=$GENERATION_B"
+
+          ALLOWED_COUNT=0
+          REJECTED_COUNT=0
+          [ "$OUTCOME_A" = "ALLOWED" ] && ALLOWED_COUNT=$((ALLOWED_COUNT + 1))
+          [ "$OUTCOME_B" = "ALLOWED" ] && ALLOWED_COUNT=$((ALLOWED_COUNT + 1))
+          [ "$OUTCOME_A" = "REJECTED" ] && REJECTED_COUNT=$((REJECTED_COUNT + 1))
+          [ "$OUTCOME_B" = "REJECTED" ] && REJECTED_COUNT=$((REJECTED_COUNT + 1))
+
+          if [ "$ALLOWED_COUNT" != "1" ]; then
+            echo "ERROR: expected exactly one ALLOWED outcome, got $ALLOWED_COUNT (A=$OUTCOME_A, B=$OUTCOME_B)." >&2
+            exit 1
+          fi
+          if [ "$REJECTED_COUNT" != "1" ]; then
+            echo "ERROR: expected exactly one REJECTED outcome, got $REJECTED_COUNT (A=$OUTCOME_A, B=$OUTCOME_B)." >&2
+            exit 1
+          fi
+
+          if [ "$OUTCOME_A" = "REJECTED" ]; then
+            LOSER_REASON="$REASON_A"
+            WINNER_GENERATION="$GENERATION_B"
+          else
+            LOSER_REASON="$REASON_B"
+            WINNER_GENERATION="$GENERATION_A"
+          fi
+          if [ "$LOSER_REASON" != "PROBE_IN_FLIGHT" ]; then
+            echo "ERROR: the losing process's rejection reason was '$LOSER_REASON', expected 'PROBE_IN_FLIGHT'." >&2
+            exit 1
+          fi
+          if [ "$WINNER_GENERATION" -le 0 ]; then
+            echo "ERROR: the winning process's granted probe generation was '$WINNER_GENERATION', expected a positive integer." >&2
+            exit 1
+          fi
+
+          echo "=== Bonus corroboration: reading the real production state file directly ==="
+          # AppleFileCircuitBreakerStateStore's own on-disk file, written by
+          # whichever of the two real app processes performed the winning
+          # compare-and-set -- read here directly from the plain shared host
+          # directory both apps were launched against (no simctl
+          # get_app_container indirection is needed for this file, since it
+          # was never written inside either app's own sandboxed container in
+          # the first place).
+          STATE_FILE="$SHARED_DIR/dataloom-circuit-state-v1.tsv"
+          if [ -f "$STATE_FILE" ]; then
+            echo "--- $STATE_FILE ---"
+            cat "$STATE_FILE"
+            if ! grep -q "HALF_OPEN" "$STATE_FILE"; then
+              echo "ERROR: persisted state file does not contain phase HALF_OPEN after the race." >&2
+              exit 1
+            fi
+          else
+            echo "ERROR: expected production state file not found: $STATE_FILE" >&2
+            exit 1
+          fi
+
+          echo "OK: exactly one of two genuinely separate Simulator app processes won the half-open probe permit."
+          echo "    pid A: $PID_A, pid B: $PID_B"
+          echo "    winner outcome: ALLOWED (generation $WINNER_GENERATION), loser: REJECTED (PROBE_IN_FLIGHT)"
+
+      - name: Clean up the Simulator device and shared directory
+        if: always()
+        env:
+          DEVICE_ID: ${{ steps.boot_simulator.outputs.device_id }}
+          BUNDLE_ID_A: io.dataloom.processcontentionproof.appa
+          BUNDLE_ID_B: io.dataloom.processcontentionproof.appb
+        run: |
+          if [ -n "${DEVICE_ID:-}" ]; then
+            xcrun simctl terminate "$DEVICE_ID" "$BUNDLE_ID_A" || true
+            xcrun simctl terminate "$DEVICE_ID" "$BUNDLE_ID_B" || true
+            xcrun simctl shutdown "$DEVICE_ID" || true
+            xcrun simctl delete "$DEVICE_ID" || true
+          fi
+          rm -rf "${RUNNER_TEMP}/dataloom-cross-process-proof" || true
