@@ -2,13 +2,21 @@
 
 ## Status
 
-**New CI infrastructure added 2026-09-12. Unverified until it runs on real
-macOS CI.** This document describes what was built, exactly what could and
-could not be verified from a Windows development host, and the specific
-format/label uncertainties left for a real macOS CI run to resolve.
+**Circuit-breaker state: fully proven on real macOS CI as of 2026-09-13** —
+see "Update: fully genuine green run" below.
+
+**Retry-budget state: new CI infrastructure added 2026-09-15, mechanically
+extending the circuit-breaker proof. Unverified until it runs on real macOS
+CI.** See "Extension: durable retry-budget state (2026-09-15)" below for what
+was built, exactly what could and could not be verified from a Windows
+development host, and why this reuses a second, separate app project rather
+than folding the write into `ProcessTerminationProofApp`'s existing launch.
 `docs/status/market-readiness.md`'s `#94` row percentage is deliberately
-**unchanged** by this work — see that row's own updated "Still pending" text
-and the dated log entry for 2026-09-12.
+**unchanged** by the retry-budget extension — see that row's own updated
+"Still pending" text and the dated log entry for 2026-09-15.
+
+The rest of this document (through "Update: fully genuine green run") is
+unchanged from round 31 and describes only the circuit-breaker proof.
 
 This document supersedes nothing in
 [`docs/apple/process-termination-investigation.md`](process-termination-investigation.md);
@@ -339,13 +347,204 @@ required check like every other job in `apple-validation.yml`. `#94`'s
 market-readiness row is bumped accordingly (see that gate's own row for the
 exact wording).
 
+## Extension: durable retry-budget state (2026-09-15)
+
+This closes the "Retry-budget state" item named below (round 31), the same
+way `AndroidProcessTerminationRetryBudgetInstrumentedTest` mechanically
+extended `AndroidProcessTerminationCircuitBreakerInstrumentedTest` on
+Android. As with that Android precedent, this is a genuinely separate
+durable structure, not a variant of circuit-breaker state:
+
+- On Android, retry-budget fields (`retry_attempt_number`,
+  `retry_window_started_at_ms`, `retry_last_evaluated_at_ms`,
+  `retry_cumulative_delay_ms`) live on the `queue_entries` table written by
+  `RoomQueueProvider`, independent of the `circuit_breaker_states` table
+  `RoomCircuitBreakerStateStore` owns.
+- On Apple, the equivalent fields are `io.dataloom.api.queue.QueueEntry.retryAttempt`
+  and `QueueEntry.retryBudgetState` (`io.dataloom.api.retry.RetryAttempt.number`
+  and `io.dataloom.api.retry.RetryBudgetState.windowStartedAt`/`lastEvaluatedAt`/`cumulativeDelay`),
+  persisted by the real production `AppleFileQueueProvider`
+  (`dataloom-runtime/src/iosMain/kotlin/io/dataloom/runtime/queue/AppleFileQueueProvider.kt`)
+  to `dataloom-queue-state-v1.tsv` — a file entirely independent of
+  `AppleFileCircuitBreakerStateStore`'s own `dataloom-circuit-state-v1.tsv`.
+  This was verified directly by reading `QueueEntry`'s declared properties
+  and `AppleFileQueueProvider`'s `reschedule`/`acquire`/`defer`
+  implementations, not assumed to carry over 1:1 from Android's column
+  names.
+
+### What this adds
+
+1. **`AppleRetryBudgetProcessTerminationProof`** (new Kotlin `object` in the
+   existing `apple-process-termination-proof` module, alongside the
+   unchanged `AppleCircuitBreakerProcessTerminationProof`) and
+   **`RetryBudgetProcessTerminationProofState`** (a new primitive-typed data
+   holder alongside the unchanged `ProcessTerminationProofState`). Two
+   methods:
+   - `writeRetryBudgetAndPersist(directoryPath: String): RetryBudgetProcessTerminationProofState`
+     drives the real production `enqueue -> acquire -> reschedule -> acquire
+     -> defer` sequence through a new `AppleFileQueueProvider` — the same
+     sequence Android's `RetryBudgetProcessTerminationContentProvider`
+     drives through `RoomQueueProvider`, with no further scope reduction
+     needed (unlike the circuit-breaker proof's own reduction versus
+     `CircuitBreakerExecutionGate`/`CircuitBreakerCoordinator`, `QueueProvider`
+     has no coordinator/execution-gate layer of its own to bypass).
+   - `hasPersistedRetryBudgetState(directoryPath: String): Boolean` is a
+     **non-mutating** existence check on the well-known
+     `AppleFileQueueProvider.DEFAULT_FILE_NAME` snapshot file. This cannot
+     reuse the circuit-breaker proof's own `readPersistedState`-as-idempotency-guard
+     pattern: `AppleFileCircuitBreakerStateStore.load` is a pure read, but
+     `AppleFileQueueProvider`'s only public read path is `acquire`, which
+     atomically assigns a new lease as a side effect. Calling `acquire` from
+     an idempotency guard on every app launch would itself mutate the
+     persisted snapshot (attaching a lease), making the CI proof's own
+     outside byte-for-byte file diff observe a spurious change across the
+     kill/relaunch even though the underlying retry-budget fields never
+     changed. The existence check avoids this entirely by never invoking the
+     provider.
+   - Confirmed via `updateKotlinAbi`/`checkKotlinAbi`
+     (`-Pdataloom.appleKlibCrossCompile=true`) that the module's exported
+     surface remains exactly the four primitive-typed declarations
+     (`ProcessTerminationProofState`, `RetryBudgetProcessTerminationProofState`,
+     `AppleCircuitBreakerProcessTerminationProof`,
+     `AppleRetryBudgetProcessTerminationProof`) with every signature typed in
+     `kotlin/String`/`kotlin/Int`/`kotlin/Long`/`kotlin/Boolean` plus the
+     module's own declared types — no `dataloom-api`/`dataloom-runtime` type
+     leaks into the generated Objective-C header. The whole-build
+     `checkKotlinAbi` passed with only this module's own baseline file
+     changing.
+
+2. **`apple-process-termination-proof-retry-budget-app/`** — a second,
+   separate hand-authored Xcode project
+   (`RetryBudgetProcessTerminationProofApp.xcodeproj`), rather than a second
+   write inside `ProcessTerminationProofApp`'s existing single launch.
+   Reasoning: the circuit-breaker and retry-budget proofs persist to
+   genuinely distinct on-disk snapshot files owned by two independent
+   production stores, so nothing is shared by combining them into one
+   app/process, and doing so would only add shared-failure risk to the
+   already-proven circuit-breaker path for no proof-relevant benefit — if
+   something about the new retry-budget write were wrong, it must not be
+   able to take the proven circuit-breaker app down with it. Bundle id
+   `io.dataloom.processterminationproof.retrybudget.app`; persists to
+   `<Documents>/RetryBudgetProof/dataloom-queue-state-v1.tsv` inside its own
+   app container (a distinct container from `ProcessTerminationProofApp`'s,
+   since it is a distinct bundle id). The project file was produced by
+   copying `ProcessTerminationProofApp.xcodeproj`'s own proven object graph
+   verbatim and substituting only object-id prefixes, the target/product
+   name, and the bundle identifier — confirmed structurally byte-identical
+   to the original after reversing those substitutions (`sed`-normalize and
+   `diff`), the strongest confidence available from a Windows host that a
+   hand-edited `.pbxproj` did not introduce a structural error, short of
+   Xcode itself opening it. `AppDelegate.swift` mirrors
+   `ProcessTerminationProofApp`'s own idempotency-guard shape exactly,
+   substituting `hasPersistedRetryBudgetState`/`writeRetryBudgetAndPersist`
+   for `readPersistedState`/`openCircuitAndPersist`.
+
+3. **New CI job `apple-retry-budget-process-termination-proof`** in
+   `.github/workflows/apple-validation.yml`, structurally identical to
+   `apple-process-termination-proof`'s own steps (assemble XCFramework, copy
+   it into the app project, `xcodebuild build`, create/boot a dedicated
+   Simulator device using the same runtime-scoped device-type-selection fix
+   round 31 already established, install/launch/kill/poll/relaunch, diff the
+   persisted state file read directly from the Simulator's app-container
+   filesystem from outside the app process) but targeting the new app,
+   bundle id, device name, and state-file path
+   (`Documents/RetryBudgetProof/dataloom-queue-state-v1.tsv`). Deliberately a
+   separate job (own checkout/Java/Gradle setup, own Simulator device) so a
+   failure here cannot fail either the existing `apple-validate` job or the
+   existing `apple-process-termination-proof` job, and vice versa — neither
+   of those two already-proven jobs, nor the circuit-breaker app/module code
+   they exercise, is modified by this addition.
+
+   This job carries `continue-on-error: true` while unproven, the same
+   posture `apple-process-termination-proof` itself held before its own
+   first real run (round 31) — it must not block merges of unrelated work
+   until a real green run is observed and this flag is deliberately removed.
+   **A `continue-on-error` job reports green in the GitHub Actions UI even
+   if its steps fail internally** — reviewers must read this job's actual
+   step logs, not just its pass/fail badge, before treating it as evidence
+   of anything.
+
+### What was verified from this Windows session
+
+- `./gradlew.bat :apple-process-termination-proof:compileKotlinIosArm64
+  :apple-process-termination-proof:compileKotlinIosSimulatorArm64
+  :apple-process-termination-proof:compileKotlinIosX64
+  -Pdataloom.appleKlibCrossCompile=true` — succeeded for all three targets
+  with `AppleRetryBudgetProcessTerminationProof` added. Production code
+  type-checks and klib-compiles against `AppleFileQueueProvider` and the
+  `dataloom-api` queue/retry contract types.
+- The same three targets' `compileTestKotlin*` tasks, run individually and
+  sequentially per this repository's Windows Gradle-concurrency discipline —
+  all three succeeded. `AppleRetryBudgetProcessTerminationProofTest` (pure
+  single-process sanity coverage, same limitation as the circuit-breaker
+  proof's own test suite — it cannot itself prove OS-level kill survival)
+  type-checks and klib-compiles for all three targets.
+- `./gradlew.bat :apple-process-termination-proof:updateKotlinAbi
+  -Pdataloom.appleKlibCrossCompile=true` then `./gradlew.bat checkKotlinAbi
+  -Pdataloom.appleKlibCrossCompile=true` — the whole-build ABI check passed.
+  `git status` confirmed only this module's own
+  `apple-process-termination-proof/api/apple-process-termination-proof.klib.api`
+  changed; no other module's baseline changed.
+- `./gradlew.bat :apple-process-termination-proof:assembleDataLoomProcessTerminationProofReleaseXCFramework
+  -Pdataloom.appleKlibCrossCompile=true` — ran with the same expected
+  `SKIPPED` linking tasks as round 31's own run of this task (Kotlin/Native
+  cross-compiles klibs on any host but cannot link final Mach-O
+  binaries/frameworks without a macOS toolchain). Confirms the task exists
+  and is wired correctly; does not confirm the XCFramework's two exported
+  proof objects both actually link.
+- The new `RetryBudgetProcessTerminationProofApp.xcodeproj`'s `project.pbxproj`
+  and `Info.plist` were diffed byte-for-byte (after reversing the known
+  name/id substitutions) against `ProcessTerminationProofApp`'s own,
+  already-CI-proven originals, and confirmed structurally identical. The new
+  CI job's YAML was reviewed by hand for indentation/structure consistency
+  with its sibling jobs (no YAML linter was available on this Windows host
+  to validate it mechanically).
+
+### What was NOT, and could not be, verified from this Windows session
+
+Everything that requires an actual macOS host, Xcode, or the iOS Simulator —
+the same category of gap round 31 named for the circuit-breaker proof,
+applying identically here since this reuses the same infrastructure shape:
+
+- **Whether Xcode accepts `RetryBudgetProcessTerminationProofApp.xcodeproj`
+  without repair on first open.** Structurally byte-identical to
+  `ProcessTerminationProofApp.xcodeproj` (already proven to build on first
+  open in round 31's own first real CI run), but never itself opened or
+  built by Xcode.
+- **Whether `AppleRetryBudgetProcessTerminationProof.shared.writeRetryBudgetAndPersist(directoryPath:)`
+  and `.hasPersistedRetryBudgetState(directoryPath:)` are exactly the Swift
+  call signatures Kotlin/Native generates.** The module's own `.klib.api`
+  dump confirms the underlying Kotlin signatures; the actual Objective-C
+  header generation and Swift import step was never run (same gap round 31
+  named for the circuit-breaker proof's own methods, resolved by that
+  round's first real CI run).
+- **Whether the retry-budget proof app's own production write sequence
+  (`enqueue -> acquire -> reschedule -> acquire -> defer`) actually succeeds
+  end to end when run for real inside a launched Simulator process**, as
+  opposed to only compiling and klib-verifying. `AppleRetryBudgetProcessTerminationProofTest`
+  exercises this same sequence within a single Kotlin/Native test process
+  (see its own KDoc), but that test binary has not itself been run on this
+  Windows host.
+- **Whether `dataloom-queue-state-v1.tsv`'s on-disk format is stable and
+  diffable the same way `dataloom-circuit-state-v1.tsv` proved to be** —
+  both are written by structurally similar atomic-rename TSV codecs
+  (`AppleQueueStateFileCodec` vs `AppleCircuitAdministrationStateFileCodec`'s
+  sibling for circuit-breaker state), but the queue snapshot's format was
+  not independently re-confirmed to be free of any non-deterministic
+  ordering or timestamp field that could cause a spurious byte-level diff
+  across the kill/relaunch even when the retry-budget fields themselves are
+  unchanged. If this assumption is wrong, the new job's final diff step will
+  fail loudly (exit non-zero with a printed diff) rather than silently
+  report a false pass.
+- **Code signing, `jq` presence, `launchctl list` label format, and
+  `simctl launch` pid-format** — all already resolved once for the
+  circuit-breaker proof's own bundle id in round 31's first real run, but
+  not independently re-confirmed for this job's distinct bundle id
+  (`io.dataloom.processterminationproof.retrybudget.app`) and device name.
+  These are expected, but not guaranteed, to behave identically.
+
 ## What remains open after this PR, even once CI infrastructure is proven
 
-- **Retry-budget state** (`AndroidProcessTerminationRetryBudgetInstrumentedTest`'s
-  Apple counterpart) is not attempted here. The same app/module/CI shape
-  should extend mechanically once the circuit-breaker path is proven, the
-  same way the Android retry-budget proof mechanically extended the
-  Android circuit-breaker proof.
 - **Cross-process probe contention** (`AndroidCircuitBreakerProbeContentionInstrumentedTest`'s
   Apple counterpart) was, at the time this document was originally written,
   believed genuinely blocked for the reason
@@ -381,12 +580,19 @@ exact wording).
 - [`docs/apple/background-task-handler.md`](background-task-handler.md) —
   round 30's `DataLoomBackgroundTaskHandler`, the still-uninvoked background-task
   half of `#101` referenced under "What remains open" above.
-- `AndroidProcessTerminationCircuitBreakerInstrumentedTest`
+- `AndroidProcessTerminationCircuitBreakerInstrumentedTest` and
+  `AndroidProcessTerminationRetryBudgetInstrumentedTest`
   (`dataloom-queue-room/src/androidTest/kotlin/io/dataloom/queue/room/`) —
-  the Android proof this Apple proof mirrors in shape (pid-before/pid-after
-  comparison, poll-with-timeout rather than assume, byte-for-byte persisted
-  state comparison).
-- `.github/workflows/apple-validation.yml` — the new `apple-process-termination-proof`
-  job.
-- `apple-process-termination-proof/` and `apple-process-termination-proof-app/` —
-  the new module and app.
+  the Android proofs this Apple proof (both the circuit-breaker and
+  retry-budget halves) mirror in shape (pid-before/pid-after comparison,
+  poll-with-timeout rather than assume, byte-for-byte persisted state
+  comparison).
+- `.github/workflows/apple-validation.yml` — the `apple-process-termination-proof`
+  (circuit-breaker) and `apple-retry-budget-process-termination-proof`
+  (retry-budget) jobs.
+- `apple-process-termination-proof/` — the shared Kotlin/Native module
+  (`AppleCircuitBreakerProcessTerminationProof`/`ProcessTerminationProofState`
+  and `AppleRetryBudgetProcessTerminationProof`/`RetryBudgetProcessTerminationProofState`).
+- `apple-process-termination-proof-app/` — the circuit-breaker proof's app.
+- `apple-process-termination-proof-retry-budget-app/` — the retry-budget
+  proof's separate app.

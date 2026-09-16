@@ -401,6 +401,277 @@ jobs:
           fi
 
   # ---------------------------------------------------------------------
+  # Apple Simulator process-termination/relaunch proof (#94, retry budget)
+  # ---------------------------------------------------------------------
+  #
+  # Mechanical extension of apple-process-termination-proof above from
+  # circuit-breaker state to durable retry-budget state, the same way
+  # AndroidProcessTerminationRetryBudgetInstrumentedTest mechanically
+  # extended AndroidProcessTerminationCircuitBreakerInstrumentedTest on
+  # Android. See docs/apple/process-termination-proof.md's "What remains
+  # open" section (round-31 PR #395) for the gap this closes, and
+  # AppleRetryBudgetProcessTerminationProof's own KDoc
+  # (apple-process-termination-proof/src/iosMain/.../AppleRetryBudgetProcessTerminationProof.kt)
+  # for exactly why retry-budget state is a genuinely separate durable
+  # structure from circuit-breaker state on both platforms (Android:
+  # queue_entries columns vs the independent circuit_breaker_states table;
+  # Apple: AppleFileQueueProvider's QueueEntry.retryAttempt/retryBudgetState
+  # vs the independent AppleFileCircuitBreakerStateStore).
+  #
+  # A separate job from both apple-validate and apple-process-termination-proof
+  # above (own checkout/Java/Gradle setup, own Simulator device) so a failure
+  # in this brand-new, never-run-before job cannot fail either of those two
+  # already-proven jobs, and vice versa -- the same isolation rationale
+  # apple-process-termination-proof itself was given from apple-validate in
+  # round 31. Neither the existing apple-validate job nor the existing
+  # apple-process-termination-proof job (or its app/XCFramework) is modified
+  # by this addition.
+  #
+  # This uses a genuinely separate app project
+  # (apple-process-termination-proof-retry-budget-app/, its own .xcodeproj,
+  # its own bundle id io.dataloom.processterminationproof.retrybudget.app)
+  # rather than adding a second write to ProcessTerminationProofApp's own
+  # single launch: the circuit-breaker and retry-budget proofs persist to
+  # genuinely distinct on-disk snapshot files owned by two independent
+  # production stores (dataloom-circuit-state-v1.tsv from
+  # AppleFileCircuitBreakerStateStore vs dataloom-queue-state-v1.tsv from
+  # AppleFileQueueProvider), so combining them into one app/process would
+  # only add shared-failure risk to the already-proven circuit-breaker path
+  # for no proof-relevant benefit. Both apps link the same
+  # DataLoomProcessTerminationProof.xcframework produced by the one Kotlin
+  # module -- the module now exports two independent proof objects
+  # (AppleCircuitBreakerProcessTerminationProof, unchanged, and the new
+  # AppleRetryBudgetProcessTerminationProof) from the same XCFramework.
+  #
+  # Everything in this job is new and has never run on real macOS CI. This
+  # job deliberately carries continue-on-error: true, matching the posture
+  # apple-process-termination-proof itself held before its own first real
+  # green run (round 31) -- it must not block merges of unrelated work until
+  # a real green run has been observed and this flag is deliberately removed,
+  # the same way it already was for the circuit-breaker job. A
+  # continue-on-error job reports green in the GitHub Actions UI even if its
+  # steps fail internally -- reviewers must read this job's actual step logs,
+  # not just its pass/fail badge, exactly as docs/apple/process-termination-proof.md
+  # already establishes for the circuit-breaker job's own first run.
+  apple-retry-budget-process-termination-proof:
+    name: Apple Simulator process-termination/relaunch proof (retry budget)
+    runs-on: macos-15
+    timeout-minutes: 30
+    continue-on-error: true
+    # New, never-run-before job as of this PR -- no real macOS CI run has
+    # been observed yet. See docs/apple/process-termination-proof.md's
+    # "Retry-budget state" entry under "What remains open after this PR"
+    # (round 31) for the gap this job closes, and this PR's own description
+    # for exactly what could and could not be verified from a Windows
+    # development host prior to this job's first real run.
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Assemble the process-termination-proof XCFramework
+        run: >-
+          ./gradlew
+          :apple-process-termination-proof:assembleDataLoomProcessTerminationProofReleaseXCFramework
+          --configuration-cache
+          --stacktrace
+          --console=plain
+
+      - name: Copy XCFramework into the retry-budget proof app's project directory
+        run: |
+          set -euo pipefail
+          SRC="apple-process-termination-proof/build/XCFrameworks/release/DataLoomProcessTerminationProof.xcframework"
+          DEST="apple-process-termination-proof-retry-budget-app/DataLoomProcessTerminationProof.xcframework"
+          echo "=== Copying $SRC -> $DEST ==="
+          ls -la "$SRC"
+          rm -rf "$DEST"
+          cp -R "$SRC" "$DEST"
+
+      - name: Build the retry-budget proof app for the iOS Simulator
+        run: |
+          set -euo pipefail
+          cd apple-process-termination-proof-retry-budget-app
+          xcodebuild build \
+            -project RetryBudgetProcessTerminationProofApp.xcodeproj \
+            -scheme RetryBudgetProcessTerminationProofApp \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Create and boot a dedicated Simulator device
+        id: boot_simulator
+        run: |
+          set -euo pipefail
+          RUNTIMES_JSON=$(xcrun simctl list runtimes --json)
+          RUNTIME_ID=$(echo "$RUNTIMES_JSON" \
+            | jq -r '[.runtimes[] | select(.isAvailable and (.identifier | startswith("com.apple.CoreSimulator.SimRuntime.iOS")))] | sort_by(.version) | last | .identifier')
+          if [ -z "$RUNTIME_ID" ] || [ "$RUNTIME_ID" = "null" ]; then
+            echo "ERROR: no available iOS simulator runtime found." >&2
+            xcrun simctl list runtimes
+            exit 1
+          fi
+          echo "Selected runtime: $RUNTIME_ID"
+
+          # Pick a device type from the *selected runtime's own*
+          # supportedDeviceTypes list -- see apple-process-termination-proof's
+          # own step above for why a naive global pick is wrong (the
+          # "iPhone 6s Plus" lexicographic-sort bug fixed in round 31).
+          DEVICETYPE_ID=$(echo "$RUNTIMES_JSON" \
+            | jq -r --arg rid "$RUNTIME_ID" '
+                [.runtimes[] | select(.identifier == $rid) | .supportedDeviceTypes[]
+                  | select(.name | contains("iPhone"))]
+                | last | .identifier')
+          if [ -z "$DEVICETYPE_ID" ] || [ "$DEVICETYPE_ID" = "null" ]; then
+            echo "ERROR: no iPhone simulator device type supported by runtime $RUNTIME_ID." >&2
+            echo "$RUNTIMES_JSON" | jq --arg rid "$RUNTIME_ID" '.runtimes[] | select(.identifier == $rid)'
+            exit 1
+          fi
+          echo "Selected device type: $DEVICETYPE_ID"
+
+          DEVICE_ID=$(xcrun simctl create RetryBudgetProcessTerminationProofDevice "$DEVICETYPE_ID" "$RUNTIME_ID")
+          echo "Created device: $DEVICE_ID"
+          echo "device_id=$DEVICE_ID" >> "$GITHUB_OUTPUT"
+
+          xcrun simctl boot "$DEVICE_ID" || true
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+
+      - name: Install, launch, kill, relaunch, and verify persisted retry-budget state
+        env:
+          DEVICE_ID: ${{ steps.boot_simulator.outputs.device_id }}
+          BUNDLE_ID: io.dataloom.processterminationproof.retrybudget.app
+        run: |
+          set -euo pipefail
+          APP_PATH="apple-process-termination-proof-retry-budget-app/build/Build/Products/Debug-iphonesimulator/RetryBudgetProcessTerminationProofApp.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "ERROR: built app not found at $APP_PATH" >&2
+            find apple-process-termination-proof-retry-budget-app/build/Build/Products -maxdepth 3 || true
+            exit 1
+          fi
+
+          xcrun simctl install "$DEVICE_ID" "$APP_PATH"
+
+          echo "=== First launch (pre-kill) ==="
+          LAUNCH_1=$(xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID")
+          echo "$LAUNCH_1"
+          PID_1=$(echo "$LAUNCH_1" | sed -n 's/^.*: *\([0-9][0-9]*\)$/\1/p')
+          if [ -z "$PID_1" ]; then
+            echo "ERROR: could not parse a pid from 'simctl launch' output: $LAUNCH_1" >&2
+            exit 1
+          fi
+          echo "First launch pid: $PID_1"
+
+          CONTAINER_DATA=$(xcrun simctl get_app_container "$DEVICE_ID" "$BUNDLE_ID" data)
+          STATE_FILE="$CONTAINER_DATA/Documents/RetryBudgetProof/dataloom-queue-state-v1.tsv"
+          echo "Resolved on-disk state file: $STATE_FILE"
+
+          echo "=== Waiting for the app's real production write to land on disk ==="
+          WROTE_STATE=0
+          for _ in $(seq 1 30); do
+            if [ -f "$STATE_FILE" ]; then
+              WROTE_STATE=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$WROTE_STATE" != "1" ]; then
+            echo "ERROR: retry-budget queue state file never appeared within 30s: $STATE_FILE" >&2
+            exit 1
+          fi
+          STATE_BEFORE_KILL=$(cat "$STATE_FILE")
+          echo "--- Persisted state before kill ---"
+          echo "$STATE_BEFORE_KILL"
+
+          echo "=== Killing the app with a genuine OS-level 'xcrun simctl terminate' ==="
+          xcrun simctl terminate "$DEVICE_ID" "$BUNDLE_ID" || true
+
+          echo "=== Polling until the OS confirms the process is actually gone ==="
+          # Same launchctl-list-grep polling strategy as
+          # apple-process-termination-proof's own step above -- see that
+          # step's comment for the format uncertainty this deliberately
+          # tolerates (grep-based substring match, not an exact label
+          # assertion), already resolved once for that job's own bundle id
+          # but re-verified independently here for this job's own bundle id.
+          TERMINATED=0
+          for _ in $(seq 1 30); do
+            if ! xcrun simctl spawn "$DEVICE_ID" launchctl list 2>/dev/null | grep -q "$BUNDLE_ID"; then
+              TERMINATED=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$TERMINATED" != "1" ]; then
+            echo "ERROR: process for $BUNDLE_ID did not disappear from launchctl list within 30s." >&2
+            xcrun simctl spawn "$DEVICE_ID" launchctl list || true
+            exit 1
+          fi
+
+          echo "=== Relaunching (must be a genuinely new OS process) ==="
+          LAUNCH_2=$(xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID")
+          echo "$LAUNCH_2"
+          PID_2=$(echo "$LAUNCH_2" | sed -n 's/^.*: *\([0-9][0-9]*\)$/\1/p')
+          if [ -z "$PID_2" ]; then
+            echo "ERROR: could not parse a pid from the relaunch 'simctl launch' output: $LAUNCH_2" >&2
+            exit 1
+          fi
+          echo "Relaunch pid: $PID_2"
+
+          if [ "$PID_1" = "$PID_2" ]; then
+            echo "ERROR: relaunch pid ($PID_2) is identical to the pre-kill pid ($PID_1)." >&2
+            echo "This would mean simctl terminate/launch did not produce a genuinely new OS process." >&2
+            exit 1
+          fi
+
+          echo "=== Reading persisted retry-budget state back from the relaunched process's container ==="
+          sleep 2
+          if [ ! -f "$STATE_FILE" ]; then
+            echo "ERROR: state file disappeared after relaunch: $STATE_FILE" >&2
+            exit 1
+          fi
+          STATE_AFTER_RELAUNCH=$(cat "$STATE_FILE")
+          echo "--- Persisted state after kill + relaunch ---"
+          echo "$STATE_AFTER_RELAUNCH"
+
+          if [ "$STATE_BEFORE_KILL" != "$STATE_AFTER_RELAUNCH" ]; then
+            echo "ERROR: persisted retry-budget queue state changed across a genuine OS process kill/relaunch." >&2
+            diff <(echo "$STATE_BEFORE_KILL") <(echo "$STATE_AFTER_RELAUNCH") || true
+            exit 1
+          fi
+
+          echo "OK: retry-budget queue state survived a genuine 'xcrun simctl terminate' + relaunch."
+          echo "    pid before kill: $PID_1"
+          echo "    pid after relaunch: $PID_2"
+
+      - name: Clean up the Simulator device
+        if: always()
+        env:
+          DEVICE_ID: ${{ steps.boot_simulator.outputs.device_id }}
+          BUNDLE_ID: io.dataloom.processterminationproof.retrybudget.app
+        run: |
+          if [ -n "${DEVICE_ID:-}" ]; then
+            xcrun simctl terminate "$DEVICE_ID" "$BUNDLE_ID" || true
+            xcrun simctl shutdown "$DEVICE_ID" || true
+            xcrun simctl delete "$DEVICE_ID" || true
+          fi
+
   # Apple Simulator cross-process probe-contention proof (#94/#95)
   # ---------------------------------------------------------------------
   #
