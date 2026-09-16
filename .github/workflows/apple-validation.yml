@@ -661,8 +661,23 @@ jobs:
             exit 1
           fi
 
-          IFS=$'\t' read -r OUTCOME_A REASON_A GENERATION_A < "$RESULT_A"
-          IFS=$'\t' read -r OUTCOME_B REASON_B GENERATION_B < "$RESULT_B"
+          # Deliberately NOT `IFS=$'\t' read -r a b c < file`: bash's `read`
+          # treats tab as one of its built-in "IFS whitespace" characters
+          # regardless of what IFS is explicitly set to, so it collapses
+          # consecutive tabs and strips a leading/trailing empty field --
+          # exactly the shape a winning ALLOWED result produces (its own
+          # rejectionReason field is empty: "ALLOWED\t\t1"). That silently
+          # shifted the real generation value into the reason variable and
+          # left the generation variable empty, which this script did not
+          # catch until this exact bug was found on a genuine CI run below.
+          # `cut` with an explicit tab delimiter treats every tab as a
+          # literal, non-collapsing field separator instead.
+          OUTCOME_A=$(cut -d$'\t' -f1 "$RESULT_A")
+          REASON_A=$(cut -d$'\t' -f2 "$RESULT_A")
+          GENERATION_A=$(cut -d$'\t' -f3 "$RESULT_A")
+          OUTCOME_B=$(cut -d$'\t' -f1 "$RESULT_B")
+          REASON_B=$(cut -d$'\t' -f2 "$RESULT_B")
+          GENERATION_B=$(cut -d$'\t' -f3 "$RESULT_B")
           echo "App A result: outcome=$OUTCOME_A reason=$REASON_A generation=$GENERATION_A"
           echo "App B result: outcome=$OUTCOME_B reason=$REASON_B generation=$GENERATION_B"
 

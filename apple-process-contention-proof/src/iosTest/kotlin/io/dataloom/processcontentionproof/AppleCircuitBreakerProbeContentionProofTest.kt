@@ -4,7 +4,7 @@ package io.dataloom.processcontentionproof
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
 import platform.Foundation.NSTemporaryDirectory
 import platform.Foundation.NSUUID
 import platform.posix.F_OK
@@ -30,11 +30,25 @@ import platform.posix.open
  * Windows host via `-Pdataloom.appleKlibCrossCompile=true`, but actually
  * *running* the compiled Kotlin/Native test binary requires a macOS host
  * and has not been performed from this environment.
+ *
+ * Deliberately uses [runBlocking], never `kotlinx.coroutines.test.runTest`:
+ * the first two tests below sleep past the circuit's real 400ms
+ * `openDuration` so the subsequent probe attempt sees a genuinely eligible
+ * `HALF_OPEN` transition -- `CircuitBreakerCoordinator` checks that duration
+ * against a real wall-clock [io.dataloom.api.time.AppleDataLoomClock], not
+ * coroutine virtual time. `runTest`'s `TestDispatcher` auto-skips `delay`
+ * calls in virtual time by design, so a `runTest`-wrapped `delay(700L)`
+ * returns instantly without actually advancing the wall clock -- the
+ * circuit would still read as freshly opened, and the probe attempt would
+ * spuriously see `Rejected` instead of `ProbeAllowed`. This was caught for
+ * real on macOS CI (both tests failed with exactly that mismatch) after
+ * being missed by Windows-only compile verification, which cannot execute
+ * either dispatcher's actual timing behavior.
  */
 class AppleCircuitBreakerProbeContentionProofTest {
 
     @Test
-    fun `opening the circuit then immediately racing alone wins the probe`() = runTest {
+    fun `opening the circuit then immediately racing alone wins the probe`() = runBlocking {
         val directory = uniqueDirectory()
         mkdir(directory, 448u) // 0700 octal
         val readyMarker = "$directory/ready.marker"
@@ -45,6 +59,8 @@ class AppleCircuitBreakerProbeContentionProofTest {
 
         // Sleep past the 400ms openDuration before the lone "racer" attempts
         // the probe, mirroring the real CI job's own real wall-clock sleep.
+        // A real delay -- see this class's own doc for why runBlocking, not
+        // runTest, is required here.
         kotlinx.coroutines.delay(700L)
         touchFile(goSignal)
 
@@ -57,7 +73,7 @@ class AppleCircuitBreakerProbeContentionProofTest {
     }
 
     @Test
-    fun `a second attempt against an already in-flight probe is rejected`() = runTest {
+    fun `a second attempt against an already in-flight probe is rejected`() = runBlocking {
         val directory = uniqueDirectory()
         mkdir(directory, 448u)
         val readyMarker = "$directory/ready.marker"
@@ -76,7 +92,7 @@ class AppleCircuitBreakerProbeContentionProofTest {
     }
 
     @Test
-    fun `waiting for a go signal that never appears times out rather than hanging`() = runTest {
+    fun `waiting for a go signal that never appears times out rather than hanging`() = runBlocking {
         val directory = uniqueDirectory()
         mkdir(directory, 448u)
         val goSignal = "$directory/never-appears.marker"

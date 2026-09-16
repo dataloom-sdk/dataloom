@@ -277,6 +277,63 @@ instead of a single app's own kill/relaunch cycle):
   extremely standard GitHub Actions convention, not expected to be a real
   risk, but not independently exercised from this Windows session.
 
+## Update: first real macOS CI run (2026-09-15)
+
+This job ran for real on a `macos-15` GitHub Actions runner for the first
+time on this PR. **The core mechanism this document depends on is
+confirmed real**: two genuinely separate, independently bundle-identified
+Simulator app processes (real distinct pids `11724`/`11761`), launched via
+`simctl launch` with `SIMCTL_CHILD_*`-forwarded environment variables,
+raced on a shared plain host-filesystem directory with no App Groups
+entitlement and no paid developer account. Exactly one process observed
+`ALLOWED` and the other `REJECTED`/`PROBE_IN_FLIGHT` -- never both, never
+neither -- and the bonus corroboration read the real persisted
+`AppleFileCircuitBreakerStateStore` state file directly from that shared
+directory afterward, confirming phase `HALF_OPEN`. The iOS Simulator's lack
+of app-container sandboxing behaves exactly as the investigation doc
+predicted.
+
+Two genuine, unrelated bugs were also found and fixed by this same run,
+neither of which affects the core finding above:
+
+- **A real test bug**, caught by the *unmodified* `apple-validate` job
+  (not this new job): `AppleCircuitBreakerProbeContentionProofTest`'s two
+  timing-dependent cases used `kotlinx.coroutines.test.runTest`, whose
+  `TestDispatcher` auto-skips `delay()` calls in virtual time. The test's
+  own `delay(700L)` -- meant to let the circuit's real 400ms `openDuration`
+  genuinely elapse against `AppleDataLoomClock`'s real wall clock -- never
+  actually advanced real time, so the subsequent probe attempt saw a
+  circuit that had not actually finished its open window and was spuriously
+  `Rejected` instead of `ProbeAllowed`. Fixed by switching both cases (and,
+  for consistency, the third) from `runTest` to plain `runBlocking`, which
+  has no virtual-time scheduler. The third, non-timing-dependent case never
+  failed, which independently corroborates this diagnosis.
+- **A real script bug** in this job's own result-parsing step: `IFS=$'\t'
+  read -r a b c < file` was used to parse each racer's tab-separated result
+  line. Bash's `read` treats tab as one of its built-in "IFS whitespace"
+  characters regardless of what `IFS` is explicitly set to, so it collapses
+  consecutive delimiters -- exactly the shape a winning `ALLOWED` result
+  produces, since its own `rejectionReason` field is empty
+  (`"ALLOWED\t\t1"`). This silently shifted the real probe-generation value
+  into the reason variable and left the generation variable empty, which in
+  turn made the intended `[ "$WINNER_GENERATION" -le 0 ]` validation error
+  out as a malformed integer test rather than genuinely failing -- and
+  because that comparison sat inside an `if` condition, `set -e` does not
+  treat a failing/erroring conditional test as fatal, so the script
+  silently skipped the check instead of catching it. The job's own
+  load-bearing assertions (exactly one `ALLOWED`, exactly one `REJECTED`
+  with reason `PROBE_IN_FLIGHT`, and the `HALF_OPEN` state-file grep) were
+  never affected by this bug and all genuinely passed on their own merits.
+  Fixed by replacing the `IFS`-based `read` with `cut -d$'\t' -f<n>`, which
+  treats every tab as a literal, non-collapsing separator.
+
+`continue-on-error: true` is deliberately left in place on this job for now
+-- one genuine green run, immediately following two real fixes, is not yet
+the same bar `apple-process-termination-proof`'s own job met (multiple
+consecutive genuine green runs) before its `continue-on-error` was removed.
+Removing it and reconsidering `#94`/`#95`'s dashboard percentages are both
+follow-up decisions, not part of this PR.
+
 ## References
 
 - [`docs/apple/cross-process-contention-investigation.md`](cross-process-contention-investigation.md) --
