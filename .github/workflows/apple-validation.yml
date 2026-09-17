@@ -1016,3 +1016,370 @@ jobs:
             xcrun simctl delete "$DEVICE_ID" || true
           fi
           rm -rf "${RUNNER_TEMP}/dataloom-cross-process-proof" || true
+
+  # ---------------------------------------------------------------------
+  # Apple Simulator cross-process conflict-log contention proof (#95)
+  # ---------------------------------------------------------------------
+  #
+  # A separate job from apple-validate, apple-process-termination-proof,
+  # apple-retry-budget-process-termination-proof, and
+  # apple-process-contention-proof above -- same isolation rationale each of
+  # those already carries: this is new, never-run-before infrastructure and
+  # must not risk any already-proven job.
+  #
+  # Extends apple-process-contention-proof's own just-proven mechanism (two
+  # genuinely independent, independently bundle-identified iOS Simulator app
+  # processes racing on a shared, unsandboxed host-filesystem directory --
+  # see docs/apple/cross-process-contention-investigation.md and
+  # docs/apple/process-contention-proof.md's "Update: first real macOS CI
+  # run" section for that domain's own confirmed-real first run) from #94's
+  # circuit-breaker domain to #95's two durable conflict-log domains:
+  # DurableUnresolvedConflictLog and DurableResolvedConflictDecisionLog.
+  # Closes the specific follow-up docs/status/market-readiness.md's #95 row
+  # names as still open ("Apple process-kill/contention evidence for either
+  # conflict-log domain").
+  #
+  # One shared, parameterized job (a two-entry matrix) rather than two
+  # fully copy-pasted jobs: both conflict-log domains share the identical
+  # AppleFileDurableStateStore compare-and-set persistence path, the
+  # identical symmetric warm-up/race shape (see
+  # AppleUnresolvedConflictLogContentionProof's own KDoc for exactly why
+  # these two racers have no opener/racer asymmetry, unlike the
+  # circuit-breaker domain), the identical two app targets
+  # (ProcessContentionProofAppC/AppD, reused unmodified across both matrix
+  # legs by varying DATALOOM_DOMAIN at launch time rather than declaring
+  # per-domain app targets), and the identical assertions modulo which
+  # on-disk state-file name to check for at the end -- only the Kotlin
+  # object driven (via DATALOOM_DOMAIN) and the expected state-file name
+  # differ per matrix entry. Two near-identical ~150-line job bodies copied
+  # by hand would drift the moment one was fixed and the other forgotten,
+  # exactly the risk a matrix avoids. Each matrix entry still runs on its
+  # own dedicated macOS runner with its own checkout/build/Simulator device,
+  # so the two domains' proofs remain fully independent of each other --
+  # a failure racing DurableUnresolvedConflictLog cannot affect the
+  # DurableResolvedConflictDecisionLog leg, or vice versa.
+  #
+  # Everything in this job is new and has never run on real macOS CI. It
+  # carries continue-on-error: true for exactly that reason, matching the
+  # posture apple-process-contention-proof itself held before its own first
+  # real green run -- it must not block merges of unrelated work until a
+  # real green run has been observed for both matrix legs and this flag is
+  # deliberately removed. A continue-on-error job reports green in the
+  # GitHub Actions UI even if its steps fail internally -- reviewers must
+  # read this job's actual step logs (both matrix legs), not just its
+  # pass/fail badge.
+  apple-conflict-log-contention-proof:
+    name: Apple Simulator cross-process contention proof (${{ matrix.domain_label }})
+    runs-on: macos-15
+    timeout-minutes: 30
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - domain: UNRESOLVED_CONFLICT
+            domain_label: unresolved conflict
+            device_name: UnresolvedConflictContentionProofDevice
+            # Must match AppleUnresolvedConflictLogContentionProof.STATE_FILE_NAME
+            # (apple-process-contention-proof/src/iosMain/.../AppleUnresolvedConflictLogContentionProof.kt).
+            state_file_name: dataloom-unresolved-conflict-contention-state-v1.tsv
+          - domain: RESOLVED_DECISION
+            domain_label: resolved conflict decision
+            device_name: ResolvedDecisionContentionProofDevice
+            # Must match AppleResolvedConflictDecisionLogContentionProof.STATE_FILE_NAME
+            # (apple-process-contention-proof/src/iosMain/.../AppleResolvedConflictDecisionLogContentionProof.kt).
+            state_file_name: dataloom-resolved-conflict-decision-contention-state-v1.tsv
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Assemble the process-contention-proof XCFramework
+        run: >-
+          ./gradlew
+          :apple-process-contention-proof:assembleDataLoomProcessContentionProofReleaseXCFramework
+          --configuration-cache
+          --stacktrace
+          --console=plain
+
+      - name: Copy XCFramework into the proof app's project directory
+        run: |
+          set -euo pipefail
+          SRC="apple-process-contention-proof/build/XCFrameworks/release/DataLoomProcessContentionProof.xcframework"
+          DEST="apple-process-contention-proof-app/DataLoomProcessContentionProof.xcframework"
+          echo "=== Copying $SRC -> $DEST ==="
+          ls -la "$SRC"
+          rm -rf "$DEST"
+          cp -R "$SRC" "$DEST"
+
+      - name: Build both proof apps for the iOS Simulator
+        run: |
+          set -euo pipefail
+          cd apple-process-contention-proof-app
+          for SCHEME in ProcessContentionProofAppC ProcessContentionProofAppD; do
+            echo "=== Building $SCHEME ==="
+            xcodebuild build \
+              -project ProcessContentionProofApp.xcodeproj \
+              -scheme "$SCHEME" \
+              -configuration Debug \
+              -sdk iphonesimulator \
+              -derivedDataPath build \
+              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGN_IDENTITY=""
+          done
+
+      - name: Create and boot a dedicated Simulator device
+        id: boot_simulator
+        run: |
+          set -euo pipefail
+          RUNTIMES_JSON=$(xcrun simctl list runtimes --json)
+          RUNTIME_ID=$(echo "$RUNTIMES_JSON" \
+            | jq -r '[.runtimes[] | select(.isAvailable and (.identifier | startswith("com.apple.CoreSimulator.SimRuntime.iOS")))] | sort_by(.version) | last | .identifier')
+          if [ -z "$RUNTIME_ID" ] || [ "$RUNTIME_ID" = "null" ]; then
+            echo "ERROR: no available iOS simulator runtime found." >&2
+            xcrun simctl list runtimes
+            exit 1
+          fi
+          echo "Selected runtime: $RUNTIME_ID"
+
+          # See apple-process-termination-proof's/apple-process-contention-proof's
+          # own identical step for why candidates are restricted to this
+          # runtime's own supportedDeviceTypes rather than picked from the
+          # global device-type list: a naive global pick can select a device
+          # type the runtime doesn't actually support (round 31's own first
+          # real CI run caught exactly this).
+          DEVICETYPE_ID=$(echo "$RUNTIMES_JSON" \
+            | jq -r --arg rid "$RUNTIME_ID" '
+                [.runtimes[] | select(.identifier == $rid) | .supportedDeviceTypes[]
+                  | select(.name | contains("iPhone"))]
+                | last | .identifier')
+          if [ -z "$DEVICETYPE_ID" ] || [ "$DEVICETYPE_ID" = "null" ]; then
+            echo "ERROR: no iPhone simulator device type supported by runtime $RUNTIME_ID." >&2
+            echo "$RUNTIMES_JSON" | jq --arg rid "$RUNTIME_ID" '.runtimes[] | select(.identifier == $rid)'
+            exit 1
+          fi
+          echo "Selected device type: $DEVICETYPE_ID"
+
+          DEVICE_ID=$(xcrun simctl create "${{ matrix.device_name }}" "$DEVICETYPE_ID" "$RUNTIME_ID")
+          echo "Created device: $DEVICE_ID"
+          echo "device_id=$DEVICE_ID" >> "$GITHUB_OUTPUT"
+
+          xcrun simctl boot "$DEVICE_ID" || true
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+
+      - name: Install both apps, race them, and verify exactly one recorder
+        env:
+          DEVICE_ID: ${{ steps.boot_simulator.outputs.device_id }}
+          BUNDLE_ID_C: io.dataloom.processcontentionproof.appc
+          BUNDLE_ID_D: io.dataloom.processcontentionproof.appd
+          DATALOOM_DOMAIN: ${{ matrix.domain }}
+          STATE_FILE_NAME: ${{ matrix.state_file_name }}
+        run: |
+          set -euo pipefail
+          APP_C_PATH="apple-process-contention-proof-app/build/Build/Products/Debug-iphonesimulator/ProcessContentionProofAppC.app"
+          APP_D_PATH="apple-process-contention-proof-app/build/Build/Products/Debug-iphonesimulator/ProcessContentionProofAppD.app"
+          for APP_PATH in "$APP_C_PATH" "$APP_D_PATH"; do
+            if [ ! -d "$APP_PATH" ]; then
+              echo "ERROR: built app not found at $APP_PATH" >&2
+              find apple-process-contention-proof-app/build/Build/Products -maxdepth 3 || true
+              exit 1
+            fi
+          done
+
+          xcrun simctl install "$DEVICE_ID" "$APP_C_PATH"
+          xcrun simctl install "$DEVICE_ID" "$APP_D_PATH"
+
+          # A plain host-filesystem directory, exactly like
+          # apple-process-contention-proof's own shared directory -- see that
+          # job's identical step for why this works with no App Groups
+          # entitlement and no paid developer account. Suffixed with the
+          # domain so the two matrix legs, if ever run against a shared
+          # $RUNNER_TEMP, cannot collide (they do not today -- each matrix
+          # entry gets its own runner -- but this costs nothing and removes
+          # the assumption).
+          SHARED_DIR="${RUNNER_TEMP}/dataloom-conflict-log-contention-proof-${DATALOOM_DOMAIN}"
+          rm -rf "$SHARED_DIR"
+          mkdir -p "$SHARED_DIR"
+          READY_C="$SHARED_DIR/ready-c.marker"
+          READY_D="$SHARED_DIR/ready-d.marker"
+          GO_SIGNAL="$SHARED_DIR/go.marker"
+          RESULT_C="$SHARED_DIR/result-c.tsv"
+          RESULT_D="$SHARED_DIR/result-d.tsv"
+          echo "Shared host directory: $SHARED_DIR"
+          echo "Domain: $DATALOOM_DOMAIN"
+
+          echo "=== Launching app C (warms up, then waits to race) ==="
+          export SIMCTL_CHILD_DATALOOM_DOMAIN="$DATALOOM_DOMAIN"
+          export SIMCTL_CHILD_DATALOOM_SHARED_DIR="$SHARED_DIR"
+          export SIMCTL_CHILD_DATALOOM_READY_MARKER="$READY_C"
+          export SIMCTL_CHILD_DATALOOM_GO_SIGNAL="$GO_SIGNAL"
+          export SIMCTL_CHILD_DATALOOM_RESULT_FILE="$RESULT_C"
+          LAUNCH_C=$(xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID_C")
+          echo "$LAUNCH_C"
+          PID_C=$(echo "$LAUNCH_C" | sed -n 's/^.*: *\([0-9][0-9]*\)$/\1/p')
+          if [ -z "$PID_C" ]; then
+            echo "ERROR: could not parse a pid from app C's 'simctl launch' output: $LAUNCH_C" >&2
+            exit 1
+          fi
+          echo "App C pid: $PID_C"
+
+          echo "=== Waiting for app C to finish warming up ==="
+          READY_C_SEEN=0
+          for _ in $(seq 1 30); do
+            if [ -f "$READY_C" ]; then
+              READY_C_SEEN=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$READY_C_SEEN" != "1" ]; then
+            echo "ERROR: app C's ready marker never appeared within 30s: $READY_C" >&2
+            exit 1
+          fi
+
+          echo "=== Launching app D (warms up, then waits to race) ==="
+          export SIMCTL_CHILD_DATALOOM_READY_MARKER="$READY_D"
+          export SIMCTL_CHILD_DATALOOM_RESULT_FILE="$RESULT_D"
+          # SIMCTL_CHILD_DATALOOM_DOMAIN/SHARED_DIR/GO_SIGNAL are unchanged
+          # from app C's launch above -- both apps must race in the exact
+          # same domain against the exact same shared directory and go
+          # signal.
+          LAUNCH_D=$(xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID_D")
+          echo "$LAUNCH_D"
+          PID_D=$(echo "$LAUNCH_D" | sed -n 's/^.*: *\([0-9][0-9]*\)$/\1/p')
+          if [ -z "$PID_D" ]; then
+            echo "ERROR: could not parse a pid from app D's 'simctl launch' output: $LAUNCH_D" >&2
+            exit 1
+          fi
+          echo "App D pid: $PID_D"
+
+          if [ "$PID_C" = "$PID_D" ]; then
+            echo "ERROR: app C and app D were launched with the identical pid ($PID_C) -- they are not genuinely separate OS processes." >&2
+            exit 1
+          fi
+
+          echo "=== Waiting for app D to be alive and polling ==="
+          READY_D_SEEN=0
+          for _ in $(seq 1 30); do
+            if [ -f "$READY_D" ]; then
+              READY_D_SEEN=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$READY_D_SEEN" != "1" ]; then
+            echo "ERROR: app D's ready marker never appeared within 30s: $READY_D" >&2
+            exit 1
+          fi
+
+          echo "=== Both processes confirmed alive and waiting -- releasing them together ==="
+          touch "$GO_SIGNAL"
+
+          echo "=== Waiting for both processes' results ==="
+          RESULTS_SEEN=0
+          for _ in $(seq 1 30); do
+            if [ -f "$RESULT_C" ] && [ -f "$RESULT_D" ]; then
+              RESULTS_SEEN=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$RESULTS_SEEN" != "1" ]; then
+            echo "ERROR: one or both result files never appeared within 30s (C: $RESULT_C, D: $RESULT_D)." >&2
+            [ -f "$RESULT_C" ] && { echo "--- result-c.tsv ---"; cat "$RESULT_C"; } || echo "result-c.tsv missing"
+            [ -f "$RESULT_D" ] && { echo "--- result-d.tsv ---"; cat "$RESULT_D"; } || echo "result-d.tsv missing"
+            exit 1
+          fi
+
+          # `cut`, never `IFS=$'\t' read -r a b < file` -- see
+          # apple-process-contention-proof's own identical step comment for
+          # the genuine bug that convention caused on real CI (bash's `read`
+          # collapses tabs as IFS whitespace regardless of explicit IFS,
+          # silently shifting later fields). Neither field in this domain's
+          # own two-field result line is ever empty, but `cut` is used
+          # unconditionally here anyway rather than re-litigating that risk
+          # per call site.
+          OUTCOME_C=$(cut -d$'\t' -f1 "$RESULT_C")
+          VERSION_C=$(cut -d$'\t' -f2 "$RESULT_C")
+          OUTCOME_D=$(cut -d$'\t' -f1 "$RESULT_D")
+          VERSION_D=$(cut -d$'\t' -f2 "$RESULT_D")
+          echo "App C result: outcome=$OUTCOME_C persistedVersion=$VERSION_C"
+          echo "App D result: outcome=$OUTCOME_D persistedVersion=$VERSION_D"
+
+          RECORDED_COUNT=0
+          ALREADY_RECORDED_COUNT=0
+          [ "$OUTCOME_C" = "RECORDED" ] && RECORDED_COUNT=$((RECORDED_COUNT + 1))
+          [ "$OUTCOME_D" = "RECORDED" ] && RECORDED_COUNT=$((RECORDED_COUNT + 1))
+          [ "$OUTCOME_C" = "ALREADY_RECORDED" ] && ALREADY_RECORDED_COUNT=$((ALREADY_RECORDED_COUNT + 1))
+          [ "$OUTCOME_D" = "ALREADY_RECORDED" ] && ALREADY_RECORDED_COUNT=$((ALREADY_RECORDED_COUNT + 1))
+
+          if [ "$RECORDED_COUNT" != "1" ]; then
+            echo "ERROR: expected exactly one RECORDED outcome, got $RECORDED_COUNT (C=$OUTCOME_C, D=$OUTCOME_D)." >&2
+            exit 1
+          fi
+          if [ "$ALREADY_RECORDED_COUNT" != "1" ]; then
+            echo "ERROR: expected exactly one ALREADY_RECORDED outcome, got $ALREADY_RECORDED_COUNT (C=$OUTCOME_C, D=$OUTCOME_D)." >&2
+            exit 1
+          fi
+
+          if [ "$VERSION_C" != "0" ] || [ "$VERSION_D" != "0" ]; then
+            echo "ERROR: expected both processes to observe persistedVersion 0 (exactly one insert, zero compare-and-set overwrites), got C=$VERSION_C D=$VERSION_D." >&2
+            exit 1
+          fi
+
+          echo "=== Bonus corroboration: confirming the real production state file was written ==="
+          # Unlike AppleFileCircuitBreakerStateStore's plain-text TSV,
+          # AppleFileDurableStateStore's on-disk snapshot format is
+          # hex-encoded (see that store's own class doc in
+          # dataloom-runtime/src/iosMain/.../AppleFileDurableStateStore.kt)
+          # and not casually greppable for a domain-specific substring the
+          # way the circuit-breaker job's own "grep HALF_OPEN" step is, so
+          # this step only confirms the shared file both racing processes'
+          # real AppleFileDurableStateStore instances write to was actually
+          # created. The load-bearing assertions above -- exactly one
+          # RECORDED/ALREADY_RECORDED, persistedVersion == 0 read back by the
+          # app processes themselves through a freshly constructed store
+          # instance -- are what this job's pass/fail genuinely rests on.
+          STATE_FILE="$SHARED_DIR/$STATE_FILE_NAME"
+          if [ ! -f "$STATE_FILE" ]; then
+            echo "ERROR: expected production state file not found: $STATE_FILE" >&2
+            exit 1
+          fi
+          ls -la "$STATE_FILE"
+
+          echo "OK: exactly one of two genuinely separate Simulator app processes recorded; the other observed AlreadyRecorded."
+          echo "    pid C: $PID_C, pid D: $PID_D"
+          echo "    persistedVersion: $VERSION_C (both sides agree -- exactly one insert, zero overwrites)"
+
+      - name: Clean up the Simulator device and shared directory
+        if: always()
+        env:
+          DEVICE_ID: ${{ steps.boot_simulator.outputs.device_id }}
+          BUNDLE_ID_C: io.dataloom.processcontentionproof.appc
+          BUNDLE_ID_D: io.dataloom.processcontentionproof.appd
+          DATALOOM_DOMAIN: ${{ matrix.domain }}
+        run: |
+          if [ -n "${DEVICE_ID:-}" ]; then
+            xcrun simctl terminate "$DEVICE_ID" "$BUNDLE_ID_C" || true
+            xcrun simctl terminate "$DEVICE_ID" "$BUNDLE_ID_D" || true
+            xcrun simctl shutdown "$DEVICE_ID" || true
+            xcrun simctl delete "$DEVICE_ID" || true
+          fi
+          rm -rf "${RUNNER_TEMP}/dataloom-conflict-log-contention-proof-${DATALOOM_DOMAIN}" || true

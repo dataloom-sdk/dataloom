@@ -11,6 +11,10 @@
 		D100000042 /* DataLoomProcessContentionProof.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = D100000003 /* DataLoomProcessContentionProof.xcframework */; };
 		D100000043 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000001 /* AppDelegate.swift */; };
 		D100000044 /* DataLoomProcessContentionProof.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = D100000003 /* DataLoomProcessContentionProof.xcframework */; };
+		D100000050 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000001 /* AppDelegate.swift */; };
+		D100000051 /* DataLoomProcessContentionProof.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = D100000003 /* DataLoomProcessContentionProof.xcframework */; };
+		D100000052 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000001 /* AppDelegate.swift */; };
+		D100000053 /* DataLoomProcessContentionProof.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = D100000003 /* DataLoomProcessContentionProof.xcframework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -19,6 +23,8 @@
 		D100000003 /* DataLoomProcessContentionProof.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = DataLoomProcessContentionProof.xcframework; sourceTree = "<group>"; };
 		D100000012 /* ProcessContentionProofAppA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ProcessContentionProofAppA.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D100000022 /* ProcessContentionProofAppB.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ProcessContentionProofAppB.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D100000054 /* ProcessContentionProofAppC.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ProcessContentionProofAppC.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D100000055 /* ProcessContentionProofAppD.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ProcessContentionProofAppD.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -38,6 +44,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D100000056 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D100000051 /* DataLoomProcessContentionProof.xcframework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D100000057 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D100000053 /* DataLoomProcessContentionProof.xcframework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -46,6 +68,8 @@
 			children = (
 				D100000012 /* ProcessContentionProofAppA.app */,
 				D100000022 /* ProcessContentionProofAppB.app */,
+				D100000054 /* ProcessContentionProofAppC.app */,
+				D100000055 /* ProcessContentionProofAppD.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -114,6 +138,40 @@
 			productReference = D100000022 /* ProcessContentionProofAppB.app */;
 			productType = "com.apple.product-type.application";
 		};
+		D100000058 /* ProcessContentionProofAppC */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D100000059 /* Build configuration list for PBXNativeTarget "ProcessContentionProofAppC" */;
+			buildPhases = (
+				D100000064 /* Sources */,
+				D100000056 /* Frameworks */,
+				D100000062 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ProcessContentionProofAppC;
+			productName = ProcessContentionProofAppC;
+			productReference = D100000054 /* ProcessContentionProofAppC.app */;
+			productType = "com.apple.product-type.application";
+		};
+		D100000060 /* ProcessContentionProofAppD */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D100000061 /* Build configuration list for PBXNativeTarget "ProcessContentionProofAppD" */;
+			buildPhases = (
+				D100000065 /* Sources */,
+				D100000057 /* Frameworks */,
+				D100000063 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ProcessContentionProofAppD;
+			productName = ProcessContentionProofAppD;
+			productReference = D100000055 /* ProcessContentionProofAppD.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -126,6 +184,12 @@
 						CreatedOnToolsVersion = 15.0;
 					};
 					D100000026 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					D100000058 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					D100000060 = {
 						CreatedOnToolsVersion = 15.0;
 					};
 				};
@@ -145,6 +209,8 @@
 			targets = (
 				D100000016 /* ProcessContentionProofAppA */,
 				D100000026 /* ProcessContentionProofAppB */,
+				D100000058 /* ProcessContentionProofAppC */,
+				D100000060 /* ProcessContentionProofAppD */,
 			);
 		};
 /* End PBXProject section */
@@ -158,6 +224,20 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		D100000025 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D100000062 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D100000063 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -180,6 +260,22 @@
 			buildActionMask = 2147483647;
 			files = (
 				D100000043 /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D100000064 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D100000050 /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D100000065 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D100000052 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -330,6 +426,150 @@
 			};
 			name = Release;
 		};
+		D100000066 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Sources/ProcessContentionProofApp/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.dataloom.processcontentionproof.appc";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		D100000067 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Sources/ProcessContentionProofApp/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.dataloom.processcontentionproof.appc";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		D100000068 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Sources/ProcessContentionProofApp/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.dataloom.processcontentionproof.appd";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		D100000069 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Sources/ProcessContentionProofApp/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.dataloom.processcontentionproof.appd";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		D100000035 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -422,6 +662,24 @@
 			buildConfigurations = (
 				D100000028 /* Debug */,
 				D100000029 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D100000059 /* Build configuration list for PBXNativeTarget "ProcessContentionProofAppC" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D100000066 /* Debug */,
+				D100000067 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D100000061 /* Build configuration list for PBXNativeTarget "ProcessContentionProofAppD" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D100000068 /* Debug */,
+				D100000069 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

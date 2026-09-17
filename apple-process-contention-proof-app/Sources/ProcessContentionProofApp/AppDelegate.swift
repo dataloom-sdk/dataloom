@@ -1,21 +1,38 @@
 // Minimal UIKit application used only by the Apple Simulator cross-process
-// probe-contention CI proof (#94/#95). It is not a distributable product and
+// contention CI proofs (#94/#95). It is not a distributable product and
 // performs no networking and no production credentials -- see
 // docs/apple/process-contention-proof.md for the full CI shape this app is
 // built, installed, and raced under.
 //
 // This single Swift file, and the single shared Info.plist beside it, are
-// used by BOTH app targets this project declares --
-// ProcessContentionProofAppA and ProcessContentionProofAppB. The two targets
-// differ only in their own PRODUCT_BUNDLE_IDENTIFIER build setting
-// (io.dataloom.processcontentionproof.appa / ...appb) -- there is no
-// source-level "A" vs "B" branch baked into this file at build time. Instead,
-// the CI script launches each installed app with a distinct DATALOOM_ROLE
-// environment variable (via `simctl launch`'s own documented
+// used by all FOUR app targets this project declares --
+// ProcessContentionProofAppA/AppB (the original circuit-breaker domain) and
+// ProcessContentionProofAppC/AppD (added for #95's two conflict-log
+// domains). The four targets differ only in their own
+// PRODUCT_BUNDLE_IDENTIFIER build setting (io.dataloom.processcontentionproof.appa/
+// ...appb/...appc/...appd) -- there is no source-level "A" vs "B" vs "C" vs
+// "D" branch baked into this file at build time. Instead, the CI script
+// launches each installed app with distinct DATALOOM_ROLE/DATALOOM_DOMAIN
+// environment variables (via `simctl launch`'s own documented
 // `SIMCTL_CHILD_*` environment-forwarding convention), and this file reads
-// that at runtime. This keeps the whole two-process race to one Xcode
-// project, one Swift file, and one Kotlin/Native module, rather than forking
-// the proof logic into two copies that could drift.
+// those at runtime. This keeps the whole family of two-process races to one
+// Xcode project, one Swift file, and one Kotlin/Native module, rather than
+// forking the proof logic into per-domain copies that could drift --
+// AppC/AppD are reused, unmodified, across both of #95's conflict-log
+// domains by varying DATALOOM_DOMAIN per CI job/matrix entry rather than by
+// declaring yet more app targets.
+//
+// DATALOOM_DOMAIN selects which real production path this launch drives:
+// "CIRCUIT_BREAKER" (the default when unset, preserving AppA/AppB's original
+// behavior exactly), "UNRESOLVED_CONFLICT", or "RESOLVED_DECISION". Only the
+// circuit-breaker domain has an asymmetric opener("A")/racer("B") shape; the
+// two conflict-log domains are symmetric -- both racing processes warm up
+// and then race identically, mirroring their own Android precedents
+// (UnresolvedConflictContentionContentProviderBase/
+// ResolvedConflictDecisionContentionContentProviderBase) exactly. See
+// AppleUnresolvedConflictLogContentionProof's/
+// AppleResolvedConflictDecisionLogContentionProof's own KDoc
+// (apple-process-contention-proof/src/iosMain/...) for why.
 //
 // This app deliberately omits Info.plist's `UIApplicationSceneManifest` key,
 // matching apple-process-termination-proof-app's own precedent: UIKit uses
@@ -53,8 +70,18 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         // loudly, since only DATALOOM_ROLE == "A" changes behavior at all;
         // an absent/unexpected value falls back to the strictly narrower
         // "B" path (touch the ready marker, then race) instead of silently
-        // attempting to reopen an already-open circuit.
+        // attempting to reopen an already-open circuit. Only consulted when
+        // DATALOOM_DOMAIN is "CIRCUIT_BREAKER" (or absent) -- the two
+        // conflict-log domains below have no role asymmetry of their own.
         let role = environment["DATALOOM_ROLE"] ?? "B"
+
+        // Defaults to "CIRCUIT_BREAKER", preserving AppA/AppB's original,
+        // already-macOS-CI-proven behavior byte-for-byte when this variable
+        // is absent (see docs/apple/process-contention-proof.md's "Update:
+        // first real macOS CI run" section for that proof). AppC/AppD are
+        // launched with this set explicitly by the CI job/matrix entry
+        // driving #95's conflict-log domains.
+        let domain = environment["DATALOOM_DOMAIN"] ?? "CIRCUIT_BREAKER"
 
         // Runs on a background queue, never the main thread: this call
         // blocks its calling thread (via Kotlin's own `runBlocking`) for up
@@ -64,36 +91,70 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         // reach a genuinely running, launched state without waiting on the
         // race to finish first.
         DispatchQueue.global(qos: .userInitiated).async {
-            if role == "A" {
-                AppleCircuitBreakerProbeContentionProof.shared.openCircuitAndSignalReady(
+            let line: String
+            switch domain {
+            case "UNRESOLVED_CONFLICT":
+                // Symmetric racers -- both processes warm up (harmless
+                // read), then race. No role branch, unlike CIRCUIT_BREAKER
+                // below; see AppleUnresolvedConflictLogContentionProof's own
+                // KDoc for why.
+                AppleUnresolvedConflictLogContentionProof.shared.warmUpAndSignalReady(
                     directoryPath: sharedDirectory,
                     readyMarkerPath: readyMarkerPath
                 )
-            } else {
-                FileManager.default.createFile(atPath: readyMarkerPath, contents: nil)
-            }
+                let result = AppleUnresolvedConflictLogContentionProof.shared.waitForGoSignalThenAttemptRecord(
+                    directoryPath: sharedDirectory,
+                    goSignalPath: goSignalPath,
+                    maxPollAttempts: 12000
+                )
+                line = "\(result.outcome)\t\(result.persistedVersion)\n"
 
-            // 12,000 * 5ms == 60s, matching
-            // AppleCircuitBreakerProbeContentionProof's own Kotlin-side
-            // DEFAULT_MAX_POLL_ATTEMPTS -- Kotlin/Native's Objective-C header
-            // generation does not expose Kotlin default parameter values to
-            // Swift, so this value must be passed explicitly here.
-            let result = AppleCircuitBreakerProbeContentionProof.shared.waitForGoSignalThenAttemptProbe(
-                directoryPath: sharedDirectory,
-                goSignalPath: goSignalPath,
-                maxPollAttempts: 12000
-            )
+            case "RESOLVED_DECISION":
+                AppleResolvedConflictDecisionLogContentionProof.shared.warmUpAndSignalReady(
+                    directoryPath: sharedDirectory,
+                    readyMarkerPath: readyMarkerPath
+                )
+                let result = AppleResolvedConflictDecisionLogContentionProof.shared.waitForGoSignalThenAttemptRecord(
+                    directoryPath: sharedDirectory,
+                    goSignalPath: goSignalPath,
+                    maxPollAttempts: 12000
+                )
+                line = "\(result.outcome)\t\(result.persistedVersion)\n"
+
+            default: // "CIRCUIT_BREAKER" -- AppA/AppB's original, unmodified behavior.
+                if role == "A" {
+                    AppleCircuitBreakerProbeContentionProof.shared.openCircuitAndSignalReady(
+                        directoryPath: sharedDirectory,
+                        readyMarkerPath: readyMarkerPath
+                    )
+                } else {
+                    FileManager.default.createFile(atPath: readyMarkerPath, contents: nil)
+                }
+
+                // 12,000 * 5ms == 60s, matching
+                // AppleCircuitBreakerProbeContentionProof's own Kotlin-side
+                // DEFAULT_MAX_POLL_ATTEMPTS -- Kotlin/Native's Objective-C
+                // header generation does not expose Kotlin default parameter
+                // values to Swift, so this value must be passed explicitly
+                // here.
+                let result = AppleCircuitBreakerProbeContentionProof.shared.waitForGoSignalThenAttemptProbe(
+                    directoryPath: sharedDirectory,
+                    goSignalPath: goSignalPath,
+                    maxPollAttempts: 12000
+                )
+                line = "\(result.outcome)\t\(result.rejectionReason)\t\(result.probeGeneration)\n"
+            }
 
             // The host CI script reads this file directly from outside this
             // process (the same "host reads a file the app wrote, not a
             // claim the app makes via IPC" pattern
             // apple-process-termination-proof-app's own AppDelegate
             // established) -- this report, not an in-process assertion, is
-            // what the CI job's own assertions are built on. The real
-            // mutual-exclusion enforcement is
-            // AppleFileCircuitBreakerStateStore's flock-based
-            // compare-and-set inside the call above, not this file write.
-            let line = "\(result.outcome)\t\(result.rejectionReason)\t\(result.probeGeneration)\n"
+            // what each CI job's own assertions are built on. The real
+            // mutual-exclusion enforcement is each domain's own
+            // AppleFileCircuitBreakerStateStore/AppleFileDurableStateStore
+            // flock-based compare-and-set inside the calls above, not this
+            // file write.
             try? line.write(toFile: resultFilePath, atomically: true, encoding: .utf8)
         }
 

@@ -26,11 +26,12 @@
 	  directly in AppDelegate.application(_:didFinishLaunchingWithOptions:),
 	  with no SceneDelegate) -- the same pattern
 	  apple-process-termination-proof-app already established. This one
-	  Info.plist and one AppDelegate.swift are shared by BOTH app targets in
-	  this project (ProcessContentionProofAppA/B); only PRODUCT_BUNDLE_IDENTIFIER
-	  differs per target's own build settings, and AppDelegate.swift reads its
-	  role from the DATALOOM_ROLE environment variable each target is launched
-	  with (see .github/workflows/apple-validation.yml) rather than from any
+	  Info.plist and one AppDelegate.swift are shared by all FOUR app targets
+	  in this project (ProcessContentionProofAppA/B/C/D); only
+	  PRODUCT_BUNDLE_IDENTIFIER differs per target's own build settings, and
+	  AppDelegate.swift reads its role/domain from the DATALOOM_ROLE/
+	  DATALOOM_DOMAIN environment variables each target is launched with (see
+	  .github/workflows/apple-validation.yml) rather than from any
 	  source-level or Info.plist-level difference.
 	-->
 	<key>UILaunchScreen</key>

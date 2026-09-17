@@ -349,6 +349,188 @@ own contention proof remain named, bounded follow-ups -- not part of this
 update, and not yet reflected in `#94`/`#95`'s dashboard percentages, which
 stay at their current values pending that follow-up work actually landing.
 
+## Update: extended to `#95`'s conflict-log domains (round 33, 2026-09-17)
+
+**New CI infrastructure added 2026-09-17. Unverified until it runs on real
+macOS CI** -- the same disclosure posture this document's own "Status"
+section above used for the circuit-breaker domain before its first real run.
+`docs/status/market-readiness.md`'s `#95` row gets a new dated "Recently
+shipped" entry describing this work but **percentage unchanged** (still 72%)
+until a real green CI run is observed for both new matrix legs.
+
+This extends the identical, now-macOS-CI-proven mechanism above (two
+genuinely independent, independently bundle-identified Simulator app
+processes racing on a shared, unsandboxed host directory) from the
+circuit-breaker domain to `#95`'s two durable conflict-log domains:
+`DurableUnresolvedConflictLog` and `DurableResolvedConflictDecisionLog` --
+the specific follow-up this document's own "What this builds"/references
+section, and `docs/status/market-readiness.md`'s `#95` row, already named as
+a "concrete, bounded follow-up rather than an open investigation."
+
+### What changed
+
+1. **`apple-process-contention-proof` (same Kotlin/Native module, new public
+   objects)**: `ConflictRecordContentionProofResult` (a new plain
+   `String`/`Long` result type, mirroring `ProcessContentionProofResult`'s
+   own interop discipline) and two new objects,
+   `AppleUnresolvedConflictLogContentionProof`/
+   `AppleResolvedConflictDecisionLogContentionProof`. Unlike
+   `AppleCircuitBreakerProbeContentionProof`'s asymmetric
+   opener/racer shape, these two are symmetric -- both racing processes
+   independently warm up (`warmUpAndSignalReady`, a harmless
+   `DurableStateStore.load`) and then race
+   (`waitForGoSignalThenAttemptRecord`) to `record()` the identical, fixed
+   scope/record, mirroring `UnresolvedConflictContentionContentProviderBase`/
+   `ResolvedConflictDecisionContentionContentProviderBase`'s own Android
+   precedent exactly (see those classes' KDoc,
+   `dataloom-queue-room/src/androidTest/kotlin/io/dataloom/queue/room/`).
+   Both drive the real production `DurableUnresolvedConflictLog.record`/
+   `DurableResolvedConflictDecisionLog.record` path directly against
+   `AppleFileDurableStateStore` (`dataloom-runtime/src/iosMain/...` --
+   already existed, unmodified, from `#93`'s own "Apple file-backed
+   `DurableStateStore`" work) rather than a lower-level store, matching the
+   circuit-breaker proof's own choice to exercise the domain type's real
+   record/outcome logic, not just the store underneath it. A small
+   `ConflictRecordContentionProofSupport.kt` file factors the
+   touch-marker/busy-poll-for-marker helpers shared by both new objects;
+   `AppleCircuitBreakerProbeContentionProof` itself is deliberately left
+   with its own already-proven, unmodified duplicate of this same logic
+   rather than refactored to share it -- see that file's own doc for why.
+2. **`apple-process-contention-proof-app/` (two new app targets, same Xcode
+   project)**: `ProcessContentionProofAppC`/`ProcessContentionProofAppD`
+   (bundle ids `io.dataloom.processcontentionproof.appc`/`...appd`), sharing
+   the same `AppDelegate.swift`/`Info.plist` the existing `AppA`/`AppB`
+   targets already share. `AppDelegate.swift` gained a new
+   `DATALOOM_DOMAIN` environment variable (`"CIRCUIT_BREAKER"` by default,
+   preserving `AppA`/`AppB`'s original behavior byte-for-byte when unset;
+   `"UNRESOLVED_CONFLICT"`/`"RESOLVED_DECISION"` route to the two new
+   objects instead) -- `AppC`/`AppD` are reused, unmodified, across *both*
+   conflict-log domains by varying this one environment variable per CI
+   job/matrix entry, rather than declaring four more per-domain app targets.
+3. **New CI job, `apple-conflict-log-contention-proof`**: a single job with
+   a two-entry `strategy.matrix` (one leg per domain), each on its own
+   dedicated `macos-15` runner with its own checkout/build/Simulator device
+   -- a failure in one domain's leg cannot affect the other's, or either
+   already-existing job. One shared job body was chosen over two
+   fully-copy-pasted jobs specifically because both domains share the
+   identical persistence path, the identical symmetric race shape, and the
+   identical two app targets, differing only in which `DATALOOM_DOMAIN` is
+   launched with and which on-disk state-file name to check for at the end
+   (see the job's own header comment in `.github/workflows/apple-validation.yml`
+   for the full reasoning). Each leg: builds `AppC`/`AppD`, creates/boots a
+   dedicated Simulator device (identical runtime/device-type-selection logic
+   to every other job in this file), launches `AppC` then `AppD` with the
+   matrix's `DATALOOM_DOMAIN` and shared directory/marker paths, releases
+   both together via a shared "go" file once both ready markers are seen,
+   then parses each result file (`OUTCOME\tPERSISTED_VERSION`, via `cut`,
+   never `IFS=$'\t' read` -- see the job's own comment recalling the exact
+   real bug that convention caused on this same file's circuit-breaker job)
+   and asserts exactly one `RECORDED`, one `ALREADY_RECORDED`, and
+   `persistedVersion == 0` on both sides. Carries `continue-on-error: true`
+   for the same reason `apple-process-contention-proof` itself did before
+   its own first real run.
+4. Unlike the circuit-breaker job's "bonus corroboration" step (a plain-text
+   grep for `HALF_OPEN`), this job's own bonus-corroboration step only
+   confirms the shared `AppleFileDurableStateStore` snapshot file exists --
+   that store's on-disk format is hex-encoded (see its own class doc), not
+   casually greppable for a domain-specific substring the way
+   `AppleFileCircuitBreakerStateStore`'s plain-text TSV is. The load-bearing
+   assertions are the `RECORDED`/`ALREADY_RECORDED`/`persistedVersion`
+   checks reported by the app processes themselves, not this file-existence
+   check.
+
+### What was verified from this Windows session
+
+- `./gradlew.bat :apple-process-contention-proof:compileKotlinIosArm64
+  :apple-process-contention-proof:compileKotlinIosSimulatorArm64
+  :apple-process-contention-proof:compileKotlinIosX64
+  -Pdataloom.appleKlibCrossCompile=true` -- succeeded (run individually per
+  target, per this session's own Windows Gradle-concurrency discipline).
+- The equivalent three `compileTestKotlinIos*` tasks (the new
+  `AppleUnresolvedConflictLogContentionProofTest`/
+  `AppleResolvedConflictDecisionLogContentionProofTest`, both using
+  `runBlocking`, never `runTest`, per this repository's own documented real
+  regression from round 32) -- all three succeeded.
+- `./gradlew.bat :apple-process-contention-proof:updateKotlinAbi
+  -Pdataloom.appleKlibCrossCompile=true` then `checkKotlinAbi` -- passed
+  clean; `git status` confirmed the diff to
+  `apple-process-contention-proof/api/apple-process-contention-proof.klib.api`
+  is purely additive (the new `ConflictRecordContentionProofResult` class
+  and the two new objects), and no other module's ABI baseline changed.
+- Every new/modified shell block inside `.github/workflows/apple-validation.yml`'s
+  new job was extracted and checked with `bash -n` from this Windows
+  session -- all five blocks passed. This does not confirm the scripts
+  behave correctly against real `simctl`/`xcodebuild` output.
+- The `project.pbxproj` additions (two new `PBXNativeTarget`s and their full
+  supporting object graph -- `PBXBuildFile`/`PBXFileReference`/
+  `PBXFrameworksBuildPhase`/`PBXResourcesBuildPhase`/`PBXSourcesBuildPhase`/
+  `XCBuildConfiguration`/`XCConfigurationList` -- plus the `PBXProject`'s own
+  `targets`/`TargetAttributes` lists) were hand-authored by duplicating the
+  existing `AppA`/`AppB` object graph with fresh, non-colliding object IDs,
+  and checked programmatically from this session for balanced
+  braces/parentheses and for zero duplicate object-ID definitions -- no
+  `plutil`/Xcode project validator was available on this Windows host (the
+  same limitation this document's own "What was NOT verified" section
+  already named for the original two-target project).
+- The `Info.plist` comment-only edit was reviewed for well-formed XML by
+  hand (no `plutil`/XML validator available on this Windows host either).
+
+### What was NOT, and could not be, verified from this Windows session
+
+The same category of unknowns this document's own "What was NOT verified"
+section above already named for the circuit-breaker domain's first run,
+now applying to the two new app targets and the new job:
+
+- Whether Xcode accepts this hand-authored four-target `project.pbxproj`
+  (two new targets added to the existing two) -- the two-target version of
+  this exact pattern was confirmed to work for real on the circuit-breaker
+  job's own first run (see the "Update" section above); the four-target
+  extension itself is unverified.
+- Whether `AppDelegate.swift`'s new `DATALOOM_DOMAIN` branch behaves
+  correctly at runtime -- the Kotlin/Swift interop surface
+  (`AppleUnresolvedConflictLogContentionProof.shared.warmUpAndSignalReady`/
+  `waitForGoSignalThenAttemptRecord`, `AppleResolvedConflictDecisionLogContentionProof`'s
+  same two methods) compiles and klib-verifies, but the generated
+  Objective-C header has never actually been consumed by real Xcode/Swift
+  compilation.
+- Whether two genuinely independent Simulator processes racing to `record()`
+  the same conflict/decision through `AppleFileDurableStateStore`'s real
+  `flock`-based compare-and-set actually produces the expected
+  `RECORDED`/`ALREADY_RECORDED` split under real inter-process timing --
+  the underlying mechanism (Simulator apps sharing an unsandboxed host
+  directory) is now confirmed real for the circuit-breaker domain, and
+  `AppleFileDurableStateStore`'s locking is structurally identical to
+  `AppleFileCircuitBreakerStateStore`'s, but this specific domain's own race
+  has never run on real hardware/Simulator.
+- The two-entry `strategy.matrix` job shape itself -- this is the first job
+  in this workflow file to use a GitHub Actions matrix; whether it schedules
+  and reports both legs correctly (independent pass/fail per leg, both
+  required if `continue-on-error` is later removed) is unverified from this
+  session (no way to dispatch a real GitHub Actions run from here).
+- `xcrun simctl launch`'s exact stdout pid format for these two new bundle
+  identifiers -- reused verbatim from the already-confirmed parsing this
+  workflow file's other jobs use, not independently re-confirmed for
+  `io.dataloom.processcontentionproof.appc`/`...appd`.
+
+### Deliberately out of scope for this same change
+
+Retry-budget's own Apple cross-process contention proof
+(`AppleFileQueueProvider`'s retry-budget compare-and-set) is **not**
+attempted here. Unlike the two conflict-log domains above, no Android
+retry-budget-*contention*-specific instrumented test exists as a precedent
+to mirror (only `AndroidProcessTerminationRetryBudgetInstrumentedTest`,
+a process-*kill* proof, exists for that structure) -- extending the
+mechanism to it would be a genuinely separate design exercise (deciding
+what "contention" even means for a retry-budget compare-and-set with no
+existing Android proof shape to copy), not a mechanical port like the two
+conflict-log domains were. Scoping it out here mirrors exactly how round 32
+itself scoped the original proof to the circuit-breaker domain alone rather
+than attempting all three domains named as follow-ups in one PR. Apple
+process-kill/relaunch evidence for either conflict-log domain (a
+structurally separate proof shape from contention, extending
+`apple-process-termination-proof` instead of this module) is likewise left
+open.
+
 ## References
 
 - [`docs/apple/cross-process-contention-investigation.md`](cross-process-contention-investigation.md) --
@@ -360,10 +542,17 @@ stay at their current values pending that follow-up work actually landing.
   discipline, and disclosure shape all follow that document's precedent
   directly.
 - `AndroidCircuitBreakerProbeContentionInstrumentedTest`/
-  `CircuitBreakerProbeContentionContentProviderBase`
+  `CircuitBreakerProbeContentionContentProviderBase`,
+  `AndroidUnresolvedConflictLogContentionInstrumentedTest`/
+  `UnresolvedConflictContentionContentProviderBase`,
+  `AndroidResolvedConflictDecisionLogContentionInstrumentedTest`/
+  `ResolvedConflictDecisionContentionContentProviderBase`
   (`dataloom-queue-room/src/androidTest/kotlin/io/dataloom/queue/room/`) --
-  the Android proof this Apple proof mirrors in intent.
-- `.github/workflows/apple-validation.yml` -- the new
-  `apple-process-contention-proof` job.
+  the three Android proofs this module's three Apple proof objects each
+  mirror in intent.
+- `.github/workflows/apple-validation.yml` -- the `apple-process-contention-proof`
+  job (circuit breaker) and the new `apple-conflict-log-contention-proof`
+  job (both conflict-log domains, as a two-entry matrix).
 - `apple-process-contention-proof/` and `apple-process-contention-proof-app/` --
-  the new module and apps.
+  the module (now three proof objects) and apps (now four targets:
+  `AppA`/`AppB`/`AppC`/`AppD`).
