@@ -2,20 +2,20 @@
 
 ## Status
 
-**New CI infrastructure added 2026-09-15 (round 32). Unverified until it
-runs on real macOS CI.** This document describes what was built, exactly
-what could and could not be verified from a Windows development host, and
-the specific format/label uncertainties left for a real macOS CI run to
-resolve -- the same disclosure shape
+**New CI infrastructure added 2026-09-15 (round 32); confirmed genuinely
+real across five consecutive green macOS CI runs, `continue-on-error`
+removed 2026-09-17 (round 33).** This document describes what was built,
+what could and could not be verified from a Windows development host before
+its first real run, and the format/label uncertainties that run resolved --
+the same disclosure shape
 [`docs/apple/process-termination-proof.md`](process-termination-proof.md)
-used for round 31's single-process kill/relaunch proof before its own first
-real run. `docs/status/market-readiness.md`'s `#94` row is bumped with a new
-dated "Recently shipped" entry describing this work but **percentage
-unchanged** until a real green CI run is observed, matching that same
-precedent exactly. `#95`'s row is left with sharper "still pending" text
-(see that row) rather than a percentage bump, since this proof exercises the
-circuit-breaker domain specifically, not either of `#95`'s own two
-conflict-log domains.
+used for round 31's single-process kill/relaunch proof. See "Update:
+`continue-on-error` removed (round 33, 2026-09-17)" below for the full
+confirmation. `#94`/`#95`'s dashboard percentages remain unchanged: this
+proof exercises the circuit-breaker domain specifically, not `#94`'s
+retry-budget structure or either of `#95`'s own two conflict-log domains --
+extending the identical app/module/CI shape to those is a named, bounded
+follow-up, not yet done.
 
 This document acts on
 [`docs/apple/cross-process-contention-investigation.md`](cross-process-contention-investigation.md)'s
@@ -327,12 +327,27 @@ neither of which affects the core finding above:
   Fixed by replacing the `IFS`-based `read` with `cut -d$'\t' -f<n>`, which
   treats every tab as a literal, non-collapsing separator.
 
-`continue-on-error: true` is deliberately left in place on this job for now
--- one genuine green run, immediately following two real fixes, is not yet
-the same bar `apple-process-termination-proof`'s own job met (multiple
-consecutive genuine green runs) before its `continue-on-error` was removed.
-Removing it and reconsidering `#94`/`#95`'s dashboard percentages are both
-follow-up decisions, not part of this PR.
+## Update: `continue-on-error` removed (round 33, 2026-09-17)
+
+Following the two fixes above, this job produced four further genuine green
+runs across separate PR/main pushes -- real distinct pids each time, exactly
+one `ALLOWED`/one `REJECTED(PROBE_IN_FLIGHT)`, `HALF_OPEN` state confirmed
+each time, including one run on `main` itself. Five genuine green runs total
+now meets the same bar `apple-process-termination-proof`'s own circuit-
+breaker job cleared before its `continue-on-error` was removed in round 31.
+`continue-on-error: true` has been removed from this job in
+`.github/workflows/apple-validation.yml` -- it is now a required check like
+every other job in this workflow.
+
+This closes out the infrastructure-proving phase of this document. The
+mechanism itself (Simulator sandbox bypass, `flock`-based mutual exclusion
+across two genuinely independent processes) is confirmed real for the
+circuit-breaker domain specifically. Extending the identical app/module/CI
+shape to `#95`'s own two conflict-log domains (`DurableUnresolvedConflictLog`,
+`DurableResolvedConflictDecisionLog`) and to `#94`'s retry-budget structure's
+own contention proof remain named, bounded follow-ups -- not part of this
+update, and not yet reflected in `#94`/`#95`'s dashboard percentages, which
+stay at their current values pending that follow-up work actually landing.
 
 ## Update: extended to `#95`'s conflict-log domains (round 33, 2026-09-17)
 

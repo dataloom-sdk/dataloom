@@ -443,27 +443,17 @@ jobs:
   # (AppleCircuitBreakerProcessTerminationProof, unchanged, and the new
   # AppleRetryBudgetProcessTerminationProof) from the same XCFramework.
   #
-  # Everything in this job is new and has never run on real macOS CI. This
-  # job deliberately carries continue-on-error: true, matching the posture
-  # apple-process-termination-proof itself held before its own first real
-  # green run (round 31) -- it must not block merges of unrelated work until
-  # a real green run has been observed and this flag is deliberately removed,
-  # the same way it already was for the circuit-breaker job. A
-  # continue-on-error job reports green in the GitHub Actions UI even if its
-  # steps fail internally -- reviewers must read this job's actual step logs,
-  # not just its pass/fail badge, exactly as docs/apple/process-termination-proof.md
-  # already establishes for the circuit-breaker job's own first run.
+  # Genuine green runs observed on real macOS CI (round 33, 2026-09-17):
+  # real distinct pids before/after a genuine `xcrun simctl terminate` +
+  # relaunch, retry-budget queue state confirmed byte-identical, across
+  # three separate runs including one on main itself. Now a required check
+  # like every other job in this workflow -- continue-on-error is no longer
+  # needed, matching the same bar apple-process-termination-proof's own
+  # circuit-breaker job cleared in round 31.
   apple-retry-budget-process-termination-proof:
     name: Apple Simulator process-termination/relaunch proof (retry budget)
     runs-on: macos-15
     timeout-minutes: 30
-    continue-on-error: true
-    # New, never-run-before job as of this PR -- no real macOS CI run has
-    # been observed yet. See docs/apple/process-termination-proof.md's
-    # "Retry-budget state" entry under "What remains open after this PR"
-    # (round 31) for the gap this job closes, and this PR's own description
-    # for exactly what could and could not be verified from a Windows
-    # development host prior to this job's first real run.
 
     steps:
       - name: Checkout repository
@@ -697,18 +687,21 @@ jobs:
   # flock-based compare-and-set -- never a test-only mutex -- mirroring
   # AndroidCircuitBreakerProbeContentionInstrumentedTest's own assertions.
   #
-  # Everything in this job is new and has never run on real macOS CI before
-  # this PR. continue-on-error is set for exactly that reason and must not be
-  # removed until a real green run is observed (matching
-  # apple-process-termination-proof's own now-superseded initial posture --
-  # see that job's git history and docs/apple/process-termination-proof.md's
-  # "Update: first real macOS CI run" section for the shape that precedent
-  # took).
+  # Genuine green runs observed on real macOS CI (round 33, 2026-09-17): the
+  # core mechanism -- two genuinely independent Simulator apps racing on a
+  # shared, unsandboxed host-filesystem path -- confirmed real across five
+  # separate runs (real distinct pids each time, exactly one ALLOWED/one
+  # REJECTED(PROBE_IN_FLIGHT), persisted state confirmed HALF_OPEN),
+  # including one on main itself. Now a required check like every other job
+  # in this workflow -- continue-on-error is no longer needed, matching the
+  # same bar apple-process-termination-proof's own circuit-breaker job
+  # cleared in round 31 (see docs/apple/process-contention-proof.md's
+  # "Update: first real macOS CI run" section for the full account,
+  # including two genuine bugs found and fixed along the way).
   apple-process-contention-proof:
     name: Apple Simulator cross-process probe-contention proof (circuit breaker)
     runs-on: macos-15
     timeout-minutes: 30
-    continue-on-error: true
 
     steps:
       - name: Checkout repository

@@ -455,14 +455,19 @@ durable structure, not a variant of circuit-breaker state:
    of those two already-proven jobs, nor the circuit-breaker app/module code
    they exercise, is modified by this addition.
 
-   This job carries `continue-on-error: true` while unproven, the same
+   This job carried `continue-on-error: true` while unproven, the same
    posture `apple-process-termination-proof` itself held before its own
-   first real run (round 31) — it must not block merges of unrelated work
-   until a real green run is observed and this flag is deliberately removed.
-   **A `continue-on-error` job reports green in the GitHub Actions UI even
-   if its steps fail internally** — reviewers must read this job's actual
-   step logs, not just its pass/fail badge, before treating it as evidence
-   of anything.
+   first real run (round 31). **Update (round 33, 2026-09-17): three
+   genuine green runs observed** across separate PR/main pushes — real
+   distinct pids before/after a genuine `xcrun simctl terminate` + relaunch
+   each time, retry-budget queue state confirmed byte-identical, including
+   one run on `main` itself. `continue-on-error` has been removed; this is
+   now a required check like every other job in this workflow. `#94`'s
+   dashboard percentage is deliberately left unchanged — this closes the
+   "prove it once for retry-budget state" gap, not the separate, still-open
+   retry-budget *contention* proof (the same extension `#95`'s two
+   conflict-log domains also still need, per
+   `docs/apple/process-contention-proof.md`'s own named follow-ups).
 
 ### What was verified from this Windows session
 
