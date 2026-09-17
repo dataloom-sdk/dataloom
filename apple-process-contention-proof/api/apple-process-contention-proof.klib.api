@@ -6,6 +6,19 @@
 // - Show declarations: true
 
 // Library unique name: <dataloom:apple-process-contention-proof>
+final class io.dataloom.processcontentionproof/ConflictRecordContentionProofResult { // io.dataloom.processcontentionproof/ConflictRecordContentionProofResult|null[0]
+    constructor <init>(kotlin/String, kotlin/Long) // io.dataloom.processcontentionproof/ConflictRecordContentionProofResult.<init>|<init>(kotlin.String;kotlin.Long){}[0]
+
+    final val outcome // io.dataloom.processcontentionproof/ConflictRecordContentionProofResult.outcome|{}outcome[0]
+        final fun <get-outcome>(): kotlin/String // io.dataloom.processcontentionproof/ConflictRecordContentionProofResult.outcome.<get-outcome>|<get-outcome>(){}[0]
+    final val persistedVersion // io.dataloom.processcontentionproof/ConflictRecordContentionProofResult.persistedVersion|{}persistedVersion[0]
+        final fun <get-persistedVersion>(): kotlin/Long // io.dataloom.processcontentionproof/ConflictRecordContentionProofResult.persistedVersion.<get-persistedVersion>|<get-persistedVersion>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.processcontentionproof/ConflictRecordContentionProofResult.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.processcontentionproof/ConflictRecordContentionProofResult.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.processcontentionproof/ConflictRecordContentionProofResult.toString|toString(){}[0]
+}
+
 final class io.dataloom.processcontentionproof/ProcessContentionProofResult { // io.dataloom.processcontentionproof/ProcessContentionProofResult|null[0]
     constructor <init>(kotlin/String, kotlin/String, kotlin/Long) // io.dataloom.processcontentionproof/ProcessContentionProofResult.<init>|<init>(kotlin.String;kotlin.String;kotlin.Long){}[0]
 
@@ -24,4 +37,20 @@ final class io.dataloom.processcontentionproof/ProcessContentionProofResult { //
 final object io.dataloom.processcontentionproof/AppleCircuitBreakerProbeContentionProof { // io.dataloom.processcontentionproof/AppleCircuitBreakerProbeContentionProof|null[0]
     final fun openCircuitAndSignalReady(kotlin/String, kotlin/String) // io.dataloom.processcontentionproof/AppleCircuitBreakerProbeContentionProof.openCircuitAndSignalReady|openCircuitAndSignalReady(kotlin.String;kotlin.String){}[0]
     final fun waitForGoSignalThenAttemptProbe(kotlin/String, kotlin/String, kotlin/Int = ...): io.dataloom.processcontentionproof/ProcessContentionProofResult // io.dataloom.processcontentionproof/AppleCircuitBreakerProbeContentionProof.waitForGoSignalThenAttemptProbe|waitForGoSignalThenAttemptProbe(kotlin.String;kotlin.String;kotlin.Int){}[0]
+}
+
+final object io.dataloom.processcontentionproof/AppleResolvedConflictDecisionLogContentionProof { // io.dataloom.processcontentionproof/AppleResolvedConflictDecisionLogContentionProof|null[0]
+    final const val STATE_FILE_NAME // io.dataloom.processcontentionproof/AppleResolvedConflictDecisionLogContentionProof.STATE_FILE_NAME|{}STATE_FILE_NAME[0]
+        final fun <get-STATE_FILE_NAME>(): kotlin/String // io.dataloom.processcontentionproof/AppleResolvedConflictDecisionLogContentionProof.STATE_FILE_NAME.<get-STATE_FILE_NAME>|<get-STATE_FILE_NAME>(){}[0]
+
+    final fun waitForGoSignalThenAttemptRecord(kotlin/String, kotlin/String, kotlin/Int = ...): io.dataloom.processcontentionproof/ConflictRecordContentionProofResult // io.dataloom.processcontentionproof/AppleResolvedConflictDecisionLogContentionProof.waitForGoSignalThenAttemptRecord|waitForGoSignalThenAttemptRecord(kotlin.String;kotlin.String;kotlin.Int){}[0]
+    final fun warmUpAndSignalReady(kotlin/String, kotlin/String) // io.dataloom.processcontentionproof/AppleResolvedConflictDecisionLogContentionProof.warmUpAndSignalReady|warmUpAndSignalReady(kotlin.String;kotlin.String){}[0]
+}
+
+final object io.dataloom.processcontentionproof/AppleUnresolvedConflictLogContentionProof { // io.dataloom.processcontentionproof/AppleUnresolvedConflictLogContentionProof|null[0]
+    final const val STATE_FILE_NAME // io.dataloom.processcontentionproof/AppleUnresolvedConflictLogContentionProof.STATE_FILE_NAME|{}STATE_FILE_NAME[0]
+        final fun <get-STATE_FILE_NAME>(): kotlin/String // io.dataloom.processcontentionproof/AppleUnresolvedConflictLogContentionProof.STATE_FILE_NAME.<get-STATE_FILE_NAME>|<get-STATE_FILE_NAME>(){}[0]
+
+    final fun waitForGoSignalThenAttemptRecord(kotlin/String, kotlin/String, kotlin/Int = ...): io.dataloom.processcontentionproof/ConflictRecordContentionProofResult // io.dataloom.processcontentionproof/AppleUnresolvedConflictLogContentionProof.waitForGoSignalThenAttemptRecord|waitForGoSignalThenAttemptRecord(kotlin.String;kotlin.String;kotlin.Int){}[0]
+    final fun warmUpAndSignalReady(kotlin/String, kotlin/String) // io.dataloom.processcontentionproof/AppleUnresolvedConflictLogContentionProof.warmUpAndSignalReady|warmUpAndSignalReady(kotlin.String;kotlin.String){}[0]
 }
