@@ -1383,3 +1383,340 @@ jobs:
             xcrun simctl delete "$DEVICE_ID" || true
           fi
           rm -rf "${RUNNER_TEMP}/dataloom-conflict-log-contention-proof-${DATALOOM_DOMAIN}" || true
+
+  # ---------------------------------------------------------------------
+  # Apple Simulator cross-process retry-budget lease contention proof (#94)
+  # ---------------------------------------------------------------------
+  #
+  # A separate job from apple-validate, apple-process-termination-proof,
+  # apple-retry-budget-process-termination-proof, apple-process-contention-proof,
+  # and apple-conflict-log-contention-proof above -- same isolation rationale
+  # each of those already carries: this is new, never-run-before
+  # infrastructure and must not risk any already-proven job.
+  #
+  # Unlike apple-conflict-log-contention-proof (symmetric racers reusing
+  # AppC/AppD), this domain reuses apple-process-contention-proof's own
+  # asymmetric AppA/AppB shape: role "A" performs the real one-time
+  # enqueue/acquire/reschedule setup that seeds a single RETRY_WAITING
+  # QueueEntry with real persisted retry-budget state
+  # (QueueEntry.retryAttempt/QueueEntry.retryBudgetState); both processes
+  # then race the real AppleFileQueueProvider.acquire for that single
+  # eligible entry. See AppleRetryBudgetLeaseContentionProof's own KDoc
+  # (apple-process-contention-proof/src/iosMain/...) for why this domain has
+  # no Android contention-specific precedent to mirror, and for the exact
+  # real cross-process mechanism (a pessimistic flock-guarded critical
+  # section around the whole read-eligible-entries/assign-lease/write
+  # sequence, not an optimistic compare-and-set-with-retry) that still
+  # produces an unambiguous one-winner/one-loser split.
+  apple-retry-budget-lease-contention-proof:
+    name: Apple Simulator cross-process contention proof (retry-budget lease)
+    runs-on: macos-15
+    timeout-minutes: 30
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Assemble the process-contention-proof XCFramework
+        run: >-
+          ./gradlew
+          :apple-process-contention-proof:assembleDataLoomProcessContentionProofReleaseXCFramework
+          --configuration-cache
+          --stacktrace
+          --console=plain
+
+      - name: Copy XCFramework into the proof app's project directory
+        run: |
+          set -euo pipefail
+          SRC="apple-process-contention-proof/build/XCFrameworks/release/DataLoomProcessContentionProof.xcframework"
+          DEST="apple-process-contention-proof-app/DataLoomProcessContentionProof.xcframework"
+          echo "=== Copying $SRC -> $DEST ==="
+          ls -la "$SRC"
+          rm -rf "$DEST"
+          cp -R "$SRC" "$DEST"
+
+      - name: Build both proof apps for the iOS Simulator
+        run: |
+          set -euo pipefail
+          cd apple-process-contention-proof-app
+          for SCHEME in ProcessContentionProofAppA ProcessContentionProofAppB; do
+            echo "=== Building $SCHEME ==="
+            xcodebuild build \
+              -project ProcessContentionProofApp.xcodeproj \
+              -scheme "$SCHEME" \
+              -configuration Debug \
+              -sdk iphonesimulator \
+              -derivedDataPath build \
+              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGN_IDENTITY=""
+          done
+
+      - name: Create and boot a dedicated Simulator device
+        id: boot_simulator
+        run: |
+          set -euo pipefail
+          RUNTIMES_JSON=$(xcrun simctl list runtimes --json)
+          RUNTIME_ID=$(echo "$RUNTIMES_JSON" \
+            | jq -r '[.runtimes[] | select(.isAvailable and (.identifier | startswith("com.apple.CoreSimulator.SimRuntime.iOS")))] | sort_by(.version) | last | .identifier')
+          if [ -z "$RUNTIME_ID" ] || [ "$RUNTIME_ID" = "null" ]; then
+            echo "ERROR: no available iOS simulator runtime found." >&2
+            xcrun simctl list runtimes
+            exit 1
+          fi
+          echo "Selected runtime: $RUNTIME_ID"
+
+          # See apple-process-termination-proof's/apple-process-contention-proof's
+          # own identical step for why candidates are restricted to this
+          # runtime's own supportedDeviceTypes rather than picked from the
+          # global device-type list: a naive global pick can select a device
+          # type the runtime doesn't actually support (round 31's own first
+          # real CI run caught exactly this).
+          DEVICETYPE_ID=$(echo "$RUNTIMES_JSON" \
+            | jq -r --arg rid "$RUNTIME_ID" '
+                [.runtimes[] | select(.identifier == $rid) | .supportedDeviceTypes[]
+                  | select(.name | contains("iPhone"))]
+                | last | .identifier')
+          if [ -z "$DEVICETYPE_ID" ] || [ "$DEVICETYPE_ID" = "null" ]; then
+            echo "ERROR: no iPhone simulator device type supported by runtime $RUNTIME_ID." >&2
+            echo "$RUNTIMES_JSON" | jq --arg rid "$RUNTIME_ID" '.runtimes[] | select(.identifier == $rid)'
+            exit 1
+          fi
+          echo "Selected device type: $DEVICETYPE_ID"
+
+          DEVICE_ID=$(xcrun simctl create RetryBudgetLeaseContentionProofDevice "$DEVICETYPE_ID" "$RUNTIME_ID")
+          echo "Created device: $DEVICE_ID"
+          echo "device_id=$DEVICE_ID" >> "$GITHUB_OUTPUT"
+
+          xcrun simctl boot "$DEVICE_ID" || true
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+
+      - name: Install both apps, race them, and verify exactly one lease winner
+        env:
+          DEVICE_ID: ${{ steps.boot_simulator.outputs.device_id }}
+          BUNDLE_ID_A: io.dataloom.processcontentionproof.appa
+          BUNDLE_ID_B: io.dataloom.processcontentionproof.appb
+        run: |
+          set -euo pipefail
+          APP_A_PATH="apple-process-contention-proof-app/build/Build/Products/Debug-iphonesimulator/ProcessContentionProofAppA.app"
+          APP_B_PATH="apple-process-contention-proof-app/build/Build/Products/Debug-iphonesimulator/ProcessContentionProofAppB.app"
+          for APP_PATH in "$APP_A_PATH" "$APP_B_PATH"; do
+            if [ ! -d "$APP_PATH" ]; then
+              echo "ERROR: built app not found at $APP_PATH" >&2
+              find apple-process-contention-proof-app/build/Build/Products -maxdepth 3 || true
+              exit 1
+            fi
+          done
+
+          xcrun simctl install "$DEVICE_ID" "$APP_A_PATH"
+          xcrun simctl install "$DEVICE_ID" "$APP_B_PATH"
+
+          # A plain host-filesystem directory, exactly like
+          # apple-process-contention-proof's own shared directory -- same
+          # Simulator-lack-of-sandboxing mechanism, see that job's own
+          # comment for the full explanation.
+          SHARED_DIR="${RUNNER_TEMP}/dataloom-retry-budget-lease-contention-proof"
+          rm -rf "$SHARED_DIR"
+          mkdir -p "$SHARED_DIR"
+          READY_A="$SHARED_DIR/ready-a.marker"
+          READY_B="$SHARED_DIR/ready-b.marker"
+          GO_SIGNAL="$SHARED_DIR/go.marker"
+          RESULT_A="$SHARED_DIR/result-a.tsv"
+          RESULT_B="$SHARED_DIR/result-b.tsv"
+          echo "Shared host directory: $SHARED_DIR"
+
+          echo "=== Launching app A (seeds the RETRY_WAITING entry, then waits for the go signal) ==="
+          export SIMCTL_CHILD_DATALOOM_ROLE="A"
+          export SIMCTL_CHILD_DATALOOM_DOMAIN="RETRY_BUDGET_LEASE"
+          export SIMCTL_CHILD_DATALOOM_SHARED_DIR="$SHARED_DIR"
+          export SIMCTL_CHILD_DATALOOM_READY_MARKER="$READY_A"
+          export SIMCTL_CHILD_DATALOOM_GO_SIGNAL="$GO_SIGNAL"
+          export SIMCTL_CHILD_DATALOOM_RESULT_FILE="$RESULT_A"
+          LAUNCH_A=$(xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID_A")
+          echo "$LAUNCH_A"
+          PID_A=$(echo "$LAUNCH_A" | sed -n 's/^.*: *\([0-9][0-9]*\)$/\1/p')
+          if [ -z "$PID_A" ]; then
+            echo "ERROR: could not parse a pid from app A's 'simctl launch' output: $LAUNCH_A" >&2
+            exit 1
+          fi
+          echo "App A pid: $PID_A"
+
+          echo "=== Waiting for app A to finish seeding the retry-budget entry ==="
+          READY_A_SEEN=0
+          for _ in $(seq 1 30); do
+            if [ -f "$READY_A" ]; then
+              READY_A_SEEN=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$READY_A_SEEN" != "1" ]; then
+            echo "ERROR: app A's ready marker never appeared within 30s: $READY_A" >&2
+            exit 1
+          fi
+
+          echo "=== Launching app B (the non-seeding racer) ==="
+          unset SIMCTL_CHILD_DATALOOM_ROLE
+          export SIMCTL_CHILD_DATALOOM_ROLE="B"
+          export SIMCTL_CHILD_DATALOOM_READY_MARKER="$READY_B"
+          export SIMCTL_CHILD_DATALOOM_RESULT_FILE="$RESULT_B"
+          # SIMCTL_CHILD_DATALOOM_DOMAIN, SIMCTL_CHILD_DATALOOM_SHARED_DIR and
+          # SIMCTL_CHILD_DATALOOM_GO_SIGNAL are unchanged from app A's launch
+          # above -- both apps must race in the exact same domain against the
+          # exact same shared directory and go signal.
+          LAUNCH_B=$(xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID_B")
+          echo "$LAUNCH_B"
+          PID_B=$(echo "$LAUNCH_B" | sed -n 's/^.*: *\([0-9][0-9]*\)$/\1/p')
+          if [ -z "$PID_B" ]; then
+            echo "ERROR: could not parse a pid from app B's 'simctl launch' output: $LAUNCH_B" >&2
+            exit 1
+          fi
+          echo "App B pid: $PID_B"
+
+          if [ "$PID_A" = "$PID_B" ]; then
+            echo "ERROR: app A and app B were launched with the identical pid ($PID_A) -- they are not genuinely separate OS processes." >&2
+            exit 1
+          fi
+
+          echo "=== Waiting for app B to be alive and polling ==="
+          READY_B_SEEN=0
+          for _ in $(seq 1 30); do
+            if [ -f "$READY_B" ]; then
+              READY_B_SEEN=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$READY_B_SEEN" != "1" ]; then
+            echo "ERROR: app B's ready marker never appeared within 30s: $READY_B" >&2
+            exit 1
+          fi
+
+          echo "=== Both processes confirmed alive and waiting -- releasing them together ==="
+          touch "$GO_SIGNAL"
+
+          echo "=== Waiting for both processes' results ==="
+          RESULTS_SEEN=0
+          for _ in $(seq 1 30); do
+            if [ -f "$RESULT_A" ] && [ -f "$RESULT_B" ]; then
+              RESULTS_SEEN=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$RESULTS_SEEN" != "1" ]; then
+            echo "ERROR: one or both result files never appeared within 30s (A: $RESULT_A, B: $RESULT_B)." >&2
+            [ -f "$RESULT_A" ] && { echo "--- result-a.tsv ---"; cat "$RESULT_A"; } || echo "result-a.tsv missing"
+            [ -f "$RESULT_B" ] && { echo "--- result-b.tsv ---"; cat "$RESULT_B"; } || echo "result-b.tsv missing"
+            exit 1
+          fi
+
+          # `cut`, never `IFS=$'\t' read -r a b c d e < file` -- see
+          # apple-process-contention-proof's own identical step comment for
+          # the genuine bug that convention caused on real CI (bash's `read`
+          # collapses tabs as IFS whitespace regardless of explicit IFS,
+          # silently shifting later fields). This domain's own five-field
+          # result line has empty-looking numeric fields only when they are
+          # legitimately "-1", never truly empty, but `cut` is used
+          # unconditionally here anyway rather than re-litigating that risk
+          # per call site.
+          OUTCOME_A=$(cut -d$'\t' -f1 "$RESULT_A")
+          ATTEMPT_A=$(cut -d$'\t' -f2 "$RESULT_A")
+          WINDOW_A=$(cut -d$'\t' -f3 "$RESULT_A")
+          EVALUATED_A=$(cut -d$'\t' -f4 "$RESULT_A")
+          DELAY_A=$(cut -d$'\t' -f5 "$RESULT_A")
+          OUTCOME_B=$(cut -d$'\t' -f1 "$RESULT_B")
+          ATTEMPT_B=$(cut -d$'\t' -f2 "$RESULT_B")
+          WINDOW_B=$(cut -d$'\t' -f3 "$RESULT_B")
+          EVALUATED_B=$(cut -d$'\t' -f4 "$RESULT_B")
+          DELAY_B=$(cut -d$'\t' -f5 "$RESULT_B")
+          echo "App A result: outcome=$OUTCOME_A retryAttempt=$ATTEMPT_A windowStartedAt=$WINDOW_A lastEvaluatedAt=$EVALUATED_A cumulativeDelay=$DELAY_A"
+          echo "App B result: outcome=$OUTCOME_B retryAttempt=$ATTEMPT_B windowStartedAt=$WINDOW_B lastEvaluatedAt=$EVALUATED_B cumulativeDelay=$DELAY_B"
+
+          ACQUIRED_COUNT=0
+          NO_ENTRY_COUNT=0
+          [ "$OUTCOME_A" = "ACQUIRED" ] && ACQUIRED_COUNT=$((ACQUIRED_COUNT + 1))
+          [ "$OUTCOME_B" = "ACQUIRED" ] && ACQUIRED_COUNT=$((ACQUIRED_COUNT + 1))
+          [ "$OUTCOME_A" = "NO_ELIGIBLE_ENTRY" ] && NO_ENTRY_COUNT=$((NO_ENTRY_COUNT + 1))
+          [ "$OUTCOME_B" = "NO_ELIGIBLE_ENTRY" ] && NO_ENTRY_COUNT=$((NO_ENTRY_COUNT + 1))
+
+          if [ "$ACQUIRED_COUNT" != "1" ]; then
+            echo "ERROR: expected exactly one ACQUIRED outcome, got $ACQUIRED_COUNT (A=$OUTCOME_A, B=$OUTCOME_B)." >&2
+            exit 1
+          fi
+          if [ "$NO_ENTRY_COUNT" != "1" ]; then
+            echo "ERROR: expected exactly one NO_ELIGIBLE_ENTRY outcome, got $NO_ENTRY_COUNT (A=$OUTCOME_A, B=$OUTCOME_B)." >&2
+            exit 1
+          fi
+
+          if [ "$OUTCOME_A" = "ACQUIRED" ]; then
+            WINNER_ATTEMPT="$ATTEMPT_A"
+            WINNER_WINDOW="$WINDOW_A"
+            WINNER_EVALUATED="$EVALUATED_A"
+            WINNER_DELAY="$DELAY_A"
+          else
+            WINNER_ATTEMPT="$ATTEMPT_B"
+            WINNER_WINDOW="$WINDOW_B"
+            WINNER_EVALUATED="$EVALUATED_B"
+            WINNER_DELAY="$DELAY_B"
+          fi
+
+          # These four values must match AppleRetryBudgetLeaseContentionProof's
+          # own seeded constants exactly (RETRY_ATTEMPT_NUMBER = 2,
+          # RETRY_WINDOW_STARTED_AT_EPOCH_MILLIS = 1100,
+          # RETRY_LAST_EVALUATED_AT_EPOCH_MILLIS = 1200,
+          # RETRY_CUMULATIVE_DELAY_MILLIS = 600) -- proving the winning
+          # process's real cross-process `acquire` read back the exact
+          # retry-budget state persisted before the race, untouched by the
+          # contention itself.
+          if [ "$WINNER_ATTEMPT" != "2" ] || [ "$WINNER_WINDOW" != "1100" ] || \
+             [ "$WINNER_EVALUATED" != "1200" ] || [ "$WINNER_DELAY" != "600" ]; then
+            echo "ERROR: winning process's retry-budget fields do not match the seeded values (attempt=$WINNER_ATTEMPT windowStartedAt=$WINNER_WINDOW lastEvaluatedAt=$WINNER_EVALUATED cumulativeDelay=$WINNER_DELAY)." >&2
+            exit 1
+          fi
+
+          echo "=== Bonus corroboration: confirming the real production state file was written ==="
+          STATE_FILE="$SHARED_DIR/dataloom-queue-state-v1.tsv"
+          if [ -f "$STATE_FILE" ]; then
+            echo "--- $STATE_FILE ---"
+            cat "$STATE_FILE"
+          else
+            echo "ERROR: expected production queue state file not found: $STATE_FILE" >&2
+            exit 1
+          fi
+
+          echo "OK: exactly one of two genuinely separate Simulator app processes won the retry-budget entry's lease."
+          echo "    pid A: $PID_A, pid B: $PID_B"
+          echo "    winner outcome: ACQUIRED (retryAttempt=$WINNER_ATTEMPT), loser: NO_ELIGIBLE_ENTRY"
+
+      - name: Clean up the Simulator device and shared directory
+        if: always()
+        env:
+          DEVICE_ID: ${{ steps.boot_simulator.outputs.device_id }}
+          BUNDLE_ID_A: io.dataloom.processcontentionproof.appa
+          BUNDLE_ID_B: io.dataloom.processcontentionproof.appb
+        run: |
+          if [ -n "${DEVICE_ID:-}" ]; then
+            xcrun simctl terminate "$DEVICE_ID" "$BUNDLE_ID_A" || true
+            xcrun simctl terminate "$DEVICE_ID" "$BUNDLE_ID_B" || true
+            xcrun simctl shutdown "$DEVICE_ID" || true
+            xcrun simctl delete "$DEVICE_ID" || true
+          fi
+          rm -rf "${RUNNER_TEMP}/dataloom-retry-budget-lease-contention-proof" || true
