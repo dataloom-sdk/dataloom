@@ -15,6 +15,16 @@ than folding the write into `ProcessTerminationProofApp`'s existing launch.
 **unchanged** by the retry-budget extension — see that row's own updated
 "Still pending" text and the dated log entry for 2026-09-15.
 
+**Conflict-log domains (`#95`): new CI infrastructure added 2026-09-18,
+mechanically extending the same single-process kill/relaunch mechanism to
+`DurableUnresolvedConflictLog` and `DurableResolvedConflictDecisionLog`.
+Unverified until it runs on real macOS CI.** See "Extension: conflict-log
+process-kill/relaunch proof (2026-09-18)" below. This is a genuinely
+different proof shape from `apple-conflict-log-contention-proof` (round 33,
+already proven on real macOS CI) — that job races two processes against each
+other; this one kills and relaunches one. `docs/status/market-readiness.md`'s
+`#95` row percentage is deliberately **unchanged** by this extension.
+
 The rest of this document (through "Update: fully genuine green run") is
 unchanged from round 31 and describes only the circuit-breaker proof.
 
@@ -548,6 +558,214 @@ applying identically here since this reuses the same infrastructure shape:
   (`io.dataloom.processterminationproof.retrybudget.app`) and device name.
   These are expected, but not guaranteed, to behave identically.
 
+## Extension: conflict-log process-kill/relaunch proof (2026-09-18)
+
+This closes the "Apple process-kill/relaunch evidence for either conflict-log
+domain" item `docs/status/market-readiness.md`'s `#95` row has named as still
+open since round 33 — a *different* proof shape from
+`apple-conflict-log-contention-proof` (round 33, already proven on real macOS
+CI), which races two processes against each other. This proof kills and
+relaunches one, the same mechanism `apple-process-termination-proof`/
+`apple-retry-budget-process-termination-proof` already proved for circuit
+breaker and retry-budget state, extended here to `DurableUnresolvedConflictLog`
+and `DurableResolvedConflictDecisionLog` — the same two real production types
+`apple-process-contention-proof`'s own
+`AppleUnresolvedConflictLogContentionProof`/
+`AppleResolvedConflictDecisionLogContentionProof` already drive against
+`AppleFileDurableStateStore` for the unrelated contention proof shape (a
+different module, a different acceptance item — read to confirm the real API
+surface, never modified).
+
+### What this adds
+
+1. **`AppleUnresolvedConflictLogProcessTerminationProof`** and
+   **`AppleResolvedConflictDecisionLogProcessTerminationProof`** (two new
+   Kotlin `object`s in the existing `apple-process-termination-proof` module,
+   alongside the unchanged `AppleCircuitBreakerProcessTerminationProof`/
+   `AppleRetryBudgetProcessTerminationProof`), and
+   **`UnresolvedConflictLogProcessTerminationProofState`**/
+   **`ResolvedConflictDecisionLogProcessTerminationProofState`** (two new
+   primitive-typed data holders). Each proof object has the same two-method
+   shape as `AppleCircuitBreakerProcessTerminationProof`:
+   - `recordAndPersist(directoryPath: String): <State>` drives one real
+     production `DurableUnresolvedConflictLog.record`/
+     `DurableResolvedConflictDecisionLog.record` call against a fresh
+     `AppleFileDurableStateStore` rooted at `directoryPath`, then reads the
+     persisted record back. Fails loudly (via Kotlin `error`) on anything
+     other than the `Recorded` outcome — a caller must guard repeat
+     invocations with `readPersistedState` first, same as
+     `AppleCircuitBreakerProcessTerminationProof.openCircuitAndPersist`.
+   - `readPersistedState(directoryPath: String): <State>?` reads back via
+     `AppleFileDurableStateStore.load`/`DurableStateStore.load` — a confirmed
+     **non-mutating** operation (verified directly by reading
+     `AppleFileDurableStateStore.load`'s implementation: it only reads and
+     decodes the snapshot, never writes). This is the same idempotency-guard
+     shape `AppleCircuitBreakerProcessTerminationProof.readPersistedState`
+     already established, and notably *not* the file-existence workaround
+     `AppleRetryBudgetProcessTerminationProof.hasPersistedRetryBudgetState`
+     needed — `AppleFileQueueProvider` has no non-mutating read path, but
+     `AppleFileDurableStateStore` does, so no workaround is needed here.
+   - Confirmed via `updateKotlinAbi`/`checkKotlinAbi`
+     (`-Pdataloom.appleKlibCrossCompile=true`) that the module's exported
+     surface grew by exactly these four declarations, every new signature
+     typed in `kotlin/String`/`kotlin/Long` plus the module's own declared
+     types — no `dataloom-api`/`dataloom-runtime` type leaks into the
+     generated Objective-C header. The whole-build `checkKotlinAbi` passed
+     with only this module's own baseline file changing.
+
+2. **`apple-process-termination-proof-conflict-log-app/`** — a new,
+   hand-authored Xcode project (`ConflictLogProcessTerminationProofApp.xcodeproj`)
+   with a **single** app target, reused unmodified across **both**
+   conflict-log domains via a `DATALOOM_DOMAIN` launch-time environment
+   variable (`"UNRESOLVED_CONFLICT"` or `"RESOLVED_DECISION"`) — mirroring
+   `apple-process-contention-proof-app`'s own reasoning for reusing
+   `ProcessContentionProofAppC`/`AppD` unmodified across the same two domains,
+   adapted to this proof's own single-process shape (one target launched
+   twice per domain — pre-kill and post-relaunch — rather than two targets
+   launched once each to race). This is a deliberate departure from both
+   prior precedents in this document: round 31's retry-budget extension added
+   a *second, separate* Xcode project per domain; round 33's conflict-log
+   *contention* extension added new *targets* to an existing multi-target
+   project. Neither fits here as cleanly as a single shared target switched
+   by environment variable, since there is no racing/target-per-role need and
+   only one process is ever launched at a time. Bundle id
+   `io.dataloom.processterminationproof.conflictlog.app`; persists to
+   `<Documents>/ConflictLogProof/<state-file-name>` inside its own app
+   container, where `<state-file-name>` is
+   `AppleUnresolvedConflictLogProcessTerminationProof.STATE_FILE_NAME` or
+   `AppleResolvedConflictDecisionLogProcessTerminationProof.STATE_FILE_NAME`
+   depending on the launch's `DATALOOM_DOMAIN`. The project file was produced
+   the same way round 31's retry-budget project was: copying
+   `RetryBudgetProcessTerminationProofApp.xcodeproj`'s own proven object graph
+   verbatim and substituting only object-id prefixes, the target/product
+   name, and the bundle identifier — confirmed structurally byte-identical to
+   that original after reversing those substitutions (`sed`-normalize and
+   `diff`), plus a balanced-braces/zero-duplicate-object-id check, the
+   strongest confidence available from a Windows host short of Xcode itself
+   opening it. `AppDelegate.swift` reads `DATALOOM_DOMAIN` and switches
+   between the two new proof objects' `recordAndPersist`/`readPersistedState`
+   idempotency-guard calls; it is otherwise a synchronous, single-process
+   write on launch, unlike `apple-process-contention-proof-app`'s own
+   `AppDelegate.swift` (no go-signal wait, no background dispatch queue, no
+   result file).
+
+3. **New CI job `apple-conflict-log-process-termination-proof`** in
+   `.github/workflows/apple-validation.yml` — a two-entry matrix (one leg per
+   domain), mirroring `apple-conflict-log-contention-proof`'s own matrix
+   rationale: both domains share the identical
+   `AppleFileDurableStateStore` persistence path and the identical
+   install/launch/kill/poll/relaunch/diff steps
+   `apple-retry-budget-process-termination-proof` already established,
+   differing only in `DATALOOM_DOMAIN` (forwarded to the launched process via
+   `simctl launch`'s own `SIMCTL_CHILD_*` environment-forwarding convention,
+   set identically on both the pre-kill and post-relaunch launches) and the
+   expected state-file name. Each matrix leg builds/installs the one shared
+   `ConflictLogProcessTerminationProofApp` target, creates its own dedicated
+   Simulator device using the same runtime-scoped device-type-selection fix
+   round 31 established, and diffs the persisted state file byte-for-byte
+   before the kill and after the relaunch — read directly from the
+   Simulator's app-container filesystem from outside the app process, the
+   same verification shape as every other job in this document (not the
+   "grep for a substring" fallback `apple-conflict-log-contention-proof`
+   needed for its own two-writer race, since this proof only ever performs
+   one insert against one scope key, making the resulting snapshot
+   deterministic and safely diffable byte-for-byte).
+
+   Deliberately a separate job (own checkout/Java/Gradle setup, own Simulator
+   device per matrix leg) so a failure here cannot fail any of the five
+   already-existing jobs in this workflow, and vice versa — none of them is
+   modified by this addition. Carries `continue-on-error: true` while
+   unproven, the same posture every other never-run-before job in this
+   workflow held before its own first real green run.
+
+### What was verified from this Windows session
+
+- `./gradlew.bat :apple-process-termination-proof:compileKotlinIosArm64
+  :apple-process-termination-proof:compileKotlinIosSimulatorArm64
+  :apple-process-termination-proof:compileKotlinIosX64
+  -Pdataloom.appleKlibCrossCompile=true` — succeeded for all three targets
+  with both new proof objects added. Production code type-checks and
+  klib-compiles against `DurableUnresolvedConflictLog`/
+  `DurableResolvedConflictDecisionLog` and `AppleFileDurableStateStore`.
+- The same three targets' `compileTestKotlin*` tasks, run individually and
+  sequentially per this repository's Windows Gradle-concurrency discipline —
+  all three succeeded for both new iosTest suites (pure single-process
+  sanity coverage; cannot itself prove OS-level kill survival).
+- `./gradlew.bat :apple-process-termination-proof:updateKotlinAbi
+  -Pdataloom.appleKlibCrossCompile=true` then
+  `./gradlew.bat :apple-process-termination-proof:checkKotlinAbi
+  -Pdataloom.appleKlibCrossCompile=true` then the whole-build
+  `./gradlew.bat checkKotlinAbi -Pdataloom.appleKlibCrossCompile=true` — all
+  passed. `git status` confirmed only this module's own
+  `apple-process-termination-proof/api/apple-process-termination-proof.klib.api`
+  changed, and the diff is purely additive (two new classes, two new
+  objects; nothing existing changed).
+- `./gradlew.bat :apple-process-termination-proof:assembleDataLoomProcessTerminationProofReleaseXCFramework
+  -Pdataloom.appleKlibCrossCompile=true` — ran with the same expected
+  `SKIPPED` linking tasks as every prior round's run of this task
+  (Kotlin/Native cross-compiles klibs on any host but cannot link final
+  Mach-O binaries/frameworks without a macOS toolchain). Confirms the task
+  graph is wired correctly; does not confirm the XCFramework's four exported
+  proof objects all actually link.
+- The new `ConflictLogProcessTerminationProofApp.xcodeproj`'s `project.pbxproj`
+  was diffed byte-for-byte (after reversing the known name/id substitutions)
+  against `RetryBudgetProcessTerminationProofApp.xcodeproj`'s own,
+  already-CI-proven original, and confirmed structurally identical; a
+  balanced-braces check and a zero-duplicate-object-id check were also run
+  directly against the new file. The new CI job's shell blocks were each
+  extracted and checked with `bash -n` (all passed); the job's YAML
+  indentation was reviewed by hand against its sibling
+  `apple-conflict-log-contention-proof` job for structural consistency (no
+  YAML linter was available on this Windows host to validate it
+  mechanically, the same gap every prior round in this document has named).
+
+### What was NOT, and could not be, verified from this Windows session
+
+Everything that requires an actual macOS host, Xcode, or the iOS Simulator —
+the same category of gap every prior extension in this document has named,
+applying identically here:
+
+- **Whether Xcode accepts `ConflictLogProcessTerminationProofApp.xcodeproj`
+  without repair on first open.** Structurally byte-identical to
+  `RetryBudgetProcessTerminationProofApp.xcodeproj` (already proven to build
+  on first open in round 33), but never itself opened or built by Xcode.
+- **Whether the generated Swift call signatures
+  (`AppleUnresolvedConflictLogProcessTerminationProof.shared.recordAndPersist(directoryPath:)`,
+  etc.) are exactly what `AppDelegate.swift` calls.** The module's own
+  `.klib.api` dump confirms the underlying Kotlin signatures; the actual
+  Objective-C header generation and Swift import step was never run.
+- **Whether both real production write sequences
+  (`DurableUnresolvedConflictLog.record`/`DurableResolvedConflictDecisionLog.record`
+  against a real `AppleFileDurableStateStore`) actually succeed end to end
+  when run for real inside a launched Simulator process**, as opposed to only
+  compiling and klib-verifying. The new iosTest suites exercise this same
+  sequence within a single Kotlin/Native test process, but that test binary
+  has not itself been run on this Windows host.
+- **Whether reading the same environment variable (`DATALOOM_DOMAIN`) on both
+  the pre-kill and post-relaunch `simctl launch` calls behaves as expected**
+  — the CI script re-exports `SIMCTL_CHILD_DATALOOM_DOMAIN` once and relies
+  on it staying exported across both `simctl launch` invocations in the same
+  shell step; this convention is already used successfully by
+  `apple-conflict-log-contention-proof`'s own script for a single launch per
+  process, but this job is the first to rely on it surviving across two
+  separate `simctl launch` calls to the *same* bundle id in the same script.
+  If this assumption is wrong, the second launch's `AppDelegate.swift` would
+  `fatalError` with a clear message rather than silently misbehave.
+- **Code signing, `jq` presence, `launchctl list` label format, and
+  `simctl launch` pid-format** — all already resolved once for sibling jobs'
+  own bundle ids, but not independently re-confirmed for this job's distinct
+  bundle id (`io.dataloom.processterminationproof.conflictlog.app`) and
+  device names.
+- **Whether `AppleFileDurableStateStore`'s on-disk snapshot format stays
+  free of any non-deterministic ordering or timestamp field** that could
+  cause a spurious byte-level diff across the kill/relaunch even when the
+  conflict-log record itself is unchanged — the format was read directly
+  (see `AppleFileDurableStateStore`'s own class doc: a sorted-by-key,
+  hex-encoded TSV, deterministic for a single inserted key), but never
+  independently re-confirmed by an actual run. If this assumption is wrong,
+  the new job's final diff step will fail loudly (exit non-zero with a
+  printed diff) rather than silently report a false pass.
+
 ## What remains open after this PR, even once CI infrastructure is proven
 
 - **Cross-process probe contention** (`AndroidCircuitBreakerProbeContentionInstrumentedTest`'s
@@ -577,6 +795,13 @@ applying identically here since this reuses the same infrastructure shape:
   and the Simulator/device's background-task debugging tools, a materially
   different `simctl`/Xcode interaction this PR does not attempt). Closing
   this gap is a named, separate follow-up.
+- **Apple process-kill/relaunch evidence for retry-budget state's own
+  cross-process *contention*** (the retry-budget analog of
+  `apple-conflict-log-contention-proof`) remains a distinct, still fully open
+  follow-up — this PR closes "conflict-log process-kill/relaunch evidence"
+  (2026-09-18) and round 33 already closed "conflict-log contention evidence"
+  (2026-09-17), but retry-budget's own contention proof was deliberately not
+  attempted in either round and remains unaddressed.
 
 ## References
 
@@ -592,12 +817,27 @@ applying identically here since this reuses the same infrastructure shape:
   retry-budget halves) mirror in shape (pid-before/pid-after comparison,
   poll-with-timeout rather than assume, byte-for-byte persisted state
   comparison).
+- `AndroidProcessTerminationConflictLogInstrumentedTest` and
+  `AndroidProcessTerminationResolvedConflictDecisionLogInstrumentedTest`
+  (`dataloom-queue-room/src/androidTest/kotlin/io/dataloom/queue/room/`) —
+  the Android kill/relaunch proofs for `#95`'s two conflict-log domains this
+  Apple extension mirrors in shape.
+- [`docs/apple/process-contention-proof.md`](process-contention-proof.md) —
+  round 33's `apple-conflict-log-contention-proof`, the genuinely different
+  *contention* (two-process-racing) proof shape for the same two `#95`
+  conflict-log domains this document's own extension must not be confused
+  with.
 - `.github/workflows/apple-validation.yml` — the `apple-process-termination-proof`
-  (circuit-breaker) and `apple-retry-budget-process-termination-proof`
-  (retry-budget) jobs.
+  (circuit-breaker), `apple-retry-budget-process-termination-proof`
+  (retry-budget), and `apple-conflict-log-process-termination-proof`
+  (unresolved-conflict/resolved-conflict-decision, matrixed) jobs.
 - `apple-process-termination-proof/` — the shared Kotlin/Native module
-  (`AppleCircuitBreakerProcessTerminationProof`/`ProcessTerminationProofState`
-  and `AppleRetryBudgetProcessTerminationProof`/`RetryBudgetProcessTerminationProofState`).
+  (`AppleCircuitBreakerProcessTerminationProof`/`ProcessTerminationProofState`,
+  `AppleRetryBudgetProcessTerminationProof`/`RetryBudgetProcessTerminationProofState`,
+  `AppleUnresolvedConflictLogProcessTerminationProof`/`UnresolvedConflictLogProcessTerminationProofState`,
+  and `AppleResolvedConflictDecisionLogProcessTerminationProof`/`ResolvedConflictDecisionLogProcessTerminationProofState`).
 - `apple-process-termination-proof-app/` — the circuit-breaker proof's app.
 - `apple-process-termination-proof-retry-budget-app/` — the retry-budget
   proof's separate app.
+- `apple-process-termination-proof-conflict-log-app/` — the conflict-log
+  proof's separate app, its single target reused across both domains.
