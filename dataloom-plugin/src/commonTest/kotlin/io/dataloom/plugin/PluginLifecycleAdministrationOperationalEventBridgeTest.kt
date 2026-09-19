@@ -1,4 +1,4 @@
-package io.dataloom.core.plugin
+package io.dataloom.plugin
 
 import io.dataloom.api.operational.OperationalEventCategory
 import io.dataloom.api.plugin.PluginId

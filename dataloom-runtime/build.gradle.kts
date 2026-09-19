@@ -4,7 +4,7 @@
 // orchestration, and engine coordination.
 //
 // Rules:
-// - May depend on dataloom-api and dataloom-core.
+// - May depend on dataloom-api, dataloom-core, and dataloom-plugin.
 // - Must not depend on dataloom-testing.
 // - Must not expose internal implementation types publicly.
 plugins {
@@ -18,6 +18,10 @@ kotlin {
                 api(project(":dataloom-model"))
                 api(project(":dataloom-provider-api"))
                 api(project(":dataloom-api"))
+                // DataLoom.pluginEngine's public signatures use dataloom-plugin's
+                // result/request types and dataloom-plugin-api's identifiers.
+                api(project(":dataloom-plugin-api"))
+                api(project(":dataloom-plugin"))
                 implementation(project(":dataloom-core"))
                 implementation(libs.kotlinx.coroutines.core)
             }

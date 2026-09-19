@@ -10,6 +10,7 @@ direction; they do not prove that every part of the decision is implemented.
 |---|---|---|
 | [ADR-0001](./ADR-0001-android-first-kmp-core.md) | Accepted; parts superseded by ADR-0002 | Android-first product with a platform-independent Kotlin Multiplatform core |
 | [ADR-0002](./ADR-0002-v1-artifact-and-foundation-architecture.md) | Accepted V1 target | Artifact graph, dependency roots, six-strategy engine, platform paths, and migration rules |
+| [ADR-0003](./ADR-0003-plugin-engine-module.md) | Accepted; amends ADR-0002 | Plugin engine relocated from `dataloom-core` to the published `dataloom-plugin` module |
 
 ## Decision lifecycle
 

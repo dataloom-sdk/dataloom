@@ -4,7 +4,18 @@
 
 ## Status
 
-**Investigated directly against source; found genuinely blocked by a
+**Resolved (2026-09-19).** The module-ownership decision this investigation
+asked for is made: relocate the whole engine out of `dataloom-core` into the
+new published module `dataloom-plugin`, rather than move only the
+result/request types (option A below) or maintain a duplicate translation
+layer (option B). See
+[ADR-0003](../adr/ADR-0003-plugin-engine-module.md) and
+[Relocation to `dataloom-plugin` and `DataLoomBuilder` wiring](./plugin-registry.md#relocation-to-dataloom-plugin-and-dataloombuilder-wiring).
+The text below is the original investigation and describes the state of the
+repository before that change, including the `io.dataloom.core.plugin` package
+name, which no longer exists.
+
+**Original status: investigated directly against source; found genuinely blocked by a
 mechanically enforced module-ownership rule, not merely "undesigned."** This
 is not a re-hash of [`plugin-registry.md`](./plugin-registry.md)'s existing
 "[No wiring into `DataLoomBuilder` yet](./plugin-registry.md#no-wiring-into-dataloombuilder-yet)"
