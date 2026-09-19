@@ -968,10 +968,16 @@ jobs:
             LOSER_REASON="$REASON_B"
             WINNER_GENERATION="$GENERATION_A"
           fi
-          if [ "$LOSER_REASON" != "PROBE_IN_FLIGHT" ]; then
-            echo "ERROR: the losing process's rejection reason was '$LOSER_REASON', expected 'PROBE_IN_FLIGHT'." >&2
+          # Each process samples its own clock before the shared state read, so
+          # a loser that sampled just before the winner's write reads a newer
+          # updatedAt and is refused as CLOCK_REGRESSION (evaluateAccess checks
+          # that before the probe lease). Either way it is refused and exactly
+          # one process was ALLOWED, which is the mutual-exclusion claim.
+          if [ "$LOSER_REASON" != "PROBE_IN_FLIGHT" ] && [ "$LOSER_REASON" != "CLOCK_REGRESSION" ]; then
+            echo "ERROR: the losing process's rejection reason was '$LOSER_REASON', expected 'PROBE_IN_FLIGHT' or 'CLOCK_REGRESSION'." >&2
             exit 1
           fi
+          echo "Loser rejection reason: $LOSER_REASON"
           if [ "$WINNER_GENERATION" -le 0 ]; then
             echo "ERROR: the winning process's granted probe generation was '$WINNER_GENERATION', expected a positive integer." >&2
             exit 1
