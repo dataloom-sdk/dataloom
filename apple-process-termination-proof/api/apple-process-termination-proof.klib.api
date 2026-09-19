@@ -25,6 +25,29 @@ final class io.dataloom.processterminationproof/ProcessTerminationProofState { /
     final fun toString(): kotlin/String // io.dataloom.processterminationproof/ProcessTerminationProofState.toString|toString(){}[0]
 }
 
+final class io.dataloom.processterminationproof/ResolvedConflictDecisionLogProcessTerminationProofState { // io.dataloom.processterminationproof/ResolvedConflictDecisionLogProcessTerminationProofState|null[0]
+    constructor <init>(kotlin/String, kotlin/String, kotlin/String, kotlin/String, kotlin/String, kotlin/Long, kotlin/Long) // io.dataloom.processterminationproof/ResolvedConflictDecisionLogProcessTerminationProofState.<init>|<init>(kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.Long;kotlin.Long){}[0]
+
+    final val committedAtEpochMillis // io.dataloom.processterminationproof/ResolvedConflictDecisionLogProcessTerminationProofState.committedAtEpochMillis|{}committedAtEpochMillis[0]
+        final fun <get-committedAtEpochMillis>(): kotlin/Long // io.dataloom.processterminationproof/ResolvedConflictDecisionLogProcessTerminationProofState.committedAtEpochMillis.<get-committedAtEpochMillis>|<get-committedAtEpochMillis>(){}[0]
+    final val conflictType // io.dataloom.processterminationproof/ResolvedConflictDecisionLogProcessTerminationProofState.conflictType|{}conflictType[0]
+        final fun <get-conflictType>(): kotlin/String // io.dataloom.processterminationproof/ResolvedConflictDecisionLogProcessTerminationProofState.conflictType.<get-conflictType>|<get-conflictType>(){}[0]
+    final val decisionKind // io.dataloom.processterminationproof/ResolvedConflictDecisionLogProcessTerminationProofState.decisionKind|{}decisionKind[0]
+        final fun <get-decisionKind>(): kotlin/String // io.dataloom.processterminationproof/ResolvedConflictDecisionLogProcessTerminationProofState.decisionKind.<get-decisionKind>|<get-decisionKind>(){}[0]
+    final val entityId // io.dataloom.processterminationproof/ResolvedConflictDecisionLogProcessTerminationProofState.entityId|{}entityId[0]
+        final fun <get-entityId>(): kotlin/String // io.dataloom.processterminationproof/ResolvedConflictDecisionLogProcessTerminationProofState.entityId.<get-entityId>|<get-entityId>(){}[0]
+    final val entityType // io.dataloom.processterminationproof/ResolvedConflictDecisionLogProcessTerminationProofState.entityType|{}entityType[0]
+        final fun <get-entityType>(): kotlin/String // io.dataloom.processterminationproof/ResolvedConflictDecisionLogProcessTerminationProofState.entityType.<get-entityType>|<get-entityType>(){}[0]
+    final val resolverId // io.dataloom.processterminationproof/ResolvedConflictDecisionLogProcessTerminationProofState.resolverId|{}resolverId[0]
+        final fun <get-resolverId>(): kotlin/String // io.dataloom.processterminationproof/ResolvedConflictDecisionLogProcessTerminationProofState.resolverId.<get-resolverId>|<get-resolverId>(){}[0]
+    final val version // io.dataloom.processterminationproof/ResolvedConflictDecisionLogProcessTerminationProofState.version|{}version[0]
+        final fun <get-version>(): kotlin/Long // io.dataloom.processterminationproof/ResolvedConflictDecisionLogProcessTerminationProofState.version.<get-version>|<get-version>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.processterminationproof/ResolvedConflictDecisionLogProcessTerminationProofState.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.processterminationproof/ResolvedConflictDecisionLogProcessTerminationProofState.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.processterminationproof/ResolvedConflictDecisionLogProcessTerminationProofState.toString|toString(){}[0]
+}
+
 final class io.dataloom.processterminationproof/RetryBudgetProcessTerminationProofState { // io.dataloom.processterminationproof/RetryBudgetProcessTerminationProofState|null[0]
     constructor <init>(kotlin/Int, kotlin/Long, kotlin/Long, kotlin/Long) // io.dataloom.processterminationproof/RetryBudgetProcessTerminationProofState.<init>|<init>(kotlin.Int;kotlin.Long;kotlin.Long;kotlin.Long){}[0]
 
@@ -42,12 +65,49 @@ final class io.dataloom.processterminationproof/RetryBudgetProcessTerminationPro
     final fun toString(): kotlin/String // io.dataloom.processterminationproof/RetryBudgetProcessTerminationProofState.toString|toString(){}[0]
 }
 
+final class io.dataloom.processterminationproof/UnresolvedConflictLogProcessTerminationProofState { // io.dataloom.processterminationproof/UnresolvedConflictLogProcessTerminationProofState|null[0]
+    constructor <init>(kotlin/String, kotlin/String, kotlin/String, kotlin/String, kotlin/Long, kotlin/Long) // io.dataloom.processterminationproof/UnresolvedConflictLogProcessTerminationProofState.<init>|<init>(kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.Long;kotlin.Long){}[0]
+
+    final val committedAtEpochMillis // io.dataloom.processterminationproof/UnresolvedConflictLogProcessTerminationProofState.committedAtEpochMillis|{}committedAtEpochMillis[0]
+        final fun <get-committedAtEpochMillis>(): kotlin/Long // io.dataloom.processterminationproof/UnresolvedConflictLogProcessTerminationProofState.committedAtEpochMillis.<get-committedAtEpochMillis>|<get-committedAtEpochMillis>(){}[0]
+    final val conflictType // io.dataloom.processterminationproof/UnresolvedConflictLogProcessTerminationProofState.conflictType|{}conflictType[0]
+        final fun <get-conflictType>(): kotlin/String // io.dataloom.processterminationproof/UnresolvedConflictLogProcessTerminationProofState.conflictType.<get-conflictType>|<get-conflictType>(){}[0]
+    final val entityId // io.dataloom.processterminationproof/UnresolvedConflictLogProcessTerminationProofState.entityId|{}entityId[0]
+        final fun <get-entityId>(): kotlin/String // io.dataloom.processterminationproof/UnresolvedConflictLogProcessTerminationProofState.entityId.<get-entityId>|<get-entityId>(){}[0]
+    final val entityType // io.dataloom.processterminationproof/UnresolvedConflictLogProcessTerminationProofState.entityType|{}entityType[0]
+        final fun <get-entityType>(): kotlin/String // io.dataloom.processterminationproof/UnresolvedConflictLogProcessTerminationProofState.entityType.<get-entityType>|<get-entityType>(){}[0]
+    final val reason // io.dataloom.processterminationproof/UnresolvedConflictLogProcessTerminationProofState.reason|{}reason[0]
+        final fun <get-reason>(): kotlin/String // io.dataloom.processterminationproof/UnresolvedConflictLogProcessTerminationProofState.reason.<get-reason>|<get-reason>(){}[0]
+    final val version // io.dataloom.processterminationproof/UnresolvedConflictLogProcessTerminationProofState.version|{}version[0]
+        final fun <get-version>(): kotlin/Long // io.dataloom.processterminationproof/UnresolvedConflictLogProcessTerminationProofState.version.<get-version>|<get-version>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.processterminationproof/UnresolvedConflictLogProcessTerminationProofState.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.processterminationproof/UnresolvedConflictLogProcessTerminationProofState.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.processterminationproof/UnresolvedConflictLogProcessTerminationProofState.toString|toString(){}[0]
+}
+
 final object io.dataloom.processterminationproof/AppleCircuitBreakerProcessTerminationProof { // io.dataloom.processterminationproof/AppleCircuitBreakerProcessTerminationProof|null[0]
     final fun openCircuitAndPersist(kotlin/String): io.dataloom.processterminationproof/ProcessTerminationProofState // io.dataloom.processterminationproof/AppleCircuitBreakerProcessTerminationProof.openCircuitAndPersist|openCircuitAndPersist(kotlin.String){}[0]
     final fun readPersistedState(kotlin/String): io.dataloom.processterminationproof/ProcessTerminationProofState? // io.dataloom.processterminationproof/AppleCircuitBreakerProcessTerminationProof.readPersistedState|readPersistedState(kotlin.String){}[0]
 }
 
+final object io.dataloom.processterminationproof/AppleResolvedConflictDecisionLogProcessTerminationProof { // io.dataloom.processterminationproof/AppleResolvedConflictDecisionLogProcessTerminationProof|null[0]
+    final const val STATE_FILE_NAME // io.dataloom.processterminationproof/AppleResolvedConflictDecisionLogProcessTerminationProof.STATE_FILE_NAME|{}STATE_FILE_NAME[0]
+        final fun <get-STATE_FILE_NAME>(): kotlin/String // io.dataloom.processterminationproof/AppleResolvedConflictDecisionLogProcessTerminationProof.STATE_FILE_NAME.<get-STATE_FILE_NAME>|<get-STATE_FILE_NAME>(){}[0]
+
+    final fun readPersistedState(kotlin/String): io.dataloom.processterminationproof/ResolvedConflictDecisionLogProcessTerminationProofState? // io.dataloom.processterminationproof/AppleResolvedConflictDecisionLogProcessTerminationProof.readPersistedState|readPersistedState(kotlin.String){}[0]
+    final fun recordAndPersist(kotlin/String): io.dataloom.processterminationproof/ResolvedConflictDecisionLogProcessTerminationProofState // io.dataloom.processterminationproof/AppleResolvedConflictDecisionLogProcessTerminationProof.recordAndPersist|recordAndPersist(kotlin.String){}[0]
+}
+
 final object io.dataloom.processterminationproof/AppleRetryBudgetProcessTerminationProof { // io.dataloom.processterminationproof/AppleRetryBudgetProcessTerminationProof|null[0]
     final fun hasPersistedRetryBudgetState(kotlin/String): kotlin/Boolean // io.dataloom.processterminationproof/AppleRetryBudgetProcessTerminationProof.hasPersistedRetryBudgetState|hasPersistedRetryBudgetState(kotlin.String){}[0]
     final fun writeRetryBudgetAndPersist(kotlin/String): io.dataloom.processterminationproof/RetryBudgetProcessTerminationProofState // io.dataloom.processterminationproof/AppleRetryBudgetProcessTerminationProof.writeRetryBudgetAndPersist|writeRetryBudgetAndPersist(kotlin.String){}[0]
+}
+
+final object io.dataloom.processterminationproof/AppleUnresolvedConflictLogProcessTerminationProof { // io.dataloom.processterminationproof/AppleUnresolvedConflictLogProcessTerminationProof|null[0]
+    final const val STATE_FILE_NAME // io.dataloom.processterminationproof/AppleUnresolvedConflictLogProcessTerminationProof.STATE_FILE_NAME|{}STATE_FILE_NAME[0]
+        final fun <get-STATE_FILE_NAME>(): kotlin/String // io.dataloom.processterminationproof/AppleUnresolvedConflictLogProcessTerminationProof.STATE_FILE_NAME.<get-STATE_FILE_NAME>|<get-STATE_FILE_NAME>(){}[0]
+
+    final fun readPersistedState(kotlin/String): io.dataloom.processterminationproof/UnresolvedConflictLogProcessTerminationProofState? // io.dataloom.processterminationproof/AppleUnresolvedConflictLogProcessTerminationProof.readPersistedState|readPersistedState(kotlin.String){}[0]
+    final fun recordAndPersist(kotlin/String): io.dataloom.processterminationproof/UnresolvedConflictLogProcessTerminationProofState // io.dataloom.processterminationproof/AppleUnresolvedConflictLogProcessTerminationProof.recordAndPersist|recordAndPersist(kotlin.String){}[0]
 }
