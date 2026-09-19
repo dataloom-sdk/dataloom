@@ -10,8 +10,9 @@ of DL-041, but it is not the completion claim for issue
 [#95](https://github.com/dataloom-sdk/dataloom/issues/95).
 
 Still required for the full gate are decision application and convergence,
-standard detector utilities, entity/workflow/tenant/global precedence,
-loop/non-convergence quarantine, complete metrics/retry integration,
+standard detector utilities, loop/non-convergence quarantine, complete
+metrics/retry integration (entity/workflow/tenant/global resolver-selection
+precedence now ships as a first slice — see "Resolver selection policy" below),
 AC-FUNC-002, and mandatory-platform qualification. Authorized manual
 conflict-resolution operations now ship as a bounded first slice — see
 "Authorized manual conflict-resolution operations" below — and administration
@@ -22,9 +23,11 @@ metrics and retry integration remain open.
 
 ## Built-in policy catalog
 
-Every policy is selected by one exact `ConflictResolverId`. No conflict type,
+Every policy is identified by one exact `ConflictResolverId`. No conflict type,
 registration order, class name, exception, or platform name selects a policy
-implicitly.
+implicitly; the ID applied to a conflict comes only from explicit application
+configuration: the binding's single `resolverId`, optionally refined by an
+explicit selection policy (see "Resolver selection policy" below).
 
 | Resolver ID | Deterministic decision | Intended use |
 |---|---|---|
@@ -51,6 +54,94 @@ val bindings = ConflictOrchestrationBindings(
     resolverId = ConflictResolverId("dataloom.builtin.server-wins"),
 )
 ```
+
+## Resolver selection policy: entity type > workflow > tenant > global
+
+**Design decision D11 (2026-09-19) reverses the earlier exact-ID-only
+invariant.** Until this decision, resolver selection used only the single
+`ConflictResolverId` on `ConflictOrchestrationBindings`, and entity type,
+workflow ID, and tenant ID never reached the selection step (see the
+[superseded investigation](./conflict-resolver-policy-precedence-investigation.md)).
+`ConflictResolverRegistry` still selects only by exact ID; what changed is that
+*which ID to look up* can now vary per conflict.
+
+`ConflictOrchestrationBindings` gains an optional third parameter,
+`resolverSelectionPolicy: ConflictResolverSelectionPolicy? = null`. A policy is
+an immutable set of tier-scoped rules:
+
+```kotlin
+val bindings = ConflictOrchestrationBindings(
+    detectorId = myDetector.id,
+    // Global default: used when no rule below matches.
+    resolverId = ConflictResolverId("dataloom.builtin.manual"),
+    resolverSelectionPolicy = ConflictResolverSelectionPolicy(
+        listOf(
+            ForEntityType(EntityType("invoice"), ConflictResolverId("dataloom.builtin.server-wins")),
+            ForEntityType(EntityType("draft"), ConflictResolverId("dataloom.builtin.client-wins")),
+            ForWorkflow(WorkflowId("nightly-import"), ConflictResolverId("dataloom.builtin.reject")),
+            ForTenant(TenantId("acme"), ConflictResolverId("dataloom.builtin.timestamp")),
+        ),
+    ),
+)
+```
+
+The policy is supplied through `DataLoomConflictDetectionSpec.bindings`, so it
+applies to every inbound-pull pipeline the builder assembles exactly as the
+single resolver ID always has. No other spec or builder API changed.
+
+### Precedence
+
+For each detected conflict `SynchronizationConflictOrchestrator` builds a
+`ConflictResolverSelectionContext` and calls
+`ConflictOrchestrationBindings.selectResolverId`. The most specific tier with a
+matching rule wins; lower tiers are not consulted once a higher one matched, and
+rule order never matters:
+
+| Tier | Rule | Context value | Availability |
+|---|---|---|---|
+| 1 | `ForEntityType` | `SynchronizationConflict.entity.type` | Always present. |
+| 2 | `ForWorkflow` | `SynchronizationRequest.workflowId` | Always present (required field). |
+| 3 | `ForTenant` | `SynchronizationRequest.context.tenantId` | Only when the host populates it; a tenant rule never matches an absent tenant. |
+| 4 | Global default | `ConflictOrchestrationBindings.resolverId` | The same single ID as before; may be `null`. |
+
+The policy deliberately has no separate "global default" field: the binding's
+`resolverId` already is that value, so a policy adds tiers above it instead of
+introducing a second, competing default.
+
+### Where the tiers sit relative to application overrides
+
+Precedence tiers only choose an ID. The chosen ID then goes through the
+unchanged `ConflictResolverRegistry.lookup`: an application registration under
+that ID is checked first, then the built-in catalog. An application that
+registers its own resolver under `dataloom.builtin.server-wins` therefore
+overrides the built-in *even when the policy is what selected that ID*. An ID
+with no resolver anywhere is the existing
+`ConflictOrchestrationResult.ResolverNotFound` outcome (recorded as
+`RESOLVER_NOT_FOUND`), never an exception and never a silent fall-through to a
+lower tier. If no rule matches and `resolverId` is `null`, the result is
+`ResolverNotConfigured`, exactly as with no policy at all.
+
+### Construction-time validation
+
+Within one tier a key may appear in at most one rule. A second rule for the same
+entity type, workflow, or tenant is rejected with `IllegalArgumentException` when
+the policy is constructed, even if both rules name the same resolver, so there
+is no runtime tie-break to depend on. The same string used as an entity type and
+as a workflow is two different keys and is not a tie. A policy is not checked
+against the resolver registry at construction, matching how `resolverId` has
+always been handled.
+
+### Compatibility and limits
+
+With `resolverSelectionPolicy = null` (the default) or an empty policy,
+behavior is identical to exact-ID-only selection; the pre-existing orchestrator,
+registry, coordinator, and pipeline tests pass unchanged. The
+`ConflictOrchestrationBindings` constructor, `copy`, and `componentN` gain the
+new parameter, a pre-V1 ABI change with no shim (baselines regenerated).
+
+Not implemented: compound rules (entity type *and* workflow), wildcard/pattern
+matching, per-detector selection, and build-time validation of policy IDs
+against the registry.
 
 ## Timestamp-evidence policy
 
@@ -155,7 +246,8 @@ sequenceDiagram
     Storage-->>Pull: local change (when present)
     Pull->>Detector: detect(local, remote)
     Detector-->>Pull: no conflict or detected conflict
-    Pull->>Registry: lookup(exact resolver ID)
+    Note over Pull: select ID: entity type > workflow > tenant > binding resolverId
+    Pull->>Registry: lookup(selected exact resolver ID)
     Registry-->>Pull: application override or built-in
     Pull->>Resolver: resolve(conflict)
     Resolver-->>Pull: typed decision
@@ -183,15 +275,16 @@ returned `SynchronizationResult.Failed` without advancing its checkpoint, and
 this coordinator never touches that pipeline, a `ChangeSet`, or a
 `StorageProvider` directly.
 
-**Does not close the policy-precedence gap.** `ConflictAdministrationRequest`
+**Independent of resolver-selection precedence.** `ConflictAdministrationRequest`
 already carries an explicit `decision: ConflictResolutionDecision` supplied
 by the caller before the coordinator runs — there is no resolver-selection
-step in this path at all, so it has no bearing on
-[entity > workflow > tenant > global precedence](./conflict-resolver-policy-precedence-investigation.md),
-which is about the live pipeline's *automatic* selection of which
-`ConflictResolver` to run via `ConflictResolverRegistry.lookup`. Confirmed by
-reading: `ConflictAdministrationCoordinator` never references
-`ConflictResolverRegistry` or `ConflictResolver`. See that document's
+step in this path at all, so [entity > workflow > tenant > global
+precedence](#resolver-selection-policy-entity-type--workflow--tenant--global)
+(which governs the live pipeline's *automatic* selection of which
+`ConflictResolver` to run) does not apply to it. Confirmed by reading:
+`ConflictAdministrationCoordinator` never references `ConflictResolverRegistry`
+or `ConflictResolver`. See the
+[investigation](./conflict-resolver-policy-precedence-investigation.md)'s
 2026-08-26 postscript for the full check.
 
 ### Authorization
@@ -297,7 +390,6 @@ The following are not claimed by this page:
 - version/vector/ETag and other standard detector utilities;
 - atomic application of `UseLocal`, `UseRemote`, and `Merge` decisions with
   checkpoint/outbox/audit effects;
-- entity > workflow > tenant > global policy precedence;
 - fingerprints, bounded attempts, loop detection, convergence limits, and
   quarantine;
 - complete metrics and retry integration (immutable audit/event bridging is
