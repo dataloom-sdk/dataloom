@@ -38,9 +38,19 @@ import io.dataloom.runtime.conflict.ConflictOrchestrationBindings
  *   implementation.
  * - [bindings]: which detector (required) and resolver (optional) to use
  *   for every detection call. One binding applies to the whole pipeline
- *   instance — there is no per-entity-type binding, matching
- *   [io.dataloom.runtime.execution.inbound.InboundPullConflictDetectionConfiguration]'s
- *   own documented scope.
+ *   instance. Which *resolver* handles a given conflict can vary by entity
+ *   type, workflow, and tenant through the binding's optional
+ *   [io.dataloom.runtime.conflict.ConflictResolverSelectionPolicy]
+ *   (`ConflictOrchestrationBindings.resolverSelectionPolicy`), with strict
+ *   precedence entity type > workflow > tenant > the binding's own
+ *   `resolverId` as the global default. The detector is still one per
+ *   pipeline instance. Without a policy, behavior is exactly the
+ *   single-resolver-ID selection this spec has always had. The tenant tier
+ *   applies only when the host populated `ExecutionContext.tenantId`.
+ *   Resolvers named by the policy are supplied through [resolvers] (or are
+ *   built-in reference IDs) like any other; a policy naming an ID with no
+ *   resolver yields the same unresolved-conflict outcome as an unknown
+ *   single resolver ID, not an exception.
  * - [unresolvedConflictStore]: a real [DurableStateStore] for
  *   [DurableUnresolvedConflictLog] to persist conflicts detection could not
  *   auto-resolve. The application chooses the backing implementation (Room,

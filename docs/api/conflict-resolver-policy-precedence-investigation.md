@@ -1,5 +1,36 @@
 # Conflict-resolver policy precedence: investigated, no bounded slice yet
 
+> **SUPERSEDED (2026-09-19) by design decision D11.** The two investigations
+> below (and the 2026-08-26 postscript) concluded that no bounded first slice
+> existed because doing so would reverse three documented exact-ID-only
+> statements without a design decision. That decision has now been made: the
+> exact-ID-only invariant is **reversed**, and a first slice ships. Everything
+> below is preserved unedited as the historical record of why the decision was
+> needed; its *Findings* about what context reaches `resolve()` remain accurate
+> and were the input to the design. Its conclusion ("no code changed", "still
+> open") no longer holds.
+>
+> **What shipped (design summary).** `ConflictOrchestrationBindings` gained an
+> optional `resolverSelectionPolicy: ConflictResolverSelectionPolicy?`
+> (default `null`). A policy is an immutable list of tier-scoped rules --
+> `ForEntityType`, `ForWorkflow`, `ForTenant` -- each naming a
+> `ConflictResolverId`. `SynchronizationConflictOrchestrator` builds a
+> `ConflictResolverSelectionContext` (the detected conflict's entity type, the
+> request's workflow ID, and the request's tenant ID when the host supplied
+> one) and selects with strict precedence entity type > workflow > tenant >
+> the binding's own `resolverId` (the global default). Ties (two rules for one
+> key in one tier) are rejected at policy construction. The chosen ID is then
+> looked up through the unchanged `ConflictResolverRegistry`, so application
+> registrations still override built-ins, and an unknown ID is still the
+> existing `ResolverNotFound` outcome. With no policy, behavior is identical
+> to before. The three statements this document called invariants were
+> rewritten in `ConflictResolverRegistry`, `SynchronizationConflictOrchestrator`
+> and `DataLoomConflictDetectionSpec`. Full design, precedence table, and
+> limits: [Conflict resolution strategies](./conflict-resolution-strategies.md),
+> "Resolver selection policy". Still open under DL-041: loop/non-convergence
+> quarantine, complete metrics and retry integration, and a single physical
+> transaction across storage, decision log, checkpoint, outbox, and audit.
+
 ## Question
 
 The `#95` market-readiness row names "policy precedence (entity > workflow >
