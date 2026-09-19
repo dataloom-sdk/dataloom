@@ -8,18 +8,22 @@ package io.dataloom.api.security
  * [DataLoomDigestCalculator] is the integrity primitive future asset-transfer
  * work (chunk and whole-object integrity) is expected to consume: a manifest
  * records a [DataLoomDigest] per chunk, and a receiver recomputes and
- * compares. Whole-object integrity is achievable by computing a digest over
- * the ordered concatenation of chunk digests, the same technique multipart
- * uploads and content-addressable stores already use — no separate streaming
- * API is required for that case.
+ * compares. A digest over a bounded chunk needs only this one-shot method.
+ * A *whole-object* digest over the asset's raw bytes (as
+ * `AssetManifest.checksum` is defined) cannot be computed one-shot without
+ * buffering the whole object, so it uses the incremental
+ * [DataLoomIncrementalDigestCalculator] / [DataLoomDigestAccumulator]
+ * capability instead.
  *
  * ## Shape
  *
  * This is a single-method, stateless, one-shot (non-streaming) contract,
  * mirroring [io.dataloom.api.random.DataLoomSecureRandom.nextBytes]'s
- * one-call shape rather than an incremental hasher. The algorithm is a
- * per-call parameter, not a constructor parameter, so one injected instance
- * serves every algorithm an implementation supports.
+ * one-call shape. Incremental hashing is a deliberately separate, extending
+ * contract ([DataLoomIncrementalDigestCalculator]) so simple one-shot
+ * implementations and test fakes remain valid. The algorithm is a per-call
+ * parameter, not a constructor parameter, so one injected instance serves
+ * every algorithm an implementation supports.
  *
  * ## Injection
  *

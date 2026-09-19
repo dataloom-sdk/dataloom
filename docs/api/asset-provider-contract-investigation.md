@@ -4,6 +4,21 @@
 
 ## Status
 
+> **Superseded by [ADR-0003](../adr/ADR-0003-asset-transfer-and-streaming-digest.md)
+> (2026-09-19).** The blocker this investigation named — no settled
+> chunked-transfer (`FR-ASSET-002`) or durable-session (`FR-ASSET-003`) design —
+> was resolved by the lead's decisions D5/D6, and slice 1 of `#97` now ships
+> an `AssetProvider` SPI, streaming source/sink contracts, the transfer-session
+> state machine, an in-memory reference provider and a provider contract kit in
+> the new `dataloom-assets` module. The analysis below is kept as the record of
+> why a contract-only SPI was not added *before* that design existed; its
+> conclusion no longer holds. The "What would need to exist first" items are now
+> addressed as: (1) chunk/streaming shapes: `AssetChunkPlan`, `AssetSource`,
+> `AssetSink`; (2) session shape: `AssetTransferSession`; (3) the
+> `ProviderType` question is **still open** and deliberately deferred to the
+> `DataLoomBuilder` wiring slice (`AssetProvider` is not yet a
+> `DataLoomProvider`).
+
 **Investigated (2026-08-24). No genuinely narrow, decision-free, non-redundant
 `AssetProvider` contract slice found.** This documents why, so a future
 attempt does not re-derive the same conclusion from scratch, and names

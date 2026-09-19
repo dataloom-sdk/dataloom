@@ -116,6 +116,15 @@ abstract interface io.dataloom.api.random/DataLoomSecureRandom { // io.dataloom.
     abstract fun nextBytes(kotlin/Int): kotlin/ByteArray // io.dataloom.api.random/DataLoomSecureRandom.nextBytes|nextBytes(kotlin.Int){}[0]
 }
 
+abstract interface io.dataloom.api.security/DataLoomDigestAccumulator : kotlin/AutoCloseable { // io.dataloom.api.security/DataLoomDigestAccumulator|null[0]
+    abstract val algorithm // io.dataloom.api.security/DataLoomDigestAccumulator.algorithm|{}algorithm[0]
+        abstract fun <get-algorithm>(): io.dataloom.api.security/DigestAlgorithm // io.dataloom.api.security/DataLoomDigestAccumulator.algorithm.<get-algorithm>|<get-algorithm>(){}[0]
+
+    abstract fun close() // io.dataloom.api.security/DataLoomDigestAccumulator.close|close(){}[0]
+    abstract fun finish(): io.dataloom.api.security/DataLoomDigest // io.dataloom.api.security/DataLoomDigestAccumulator.finish|finish(){}[0]
+    abstract fun update(kotlin/ByteArray, kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.api.security/DataLoomDigestAccumulator.update|update(kotlin.ByteArray;kotlin.Int;kotlin.Int){}[0]
+}
+
 abstract interface io.dataloom.api.security/DataLoomDigestCalculator { // io.dataloom.api.security/DataLoomDigestCalculator|null[0]
     abstract fun digest(io.dataloom.api.security/DigestAlgorithm, kotlin/ByteArray): io.dataloom.api.security/DataLoomDigest // io.dataloom.api.security/DataLoomDigestCalculator.digest|digest(io.dataloom.api.security.DigestAlgorithm;kotlin.ByteArray){}[0]
 }
@@ -123,6 +132,10 @@ abstract interface io.dataloom.api.security/DataLoomDigestCalculator { // io.dat
 abstract interface io.dataloom.api.security/DataLoomHmacCalculator { // io.dataloom.api.security/DataLoomHmacCalculator|null[0]
     abstract fun hmac(io.dataloom.api.security/HmacAlgorithm, kotlin/ByteArray, kotlin/ByteArray): io.dataloom.api.security/DataLoomMac // io.dataloom.api.security/DataLoomHmacCalculator.hmac|hmac(io.dataloom.api.security.HmacAlgorithm;kotlin.ByteArray;kotlin.ByteArray){}[0]
     abstract fun verify(kotlin/ByteArray, kotlin/ByteArray, io.dataloom.api.security/DataLoomMac): kotlin/Boolean // io.dataloom.api.security/DataLoomHmacCalculator.verify|verify(kotlin.ByteArray;kotlin.ByteArray;io.dataloom.api.security.DataLoomMac){}[0]
+}
+
+abstract interface io.dataloom.api.security/DataLoomIncrementalDigestCalculator : io.dataloom.api.security/DataLoomDigestCalculator { // io.dataloom.api.security/DataLoomIncrementalDigestCalculator|null[0]
+    abstract fun newAccumulator(io.dataloom.api.security/DigestAlgorithm): io.dataloom.api.security/DataLoomDigestAccumulator // io.dataloom.api.security/DataLoomIncrementalDigestCalculator.newAccumulator|newAccumulator(io.dataloom.api.security.DigestAlgorithm){}[0]
 }
 
 abstract interface io.dataloom.api.time/DataLoomClock { // io.dataloom.api.time/DataLoomClock|null[0]
@@ -173,10 +186,11 @@ final class io.dataloom.api.random/AppleDataLoomSecureRandom : io.dataloom.api.r
     final fun nextBytes(kotlin/Int): kotlin/ByteArray // io.dataloom.api.random/AppleDataLoomSecureRandom.nextBytes|nextBytes(kotlin.Int){}[0]
 }
 
-final class io.dataloom.api.security/AppleDataLoomDigestCalculator : io.dataloom.api.security/DataLoomDigestCalculator { // io.dataloom.api.security/AppleDataLoomDigestCalculator|null[0]
+final class io.dataloom.api.security/AppleDataLoomDigestCalculator : io.dataloom.api.security/DataLoomIncrementalDigestCalculator { // io.dataloom.api.security/AppleDataLoomDigestCalculator|null[0]
     constructor <init>() // io.dataloom.api.security/AppleDataLoomDigestCalculator.<init>|<init>(){}[0]
 
     final fun digest(io.dataloom.api.security/DigestAlgorithm, kotlin/ByteArray): io.dataloom.api.security/DataLoomDigest // io.dataloom.api.security/AppleDataLoomDigestCalculator.digest|digest(io.dataloom.api.security.DigestAlgorithm;kotlin.ByteArray){}[0]
+    final fun newAccumulator(io.dataloom.api.security/DigestAlgorithm): io.dataloom.api.security/DataLoomDigestAccumulator // io.dataloom.api.security/AppleDataLoomDigestCalculator.newAccumulator|newAccumulator(io.dataloom.api.security.DigestAlgorithm){}[0]
 }
 
 final class io.dataloom.api.security/AppleDataLoomHmacCalculator : io.dataloom.api.security/DataLoomHmacCalculator { // io.dataloom.api.security/AppleDataLoomHmacCalculator|null[0]

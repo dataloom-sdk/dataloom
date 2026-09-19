@@ -10,6 +10,7 @@ direction; they do not prove that every part of the decision is implemented.
 |---|---|---|
 | [ADR-0001](./ADR-0001-android-first-kmp-core.md) | Accepted; parts superseded by ADR-0002 | Android-first product with a platform-independent Kotlin Multiplatform core |
 | [ADR-0002](./ADR-0002-v1-artifact-and-foundation-architecture.md) | Accepted V1 target | Artifact graph, dependency roots, six-strategy engine, platform paths, and migration rules |
+| [ADR-0003](./ADR-0003-asset-transfer-and-streaming-digest.md) | Accepted; slice 1 implemented | Chunked resumable asset transfer, transfer-session state machine, `AssetProvider` SPI, and incremental (streaming) digest |
 
 ## Decision lifecycle
 
