@@ -968,10 +968,16 @@ jobs:
             LOSER_REASON="$REASON_B"
             WINNER_GENERATION="$GENERATION_A"
           fi
-          if [ "$LOSER_REASON" != "PROBE_IN_FLIGHT" ]; then
-            echo "ERROR: the losing process's rejection reason was '$LOSER_REASON', expected 'PROBE_IN_FLIGHT'." >&2
+          # Each process samples its own clock before the shared state read, so
+          # a loser that sampled just before the winner's write reads a newer
+          # updatedAt and is refused as CLOCK_REGRESSION (evaluateAccess checks
+          # that before the probe lease). Either way it is refused and exactly
+          # one process was ALLOWED, which is the mutual-exclusion claim.
+          if [ "$LOSER_REASON" != "PROBE_IN_FLIGHT" ] && [ "$LOSER_REASON" != "CLOCK_REGRESSION" ]; then
+            echo "ERROR: the losing process's rejection reason was '$LOSER_REASON', expected 'PROBE_IN_FLIGHT' or 'CLOCK_REGRESSION'." >&2
             exit 1
           fi
+          echo "Loser rejection reason: $LOSER_REASON"
           if [ "$WINNER_GENERATION" -le 0 ]; then
             echo "ERROR: the winning process's granted probe generation was '$WINNER_GENERATION', expected a positive integer." >&2
             exit 1
@@ -1625,6 +1631,15 @@ jobs:
             echo "ERROR: one or both result files never appeared within 30s (A: $RESULT_A, B: $RESULT_B)." >&2
             [ -f "$RESULT_A" ] && { echo "--- result-a.tsv ---"; cat "$RESULT_A"; } || echo "result-a.tsv missing"
             [ -f "$RESULT_B" ] && { echo "--- result-b.tsv ---"; cat "$RESULT_B"; } || echo "result-b.tsv missing"
+            # Distinguishes a suspended app (STAT T / no CPU time) from a
+            # crashed one (pid gone, crash report present) from a hung one.
+            echo "--- process state (missing row = exited; STAT T = stopped/suspended) ---"
+            ps -o pid,stat,etime,time,command -p "$PID_A,$PID_B" || true
+            echo "--- recent crash reports ---"
+            ls -lt "$HOME/Library/Logs/DiagnosticReports" 2>/dev/null | head -10 || true
+            echo "--- simulator log tail for the proof apps ---"
+            xcrun simctl spawn "$DEVICE_ID" log show --last 3m --style compact \
+              --predicate 'process BEGINSWITH "ProcessContentionProofApp"' 2>&1 | tail -60 || true
             exit 1
           fi
 
