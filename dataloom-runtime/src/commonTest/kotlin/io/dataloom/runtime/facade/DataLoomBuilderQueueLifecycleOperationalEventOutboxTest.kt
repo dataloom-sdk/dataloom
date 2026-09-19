@@ -82,6 +82,11 @@ import io.dataloom.api.transport.PushChangesRequest
 import io.dataloom.api.transport.TransportProvider
 import io.dataloom.runtime.execution.SynchronizationExecutionContext
 import io.dataloom.runtime.execution.SynchronizationPipeline
+import io.dataloom.runtime.observation.health.DataLoomHealthSeverity
+import io.dataloom.runtime.observation.health.OperationalEventOutboxHealthTracker
+import io.dataloom.runtime.observation.health.QueueWorkerHealthTracker
+import io.dataloom.runtime.observation.health.QueueWorkerRunOutcome
+import io.dataloom.runtime.observation.health.dataLoomHealthSnapshot
 import io.dataloom.runtime.queue.QueueProcessingRequest
 import io.dataloom.runtime.queue.QueueProcessingResult
 import io.dataloom.runtime.queue.QueuedSynchronizationWork
@@ -198,6 +203,75 @@ class DataLoomBuilderQueueLifecycleOperationalEventOutboxTest {
         val processed = assertIs<QueueProcessingResult.Processed>(completed.processingResult)
         assertEquals(1, processed.summary.completed)
         assertEquals(1, queue.completionRequests.size)
+    }
+
+    @Test
+    fun healthTrackers_observeTheBridgedOutboxAndTheWorkerRun_whenConfigured() = runTest {
+        val queue = RecordingQueueProvider()
+        val outboxStore = InMemoryOperationalEventOutboxStore()
+        val scope = OperationalEventOutboxScope("integration-health-events")
+        val trackerClock = object : DataLoomClock {
+            override fun now(): DataLoomInstant = DataLoomInstant(9_000L)
+        }
+        val outboxTracker = OperationalEventOutboxHealthTracker(trackerClock)
+        val workerTracker = QueueWorkerHealthTracker(trackerClock)
+        val dataLoom = builder(queue)
+            .pipeline(SucceedingPipeline(SynchronizationDirection.PUSH))
+            .queueWorkerConfiguration(queueWorkerSpec())
+            .queueLifecycleOperationalEventOutboxConfiguration(
+                DataLoomQueueLifecycleOperationalEventOutboxSpec(store = outboxStore, scope = scope),
+            )
+            .operationalEventOutboxHealthTracker(outboxTracker)
+            .queueWorkerHealthTracker(workerTracker)
+            .build()
+        assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
+
+        val result = dataLoom.queueWorker!!.run(workerRunRequest())
+
+        // The wrapped worker returns the real result and the outbox bridge still appended.
+        assertIs<QueueWorkerRunResult.ProcessingCompleted>(result)
+        assertEquals(1, outboxStore.recordedEntryCount(scope))
+        val outbox = outboxTracker.snapshot().single()
+        assertEquals(scope, outbox.scope)
+        assertEquals(1, outbox.stateObservation?.summary?.pendingCount)
+        val worker = workerTracker.snapshot()
+        assertEquals(QueueWorkerRunOutcome.COMPLETED_PROCESSED, worker.lastRunOutcome)
+        assertEquals(0, worker.runsInFlight)
+        assertEquals(0, worker.consecutiveFailedRuns)
+        val health = dataLoomHealthSnapshot(
+            outboxObservations = outboxTracker.snapshot(),
+            queueWorkerObservation = worker,
+            now = DataLoomInstant(9_000L), // the same instant the builder's runtime clock reports
+        )
+        assertEquals(DataLoomHealthSeverity.HEALTHY, health.severity)
+    }
+
+    @Test
+    fun healthTrackers_areInert_whenNotConfigured() = runTest {
+        val queue = RecordingQueueProvider()
+        val outboxStore = InMemoryOperationalEventOutboxStore()
+        val scope = OperationalEventOutboxScope("integration-no-tracker-events")
+        val trackerClock = object : DataLoomClock {
+            override fun now(): DataLoomInstant = DataLoomInstant(9_000L)
+        }
+        val outboxTracker = OperationalEventOutboxHealthTracker(trackerClock)
+        val workerTracker = QueueWorkerHealthTracker(trackerClock)
+        val dataLoom = builder(queue)
+            .pipeline(SucceedingPipeline(SynchronizationDirection.PUSH))
+            .queueWorkerConfiguration(queueWorkerSpec())
+            .queueLifecycleOperationalEventOutboxConfiguration(
+                DataLoomQueueLifecycleOperationalEventOutboxSpec(store = outboxStore, scope = scope),
+            )
+            // Neither health tracker is ever passed to the builder.
+            .build()
+        assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
+
+        val result = dataLoom.queueWorker!!.run(workerRunRequest())
+
+        assertIs<QueueWorkerRunResult.ProcessingCompleted>(result)
+        assertEquals(1, outboxStore.recordedEntryCount(scope))
+        assertEquals(emptyList(), outboxTracker.snapshot())
+        assertEquals(null, workerTracker.snapshot().lastRunOutcome)
     }
 
     // -------------------------------------------------------------------------

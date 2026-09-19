@@ -389,6 +389,20 @@ envelopes, hard-delete acknowledgement) is still decoded -- sequences are
 assigned in list order, everything is pending -- so a scope persisted before
 this change loads and upgrades on its next write. There is no other migration.
 
+### Health observation (opt-in)
+
+Because every outbox read suspends over a store, a synchronous health snapshot
+cannot read it. `DurableOperationalEventOutbox` therefore takes an optional
+`stateObserver` and pushes a bounded summary (pending count, oldest pending
+`occurredAt`, retained-acknowledged count, store version, observation time)
+after each state it loads-and-evaluates or successfully writes.
+`OperationalEventOutboxHealthTracker` keeps the latest per scope and
+`DurableOperationalEventOutboxProcessor(outbox, tracker)` adds each cycle's
+left-pending counts. The value is what this process last saw, **not** the
+store's current state; `dataLoomHealthSnapshot` reports its age and a `stale`
+flag rather than hiding that. Absent an observer nothing is computed. Full
+description and roll-up thresholds: [Health snapshot](./health-snapshot.md).
+
 ### Read-then-consume processing (opt-in)
 
 `DurableOperationalEventOutboxProcessor` (`io.dataloom.runtime.operational`)

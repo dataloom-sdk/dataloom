@@ -202,7 +202,7 @@ protection, quarantine, and metrics.
 | [Runtime lifecycle events](./runtime-lifecycle-events.md) | Available foundation | Started, phase, and completed runtime integration. |
 | [Runtime operational events](./runtime-operational-events.md) | Available foundation | Selected progress, scheduler-backed retry, and conflict event integration. |
 | [Retry and circuit telemetry](./retry-circuit-telemetry.md) | Partial V1 subsystem | Bounded exporter isolation, fixed-cardinality metrics, structured-log/trace adapters, redacted health snapshots, and retry/circuit/admin wrappers. |
-| [Health snapshot](./health-snapshot.md) | Bounded first slice | Pure, synchronous, redacted point-in-time aggregation of provider lifecycle state, retry/circuit telemetry, and caller-supplied provider health. |
+| [Health snapshot](./health-snapshot.md) | Bounded slice 2 | Pure, synchronous, redacted point-in-time aggregation of provider lifecycle state, retry/circuit telemetry, caller-supplied provider health, and -- through purpose-built synchronous read paths -- the durable outbox (a pushed cache with explicit as-of/staleness) and the queue worker (run bookkeeping), with a configurable HEALTHY/DEGRADED/UNHEALTHY roll-up. |
 | [Durable outbox ordering, retention and replay](./outbox-replay-investigation.md) | Decided and implemented | Durable per-workflow sequence numbers assigned inside the persisting compare-and-set (FR-EVENT-003); `acknowledge` keeps a bounded, deterministically pruned tombstone instead of deleting, with an explicit `replay`; payload/schema version 2 (version 1 still decodes). Health aggregation of outbox state is a separate, not-yet-built slice. |
 
 The compatibility synchronization-event path remains synchronous and
@@ -211,8 +211,8 @@ fixed-cardinality metrics, structured-log/trace adapters, and a redacted local
 health snapshot. A canonical versioned envelope and shared redaction boundary
 now exist. `dataLoomHealthSnapshot` now aggregates that retry/circuit read
 model with provider lifecycle state and caller-supplied provider health into
-one redacted, point-in-time value type -- durable-outbox and queue-worker
-state are not included since neither exposes a synchronous read path today.
+one redacted, point-in-time value type, and (slice 2) also the durable outbox and
+queue worker through synchronous read paths, with a severity roll-up.
 The durable outbox now assigns durable per-workflow sequence numbers and
 supports acknowledged-entry replay. V1 still requires subscription delivery,
 cross-scope enumeration, wire compatibility/upcasting, complete
