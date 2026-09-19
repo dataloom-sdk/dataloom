@@ -2,14 +2,15 @@
 
 Status: **available foundation**. The shared contracts, strict redactor,
 canonical V1 wire codec, and schema-upcast registry are implemented. A
-bounded first slice of durable persistence exists, including opt-in
-count-based and age-based retention policies, operator-driven per-entry
-acknowledgement, an opt-in read-then-consume processing loop, and bounded
-opt-in filtering of that loop's entries (see "Durable outbox" below).
-Replaying currently-retained, never-acknowledged entries needs no new
-capability -- see "Replay" below. Replaying already-*acknowledged* entries
-would need a real design change to this outbox's core acknowledge-deletes
-semantics (see "Replay"), and complete subsystem adapters remain V1 work.
+durable outbox exists with durable per-workflow sequence numbers assigned
+inside the persisting compare-and-set (FR-EVENT-003), opt-in count-based and
+age-based retention of pending entries, acknowledgement as a retained
+tombstone with bounded, deterministically pruned history, an explicit
+`replay` of acknowledged entries, an opt-in read-then-consume processing
+loop, and bounded opt-in filtering of that loop's entries (see "Durable
+outbox" below and [the ordering/retention/replay design](outbox-replay-investigation.md)).
+Complete subsystem adapters, subscription delivery, and cross-scope
+enumeration remain V1 work.
 
 ## Purpose
 
@@ -141,27 +142,57 @@ standing "don't build ahead of a concrete near-term consumer" discipline.
 `DurableOperationalEventOutbox` (`io.dataloom.api.operational`) is a bounded
 first slice of DL-042's durable-outbox requirement: it persists
 `OperationalEventEnvelope` instances so they survive a process restart, and
-reads back everything currently persisted for one
-`OperationalEventOutboxScope`, oldest first.
+reads back everything still pending for one `OperationalEventOutboxScope`, in
+durable sequence order.
 
 ```kotlin
-val outbox = DurableOperationalEventOutbox(store)
+val outbox = DurableOperationalEventOutbox(store, clock)
 val scope = OperationalEventOutboxScope("retry-events")
 
 when (val outcome = outbox.append(scope, envelope)) {
-    is DurableOperationalEventOutboxAppendOutcome.Appended -> Unit
-    is DurableOperationalEventOutboxAppendOutcome.AlreadyAppended -> Unit // idempotent retry
+    is DurableOperationalEventOutboxAppendOutcome.Appended -> outcome.sequence // durable, per-workflow
+    is DurableOperationalEventOutboxAppendOutcome.AlreadyAppended -> Unit // idempotent retry, original sequence
     else -> Unit // Conflict / PersistenceFailure / ContentionLimitReached
 }
 
-val persisted = outbox.entries(scope) // every envelope appended so far, oldest first
+val pending = outbox.entries(scope) // pending envelopes, in sequence order
+val withSequences = outbox.pendingEntries(scope) // the same, with each entry's sequence
 
 when (val acknowledged = outbox.acknowledge(scope, envelope.id)) {
-    is DurableOperationalEventOutboxAcknowledgeOutcome.Acknowledged -> Unit // removed
-    is DurableOperationalEventOutboxAcknowledgeOutcome.NotFound -> Unit // already gone; safe no-op
+    is DurableOperationalEventOutboxAcknowledgeOutcome.Acknowledged -> Unit // tombstoned, not deleted
+    is DurableOperationalEventOutboxAcknowledgeOutcome.AlreadyAcknowledged -> Unit // safe no-op
+    is DurableOperationalEventOutboxAcknowledgeOutcome.NotFound -> Unit // never appended / already pruned
     else -> Unit // PersistenceFailure / ContentionLimitReached
 }
+
+val history = outbox.acknowledgedEntries(scope) // retained acknowledged entries
+outbox.replay(scope, envelope.id) // operator request: pending again, original position and sequence
 ```
+
+### Ordering (FR-EVENT-003)
+
+Every entry carries a durable, monotonically increasing
+`OperationalEventOutboxEntry.sequence`, assigned per ordering key: the
+envelope's `workflowId`, or the documented default
+`OperationalEventOrderingKey.Global` for envelopes without one. `append`
+computes the sequence from the state its own compare-and-set is conditioned
+on, so two concurrent appenders -- in one process or across processes sharing
+a store -- can never persist the same sequence: exactly one compare-and-set
+wins and the loser reloads and takes the next. Nothing lives in memory, so a
+restart loses nothing. Gaps left by removed entries are allowed; a sequence is
+never reused, because `OperationalEventOutboxState.sequenceHighWaterMarks`
+remembers the largest sequence ever assigned per key even after every entry
+carrying it has been pruned. That memory is itself bounded (10,000 keys):
+beyond that, marks of keys with no retained entry are dropped lowest-first
+and `sequenceFloor` is raised so a dropped key restarts above every sequence
+it could have used. `entries`, `pendingEntries`, `acknowledgedEntries` and
+`DurableOperationalEventOutboxProcessor` all present entries in list order,
+which the state validates equals per-key sequence order.
+
+The processor presents a workflow's events in sequence order but does **not**
+hold later events back behind an earlier one whose handler outcome was
+`Skipped`/`Failed`; strict head-of-line blocking is not part of this
+contract.
 
 ### Why this reuses `DurableStateStore`, not `QueueProvider`
 
@@ -190,15 +221,19 @@ join multiple entries into one text payload.
 
 ### Retention policy
 
-`DurableOperationalEventOutbox` takes two independent, optional retention
+Two populations are bounded separately. **Pending** entries (never
+acknowledged, or replayed) are bounded by two independent, optional
 constructor parameters — `maximumRetainedEntries: Int?` (count-based) and
-`maximumRetainedAge: Duration?` (age-based) — plus a `clock: DataLoomClock?`
-the age-based policy reads. All three default to `null`. With both
-retention parameters `null`, behavior is byte-for-byte unchanged from before
-either policy existed: entries accumulate without bound, limited only by
+`maximumRetainedAge: Duration?` (age-based). Both default to `null`, meaning
+pending entries accumulate without bound, limited only by
 `OperationalEventOutboxStateCodec`'s own overall-encoded-length safety limit
-(`MAX_ENTRY_COUNT` = 10,000 entries; 4 MiB encoded). A caller may configure
-either policy alone, both together, or neither.
+(`MAX_ENTRY_COUNT` = 10,000 entries including acknowledged tombstones; 4 MiB
+encoded). A caller may configure either policy alone, both together, or
+neither. **Acknowledged history** has its own bound, described under
+"Acknowledgement and replay" below; the policies here never count or evict a
+tombstone. The constructor now takes a required `clock: DataLoomClock` (used
+for acknowledgement timestamps and for every age-based decision); it is read
+during `append` only when an age policy is configured.
 
 Both policies share the same two eviction guarantees: eviction happens as
 part of the very same compare-and-set write that persists the new entry,
@@ -215,11 +250,11 @@ A caller that sets `maximumRetainedEntries` gets a bounded first slice of
 real retention:
 
 ```kotlin
-val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 5_000)
+val outbox = DurableOperationalEventOutbox(store, clock, maximumRetainedEntries = 5_000)
 ```
 
-Once an `append` would grow the retained entry count for a scope past
-`maximumRetainedEntries`, the oldest entries are evicted first — as many as
+Once an `append` would grow the pending entry count for a scope past
+`maximumRetainedEntries`, the oldest pending entries are evicted first — as many as
 needed to bring the retained count back down to the configured cap. This
 mirrors `DurableConfigurationHistory`'s own `maxRetainedVersions` shape — a
 count-based cap enforced by trimming the oldest entries off an ordered list
@@ -232,23 +267,22 @@ elements.
 #### Age-based retention
 
 A caller that sets `maximumRetainedAge` gets a second, independent bounded
-retention mode. It must also supply `clock`, since age-based eviction
-needs a "now" reference `DurableOperationalEventOutbox` did not previously
-hold — `OperationalEventEnvelope` itself never reads a clock:
+retention mode, using the outbox's `clock` for the "now" reference —
+`OperationalEventEnvelope` itself never reads a clock:
 
 ```kotlin
 val outbox = DurableOperationalEventOutbox(
     store,
+    SystemDataLoomClock(),
     maximumRetainedAge = 30.days,
-    clock = SystemDataLoomClock(),
 )
 ```
 
-On each `append`, every already-persisted entry (never the entry that call
-is itself adding) whose `OperationalEventEnvelope.occurredAt` is older than
-`maximumRetainedAge` relative to `clock`'s current reading is evicted, as
+On each `append`, every already-persisted pending entry (never the entry that
+call is itself adding) whose `OperationalEventEnvelope.occurredAt` is older
+than `maximumRetainedAge` relative to `clock`'s current reading is evicted, as
 part of that same compare-and-set write. `clock` is read at most once per
-`append` call, never once per entry, and only when `maximumRetainedAge` is
+`append` call, never once per entry, and only when an age policy is
 configured.
 
 This class previously argued a count-based cap over an age-based one
@@ -260,12 +294,9 @@ global clock and treats every time value as caller-supplied, not
 authoritative: `maximumRetainedAge` takes `occurredAt` at face value as the
 event's stated occurrence time, so a caller supplying an inaccurate,
 backdated, or clock-skewed `occurredAt` gets correspondingly inaccurate
-age-based eviction. Reusing `occurredAt` rather than inventing a new
-per-entry "appended at" timestamp was a deliberate choice: it keeps
-`OperationalEventOutboxState`'s persisted shape completely unchanged, where
-a new field would have been a materially larger, separately-versioned
-schema change for what remains a bounded first slice. A caller whose
-events' `occurredAt` cannot be trusted as wall-clock-comparable should
+age-based eviction of *pending* entries. (Acknowledged tombstones are aged by
+the outbox's own `acknowledgedAt`, read from `clock`, not by `occurredAt`.)
+A caller whose events' `occurredAt` cannot be trusted as wall-clock-comparable should
 prefer `maximumRetainedEntries` instead, or configure both so a single
 runaway `occurredAt` value cannot defeat bounding entirely.
 
@@ -298,56 +329,73 @@ otherwise surface a different surviving set.
 
 #### Optionality
 
-Both `maximumRetainedEntries` and `maximumRetainedAge` (with `clock`) are
-optional constructor parameters rather than required ones, matching this
-codebase's existing "optional collaborator" pattern for additive,
-backward-compatible behavior (for example `QueueEntryTransitionObserver? = null`
-on the queue-execution processors) — existing callers that construct
-`DurableOperationalEventOutbox` without them see no behavior change at all.
+Both `maximumRetainedEntries` and `maximumRetainedAge` are optional
+constructor parameters. Sequence numbers and acknowledgement tombstones are
+not optional -- they are how ordering and replay work -- and the persisted
+schema changed to carry them (see "Persisted schema" below).
 
-### Acknowledgement
+### Acknowledgement and replay
 
-`DurableOperationalEventOutbox.acknowledge(scope, id)` removes exactly one
-entry -- the one whose `OperationalEventEnvelope.id` matches -- from a
-scope's retained list, as part of one atomic compare-and-set write, using the
-same load-evaluate-compare-and-set retry loop `append` already uses:
+`DurableOperationalEventOutbox.acknowledge(scope, id)` no longer deletes. In
+one atomic compare-and-set write it stamps the entry with
+`OperationalEventOutboxEntry.acknowledgedAt` (read from the outbox's `clock`),
+turning it into a retained tombstone. The entry disappears from `entries`/
+`pendingEntries`, stays readable through `acknowledgedEntries`, and stays
+replayable until acknowledged-history retention prunes it. Acknowledging an
+already-acknowledged id reports `AlreadyAcknowledged` (a no-op that leaves
+the original `acknowledgedAt`); an id that was never appended, was evicted, or
+whose tombstone was pruned reports `NotFound`.
 
-```kotlin
-val outcome = outbox.acknowledge(scope, envelope.id)
-```
+This is still **operator-driven dismissal from view, not work-queue
+completion**: no lease, retry attempt or failure disposition exists here, and
+a caller that needs those belongs on `io.dataloom.api.queue.QueueProvider`.
+What changed is that dismissal is reversible.
+`outbox.replay(scope, id)` clears the acknowledgement marker of a retained
+tombstone -- reporting `Replayed`, `AlreadyPending` (nothing to do) or
+`NotFound` (never appended or already pruned) -- and the entry is pending
+again at its **original position and sequence**, so the next processor pass
+presents it in order, ahead of anything appended since. A duplicate append of
+an acknowledged id (a producer retry) is `AlreadyAppended` with the original
+sequence: a tombstone still counts for the duplicate-id check, so a retry
+never resurrects a processed entry.
 
-This is deliberately **operator-driven dismissal from view, not work-queue
-completion**. Every real caller of this outbox today (the four bridges
-documented below) durably appends an envelope purely for operator visibility
-and debugging, as a side-record of something that already happened -- none
-of them ever reads `entries` back to decide what to do next, and append
-outcomes other than success are always swallowed rather than gated on.
-`acknowledge` does not add or imply any "processing" contract this outbox
-never had: it is the durable counterpart of an operator clearing a
-diagnostic entry they have already reviewed out of a dashboard list. A
-caller that genuinely needs lease/acquire/complete work-queue semantics
-still belongs on `io.dataloom.api.queue.QueueProvider`, for the same reasons
-this outbox reuses `DurableStateStore` rather than `QueueProvider` in the
-first place (see above).
+`replay` has no authorization concept, exactly like `acknowledge`; a caller
+that exposes it to operators must gate it. A replayed entry is an ordinary
+pending entry: it counts against `maximumRetainedEntries` and, if its
+`occurredAt` is old, `maximumRetainedAge`, and because it sits at an old
+position it is among the first candidates for eviction at the next `append`.
+Process a replayed entry before appending more to a capped outbox.
 
-`acknowledge` composes with retention with no special-case handling needed:
-both operate on the exact same persisted `OperationalEventOutboxState.entries`
-list by producing a new list with some entries removed. Acknowledging an
-entry retention already evicted, or retention evicting an entry that was
-already acknowledged, are simply the same "entry no longer present" state
-reached two different ways -- `acknowledge` reports
-`DurableOperationalEventOutboxAcknowledgeOutcome.NotFound` for the former, a
-well-defined no-op rather than a failure. Acknowledging the same id twice is
-therefore safe: the second call also reports `NotFound`.
+**Acknowledged-history retention** is bounded by default.
+`maximumRetainedAcknowledgedEntries` (default 1,000; `0` discards on
+acknowledgement, i.e. no replay window) caps tombstones per scope, and the
+optional `acknowledgedRetentionAge` drops tombstones older than the window,
+measured from `acknowledgedAt`. Pruning is deterministic and runs inside the
+compare-and-set of every `append` and `acknowledge`: age first, then -- if
+still over the cap -- the tombstones with the earliest `acknowledgedAt` first
+(ties by list position). It never touches pending entries, and pruning a
+tombstone never frees its sequence.
+
+**Never-acknowledged entries** a handler reported `Skipped`/`Failed` for need
+no replay API at all: they are still pending, so the next `process` pass
+presents them again, in sequence order, ahead of anything appended since.
+
+**Persisted schema.** The persisted `OperationalEventOutboxState` became
+`entries: List<OperationalEventOutboxEntry>` (sequence, envelope,
+`acknowledgedAt`) plus `sequenceHighWaterMarks` and `sequenceFloor`;
+`DurableOperationalEventOutbox.CURRENT_SCHEMA_VERSION` is `2` and
+`OperationalEventOutboxStateCodec` writes payload format `2`. Format `1` (bare
+envelopes, hard-delete acknowledgement) is still decoded -- sequences are
+assigned in list order, everything is pending -- so a scope persisted before
+this change loads and upgrades on its next write. There is no other migration.
 
 ### Read-then-consume processing (opt-in)
 
 `DurableOperationalEventOutboxProcessor` (`io.dataloom.runtime.operational`)
 is the first real read-then-consume loop over
-`DurableOperationalEventOutbox.entries`/`acknowledge` -- purely additive,
-opt-in usage of that already-public API. `DurableOperationalEventOutbox`
-itself is unmodified; nothing above changes for the five bridges, which still
-only ever append.
+`DurableOperationalEventOutbox.entries`/`acknowledge` -- opt-in usage of that
+public API. It owns no durable state; nothing above changes for the five
+bridges, which still only ever append.
 
 ```kotlin
 val processor = DurableOperationalEventOutboxProcessor(outbox)
@@ -362,7 +410,7 @@ val result = processor.process(scope, maxEntries = 100) { envelope ->
 ```
 
 One `process` call reads at most `maxEntries` currently-retained entries for
-`scope` (oldest first, exactly as `entries` already returns them), hands each
+`scope` (pending only, in sequence order, exactly as `entries` returns them), hands each
 to the caller-supplied `OperationalEventOutboxEntryHandler` sequentially, and
 acknowledges only the ones whose outcome is
 `OperationalEventOutboxEntryOutcome.Processed`. `Skipped` and `Failed` both
@@ -393,8 +441,8 @@ containing the same entry and invoke the handler for it more than once
 combined. What they still guarantee, inherited directly from `acknowledge`'s
 own compare-and-set retry loop: no entry is ever lost, and no entry is ever
 double-acknowledged -- exactly one racing `acknowledge(scope, id)` call
-observes `Acknowledged`, the other observes `NotFound` once it reloads and
-finds the entry already gone. A caller whose handler has side effects that
+observes `Acknowledged`, the other observes `AlreadyAcknowledged` (or
+`NotFound` if pruning removed the tombstone meanwhile) once it reloads. A caller whose handler has side effects that
 are not themselves idempotent must serialize `process` calls per scope
 itself; `process` calls against different scopes never interact.
 
@@ -416,9 +464,9 @@ A rejected entry is never handed to `handler`, is left retained untouched for
 a later pass, and -- deliberately -- does not count toward `maxEntries`, so a
 filter for a rare `OperationalEventType`/`OperationalEventCategory` is never
 starved by a batch full of common non-matching entries counting against the
-bound. `DurableOperationalEventOutbox` itself is unmodified: it already loads
-a scope's entire retained list as one persisted document per `entries` call,
-so filtering earlier (inside that class) would save no read work, only move
+bound. Filtering stays in the processor: `DurableOperationalEventOutbox`
+already loads a scope's entire retained list as one persisted document per
+`entries` call, so filtering earlier (inside that class) would save no read work, only move
 the same in-memory `List.filter` into a class whose own documentation already
 scopes filtering out as separate follow-up work. The default filter accepts
 every entry, so an unconfigured `process` call reads and hands entries to
@@ -437,38 +485,17 @@ of any real caller, about which fields deserve dedicated criteria.
 
 ### Replay
 
-"Replay" was investigated
-([`outbox-replay-investigation.md`](outbox-replay-investigation.md)) rather
-than assumed to name a bounded implementation task, since it had never been
-defined beyond the single word itself. Two readings, both settled:
+Two readings of "replay", both now covered; the reasoning and the decided
+design are in [`outbox-replay-investigation.md`](outbox-replay-investigation.md):
 
-- **Re-presenting currently-retained entries a handler already reported
-  `Skipped`/`Failed` for.** Already fully covered by calling `process` again
-  -- no new API. `OperationalEventOutboxEntryOutcome.Skipped`/`Failed` both
-  leave the entry retained, `entries` always returns oldest-first, and
-  `append` only ever adds newer entries after it, so a `Skipped`/`Failed`
-  entry stays among the oldest currently-retained entries and is
-  re-presented at or near the front of the very next `process` call's batch,
-  ahead of anything appended since. A narrower, ID-scoped `replay(scope,
-  ids)` entry point would add nothing over this: the same ordering already
-  guarantees those specific entries surface first, so it would be a second
-  way to express what calling `process` with a sufficient `maxEntries`
-  already does.
-- **Re-presenting an already-*acknowledged* entry.** Impossible by
-  construction today, not merely unimplemented: `acknowledge` removes the
-  entry from `OperationalEventOutboxState.entries` -- this outbox's only
-  persisted storage for it -- via `filterNot`, in the same compare-and-set
-  write that performs the acknowledgement. There is no soft-delete flag and
-  no separate history/archive state to read an acknowledged entry back from.
-  This matches `acknowledge`'s own "operator-driven dismissal from view, not
-  work-queue completion" semantics (see "Acknowledgement" above) -- an
-  operator "un-clearing" an entry they already dismissed is a materially
-  different guarantee than anything `acknowledge` currently promises.
-  Enabling this would need a real design change to
-  `DurableOperationalEventOutbox` itself (retaining acknowledged entries in
-  a second, separately-retained state, with its own retention-duration and
-  access-control questions, and a persisted-schema change) -- a genuine,
-  separately-scoped follow-up, not a bounded slice on top of the processor.
+- **Re-presenting currently-retained entries a handler reported
+  `Skipped`/`Failed` for.** Call `process` again -- no new API. Those entries
+  stay pending in their original position, `entries` returns sequence order,
+  and `append` only adds newer entries after them, so they are re-presented at
+  the front of the next batch, ahead of anything appended since.
+- **Re-presenting an already-*acknowledged* entry.** `outbox.replay(scope, id)`
+  (see "Acknowledgement and replay" above), possible while the tombstone is
+  retained.
 
 ### What this does not do yet
 
@@ -478,10 +505,12 @@ defined beyond the single word itself. Two readings, both settled:
   are appended.
 - **No enumeration across scopes.** A caller must already know which
   `OperationalEventOutboxScope` to read.
-- **No replay of already-acknowledged entries.** See "Replay" above --
-  `acknowledge` deletes, it does not soft-delete, so there is nothing to
-  replay without a real retention/schema design change to
-  `DurableOperationalEventOutbox` itself.
+- **Replay is bounded by acknowledged-history retention, single-entry, and
+  ungated.** An entry whose tombstone was pruned cannot be replayed; there is
+  no batch/by-workflow replay call; and `replay` performs no authorization.
+- **No head-of-line blocking per workflow.** The processor presents a
+  workflow's events in sequence order but does not hold later events behind an
+  earlier `Skipped`/`Failed` one.
 - **Five real wired callers so far — synchronization events, retry/circuit
   administration commands, strategy-decision diagnostics, queue lifecycle,
   and conflict resolution.**
@@ -640,13 +669,11 @@ defined beyond the single word itself. Two readings, both settled:
 This foundation does not yet provide:
 
 - payload classification, minimization, encoding, encryption, or integrity;
-- durable outbox replay of already-*acknowledged* entries, or cross-scope
-  enumeration (ordered append, single-scope read-back, opt-in count-based and
-  age-based retention policies, operator-driven per-entry acknowledgement, an
-  opt-in read-then-consume processing loop, and bounded opt-in filtering of
-  that loop all exist -- see "Durable outbox" above; replaying
-  currently-retained, never-acknowledged entries needs no new capability
-  either, see "Replay" above);
+- cross-scope outbox enumeration (durable per-workflow sequencing, single-scope
+  read-back, opt-in count-based and age-based retention of pending entries,
+  acknowledgement tombstones with bounded pruned history and an explicit
+  `replay`, an opt-in read-then-consume processing loop, and bounded opt-in
+  filtering of that loop all exist -- see "Durable outbox" above);
 - subscription/push delivery or back-pressure;
 - subsystem adapters for every event and administrative action;
 - policy-signature, residency, authorization, or tamper-evident audit storage;

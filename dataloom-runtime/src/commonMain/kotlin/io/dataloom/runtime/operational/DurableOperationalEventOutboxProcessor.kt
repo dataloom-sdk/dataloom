@@ -143,11 +143,12 @@ public fun interface OperationalEventOutboxEntryFilter {
  *   A subsequent [DurableOperationalEventOutbox.entries] call for the same
  *   scope no longer includes these.
  * @param acknowledgeRaced entries that were [processed] but whose
- *   acknowledgement reported [DurableOperationalEventOutboxAcknowledgeOutcome.NotFound]
+ *   acknowledgement reported [DurableOperationalEventOutboxAcknowledgeOutcome.AlreadyAcknowledged]
+ *   or [DurableOperationalEventOutboxAcknowledgeOutcome.NotFound]
  *   -- another caller (a concurrent [DurableOperationalEventOutboxProcessor.process]
  *   call, an unrelated direct [DurableOperationalEventOutbox.acknowledge] caller, or
- *   retention) already removed the entry first. Not an error; see this
- *   class's "Concurrency" documentation.
+ *   retention) already acknowledged or removed the entry first. Not an error;
+ *   see this class's "Concurrency" documentation.
  * @param acknowledgeFailed entries that were [processed] but whose
  *   acknowledgement reported [DurableOperationalEventOutboxAcknowledgeOutcome.PersistenceFailure]
  *   or [DurableOperationalEventOutboxAcknowledgeOutcome.ContentionLimitReached].
@@ -213,13 +214,12 @@ public sealed interface OperationalEventOutboxProcessingResult {
  * handler reports [OperationalEventOutboxEntryOutcome.Processed], leaving
  * every other entry retained for a later pass.
  *
- * ## Why [io.dataloom.api.operational.DurableOperationalEventOutbox] itself is unchanged
+ * ## Built only from the outbox's public read/acknowledge API
  *
- * This class is built entirely out of [outbox]'s already-public `entries`/
- * `acknowledge` API. It needs nothing new from
- * [io.dataloom.api.operational.DurableOperationalEventOutbox] itself, so that
- * class is not modified -- every existing caller of `append`/`entries`/
- * `acknowledge` is completely unaffected by this type's existence.
+ * This class is built entirely out of [outbox]'s public `entries`/
+ * `acknowledge` API. It owns no durable state of its own: ordering,
+ * acknowledgement tombstones and their retention all live in
+ * [io.dataloom.api.operational.DurableOperationalEventOutbox].
  *
  * ## Why this lives in `dataloom-runtime`, not `dataloom-api`
  *
@@ -265,9 +265,10 @@ public sealed interface OperationalEventOutboxProcessingResult {
  *
  * ## Ordering
  *
- * [process] reads [outbox]'s `entries(scope)` once per call -- oldest first,
- * exactly as [io.dataloom.api.operational.DurableOperationalEventOutbox.entries]
- * already returns them -- and hands them to [handler] in that same order,
+ * [process] reads [outbox]'s `entries(scope)` once per call -- the pending
+ * entries in durable sequence order (FR-EVENT-003), exactly as
+ * [io.dataloom.api.operational.DurableOperationalEventOutbox.entries]
+ * returns them -- and hands them to [handler] in that same order,
  * sequentially, one at a time. At most `maxEntries` of the retained list are
  * read; any beyond that bound are left for a later [process] call.
  *
@@ -350,8 +351,9 @@ public sealed interface OperationalEventOutboxProcessingResult {
  * - **No entry is ever double-acknowledged.** Exactly one of two racing
  *   `acknowledge(scope, id)` calls for the same `id` observes
  *   [DurableOperationalEventOutboxAcknowledgeOutcome.Acknowledged]; the other
- *   necessarily observes [DurableOperationalEventOutboxAcknowledgeOutcome.NotFound]
- *   once it reloads and finds the entry already gone -- counted in
+ *   necessarily observes [DurableOperationalEventOutboxAcknowledgeOutcome.AlreadyAcknowledged]
+ *   (or [DurableOperationalEventOutboxAcknowledgeOutcome.NotFound] if
+ *   retention pruned it meanwhile) once it reloads -- counted in
  *   [OperationalEventOutboxProcessingSummary.acknowledgeRaced], not treated as
  *   a failure.
  *
@@ -370,9 +372,9 @@ public sealed interface OperationalEventOutboxProcessingResult {
  * [OperationalEventOutboxEntryOutcome.Skipped] or
  * [OperationalEventOutboxEntryOutcome.Failed] for needs no dedicated API --
  * simply call [process] again. Those entries were never acknowledged, so they
- * remain retained in their original position, and because
- * [io.dataloom.api.operational.DurableOperationalEventOutbox.entries] always
- * returns entries oldest first and a later `append` only ever adds newer
+ * remain pending in their original position, and because
+ * [io.dataloom.api.operational.DurableOperationalEventOutbox.entries] returns
+ * entries in sequence order and a later `append` only ever adds newer
  * entries after them, a `Skipped`/`Failed` entry stays among the *oldest*
  * currently-retained, filter-accepted entries -- it is therefore
  * re-presented at or near the front of the very next [process] call's batch,
@@ -380,18 +382,24 @@ public sealed interface OperationalEventOutboxProcessingResult {
  * to reach it. A caller does not need to track which entries to retry;
  * ordinary reprocessing already does the right thing.
  *
- * This class deliberately does **not** provide replay of an already-
- * *acknowledged* entry -- that is a fundamentally different, larger question
- * this class does not attempt to answer. See
- * [io.dataloom.api.operational.DurableOperationalEventOutbox]'s own
- * "Acknowledgement" documentation: `acknowledge` deletes an entry from the
- * persisted list outright (no soft-delete, no retained history), matching
- * its "operator-driven dismissal from view, not work-queue completion"
- * posture. Making an acknowledged entry replayable would require a real
- * design change to that class itself -- retaining acknowledged entries
- * somewhere, with its own retention-duration and access-control questions --
- * not an addition to this processor. See
- * `docs/api/outbox-replay-investigation.md` for the full investigation.
+ * Replaying an already-*acknowledged* entry is an operator action on the
+ * outbox itself: [io.dataloom.api.operational.DurableOperationalEventOutbox.replay]
+ * makes a retained acknowledged entry pending again at its original position
+ * and sequence, and the next [process] call then presents it in order like
+ * any other pending entry. This processor deliberately has no replay entry
+ * point of its own -- see `docs/api/outbox-replay-investigation.md` for the
+ * decided design.
+ *
+ * ## Per-workflow presentation order
+ *
+ * Entries reach [handler] in [io.dataloom.api.operational.DurableOperationalEventOutbox.entries]
+ * order, so one workflow's events are always presented in sequence order.
+ * What this processor does **not** do is hold back a workflow's later events
+ * behind an earlier one the handler reported `Skipped`/`Failed`: each entry's
+ * outcome is independent, so a later event of the same workflow can be
+ * `Processed` and acknowledged while an earlier one stays pending. A handler
+ * that needs strict head-of-line semantics must itself report `Skipped` for
+ * an event whose predecessor it has not finished.
  *
  * ## Cancellation
  *
@@ -464,7 +472,9 @@ public class DurableOperationalEventOutboxProcessor(
                     processed++
                     when (outbox.acknowledge(scope, envelope.id)) {
                         is DurableOperationalEventOutboxAcknowledgeOutcome.Acknowledged -> acknowledged++
-                        is DurableOperationalEventOutboxAcknowledgeOutcome.NotFound -> acknowledgeRaced++
+                        is DurableOperationalEventOutboxAcknowledgeOutcome.NotFound,
+                        is DurableOperationalEventOutboxAcknowledgeOutcome.AlreadyAcknowledged,
+                        -> acknowledgeRaced++
                         is DurableOperationalEventOutboxAcknowledgeOutcome.PersistenceFailure,
                         is DurableOperationalEventOutboxAcknowledgeOutcome.ContentionLimitReached,
                         -> acknowledgeFailed++
