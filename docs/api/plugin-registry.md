@@ -582,6 +582,32 @@ What the wiring deliberately does not do:
 
 ## Verification
 
+### Relocation and wiring (2026-09-19)
+
+Run on a Windows host with `-Pdataloom.appleKlibCrossCompile=true`:
+
+- `dataloom-plugin:jvmTest`: 88 tests, 0 failures (the same seven test
+  classes that were in `dataloom-core`, moved unchanged apart from package).
+  `dataloom-core:jvmTest`: 133 tests, 0 failures.
+- `dataloom-runtime:jvmTest`: 1840 tests, 0 failures, including 17 new tests in
+  `DataLoomBuilderPluginEngineTest` (absence is inert, builder wiring,
+  invalid-graph rejection, every transition and execution result variant
+  returned unchanged).
+- `compileKotlinIos*` and `compileTestKotlinIos*` for all three iOS targets in
+  `dataloom-plugin`, `dataloom-core`, and `dataloom-runtime`;
+  `compileKotlinIos*` in `runtime-external-consumer` and `dataloom-apple`: clean.
+- `runtime-external-consumer:checkRuntimeExternalConsumer`,
+  `dataloom-runtime:checkPublicAbiBoundaries`, and
+  `dataloom-runtime:checkResolvedDependencyBoundaries`: pass.
+- Whole-build `checkKotlinAbi`: passes. `updateKotlinAbi` diff reviewed:
+  `dataloom-core` loses only plugin declarations (226 JVM and 248 klib lines
+  removed, none added); `dataloom-plugin` has a new baseline; `dataloom-runtime`
+  adds `DataLoom.pluginEngine`, `DataLoomBuilder.pluginConfiguration`,
+  `DataLoomPluginSpec`, and `DataLoomPluginEngine` only (17 JVM and 23 klib
+  lines, no deletions).
+- Not verified here: XCFramework assembly with the new Apple exports, and any
+  Simulator execution (both need macOS CI).
+
 ### Before the relocation (engine in `dataloom-core`, through 2026-09-08)
 
 - `dataloom-core:jvmTest` (`io.dataloom.core.plugin.*`, before the relocation): 88 tests, 0
