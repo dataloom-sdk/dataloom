@@ -1,4 +1,4 @@
-# Plugin registry and lifecycle state tracking (`dataloom-core`)
+# Plugin registry and lifecycle state tracking (`dataloom-plugin`)
 
 [API reference index](./README.md)
 
@@ -10,9 +10,9 @@ compatibility-range/dependency/execution-bounds/hook-point/lifecycle-label
 *contract shapes* with zero behavior, by design — that module's own
 `build.gradle.kts` says the loading/registration/enforcement/isolation
 engine is `#98`'s job, built on top of those contracts. This page documents
-that engine's growing slice: `io.dataloom.core.plugin.PluginRegistry`,
+that engine's growing slice: `io.dataloom.plugin.PluginRegistry`,
 `PluginLifecycleTransitions`, `PluginLifecycleStateTracker`, and
-`PluginExecutionBoundsEnforcer` (`dataloom-core`).
+`PluginExecutionBoundsEnforcer` (`dataloom-plugin`; originally shipped in `dataloom-core` and relocated on 2026-09-19, see below).
 
 This is a genuinely bounded slice of `#98`, not the whole gate. See
 [What remains open](#what-remains-open) below for everything this slice
@@ -68,7 +68,7 @@ prior prose summary, per this session's own standing discipline after
   `dataloom-plugin-api` lacking a dependency path to the policy foundation.
   Re-checked directly against source (round 23) and found stale: the engine
   this permission check needs to live in is not `dataloom-plugin-api` at all
-  — it is `dataloom-core`, this page's own module, which already depends on
+  — it is the engine module (then `dataloom-core`, now `dataloom-plugin`), which already depends on
   both `dataloom-plugin-api` (`PluginPermission`) and `dataloom-model`
   (`Capability`/`GrantedCapabilities`/`isAuthorized`) directly. No new module
   dependency was actually needed. See
@@ -326,7 +326,7 @@ both bridge an administration command's request and terminal outcome into
 `io.dataloom.api.operational.OperationalEventEnvelope`, the canonical DL-042
 envelope `DurableOperationalEventOutbox` persists.
 
-New `io.dataloom.core.plugin.PluginLifecycleAdministrationOperationalEventBridge`
+New `io.dataloom.plugin.PluginLifecycleAdministrationOperationalEventBridge`
 is the mechanical "sixth bridge" that precedent predicted: a stateless
 `toEnvelope(request: PluginLifecycleTransitionRequest, result:
 PluginLifecycleTransitionResult): OperationalEventEnvelope` covering every
@@ -336,10 +336,10 @@ capability-aware overload) can produce — `Allowed`, `Rejected`,
 the precedent's own "bridge every terminal outcome" convention.
 
 Unlike the retry/circuit/conflict precedents, this bridge lives in
-`dataloom-core` itself rather than `dataloom-runtime`: the request and
+the engine module (`dataloom-plugin`) itself rather than `dataloom-runtime`: the request and
 result types it bridges from (`PluginLifecycleTransitionRequest`,
 `PluginLifecycleTransitionResult`) already live in this module, and
-`OperationalEventEnvelope` lives in `dataloom-api`, which `dataloom-core`
+`OperationalEventEnvelope` lives in `dataloom-api`, which the engine module
 already depends on directly — no new module dependency was needed, unlike
 execution-bounds enforcement's `kotlinx-coroutines-core` addition.
 
@@ -376,7 +376,7 @@ ahead of hook-point dispatch.
 
 ## Execution-bounds enforcement
 
-`io.dataloom.core.plugin.PluginExecutionBoundsEnforcer` wraps an arbitrary
+`io.dataloom.plugin.PluginExecutionBoundsEnforcer` wraps an arbitrary
 plugin invocation with the timeout cancellation and concurrency limiting
 `docs/api/plugin-registry.md`'s own prior round named as the most promising
 remaining bounded slice, precisely because it has a directly analogous
@@ -488,19 +488,14 @@ bound.
 
 ### Module dependency change
 
-`dataloom-core` did not previously depend on `kotlinx-coroutines-core` at
-compile time (its existing `suspend fun`s use only `kotlin.coroutines`
-stdlib types). Real cancellation-capable timeout enforcement needs
-`withTimeoutOrNull`, and real concurrency limiting needs
-`kotlinx.coroutines.sync.Semaphore`, both of which live in that artifact —
-so `dataloom-core/build.gradle.kts` now declares
-`implementation(libs.kotlinx.coroutines.core)`, the same dependency
-`dataloom-runtime` already declares for the same purpose. This is an
-external-library addition only; no new DataLoom module dependency was
-added, and `dataloom-core`'s documented module-dependency rules
-(`docs/architecture/modules.md`: may depend on `dataloom-model`,
-`dataloom-provider-api`, `dataloom-plugin-api`, `dataloom-api`; must not
-depend on `dataloom-runtime` or `dataloom-testing`) are unaffected.
+When this slice shipped (in `dataloom-core`), real cancellation-capable
+timeout enforcement needed `withTimeoutOrNull` and real concurrency limiting
+needed `kotlinx.coroutines.sync.Semaphore`, both in
+`kotlinx-coroutines-core`, so `dataloom-core` gained
+`implementation(libs.kotlinx.coroutines.core)`. That dependency (and
+`dataloom-core`'s dependency on `dataloom-plugin-api`) existed only for this
+engine and was removed from `dataloom-core` when the engine moved; the same
+declarations now live in `dataloom-plugin/build.gradle.kts`.
 
 ## What remains open
 
@@ -540,40 +535,82 @@ see above):
   exist first; execution-bounds enforcement alone is not sufficient without
   something that actually calls a plugin.
 
-## No wiring into `DataLoomBuilder` yet
 
-`PluginRegistry`/`PluginLifecycleStateTracker`/`PluginExecutionBoundsEnforcer`/
-`PluginLifecycleAdministrationAuthorizer`/
-`PluginLifecycleAdministrationOperationalEventBridge` are not referenced
-from `DataLoomBuilder` or any other composition root. There is still no
-application-facing way to register a plugin with the DataLoom runtime —
-these types are `#98`'s internal engine building blocks, verified in
-isolation, not yet a public plugin-registration API.
+## Relocation to `dataloom-plugin` and `DataLoomBuilder` wiring
 
-**Update (2026-09-09):** this was investigated directly, not left as a
-standing "still unwired" note — see
-[`docs/api/plugin-platform-databuilder-wiring-investigation.md`](./plugin-platform-databuilder-wiring-investigation.md).
-The wiring is not merely unbuilt: it is a **build failure today** under
-`dataloom-runtime`'s own enforced `checkPublicAbiBoundaries` task, because
-every result/request/decision type this engine has shipped
-(`PluginLifecycleTransitionResult`, `PluginExecutionBoundsResult`,
-`PluginLifecycleTransitionRequest`,
-`PluginLifecycleAdministrationAuthorizationDecision`) lives in the
-forbidden `io.dataloom.core.plugin` namespace, unlike the analogous provider
-precedent (`ProviderLifecycleResult`/`ProviderLifecycleCoordinatorState`),
-which deliberately lives in `dataloom-api` specifically so
-`dataloom-runtime` can expose it. Resolving this needs a real
-module-ownership decision (relocate these types, accepting a breaking-shaped
-diff to `dataloom-core`'s already-additive-only ABI baseline; or build and
-permanently maintain a duplicate translation layer inside
-`dataloom-runtime`) that no round to date has made. Wiring a public
-registration surface is separate follow-up work, gated on that decision as
-well as on hook-point dispatch existing first (execution-bounds enforcement
-alone has nothing to wrap without a real invocation call site).
+**Update (2026-09-19):** the module-ownership question the
+[wiring investigation](./plugin-platform-databuilder-wiring-investigation.md)
+left open is decided: the whole engine is relocated out of `dataloom-core`
+into the new published module `dataloom-plugin`
+([ADR-0003](../adr/ADR-0003-plugin-engine-module.md)), and wired into
+`DataLoomBuilder` as an opt-in capability.
+
+Before this change, `dataloom-runtime`'s `checkPublicAbiBoundaries` task
+failed on any public exposure of an `io.dataloom.core.plugin.*` type, and every
+result/request/decision type the engine returned lived in that namespace.
+Everything now lives in `io.dataloom.plugin` (`dataloom-plugin`), unchanged
+apart from the package, and the runtime exposes the engine's own types with no
+translation layer.
+
+What the wiring provides:
+
+- `DataLoomBuilder.pluginConfiguration(DataLoomPluginSpec)`: opt-in. The spec
+  carries the plugins to register and a host-supplied
+  `PluginLifecycleAdministrationAuthorizer` (required; there is no
+  authorizer-free path). Like every other `*Configuration`/`*Spec` opt-in, the
+  spec is stored unvalidated and the collaborators are built in `build()`.
+- `DataLoom.pluginEngine: DataLoomPluginEngine?`: `null` when
+  `pluginConfiguration` was never called, so `DataLoom` behaves as before.
+  When present it offers `resolutionOrder`, `stateOf(id)`, an authorizer-gated
+  `transition(request)`, and a bounds-enforced `execute(id, operation)`. It does
+  not expose the registry, tracker, enforcer, or authorizer.
+- `build()` constructs the registry, tracker, and enforcer eagerly. An invalid
+  plugin graph (duplicate id, unresolved dependency, cycle) throws the
+  registry's `IllegalArgumentException` from `build()`, the same behavior as
+  duplicate provider ids. Every plugin starts in `LOADED`; nothing is activated
+  or invoked, and `build()` does no clock read, I/O, or coroutine launch.
+
+What the wiring deliberately does not do:
+
+- The capability-aware `transition(id, target, grantedCapabilities)` overload
+  (permission enforcement on entry to `ACTIVE`) is not exposed; the facade
+  offers only the authorizer-gated path.
+- `PluginLifecycleAdministrationOperationalEventBridge` is not connected to an
+  outbox, and `PluginExecutionBoundsResult` is not bridged into the audit trail.
+- The tracker and enforcer are still not integrated with each other, and no
+  subsystem dispatches hook points to plugins.
 
 ## Verification
 
-- `dataloom-core:jvmTest` (`io.dataloom.core.plugin.*`): 88 tests, 0
+### Relocation and wiring (2026-09-19)
+
+Run on a Windows host with `-Pdataloom.appleKlibCrossCompile=true`:
+
+- `dataloom-plugin:jvmTest`: 88 tests, 0 failures (the same seven test
+  classes that were in `dataloom-core`, moved unchanged apart from package).
+  `dataloom-core:jvmTest`: 133 tests, 0 failures.
+- `dataloom-runtime:jvmTest`: 1840 tests, 0 failures, including 17 new tests in
+  `DataLoomBuilderPluginEngineTest` (absence is inert, builder wiring,
+  invalid-graph rejection, every transition and execution result variant
+  returned unchanged).
+- `compileKotlinIos*` and `compileTestKotlinIos*` for all three iOS targets in
+  `dataloom-plugin`, `dataloom-core`, and `dataloom-runtime`;
+  `compileKotlinIos*` in `runtime-external-consumer` and `dataloom-apple`: clean.
+- `runtime-external-consumer:checkRuntimeExternalConsumer`,
+  `dataloom-runtime:checkPublicAbiBoundaries`, and
+  `dataloom-runtime:checkResolvedDependencyBoundaries`: pass.
+- Whole-build `checkKotlinAbi`: passes. `updateKotlinAbi` diff reviewed:
+  `dataloom-core` loses only plugin declarations (226 JVM and 248 klib lines
+  removed, none added); `dataloom-plugin` has a new baseline; `dataloom-runtime`
+  adds `DataLoom.pluginEngine`, `DataLoomBuilder.pluginConfiguration`,
+  `DataLoomPluginSpec`, and `DataLoomPluginEngine` only (17 JVM and 23 klib
+  lines, no deletions).
+- Not verified here: XCFramework assembly with the new Apple exports, and any
+  Simulator execution (both need macOS CI).
+
+### Before the relocation (engine in `dataloom-core`, through 2026-09-08)
+
+- `dataloom-core:jvmTest` (`io.dataloom.core.plugin.*`, before the relocation): 88 tests, 0
   failures (`PluginRegistryTest`: 16, `PluginLifecycleTransitionsTest`: 17,
   `PluginLifecycleStateTrackerTest`: 24, `PluginPermissionEnforcementTest`: 2,
   `PluginExecutionBoundsEnforcerTest`: 10,

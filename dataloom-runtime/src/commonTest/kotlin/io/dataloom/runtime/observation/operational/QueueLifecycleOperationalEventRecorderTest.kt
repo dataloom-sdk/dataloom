@@ -32,6 +32,7 @@ import io.dataloom.api.state.DurableStateRecord
 import io.dataloom.api.state.DurableStateStore
 import io.dataloom.api.time.DataLoomClock
 import io.dataloom.api.time.DataLoomInstant
+import io.dataloom.runtime.operational.outboxTestClock
 import io.dataloom.runtime.queue.QueueEntryExecutionOutcome
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Test
@@ -167,7 +168,7 @@ class QueueLifecycleOperationalEventRecorderTest {
     @Test
     fun onTransition_withRealStore_durablyAppendsAnEnvelope() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, outboxTestClock)
         val recorder = QueueLifecycleOperationalEventRecorder(
             outbox = outbox,
             scope = scope,
@@ -185,7 +186,7 @@ class QueueLifecycleOperationalEventRecorderTest {
     @Test
     fun onTransition_completed_neverReadsTheClock() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, outboxTestClock)
         val clock = FixedClock()
         val recorder = QueueLifecycleOperationalEventRecorder(outbox = outbox, scope = scope, clock = clock)
 
@@ -197,7 +198,7 @@ class QueueLifecycleOperationalEventRecorderTest {
     @Test
     fun onTransition_reschedule_readsTheClockExactlyOnce() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, outboxTestClock)
         val clock = FixedClock(epochMs = 7_000_000L)
         val recorder = QueueLifecycleOperationalEventRecorder(outbox = outbox, scope = scope, clock = clock)
         val error = FakeError()
@@ -220,7 +221,7 @@ class QueueLifecycleOperationalEventRecorderTest {
 
     @Test
     fun onTransition_persistenceFailureIsSwallowed_doesNotThrow() = runTest {
-        val outbox = DurableOperationalEventOutbox(PersistenceFailureOperationalEventOutboxStore())
+        val outbox = DurableOperationalEventOutbox(PersistenceFailureOperationalEventOutboxStore(), outboxTestClock)
         val recorder = QueueLifecycleOperationalEventRecorder(outbox = outbox, scope = scope, clock = FixedClock())
 
         // Must not throw.
@@ -229,7 +230,7 @@ class QueueLifecycleOperationalEventRecorderTest {
 
     @Test
     fun onTransition_storeThrowingOrdinaryException_isSwallowed() = runTest {
-        val outbox = DurableOperationalEventOutbox(ThrowingOperationalEventOutboxStore())
+        val outbox = DurableOperationalEventOutbox(ThrowingOperationalEventOutboxStore(), outboxTestClock)
         val recorder = QueueLifecycleOperationalEventRecorder(outbox = outbox, scope = scope, clock = FixedClock())
 
         // Must not throw.
@@ -239,7 +240,7 @@ class QueueLifecycleOperationalEventRecorderTest {
     @Test
     fun onTransition_cancellationExceptionFromStore_stillPropagates() = runTest {
         val cancellation = CancellationException("Cancelled in store.")
-        val outbox = DurableOperationalEventOutbox(ThrowingOperationalEventOutboxStore(cancellation))
+        val outbox = DurableOperationalEventOutbox(ThrowingOperationalEventOutboxStore(cancellation), outboxTestClock)
         val recorder = QueueLifecycleOperationalEventRecorder(outbox = outbox, scope = scope, clock = FixedClock())
 
         var threw = false

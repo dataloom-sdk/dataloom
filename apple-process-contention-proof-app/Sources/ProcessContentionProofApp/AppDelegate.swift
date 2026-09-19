@@ -53,6 +53,8 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
 
+    private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
+
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
@@ -88,6 +90,14 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         // launched with this set explicitly by the CI job/matrix entry
         // driving #95's conflict-log domains.
         let domain = environment["DATALOOM_DOMAIN"] ?? "CIRCUIT_BREAKER"
+
+        // Launching the second proof app backgrounds this one; without an
+        // assertion iOS may suspend it mid-race, so it never reports a result.
+        backgroundTask = application.beginBackgroundTask(withName: "dataloom-contention-proof") { [weak self] in
+            guard let self = self, self.backgroundTask != .invalid else { return }
+            application.endBackgroundTask(self.backgroundTask)
+            self.backgroundTask = .invalid
+        }
 
         // Runs on a background queue, never the main thread: this call
         // blocks its calling thread (via Kotlin's own `runBlocking`) for up
@@ -198,6 +208,12 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             // flock-based compare-and-set inside the calls above, not this
             // file write.
             try? line.write(toFile: resultFilePath, atomically: true, encoding: .utf8)
+
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self, self.backgroundTask != .invalid else { return }
+                application.endBackgroundTask(self.backgroundTask)
+                self.backgroundTask = .invalid
+            }
         }
 
         window = UIWindow(frame: UIScreen.main.bounds)

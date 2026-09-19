@@ -57,6 +57,7 @@ import io.dataloom.runtime.execution.SynchronizationExecutionContext
 import io.dataloom.runtime.observation.SynchronizationEventDispatchResult
 import io.dataloom.runtime.observation.SynchronizationEventDispatcher
 import io.dataloom.runtime.observation.SynchronizationObserverRegistry
+import io.dataloom.runtime.operational.outboxTestClock
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -297,7 +298,7 @@ class DispatchingSynchronizationLifecycleEventEmitterOperationalOutboxTest {
     @Test
     fun emitStarted_withOutboxAndScopeConfigured_durablyAppendsAnEnvelope() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, outboxTestClock)
         val clock = FixedClock()
         val idGen = SequenceIdGenerator()
         val emitter = DispatchingSynchronizationLifecycleEventEmitter(
@@ -320,7 +321,7 @@ class DispatchingSynchronizationLifecycleEventEmitterOperationalOutboxTest {
     fun emitStarted_recordingIsAdditiveToObserverDelivery() = runTest {
         val observer = RecordingObserver("obs-outbox")
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, outboxTestClock)
         val emitter = DispatchingSynchronizationLifecycleEventEmitter(
             dispatcher = makeDispatcher(observer),
             clock = FixedClock(),
@@ -341,7 +342,7 @@ class DispatchingSynchronizationLifecycleEventEmitterOperationalOutboxTest {
     @Test
     fun emitStarted_doesNotReadClockOrGenerateIdAgainForTheBridge() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, outboxTestClock)
         val clock = FixedClock()
         val idGen = SequenceIdGenerator()
         val emitter = DispatchingSynchronizationLifecycleEventEmitter(
@@ -364,7 +365,7 @@ class DispatchingSynchronizationLifecycleEventEmitterOperationalOutboxTest {
 
     @Test
     fun emitStarted_persistenceFailureIsSwallowed_dispatchResultUnaffected() = runTest {
-        val outbox = DurableOperationalEventOutbox(PersistenceFailureOperationalEventOutboxStore())
+        val outbox = DurableOperationalEventOutbox(PersistenceFailureOperationalEventOutboxStore(), outboxTestClock)
         val observer = RecordingObserver("obs-swallow")
         val emitter = DispatchingSynchronizationLifecycleEventEmitter(
             dispatcher = makeDispatcher(observer),
@@ -382,7 +383,7 @@ class DispatchingSynchronizationLifecycleEventEmitterOperationalOutboxTest {
 
     @Test
     fun emitStarted_storeThrowing_doesNotPropagateAndDoesNotAffectDispatchResult() = runTest {
-        val outbox = DurableOperationalEventOutbox(ThrowingOperationalEventOutboxStore())
+        val outbox = DurableOperationalEventOutbox(ThrowingOperationalEventOutboxStore(), outboxTestClock)
         val observer = RecordingObserver("obs-throw")
         val emitter = DispatchingSynchronizationLifecycleEventEmitter(
             dispatcher = makeDispatcher(observer),
@@ -401,7 +402,7 @@ class DispatchingSynchronizationLifecycleEventEmitterOperationalOutboxTest {
     @Test
     fun emitStarted_cancellationFromObserverStillPropagates_recordingNeverReached() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, outboxTestClock)
         val emitter = DispatchingSynchronizationLifecycleEventEmitter(
             dispatcher = makeDispatcher(CancellingObserver("cancel-obs")),
             clock = FixedClock(),
@@ -445,7 +446,7 @@ class DispatchingSynchronizationLifecycleEventEmitterOperationalOutboxTest {
     @Test
     fun emitStarted_withOutboxButNoScope_performsNoWork() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, outboxTestClock)
         val emitter = DispatchingSynchronizationLifecycleEventEmitter(
             dispatcher = makeDispatcher(),
             clock = FixedClock(),

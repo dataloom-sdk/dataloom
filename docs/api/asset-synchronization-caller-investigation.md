@@ -140,7 +140,7 @@ either:
 Confirmed by reading both production `DataLoomDigestCalculator`
 implementations directly:
 
-- **JVM** ([`SystemDataLoomDigestCalculator.kt`](../../dataloom-model/src/jvmMain/kotlin/io/dataloom/api/security/SystemDataLoomDigestCalculator.kt))
+- **JVM** ([`SystemDataLoomDigestCalculator.kt`](../../dataloom-model/src/jvmAndroidMain/kotlin/io/dataloom/api/security/SystemDataLoomDigestCalculator.kt))
   calls `MessageDigest.getInstance(...).digest(input)` — the one-shot
   convenience method. The underlying JCA `MessageDigest` class *does*
   support incremental `update()`/`digest()` calls, but `DataLoomDigestCalculator`'s
@@ -213,7 +213,7 @@ To close either remaining candidate for real:
   the two shipped primitives this investigation searched for a real caller
   on top of.
 - `dataloom-model/src/commonMain/kotlin/io/dataloom/api/security/DataLoomDigestCalculator.kt`,
-  `dataloom-model/src/jvmMain/kotlin/io/dataloom/api/security/SystemDataLoomDigestCalculator.kt`,
+  `dataloom-model/src/jvmAndroidMain/kotlin/io/dataloom/api/security/SystemDataLoomDigestCalculator.kt`,
   `dataloom-model/src/iosMain/kotlin/io/dataloom/api/security/AppleDataLoomDigestCalculator.kt`
   — the one-shot digest contract and both platform implementations this
   investigation read to establish the streaming-verification gap.

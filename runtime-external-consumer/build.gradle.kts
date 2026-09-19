@@ -11,6 +11,8 @@ kotlin {
                 implementation(project(":dataloom-model"))
                 implementation(project(":dataloom-provider-api"))
                 implementation(project(":dataloom-api"))
+                implementation(project(":dataloom-plugin-api"))
+                implementation(project(":dataloom-plugin"))
                 implementation(project(":dataloom-runtime"))
                 // Compile-only fixture dependency for documentation/evaluation samples.
                 implementation(project(":dataloom-testing"))

@@ -20,7 +20,7 @@ disable, or audit recording. Most of that remains `#98` (DL-044 plugin
 platform)'s open job, built on top of these contracts — its own issue text
 says "Implement after the relevant `#93` ... slices," confirming this
 ordering. `#98` has now shipped its first bounded slice on top of these
-contracts, in `dataloom-core` rather than this module: deny-by-default
+contracts, in `dataloom-plugin` rather than this module: deny-by-default
 registration, dependency-graph validation/resolution ordering/cycle
 rejection, and lifecycle state-machine transition enforcement — see
 [Plugin registry and lifecycle state tracking](./plugin-registry.md).

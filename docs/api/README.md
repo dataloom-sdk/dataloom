@@ -91,7 +91,7 @@ complete V1 strategy, asset, plugin, governance, or observability engine.
 | [Least-privilege capabilities](./least-privilege.md) | Available primitive | Bounded, deny-by-default capability grant (`Capability`/`GrantedCapabilities`) plus a shared `isAuthorized` check. No subsystem's enforcement engine is wired to it yet; plugin permission enforcement remains `#98`'s job. |
 | [Plugin SPI](./plugin-api.md) | Available contract (bounded first slice) | Versioned plugin manifest, identifier, compatibility-range, dependency, execution-bounds, hook-point, and lifecycle-label contracts — `#93`'s own bounded slice toward the plugin API line. Zero behavior: no loading, registration, enforcement, isolation, or certification. |
 | [Plugin platform first-slice investigation](./plugin-platform-first-slice-investigation.md) | Investigated, already shipped | Confirms `#98`'s candidate manifest-shaped first slice already exists as `dataloom-plugin-api`, built under `#93`; everything still open for `#98` is lifecycle/enforcement/isolation/audit/certification behavior, not a further bounded value type. |
-| [Plugin registry and lifecycle state tracking](./plugin-registry.md) | Available foundation (bounded first slice) | `#98`'s first real runtime component: `PluginRegistry` (deny-by-default registration, dependency-graph validation, deterministic resolution ordering, cycle rejection) and `PluginLifecycleStateTracker`/`PluginLifecycleTransitions` (lifecycle state-machine transition enforcement), in `dataloom-core`. Permission enforcement, execution-bounds enforcement, compatibility validation, hook-point dispatch, hot disable, audit, and certification remain open. |
+| [Plugin registry and lifecycle state tracking](./plugin-registry.md) | Available foundation (bounded first slice) | `#98`'s first real runtime component: `PluginRegistry` (deny-by-default registration, dependency-graph validation, deterministic resolution ordering, cycle rejection) and `PluginLifecycleStateTracker`/`PluginLifecycleTransitions` (lifecycle state-machine transition enforcement), in `dataloom-plugin` (relocated from `dataloom-core`, [ADR-0003](../adr/ADR-0003-plugin-engine-module.md); wired into `DataLoomBuilder` as the opt-in `pluginConfiguration`). Permission enforcement, execution-bounds enforcement, compatibility validation, hook-point dispatch, hot disable, audit, and certification remain open. |
 | [`RetryPolicy`/`StrategyPolicy` migration investigation](./retry-strategy-policy-migration-investigation.md) | Investigated, not achievable | Why migrating `RetryPolicy`/`StrategyPolicy` onto the policy foundation is a category error, not a bounded slice — both make numeric backoff-timing or ordered execution-planning decisions the foundation's graded allow/deny/require-user-action/defer vocabulary was never shaped to hold, and both are heavily-used public API where a breaking redesign would be a large, separately-scoped migration. |
 
 ## Provider contracts and assembly
@@ -203,7 +203,7 @@ protection, quarantine, and metrics.
 | [Runtime operational events](./runtime-operational-events.md) | Available foundation | Selected progress, scheduler-backed retry, and conflict event integration. |
 | [Retry and circuit telemetry](./retry-circuit-telemetry.md) | Partial V1 subsystem | Bounded exporter isolation, fixed-cardinality metrics, structured-log/trace adapters, redacted health snapshots, and retry/circuit/admin wrappers. |
 | [Health snapshot](./health-snapshot.md) | Bounded first slice | Pure, synchronous, redacted point-in-time aggregation of provider lifecycle state, retry/circuit telemetry, and caller-supplied provider health. |
-| [Durable outbox replay investigation](./outbox-replay-investigation.md) | Investigated, no code needed | Re-presenting currently-retained `Skipped`/`Failed` entries is already fully covered by calling `DurableOperationalEventOutboxProcessor.process` again; replaying an already-*acknowledged* entry is impossible by construction today (`acknowledge` deletes, never soft-deletes) and would need a real retention/schema design decision on `DurableOperationalEventOutbox` itself, not a bounded slice. |
+| [Durable outbox ordering, retention and replay](./outbox-replay-investigation.md) | Decided and implemented | Durable per-workflow sequence numbers assigned inside the persisting compare-and-set (FR-EVENT-003); `acknowledge` keeps a bounded, deterministically pruned tombstone instead of deleting, with an explicit `replay`; payload/schema version 2 (version 1 still decodes). Health aggregation of outbox state is a separate, not-yet-built slice. |
 
 The compatibility synchronization-event path remains synchronous and
 in-process. Retry/circuit telemetry now has bounded exporter-isolated delivery,
@@ -213,8 +213,9 @@ now exist. `dataLoomHealthSnapshot` now aggregates that retry/circuit read
 model with provider lifecycle state and caller-supplied provider health into
 one redacted, point-in-time value type -- durable-outbox and queue-worker
 state are not included since neither exposes a synchronous read path today.
-V1 still requires durable delivery/outbox, replay, filtering,
-authoritative ordering, wire compatibility/upcasting, event persistence, complete
+The durable outbox now assigns durable per-workflow sequence numbers and
+supports acknowledged-entry replay. V1 still requires subscription delivery,
+cross-scope enumeration, wire compatibility/upcasting, complete
 subsystem instrumentation, health aggregation across every subsystem, and an
 operational read model/reference dashboard.
 

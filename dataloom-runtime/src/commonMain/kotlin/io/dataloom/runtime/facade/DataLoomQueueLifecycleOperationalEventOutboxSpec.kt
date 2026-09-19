@@ -136,7 +136,7 @@ import io.dataloom.api.state.DurableStateStore
 public class DataLoomQueueLifecycleOperationalEventOutboxSpec(
     public val store: DurableStateStore<OperationalEventOutboxScope, OperationalEventOutboxState>,
     public val scope: OperationalEventOutboxScope = OperationalEventOutboxScope(DEFAULT_SCOPE_VALUE),
-    public val schemaVersion: Int = 1,
+    public val schemaVersion: Int = DurableOperationalEventOutbox.CURRENT_SCHEMA_VERSION,
     public val maximumStateUpdateAttempts: Int = 8,
 ) {
     private companion object {

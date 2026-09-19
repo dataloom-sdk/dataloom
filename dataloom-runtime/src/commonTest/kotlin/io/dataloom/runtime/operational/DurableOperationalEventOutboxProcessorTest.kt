@@ -6,10 +6,13 @@ import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
 import io.dataloom.api.identifier.CorrelationId
+import io.dataloom.api.identifier.WorkflowId
 import io.dataloom.api.operational.DurableOperationalEventOutbox
+import io.dataloom.api.operational.DurableOperationalEventOutboxReplayOutcome
 import io.dataloom.api.operational.OperationalEventCategory
 import io.dataloom.api.operational.OperationalEventEnvelope
 import io.dataloom.api.operational.OperationalEventId
+import io.dataloom.api.operational.OperationalEventOutboxEntry
 import io.dataloom.api.operational.OperationalEventOutboxScope
 import io.dataloom.api.operational.OperationalEventOutboxState
 import io.dataloom.api.operational.OperationalEventSource
@@ -50,7 +53,7 @@ class DurableOperationalEventOutboxProcessorTest {
 
     @Test
     fun emptyOutboxIsANoOpAndNeverInvokesTheHandler() = runTest {
-        val outbox = DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore())
+        val outbox = DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore(), outboxTestClock)
         val processor = DurableOperationalEventOutboxProcessor(outbox)
         var invocations = 0
 
@@ -63,7 +66,7 @@ class DurableOperationalEventOutboxProcessorTest {
     @Test
     fun mixedOutcomesOnlyAcknowledgeTheProcessedEntriesAndLeaveTheRest() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, outboxTestClock)
         val processed = envelope("event-processed")
         val skipped = envelope("event-skipped")
         val failed = envelope("event-failed")
@@ -95,7 +98,7 @@ class DurableOperationalEventOutboxProcessorTest {
     @Test
     fun entriesAreHandedToTheHandlerInOldestFirstOrder() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, outboxTestClock)
         val envelopes = (1..4).map { envelope("event-$it") }
         envelopes.forEach { outbox.append(scope, it) }
         val processor = DurableOperationalEventOutboxProcessor(outbox)
@@ -107,9 +110,71 @@ class DurableOperationalEventOutboxProcessorTest {
     }
 
     @Test
+    fun interleavedWorkflowsArePresentedInAppendOrderSoEachWorkflowSeesItsEventsInSequenceOrder() = runTest {
+        val outbox = DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore(), outboxTestClock)
+        listOf("a" to "a1", "b" to "b1", "a" to "a2", "b" to "b2", "a" to "a3")
+            .forEach { (workflow, id) -> outbox.append(scope, envelope(id, workflow = workflow)) }
+        val processor = DurableOperationalEventOutboxProcessor(outbox)
+        val seen = mutableListOf<String>()
+
+        processor.process(scope) { seen.add(it.id.value); OperationalEventOutboxEntryOutcome.Processed }
+
+        assertEquals(listOf("a1", "b1", "a2", "b2", "a3"), seen)
+        assertEquals(listOf("a1", "a2", "a3"), seen.filter { it.startsWith("a") })
+        assertEquals(listOf("b1", "b2"), seen.filter { it.startsWith("b") })
+    }
+
+    @Test
+    fun neverAcknowledgedSkippedAndFailedEntriesAreRepresentedInSequenceOrderAheadOfLaterAppends() = runTest {
+        val outbox = DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore(), outboxTestClock)
+        listOf("a1", "a2", "a3").forEach { outbox.append(scope, envelope(it, workflow = "a")) }
+        val processor = DurableOperationalEventOutboxProcessor(outbox)
+        processor.process(scope) { current ->
+            when (current.id.value) {
+                "a1" -> OperationalEventOutboxEntryOutcome.Failed()
+                "a2" -> OperationalEventOutboxEntryOutcome.Skipped
+                else -> OperationalEventOutboxEntryOutcome.Processed
+            }
+        }
+        outbox.append(scope, envelope("a4", workflow = "a"))
+        outbox.append(scope, envelope("b1", workflow = "b"))
+        val seen = mutableListOf<String>()
+
+        processor.process(scope) { seen.add(it.id.value); OperationalEventOutboxEntryOutcome.Processed }
+
+        // The retained never-acknowledged entries come back first, in their original
+        // sequence order, ahead of everything appended after the first pass.
+        assertEquals(listOf("a1", "a2", "a4", "b1"), seen)
+        assertEquals(emptyList(), pendingIds(outbox))
+    }
+
+    @Test
+    fun anAcknowledgedEntryReplayedThroughTheOutboxIsPresentedAgainInSequenceOrder() = runTest {
+        val outbox = DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore(), outboxTestClock)
+        listOf("a1", "a2").forEach { outbox.append(scope, envelope(it, workflow = "a")) }
+        val processor = DurableOperationalEventOutboxProcessor(outbox)
+        processor.process(scope) { OperationalEventOutboxEntryOutcome.Processed }
+        outbox.append(scope, envelope("a3", workflow = "a"))
+        assertEquals(listOf("a3"), pendingIds(outbox))
+
+        // The operator asks for a1 to be replayed: it becomes pending again at its original
+        // position, so the next pass presents it ahead of a3, not after it.
+        assertIs<DurableOperationalEventOutboxReplayOutcome.Replayed>(outbox.replay(scope, OperationalEventId("a1")))
+        val seen = mutableListOf<String>()
+        val result = processor.process(scope) { seen.add(it.id.value); OperationalEventOutboxEntryOutcome.Processed }
+
+        assertEquals(listOf("a1", "a3"), seen)
+        val summary = assertIs<OperationalEventOutboxProcessingResult.Processed>(result).summary
+        assertEquals(2, summary.acknowledged)
+        assertEquals(emptyList(), pendingIds(outbox))
+        val history = assertIs<ProviderOperationResult.Success<List<OperationalEventOutboxEntry>>>(outbox.acknowledgedEntries(scope))
+        assertEquals(listOf("a1", "a2", "a3"), history.value.map { it.envelope.id.value })
+    }
+
+    @Test
     fun maxEntriesBoundsOneCycleAndLeavesTheRestForALaterPass() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, outboxTestClock)
         val envelopes = (1..5).map { envelope("event-$it") }
         envelopes.forEach { outbox.append(scope, it) }
         val processor = DurableOperationalEventOutboxProcessor(outbox)
@@ -128,7 +193,7 @@ class DurableOperationalEventOutboxProcessorTest {
     @Test
     fun unconfiguredFilterAcceptsEveryEntryAndReportsZeroFilteredOut() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, outboxTestClock)
         val envelopes = (1..3).map { envelope("event-$it") }
         envelopes.forEach { outbox.append(scope, it) }
         val processor = DurableOperationalEventOutboxProcessor(outbox)
@@ -147,7 +212,7 @@ class DurableOperationalEventOutboxProcessorTest {
     @Test
     fun aConfiguredFilterProcessesOnlyMatchingEntriesAndLeavesNonMatchingEntriesRetainedUntouched() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, outboxTestClock)
         val matchingType = OperationalEventType("dataloom.test.matching")
         val otherType = OperationalEventType("dataloom.test.other")
         val matchingOne = envelope("event-matching-1", type = matchingType)
@@ -177,7 +242,7 @@ class DurableOperationalEventOutboxProcessorTest {
     @Test
     fun rejectedEntriesDoNotCountAgainstMaxEntriesSoARareFilterIsNotStarvedByCommonEntries() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, outboxTestClock)
         val rareType = OperationalEventType("dataloom.test.rare")
         val commonType = OperationalEventType("dataloom.test.common")
         // Five common (non-matching) entries appended first, then two rare (matching) ones.
@@ -207,7 +272,7 @@ class DurableOperationalEventOutboxProcessorTest {
     @Test
     fun everyRetainedEntryFilteredOutReturnsProcessedWithAnAllZeroSummaryNotNoWork() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, outboxTestClock)
         val envelopes = (1..3).map { envelope("event-$it") }
         envelopes.forEach { outbox.append(scope, it) }
         val processor = DurableOperationalEventOutboxProcessor(outbox)
@@ -234,7 +299,7 @@ class DurableOperationalEventOutboxProcessorTest {
 
     @Test
     fun maxEntriesBelowOneIsRejected() = runTest {
-        val outbox = DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore())
+        val outbox = DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore(), outboxTestClock)
         val processor = DurableOperationalEventOutboxProcessor(outbox)
 
         assertFailsWith<IllegalArgumentException> {
@@ -244,7 +309,7 @@ class DurableOperationalEventOutboxProcessorTest {
 
     @Test
     fun readFailurePropagatesAsAReadFailureResultAndNeverInvokesTheHandler() = runTest {
-        val outbox = DurableOperationalEventOutbox(FailingLoadStore())
+        val outbox = DurableOperationalEventOutbox(FailingLoadStore(), outboxTestClock)
         val processor = DurableOperationalEventOutboxProcessor(outbox)
         var invocations = 0
 
@@ -257,8 +322,8 @@ class DurableOperationalEventOutboxProcessorTest {
     @Test
     fun anAcknowledgementRaceReportedByAnotherCallerIsCountedNotTreatedAsAFailure() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
-        val other = DurableOperationalEventOutbox(store) // a distinct instance over the same durable store
+        val outbox = DurableOperationalEventOutbox(store, outboxTestClock)
+        val other = DurableOperationalEventOutbox(store, outboxTestClock) // a distinct instance over the same durable store
         val envelope = envelope("event-1")
         outbox.append(scope, envelope)
         val processor = DurableOperationalEventOutboxProcessor(outbox)
@@ -283,11 +348,11 @@ class DurableOperationalEventOutboxProcessorTest {
     fun anAcknowledgementPersistenceFailureIsCountedAndTheEntryStaysRetained() = runTest {
         val envelope = envelope("event-1")
         val record = DurableStateRecord(
-            state = OperationalEventOutboxState(listOf(envelope)),
+            state = OperationalEventOutboxState(listOf(OperationalEventOutboxEntry(1L, envelope))),
             version = 0L,
             schemaVersion = 1,
         )
-        val outbox = DurableOperationalEventOutbox(FoundStoreWithFailingCompareAndSet(record))
+        val outbox = DurableOperationalEventOutbox(FoundStoreWithFailingCompareAndSet(record), outboxTestClock)
         val processor = DurableOperationalEventOutboxProcessor(outbox)
 
         val result = processor.process(scope) { OperationalEventOutboxEntryOutcome.Processed }
@@ -302,7 +367,7 @@ class DurableOperationalEventOutboxProcessorTest {
     @Test
     fun cancellationFromTheHandlerPropagatesRatherThanBecomingAResultVariant() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, outboxTestClock)
         outbox.append(scope, envelope("event-1"))
         val processor = DurableOperationalEventOutboxProcessor(outbox)
 
@@ -326,12 +391,12 @@ class DurableOperationalEventOutboxProcessorTest {
     @Test
     fun concurrentProcessCallsAgainstTheSameScopeNeverLoseOrDoubleAcknowledgeAnEntry() = runTest {
         val store = InterleavingOperationalEventOutboxStore()
-        val seedOutbox = DurableOperationalEventOutbox(store)
+        val seedOutbox = DurableOperationalEventOutbox(store, outboxTestClock)
         val envelopes = (1..8).map { envelope("event-$it") }
         envelopes.forEach { seedOutbox.append(scope, it) }
 
-        val processorA = DurableOperationalEventOutboxProcessor(DurableOperationalEventOutbox(store))
-        val processorB = DurableOperationalEventOutboxProcessor(DurableOperationalEventOutbox(store))
+        val processorA = DurableOperationalEventOutboxProcessor(DurableOperationalEventOutbox(store, outboxTestClock))
+        val processorB = DurableOperationalEventOutboxProcessor(DurableOperationalEventOutbox(store, outboxTestClock))
 
         val deferredA = async { processorA.process(scope, maxEntries = 8) { OperationalEventOutboxEntryOutcome.Processed } }
         val deferredB = async { processorB.process(scope, maxEntries = 8) { OperationalEventOutboxEntryOutcome.Processed } }
@@ -342,7 +407,7 @@ class DurableOperationalEventOutboxProcessorTest {
         assertEquals(envelopes.size, summaryA.acknowledged + summaryB.acknowledged)
         // Nothing double-acknowledged: the durable store agrees -- empty.
         val remaining = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(
-            DurableOperationalEventOutbox(store).entries(scope),
+            DurableOperationalEventOutbox(store, outboxTestClock).entries(scope),
         )
         assertTrue(remaining.value.isEmpty())
         // Every acknowledge attempt that did not win landed as a counted race,
@@ -351,13 +416,20 @@ class DurableOperationalEventOutboxProcessorTest {
         assertEquals(0, summaryB.acknowledgeFailed)
     }
 
+    /** The ids of [scope]'s pending entries, in the order [DurableOperationalEventOutbox.entries] presents them. */
+    private suspend fun pendingIds(outbox: DurableOperationalEventOutbox): List<String> =
+        assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope)).value
+            .map { it.id.value }
+
     private fun envelope(
         id: String,
         correlationId: String = "correlation-1",
         type: OperationalEventType = OperationalEventType("dataloom.test.event"),
+        workflow: String? = null,
     ): OperationalEventEnvelope = OperationalEventEnvelope(
         id = OperationalEventId(id),
         type = type,
+        workflowId = workflow?.let { WorkflowId(it) },
         source = OperationalEventSource("dataloom.runtime.test"),
         category = OperationalEventCategory.TELEMETRY,
         schemaVersion = OperationalSchemaVersion(1),

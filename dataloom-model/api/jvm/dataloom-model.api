@@ -1,0 +1,683 @@
+public final class io/dataloom/api/context/DataLoomMetadata {
+	public static final field Companion Lio/dataloom/api/context/DataLoomMetadata$Companion;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun get (Ljava/lang/String;)Ljava/lang/String;
+	public final fun getEntries ()Ljava/util/Map;
+	public fun hashCode ()I
+	public final fun isEmpty ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/context/DataLoomMetadata$Companion {
+	public final fun getEmpty ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun of (Ljava/util/Map;)Lio/dataloom/api/context/DataLoomMetadata;
+}
+
+public abstract interface class io/dataloom/api/error/DataLoomError {
+	public abstract fun getCategory ()Lio/dataloom/api/error/ErrorCategory;
+	public abstract fun getCause ()Ljava/lang/Throwable;
+	public abstract fun getCode-7tkViRw ()Ljava/lang/String;
+	public abstract fun getMessage ()Ljava/lang/String;
+	public abstract fun getRecoverability ()Lio/dataloom/api/error/Recoverability;
+	public abstract fun getSeverity ()Lio/dataloom/api/error/ErrorSeverity;
+}
+
+public final class io/dataloom/api/error/DataLoomErrorRenderingKt {
+	public static final fun safeDiagnosticString (Lio/dataloom/api/error/DataLoomError;)Ljava/lang/String;
+}
+
+public final class io/dataloom/api/error/ErrorCategory : java/lang/Enum {
+	public static final field AUTHENTICATION Lio/dataloom/api/error/ErrorCategory;
+	public static final field AUTHORIZATION Lio/dataloom/api/error/ErrorCategory;
+	public static final field CONFIGURATION Lio/dataloom/api/error/ErrorCategory;
+	public static final field CONFLICT Lio/dataloom/api/error/ErrorCategory;
+	public static final field INTERNAL Lio/dataloom/api/error/ErrorCategory;
+	public static final field NETWORK Lio/dataloom/api/error/ErrorCategory;
+	public static final field PLUGIN Lio/dataloom/api/error/ErrorCategory;
+	public static final field POLICY Lio/dataloom/api/error/ErrorCategory;
+	public static final field PROVIDER Lio/dataloom/api/error/ErrorCategory;
+	public static final field QUEUE Lio/dataloom/api/error/ErrorCategory;
+	public static final field SCHEDULER Lio/dataloom/api/error/ErrorCategory;
+	public static final field SECURITY Lio/dataloom/api/error/ErrorCategory;
+	public static final field SERIALIZATION Lio/dataloom/api/error/ErrorCategory;
+	public static final field STATE Lio/dataloom/api/error/ErrorCategory;
+	public static final field STORAGE Lio/dataloom/api/error/ErrorCategory;
+	public static final field VALIDATION Lio/dataloom/api/error/ErrorCategory;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/error/ErrorCategory;
+	public static fun values ()[Lio/dataloom/api/error/ErrorCategory;
+}
+
+public final class io/dataloom/api/error/ErrorCode {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/error/ErrorCode;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/error/ErrorSeverity : java/lang/Enum {
+	public static final field CRITICAL Lio/dataloom/api/error/ErrorSeverity;
+	public static final field ERROR Lio/dataloom/api/error/ErrorSeverity;
+	public static final field WARNING Lio/dataloom/api/error/ErrorSeverity;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/error/ErrorSeverity;
+	public static fun values ()[Lio/dataloom/api/error/ErrorSeverity;
+}
+
+public final class io/dataloom/api/error/Recoverability : java/lang/Enum {
+	public static final field NON_RECOVERABLE Lio/dataloom/api/error/Recoverability;
+	public static final field RECOVERABLE Lio/dataloom/api/error/Recoverability;
+	public static final field UNKNOWN Lio/dataloom/api/error/Recoverability;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/error/Recoverability;
+	public static fun values ()[Lio/dataloom/api/error/Recoverability;
+}
+
+public final class io/dataloom/api/error/RetryDelayHint {
+	public fun <init> (JLio/dataloom/api/error/RetryDelayHintSource;)V
+	public final fun component1 ()J
+	public final fun component2 ()Lio/dataloom/api/error/RetryDelayHintSource;
+	public final fun copy (JLio/dataloom/api/error/RetryDelayHintSource;)Lio/dataloom/api/error/RetryDelayHint;
+	public static synthetic fun copy$default (Lio/dataloom/api/error/RetryDelayHint;JLio/dataloom/api/error/RetryDelayHintSource;ILjava/lang/Object;)Lio/dataloom/api/error/RetryDelayHint;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDelayMilliseconds ()J
+	public final fun getSource ()Lio/dataloom/api/error/RetryDelayHintSource;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/error/RetryDelayHintCarrier {
+	public abstract fun getRetryDelayHint ()Lio/dataloom/api/error/RetryDelayHint;
+}
+
+public final class io/dataloom/api/error/RetryDelayHintSource : java/lang/Enum {
+	public static final field PROVIDER Lio/dataloom/api/error/RetryDelayHintSource;
+	public static final field SERVER Lio/dataloom/api/error/RetryDelayHintSource;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/error/RetryDelayHintSource;
+	public static fun values ()[Lio/dataloom/api/error/RetryDelayHintSource;
+}
+
+public final class io/dataloom/api/identifier/AssetId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/AssetId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/ChangeEventId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/ChangeEventId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/ChangeSetId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/ChangeSetId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/CheckpointKey {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/CheckpointKey;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/CheckpointToken {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/CheckpointToken;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/ConfigurationVersion {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/ConfigurationVersion;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/ConflictDetectorId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/ConflictDetectorId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/ConflictId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/ConflictId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/ConflictResolverId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/ConflictResolverId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/CorrelationId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/CorrelationId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/EntityId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/EntityId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/EntityType {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/EntityType;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/ExecutionId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/ExecutionId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/identifier/IdentifierGenerator {
+	public abstract fun generate ()Ljava/lang/Object;
+}
+
+public final class io/dataloom/api/identifier/LocaleTag {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/LocaleTag;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/PolicyCheckId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/PolicyCheckId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/PolicySetId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/PolicySetId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/QueueConsumerId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/QueueConsumerId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/QueueEntryId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/QueueEntryId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/QueueLeaseId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/QueueLeaseId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/RequestId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/RequestId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/RetryPolicyId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/RetryPolicyId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/RuntimeVersion {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/RuntimeVersion;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/ScheduleId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/ScheduleId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/SynchronizationEventId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/SynchronizationEventId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/SynchronizationObserverId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/SynchronizationObserverId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/SynchronizationSessionId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/SynchronizationSessionId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/TenantId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/TenantId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/TraceId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/TraceId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/UserId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/UserId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/WorkflowId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/WorkflowId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/random/DataLoomSecureRandom {
+	public abstract fun nextBytes (I)[B
+}
+
+public final class io/dataloom/api/random/SystemDataLoomSecureRandom : io/dataloom/api/random/DataLoomSecureRandom {
+	public fun <init> ()V
+	public fun nextBytes (I)[B
+}
+
+public final class io/dataloom/api/security/Capability {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/security/Capability;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/security/DataLoomDigest {
+	public fun <init> (Lio/dataloom/api/security/DigestAlgorithm;[B)V
+	public final fun contentEquals (Lio/dataloom/api/security/DataLoomDigest;)Z
+	public final fun copyBytes ()[B
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAlgorithm ()Lio/dataloom/api/security/DigestAlgorithm;
+	public final fun getSize ()I
+	public fun hashCode ()I
+	public final fun toHex ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/security/DataLoomDigestCalculator {
+	public abstract fun digest (Lio/dataloom/api/security/DigestAlgorithm;[B)Lio/dataloom/api/security/DataLoomDigest;
+}
+
+public abstract interface class io/dataloom/api/security/DataLoomHmacCalculator {
+	public abstract fun hmac (Lio/dataloom/api/security/HmacAlgorithm;[B[B)Lio/dataloom/api/security/DataLoomMac;
+	public abstract fun verify ([B[BLio/dataloom/api/security/DataLoomMac;)Z
+}
+
+public final class io/dataloom/api/security/DataLoomMac {
+	public fun <init> (Lio/dataloom/api/security/HmacAlgorithm;[B)V
+	public final fun contentEquals (Lio/dataloom/api/security/DataLoomMac;)Z
+	public final fun copyBytes ()[B
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAlgorithm ()Lio/dataloom/api/security/HmacAlgorithm;
+	public final fun getSize ()I
+	public fun hashCode ()I
+	public final fun toHex ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/security/DigestAlgorithm : java/lang/Enum {
+	public static final field SHA_256 Lio/dataloom/api/security/DigestAlgorithm;
+	public static final field SHA_512 Lio/dataloom/api/security/DigestAlgorithm;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/security/DigestAlgorithm;
+	public static fun values ()[Lio/dataloom/api/security/DigestAlgorithm;
+}
+
+public final class io/dataloom/api/security/GrantedCapabilities {
+	public static final field Companion Lio/dataloom/api/security/GrantedCapabilities$Companion;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSize ()I
+	public fun hashCode ()I
+	public final fun holds-aIVBPZg (Ljava/lang/String;)Z
+	public final fun holdsAll (Ljava/util/Set;)Z
+	public final fun isEmpty ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/security/GrantedCapabilities$Companion {
+	public final fun getNone ()Lio/dataloom/api/security/GrantedCapabilities;
+	public final fun of (Ljava/util/Set;)Lio/dataloom/api/security/GrantedCapabilities;
+}
+
+public final class io/dataloom/api/security/HmacAlgorithm : java/lang/Enum {
+	public static final field HMAC_SHA_256 Lio/dataloom/api/security/HmacAlgorithm;
+	public static final field HMAC_SHA_512 Lio/dataloom/api/security/HmacAlgorithm;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/security/HmacAlgorithm;
+	public static fun values ()[Lio/dataloom/api/security/HmacAlgorithm;
+}
+
+public final class io/dataloom/api/security/KeyReference {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/security/KeyReference;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/security/LeastPrivilegeKt {
+	public static final fun isAuthorized (Ljava/util/Set;Lio/dataloom/api/security/GrantedCapabilities;)Z
+}
+
+public final class io/dataloom/api/security/SystemDataLoomDigestCalculator : io/dataloom/api/security/DataLoomDigestCalculator {
+	public fun <init> ()V
+	public fun digest (Lio/dataloom/api/security/DigestAlgorithm;[B)Lio/dataloom/api/security/DataLoomDigest;
+}
+
+public final class io/dataloom/api/security/SystemDataLoomHmacCalculator : io/dataloom/api/security/DataLoomHmacCalculator {
+	public fun <init> ()V
+	public fun hmac (Lio/dataloom/api/security/HmacAlgorithm;[B[B)Lio/dataloom/api/security/DataLoomMac;
+	public fun verify ([B[BLio/dataloom/api/security/DataLoomMac;)Z
+}
+
+public abstract interface class io/dataloom/api/time/DataLoomClock {
+	public abstract fun now ()Lio/dataloom/api/time/DataLoomInstant;
+}
+
+public final class io/dataloom/api/time/DataLoomInstant {
+	public fun <init> (J)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEpochMilliseconds ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/time/DataLoomMonotonicClock {
+	public abstract fun mark ()Lio/dataloom/api/time/DataLoomMonotonicReading;
+}
+
+public final class io/dataloom/api/time/DataLoomMonotonicReading {
+	public fun <init> (J)V
+	public final fun elapsedNanosecondsSince (Lio/dataloom/api/time/DataLoomMonotonicReading;)J
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getNanoseconds ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/time/SystemDataLoomClock : io/dataloom/api/time/DataLoomClock {
+	public fun <init> ()V
+	public fun now ()Lio/dataloom/api/time/DataLoomInstant;
+}
+
+public final class io/dataloom/api/time/SystemDataLoomMonotonicClock : io/dataloom/api/time/DataLoomMonotonicClock {
+	public fun <init> ()V
+	public fun mark ()Lio/dataloom/api/time/DataLoomMonotonicReading;
+}
+

@@ -645,6 +645,7 @@ public abstract interface class io/dataloom/runtime/facade/DataLoom {
 	public fun getCircuitAdministration ()Lio/dataloom/runtime/facade/DataLoomCircuitAdministration;
 	public fun getCircuitQueueWorker ()Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorker;
 	public fun getConflictAdministration ()Lio/dataloom/runtime/facade/DataLoomConflictAdministration;
+	public fun getPluginEngine ()Lio/dataloom/runtime/facade/DataLoomPluginEngine;
 	public fun getProtectedStrategySynchronization ()Lio/dataloom/runtime/facade/DataLoomProtectedStrategySynchronization;
 	public fun getProtectedSynchronization ()Lio/dataloom/runtime/facade/DataLoomProtectedSynchronization;
 	public abstract fun getProviderLifecycleState ()Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;
@@ -665,6 +666,7 @@ public final class io/dataloom/runtime/facade/DataLoom$DefaultImpls {
 	public static fun getCircuitAdministration (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomCircuitAdministration;
 	public static fun getCircuitQueueWorker (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorker;
 	public static fun getConflictAdministration (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomConflictAdministration;
+	public static fun getPluginEngine (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomPluginEngine;
 	public static fun getProtectedStrategySynchronization (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomProtectedStrategySynchronization;
 	public static fun getProtectedSynchronization (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomProtectedSynchronization;
 	public static fun getRetryAdministration (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomRetryAdministration;
@@ -693,6 +695,7 @@ public final class io/dataloom/runtime/facade/DataLoomBuilder {
 	public final fun operationalEventOutboxConfiguration (Lio/dataloom/runtime/facade/DataLoomOperationalEventOutboxSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun outboundConfiguration (Lio/dataloom/runtime/execution/outbound/OutboundPushPipelineConfiguration;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun pipeline (Lio/dataloom/runtime/execution/SynchronizationPipeline;)Lio/dataloom/runtime/facade/DataLoomBuilder;
+	public final fun pluginConfiguration (Lio/dataloom/runtime/facade/DataLoomPluginSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun provider (Lio/dataloom/api/provider/DataLoomProvider;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun providerProtectionConfiguration (Lio/dataloom/runtime/facade/DataLoomProviderProtectionSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun providers ([Lio/dataloom/api/provider/DataLoomProvider;)Lio/dataloom/runtime/facade/DataLoomBuilder;
@@ -798,6 +801,20 @@ public final class io/dataloom/runtime/facade/DataLoomOperationalEventOutboxSpec
 	public final fun getSchemaVersion ()I
 	public final fun getScope--IyNcac ()Ljava/lang/String;
 	public final fun getStore ()Lio/dataloom/api/state/DurableStateStore;
+}
+
+public abstract interface class io/dataloom/runtime/facade/DataLoomPluginEngine {
+	public abstract fun execute-dkBeV0E (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getResolutionOrder ()Ljava/util/List;
+	public abstract fun stateOf-WWrLh4Q (Ljava/lang/String;)Lio/dataloom/api/plugin/PluginLifecycleState;
+	public abstract fun transition (Lio/dataloom/plugin/PluginLifecycleTransitionRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/facade/DataLoomPluginSpec {
+	public fun <init> (Ljava/util/List;Lio/dataloom/plugin/PluginLifecycleAdministrationAuthorizer;)V
+	public final fun getLifecycleAuthorizer ()Lio/dataloom/plugin/PluginLifecycleAdministrationAuthorizer;
+	public final fun getPlugins ()Ljava/util/List;
+	public fun toString ()Ljava/lang/String;
 }
 
 public abstract interface class io/dataloom/runtime/facade/DataLoomProtectedStrategySynchronization {
