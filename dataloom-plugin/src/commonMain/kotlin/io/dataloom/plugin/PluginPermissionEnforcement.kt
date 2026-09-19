@@ -1,4 +1,4 @@
-package io.dataloom.core.plugin
+package io.dataloom.plugin
 
 import io.dataloom.api.plugin.PluginPermission
 import io.dataloom.api.security.Capability
@@ -13,11 +13,10 @@ import io.dataloom.api.security.Capability
  * [io.dataloom.api.security.isAuthorized], `dataloom-model`) and `#93`'s plugin
  * SPI ([PluginPermission], `dataloom-plugin-api`) both ship the exact same
  * shape: a validated, non-blank, exactly-preserved string label with no
- * grant, scope, or expiry of its own. `dataloom-core` (this module) already
- * depends on both `dataloom-model` and `dataloom-plugin-api` directly — see
- * `docs/architecture/modules.md`'s `dataloom-core` dependency rule — so no
- * new module dependency, and no new policy-specific plumbing type, is needed
- * to connect them. A plugin's declared permission label *is* the capability
+ * grant, scope, or expiry of its own. `dataloom-plugin` (this module) depends
+ * on both `dataloom-model` and `dataloom-plugin-api` directly — see
+ * `docs/architecture/modules.md`'s `dataloom-plugin` dependency rule — so no
+ * new policy-specific plumbing type is needed to connect them. A plugin's declared permission label *is* the capability
  * label checked against a caller-supplied grant.
  *
  * This is deliberately not a dependency from `dataloom-plugin-api` itself

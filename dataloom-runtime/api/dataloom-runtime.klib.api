@@ -502,6 +502,8 @@ abstract interface io.dataloom.runtime.facade/DataLoom { // io.dataloom.runtime.
         open fun <get-circuitQueueWorker>(): io.dataloom.runtime.facade/DataLoomCircuitQueueWorker? // io.dataloom.runtime.facade/DataLoom.circuitQueueWorker.<get-circuitQueueWorker>|<get-circuitQueueWorker>(){}[0]
     open val conflictAdministration // io.dataloom.runtime.facade/DataLoom.conflictAdministration|{}conflictAdministration[0]
         open fun <get-conflictAdministration>(): io.dataloom.runtime.facade/DataLoomConflictAdministration? // io.dataloom.runtime.facade/DataLoom.conflictAdministration.<get-conflictAdministration>|<get-conflictAdministration>(){}[0]
+    open val pluginEngine // io.dataloom.runtime.facade/DataLoom.pluginEngine|{}pluginEngine[0]
+        open fun <get-pluginEngine>(): io.dataloom.runtime.facade/DataLoomPluginEngine? // io.dataloom.runtime.facade/DataLoom.pluginEngine.<get-pluginEngine>|<get-pluginEngine>(){}[0]
     open val protectedStrategySynchronization // io.dataloom.runtime.facade/DataLoom.protectedStrategySynchronization|{}protectedStrategySynchronization[0]
         open fun <get-protectedStrategySynchronization>(): io.dataloom.runtime.facade/DataLoomProtectedStrategySynchronization? // io.dataloom.runtime.facade/DataLoom.protectedStrategySynchronization.<get-protectedStrategySynchronization>|<get-protectedStrategySynchronization>(){}[0]
     open val protectedSynchronization // io.dataloom.runtime.facade/DataLoom.protectedSynchronization|{}protectedSynchronization[0]
@@ -529,6 +531,15 @@ abstract interface io.dataloom.runtime.facade/DataLoomCircuitQueueWorker { // io
 
 abstract interface io.dataloom.runtime.facade/DataLoomConflictAdministration { // io.dataloom.runtime.facade/DataLoomConflictAdministration|null[0]
     abstract suspend fun execute(io.dataloom.api.conflict/ConflictAdministrationRequest): io.dataloom.runtime.conflict/ConflictAdministrationResult // io.dataloom.runtime.facade/DataLoomConflictAdministration.execute|execute(io.dataloom.api.conflict.ConflictAdministrationRequest){}[0]
+}
+
+abstract interface io.dataloom.runtime.facade/DataLoomPluginEngine { // io.dataloom.runtime.facade/DataLoomPluginEngine|null[0]
+    abstract val resolutionOrder // io.dataloom.runtime.facade/DataLoomPluginEngine.resolutionOrder|{}resolutionOrder[0]
+        abstract fun <get-resolutionOrder>(): kotlin.collections/List<io.dataloom.api.plugin/PluginId> // io.dataloom.runtime.facade/DataLoomPluginEngine.resolutionOrder.<get-resolutionOrder>|<get-resolutionOrder>(){}[0]
+
+    abstract fun stateOf(io.dataloom.api.plugin/PluginId): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.runtime.facade/DataLoomPluginEngine.stateOf|stateOf(io.dataloom.api.plugin.PluginId){}[0]
+    abstract suspend fun <#A1: kotlin/Any?> execute(io.dataloom.api.plugin/PluginId, kotlin.coroutines/SuspendFunction0<#A1>): io.dataloom.plugin/PluginExecutionBoundsResult<#A1> // io.dataloom.runtime.facade/DataLoomPluginEngine.execute|execute(io.dataloom.api.plugin.PluginId;kotlin.coroutines.SuspendFunction0<0:0>){0§<kotlin.Any?>}[0]
+    abstract suspend fun transition(io.dataloom.plugin/PluginLifecycleTransitionRequest): io.dataloom.plugin/PluginLifecycleTransitionResult // io.dataloom.runtime.facade/DataLoomPluginEngine.transition|transition(io.dataloom.plugin.PluginLifecycleTransitionRequest){}[0]
 }
 
 abstract interface io.dataloom.runtime.facade/DataLoomProtectedStrategySynchronization { // io.dataloom.runtime.facade/DataLoomProtectedStrategySynchronization|null[0]
@@ -3120,6 +3131,7 @@ final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.
     final fun operationalEventOutboxConfiguration(io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.operationalEventOutboxConfiguration|operationalEventOutboxConfiguration(io.dataloom.runtime.facade.DataLoomOperationalEventOutboxSpec){}[0]
     final fun outboundConfiguration(io.dataloom.runtime.execution.outbound/OutboundPushPipelineConfiguration): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.outboundConfiguration|outboundConfiguration(io.dataloom.runtime.execution.outbound.OutboundPushPipelineConfiguration){}[0]
     final fun pipeline(io.dataloom.runtime.execution/SynchronizationPipeline): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.pipeline|pipeline(io.dataloom.runtime.execution.SynchronizationPipeline){}[0]
+    final fun pluginConfiguration(io.dataloom.runtime.facade/DataLoomPluginSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.pluginConfiguration|pluginConfiguration(io.dataloom.runtime.facade.DataLoomPluginSpec){}[0]
     final fun provider(io.dataloom.api.provider/DataLoomProvider): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.provider|provider(io.dataloom.api.provider.DataLoomProvider){}[0]
     final fun providerProtectionConfiguration(io.dataloom.runtime.facade/DataLoomProviderProtectionSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.providerProtectionConfiguration|providerProtectionConfiguration(io.dataloom.runtime.facade.DataLoomProviderProtectionSpec){}[0]
     final fun providers(kotlin/Array<out io.dataloom.api.provider/DataLoomProvider>...): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.providers|providers(kotlin.Array<out|io.dataloom.api.provider.DataLoomProvider>...){}[0]
@@ -3256,6 +3268,17 @@ final class io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec { // i
         final fun <get-scope>(): io.dataloom.api.operational/OperationalEventOutboxScope // io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec.scope.<get-scope>|<get-scope>(){}[0]
     final val store // io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec.store|{}store[0]
         final fun <get-store>(): io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState> // io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec.store.<get-store>|<get-store>(){}[0]
+}
+
+final class io.dataloom.runtime.facade/DataLoomPluginSpec { // io.dataloom.runtime.facade/DataLoomPluginSpec|null[0]
+    constructor <init>(kotlin.collections/List<io.dataloom.api.plugin/DataLoomPlugin>, io.dataloom.plugin/PluginLifecycleAdministrationAuthorizer) // io.dataloom.runtime.facade/DataLoomPluginSpec.<init>|<init>(kotlin.collections.List<io.dataloom.api.plugin.DataLoomPlugin>;io.dataloom.plugin.PluginLifecycleAdministrationAuthorizer){}[0]
+
+    final val lifecycleAuthorizer // io.dataloom.runtime.facade/DataLoomPluginSpec.lifecycleAuthorizer|{}lifecycleAuthorizer[0]
+        final fun <get-lifecycleAuthorizer>(): io.dataloom.plugin/PluginLifecycleAdministrationAuthorizer // io.dataloom.runtime.facade/DataLoomPluginSpec.lifecycleAuthorizer.<get-lifecycleAuthorizer>|<get-lifecycleAuthorizer>(){}[0]
+    final val plugins // io.dataloom.runtime.facade/DataLoomPluginSpec.plugins|{}plugins[0]
+        final fun <get-plugins>(): kotlin.collections/List<io.dataloom.api.plugin/DataLoomPlugin> // io.dataloom.runtime.facade/DataLoomPluginSpec.plugins.<get-plugins>|<get-plugins>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.runtime.facade/DataLoomPluginSpec.toString|toString(){}[0]
 }
 
 final class io.dataloom.runtime.facade/DataLoomProviderProtectionSpec { // io.dataloom.runtime.facade/DataLoomProviderProtectionSpec|null[0]

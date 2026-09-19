@@ -1,11 +1,13 @@
 // DataLoom Apple umbrella module.
 //
 // This module is the Apple distribution boundary for the DataLoom SDK.
-// It assembles one XCFramework named "DataLoom" that exports the four
-// stable production modules required by Apple consumers.
+// It assembles one XCFramework named "DataLoom" that exports the stable
+// production modules required by Apple consumers.
 //
 // Rules:
-// - Export model, provider API, SDK API, and runtime.
+// - Export model, provider API, SDK API, plugin SPI, plugin engine, and
+//   runtime. The plugin modules are exported because DataLoom.pluginEngine's
+//   public signatures use their types.
 // - Never export dataloom-core implementation details.
 // - Never export dataloom-testing.
 // - Contain no synchronization implementation.
@@ -62,6 +64,8 @@ kotlin {
             export(project(":dataloom-model"))
             export(project(":dataloom-provider-api"))
             export(project(":dataloom-api"))
+            export(project(":dataloom-plugin-api"))
+            export(project(":dataloom-plugin"))
             export(project(":dataloom-runtime"))
         }
     }
@@ -73,6 +77,8 @@ kotlin {
                 api(project(":dataloom-model"))
                 api(project(":dataloom-provider-api"))
                 api(project(":dataloom-api"))
+                api(project(":dataloom-plugin-api"))
+                api(project(":dataloom-plugin"))
                 api(project(":dataloom-runtime"))
             }
         }

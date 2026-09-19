@@ -1,4 +1,4 @@
-package io.dataloom.core.plugin
+package io.dataloom.plugin
 
 import io.dataloom.api.plugin.PluginId
 import io.dataloom.api.plugin.PluginLifecycleState
@@ -75,10 +75,10 @@ public class PluginLifecycleStateTracker(private val registry: PluginRegistry) {
      * Requests a transition of [id]'s tracked state to [target].
      *
      * When [PluginLifecycleTransitions.validate] reports the transition as
-     * [io.dataloom.core.plugin.PluginLifecycleTransitionResult.Allowed],
+     * [io.dataloom.plugin.PluginLifecycleTransitionResult.Allowed],
      * the tracked state for [id] is updated to [target] and the same
      * result is returned. When it reports
-     * [io.dataloom.core.plugin.PluginLifecycleTransitionResult.Rejected],
+     * [io.dataloom.plugin.PluginLifecycleTransitionResult.Rejected],
      * the tracked state is left unchanged and that result is returned —
      * this method never throws for an illegal transition.
      *

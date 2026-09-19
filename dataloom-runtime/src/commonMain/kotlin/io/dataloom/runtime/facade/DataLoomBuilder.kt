@@ -15,6 +15,9 @@ import io.dataloom.api.provider.SynchronizationProviderBindings
 import io.dataloom.core.provider.SynchronizationProviderResolver
 import io.dataloom.core.provider.StrategyProviderResolver
 import io.dataloom.api.runtime.RuntimeDependencies
+import io.dataloom.plugin.PluginExecutionBoundsEnforcer
+import io.dataloom.plugin.PluginLifecycleStateTracker
+import io.dataloom.plugin.PluginRegistry
 import io.dataloom.runtime.connectivity.SynchronizationConnectivityConfiguration
 import io.dataloom.runtime.connectivity.SynchronizationConnectivityPreflight
 import io.dataloom.runtime.execution.SynchronizationExecutionCoordinator
@@ -118,7 +121,10 @@ import io.dataloom.runtime.worker.assembleQueueWorkerQueueProvider
  * Duplicate provider IDs throw [IllegalArgumentException] from
  * [ProviderRegistry]. Duplicate observer IDs throw [IllegalArgumentException]
  * from [SynchronizationObserverRegistry]. Duplicate pipeline directions throw
- * [IllegalArgumentException] from [SynchronizationPipelineRegistry].
+ * [IllegalArgumentException] from [SynchronizationPipelineRegistry]. An
+ * invalid plugin graph supplied through [pluginConfiguration] (duplicate
+ * plugin IDs, an unresolved dependency, or a dependency cycle) throws
+ * [IllegalArgumentException] from [PluginRegistry].
  *
  * ## KMP compatibility
  *
@@ -159,6 +165,7 @@ public class DataLoomBuilder {
     private var strategyProviderProtectionSpec: DataLoomStrategyProviderProtectionSpec? = null
     private var retryAdministrationSpec: DataLoomRetryAdministrationSpec? = null
     private var circuitAdministrationSpec: DataLoomCircuitAdministrationSpec? = null
+    private var pluginSpec: DataLoomPluginSpec? = null
     private var conflictDetectionSpec: DataLoomConflictDetectionSpec? = null
     private var conflictAdministrationSpec: DataLoomConflictAdministrationSpec? = null
     private var strategyDiagnosticsSpec: DataLoomStrategyDiagnosticsSpec? = null
@@ -755,6 +762,29 @@ public class DataLoomBuilder {
     }
 
     /**
+     * Configures the optional plugin-engine capability.
+     *
+     * When supplied, [DataLoom.pluginEngine] is non-null after [build]. When
+     * never supplied, [DataLoom.pluginEngine] is `null` and [DataLoom] behavior
+     * is unchanged. Registered plugins start in
+     * [io.dataloom.api.plugin.PluginLifecycleState.LOADED]; none is activated,
+     * invoked, or given a clock read, coroutine, or I/O during [build].
+     *
+     * [build] rejects an invalid plugin graph (duplicate plugin ids, an
+     * unresolved dependency, or a dependency cycle) with the
+     * [IllegalArgumentException] thrown by [io.dataloom.plugin.PluginRegistry].
+     *
+     * @param spec the plugins to register and the host-owned lifecycle
+     *   authorizer.
+     * @return this builder for chaining.
+     */
+    public fun pluginConfiguration(
+        spec: DataLoomPluginSpec,
+    ): DataLoomBuilder = apply {
+        pluginSpec = spec
+    }
+
+    /**
      * Configures the optional queue-worker capability.
      *
      * When supplied with valid configuration and a valid queue provider
@@ -1263,6 +1293,17 @@ public class DataLoomBuilder {
             )
         }
 
+        // --- 14c. Build optional plugin-engine capability ---
+        val pluginEngine = pluginSpec?.let { spec ->
+            val pluginRegistry = PluginRegistry(spec.plugins)
+            DefaultDataLoomPluginEngine(
+                registry = pluginRegistry,
+                tracker = PluginLifecycleStateTracker(pluginRegistry),
+                enforcer = PluginExecutionBoundsEnforcer(pluginRegistry),
+                authorizer = spec.lifecycleAuthorizer,
+            )
+        }
+
         return DefaultDataLoom(
             lifecycleCoordinator = lifecycleCoordinator,
             executionCoordinator = executionCoordinator,
@@ -1278,6 +1319,7 @@ public class DataLoomBuilder {
             retryAdministration = retryAdministration,
             circuitAdministration = circuitAdministration,
             conflictAdministration = conflictAdministration,
+            pluginEngine = pluginEngine,
         )
     }
 

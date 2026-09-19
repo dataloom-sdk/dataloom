@@ -32,6 +32,8 @@ flowchart TD
     model["dataloom-model"] --> appleUmbrella["Apple umbrella"]
     providerApi["dataloom-provider-api"] --> appleUmbrella
     api["dataloom-api"] --> appleUmbrella
+    pluginApi["dataloom-plugin-api"] --> appleUmbrella
+    plugin["dataloom-plugin"] --> appleUmbrella
     runtime["dataloom-runtime"] --> appleUmbrella
     appleUmbrella --> framework["Static XCFramework"]
     framework --> swiftSmoke["Swift compile smoke"]
@@ -47,6 +49,8 @@ exported.
 | `dataloom-model` | Canonical dependency-root types | Current public foundation |
 | `dataloom-provider-api` | Provider lifecycle, descriptor, and binding contracts | Current public SPI foundation |
 | `dataloom-api` | Contracts, identifiers, models, and synchronization interfaces | Current public foundation |
+| `dataloom-plugin-api` | Plugin manifest, lifecycle, and bounded-execution contracts used by `DataLoom.pluginEngine` | Current public SPI foundation |
+| `dataloom-plugin` | Plugin engine result, request, and authorizer types used by `DataLoom.pluginEngine` | Current public feature library |
 | `dataloom-runtime` | Facade and orchestration foundations | Current export under review |
 
 `dataloom-core` and `dataloom-testing` are intentionally absent. The

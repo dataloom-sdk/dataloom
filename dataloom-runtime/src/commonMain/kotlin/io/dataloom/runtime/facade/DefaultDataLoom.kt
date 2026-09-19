@@ -59,6 +59,8 @@ import io.dataloom.runtime.submission.DataLoomQueueSubmission
  *   capability; `null` when not configured.
  * @param conflictAdministration the optional authorized manual
  *   conflict-resolution operations capability; `null` when not configured.
+ * @param pluginEngine the optional plugin-engine capability; `null` when not
+ *   configured.
  */
 internal class DefaultDataLoom(
     private val lifecycleCoordinator: ProviderLifecycleCoordinator,
@@ -75,6 +77,7 @@ internal class DefaultDataLoom(
     override val retryAdministration: DataLoomRetryAdministration?,
     override val circuitAdministration: DataLoomCircuitAdministration?,
     override val conflictAdministration: DataLoomConflictAdministration?,
+    override val pluginEngine: DataLoomPluginEngine?,
 ) : DataLoom {
 
     override val providerLifecycleState: ProviderLifecycleCoordinatorState
