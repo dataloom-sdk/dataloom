@@ -189,6 +189,8 @@ public object PluginLifecycleAdministrationOperationalEventBridge {
             "dataloom.plugin.lifecycle.administration.permission_denied"
         is PluginLifecycleTransitionResult.AuthorizationDenied ->
             "dataloom.plugin.lifecycle.administration.authorization_denied"
+        is PluginLifecycleTransitionResult.IncompatibleRuntime ->
+            "dataloom.plugin.lifecycle.administration.incompatible_runtime"
     }
 
     private fun classifiedAttributesFor(
@@ -223,6 +225,23 @@ public object PluginLifecycleAdministrationOperationalEventBridge {
                 attributes["result.from"] = ClassifiedDataValue(result.from.name, DataClassification.PUBLIC)
                 attributes["result.to"] = ClassifiedDataValue(result.to.name, DataClassification.PUBLIC)
                 attributes["result.reasonCode"] = ClassifiedDataValue(result.reasonCode, DataClassification.INTERNAL)
+            }
+            is PluginLifecycleTransitionResult.IncompatibleRuntime -> {
+                val incompatibility = result.incompatibility
+                attributes["result.from"] = ClassifiedDataValue(result.from.name, DataClassification.PUBLIC)
+                attributes["result.to"] = ClassifiedDataValue(result.to.name, DataClassification.PUBLIC)
+                attributes["result.incompatibilityReason"] =
+                    ClassifiedDataValue(incompatibility.reason.name, DataClassification.PUBLIC)
+                attributes["result.sdkVersion"] =
+                    ClassifiedDataValue(incompatibility.sdkVersion.value, DataClassification.PUBLIC)
+                // Plugin-manifest-declared bounds are validated semantic versions but
+                // host- or vendor-supplied, so they get the conservative INTERNAL treatment.
+                attributes["result.minimumSdkVersion"] =
+                    ClassifiedDataValue(incompatibility.range.minimumSdkVersion.value, DataClassification.INTERNAL)
+                incompatibility.range.maximumSdkVersion?.let { maximum ->
+                    attributes["result.maximumSdkVersion"] =
+                        ClassifiedDataValue(maximum.value, DataClassification.INTERNAL)
+                }
             }
         }
         return attributes

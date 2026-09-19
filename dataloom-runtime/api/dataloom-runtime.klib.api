@@ -537,6 +537,7 @@ abstract interface io.dataloom.runtime.facade/DataLoomPluginEngine { // io.datal
     abstract val resolutionOrder // io.dataloom.runtime.facade/DataLoomPluginEngine.resolutionOrder|{}resolutionOrder[0]
         abstract fun <get-resolutionOrder>(): kotlin.collections/List<io.dataloom.api.plugin/PluginId> // io.dataloom.runtime.facade/DataLoomPluginEngine.resolutionOrder.<get-resolutionOrder>|<get-resolutionOrder>(){}[0]
 
+    abstract fun compatibilityOf(io.dataloom.api.plugin/PluginId): io.dataloom.plugin/PluginCompatibilityResult // io.dataloom.runtime.facade/DataLoomPluginEngine.compatibilityOf|compatibilityOf(io.dataloom.api.plugin.PluginId){}[0]
     abstract fun stateOf(io.dataloom.api.plugin/PluginId): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.runtime.facade/DataLoomPluginEngine.stateOf|stateOf(io.dataloom.api.plugin.PluginId){}[0]
     abstract suspend fun <#A1: kotlin/Any?> execute(io.dataloom.api.plugin/PluginId, kotlin.coroutines/SuspendFunction0<#A1>): io.dataloom.plugin/PluginExecutionBoundsResult<#A1> // io.dataloom.runtime.facade/DataLoomPluginEngine.execute|execute(io.dataloom.api.plugin.PluginId;kotlin.coroutines.SuspendFunction0<0:0>){0§<kotlin.Any?>}[0]
     abstract suspend fun transition(io.dataloom.plugin/PluginLifecycleTransitionRequest): io.dataloom.plugin/PluginLifecycleTransitionResult // io.dataloom.runtime.facade/DataLoomPluginEngine.transition|transition(io.dataloom.plugin.PluginLifecycleTransitionRequest){}[0]
@@ -4764,6 +4765,11 @@ final value class io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExp
 
 final object io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationRuntime { // io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationRuntime|null[0]
     final suspend fun execute(io.dataloom.runtime.execution/SynchronizationExecutionContext, io.dataloom.runtime.execution/SynchronizationPipeline, io.dataloom.runtime.retry/ProtectedStorageOperations, io.dataloom.runtime.retry/ProtectedTransportOperations): io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationResult // io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationRuntime.execute|execute(io.dataloom.runtime.execution.SynchronizationExecutionContext;io.dataloom.runtime.execution.SynchronizationPipeline;io.dataloom.runtime.retry.ProtectedStorageOperations;io.dataloom.runtime.retry.ProtectedTransportOperations){}[0]
+}
+
+final object io.dataloom.runtime.facade/DataLoomRuntimeVersion { // io.dataloom.runtime.facade/DataLoomRuntimeVersion|null[0]
+    final val CURRENT // io.dataloom.runtime.facade/DataLoomRuntimeVersion.CURRENT|{}CURRENT[0]
+        final fun <get-CURRENT>(): io.dataloom.api.identifier/RuntimeVersion // io.dataloom.runtime.facade/DataLoomRuntimeVersion.CURRENT.<get-CURRENT>|<get-CURRENT>(){}[0]
 }
 
 final object io.dataloom.runtime.observation.operational/ConflictResolutionOperationalEventBridge { // io.dataloom.runtime.observation.operational/ConflictResolutionOperationalEventBridge|null[0]

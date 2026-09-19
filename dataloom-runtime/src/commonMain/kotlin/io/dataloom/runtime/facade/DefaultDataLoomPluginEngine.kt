@@ -2,6 +2,7 @@ package io.dataloom.runtime.facade
 
 import io.dataloom.api.plugin.PluginId
 import io.dataloom.api.plugin.PluginLifecycleState
+import io.dataloom.plugin.PluginCompatibilityResult
 import io.dataloom.plugin.PluginExecutionBoundsEnforcer
 import io.dataloom.plugin.PluginExecutionBoundsResult
 import io.dataloom.plugin.PluginLifecycleAdministrationAuthorizer
@@ -26,6 +27,8 @@ internal class DefaultDataLoomPluginEngine(
         get() = registry.resolutionOrder
 
     override fun stateOf(id: PluginId): PluginLifecycleState = tracker.stateOf(id)
+
+    override fun compatibilityOf(id: PluginId): PluginCompatibilityResult = tracker.compatibilityOf(id)
 
     override suspend fun transition(
         request: PluginLifecycleTransitionRequest,

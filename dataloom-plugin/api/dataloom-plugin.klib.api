@@ -6,6 +6,18 @@
 // - Show declarations: true
 
 // Library unique name: <dataloom:dataloom-plugin>
+final enum class io.dataloom.plugin/PluginIncompatibilityReason : kotlin/Enum<io.dataloom.plugin/PluginIncompatibilityReason> { // io.dataloom.plugin/PluginIncompatibilityReason|null[0]
+    enum entry ABOVE_MAXIMUM // io.dataloom.plugin/PluginIncompatibilityReason.ABOVE_MAXIMUM|null[0]
+    enum entry BELOW_MINIMUM // io.dataloom.plugin/PluginIncompatibilityReason.BELOW_MINIMUM|null[0]
+    enum entry EMPTY_RANGE // io.dataloom.plugin/PluginIncompatibilityReason.EMPTY_RANGE|null[0]
+
+    final val entries // io.dataloom.plugin/PluginIncompatibilityReason.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.plugin/PluginIncompatibilityReason> // io.dataloom.plugin/PluginIncompatibilityReason.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.plugin/PluginIncompatibilityReason // io.dataloom.plugin/PluginIncompatibilityReason.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.plugin/PluginIncompatibilityReason> // io.dataloom.plugin/PluginIncompatibilityReason.values|values#static(){}[0]
+}
+
 abstract interface io.dataloom.plugin/PluginLifecycleAdministrationAuthorizer { // io.dataloom.plugin/PluginLifecycleAdministrationAuthorizer|null[0]
     abstract suspend fun authorize(io.dataloom.plugin/PluginLifecycleTransitionRequest): io.dataloom.plugin/PluginLifecycleAdministrationAuthorizationDecision // io.dataloom.plugin/PluginLifecycleAdministrationAuthorizer.authorize|authorize(io.dataloom.plugin.PluginLifecycleTransitionRequest){}[0]
 }
@@ -40,6 +52,22 @@ sealed interface <#A: out kotlin/Any?> io.dataloom.plugin/PluginExecutionBoundsR
         final fun toString(): kotlin/String // io.dataloom.plugin/PluginExecutionBoundsResult.ConcurrencyLimitExceeded.toString|toString(){}[0]
     }
 
+    final class NotActive : io.dataloom.plugin/PluginExecutionBoundsResult<kotlin/Nothing> { // io.dataloom.plugin/PluginExecutionBoundsResult.NotActive|null[0]
+        constructor <init>(io.dataloom.api.plugin/PluginId, io.dataloom.api.plugin/PluginLifecycleState) // io.dataloom.plugin/PluginExecutionBoundsResult.NotActive.<init>|<init>(io.dataloom.api.plugin.PluginId;io.dataloom.api.plugin.PluginLifecycleState){}[0]
+
+        final val pluginId // io.dataloom.plugin/PluginExecutionBoundsResult.NotActive.pluginId|{}pluginId[0]
+            final fun <get-pluginId>(): io.dataloom.api.plugin/PluginId // io.dataloom.plugin/PluginExecutionBoundsResult.NotActive.pluginId.<get-pluginId>|<get-pluginId>(){}[0]
+        final val state // io.dataloom.plugin/PluginExecutionBoundsResult.NotActive.state|{}state[0]
+            final fun <get-state>(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.plugin/PluginExecutionBoundsResult.NotActive.state.<get-state>|<get-state>(){}[0]
+
+        final fun component1(): io.dataloom.api.plugin/PluginId // io.dataloom.plugin/PluginExecutionBoundsResult.NotActive.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.plugin/PluginExecutionBoundsResult.NotActive.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.plugin/PluginId = ..., io.dataloom.api.plugin/PluginLifecycleState = ...): io.dataloom.plugin/PluginExecutionBoundsResult.NotActive // io.dataloom.plugin/PluginExecutionBoundsResult.NotActive.copy|copy(io.dataloom.api.plugin.PluginId;io.dataloom.api.plugin.PluginLifecycleState){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.plugin/PluginExecutionBoundsResult.NotActive.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.plugin/PluginExecutionBoundsResult.NotActive.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.plugin/PluginExecutionBoundsResult.NotActive.toString|toString(){}[0]
+    }
+
     final class TimedOut : io.dataloom.plugin/PluginExecutionBoundsResult<kotlin/Nothing> { // io.dataloom.plugin/PluginExecutionBoundsResult.TimedOut|null[0]
         constructor <init>(io.dataloom.api.plugin/PluginId, kotlin/Long) // io.dataloom.plugin/PluginExecutionBoundsResult.TimedOut.<init>|<init>(io.dataloom.api.plugin.PluginId;kotlin.Long){}[0]
 
@@ -54,6 +82,33 @@ sealed interface <#A: out kotlin/Any?> io.dataloom.plugin/PluginExecutionBoundsR
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.plugin/PluginExecutionBoundsResult.TimedOut.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.plugin/PluginExecutionBoundsResult.TimedOut.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.plugin/PluginExecutionBoundsResult.TimedOut.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.plugin/PluginCompatibilityResult { // io.dataloom.plugin/PluginCompatibilityResult|null[0]
+    final class Incompatible : io.dataloom.plugin/PluginCompatibilityResult { // io.dataloom.plugin/PluginCompatibilityResult.Incompatible|null[0]
+        constructor <init>(io.dataloom.api.identifier/RuntimeVersion, io.dataloom.api.plugin/PluginCompatibilityRange, io.dataloom.plugin/PluginIncompatibilityReason) // io.dataloom.plugin/PluginCompatibilityResult.Incompatible.<init>|<init>(io.dataloom.api.identifier.RuntimeVersion;io.dataloom.api.plugin.PluginCompatibilityRange;io.dataloom.plugin.PluginIncompatibilityReason){}[0]
+
+        final val range // io.dataloom.plugin/PluginCompatibilityResult.Incompatible.range|{}range[0]
+            final fun <get-range>(): io.dataloom.api.plugin/PluginCompatibilityRange // io.dataloom.plugin/PluginCompatibilityResult.Incompatible.range.<get-range>|<get-range>(){}[0]
+        final val reason // io.dataloom.plugin/PluginCompatibilityResult.Incompatible.reason|{}reason[0]
+            final fun <get-reason>(): io.dataloom.plugin/PluginIncompatibilityReason // io.dataloom.plugin/PluginCompatibilityResult.Incompatible.reason.<get-reason>|<get-reason>(){}[0]
+        final val sdkVersion // io.dataloom.plugin/PluginCompatibilityResult.Incompatible.sdkVersion|{}sdkVersion[0]
+            final fun <get-sdkVersion>(): io.dataloom.api.identifier/RuntimeVersion // io.dataloom.plugin/PluginCompatibilityResult.Incompatible.sdkVersion.<get-sdkVersion>|<get-sdkVersion>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/RuntimeVersion // io.dataloom.plugin/PluginCompatibilityResult.Incompatible.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.plugin/PluginCompatibilityRange // io.dataloom.plugin/PluginCompatibilityResult.Incompatible.component2|component2(){}[0]
+        final fun component3(): io.dataloom.plugin/PluginIncompatibilityReason // io.dataloom.plugin/PluginCompatibilityResult.Incompatible.component3|component3(){}[0]
+        final fun copy(io.dataloom.api.identifier/RuntimeVersion = ..., io.dataloom.api.plugin/PluginCompatibilityRange = ..., io.dataloom.plugin/PluginIncompatibilityReason = ...): io.dataloom.plugin/PluginCompatibilityResult.Incompatible // io.dataloom.plugin/PluginCompatibilityResult.Incompatible.copy|copy(io.dataloom.api.identifier.RuntimeVersion;io.dataloom.api.plugin.PluginCompatibilityRange;io.dataloom.plugin.PluginIncompatibilityReason){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.plugin/PluginCompatibilityResult.Incompatible.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.plugin/PluginCompatibilityResult.Incompatible.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.plugin/PluginCompatibilityResult.Incompatible.toString|toString(){}[0]
+    }
+
+    final object Compatible : io.dataloom.plugin/PluginCompatibilityResult { // io.dataloom.plugin/PluginCompatibilityResult.Compatible|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.plugin/PluginCompatibilityResult.Compatible.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.plugin/PluginCompatibilityResult.Compatible.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.plugin/PluginCompatibilityResult.Compatible.toString|toString(){}[0]
     }
 }
 
@@ -79,14 +134,20 @@ sealed interface io.dataloom.plugin/PluginLifecycleAdministrationAuthorizationDe
 }
 
 final class io.dataloom.plugin/PluginExecutionBoundsEnforcer { // io.dataloom.plugin/PluginExecutionBoundsEnforcer|null[0]
-    constructor <init>(io.dataloom.plugin/PluginRegistry) // io.dataloom.plugin/PluginExecutionBoundsEnforcer.<init>|<init>(io.dataloom.plugin.PluginRegistry){}[0]
+    constructor <init>(io.dataloom.plugin/PluginLifecycleStateTracker) // io.dataloom.plugin/PluginExecutionBoundsEnforcer.<init>|<init>(io.dataloom.plugin.PluginLifecycleStateTracker){}[0]
 
     final suspend fun <#A1: kotlin/Any?> execute(io.dataloom.api.plugin/PluginId, kotlin.coroutines/SuspendFunction0<#A1>): io.dataloom.plugin/PluginExecutionBoundsResult<#A1> // io.dataloom.plugin/PluginExecutionBoundsEnforcer.execute|execute(io.dataloom.api.plugin.PluginId;kotlin.coroutines.SuspendFunction0<0:0>){0§<kotlin.Any?>}[0]
 }
 
 final class io.dataloom.plugin/PluginLifecycleStateTracker { // io.dataloom.plugin/PluginLifecycleStateTracker|null[0]
-    constructor <init>(io.dataloom.plugin/PluginRegistry) // io.dataloom.plugin/PluginLifecycleStateTracker.<init>|<init>(io.dataloom.plugin.PluginRegistry){}[0]
+    constructor <init>(io.dataloom.plugin/PluginRegistry, io.dataloom.api.identifier/RuntimeVersion) // io.dataloom.plugin/PluginLifecycleStateTracker.<init>|<init>(io.dataloom.plugin.PluginRegistry;io.dataloom.api.identifier.RuntimeVersion){}[0]
 
+    final val registry // io.dataloom.plugin/PluginLifecycleStateTracker.registry|{}registry[0]
+        final fun <get-registry>(): io.dataloom.plugin/PluginRegistry // io.dataloom.plugin/PluginLifecycleStateTracker.registry.<get-registry>|<get-registry>(){}[0]
+    final val sdkVersion // io.dataloom.plugin/PluginLifecycleStateTracker.sdkVersion|{}sdkVersion[0]
+        final fun <get-sdkVersion>(): io.dataloom.api.identifier/RuntimeVersion // io.dataloom.plugin/PluginLifecycleStateTracker.sdkVersion.<get-sdkVersion>|<get-sdkVersion>(){}[0]
+
+    final fun compatibilityOf(io.dataloom.api.plugin/PluginId): io.dataloom.plugin/PluginCompatibilityResult // io.dataloom.plugin/PluginLifecycleStateTracker.compatibilityOf|compatibilityOf(io.dataloom.api.plugin.PluginId){}[0]
     final fun stateOf(io.dataloom.api.plugin/PluginId): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.plugin/PluginLifecycleStateTracker.stateOf|stateOf(io.dataloom.api.plugin.PluginId){}[0]
     final fun transition(io.dataloom.api.plugin/PluginId, io.dataloom.api.plugin/PluginLifecycleState): io.dataloom.plugin/PluginLifecycleTransitionResult // io.dataloom.plugin/PluginLifecycleStateTracker.transition|transition(io.dataloom.api.plugin.PluginId;io.dataloom.api.plugin.PluginLifecycleState){}[0]
     final fun transition(io.dataloom.api.plugin/PluginId, io.dataloom.api.plugin/PluginLifecycleState, io.dataloom.api.security/GrantedCapabilities): io.dataloom.plugin/PluginLifecycleTransitionResult // io.dataloom.plugin/PluginLifecycleStateTracker.transition|transition(io.dataloom.api.plugin.PluginId;io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.api.security.GrantedCapabilities){}[0]
@@ -204,6 +265,25 @@ sealed class io.dataloom.plugin/PluginLifecycleTransitionResult { // io.dataloom
         final fun toString(): kotlin/String // io.dataloom.plugin/PluginLifecycleTransitionResult.AuthorizationDenied.toString|toString(){}[0]
     }
 
+    final class IncompatibleRuntime : io.dataloom.plugin/PluginLifecycleTransitionResult { // io.dataloom.plugin/PluginLifecycleTransitionResult.IncompatibleRuntime|null[0]
+        constructor <init>(io.dataloom.api.plugin/PluginLifecycleState, io.dataloom.api.plugin/PluginLifecycleState, io.dataloom.plugin/PluginCompatibilityResult.Incompatible) // io.dataloom.plugin/PluginLifecycleTransitionResult.IncompatibleRuntime.<init>|<init>(io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.plugin.PluginCompatibilityResult.Incompatible){}[0]
+
+        final val from // io.dataloom.plugin/PluginLifecycleTransitionResult.IncompatibleRuntime.from|{}from[0]
+            final fun <get-from>(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.plugin/PluginLifecycleTransitionResult.IncompatibleRuntime.from.<get-from>|<get-from>(){}[0]
+        final val incompatibility // io.dataloom.plugin/PluginLifecycleTransitionResult.IncompatibleRuntime.incompatibility|{}incompatibility[0]
+            final fun <get-incompatibility>(): io.dataloom.plugin/PluginCompatibilityResult.Incompatible // io.dataloom.plugin/PluginLifecycleTransitionResult.IncompatibleRuntime.incompatibility.<get-incompatibility>|<get-incompatibility>(){}[0]
+        final val to // io.dataloom.plugin/PluginLifecycleTransitionResult.IncompatibleRuntime.to|{}to[0]
+            final fun <get-to>(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.plugin/PluginLifecycleTransitionResult.IncompatibleRuntime.to.<get-to>|<get-to>(){}[0]
+
+        final fun component1(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.plugin/PluginLifecycleTransitionResult.IncompatibleRuntime.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.plugin/PluginLifecycleTransitionResult.IncompatibleRuntime.component2|component2(){}[0]
+        final fun component3(): io.dataloom.plugin/PluginCompatibilityResult.Incompatible // io.dataloom.plugin/PluginLifecycleTransitionResult.IncompatibleRuntime.component3|component3(){}[0]
+        final fun copy(io.dataloom.api.plugin/PluginLifecycleState = ..., io.dataloom.api.plugin/PluginLifecycleState = ..., io.dataloom.plugin/PluginCompatibilityResult.Incompatible = ...): io.dataloom.plugin/PluginLifecycleTransitionResult.IncompatibleRuntime // io.dataloom.plugin/PluginLifecycleTransitionResult.IncompatibleRuntime.copy|copy(io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.plugin.PluginCompatibilityResult.Incompatible){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.plugin/PluginLifecycleTransitionResult.IncompatibleRuntime.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.plugin/PluginLifecycleTransitionResult.IncompatibleRuntime.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.plugin/PluginLifecycleTransitionResult.IncompatibleRuntime.toString|toString(){}[0]
+    }
+
     final class PermissionDenied : io.dataloom.plugin/PluginLifecycleTransitionResult { // io.dataloom.plugin/PluginLifecycleTransitionResult.PermissionDenied|null[0]
         constructor <init>(io.dataloom.api.plugin/PluginLifecycleState, io.dataloom.api.plugin/PluginLifecycleState, kotlin.collections/Set<io.dataloom.api.plugin/PluginPermission>) // io.dataloom.plugin/PluginLifecycleTransitionResult.PermissionDenied.<init>|<init>(io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.api.plugin.PluginLifecycleState;kotlin.collections.Set<io.dataloom.api.plugin.PluginPermission>){}[0]
 
@@ -241,6 +321,10 @@ sealed class io.dataloom.plugin/PluginLifecycleTransitionResult { // io.dataloom
         final fun hashCode(): kotlin/Int // io.dataloom.plugin/PluginLifecycleTransitionResult.Rejected.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.plugin/PluginLifecycleTransitionResult.Rejected.toString|toString(){}[0]
     }
+}
+
+final object io.dataloom.plugin/PluginCompatibilityValidator { // io.dataloom.plugin/PluginCompatibilityValidator|null[0]
+    final fun validate(io.dataloom.api.plugin/PluginCompatibilityRange, io.dataloom.api.identifier/RuntimeVersion): io.dataloom.plugin/PluginCompatibilityResult // io.dataloom.plugin/PluginCompatibilityValidator.validate|validate(io.dataloom.api.plugin.PluginCompatibilityRange;io.dataloom.api.identifier.RuntimeVersion){}[0]
 }
 
 final object io.dataloom.plugin/PluginLifecycleAdministrationOperationalEventBridge { // io.dataloom.plugin/PluginLifecycleAdministrationOperationalEventBridge|null[0]

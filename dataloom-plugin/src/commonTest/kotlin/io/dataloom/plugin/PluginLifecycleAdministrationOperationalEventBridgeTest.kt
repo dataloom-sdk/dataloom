@@ -1,6 +1,8 @@
 package io.dataloom.plugin
 
+import io.dataloom.api.identifier.RuntimeVersion
 import io.dataloom.api.operational.OperationalEventCategory
+import io.dataloom.api.plugin.PluginCompatibilityRange
 import io.dataloom.api.plugin.PluginId
 import io.dataloom.api.plugin.PluginLifecycleState
 import io.dataloom.api.plugin.PluginPermission
@@ -70,12 +72,61 @@ class PluginLifecycleAdministrationOperationalEventBridgeTest {
                 PluginLifecycleState.DISABLED,
                 "NOT_AN_OPERATOR",
             ),
+            incompatibleRuntime,
         )
 
         results.forEach { result ->
             val envelope = PluginLifecycleAdministrationOperationalEventBridge.toEnvelope(request, result)
             assertEquals(OperationalEventCategory.AUDIT, envelope.category)
         }
+    }
+
+    private val incompatibleRuntime = PluginLifecycleTransitionResult.IncompatibleRuntime(
+        from = PluginLifecycleState.LOADED,
+        to = PluginLifecycleState.VALIDATED,
+        incompatibility = PluginCompatibilityResult.Incompatible(
+            sdkVersion = RuntimeVersion("1.0.0"),
+            range = PluginCompatibilityRange(
+                minimumSdkVersion = RuntimeVersion("2.0.0"),
+                maximumSdkVersion = RuntimeVersion("3.0.0"),
+            ),
+            reason = PluginIncompatibilityReason.BELOW_MINIMUM,
+        ),
+    )
+
+    @Test
+    fun `IncompatibleRuntime is bridged as an AUDIT event with its own type`() {
+        val envelope = PluginLifecycleAdministrationOperationalEventBridge.toEnvelope(request, incompatibleRuntime)
+
+        assertEquals(OperationalEventCategory.AUDIT, envelope.category)
+        assertEquals("dataloom.plugin.lifecycle.administration.incompatible_runtime", envelope.type.value)
+    }
+
+    @Test
+    fun `IncompatibleRuntime exposes the SDK version and reason but redacts plugin-declared bounds`() {
+        val envelope = PluginLifecycleAdministrationOperationalEventBridge.toEnvelope(request, incompatibleRuntime)
+
+        assertEquals("LOADED", envelope.attributes["result.from"])
+        assertEquals("VALIDATED", envelope.attributes["result.to"])
+        assertEquals("BELOW_MINIMUM", envelope.attributes["result.incompatibilityReason"])
+        assertEquals("1.0.0", envelope.attributes["result.sdkVersion"])
+        assertEquals("[REDACTED]", envelope.attributes["result.minimumSdkVersion"])
+        assertEquals("[REDACTED]", envelope.attributes["result.maximumSdkVersion"])
+    }
+
+    @Test
+    fun `IncompatibleRuntime with no maximum omits the maximum attribute`() {
+        val noMaximum = PluginLifecycleTransitionResult.IncompatibleRuntime(
+            from = PluginLifecycleState.LOADED,
+            to = PluginLifecycleState.VALIDATED,
+            incompatibility = incompatibleRuntime.incompatibility.copy(
+                range = PluginCompatibilityRange(minimumSdkVersion = RuntimeVersion("2.0.0")),
+            ),
+        )
+
+        val envelope = PluginLifecycleAdministrationOperationalEventBridge.toEnvelope(request, noMaximum)
+
+        assertNull(envelope.attributes["result.maximumSdkVersion"])
     }
 
     @Test
