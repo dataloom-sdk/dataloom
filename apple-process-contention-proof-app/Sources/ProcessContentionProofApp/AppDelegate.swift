@@ -24,15 +24,21 @@
 //
 // DATALOOM_DOMAIN selects which real production path this launch drives:
 // "CIRCUIT_BREAKER" (the default when unset, preserving AppA/AppB's original
-// behavior exactly), "UNRESOLVED_CONFLICT", or "RESOLVED_DECISION". Only the
-// circuit-breaker domain has an asymmetric opener("A")/racer("B") shape; the
-// two conflict-log domains are symmetric -- both racing processes warm up
+// behavior exactly), "UNRESOLVED_CONFLICT", "RESOLVED_DECISION", or
+// "RETRY_BUDGET_LEASE" (#94's own retry-budget durable structure, launched
+// on AppA/AppB like CIRCUIT_BREAKER, not AppC/AppD). Only CIRCUIT_BREAKER and
+// RETRY_BUDGET_LEASE have an asymmetric opener/seeder("A")/racer("B") shape;
+// the two conflict-log domains are symmetric -- both racing processes warm up
 // and then race identically, mirroring their own Android precedents
 // (UnresolvedConflictContentionContentProviderBase/
 // ResolvedConflictDecisionContentionContentProviderBase) exactly. See
 // AppleUnresolvedConflictLogContentionProof's/
 // AppleResolvedConflictDecisionLogContentionProof's own KDoc
-// (apple-process-contention-proof/src/iosMain/...) for why.
+// (apple-process-contention-proof/src/iosMain/...) for why. RETRY_BUDGET_LEASE
+// has no Android contention-specific precedent of its own to mirror at all --
+// see AppleRetryBudgetLeaseContentionProof's own KDoc for how its race shape
+// was designed directly from AppleFileQueueProvider.acquire's real
+// implementation instead.
 //
 // This app deliberately omits Info.plist's `UIApplicationSceneManifest` key,
 // matching apple-process-termination-proof-app's own precedent: UIKit uses
@@ -120,6 +126,42 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                     maxPollAttempts: 12000
                 )
                 line = "\(result.outcome)\t\(result.persistedVersion)\n"
+
+            case "RETRY_BUDGET_LEASE":
+                // Asymmetric like CIRCUIT_BREAKER above: role "A" performs
+                // the one-time real enqueue/acquire/reschedule setup that
+                // seeds the single RETRY_WAITING entry with real persisted
+                // retry-budget state; role "B" (the non-seeding racer) just
+                // signals its own ready marker directly, identically to
+                // CIRCUIT_BREAKER's own non-opening racer below. See
+                // AppleRetryBudgetLeaseContentionProof's own KDoc for why
+                // this domain reuses that asymmetric shape rather than the
+                // conflict-log domains' symmetric one.
+                if role == "A" {
+                    AppleRetryBudgetLeaseContentionProof.shared.seedRetryWaitingEntryAndSignalReady(
+                        directoryPath: sharedDirectory,
+                        readyMarkerPath: readyMarkerPath
+                    )
+                } else {
+                    FileManager.default.createFile(atPath: readyMarkerPath, contents: nil)
+                }
+
+                // Each racing process uses its own distinct lease/consumer
+                // identity (derived from its own role) so a winning
+                // acquisition's lease unambiguously identifies which process
+                // won -- see AppleRetryBudgetLeaseContentionProof's own
+                // waitForGoSignalThenAttemptAcquire KDoc.
+                let result = AppleRetryBudgetLeaseContentionProof.shared.waitForGoSignalThenAttemptAcquire(
+                    directoryPath: sharedDirectory,
+                    goSignalPath: goSignalPath,
+                    racerLeaseId: "lease-race-\(role.lowercased())",
+                    racerConsumerId: "consumer-race-\(role.lowercased())",
+                    maxPollAttempts: 12000
+                )
+                line = "\(result.outcome)\t\(result.retryAttemptNumber)\t" +
+                    "\(result.retryWindowStartedAtEpochMillis)\t" +
+                    "\(result.retryLastEvaluatedAtEpochMillis)\t" +
+                    "\(result.retryCumulativeDelayMillis)\n"
 
             default: // "CIRCUIT_BREAKER" -- AppA/AppB's original, unmodified behavior.
                 if role == "A" {

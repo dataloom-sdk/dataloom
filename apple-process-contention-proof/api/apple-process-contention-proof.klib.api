@@ -34,6 +34,25 @@ final class io.dataloom.processcontentionproof/ProcessContentionProofResult { //
     final fun toString(): kotlin/String // io.dataloom.processcontentionproof/ProcessContentionProofResult.toString|toString(){}[0]
 }
 
+final class io.dataloom.processcontentionproof/RetryBudgetLeaseContentionProofResult { // io.dataloom.processcontentionproof/RetryBudgetLeaseContentionProofResult|null[0]
+    constructor <init>(kotlin/String, kotlin/Int, kotlin/Long, kotlin/Long, kotlin/Long) // io.dataloom.processcontentionproof/RetryBudgetLeaseContentionProofResult.<init>|<init>(kotlin.String;kotlin.Int;kotlin.Long;kotlin.Long;kotlin.Long){}[0]
+
+    final val outcome // io.dataloom.processcontentionproof/RetryBudgetLeaseContentionProofResult.outcome|{}outcome[0]
+        final fun <get-outcome>(): kotlin/String // io.dataloom.processcontentionproof/RetryBudgetLeaseContentionProofResult.outcome.<get-outcome>|<get-outcome>(){}[0]
+    final val retryAttemptNumber // io.dataloom.processcontentionproof/RetryBudgetLeaseContentionProofResult.retryAttemptNumber|{}retryAttemptNumber[0]
+        final fun <get-retryAttemptNumber>(): kotlin/Int // io.dataloom.processcontentionproof/RetryBudgetLeaseContentionProofResult.retryAttemptNumber.<get-retryAttemptNumber>|<get-retryAttemptNumber>(){}[0]
+    final val retryCumulativeDelayMillis // io.dataloom.processcontentionproof/RetryBudgetLeaseContentionProofResult.retryCumulativeDelayMillis|{}retryCumulativeDelayMillis[0]
+        final fun <get-retryCumulativeDelayMillis>(): kotlin/Long // io.dataloom.processcontentionproof/RetryBudgetLeaseContentionProofResult.retryCumulativeDelayMillis.<get-retryCumulativeDelayMillis>|<get-retryCumulativeDelayMillis>(){}[0]
+    final val retryLastEvaluatedAtEpochMillis // io.dataloom.processcontentionproof/RetryBudgetLeaseContentionProofResult.retryLastEvaluatedAtEpochMillis|{}retryLastEvaluatedAtEpochMillis[0]
+        final fun <get-retryLastEvaluatedAtEpochMillis>(): kotlin/Long // io.dataloom.processcontentionproof/RetryBudgetLeaseContentionProofResult.retryLastEvaluatedAtEpochMillis.<get-retryLastEvaluatedAtEpochMillis>|<get-retryLastEvaluatedAtEpochMillis>(){}[0]
+    final val retryWindowStartedAtEpochMillis // io.dataloom.processcontentionproof/RetryBudgetLeaseContentionProofResult.retryWindowStartedAtEpochMillis|{}retryWindowStartedAtEpochMillis[0]
+        final fun <get-retryWindowStartedAtEpochMillis>(): kotlin/Long // io.dataloom.processcontentionproof/RetryBudgetLeaseContentionProofResult.retryWindowStartedAtEpochMillis.<get-retryWindowStartedAtEpochMillis>|<get-retryWindowStartedAtEpochMillis>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.processcontentionproof/RetryBudgetLeaseContentionProofResult.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.processcontentionproof/RetryBudgetLeaseContentionProofResult.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.processcontentionproof/RetryBudgetLeaseContentionProofResult.toString|toString(){}[0]
+}
+
 final object io.dataloom.processcontentionproof/AppleCircuitBreakerProbeContentionProof { // io.dataloom.processcontentionproof/AppleCircuitBreakerProbeContentionProof|null[0]
     final fun openCircuitAndSignalReady(kotlin/String, kotlin/String) // io.dataloom.processcontentionproof/AppleCircuitBreakerProbeContentionProof.openCircuitAndSignalReady|openCircuitAndSignalReady(kotlin.String;kotlin.String){}[0]
     final fun waitForGoSignalThenAttemptProbe(kotlin/String, kotlin/String, kotlin/Int = ...): io.dataloom.processcontentionproof/ProcessContentionProofResult // io.dataloom.processcontentionproof/AppleCircuitBreakerProbeContentionProof.waitForGoSignalThenAttemptProbe|waitForGoSignalThenAttemptProbe(kotlin.String;kotlin.String;kotlin.Int){}[0]
@@ -45,6 +64,11 @@ final object io.dataloom.processcontentionproof/AppleResolvedConflictDecisionLog
 
     final fun waitForGoSignalThenAttemptRecord(kotlin/String, kotlin/String, kotlin/Int = ...): io.dataloom.processcontentionproof/ConflictRecordContentionProofResult // io.dataloom.processcontentionproof/AppleResolvedConflictDecisionLogContentionProof.waitForGoSignalThenAttemptRecord|waitForGoSignalThenAttemptRecord(kotlin.String;kotlin.String;kotlin.Int){}[0]
     final fun warmUpAndSignalReady(kotlin/String, kotlin/String) // io.dataloom.processcontentionproof/AppleResolvedConflictDecisionLogContentionProof.warmUpAndSignalReady|warmUpAndSignalReady(kotlin.String;kotlin.String){}[0]
+}
+
+final object io.dataloom.processcontentionproof/AppleRetryBudgetLeaseContentionProof { // io.dataloom.processcontentionproof/AppleRetryBudgetLeaseContentionProof|null[0]
+    final fun seedRetryWaitingEntryAndSignalReady(kotlin/String, kotlin/String) // io.dataloom.processcontentionproof/AppleRetryBudgetLeaseContentionProof.seedRetryWaitingEntryAndSignalReady|seedRetryWaitingEntryAndSignalReady(kotlin.String;kotlin.String){}[0]
+    final fun waitForGoSignalThenAttemptAcquire(kotlin/String, kotlin/String, kotlin/String, kotlin/String, kotlin/Int = ...): io.dataloom.processcontentionproof/RetryBudgetLeaseContentionProofResult // io.dataloom.processcontentionproof/AppleRetryBudgetLeaseContentionProof.waitForGoSignalThenAttemptAcquire|waitForGoSignalThenAttemptAcquire(kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.Int){}[0]
 }
 
 final object io.dataloom.processcontentionproof/AppleUnresolvedConflictLogContentionProof { // io.dataloom.processcontentionproof/AppleUnresolvedConflictLogContentionProof|null[0]
