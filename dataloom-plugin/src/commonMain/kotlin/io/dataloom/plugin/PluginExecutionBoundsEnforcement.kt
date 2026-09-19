@@ -1,6 +1,7 @@
 package io.dataloom.plugin
 
 import io.dataloom.api.plugin.PluginId
+import io.dataloom.api.plugin.PluginLifecycleState
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -31,6 +32,17 @@ public sealed interface PluginExecutionBoundsResult<out T> {
     public data class ConcurrencyLimitExceeded(
         public val pluginId: PluginId,
         public val maximumConcurrentInvocations: Int,
+    ) : PluginExecutionBoundsResult<Nothing>
+
+    /**
+     * `operation` was never invoked because [pluginId] was not in
+     * [PluginLifecycleState.ACTIVE] when the call started; [state] is the
+     * state observed. Every state other than `ACTIVE` (including `DEGRADED`)
+     * refuses new invocations.
+     */
+    public data class NotActive(
+        public val pluginId: PluginId,
+        public val state: PluginLifecycleState,
     ) : PluginExecutionBoundsResult<Nothing>
 }
 
@@ -95,30 +107,37 @@ public sealed interface PluginExecutionBoundsResult<out T> {
  * one busy or slow plugin cannot silently stall an unrelated caller waiting
  * on a slot that may never free up in time.
  *
+ * ## Lifecycle gating (decision D13)
+ *
+ * This enforcer is bound to a [PluginLifecycleStateTracker] and consults it
+ * once, at the start of each [execute] call:
+ *
+ * - **New invocations are refused unless the plugin is
+ *   [PluginLifecycleState.ACTIVE].** In any other state (including
+ *   `DEGRADED`, `DISABLED`, and every pre-active state) [execute] returns
+ *   [PluginExecutionBoundsResult.NotActive] without acquiring a concurrency
+ *   slot or invoking the operation. The state check happens before the
+ *   concurrency check, so a non-active plugin reports `NotActive` even when
+ *   it is also at its ceiling.
+ * - **An invocation already in flight is not disturbed by a later state
+ *   change.** If its plugin leaves `ACTIVE` while it runs, it is neither
+ *   cancelled nor shortened: it completes, or is cancelled by its own
+ *   declared timeout ([PluginExecutionBoundsResult.TimedOut]), or by caller
+ *   cancellation, exactly as it would have without the transition. Its
+ *   concurrency slot is released when it finishes, so a disabled plugin
+ *   drains rather than being torn down. The state is read only at invocation
+ *   start, so an invocation that passed the check just before a transition
+ *   is by definition already in flight.
+ *
+ * [PluginLifecycleStateTracker.stateOf] is safe to call concurrently with a
+ * transition, so this check may run on any invocation thread.
+ *
  * ## What this does not do
  *
- * - **Does not check [io.dataloom.api.plugin.PluginLifecycleState].** This
- *   type enforces declared time/concurrency bounds only, independent of
- *   [PluginLifecycleStateTracker]. It does not require a plugin to be
- *   [io.dataloom.api.plugin.PluginLifecycleState.ACTIVE] before running
- *   `operation`, and — this is a deliberate, investigated omission, not an
- *   oversight — it does not decide what happens to an already-in-flight
- *   invocation when a plugin's tracked state changes mid-execution (for
- *   example `ACTIVE -> DEGRADED` or `ACTIVE -> DISABLED`). That is a
- *   genuine open design question, not a mechanical extension of this type:
- *   `io.dataloom.core.provider.ProviderLifecycleCoordinator`, the precedent
- *   this gate's own lifecycle types already follow, has no analogous
- *   "cancel work in flight when state changes" behavior to mirror either.
- *   More fundamentally, there is no real invocation call site at all today
- *   — hook-point dispatch remains blocked (see `docs/api/plugin-registry.md`'s
- *   "What remains open") — so there is no concrete in-flight invocation this
- *   scenario could apply to yet, and inventing an answer unilaterally here,
- *   ahead of any real caller, would be exactly the kind of speculative
- *   design this project avoids building ahead of a concrete consumer.
- *   Wiring this enforcer together with [PluginLifecycleStateTracker] is left
- *   to whichever future slice adds a real invocation call site, once that
- *   call site's own semantics make the question concrete instead of
- *   hypothetical.
+ * - **Does not cancel in-flight work on a state change.** See "Lifecycle
+ *   gating" above: draining is the specified behavior, not an omission.
+ *   Actively cancelling in-flight invocations on `DISABLED` would be a new,
+ *   separate policy.
  * - **Does not perform failure isolation/bulkheading beyond concurrency
  *   limiting.** A plugin operation throwing an ordinary exception
  *   propagates normally, uncaught — exactly as
@@ -138,10 +157,13 @@ public sealed interface PluginExecutionBoundsResult<out T> {
  * this type's whole purpose, so it must tolerate the concurrent calls it
  * exists to bound.
  *
- * @param registry the plugin registry whose registered plugins' declared
- *   [io.dataloom.api.plugin.PluginExecutionBounds] this enforcer enforces.
+ * @param lifecycle the tracker whose [PluginLifecycleStateTracker.registry]'s
+ *   registered plugins' declared [io.dataloom.api.plugin.PluginExecutionBounds]
+ *   this enforcer enforces, and whose tracked state gates new invocations.
  */
-public class PluginExecutionBoundsEnforcer(private val registry: PluginRegistry) {
+public class PluginExecutionBoundsEnforcer(private val lifecycle: PluginLifecycleStateTracker) {
+
+    private val registry: PluginRegistry = lifecycle.registry
 
     private val semaphores: Map<PluginId, Semaphore> = registry.plugins.associate { plugin ->
         plugin.manifest.id to Semaphore(plugin.executionBounds.maximumConcurrentInvocations)
@@ -150,6 +172,9 @@ public class PluginExecutionBoundsEnforcer(private val registry: PluginRegistry)
     /**
      * Runs [operation] as one bounded invocation of the plugin registered
      * under [id].
+     *
+     * If [id] is not [PluginLifecycleState.ACTIVE], [operation] is never
+     * invoked and [PluginExecutionBoundsResult.NotActive] is returned.
      *
      * If [id] already has [io.dataloom.api.plugin.PluginExecutionBounds.maximumConcurrentInvocations]
      * invocations in flight, [operation] is never invoked and
@@ -185,6 +210,11 @@ public class PluginExecutionBoundsEnforcer(private val registry: PluginRegistry)
         }
         val bounds = plugin.executionBounds
         val semaphore = semaphores.getValue(id)
+
+        val state = lifecycle.stateOf(id)
+        if (state != PluginLifecycleState.ACTIVE) {
+            return PluginExecutionBoundsResult.NotActive(pluginId = id, state = state)
+        }
 
         if (!semaphore.tryAcquire()) {
             return PluginExecutionBoundsResult.ConcurrencyLimitExceeded(
