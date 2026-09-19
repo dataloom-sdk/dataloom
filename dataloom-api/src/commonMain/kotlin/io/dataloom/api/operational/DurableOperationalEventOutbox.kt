@@ -45,39 +45,32 @@ public value class OperationalEventOutboxScope(
     }
 }
 
-/**
- * Durable `TState` persisted per [OperationalEventOutboxScope]: every
- * [OperationalEventEnvelope] appended to this outbox stream so far, in
- * append order (oldest first).
- *
- * This is a bounded first slice of DL-042's durable-outbox requirement --
- * ordered append, optional count-based and/or age-based retention,
- * operator-driven per-entry acknowledgement (see
- * [DurableOperationalEventOutbox]'s "Retention" and "Acknowledgement"
- * documentation), and "read everything currently retained" only. It does
- * not implement filtered/subscription delivery or cross-scope enumeration;
- * those remain separate, larger follow-up work.
- */
-public data class OperationalEventOutboxState(
-    public val entries: List<OperationalEventEnvelope>,
-)
-
 /** Outcome of one [DurableOperationalEventOutbox.append] call. */
 public sealed interface DurableOperationalEventOutboxAppendOutcome {
 
-    /** [envelope] was newly appended -- the first entry with its [OperationalEventEnvelope.id]. */
+    /**
+     * [envelope] was newly appended -- the first entry with its [OperationalEventEnvelope.id].
+     *
+     * @param sequence the durable per-ordering-key sequence number assigned to
+     *   the new entry; see [OperationalEventOutboxEntry.sequence].
+     */
     public data class Appended(
         public val envelope: OperationalEventEnvelope,
+        public val sequence: Long,
     ) : DurableOperationalEventOutboxAppendOutcome
 
     /**
      * An entry with the same [OperationalEventEnvelope.id] was already
-     * appended and it is identical to the one just attempted -- an
-     * idempotent retry. [envelope] is the unchanged existing entry; nothing
-     * new was persisted.
+     * appended -- whether it is still pending or already acknowledged and
+     * retained -- and it is identical to the one just attempted -- an
+     * idempotent retry. [envelope] is the unchanged existing entry and
+     * [sequence] its original sequence; nothing new was persisted. Notably a
+     * producer retrying an append after its entry was already processed and
+     * acknowledged does not resurrect the entry.
      */
     public data class AlreadyAppended(
         public val envelope: OperationalEventEnvelope,
+        public val sequence: Long,
     ) : DurableOperationalEventOutboxAppendOutcome
 
     /**
@@ -114,22 +107,36 @@ public sealed interface DurableOperationalEventOutboxAcknowledgeOutcome {
 
     /**
      * [envelope] -- the entry with the acknowledged [OperationalEventId] --
-     * was removed from the retained list. A subsequent [DurableOperationalEventOutbox.entries]
-     * call for the same scope no longer includes it.
+     * was marked acknowledged at [acknowledgedAt]. It no longer appears in
+     * [DurableOperationalEventOutbox.entries]/[DurableOperationalEventOutbox.pendingEntries],
+     * and remains readable through [DurableOperationalEventOutbox.acknowledgedEntries]
+     * (and replayable through [DurableOperationalEventOutbox.replay]) until
+     * acknowledged-history retention prunes it.
      */
     public data class Acknowledged(
         public val envelope: OperationalEventEnvelope,
+        public val acknowledgedAt: DataLoomInstant,
+    ) : DurableOperationalEventOutboxAcknowledgeOutcome
+
+    /**
+     * The entry was already acknowledged and its tombstone is still retained.
+     * A well-defined no-op, not a failure: nothing was persisted and the
+     * original [acknowledgedAt] is unchanged, so acknowledging the same id
+     * twice reports [Acknowledged] once and [AlreadyAcknowledged] every time
+     * after -- until retention prunes the tombstone, after which it is
+     * [NotFound].
+     */
+    public data class AlreadyAcknowledged(
+        public val envelope: OperationalEventEnvelope,
+        public val acknowledgedAt: DataLoomInstant,
     ) : DurableOperationalEventOutboxAcknowledgeOutcome
 
     /**
      * No entry with the given [OperationalEventId] is currently retained for
-     * this scope -- because it was never appended, it was already
-     * acknowledged, or count-based and/or age-based retention already evicted
-     * it. A
-     * well-defined no-op, not a failure: nothing was persisted because there
-     * was nothing left to remove. Safe to treat acknowledgement as
-     * idempotent -- acknowledging the same id twice reports [Acknowledged]
-     * once and [NotFound] every time after.
+     * this scope -- because it was never appended, or count-based and/or
+     * age-based retention already evicted it, or its acknowledged tombstone
+     * was already pruned. A well-defined no-op, not a failure: nothing was
+     * persisted because there was nothing to acknowledge.
      */
     public data object NotFound : DurableOperationalEventOutboxAcknowledgeOutcome
 
@@ -146,10 +153,50 @@ public sealed interface DurableOperationalEventOutboxAcknowledgeOutcome {
     public data object ContentionLimitReached : DurableOperationalEventOutboxAcknowledgeOutcome
 }
 
+/** Outcome of one [DurableOperationalEventOutbox.replay] call. */
+public sealed interface DurableOperationalEventOutboxReplayOutcome {
+
+    /**
+     * The acknowledged [entry] is pending again, at its original position and
+     * with its original [OperationalEventOutboxEntry.sequence]. The next
+     * [DurableOperationalEventOutbox.entries] read presents it in sequence
+     * order, ahead of any entry appended after it.
+     */
+    public data class Replayed(
+        public val entry: OperationalEventOutboxEntry,
+    ) : DurableOperationalEventOutboxReplayOutcome
+
+    /**
+     * The entry is already pending -- never acknowledged, or already replayed.
+     * A well-defined no-op: nothing was persisted.
+     */
+    public data class AlreadyPending(
+        public val entry: OperationalEventOutboxEntry,
+    ) : DurableOperationalEventOutboxReplayOutcome
+
+    /**
+     * No entry with the given [OperationalEventId] is retained for this scope
+     * -- never appended, evicted by retention, or its acknowledged tombstone
+     * was already pruned. Nothing can be replayed.
+     */
+    public data object NotFound : DurableOperationalEventOutboxReplayOutcome
+
+    /** The underlying [DurableStateStore] failed. Nothing was persisted. */
+    public data class PersistenceFailure(
+        public val error: DataLoomError,
+    ) : DurableOperationalEventOutboxReplayOutcome
+
+    /**
+     * [DurableOperationalEventOutbox.maximumStateUpdateAttempts] consecutive
+     * compare-and-set attempts all lost the race to concurrent writers for
+     * the same scope. Nothing was persisted; the caller may retry.
+     */
+    public data object ContentionLimitReached : DurableOperationalEventOutboxReplayOutcome
+}
+
 /**
- * Durable, ordered-append event outbox for [OperationalEventEnvelope],
- * backed by a [DurableStateStore] -- a bounded first slice of DL-042's
- * durable-outbox requirement.
+ * Durable, ordered event outbox for [OperationalEventEnvelope], backed by a
+ * [DurableStateStore] -- DL-042's durable-outbox requirement.
  *
  * ## Why [DurableStateStore], not [io.dataloom.api.queue.QueueProvider]
  *
@@ -171,165 +218,119 @@ public sealed interface DurableOperationalEventOutboxAcknowledgeOutcome {
  * shape: a per-scope [DurableStateStore] compare-and-set retry loop over a
  * `TState` that itself holds an ordered list.
  *
- * ## What this does and does not provide
+ * ## What this provides
  *
- * [append] durably persists one [OperationalEventEnvelope] so it survives a
- * process restart, [entries] reads back everything currently retained for a
- * scope, oldest first, and [acknowledge] lets a caller remove one entry it
- * has already dealt with. That is the entire bounded scope of this first
- * slice:
+ * - [append] durably persists one [OperationalEventEnvelope] and assigns it a
+ *   durable sequence number (see "Ordering").
+ * - [entries] / [pendingEntries] read what is still pending, in order.
+ * - [acknowledge] marks one entry done without deleting it (see
+ *   "Acknowledgement and replay").
+ * - [acknowledgedEntries] / [replay] read and reopen acknowledged history.
  *
- * - No filtering or subscription delivery.
- * - No enumeration across scopes -- a caller must already know which
- *   [OperationalEventOutboxScope] to read.
+ * Not provided: subscription delivery, and enumeration across scopes -- a
+ * caller must already know which [OperationalEventOutboxScope] to read. Both
+ * are separately-scoped follow-up work, not oversights.
  *
- * Both of the above are real, separately-scoped follow-up work, not
- * oversights.
+ * ## Ordering (FR-EVENT-003)
+ *
+ * Every entry carries a durable, monotonically increasing
+ * [OperationalEventOutboxEntry.sequence], assigned per
+ * [OperationalEventOrderingKey] -- the workflow id, or
+ * [OperationalEventOrderingKey.Global] for envelopes without one. The
+ * sequence is assigned by [append] *inside* the same compare-and-set write
+ * that persists the entry, computed from the very state that write is
+ * conditioned on. Two concurrent appenders -- in the same process or across
+ * processes sharing one [DurableStateStore] -- can therefore never both
+ * persist the same sequence: exactly one compare-and-set wins, and the loser
+ * reloads, sees the winner's entry and takes the next sequence. No in-memory
+ * counter is involved, so nothing is lost across a restart.
+ *
+ * The retained list is append-ordered, and within one key list order is
+ * sequence order ([OperationalEventOutboxState] validates this on
+ * construction, so a corrupt payload cannot decode into a reordered stream).
+ * [entries], [pendingEntries], [acknowledgedEntries] and the runtime module's
+ * `DurableOperationalEventOutboxProcessor` all present entries in that order,
+ * so a workflow's events are presented in
+ * the order they were appended -- including after a [replay], which keeps an
+ * entry's original position and sequence. Ordering across *different* keys is
+ * only the shared append order; nothing promises a relationship between two
+ * workflows beyond it.
+ *
+ * Gaps are allowed: an entry removed by retention leaves its sequence unused
+ * forever. Duplicates never are: [OperationalEventOutboxState.sequenceHighWaterMarks]
+ * remembers the largest sequence ever assigned per key even after every entry
+ * with it has been pruned.
  *
  * ## Retention
  *
- * By default both [maximumRetainedEntries] and [maximumRetainedAge] are
- * `null` and behavior is byte-for-byte unchanged from before either policy
- * existed: entries accumulate without bound, limited only by
+ * Two separate populations are bounded separately.
+ *
+ * **Pending entries** (never acknowledged, or replayed): by default both
+ * [maximumRetainedEntries] and [maximumRetainedAge] are `null` and pending
+ * entries accumulate without bound, limited only by
  * [OperationalEventOutboxStateCodec]'s own overall-encoded-length safety
- * limit. A caller may configure either policy alone, both together, or
- * neither.
+ * limit. Eviction here is a hard removal -- a pending entry a consumer never
+ * saw is gone, which is the documented cost of bounding retention.
  *
- * Both policies share the same two eviction guarantees: eviction happens as
- * part of the very same compare-and-set write that persists the new entry,
- * never a separate follow-up write, and it never evicts the entry an
- * [append] call is itself adding. An evicted entry's
- * [OperationalEventEnvelope.id] is no longer visible to the same-id
- * [DurableOperationalEventOutboxAppendOutcome.AlreadyAppended] /
- * [DurableOperationalEventOutboxAppendOutcome.Conflict] duplicate check --
- * once either policy has evicted an entry, appending its identifier again is
- * indistinguishable from a genuinely new entry. That is an accepted
- * consequence of bounding retention, not an oversight.
+ * - *Count* ([maximumRetainedEntries]): once an [append] would grow the
+ *   pending count past the cap, the oldest pending entries (by list
+ *   position) are evicted first. Needs no clock read.
+ * - *Age* ([maximumRetainedAge]): on each [append], every already-persisted
+ *   pending entry (never the one being added) whose
+ *   [OperationalEventEnvelope.occurredAt] is older than the age relative to
+ *   [clock] is evicted. [OperationalEventEnvelope] never reads a clock and
+ *   treats its times as caller-supplied, so a caller whose `occurredAt`
+ *   cannot be trusted should prefer the count policy or both together.
+ * - *Composition*: age eviction runs first over already-persisted pending
+ *   entries, then the new entry is appended, then count eviction runs -- a
+ *   fixed order that is part of the contract, since `occurredAt` need not
+ *   align with append order.
  *
- * ### Count-based retention
+ * Both never evict the entry the current [append] is adding, all eviction
+ * happens in the same compare-and-set write that persists the new entry, and
+ * once an entry is evicted its [OperationalEventEnvelope.id] is invisible to
+ * the duplicate-id check, so appending it again is a fresh append.
  *
- * A caller that sets [maximumRetainedEntries] gets a bounded first slice of
- * real retention: once an [append] would grow [OperationalEventOutboxState.entries]
- * past that count, the oldest entries are evicted first -- as many as needed
- * to bring the retained count back down to [maximumRetainedEntries]. This
- * mirrors [io.dataloom.api.configuration.DurableConfigurationHistory]'s own
- * `maxRetainedVersions` shape -- a count-based cap enforced by trimming the
- * oldest entries off an ordered list inside the same atomic update -- which
- * is this codebase's only existing precedent for bounding an ordered
- * [DurableStateStore]-backed list.
+ * **Acknowledged history** (tombstones): bounded by
+ * [maximumRetainedAcknowledgedEntries] (default
+ * [DEFAULT_MAXIMUM_RETAINED_ACKNOWLEDGED_ENTRIES]; `0` discards on
+ * acknowledgement, i.e. no replay window) and optionally
+ * [acknowledgedRetentionAge], measured from
+ * [OperationalEventOutboxEntry.acknowledgedAt] relative to [clock]. Pruning
+ * is deterministic: it runs inside the compare-and-set write of every
+ * [append] and [acknowledge]; age pruning drops every tombstone past the
+ * window, and count pruning then drops the tombstones with the earliest
+ * `acknowledgedAt` first (ties by list position) until the cap holds. It
+ * never touches pending entries, and pruning a tombstone never frees its
+ * sequence.
  *
- * Count-based eviction happens entirely from the list's own `size`/position,
- * so it needs no clock read: the entries to evict are always exactly the
- * current list's leading elements.
+ * A [replay]ed entry is pending again at its original (old) position, so
+ * it counts against the pending policies like any other pending entry and is
+ * among the first candidates for count eviction, and -- if its `occurredAt`
+ * is old -- for age eviction, on the next [append]. Callers replaying from a
+ * capped or age-bounded outbox should process the replayed entry before
+ * appending more.
  *
- * ### Age-based retention
+ * ## Acknowledgement and replay
  *
- * A caller that sets [maximumRetainedAge] gets a second, independent bounded
- * retention mode: on each [append], every already-persisted entry (never the
- * entry this call is itself adding) whose [OperationalEventEnvelope.occurredAt]
- * is older than [maximumRetainedAge] relative to [clock]'s current reading is
- * evicted.
+ * [acknowledge] no longer deletes. It stamps the entry with
+ * [OperationalEventOutboxEntry.acknowledgedAt] (read from [clock]) in one
+ * compare-and-set write, turning it into a retained tombstone. This is still
+ * **operator-driven dismissal from view**, not work-queue completion -- no
+ * lease, retry attempt or failure disposition exists here (a caller that needs
+ * those belongs on [io.dataloom.api.queue.QueueProvider]) -- but a dismissal
+ * is no longer irreversible: [replay] clears the marker on an operator's
+ * request, so a downstream failure discovered later can be reprocessed.
  *
- * Age-based eviction genuinely needs a "now" reference this class did not
- * previously hold, since [OperationalEventEnvelope] never reads a clock
- * itself. [clock] supplies that reference. It is read at most once per
- * [append] call (never once per entry), and only when [maximumRetainedAge]
- * is configured -- an outbox with [maximumRetainedAge] left `null` never
- * touches [clock] even if one happens to be supplied. Setting
- * [maximumRetainedAge] without also supplying [clock] is rejected at
- * construction, since the age policy is meaningless without a "now"
- * reference.
+ * [replay] is an explicit operation on one entry id. It has no authorization
+ * concept of its own, exactly like [acknowledge]: authorizing an operator is
+ * the caller's responsibility, and a caller exposing replay to operators
+ * should gate it accordingly.
  *
- * This class previously argued a count-based cap over an age-based one
- * specifically because eviction driven by `size` alone needs no clock and no
- * dependency on `occurredAt` being a trustworthy "now" reference -- and that
- * trade-off has not disappeared just because an age-based mode now also
- * exists. [OperationalEventEnvelope] still documents that it "never reads a
- * global clock" and treats every time value as caller-supplied, not
- * authoritative: [maximumRetainedAge] takes `occurredAt` at face value as
- * the event's stated occurrence time, so a caller that supplies an
- * inaccurate, backdated, or clock-skewed `occurredAt` gets correspondingly
- * inaccurate age-based eviction. This is a deliberate, documented trade-off
- * -- reusing `occurredAt` rather than inventing a new per-entry "appended
- * at" timestamp keeps [OperationalEventOutboxState]'s persisted shape
- * completely unchanged, where a new field would have been a materially
- * larger, separately-versioned schema change for what remains a bounded
- * first slice. A caller whose events' `occurredAt` cannot be trusted as
- * wall-clock-comparable should prefer [maximumRetainedEntries] instead, or
- * configure both (see "Composing both policies" below) so a single runaway
- * `occurredAt` value cannot defeat bounding entirely.
- *
- * Because `occurredAt` is caller-supplied and not guaranteed to align with
- * append order, age-based eviction cannot reuse count-based retention's
- * "always the leading elements" shortcut -- it evaluates every
- * already-persisted entry's `occurredAt` against [clock]'s current reading,
- * regardless of that entry's position in the list.
- *
- * Like count-based retention, age-based retention never evicts the entry an
- * [append] call is itself adding, even if that entry's own `occurredAt` is
- * already outside the retention window -- for example, a deliberate
- * historical backfill. It still appears in [entries] immediately after that
- * successful append, and only becomes a candidate for age-based eviction on
- * a later [append] call, once it is no longer the entry being added.
- *
- * ### Composing both policies
- *
- * When both [maximumRetainedAge] and [maximumRetainedEntries] are
- * configured, each [append] applies them in one fixed order, as part of the
- * same compare-and-set write: age-based eviction runs first, over the
- * already-persisted entries only; the new envelope is then appended; then
- * count-based eviction runs over the resulting list. An entry evicted by
- * either policy ends up evicted either way -- age-based eviction can remove
- * entries count-based eviction alone would have kept (an old entry sitting
- * well within the count cap), and count-based eviction can remove entries
- * age-based eviction alone would have kept (a recent entry pushed out purely
- * by volume). Running age-based eviction first, before the new envelope is
- * even appended, means count-based eviction's own "keep the last N entries
- * by append position" guarantee always operates on entries that have
- * already survived the age check -- this fixed order is itself part of the
- * contract, not an incidental implementation detail, precisely because
- * `occurredAt` need not align with append order (see "Age-based retention"
- * above), so evaluating the two policies in the opposite order could
- * otherwise surface a different surviving set.
- *
- * ## Acknowledgement
- *
- * [acknowledge] removes exactly one entry -- the one whose
- * [OperationalEventEnvelope.id] matches -- from a scope's retained list, as
- * part of one atomic compare-and-set write, using the same
- * load-evaluate-compare-and-set retry loop [append] already uses.
- *
- * This is deliberately **operator-driven dismissal from view**, not
- * work-queue completion. Every real caller of this outbox so far
- * (`SynchronizationOperationalEventBridge`,
- * `RetryCircuitAdministrationOperationalEventBridge`,
- * `StrategyDecisionOperationalEventBridge`,
- * `QueueLifecycleOperationalEventBridge`) durably appends an envelope as a
- * side-record purely for operator visibility and debugging, after the real
- * operation it describes has already happened -- it never reads [entries]
- * back to decide what to do next, and append outcomes other than success are
- * always swallowed rather than gated on. Nothing in this outbox's existing
- * shape ever depended on an entry surviving until some future "processing"
- * step, so [acknowledge] does not need to invent or enforce that guarantee
- * either: it is the durable counterpart of an operator clearing a diagnostic
- * entry they have already reviewed out of a dashboard list, not a queue
- * consumer marking a work item done. A caller that genuinely needs
- * lease/acquire/complete queue semantics still belongs on
- * [io.dataloom.api.queue.QueueProvider], for the same reasons this class's
- * own "Why [DurableStateStore], not [io.dataloom.api.queue.QueueProvider]"
- * documentation above already gives.
- *
- * [acknowledge] composes with retention with no special-case handling
- * needed: both operate on the exact same persisted
- * [OperationalEventOutboxState.entries] list by producing a new list with
- * some entries removed, so acknowledging an entry retention already evicted,
- * or retention evicting an entry that was already acknowledged, are simply
- * the same "entry no longer present" state reached two different ways --
- * [acknowledge] reports [DurableOperationalEventOutboxAcknowledgeOutcome.NotFound]
- * for the former, and a later [append] evicting further entries never
- * revisits an id [acknowledge] already removed, mirroring how
- * already-evicted ids are already invisible to [append]'s own duplicate-id
- * check (see "Retention" above).
+ * Replaying never-acknowledged entries a consumer skipped or failed needs no
+ * API at all: they are still pending, so the next pass of the runtime
+ * module's `DurableOperationalEventOutboxProcessor` presents them again, in sequence order, ahead of anything appended
+ * since.
  *
  * ## Idempotency
  *
@@ -337,43 +338,60 @@ public sealed interface DurableOperationalEventOutboxAcknowledgeOutcome {
  * same posture as [io.dataloom.api.conflict.DurableUnresolvedConflictLog]: a
  * caller retrying the same append after a crash or a duplicate delivery
  * reproduces the same envelope, so [append] reports
- * [DurableOperationalEventOutboxAppendOutcome.AlreadyAppended] rather than
- * duplicating the entry or failing.
+ * [DurableOperationalEventOutboxAppendOutcome.AlreadyAppended] -- with the
+ * originally assigned sequence -- rather than duplicating the entry or
+ * failing. This holds for pending and retained-acknowledged entries alike.
  *
  * ## Concurrency
  *
- * Follows the same bounded load-evaluate-compare-and-set retry loop
+ * [append], [acknowledge] and [replay] all follow the same bounded
+ * load-evaluate-compare-and-set retry loop
  * [io.dataloom.api.configuration.DurableConfigurationHistory] and
  * [io.dataloom.api.conflict.DurableUnresolvedConflictLog] already establish.
  *
+ * ## Persisted schema
+ *
+ * The persisted `TState` is [OperationalEventOutboxState] written with
+ * [schemaVersion]; [CURRENT_SCHEMA_VERSION] is `2`, the version that
+ * introduced sequence numbers and acknowledgement tombstones (version `1`
+ * persisted bare envelopes and hard-deleted on acknowledgement).
+ * [OperationalEventOutboxStateCodec] still decodes the version-`1` payload
+ * format, assigning sequences in list order.
+ *
  * @param store durable persistence for this outbox's [OperationalEventOutboxState].
+ * @param clock the time source for acknowledgement timestamps and for every
+ *   age-based retention decision. Read at most once per [acknowledge] attempt,
+ *   and during [append] only when [maximumRetainedAge] or
+ *   [acknowledgedRetentionAge] is set.
  * @param schemaVersion the [io.dataloom.api.state.DurableStateRecord.schemaVersion]
- *   this instance writes and expects to read.
+ *   this instance writes.
  * @param maximumStateUpdateAttempts bounded compare-and-set retry attempts
- *   per [append] call before giving up with
- *   [DurableOperationalEventOutboxAppendOutcome.ContentionLimitReached]. Must
- *   be at least `1`.
- * @param maximumRetainedEntries the maximum number of entries kept per scope,
- *   including the one just appended. `null` (the default) means no
- *   count-based eviction -- byte-for-byte the same unbounded-accumulation
- *   behavior this outbox had before this parameter existed. When non-null it
- *   must be at least `1`; see this class's "Retention" documentation.
+ *   per call before giving up with the respective `ContentionLimitReached`
+ *   outcome. Must be at least `1`.
+ * @param maximumRetainedEntries the maximum number of *pending* entries kept
+ *   per scope, including the one just appended. `null` (the default) means no
+ *   count-based eviction. When non-null it must be at least `1`.
  * @param maximumRetainedAge the maximum age, relative to [clock]'s current
- *   reading, an already-persisted entry's [OperationalEventEnvelope.occurredAt]
- *   may have before it is evicted. `null` (the default) means no age-based
- *   eviction. When non-null it must be greater than zero, and [clock] must
- *   be non-null; see this class's "Retention" documentation.
- * @param clock supplies the current instant age-based eviction compares
- *   entries against. Required (non-null) whenever [maximumRetainedAge] is
- *   set; never read otherwise. `null` by default.
+ *   reading, a pending entry's [OperationalEventEnvelope.occurredAt] may have
+ *   before it is evicted. `null` (the default) means no age-based eviction.
+ *   When non-null it must be greater than zero.
+ * @param maximumRetainedAcknowledgedEntries the maximum number of
+ *   acknowledged tombstones kept per scope. Must not be negative; `0`
+ *   discards an entry the moment it is acknowledged.
+ * @param acknowledgedRetentionAge the maximum time a tombstone is kept after
+ *   [OperationalEventOutboxEntry.acknowledgedAt], relative to [clock]. `null`
+ *   (the default) means tombstones are bounded by count only. When non-null it
+ *   must be greater than zero.
  */
 public class DurableOperationalEventOutbox(
     private val store: DurableStateStore<OperationalEventOutboxScope, OperationalEventOutboxState>,
-    private val schemaVersion: Int = DEFAULT_SCHEMA_VERSION,
+    private val clock: DataLoomClock,
+    private val schemaVersion: Int = CURRENT_SCHEMA_VERSION,
     private val maximumStateUpdateAttempts: Int = DEFAULT_MAX_STATE_UPDATE_ATTEMPTS,
     private val maximumRetainedEntries: Int? = null,
     private val maximumRetainedAge: Duration? = null,
-    private val clock: DataLoomClock? = null,
+    private val maximumRetainedAcknowledgedEntries: Int = DEFAULT_MAXIMUM_RETAINED_ACKNOWLEDGED_ENTRIES,
+    private val acknowledgedRetentionAge: Duration? = null,
 ) {
     init {
         require(maximumStateUpdateAttempts >= 1) {
@@ -385,111 +403,201 @@ public class DurableOperationalEventOutbox(
         require(maximumRetainedAge == null || maximumRetainedAge > Duration.ZERO) {
             "maximumRetainedAge must be greater than zero when set, but was $maximumRetainedAge."
         }
-        require(maximumRetainedAge == null || clock != null) {
-            "clock must be provided when maximumRetainedAge is set."
+        require(maximumRetainedAcknowledgedEntries >= 0) {
+            "maximumRetainedAcknowledgedEntries must not be negative, but was $maximumRetainedAcknowledgedEntries."
+        }
+        require(acknowledgedRetentionAge == null || acknowledgedRetentionAge > Duration.ZERO) {
+            "acknowledgedRetentionAge must be greater than zero when set, but was $acknowledgedRetentionAge."
         }
     }
 
     /**
-     * Every envelope currently persisted for [scope], oldest first. Empty
-     * (never a failure) if [append] has never succeeded for this scope.
+     * Every envelope currently pending for [scope], in sequence order (see
+     * this class's "Ordering" documentation). Acknowledged entries are not
+     * included. Empty (never a failure) if [append] has never succeeded for
+     * this scope.
      */
     public suspend fun entries(
         scope: OperationalEventOutboxScope,
     ): ProviderOperationResult<List<OperationalEventEnvelope>> =
+        when (val loaded = pendingEntries(scope)) {
+            is ProviderOperationResult.Failure -> loaded
+            is ProviderOperationResult.Success -> ProviderOperationResult.Success(loaded.value.map { it.envelope })
+        }
+
+    /** Like [entries], but with each envelope's [OperationalEventOutboxEntry.sequence]. */
+    public suspend fun pendingEntries(
+        scope: OperationalEventOutboxScope,
+    ): ProviderOperationResult<List<OperationalEventOutboxEntry>> =
         when (val loaded = store.load(scope)) {
             is ProviderOperationResult.Failure -> loaded
-            is ProviderOperationResult.Success -> ProviderOperationResult.Success(loaded.value.stateOrEmpty().entries)
+            is ProviderOperationResult.Success ->
+                ProviderOperationResult.Success(loaded.value.stateOrEmpty().entries.filterNot { it.isAcknowledged })
+        }
+
+    /**
+     * The retained acknowledged history for [scope]: every acknowledged entry
+     * not yet pruned, in sequence order. These are the candidates
+     * [replay] can reopen.
+     */
+    public suspend fun acknowledgedEntries(
+        scope: OperationalEventOutboxScope,
+    ): ProviderOperationResult<List<OperationalEventOutboxEntry>> =
+        when (val loaded = store.load(scope)) {
+            is ProviderOperationResult.Failure -> loaded
+            is ProviderOperationResult.Success ->
+                ProviderOperationResult.Success(loaded.value.stateOrEmpty().entries.filter { it.isAcknowledged })
         }
 
     /**
      * Appends [envelope] to [scope]'s outbox stream if no entry with the
-     * same [OperationalEventEnvelope.id] has been appended yet. If one
-     * already has, this call never overwrites it -- it reports whether
-     * [envelope] agrees with what is already appended instead.
+     * same [OperationalEventEnvelope.id] is retained yet, assigning it the
+     * next sequence for its ordering key inside the same compare-and-set
+     * write. If one already is, this call never overwrites it -- it reports
+     * whether [envelope] agrees with what is already appended instead.
      */
     public suspend fun append(
         scope: OperationalEventOutboxScope,
         envelope: OperationalEventEnvelope,
-    ): DurableOperationalEventOutboxAppendOutcome {
-        repeat(maximumStateUpdateAttempts) {
-            val loaded = when (val result = store.load(scope)) {
-                is ProviderOperationResult.Failure -> return DurableOperationalEventOutboxAppendOutcome.PersistenceFailure(result.error)
-                is ProviderOperationResult.Success -> result.value
-            }
-            val expectedVersion = loaded.versionOrNull()
-            val currentState = loaded.stateOrEmpty()
-            val existing = currentState.entries.firstOrNull { it.id == envelope.id }
-            if (existing != null) {
-                return if (existing == envelope) {
-                    DurableOperationalEventOutboxAppendOutcome.AlreadyAppended(existing)
+    ): DurableOperationalEventOutboxAppendOutcome = update(
+        scope = scope,
+        onPersistenceFailure = { DurableOperationalEventOutboxAppendOutcome.PersistenceFailure(it) },
+        onContentionLimit = DurableOperationalEventOutboxAppendOutcome.ContentionLimitReached,
+    ) { current ->
+        val existing = current.entries.firstOrNull { it.envelope.id == envelope.id }
+        if (existing != null) {
+            return@update Plan.Done(
+                if (existing.envelope == envelope) {
+                    DurableOperationalEventOutboxAppendOutcome.AlreadyAppended(existing.envelope, existing.sequence)
                 } else {
-                    DurableOperationalEventOutboxAppendOutcome.Conflict(existing, envelope)
-                }
-            }
-            val now: DataLoomInstant? = maximumRetainedAge?.let { clock?.now() }
-            val nextEntries = (currentState.entries.retainedByAge(now) + envelope).retainedByCap()
-            when (
-                val result = store.compareAndSet(
-                    DurableStateCompareAndSetRequest(
-                        scope = scope,
-                        expectedVersion = expectedVersion,
-                        nextState = OperationalEventOutboxState(nextEntries),
-                        nextSchemaVersion = schemaVersion,
-                    ),
-                )
-            ) {
-                is ProviderOperationResult.Failure ->
-                    return DurableOperationalEventOutboxAppendOutcome.PersistenceFailure(result.error)
-                is ProviderOperationResult.Success -> when (result.value) {
-                    is DurableStateCompareAndSetResult.Conflict -> Unit // lost the race; reload and retry
-                    is DurableStateCompareAndSetResult.Updated ->
-                        return DurableOperationalEventOutboxAppendOutcome.Appended(envelope)
-                }
-            }
+                    DurableOperationalEventOutboxAppendOutcome.Conflict(existing.envelope, envelope)
+                },
+            )
         }
-        return DurableOperationalEventOutboxAppendOutcome.ContentionLimitReached
+        val now: DataLoomInstant? = if (maximumRetainedAge != null || acknowledgedRetentionAge != null) clock.now() else null
+        val key = OperationalEventOrderingKey.forWorkflow(envelope.workflowId)
+        val sequence = nextSequenceFor(current, key)
+        val nextEntries = (current.entries.pendingRetainedByAge(now) + OperationalEventOutboxEntry(sequence, envelope))
+            .pendingRetainedByCap()
+            .acknowledgedRetained(now)
+        val (marks, floor) = boundSequenceTracking(
+            entries = nextEntries,
+            marks = current.sequenceHighWaterMarks + (key to sequence),
+            floor = current.sequenceFloor,
+            maximumTrackedKeys = MAXIMUM_TRACKED_ORDERING_KEYS,
+        )
+        Plan.Write(
+            OperationalEventOutboxState(nextEntries, marks, floor),
+            DurableOperationalEventOutboxAppendOutcome.Appended(envelope, sequence),
+        )
     }
 
     /**
-     * Removes the entry with [id] from [scope]'s retained list, if one is
-     * currently retained. See this class's "Acknowledgement" documentation
-     * for what this does and does not mean.
+     * Marks the entry with [id] acknowledged in [scope], if one is currently
+     * retained and still pending. See this class's "Acknowledgement and
+     * replay" documentation for what this does and does not mean.
      */
     public suspend fun acknowledge(
         scope: OperationalEventOutboxScope,
         id: OperationalEventId,
-    ): DurableOperationalEventOutboxAcknowledgeOutcome {
+    ): DurableOperationalEventOutboxAcknowledgeOutcome = update(
+        scope = scope,
+        onPersistenceFailure = { DurableOperationalEventOutboxAcknowledgeOutcome.PersistenceFailure(it) },
+        onContentionLimit = DurableOperationalEventOutboxAcknowledgeOutcome.ContentionLimitReached,
+    ) { current ->
+        val existing = current.entries.firstOrNull { it.envelope.id == id }
+            ?: return@update Plan.Done(DurableOperationalEventOutboxAcknowledgeOutcome.NotFound)
+        existing.acknowledgedAt?.let {
+            return@update Plan.Done(
+                DurableOperationalEventOutboxAcknowledgeOutcome.AlreadyAcknowledged(existing.envelope, it),
+            )
+        }
+        val now = clock.now()
+        val nextEntries = current.entries
+            .map { if (it.envelope.id == id) it.copy(acknowledgedAt = now) else it }
+            .acknowledgedRetained(now)
+        Plan.Write(
+            current.copy(entries = nextEntries),
+            DurableOperationalEventOutboxAcknowledgeOutcome.Acknowledged(existing.envelope, now),
+        )
+    }
+
+    /**
+     * Reopens the acknowledged entry with [id] in [scope], making it pending
+     * again at its original position and sequence. See this class's
+     * "Acknowledgement and replay" documentation.
+     */
+    public suspend fun replay(
+        scope: OperationalEventOutboxScope,
+        id: OperationalEventId,
+    ): DurableOperationalEventOutboxReplayOutcome = update(
+        scope = scope,
+        onPersistenceFailure = { DurableOperationalEventOutboxReplayOutcome.PersistenceFailure(it) },
+        onContentionLimit = DurableOperationalEventOutboxReplayOutcome.ContentionLimitReached,
+    ) { current ->
+        val existing = current.entries.firstOrNull { it.envelope.id == id }
+            ?: return@update Plan.Done(DurableOperationalEventOutboxReplayOutcome.NotFound)
+        if (!existing.isAcknowledged) {
+            return@update Plan.Done(DurableOperationalEventOutboxReplayOutcome.AlreadyPending(existing))
+        }
+        val reopened = existing.copy(acknowledgedAt = null)
+        Plan.Write(
+            current.copy(entries = current.entries.map { if (it.envelope.id == id) reopened else it }),
+            DurableOperationalEventOutboxReplayOutcome.Replayed(reopened),
+        )
+    }
+
+    /** What one attempt of [update] decided, given the state it loaded. */
+    private sealed interface Plan<out O> {
+        /** Nothing to persist; report [outcome]. */
+        class Done<O>(val outcome: O) : Plan<O>
+
+        /** Persist [next] conditioned on the state that was loaded; report [outcome] if it lands. */
+        class Write<O>(val next: OperationalEventOutboxState, val outcome: O) : Plan<O>
+    }
+
+    /**
+     * The shared bounded load-evaluate-compare-and-set loop. [plan] is pure
+     * with respect to the store: it sees the freshly loaded state and either
+     * finishes without writing or proposes the next state, which is persisted
+     * only if no concurrent writer changed the scope since that load --
+     * otherwise the loop reloads and asks [plan] again, so every proposal
+     * (including an assigned sequence) is always computed from the exact state
+     * it is conditioned on.
+     */
+    private suspend fun <O> update(
+        scope: OperationalEventOutboxScope,
+        onPersistenceFailure: (DataLoomError) -> O,
+        onContentionLimit: O,
+        plan: (OperationalEventOutboxState) -> Plan<O>,
+    ): O {
         repeat(maximumStateUpdateAttempts) {
             val loaded = when (val result = store.load(scope)) {
-                is ProviderOperationResult.Failure -> return DurableOperationalEventOutboxAcknowledgeOutcome.PersistenceFailure(result.error)
+                is ProviderOperationResult.Failure -> return onPersistenceFailure(result.error)
                 is ProviderOperationResult.Success -> result.value
             }
-            val expectedVersion = loaded.versionOrNull()
-            val currentState = loaded.stateOrEmpty()
-            val existing = currentState.entries.firstOrNull { it.id == id }
-                ?: return DurableOperationalEventOutboxAcknowledgeOutcome.NotFound
-            val nextEntries = currentState.entries.filterNot { it.id == id }
+            val write = when (val decided = plan(loaded.stateOrEmpty())) {
+                is Plan.Done -> return decided.outcome
+                is Plan.Write -> decided
+            }
             when (
                 val result = store.compareAndSet(
                     DurableStateCompareAndSetRequest(
                         scope = scope,
-                        expectedVersion = expectedVersion,
-                        nextState = OperationalEventOutboxState(nextEntries),
+                        expectedVersion = loaded.versionOrNull(),
+                        nextState = write.next,
                         nextSchemaVersion = schemaVersion,
                     ),
                 )
             ) {
-                is ProviderOperationResult.Failure ->
-                    return DurableOperationalEventOutboxAcknowledgeOutcome.PersistenceFailure(result.error)
+                is ProviderOperationResult.Failure -> return onPersistenceFailure(result.error)
                 is ProviderOperationResult.Success -> when (result.value) {
                     is DurableStateCompareAndSetResult.Conflict -> Unit // lost the race; reload and retry
-                    is DurableStateCompareAndSetResult.Updated ->
-                        return DurableOperationalEventOutboxAcknowledgeOutcome.Acknowledged(existing)
+                    is DurableStateCompareAndSetResult.Updated -> return write.outcome
                 }
             }
         }
-        return DurableOperationalEventOutboxAcknowledgeOutcome.ContentionLimitReached
+        return onContentionLimit
     }
 
     private fun DurableStateLoadResult<OperationalEventOutboxState>.stateOrEmpty(): OperationalEventOutboxState =
@@ -505,32 +613,80 @@ public class DurableOperationalEventOutbox(
         }
 
     /**
-     * Drops the oldest entries, if needed, so at most [maximumRetainedEntries]
-     * remain -- a no-op when [maximumRetainedEntries] is `null` or the list is
-     * already within the cap. See this class's "Retention" documentation.
+     * Drops the oldest *pending* entries, if needed, so at most
+     * [maximumRetainedEntries] pending entries remain -- a no-op when
+     * [maximumRetainedEntries] is `null` or the pending count is already
+     * within the cap. Acknowledged tombstones are neither counted nor
+     * dropped here. See this class's "Retention" documentation.
      */
-    private fun List<OperationalEventEnvelope>.retainedByCap(): List<OperationalEventEnvelope> {
+    private fun List<OperationalEventOutboxEntry>.pendingRetainedByCap(): List<OperationalEventOutboxEntry> {
         val cap = maximumRetainedEntries ?: return this
-        return if (size > cap) subList(size - cap, size) else this
+        var toDrop = count { !it.isAcknowledged } - cap
+        if (toDrop <= 0) return this
+        return filter { entry ->
+            if (!entry.isAcknowledged && toDrop > 0) {
+                toDrop--
+                false
+            } else {
+                true
+            }
+        }
     }
 
     /**
-     * Drops every entry whose [OperationalEventEnvelope.occurredAt] is older
-     * than [maximumRetainedAge] relative to [now] -- a no-op when
+     * Drops every *pending* entry whose [OperationalEventEnvelope.occurredAt]
+     * is older than [maximumRetainedAge] relative to [now] -- a no-op when
      * [maximumRetainedAge] is `null` or [now] is unavailable (which only
-     * happens if [maximumRetainedAge] is `null`, given this class's own
-     * constructor validation). See this class's "Retention" documentation --
-     * this operates only on already-persisted entries, never the entry the
-     * current [append] call is itself adding.
+     * happens if no age policy is set). Operates only on already-persisted
+     * entries, never the entry the current [append] call is itself adding.
      */
-    private fun List<OperationalEventEnvelope>.retainedByAge(now: DataLoomInstant?): List<OperationalEventEnvelope> {
+    private fun List<OperationalEventOutboxEntry>.pendingRetainedByAge(now: DataLoomInstant?): List<OperationalEventOutboxEntry> {
         val maxAgeMillis = maximumRetainedAge?.inWholeMilliseconds ?: return this
         val nowMillis = now?.epochMilliseconds ?: return this
-        return filter { nowMillis - it.occurredAt.epochMilliseconds <= maxAgeMillis }
+        return filter { it.isAcknowledged || nowMillis - it.envelope.occurredAt.epochMilliseconds <= maxAgeMillis }
     }
 
-    private companion object {
-        const val DEFAULT_SCHEMA_VERSION: Int = 1
-        const val DEFAULT_MAX_STATE_UPDATE_ATTEMPTS: Int = 8
+    /**
+     * Prunes acknowledged tombstones: first every tombstone older than
+     * [acknowledgedRetentionAge] relative to [now], then -- if more than
+     * [maximumRetainedAcknowledgedEntries] remain -- the ones with the
+     * earliest [OperationalEventOutboxEntry.acknowledgedAt] (ties by list
+     * position). Never touches pending entries.
+     */
+    private fun List<OperationalEventOutboxEntry>.acknowledgedRetained(now: DataLoomInstant?): List<OperationalEventOutboxEntry> {
+        val ageMillis = acknowledgedRetentionAge?.inWholeMilliseconds
+        val aged = if (ageMillis != null && now != null) {
+            filter { entry ->
+                val at = entry.acknowledgedAt
+                at == null || now.epochMilliseconds - at.epochMilliseconds <= ageMillis
+            }
+        } else {
+            this
+        }
+        val excess = aged.count { it.isAcknowledged } - maximumRetainedAcknowledgedEntries
+        if (excess <= 0) return aged
+        val evictedIndexes = aged.withIndex()
+            .filter { it.value.isAcknowledged }
+            .sortedWith(compareBy({ it.value.acknowledgedAt!!.epochMilliseconds }, { it.index }))
+            .take(excess)
+            .mapTo(HashSet()) { it.index }
+        return aged.filterIndexed { index, _ -> index !in evictedIndexes }
+    }
+
+    public companion object {
+        /**
+         * The [OperationalEventOutboxState] persisted schema version this
+         * class writes by default: `2` introduced per-key sequence numbers and
+         * acknowledgement tombstones.
+         */
+        public const val CURRENT_SCHEMA_VERSION: Int = 2
+
+        /** Default cap on retained acknowledged tombstones per scope. */
+        public const val DEFAULT_MAXIMUM_RETAINED_ACKNOWLEDGED_ENTRIES: Int = 1_000
+
+        private const val DEFAULT_MAX_STATE_UPDATE_ATTEMPTS: Int = 8
+
+        /** Same bound [OperationalEventOutboxStateCodec] enforces on persisted high-water marks. */
+        internal const val MAXIMUM_TRACKED_ORDERING_KEYS: Int = 10_000
     }
 }

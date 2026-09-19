@@ -944,6 +944,7 @@ public class DataLoomBuilder {
         val operationalEventOutbox = operationalEventOutboxSpec?.let { spec ->
             DurableOperationalEventOutbox(
                 store = spec.store,
+                clock = deps.clock,
                 schemaVersion = spec.schemaVersion,
                 maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
             )
@@ -967,6 +968,7 @@ public class DataLoomBuilder {
         val conflictResolutionOperationalEventOutbox = conflictResolutionOperationalEventOutboxSpec?.let { spec ->
             DurableOperationalEventOutbox(
                 store = spec.store,
+                clock = deps.clock,
                 schemaVersion = spec.schemaVersion,
                 maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
             )
@@ -1047,6 +1049,7 @@ public class DataLoomBuilder {
         val strategyDecisionOperationalEventOutbox = strategyDecisionOperationalEventOutboxSpec?.let { spec ->
             DurableOperationalEventOutbox(
                 store = spec.store,
+                clock = deps.clock,
                 schemaVersion = spec.schemaVersion,
                 maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
             )
@@ -1130,6 +1133,7 @@ public class DataLoomBuilder {
         val queueLifecycleOperationalEventOutbox = queueLifecycleOperationalEventOutboxSpec?.let { spec ->
             DurableOperationalEventOutbox(
                 store = spec.store,
+                clock = deps.clock,
                 schemaVersion = spec.schemaVersion,
                 maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
             )
@@ -1198,6 +1202,7 @@ public class DataLoomBuilder {
             retryCircuitAdministrationOperationalEventOutboxSpec?.let { spec ->
                 DurableOperationalEventOutbox(
                     store = spec.store,
+                    clock = deps.clock,
                     schemaVersion = spec.schemaVersion,
                     maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
                 )

@@ -49,6 +49,7 @@ import io.dataloom.api.state.DurableStateRecord
 import io.dataloom.api.state.DurableStateStore
 import io.dataloom.api.time.DataLoomClock
 import io.dataloom.api.time.DataLoomInstant
+import io.dataloom.runtime.operational.outboxTestClock
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -492,7 +493,7 @@ class DurableConflictDetectionCoordinatorTest {
     @Test
     fun configuredOutbox_durablyAppendsAnEnvelope_forAnUnresolvedOutcome() = runTest {
         val outboxScope = OperationalEventOutboxScope("test-conflict-resolution-events")
-        val outbox = DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore())
+        val outbox = DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore(), outboxTestClock)
         val coordinator = coordinator(
             detector = FakeDetector(detectorId, ConflictDetectionResult.ConflictDetected(sampleConflict)),
             unresolvedConflictLog = DurableUnresolvedConflictLog(InMemoryUnresolvedConflictStore()),
@@ -535,7 +536,7 @@ class DurableConflictDetectionCoordinatorTest {
         val decision = ConflictResolutionDecision.UseRemote()
         val resolvedLog = DurableResolvedConflictDecisionLog(InMemoryResolvedConflictDecisionStore())
         val outboxScope = OperationalEventOutboxScope("test-conflict-resolution-events")
-        val outbox = DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore())
+        val outbox = DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore(), outboxTestClock)
         val coordinator = coordinator(
             detector = FakeDetector(detectorId, ConflictDetectionResult.ConflictDetected(sampleConflict)),
             resolver = FakeResolver(resolverId, decision),
@@ -561,7 +562,7 @@ class DurableConflictDetectionCoordinatorTest {
         // operationalEventOutbox backed by a store that fails every call; the coordinator's own
         // return value must be unaffected since bridging failures are swallowed.
         val outboxScope = OperationalEventOutboxScope("test-conflict-resolution-events")
-        val outbox = DurableOperationalEventOutbox(FailingOperationalEventOutboxStore())
+        val outbox = DurableOperationalEventOutbox(FailingOperationalEventOutboxStore(), outboxTestClock)
         val coordinator = coordinator(
             detector = FakeDetector(detectorId, ConflictDetectionResult.ConflictDetected(sampleConflict)),
             unresolvedConflictLog = DurableUnresolvedConflictLog(InMemoryUnresolvedConflictStore()),
