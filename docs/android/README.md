@@ -38,7 +38,7 @@ complete profile. See
 | [Security and R8](security-and-r8.md) | Consumer rules, permissions, and data-at-rest limitations |
 | [dataloom-android platform artifact](dataloom-android.md) | Real production aggregation of the four core Android providers, with public wiring helpers a host application can call |
 | [Native Android reference consumer](reference-consumer.md) | Proof that `dataloom-android`'s wiring helpers compose with `DataLoomBuilder` into one buildable `DataLoom` |
-| [KMP Android target: confirmed blocker](kmp-android-target-blocker.md) | What has already been tried and ruled out for exposing an explicit Android KMP variant, before attempting it again |
+| [KMP Android target: root cause and pilot](kmp-android-target-blocker.md) | Why the explicit Android KMP variant was blocked (plugin requested with a version), the `dataloom-model` pilot, and the roll-out recipe for the other shared modules |
 
 ## Current platform topology
 
@@ -179,7 +179,7 @@ workflow-aligned assemble, unit-test, lint, schema, and managed-device tasks.
 | Area | Current state | Required before V1 |
 |---|---|---|
 | Native Android | Connectivity, WorkManager, and Room queue/circuit foundations exist; aggregated into a real production platform artifact with public wiring helpers ([`dataloom-android`](dataloom-android.md)), dogfooded by a real `DataLoomBuilder` composition that compiles ([reference consumer](reference-consumer.md)) | Runtime (Robolectric/instrumented) proof, published-style artifact resolution, and end-to-end qualification |
-| KMP Android | Shared code has JVM and Apple targets, but no explicit Android KMP target — attempted and confirmed blocked by a Gradle plugin-resolution conflict, see [kmp-android-target-blocker.md](kmp-android-target-blocker.md) | Published KMP Android variant and external consumer fixture |
+| KMP Android | Shared code has JVM and Apple targets; only `dataloom-model` has an explicit Android KMP target so far (pilot, `DATALOOM_ANDROID_BUILD=true`), the rest is a documented roll-out, see [kmp-android-target-blocker.md](kmp-android-target-blocker.md) | Published KMP Android variant and external consumer fixture |
 | KMP iOS | Producer compilation baseline exists | Apple adapters, executable consumer, and platform parity |
 | Native Swift | XCFramework compile smoke exists | Optional; qualify separately if distributed |
 | Six strategy profiles | Contracts and orchestration building blocks exist | Built-in policy behavior and parity suites for every profile |
