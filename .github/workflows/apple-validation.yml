@@ -1625,6 +1625,15 @@ jobs:
             echo "ERROR: one or both result files never appeared within 30s (A: $RESULT_A, B: $RESULT_B)." >&2
             [ -f "$RESULT_A" ] && { echo "--- result-a.tsv ---"; cat "$RESULT_A"; } || echo "result-a.tsv missing"
             [ -f "$RESULT_B" ] && { echo "--- result-b.tsv ---"; cat "$RESULT_B"; } || echo "result-b.tsv missing"
+            # Distinguishes a suspended app (STAT T / no CPU time) from a
+            # crashed one (pid gone, crash report present) from a hung one.
+            echo "--- process state (missing row = exited; STAT T = stopped/suspended) ---"
+            ps -o pid,stat,etime,time,command -p "$PID_A,$PID_B" || true
+            echo "--- recent crash reports ---"
+            ls -lt "$HOME/Library/Logs/DiagnosticReports" 2>/dev/null | head -10 || true
+            echo "--- simulator log tail for the proof apps ---"
+            xcrun simctl spawn "$DEVICE_ID" log show --last 3m --style compact \
+              --predicate 'process BEGINSWITH "ProcessContentionProofApp"' 2>&1 | tail -60 || true
             exit 1
           fi
 
