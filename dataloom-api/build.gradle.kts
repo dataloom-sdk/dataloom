@@ -1,3 +1,5 @@
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
+
 // DataLoom API module.
 //
 // This module will house stable public contracts, canonical models,
@@ -8,12 +10,32 @@
 // - Must remain platform-independent.
 // - Must not depend on any other DataLoom implementation module.
 // - Must not contain runtime implementations.
+//
+// Explicit Android KMP target: see docs/android/kmp-android-target-blocker.md
+// (env-gated on DATALOOM_ANDROID_BUILD; plugin applied by bare id, no version).
 plugins {
     id("io.dataloom.kotlin.multiplatform-library")
 }
 
+val androidTargetEnabled: Boolean =
+    System.getenv("DATALOOM_ANDROID_BUILD") == "true"
+
+if (androidTargetEnabled) {
+    apply(plugin = "com.android.kotlin.multiplatform.library")
+}
+
 kotlin {
     explicitApi()
+
+    if (androidTargetEnabled) {
+        (this as ExtensionAware).extensions
+            .configure<KotlinMultiplatformAndroidLibraryTarget>("androidLibrary") {
+                namespace = "io.dataloom.api"
+                compileSdk = libs.versions.android.compileSdk.get().toInt()
+                minSdk = libs.versions.android.minSdk.get().toInt()
+                withHostTest {}
+            }
+    }
 
     sourceSets {
         commonMain {
