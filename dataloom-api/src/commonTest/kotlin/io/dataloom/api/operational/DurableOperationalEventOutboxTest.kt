@@ -32,6 +32,10 @@ import kotlinx.coroutines.test.runTest
 class DurableOperationalEventOutboxTest {
 
     private val scope = OperationalEventOutboxScope("outbox-1")
+    private val defaultClock = StubDataLoomClock(DataLoomInstant(1_000L))
+
+    private fun stateOf(vararg envelopes: OperationalEventEnvelope): OperationalEventOutboxState =
+        OperationalEventOutboxState(envelopes.mapIndexed { index, envelope -> OperationalEventOutboxEntry(index + 1L, envelope) })
 
     @Test
     fun keyEncoderEncodesEqualScopesIdenticallyAndDistinctScopesDifferently() {
@@ -54,7 +58,7 @@ class DurableOperationalEventOutboxTest {
 
     @Test
     fun entriesAreEmptyBeforeAnySuccessfulAppend() = runTest {
-        val outbox = DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore())
+        val outbox = DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore(), defaultClock)
         val result = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(outbox.entries(scope))
         assertEquals(emptyList(), result.value)
     }
@@ -62,7 +66,7 @@ class DurableOperationalEventOutboxTest {
     @Test
     fun firstAppendSucceedsAndSurvivesAReloadOfTheSameStore() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, defaultClock)
         val envelope = envelope("event-1")
 
         val outcome = outbox.append(scope, envelope)
@@ -73,7 +77,7 @@ class DurableOperationalEventOutboxTest {
         // A fresh DurableOperationalEventOutbox wrapping the same underlying
         // store simulates a process restart: no in-memory outbox state
         // survives, only what the store itself persisted.
-        val reopened = DurableOperationalEventOutbox(store)
+        val reopened = DurableOperationalEventOutbox(store, defaultClock)
         val entries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(reopened.entries(scope))
         assertEquals(listOf(envelope), entries.value)
     }
@@ -81,7 +85,7 @@ class DurableOperationalEventOutboxTest {
     @Test
     fun secondAppendPreservesOrderOldestFirst() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, defaultClock)
         val first = envelope("event-1")
         val second = envelope("event-2")
 
@@ -95,7 +99,7 @@ class DurableOperationalEventOutboxTest {
     @Test
     fun appendingTheSameEnvelopeAgainIsIdempotent() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, defaultClock)
         val envelope = envelope("event-1")
         outbox.append(scope, envelope)
 
@@ -110,7 +114,7 @@ class DurableOperationalEventOutboxTest {
     @Test
     fun appendingADifferentEnvelopeWithTheSameIdConflicts() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, defaultClock)
         val first = envelope("event-1", correlationId = "correlation-a")
         outbox.append(scope, first)
         val second = envelope("event-1", correlationId = "correlation-b")
@@ -127,7 +131,7 @@ class DurableOperationalEventOutboxTest {
     @Test
     fun distinctScopesAreIndependent() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, defaultClock)
         val other = OperationalEventOutboxScope("outbox-2")
         val a = envelope("event-1")
         val b = envelope("event-2")
@@ -144,14 +148,14 @@ class DurableOperationalEventOutboxTest {
     @Test
     fun maximumStateUpdateAttemptsBelowOneIsRejected() {
         assertFailsWith<IllegalArgumentException> {
-            DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore(), maximumStateUpdateAttempts = 0)
+            DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore(), defaultClock, maximumStateUpdateAttempts = 0)
         }
     }
 
     @Test
     fun maximumRetainedEntriesBelowOneIsRejected() {
         assertFailsWith<IllegalArgumentException> {
-            DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore(), maximumRetainedEntries = 0)
+            DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore(), defaultClock, maximumRetainedEntries = 0)
         }
     }
 
@@ -167,11 +171,23 @@ class DurableOperationalEventOutboxTest {
     }
 
     @Test
-    fun maximumRetainedAgeWithoutAClockIsRejected() {
+    fun negativeMaximumRetainedAcknowledgedEntriesIsRejected() {
         assertFailsWith<IllegalArgumentException> {
             DurableOperationalEventOutbox(
                 InMemoryOperationalEventOutboxStore(),
-                maximumRetainedAge = 1_000L.milliseconds,
+                defaultClock,
+                maximumRetainedAcknowledgedEntries = -1,
+            )
+        }
+    }
+
+    @Test
+    fun acknowledgedRetentionAgeOfZeroIsRejected() {
+        assertFailsWith<IllegalArgumentException> {
+            DurableOperationalEventOutbox(
+                InMemoryOperationalEventOutboxStore(),
+                defaultClock,
+                acknowledgedRetentionAge = Duration.ZERO,
             )
         }
     }
@@ -179,7 +195,7 @@ class DurableOperationalEventOutboxTest {
     @Test
     fun unconfiguredRetentionAccumulatesEveryAppendWithoutEviction() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, defaultClock)
         val envelopes = (1..5).map { envelope("event-$it") }
 
         envelopes.forEach { outbox.append(scope, it) }
@@ -191,7 +207,7 @@ class DurableOperationalEventOutboxTest {
     @Test
     fun appendingUnderTheRetentionCapDoesNotEvictAnything() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 3)
+        val outbox = DurableOperationalEventOutbox(store, defaultClock, maximumRetainedEntries = 3)
         val envelopes = (1..3).map { envelope("event-$it") }
 
         envelopes.forEach { outbox.append(scope, it) }
@@ -203,7 +219,7 @@ class DurableOperationalEventOutboxTest {
     @Test
     fun appendingAtTheRetentionCapDoesNotEvictAnything() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 3)
+        val outbox = DurableOperationalEventOutbox(store, defaultClock, maximumRetainedEntries = 3)
         val envelopes = (1..3).map { envelope("event-$it") }
         envelopes.dropLast(1).forEach { outbox.append(scope, it) }
 
@@ -216,7 +232,7 @@ class DurableOperationalEventOutboxTest {
     @Test
     fun appendingPastTheRetentionCapEvictsTheOldestEntriesFirst() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 3)
+        val outbox = DurableOperationalEventOutbox(store, defaultClock, maximumRetainedEntries = 3)
         val envelopes = (1..5).map { envelope("event-$it") }
 
         envelopes.forEach { outbox.append(scope, it) }
@@ -229,7 +245,7 @@ class DurableOperationalEventOutboxTest {
     @Test
     fun retentionCapOfOneKeepsOnlyTheMostRecentlyAppendedEntry() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 1)
+        val outbox = DurableOperationalEventOutbox(store, defaultClock, maximumRetainedEntries = 1)
         val first = envelope("event-1")
         val second = envelope("event-2")
 
@@ -243,14 +259,14 @@ class DurableOperationalEventOutboxTest {
     @Test
     fun retentionEvictionSurvivesAReloadOfTheSameStore() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 2)
+        val outbox = DurableOperationalEventOutbox(store, defaultClock, maximumRetainedEntries = 2)
         val envelopes = (1..3).map { envelope("event-$it") }
         envelopes.forEach { outbox.append(scope, it) }
 
         // A fresh DurableOperationalEventOutbox wrapping the same underlying
         // store simulates a process restart: eviction already happened as
         // part of the persisted state, not something recomputed on read.
-        val reopened = DurableOperationalEventOutbox(store, maximumRetainedEntries = 2)
+        val reopened = DurableOperationalEventOutbox(store, defaultClock, maximumRetainedEntries = 2)
         val entries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(reopened.entries(scope))
         assertEquals(envelopes.takeLast(2), entries.value)
     }
@@ -258,7 +274,7 @@ class DurableOperationalEventOutboxTest {
     @Test
     fun retentionEvictsIndependentlyPerScope() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 2)
+        val outbox = DurableOperationalEventOutbox(store, defaultClock, maximumRetainedEntries = 2)
         val other = OperationalEventOutboxScope("outbox-2")
         val scopeEnvelopes = (1..3).map { envelope("scope-event-$it") }
         val otherEnvelopes = (1..2).map { envelope("other-event-$it") }
@@ -275,7 +291,7 @@ class DurableOperationalEventOutboxTest {
     @Test
     fun appendingAnAlreadyEvictedIdIsTreatedAsANewAppendRatherThanIdempotentOrConflicting() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 1)
+        val outbox = DurableOperationalEventOutbox(store, defaultClock, maximumRetainedEntries = 1)
         val evicted = envelope("event-1")
         val displacing = envelope("event-2")
         outbox.append(scope, evicted)
@@ -296,12 +312,12 @@ class DurableOperationalEventOutboxTest {
     fun retentionEvictionDoesNotAffectContentionRetryDiscipline() = runTest {
         val envelope = envelope("event-1")
         val winningRecord = DurableStateRecord(
-            state = OperationalEventOutboxState(listOf(envelope)),
+            state = stateOf(envelope),
             version = 0L,
             schemaVersion = 1,
         )
         val store = RaceThenConsistentStore(winningRecord)
-        val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 5)
+        val outbox = DurableOperationalEventOutbox(store, defaultClock, maximumRetainedEntries = 5)
 
         val outcome = outbox.append(scope, envelope)
 
@@ -312,7 +328,7 @@ class DurableOperationalEventOutboxTest {
     fun ageBasedRetentionEvictsEntriesOlderThanTheConfiguredAge() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
         val clock = StubDataLoomClock(DataLoomInstant(0L))
-        val outbox = DurableOperationalEventOutbox(store, maximumRetainedAge = 100L.milliseconds, clock = clock)
+        val outbox = DurableOperationalEventOutbox(store, clock, maximumRetainedAge = 100L.milliseconds)
         val first = envelope("event-1", occurredAt = DataLoomInstant(0L))
         outbox.append(scope, first)
 
@@ -331,7 +347,7 @@ class DurableOperationalEventOutboxTest {
     fun ageBasedRetentionKeepsEntriesStillWithinTheWindow() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
         val clock = StubDataLoomClock(DataLoomInstant(0L))
-        val outbox = DurableOperationalEventOutbox(store, maximumRetainedAge = 100L.milliseconds, clock = clock)
+        val outbox = DurableOperationalEventOutbox(store, clock, maximumRetainedAge = 100L.milliseconds)
         val first = envelope("event-1", occurredAt = DataLoomInstant(0L))
         outbox.append(scope, first)
 
@@ -350,7 +366,7 @@ class DurableOperationalEventOutboxTest {
     fun ageBasedRetentionNeverEvictsTheEntryTheCurrentAppendIsItselfAddingEvenIfAlreadyOutsideTheWindow() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
         val clock = StubDataLoomClock(DataLoomInstant(1_000L))
-        val outbox = DurableOperationalEventOutbox(store, maximumRetainedAge = 100L.milliseconds, clock = clock)
+        val outbox = DurableOperationalEventOutbox(store, clock, maximumRetainedAge = 100L.milliseconds)
         val recent = envelope("event-recent", occurredAt = DataLoomInstant(1_000L))
         outbox.append(scope, recent)
 
@@ -379,7 +395,7 @@ class DurableOperationalEventOutboxTest {
     fun ageBasedRetentionEvictionSurvivesAReloadOfTheSameStore() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
         val clock = StubDataLoomClock(DataLoomInstant(0L))
-        val outbox = DurableOperationalEventOutbox(store, maximumRetainedAge = 100L.milliseconds, clock = clock)
+        val outbox = DurableOperationalEventOutbox(store, clock, maximumRetainedAge = 100L.milliseconds)
         val first = envelope("event-1", occurredAt = DataLoomInstant(0L))
         outbox.append(scope, first)
 
@@ -441,7 +457,7 @@ class DurableOperationalEventOutboxTest {
     @Test
     fun acknowledgingAnExistingEntryRemovesItAndIsReflectedInASubsequentEntriesCall() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, defaultClock)
         val first = envelope("event-1")
         val second = envelope("event-2")
         outbox.append(scope, first)
@@ -458,7 +474,7 @@ class DurableOperationalEventOutboxTest {
     @Test
     fun acknowledgementSurvivesAReloadOfTheSameStore() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, defaultClock)
         val envelope = envelope("event-1")
         outbox.append(scope, envelope)
 
@@ -467,14 +483,14 @@ class DurableOperationalEventOutboxTest {
         // A fresh DurableOperationalEventOutbox wrapping the same underlying
         // store simulates a process restart: the removal already happened as
         // part of the persisted state, not something recomputed on read.
-        val reopened = DurableOperationalEventOutbox(store)
+        val reopened = DurableOperationalEventOutbox(store, defaultClock)
         val entries = assertIs<ProviderOperationResult.Success<List<OperationalEventEnvelope>>>(reopened.entries(scope))
         assertEquals(emptyList(), entries.value)
     }
 
     @Test
     fun acknowledgingANonexistentIdIsAWellDefinedNoOp() = runTest {
-        val outbox = DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore())
+        val outbox = DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore(), defaultClock)
 
         val outcome = outbox.acknowledge(scope, OperationalEventId("never-appended"))
 
@@ -482,22 +498,41 @@ class DurableOperationalEventOutboxTest {
     }
 
     @Test
-    fun acknowledgingTheSameEntryTwiceIsIdempotentAndTheSecondCallReportsNotFound() = runTest {
+    fun acknowledgingTheSameEntryTwiceIsIdempotentAndTheSecondCallReportsAlreadyAcknowledged() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, defaultClock)
+        val envelope = envelope("event-1")
+        outbox.append(scope, envelope)
+        assertIs<DurableOperationalEventOutboxAcknowledgeOutcome.Acknowledged>(outbox.acknowledge(scope, envelope.id))
+        defaultClock.instant = DataLoomInstant(5_000L)
+
+        val outcome = outbox.acknowledge(scope, envelope.id)
+
+        // The tombstone is retained, so this is not NotFound -- and the
+        // original acknowledgedAt is untouched by the repeat call.
+        val already = assertIs<DurableOperationalEventOutboxAcknowledgeOutcome.AlreadyAcknowledged>(outcome)
+        assertEquals(envelope, already.envelope)
+        assertEquals(DataLoomInstant(1_000L), already.acknowledgedAt)
+    }
+
+    @Test
+    fun acknowledgingWithNoTombstoneRetentionDiscardsTheEntryAndTheSecondCallReportsNotFound() = runTest {
+        val outbox = DurableOperationalEventOutbox(
+            InMemoryOperationalEventOutboxStore(),
+            defaultClock,
+            maximumRetainedAcknowledgedEntries = 0,
+        )
         val envelope = envelope("event-1")
         outbox.append(scope, envelope)
         assertIs<DurableOperationalEventOutboxAcknowledgeOutcome.Acknowledged>(outbox.acknowledge(scope, envelope.id))
 
-        val outcome = outbox.acknowledge(scope, envelope.id)
-
-        assertIs<DurableOperationalEventOutboxAcknowledgeOutcome.NotFound>(outcome)
+        assertIs<DurableOperationalEventOutboxAcknowledgeOutcome.NotFound>(outbox.acknowledge(scope, envelope.id))
     }
 
     @Test
     fun acknowledgingAnEntryAlreadyEvictedByRetentionIsAWellDefinedNoOp() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 1)
+        val outbox = DurableOperationalEventOutbox(store, defaultClock, maximumRetainedEntries = 1)
         val evicted = envelope("event-1")
         val displacing = envelope("event-2")
         outbox.append(scope, evicted)
@@ -513,7 +548,7 @@ class DurableOperationalEventOutboxTest {
     @Test
     fun acknowledgingOneEntryDoesNotDisturbRetentionForSubsequentAppends() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store, maximumRetainedEntries = 2)
+        val outbox = DurableOperationalEventOutbox(store, defaultClock, maximumRetainedEntries = 2)
         val first = envelope("event-1")
         val second = envelope("event-2")
         outbox.append(scope, first)
@@ -533,7 +568,7 @@ class DurableOperationalEventOutboxTest {
     @Test
     fun acknowledgeDistinctScopesAreIndependent() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, defaultClock)
         val other = OperationalEventOutboxScope("outbox-2")
         val a = envelope("event-1")
         val b = envelope("event-1") // same id, different scope -- distinct entries
@@ -550,7 +585,7 @@ class DurableOperationalEventOutboxTest {
 
     @Test
     fun acknowledgeReturnsPersistenceFailureWhenLoadFails() = runTest {
-        val outbox = DurableOperationalEventOutbox(FailingLoadStore())
+        val outbox = DurableOperationalEventOutbox(FailingLoadStore(), defaultClock)
         val outcome = outbox.acknowledge(scope, OperationalEventId("event-1"))
         assertIs<DurableOperationalEventOutboxAcknowledgeOutcome.PersistenceFailure>(outcome)
     }
@@ -558,11 +593,11 @@ class DurableOperationalEventOutboxTest {
     @Test
     fun acknowledgeReturnsPersistenceFailureWhenCompareAndSetFails() = runTest {
         val record = DurableStateRecord(
-            state = OperationalEventOutboxState(listOf(envelope("event-1"))),
+            state = stateOf(envelope("event-1")),
             version = 0L,
             schemaVersion = 1,
         )
-        val outbox = DurableOperationalEventOutbox(FoundStoreWithFailingCompareAndSet(record))
+        val outbox = DurableOperationalEventOutbox(FoundStoreWithFailingCompareAndSet(record), defaultClock)
 
         val outcome = outbox.acknowledge(scope, OperationalEventId("event-1"))
 
@@ -572,12 +607,13 @@ class DurableOperationalEventOutboxTest {
     @Test
     fun acknowledgeReturnsContentionLimitReachedWhenTheRemovalRaceIsAlwaysLost() = runTest {
         val record = DurableStateRecord(
-            state = OperationalEventOutboxState(listOf(envelope("event-1"))),
+            state = stateOf(envelope("event-1")),
             version = 0L,
             schemaVersion = 1,
         )
         val outbox = DurableOperationalEventOutbox(
             FoundStoreAlwaysConflicting(record),
+            defaultClock,
             maximumStateUpdateAttempts = 3,
         )
 
@@ -590,12 +626,12 @@ class DurableOperationalEventOutboxTest {
     fun acknowledgeRetriesAfterLosingTheRemovalRaceAndThenSucceeds() = runTest {
         val envelope = envelope("event-1")
         val record = DurableStateRecord(
-            state = OperationalEventOutboxState(listOf(envelope)),
+            state = stateOf(envelope),
             version = 0L,
             schemaVersion = 1,
         )
         val store = FoundStoreConflictOnceThenUpdates(record)
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, defaultClock)
 
         val outcome = outbox.acknowledge(scope, envelope.id)
 
@@ -606,21 +642,21 @@ class DurableOperationalEventOutboxTest {
 
     @Test
     fun appendReturnsPersistenceFailureWhenLoadFails() = runTest {
-        val outbox = DurableOperationalEventOutbox(FailingLoadStore())
+        val outbox = DurableOperationalEventOutbox(FailingLoadStore(), defaultClock)
         val outcome = outbox.append(scope, envelope("event-1"))
         assertIs<DurableOperationalEventOutboxAppendOutcome.PersistenceFailure>(outcome)
     }
 
     @Test
     fun appendReturnsPersistenceFailureWhenCompareAndSetFails() = runTest {
-        val outbox = DurableOperationalEventOutbox(FailingCompareAndSetStore())
+        val outbox = DurableOperationalEventOutbox(FailingCompareAndSetStore(), defaultClock)
         val outcome = outbox.append(scope, envelope("event-1"))
         assertIs<DurableOperationalEventOutboxAppendOutcome.PersistenceFailure>(outcome)
     }
 
     @Test
     fun appendReturnsContentionLimitReachedWhenTheInsertRaceIsAlwaysLost() = runTest {
-        val outbox = DurableOperationalEventOutbox(AlwaysConflictStore(), maximumStateUpdateAttempts = 3)
+        val outbox = DurableOperationalEventOutbox(AlwaysConflictStore(), defaultClock, maximumStateUpdateAttempts = 3)
         val outcome = outbox.append(scope, envelope("event-1"))
         assertIs<DurableOperationalEventOutboxAppendOutcome.ContentionLimitReached>(outcome)
     }
@@ -629,12 +665,12 @@ class DurableOperationalEventOutboxTest {
     fun appendRetriesAfterLosingTheInsertRaceAndReportsAlreadyAppended() = runTest {
         val envelope = envelope("event-1")
         val winningRecord = DurableStateRecord(
-            state = OperationalEventOutboxState(listOf(envelope)),
+            state = stateOf(envelope),
             version = 0L,
             schemaVersion = 1,
         )
         val store = RaceThenConsistentStore(winningRecord)
-        val outbox = DurableOperationalEventOutbox(store)
+        val outbox = DurableOperationalEventOutbox(store, defaultClock)
 
         val outcome = outbox.append(scope, envelope)
 

@@ -4,6 +4,7 @@ import io.dataloom.api.identifier.CorrelationId
 import io.dataloom.api.operational.OperationalEventCategory
 import io.dataloom.api.operational.OperationalEventEnvelope
 import io.dataloom.api.operational.OperationalEventId
+import io.dataloom.api.operational.OperationalEventOutboxEntry
 import io.dataloom.api.operational.OperationalEventOutboxScope
 import io.dataloom.api.operational.OperationalEventOutboxState
 import io.dataloom.api.operational.OperationalEventOutboxStateCodec
@@ -54,6 +55,8 @@ class RoomDurableStateStoreOperationalEventOutboxIntegrationTest {
     private val scope = OperationalEventOutboxScope("retry-events")
     private val firstEnvelope = envelope("event-1")
     private val secondEnvelope = envelope("event-2")
+    private val firstEntry = OperationalEventOutboxEntry(1L, firstEnvelope)
+    private val secondEntry = OperationalEventOutboxEntry(2L, secondEnvelope)
 
     @Before
     fun setUp() {
@@ -72,13 +75,13 @@ class RoomDurableStateStoreOperationalEventOutboxIntegrationTest {
     fun insertsAndRoundTripsOneEnvelopeThroughTheGenericRoomStore() {
         runBlocking {
             val encodedKey = OperationalEventOutboxScope.KeyEncoder.encode(scope)
-            val state = OperationalEventOutboxState(listOf(firstEnvelope))
+            val state = OperationalEventOutboxState(listOf(firstEntry))
             val encodedPayload = OperationalEventOutboxStateCodec().encode(state)
             val persistedEntity = DurableStateEntity(
                 namespace = "operational-event-outbox",
                 scopeKey = encodedKey,
                 statePayload = encodedPayload,
-                schemaVersion = 1,
+                schemaVersion = 2,
                 recordVersion = 0L,
             )
             whenever(dao.compareAndSet(eq(null), any())).thenReturn(
@@ -87,7 +90,7 @@ class RoomDurableStateStoreOperationalEventOutboxIntegrationTest {
             whenever(dao.load("operational-event-outbox", encodedKey)).thenReturn(persistedEntity)
 
             val inserted = assertIs<ProviderOperationResult.Success<DurableStateCompareAndSetResult<OperationalEventOutboxState>>>(
-                store.compareAndSet(DurableStateCompareAndSetRequest(scope, null, state, 1)),
+                store.compareAndSet(DurableStateCompareAndSetRequest(scope, null, state, 2)),
             )
             val updated = assertIs<DurableStateCompareAndSetResult.Updated<OperationalEventOutboxState>>(inserted.value)
             assertEquals(state, updated.record.state)
@@ -106,7 +109,7 @@ class RoomDurableStateStoreOperationalEventOutboxIntegrationTest {
             )
             val found = assertIs<DurableStateLoadResult.Found<OperationalEventOutboxState>>(loaded.value)
             assertEquals(state, found.record.state)
-            assertEquals(listOf(firstEnvelope), found.record.state.entries)
+            assertEquals(listOf(firstEntry), found.record.state.entries)
         }
     }
 
@@ -115,20 +118,20 @@ class RoomDurableStateStoreOperationalEventOutboxIntegrationTest {
         runBlocking {
             val encodedKey = OperationalEventOutboxScope.KeyEncoder.encode(scope)
             val codec = OperationalEventOutboxStateCodec()
-            val firstState = OperationalEventOutboxState(listOf(firstEnvelope))
-            val secondState = OperationalEventOutboxState(listOf(firstEnvelope, secondEnvelope))
+            val firstState = OperationalEventOutboxState(listOf(firstEntry))
+            val secondState = OperationalEventOutboxState(listOf(firstEntry, secondEntry))
             val firstEntity = DurableStateEntity(
                 namespace = "operational-event-outbox",
                 scopeKey = encodedKey,
                 statePayload = codec.encode(firstState),
-                schemaVersion = 1,
+                schemaVersion = 2,
                 recordVersion = 0L,
             )
             val secondEntity = DurableStateEntity(
                 namespace = "operational-event-outbox",
                 scopeKey = encodedKey,
                 statePayload = codec.encode(secondState),
-                schemaVersion = 1,
+                schemaVersion = 2,
                 recordVersion = 1L,
             )
             whenever(dao.compareAndSet(eq(null), any())).thenReturn(
@@ -139,18 +142,43 @@ class RoomDurableStateStoreOperationalEventOutboxIntegrationTest {
             )
             whenever(dao.load("operational-event-outbox", encodedKey)).thenReturn(secondEntity)
 
-            store.compareAndSet(DurableStateCompareAndSetRequest(scope, null, firstState, 1))
+            store.compareAndSet(DurableStateCompareAndSetRequest(scope, null, firstState, 2))
             val secondInsert = assertIs<ProviderOperationResult.Success<DurableStateCompareAndSetResult<OperationalEventOutboxState>>>(
-                store.compareAndSet(DurableStateCompareAndSetRequest(scope, 0L, secondState, 1)),
+                store.compareAndSet(DurableStateCompareAndSetRequest(scope, 0L, secondState, 2)),
             )
             val updated = assertIs<DurableStateCompareAndSetResult.Updated<OperationalEventOutboxState>>(secondInsert.value)
-            assertEquals(listOf(firstEnvelope, secondEnvelope), updated.record.state.entries)
+            assertEquals(listOf(firstEntry, secondEntry), updated.record.state.entries)
 
             val loaded = assertIs<ProviderOperationResult.Success<DurableStateLoadResult<OperationalEventOutboxState>>>(
                 store.load(scope),
             )
             val found = assertIs<DurableStateLoadResult.Found<OperationalEventOutboxState>>(loaded.value)
-            assertEquals(listOf(firstEnvelope, secondEnvelope), found.record.state.entries)
+            assertEquals(listOf(firstEntry, secondEntry), found.record.state.entries)
+        }
+    }
+
+    @Test
+    fun anAcknowledgedTombstoneAndItsSequenceBookkeepingSurviveTheGenericRoomStoreRoundTrip() {
+        runBlocking {
+            val encodedKey = OperationalEventOutboxScope.KeyEncoder.encode(scope)
+            val tombstone = OperationalEventOutboxEntry(1L, firstEnvelope, acknowledgedAt = DataLoomInstant(20_000L))
+            val state = OperationalEventOutboxState(listOf(tombstone, secondEntry), sequenceFloor = 4L)
+            val entity = DurableStateEntity(
+                namespace = "operational-event-outbox",
+                scopeKey = encodedKey,
+                statePayload = OperationalEventOutboxStateCodec().encode(state),
+                schemaVersion = 2,
+                recordVersion = 3L,
+            )
+            whenever(dao.load("operational-event-outbox", encodedKey)).thenReturn(entity)
+
+            val loaded = assertIs<ProviderOperationResult.Success<DurableStateLoadResult<OperationalEventOutboxState>>>(
+                store.load(scope),
+            )
+            val found = assertIs<DurableStateLoadResult.Found<OperationalEventOutboxState>>(loaded.value)
+            assertEquals(state, found.record.state)
+            assertEquals(DataLoomInstant(20_000L), found.record.state.entries.first().acknowledgedAt)
+            assertEquals(4L, found.record.state.sequenceFloor)
         }
     }
 
