@@ -77,6 +77,7 @@ include(
 //
 // Modules are independently consumable:
 //   - dataloom-connectivity-android — Android ConnectivityProvider
+//   - dataloom-lifecycle-android — Android AppLifecycleProvider (AndroidX process lifecycle)
 //   - dataloom-scheduler-workmanager — WorkManager SchedulerProvider and worker bridge
 //   - dataloom-queue-room — Room QueueProvider
 //   - dataloom-storage-room — Room StorageProvider
@@ -99,6 +100,7 @@ val isAndroidBuildEnabled: Boolean =
 if (isAndroidBuildEnabled) {
     include(
         ":dataloom-connectivity-android",
+        ":dataloom-lifecycle-android",
         ":dataloom-scheduler-workmanager",
         ":dataloom-queue-room",
         ":dataloom-storage-room",

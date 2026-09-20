@@ -22,5 +22,10 @@ kotlin {
                 implementation(project(":dataloom-runtime"))
             }
         }
+        commonTest {
+            dependencies {
+                implementation(libs.kotlinx.coroutines.test)
+            }
+        }
     }
 }

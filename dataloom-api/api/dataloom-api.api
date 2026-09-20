@@ -1642,6 +1642,32 @@ public abstract interface class io/dataloom/api/execution/SynchronizationProvide
 	public abstract fun getTransportProvider ()Lio/dataloom/api/transport/TransportProvider;
 }
 
+public final class io/dataloom/api/lifecycle/AppLifecycleCapabilities {
+	public static final field INSTANCE Lio/dataloom/api/lifecycle/AppLifecycleCapabilities;
+	public final fun getSTATE_STREAM-_4DVUv0 ()Ljava/lang/String;
+	public final fun getTERMINATING_SOON-_4DVUv0 ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/lifecycle/AppLifecycleObservationException : java/lang/Exception {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+}
+
+public abstract interface class io/dataloom/api/lifecycle/AppLifecycleProvider : io/dataloom/api/provider/DataLoomProvider {
+	public abstract fun getCurrent ()Lio/dataloom/api/lifecycle/AppLifecycleState;
+	public abstract fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public abstract fun states ()Lkotlinx/coroutines/flow/Flow;
+}
+
+public final class io/dataloom/api/lifecycle/AppLifecycleState : java/lang/Enum {
+	public static final field BACKGROUND Lio/dataloom/api/lifecycle/AppLifecycleState;
+	public static final field FOREGROUND Lio/dataloom/api/lifecycle/AppLifecycleState;
+	public static final field TERMINATING_SOON Lio/dataloom/api/lifecycle/AppLifecycleState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/lifecycle/AppLifecycleState;
+	public static fun values ()[Lio/dataloom/api/lifecycle/AppLifecycleState;
+}
+
 public final class io/dataloom/api/model/ChangeOperation : java/lang/Enum {
 	public static final field CREATE Lio/dataloom/api/model/ChangeOperation;
 	public static final field DELETE Lio/dataloom/api/model/ChangeOperation;

@@ -105,9 +105,9 @@ this PR/commit's own CI result), not by anything this Windows host can run.
   confirmed genuinely blocked in this repository's current Kotlin/AGP
   combination; see
   [kmp-android-target-blocker.md](../android/kmp-android-target-blocker.md).
-- iOS lifecycle integration: no `LifecycleProvider` contract exists in this
-  codebase at all yet — an open design question, not attempted by this
-  module or `dataloom-platform-ios`.
+- iOS lifecycle integration: the `AppLifecycleProvider` contract and
+  `AppleLifecycleProvider` now exist (ADR-0007), but nothing in the runtime
+  consumes lifecycle signals and this consumer does not wire the provider.
 - Device runtime proof — the iOS Simulator is a real Apple-provided
   runtime, not a shadow layer, but device-only behavior (background
   execution limits, real network conditions, memory pressure) can still
