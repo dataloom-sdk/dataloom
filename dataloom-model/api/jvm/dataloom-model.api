@@ -615,6 +615,18 @@ public final class io/dataloom/api/security/DataLoomDigest {
 	public fun toString ()Ljava/lang/String;
 }
 
+public abstract interface class io/dataloom/api/security/DataLoomDigestAccumulator : java/lang/AutoCloseable {
+	public abstract fun close ()V
+	public abstract fun finish ()Lio/dataloom/api/security/DataLoomDigest;
+	public abstract fun getAlgorithm ()Lio/dataloom/api/security/DigestAlgorithm;
+	public abstract fun update ([BII)V
+	public static synthetic fun update$default (Lio/dataloom/api/security/DataLoomDigestAccumulator;[BIIILjava/lang/Object;)V
+}
+
+public final class io/dataloom/api/security/DataLoomDigestAccumulator$DefaultImpls {
+	public static synthetic fun update$default (Lio/dataloom/api/security/DataLoomDigestAccumulator;[BIIILjava/lang/Object;)V
+}
+
 public abstract interface class io/dataloom/api/security/DataLoomDigestCalculator {
 	public abstract fun digest (Lio/dataloom/api/security/DigestAlgorithm;[B)Lio/dataloom/api/security/DataLoomDigest;
 }
@@ -622,6 +634,10 @@ public abstract interface class io/dataloom/api/security/DataLoomDigestCalculato
 public abstract interface class io/dataloom/api/security/DataLoomHmacCalculator {
 	public abstract fun hmac (Lio/dataloom/api/security/HmacAlgorithm;[B[B)Lio/dataloom/api/security/DataLoomMac;
 	public abstract fun verify ([B[BLio/dataloom/api/security/DataLoomMac;)Z
+}
+
+public abstract interface class io/dataloom/api/security/DataLoomIncrementalDigestCalculator : io/dataloom/api/security/DataLoomDigestCalculator {
+	public abstract fun newAccumulator (Lio/dataloom/api/security/DigestAlgorithm;)Lio/dataloom/api/security/DataLoomDigestAccumulator;
 }
 
 public final class io/dataloom/api/security/DataLoomMac {
@@ -686,9 +702,10 @@ public final class io/dataloom/api/security/LeastPrivilegeKt {
 	public static final fun isAuthorized (Ljava/util/Set;Lio/dataloom/api/security/GrantedCapabilities;)Z
 }
 
-public final class io/dataloom/api/security/SystemDataLoomDigestCalculator : io/dataloom/api/security/DataLoomDigestCalculator {
+public final class io/dataloom/api/security/SystemDataLoomDigestCalculator : io/dataloom/api/security/DataLoomIncrementalDigestCalculator {
 	public fun <init> ()V
 	public fun digest (Lio/dataloom/api/security/DigestAlgorithm;[B)Lio/dataloom/api/security/DataLoomDigest;
+	public fun newAccumulator (Lio/dataloom/api/security/DigestAlgorithm;)Lio/dataloom/api/security/DataLoomDigestAccumulator;
 }
 
 public final class io/dataloom/api/security/SystemDataLoomHmacCalculator : io/dataloom/api/security/DataLoomHmacCalculator {

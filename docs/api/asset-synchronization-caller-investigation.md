@@ -4,6 +4,20 @@
 
 ## Status
 
+> **Superseded by [ADR-0006](../adr/ADR-0006-asset-transfer-and-streaming-digest.md)
+> (2026-09-19).** Both blockers named here were decided and slice 1 of `#97`
+> implements them: (1) the chunked-transfer/session design (`FR-ASSET-002`/`-003`)
+> is D6, shipped as the `dataloom-assets` module; (2) the streaming/incremental
+> digest question is D5 — `DataLoomIncrementalDigestCalculator` and
+> `DataLoomDigestAccumulator` now exist beside the unchanged one-shot
+> `DataLoomDigestCalculator`, implemented over `MessageDigest` on the JVM and
+> CommonCrypto `Init`/`Update`/`Final` on Apple. The "already-documented
+> one-shot design choice" this page describes as an obstacle was explicitly
+> reversed. There is now a real caller for chunk verification and whole-object
+> verification (`AssetTransferEngine` / `AssetIntegrityVerifier`), though
+> `AssetManifest`'s durable history still has no production caller. The
+> analysis below is kept as the historical record.
+
 **Investigated (2026-08-26). No genuinely bounded, safe-to-ship slice found.**
 This round re-approached `#97` (DL-043) from a different angle than
 [`asset-provider-contract-investigation.md`](./asset-provider-contract-investigation.md)
