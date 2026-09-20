@@ -54,6 +54,7 @@ include(
     ":dataloom-plugin",
     ":dataloom-config",
     ":dataloom-api",
+    ":dataloom-governance",
     ":dataloom-storage-sqldelight",
     ":dataloom-core",
     ":dataloom-runtime",

@@ -1,0 +1,350 @@
+public final class io/dataloom/governance/audit/AuditAnchor {
+	public fun <init> (JLio/dataloom/api/security/DataLoomMac;)V
+	public final fun component1 ()J
+	public final fun component2 ()Lio/dataloom/api/security/DataLoomMac;
+	public final fun copy (JLio/dataloom/api/security/DataLoomMac;)Lio/dataloom/governance/audit/AuditAnchor;
+	public static synthetic fun copy$default (Lio/dataloom/governance/audit/AuditAnchor;JLio/dataloom/api/security/DataLoomMac;ILjava/lang/Object;)Lio/dataloom/governance/audit/AuditAnchor;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMac ()Lio/dataloom/api/security/DataLoomMac;
+	public final fun getSequence ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/audit/AuditAppendRejectedException : java/lang/IllegalStateException {
+	public fun <init> (Lio/dataloom/governance/audit/AuditAppendRejection;Ljava/lang/String;)V
+	public final fun getRejection ()Lio/dataloom/governance/audit/AuditAppendRejection;
+}
+
+public final class io/dataloom/governance/audit/AuditAppendRejection : java/lang/Enum {
+	public static final field CAPACITY_EXCEEDED Lio/dataloom/governance/audit/AuditAppendRejection;
+	public static final field HEAD_CONFLICT Lio/dataloom/governance/audit/AuditAppendRejection;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/governance/audit/AuditAppendRejection;
+	public static fun values ()[Lio/dataloom/governance/audit/AuditAppendRejection;
+}
+
+public final class io/dataloom/governance/audit/AuditChainVerifier {
+	public fun <init> (Lio/dataloom/api/security/DataLoomHmacCalculator;)V
+	public final fun verify (Ljava/util/List;[BLio/dataloom/governance/audit/AuditAnchor;)Lio/dataloom/governance/audit/AuditVerificationResult;
+	public static synthetic fun verify$default (Lio/dataloom/governance/audit/AuditChainVerifier;Ljava/util/List;[BLio/dataloom/governance/audit/AuditAnchor;ILjava/lang/Object;)Lio/dataloom/governance/audit/AuditVerificationResult;
+}
+
+public final class io/dataloom/governance/audit/AuditEvent {
+	public static final field Companion Lio/dataloom/governance/audit/AuditEvent$Companion;
+	public static final field MAXIMUM_DETAIL_ENTRIES I
+	public static final field MAXIMUM_DETAIL_LENGTH I
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-Eix2Umk ()Ljava/lang/String;
+	public final fun component2-QLlJPAY ()Ljava/lang/String;
+	public final fun component3-P8rpFLo ()Ljava/lang/String;
+	public final fun component4 ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun copy-gnwy7Jo (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;)Lio/dataloom/governance/audit/AuditEvent;
+	public static synthetic fun copy-gnwy7Jo$default (Lio/dataloom/governance/audit/AuditEvent;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/context/DataLoomMetadata;ILjava/lang/Object;)Lio/dataloom/governance/audit/AuditEvent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDetails ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun getEventType-P8rpFLo ()Ljava/lang/String;
+	public final fun getPrincipalId-QLlJPAY ()Ljava/lang/String;
+	public final fun getTenantId-Eix2Umk ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/audit/AuditEvent$Companion {
+}
+
+public final class io/dataloom/governance/audit/AuditEventType {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/governance/audit/AuditEventType;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/audit/AuditLog {
+	public static final field Companion Lio/dataloom/governance/audit/AuditLog$Companion;
+	public fun <init> (Lio/dataloom/governance/audit/AuditStore;Lio/dataloom/api/security/DataLoomHmacCalculator;Lio/dataloom/api/time/DataLoomClock;[B)V
+	public final fun anchor (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun append (Lio/dataloom/governance/audit/AuditEvent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun toString ()Ljava/lang/String;
+	public final fun verify (Lio/dataloom/governance/audit/AuditAnchor;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun verify$default (Lio/dataloom/governance/audit/AuditLog;Lio/dataloom/governance/audit/AuditAnchor;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/governance/audit/AuditLog$Companion {
+	public final fun getMAC_ALGORITHM ()Lio/dataloom/api/security/HmacAlgorithm;
+}
+
+public final class io/dataloom/governance/audit/AuditRecord {
+	public fun <init> (JLio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/security/DataLoomMac;Lio/dataloom/governance/audit/AuditEvent;Lio/dataloom/api/security/DataLoomMac;)V
+	public final fun component1 ()J
+	public final fun component2 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component3 ()Lio/dataloom/api/security/DataLoomMac;
+	public final fun component4 ()Lio/dataloom/governance/audit/AuditEvent;
+	public final fun component5 ()Lio/dataloom/api/security/DataLoomMac;
+	public final fun copy (JLio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/security/DataLoomMac;Lio/dataloom/governance/audit/AuditEvent;Lio/dataloom/api/security/DataLoomMac;)Lio/dataloom/governance/audit/AuditRecord;
+	public static synthetic fun copy$default (Lio/dataloom/governance/audit/AuditRecord;JLio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/security/DataLoomMac;Lio/dataloom/governance/audit/AuditEvent;Lio/dataloom/api/security/DataLoomMac;ILjava/lang/Object;)Lio/dataloom/governance/audit/AuditRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEvent ()Lio/dataloom/governance/audit/AuditEvent;
+	public final fun getMac ()Lio/dataloom/api/security/DataLoomMac;
+	public final fun getPreviousMac ()Lio/dataloom/api/security/DataLoomMac;
+	public final fun getRecordedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getSequence ()J
+	public fun hashCode ()I
+	public final fun toAnchor ()Lio/dataloom/governance/audit/AuditAnchor;
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/governance/audit/AuditStore {
+	public abstract fun append (Lio/dataloom/governance/audit/AuditRecord;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun head (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun readAll (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/governance/audit/AuditVerificationFailure : java/lang/Enum {
+	public static final field ANCHOR_MISMATCH Lio/dataloom/governance/audit/AuditVerificationFailure;
+	public static final field ANCHOR_TRUNCATED Lio/dataloom/governance/audit/AuditVerificationFailure;
+	public static final field MAC_MISMATCH Lio/dataloom/governance/audit/AuditVerificationFailure;
+	public static final field PREVIOUS_LINK_MISMATCH Lio/dataloom/governance/audit/AuditVerificationFailure;
+	public static final field SEQUENCE_MISMATCH Lio/dataloom/governance/audit/AuditVerificationFailure;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/governance/audit/AuditVerificationFailure;
+	public static fun values ()[Lio/dataloom/governance/audit/AuditVerificationFailure;
+}
+
+public abstract interface class io/dataloom/governance/audit/AuditVerificationResult {
+}
+
+public final class io/dataloom/governance/audit/AuditVerificationResult$Invalid : io/dataloom/governance/audit/AuditVerificationResult {
+	public fun <init> (Lio/dataloom/governance/audit/AuditVerificationFailure;Ljava/lang/Integer;)V
+	public final fun component1 ()Lio/dataloom/governance/audit/AuditVerificationFailure;
+	public final fun component2 ()Ljava/lang/Integer;
+	public final fun copy (Lio/dataloom/governance/audit/AuditVerificationFailure;Ljava/lang/Integer;)Lio/dataloom/governance/audit/AuditVerificationResult$Invalid;
+	public static synthetic fun copy$default (Lio/dataloom/governance/audit/AuditVerificationResult$Invalid;Lio/dataloom/governance/audit/AuditVerificationFailure;Ljava/lang/Integer;ILjava/lang/Object;)Lio/dataloom/governance/audit/AuditVerificationResult$Invalid;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFailure ()Lio/dataloom/governance/audit/AuditVerificationFailure;
+	public final fun getRecordIndex ()Ljava/lang/Integer;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/audit/AuditVerificationResult$Valid : io/dataloom/governance/audit/AuditVerificationResult {
+	public fun <init> (ILio/dataloom/governance/audit/AuditAnchor;Z)V
+	public final fun component1 ()I
+	public final fun component2 ()Lio/dataloom/governance/audit/AuditAnchor;
+	public final fun component3 ()Z
+	public final fun copy (ILio/dataloom/governance/audit/AuditAnchor;Z)Lio/dataloom/governance/audit/AuditVerificationResult$Valid;
+	public static synthetic fun copy$default (Lio/dataloom/governance/audit/AuditVerificationResult$Valid;ILio/dataloom/governance/audit/AuditAnchor;ZILjava/lang/Object;)Lio/dataloom/governance/audit/AuditVerificationResult$Valid;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAnchorVerified ()Z
+	public final fun getHead ()Lio/dataloom/governance/audit/AuditAnchor;
+	public final fun getRecordCount ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/audit/InMemoryAuditStore : io/dataloom/governance/audit/AuditStore {
+	public static final field Companion Lio/dataloom/governance/audit/InMemoryAuditStore$Companion;
+	public static final field DEFAULT_CAPACITY I
+	public fun <init> ()V
+	public fun <init> (I)V
+	public synthetic fun <init> (IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun append (Lio/dataloom/governance/audit/AuditRecord;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getCapacity ()I
+	public fun head (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun readAll (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/audit/InMemoryAuditStore$Companion {
+}
+
+public final class io/dataloom/governance/rbac/AccessDecisionKt {
+	public static final fun getAccessDecisionReason (Lio/dataloom/api/policy/PolicyCheckOutcome;)Lio/dataloom/governance/rbac/AccessDecisionReason;
+}
+
+public final class io/dataloom/governance/rbac/AccessDecisionMetadata {
+	public static final field DECIDING_ROLES_KEY Ljava/lang/String;
+	public static final field INSTANCE Lio/dataloom/governance/rbac/AccessDecisionMetadata;
+	public static final field REASON_KEY Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/rbac/AccessDecisionReason : java/lang/Enum {
+	public static final field ALLOWED_BY_ROLE Lio/dataloom/governance/rbac/AccessDecisionReason;
+	public static final field EXPLICIT_DENY Lio/dataloom/governance/rbac/AccessDecisionReason;
+	public static final field NO_MATCHING_PERMISSION Lio/dataloom/governance/rbac/AccessDecisionReason;
+	public static final field NO_ROLE_BINDING Lio/dataloom/governance/rbac/AccessDecisionReason;
+	public static final field TENANT_MISMATCH Lio/dataloom/governance/rbac/AccessDecisionReason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/governance/rbac/AccessDecisionReason;
+	public static fun values ()[Lio/dataloom/governance/rbac/AccessDecisionReason;
+}
+
+public final class io/dataloom/governance/rbac/AccessRequest {
+	public fun <init> (Lio/dataloom/governance/rbac/Principal;Lio/dataloom/governance/rbac/Action;Lio/dataloom/governance/rbac/ResourceRef;)V
+	public final fun component1 ()Lio/dataloom/governance/rbac/Principal;
+	public final fun component2 ()Lio/dataloom/governance/rbac/Action;
+	public final fun component3 ()Lio/dataloom/governance/rbac/ResourceRef;
+	public final fun copy (Lio/dataloom/governance/rbac/Principal;Lio/dataloom/governance/rbac/Action;Lio/dataloom/governance/rbac/ResourceRef;)Lio/dataloom/governance/rbac/AccessRequest;
+	public static synthetic fun copy$default (Lio/dataloom/governance/rbac/AccessRequest;Lio/dataloom/governance/rbac/Principal;Lio/dataloom/governance/rbac/Action;Lio/dataloom/governance/rbac/ResourceRef;ILjava/lang/Object;)Lio/dataloom/governance/rbac/AccessRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAction ()Lio/dataloom/governance/rbac/Action;
+	public final fun getPrincipal ()Lio/dataloom/governance/rbac/Principal;
+	public final fun getRequiredPermission ()Lio/dataloom/governance/rbac/Permission;
+	public final fun getResource ()Lio/dataloom/governance/rbac/ResourceRef;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/rbac/Action : java/lang/Enum {
+	public static final field ADMINISTER Lio/dataloom/governance/rbac/Action;
+	public static final field EXECUTE Lio/dataloom/governance/rbac/Action;
+	public static final field READ Lio/dataloom/governance/rbac/Action;
+	public static final field WRITE Lio/dataloom/governance/rbac/Action;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/governance/rbac/Action;
+	public static fun values ()[Lio/dataloom/governance/rbac/Action;
+}
+
+public final class io/dataloom/governance/rbac/Permission {
+	public synthetic fun <init> (Lio/dataloom/governance/rbac/Action;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/governance/rbac/Action;
+	public final fun component2-vcWdDgc ()Ljava/lang/String;
+	public final fun copy-wLbxUjg (Lio/dataloom/governance/rbac/Action;Ljava/lang/String;)Lio/dataloom/governance/rbac/Permission;
+	public static synthetic fun copy-wLbxUjg$default (Lio/dataloom/governance/rbac/Permission;Lio/dataloom/governance/rbac/Action;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/governance/rbac/Permission;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAction ()Lio/dataloom/governance/rbac/Action;
+	public final fun getResourceType-vcWdDgc ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/rbac/Principal {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-QLlJPAY ()Ljava/lang/String;
+	public final fun component2-Eix2Umk ()Ljava/lang/String;
+	public final fun copy-Bxne-HI (Ljava/lang/String;Ljava/lang/String;)Lio/dataloom/governance/rbac/Principal;
+	public static synthetic fun copy-Bxne-HI$default (Lio/dataloom/governance/rbac/Principal;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/governance/rbac/Principal;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId-QLlJPAY ()Ljava/lang/String;
+	public final fun getTenantId-Eix2Umk ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/rbac/PrincipalId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/governance/rbac/PrincipalId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/rbac/RbacEvaluator {
+	public fun <init> (Lio/dataloom/governance/rbac/RbacPolicy;)V
+	public final fun evaluate (Lio/dataloom/governance/rbac/AccessRequest;)Lio/dataloom/api/policy/PolicyCheckOutcome;
+}
+
+public final class io/dataloom/governance/rbac/RbacPolicy {
+	public static final field Companion Lio/dataloom/governance/rbac/RbacPolicy$Companion;
+	public static final field MAXIMUM_BINDINGS I
+	public static final field MAXIMUM_ROLES I
+	public fun <init> (Ljava/util/Collection;Ljava/util/Collection;)V
+	public final fun getBindings ()Ljava/util/List;
+	public final fun getRoles ()Ljava/util/List;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/rbac/RbacPolicy$Companion {
+}
+
+public final class io/dataloom/governance/rbac/ResourceRef {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-Eix2Umk ()Ljava/lang/String;
+	public final fun component2-vcWdDgc ()Ljava/lang/String;
+	public final fun copy-Mcc4TYI (Ljava/lang/String;Ljava/lang/String;)Lio/dataloom/governance/rbac/ResourceRef;
+	public static synthetic fun copy-Mcc4TYI$default (Lio/dataloom/governance/rbac/ResourceRef;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/governance/rbac/ResourceRef;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getTenantId-Eix2Umk ()Ljava/lang/String;
+	public final fun getType-vcWdDgc ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/rbac/ResourceType {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/governance/rbac/ResourceType;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/rbac/Role {
+	public static final field Companion Lio/dataloom/governance/rbac/Role$Companion;
+	public static final field MAXIMUM_PERMISSIONS_PER_SET I
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAllow ()Ljava/util/Set;
+	public final fun getDeny ()Ljava/util/Set;
+	public final fun getId-0YkL9Ig ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/rbac/Role$Companion {
+}
+
+public final class io/dataloom/governance/rbac/RoleBinding {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-QLlJPAY ()Ljava/lang/String;
+	public final fun component2-Eix2Umk ()Ljava/lang/String;
+	public final fun component3-0YkL9Ig ()Ljava/lang/String;
+	public final fun copy-vPc1yKk (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/dataloom/governance/rbac/RoleBinding;
+	public static synthetic fun copy-vPc1yKk$default (Lio/dataloom/governance/rbac/RoleBinding;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/governance/rbac/RoleBinding;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPrincipalId-QLlJPAY ()Ljava/lang/String;
+	public final fun getRoleId-0YkL9Ig ()Ljava/lang/String;
+	public final fun getTenantId-Eix2Umk ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/rbac/RoleId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/governance/rbac/RoleId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/rbac/TenantGuard {
+	public static final field INSTANCE Lio/dataloom/governance/rbac/TenantGuard;
+	public final fun check (Lio/dataloom/governance/rbac/Principal;Lio/dataloom/governance/rbac/ResourceRef;)Lio/dataloom/api/policy/PolicyCheckOutcome;
+}
+

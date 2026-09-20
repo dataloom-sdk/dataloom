@@ -4,6 +4,19 @@
 
 ## Status
 
+> **Update (2026-09-19).** The blocking decisions below (RBAC taxonomy, tenant
+> isolation model, tamper-evident audit design, signature scheme for policy
+> packs) have been taken and recorded in
+> [ADR-0005](../adr/ADR-0005-enterprise-governance-foundation.md). Slice 1 —
+> RBAC model and evaluator, tenant guard, and a hash-chained audit log in the new
+> `dataloom-governance` module — is described in
+> [Governance foundation](../api/governance-foundation.md). The investigation
+> below is kept as the historical record of why the gate stalled; where it says
+> a piece "cannot be decided unilaterally" or "has no bounded slice", read that
+> as superseded by the ADR for RBAC, tenant isolation, and audit. Signed policy
+> packs, configuration locks, residency, fleet/support diagnostics, and
+> LTS/catalog governance are still not built.
+
 **Investigated (2026-08-25). No genuinely bounded, decision-free
 implementation slice found for `#99` itself.** This document is the scoping
 deliverable in its place: a precise, evidence-based gap table
