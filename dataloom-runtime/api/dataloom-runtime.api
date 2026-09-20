@@ -697,6 +697,7 @@ public final class io/dataloom/runtime/facade/DataLoomBuilder {
 	public final fun outboundConfiguration (Lio/dataloom/runtime/execution/outbound/OutboundPushPipelineConfiguration;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun pipeline (Lio/dataloom/runtime/execution/SynchronizationPipeline;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun pluginConfiguration (Lio/dataloom/runtime/facade/DataLoomPluginSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
+	public final fun pluginOperationalEventOutboxConfiguration (Lio/dataloom/runtime/facade/DataLoomPluginOperationalEventOutboxSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun provider (Lio/dataloom/api/provider/DataLoomProvider;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun providerProtectionConfiguration (Lio/dataloom/runtime/facade/DataLoomProviderProtectionSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun providers ([Lio/dataloom/api/provider/DataLoomProvider;)Lio/dataloom/runtime/facade/DataLoomBuilder;
@@ -811,6 +812,15 @@ public abstract interface class io/dataloom/runtime/facade/DataLoomPluginEngine 
 	public abstract fun getResolutionOrder ()Ljava/util/List;
 	public abstract fun stateOf-WWrLh4Q (Ljava/lang/String;)Lio/dataloom/api/plugin/PluginLifecycleState;
 	public abstract fun transition (Lio/dataloom/plugin/PluginLifecycleTransitionRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/facade/DataLoomPluginOperationalEventOutboxSpec {
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;Ljava/lang/String;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;Ljava/lang/String;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getMaximumStateUpdateAttempts ()I
+	public final fun getSchemaVersion ()I
+	public final fun getScope--IyNcac ()Ljava/lang/String;
+	public final fun getStore ()Lio/dataloom/api/state/DurableStateStore;
 }
 
 public final class io/dataloom/runtime/facade/DataLoomPluginSpec {

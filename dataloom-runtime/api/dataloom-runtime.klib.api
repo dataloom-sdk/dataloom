@@ -3308,6 +3308,7 @@ final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.
     final fun outboundConfiguration(io.dataloom.runtime.execution.outbound/OutboundPushPipelineConfiguration): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.outboundConfiguration|outboundConfiguration(io.dataloom.runtime.execution.outbound.OutboundPushPipelineConfiguration){}[0]
     final fun pipeline(io.dataloom.runtime.execution/SynchronizationPipeline): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.pipeline|pipeline(io.dataloom.runtime.execution.SynchronizationPipeline){}[0]
     final fun pluginConfiguration(io.dataloom.runtime.facade/DataLoomPluginSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.pluginConfiguration|pluginConfiguration(io.dataloom.runtime.facade.DataLoomPluginSpec){}[0]
+    final fun pluginOperationalEventOutboxConfiguration(io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.pluginOperationalEventOutboxConfiguration|pluginOperationalEventOutboxConfiguration(io.dataloom.runtime.facade.DataLoomPluginOperationalEventOutboxSpec){}[0]
     final fun provider(io.dataloom.api.provider/DataLoomProvider): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.provider|provider(io.dataloom.api.provider.DataLoomProvider){}[0]
     final fun providerProtectionConfiguration(io.dataloom.runtime.facade/DataLoomProviderProtectionSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.providerProtectionConfiguration|providerProtectionConfiguration(io.dataloom.runtime.facade.DataLoomProviderProtectionSpec){}[0]
     final fun providers(kotlin/Array<out io.dataloom.api.provider/DataLoomProvider>...): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.providers|providers(kotlin.Array<out|io.dataloom.api.provider.DataLoomProvider>...){}[0]
@@ -3445,6 +3446,19 @@ final class io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec { // i
         final fun <get-scope>(): io.dataloom.api.operational/OperationalEventOutboxScope // io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec.scope.<get-scope>|<get-scope>(){}[0]
     final val store // io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec.store|{}store[0]
         final fun <get-store>(): io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState> // io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec.store.<get-store>|<get-store>(){}[0]
+}
+
+final class io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec { // io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec|null[0]
+    constructor <init>(io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState>, io.dataloom.api.operational/OperationalEventOutboxScope = ..., kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec.<init>|<init>(io.dataloom.api.state.DurableStateStore<io.dataloom.api.operational.OperationalEventOutboxScope,io.dataloom.api.operational.OperationalEventOutboxState>;io.dataloom.api.operational.OperationalEventOutboxScope;kotlin.Int;kotlin.Int){}[0]
+
+    final val maximumStateUpdateAttempts // io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec.maximumStateUpdateAttempts|{}maximumStateUpdateAttempts[0]
+        final fun <get-maximumStateUpdateAttempts>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec.maximumStateUpdateAttempts.<get-maximumStateUpdateAttempts>|<get-maximumStateUpdateAttempts>(){}[0]
+    final val schemaVersion // io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec.schemaVersion|{}schemaVersion[0]
+        final fun <get-schemaVersion>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec.schemaVersion.<get-schemaVersion>|<get-schemaVersion>(){}[0]
+    final val scope // io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec.scope|{}scope[0]
+        final fun <get-scope>(): io.dataloom.api.operational/OperationalEventOutboxScope // io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec.scope.<get-scope>|<get-scope>(){}[0]
+    final val store // io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec.store|{}store[0]
+        final fun <get-store>(): io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState> // io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec.store.<get-store>|<get-store>(){}[0]
 }
 
 final class io.dataloom.runtime.facade/DataLoomPluginSpec { // io.dataloom.runtime.facade/DataLoomPluginSpec|null[0]

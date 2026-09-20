@@ -169,6 +169,7 @@ public class DataLoomBuilder {
     private var retryAdministrationSpec: DataLoomRetryAdministrationSpec? = null
     private var circuitAdministrationSpec: DataLoomCircuitAdministrationSpec? = null
     private var pluginSpec: DataLoomPluginSpec? = null
+    private var pluginOperationalEventOutboxSpec: DataLoomPluginOperationalEventOutboxSpec? = null
 
     /**
      * The SDK version plugin compatibility is checked against. Always
@@ -837,6 +838,29 @@ public class DataLoomBuilder {
     }
 
     /**
+     * Enables the durable operational-event outbox bridge for the plugin engine:
+     * every result [DataLoomPluginEngine.transition] and
+     * [DataLoomPluginEngine.execute] return is also translated into an
+     * [io.dataloom.api.operational.OperationalEventEnvelope] and durably
+     * appended, in order, under [DataLoomPluginOperationalEventOutboxSpec.scope].
+     * See [DataLoomPluginOperationalEventOutboxSpec] for what is and is not
+     * recorded.
+     *
+     * When this is not called, or [pluginConfiguration] is not called, no
+     * envelope is constructed or appended and behavior is unchanged. Nothing is
+     * appended, and no clock is read, during [build]. The runtime clock from
+     * [runtimeDependencies] is used only when a result is recorded.
+     *
+     * @param spec the store, scope, and outbox tuning.
+     * @return this builder for chaining.
+     */
+    public fun pluginOperationalEventOutboxConfiguration(
+        spec: DataLoomPluginOperationalEventOutboxSpec,
+    ): DataLoomBuilder = apply {
+        pluginOperationalEventOutboxSpec = spec
+    }
+
+    /**
      * Configures the optional queue-worker capability.
      *
      * When supplied with valid configuration and a valid queue provider
@@ -1354,11 +1378,23 @@ public class DataLoomBuilder {
         val pluginEngine = pluginSpec?.let { spec ->
             val pluginRegistry = PluginRegistry(spec.plugins)
             val pluginTracker = PluginLifecycleStateTracker(pluginRegistry, pluginSdkVersion)
+            val pluginOperationalEventOutbox = pluginOperationalEventOutboxSpec?.let { outboxSpec ->
+                DurableOperationalEventOutbox(
+                    store = outboxSpec.store,
+                    clock = deps.clock,
+                    schemaVersion = outboxSpec.schemaVersion,
+                    maximumStateUpdateAttempts = outboxSpec.maximumStateUpdateAttempts,
+                    stateObserver = operationalEventOutboxHealthTracker,
+                )
+            }
             DefaultDataLoomPluginEngine(
                 registry = pluginRegistry,
                 tracker = pluginTracker,
                 enforcer = PluginExecutionBoundsEnforcer(pluginTracker),
                 authorizer = spec.lifecycleAuthorizer,
+                operationalEventOutbox = pluginOperationalEventOutbox,
+                operationalEventOutboxScope = pluginOperationalEventOutboxSpec?.scope,
+                clock = deps.clock,
             )
         }
 
