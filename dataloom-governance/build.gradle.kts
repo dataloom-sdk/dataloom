@@ -3,7 +3,7 @@
 // First slice: closed RBAC model + deterministic evaluator (D7), tenant
 // isolation guard (D8), and a tamper-evident, hash-chained audit log (D9).
 // Decisions are recorded in
-// docs/adr/ADR-0004-enterprise-governance-foundation.md. Signed policy packs
+// docs/adr/ADR-0005-enterprise-governance-foundation.md. Signed policy packs
 // (D10), DataLoomBuilder wiring, durable audit persistence, configuration
 // locks, residency, and fleet/support diagnostics are later slices.
 //

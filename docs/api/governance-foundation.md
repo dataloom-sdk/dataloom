@@ -8,7 +8,7 @@
 > `DataLoomBuilder`, nothing else depends on it, and it is not enterprise
 > governance as a whole: see [What is not included](#what-is-not-included).
 > Decisions are recorded in
-> [ADR-0004](../adr/ADR-0004-enterprise-governance-foundation.md).
+> [ADR-0005](../adr/ADR-0005-enterprise-governance-foundation.md).
 
 **Audience:** engineers integrating or extending governance.
 **Packages:** `io.dataloom.governance.rbac`, `io.dataloom.governance.audit`.
@@ -118,6 +118,6 @@ tenant-isolation acceptance.
 
 ## Related documentation
 
-- [ADR-0004](../adr/ADR-0004-enterprise-governance-foundation.md)
+- [ADR-0005](../adr/ADR-0005-enterprise-governance-foundation.md)
 - [Policy foundation](./policy-foundation.md)
 - [DL-045 gap analysis](../status/dl-045-enterprise-governance-gap-analysis.md)

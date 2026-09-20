@@ -1,4 +1,4 @@
-# ADR-0004: Enterprise governance foundation (RBAC, tenant isolation, tamper-evident audit, signed policy packs)
+# ADR-0005: Enterprise governance foundation (RBAC, tenant isolation, tamper-evident audit, signed policy packs)
 
 > **Numbering note.** `main` currently holds only ADR-0001 and ADR-0002.
 > ADR-0003 (`ADR-0003-plugin-engine-module`) exists only on the open `#98` PR
