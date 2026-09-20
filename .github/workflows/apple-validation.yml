@@ -1311,6 +1311,18 @@ jobs:
             echo "ERROR: one or both result files never appeared within 30s (C: $RESULT_C, D: $RESULT_D)." >&2
             [ -f "$RESULT_C" ] && { echo "--- result-c.tsv ---"; cat "$RESULT_C"; } || echo "result-c.tsv missing"
             [ -f "$RESULT_D" ] && { echo "--- result-d.tsv ---"; cat "$RESULT_D"; } || echo "result-d.tsv missing"
+            # The first-launched app has repeatedly been the silent one. These
+            # distinguish suspended (STAT T, no CPU time) from exited (no row,
+            # crash report) from still running but stuck.
+            echo "--- process state (missing row = exited; STAT T = stopped/suspended) ---"
+            ps -o pid,stat,etime,time,command -p "$PID_C,$PID_D" || true
+            echo "--- simulator launchd view of the proof apps (pid '-' = not running) ---"
+            xcrun simctl spawn "$DEVICE_ID" launchctl list 2>/dev/null | grep -i "processcontentionproof" || true
+            echo "--- recent crash reports ---"
+            ls -lt "$HOME/Library/Logs/DiagnosticReports" 2>/dev/null | head -10 || true
+            echo "--- simulator log tail for the proof apps ---"
+            xcrun simctl spawn "$DEVICE_ID" log show --last 3m --style compact \
+              --predicate 'process BEGINSWITH "ProcessContentionProofApp"' 2>&1 | tail -80 || true
             exit 1
           fi
 
