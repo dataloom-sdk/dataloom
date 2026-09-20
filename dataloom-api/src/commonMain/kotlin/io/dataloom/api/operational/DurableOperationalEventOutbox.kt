@@ -349,6 +349,29 @@ public sealed interface DurableOperationalEventOutboxReplayOutcome {
  * [io.dataloom.api.configuration.DurableConfigurationHistory] and
  * [io.dataloom.api.conflict.DurableUnresolvedConflictLog] already establish.
  *
+ * ## Health observation
+ *
+ * Every read here suspends over a [DurableStateStore], so a caller that must
+ * answer synchronously ("what is the outbox's health right now?") cannot read
+ * the store itself. When a [stateObserver] is supplied, the outbox instead
+ * *pushes* a bounded [OperationalEventOutboxSummary] -- pending count, oldest
+ * pending `occurredAt`, retained-acknowledged count, plus the store version
+ * and the observation time -- after each of: a successful [entries] /
+ * [pendingEntries] / [acknowledgedEntries] read, a call that loaded a state
+ * and finished without writing (for example an idempotent [append] or a
+ * no-op [acknowledge]), and every successful compare-and-set (reporting the
+ * state just written and its new version). A failed load, a lost
+ * compare-and-set race and a persistence failure report nothing.
+ *
+ * That makes the observer's latest value *the last state this instance saw
+ * or wrote*, never the store's current state: another instance or process
+ * may have changed the scope since, and a process that has not touched the
+ * outbox has observed nothing. Consumers must therefore treat it as an
+ * "as of [OperationalEventOutboxStateObservation.observedAt]" fact and apply
+ * their own staleness rule; the outbox does not pretend otherwise. Observation
+ * never mutates the outbox, never suspends, never fails a call (observer
+ * exceptions are swallowed), and is inert when [stateObserver] is `null`.
+ *
  * ## Persisted schema
  *
  * The persisted `TState` is [OperationalEventOutboxState] written with
@@ -382,6 +405,11 @@ public sealed interface DurableOperationalEventOutboxReplayOutcome {
  *   [OperationalEventOutboxEntry.acknowledgedAt], relative to [clock]. `null`
  *   (the default) means tombstones are bounded by count only. When non-null it
  *   must be greater than zero.
+ * @param stateObserver optional sink notified with a bounded
+ *   [OperationalEventOutboxStateObservation] after every state this outbox
+ *   loads-and-evaluates or successfully persists; `null` (the default) means
+ *   no observation, no summary computation and no extra clock read. See
+ *   "Health observation".
  */
 public class DurableOperationalEventOutbox(
     private val store: DurableStateStore<OperationalEventOutboxScope, OperationalEventOutboxState>,
@@ -392,6 +420,7 @@ public class DurableOperationalEventOutbox(
     private val maximumRetainedAge: Duration? = null,
     private val maximumRetainedAcknowledgedEntries: Int = DEFAULT_MAXIMUM_RETAINED_ACKNOWLEDGED_ENTRIES,
     private val acknowledgedRetentionAge: Duration? = null,
+    private val stateObserver: OperationalEventOutboxStateObserver? = null,
 ) {
     init {
         require(maximumStateUpdateAttempts >= 1) {
@@ -431,8 +460,10 @@ public class DurableOperationalEventOutbox(
     ): ProviderOperationResult<List<OperationalEventOutboxEntry>> =
         when (val loaded = store.load(scope)) {
             is ProviderOperationResult.Failure -> loaded
-            is ProviderOperationResult.Success ->
+            is ProviderOperationResult.Success -> {
+                observe(scope, loaded.value.stateOrEmpty(), loaded.value.versionOrNull())
                 ProviderOperationResult.Success(loaded.value.stateOrEmpty().entries.filterNot { it.isAcknowledged })
+            }
         }
 
     /**
@@ -445,8 +476,10 @@ public class DurableOperationalEventOutbox(
     ): ProviderOperationResult<List<OperationalEventOutboxEntry>> =
         when (val loaded = store.load(scope)) {
             is ProviderOperationResult.Failure -> loaded
-            is ProviderOperationResult.Success ->
+            is ProviderOperationResult.Success -> {
+                observe(scope, loaded.value.stateOrEmpty(), loaded.value.versionOrNull())
                 ProviderOperationResult.Success(loaded.value.stateOrEmpty().entries.filter { it.isAcknowledged })
+            }
         }
 
     /**
@@ -577,7 +610,10 @@ public class DurableOperationalEventOutbox(
                 is ProviderOperationResult.Success -> result.value
             }
             val write = when (val decided = plan(loaded.stateOrEmpty())) {
-                is Plan.Done -> return decided.outcome
+                is Plan.Done -> {
+                    observe(scope, loaded.stateOrEmpty(), loaded.versionOrNull())
+                    return decided.outcome
+                }
                 is Plan.Write -> decided
             }
             when (
@@ -591,13 +627,45 @@ public class DurableOperationalEventOutbox(
                 )
             ) {
                 is ProviderOperationResult.Failure -> return onPersistenceFailure(result.error)
-                is ProviderOperationResult.Success -> when (result.value) {
+                is ProviderOperationResult.Success -> when (val casResult = result.value) {
                     is DurableStateCompareAndSetResult.Conflict -> Unit // lost the race; reload and retry
-                    is DurableStateCompareAndSetResult.Updated -> return write.outcome
+                    is DurableStateCompareAndSetResult.Updated -> {
+                        observe(scope, write.next, casResult.record.version)
+                        return write.outcome
+                    }
                 }
             }
         }
         return onContentionLimit
+    }
+
+    /**
+     * Reports [state], which the store held (or was just made to hold) at
+     * [version], to [stateObserver] as one bounded summary. Does nothing --
+     * and reads no clock -- when no observer is configured, and never lets an
+     * observer failure escape: health observation must not fail a call whose
+     * durable work already succeeded.
+     */
+    private fun observe(scope: OperationalEventOutboxScope, state: OperationalEventOutboxState, version: Long?) {
+        val observer = stateObserver ?: return
+        try {
+            val pending = state.entries.filterNot { it.isAcknowledged }
+            observer.onStateObserved(
+                OperationalEventOutboxStateObservation(
+                    scope = scope,
+                    summary = OperationalEventOutboxSummary(
+                        pendingCount = pending.size,
+                        oldestPendingOccurredAt = pending.minOfOrNull { it.envelope.occurredAt.epochMilliseconds }
+                            ?.let { DataLoomInstant(it) },
+                        acknowledgedRetainedCount = state.entries.size - pending.size,
+                    ),
+                    storeVersion = version,
+                    observedAt = clock.now(),
+                ),
+            )
+        } catch (ignored: Exception) {
+            // Deliberately swallowed -- see this function's documentation.
+        }
     }
 
     private fun DurableStateLoadResult<OperationalEventOutboxState>.stateOrEmpty(): OperationalEventOutboxState =
