@@ -28,9 +28,17 @@ import io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitte
  * 4. Inspect the exact [io.dataloom.api.conflict.ConflictDetectionResult].
  * 5. If no conflict exists, return [ConflictOrchestrationResult.NoConflict].
  * 6. Preserve the exact [io.dataloom.api.conflict.SynchronizationConflict].
- * 7. If [ConflictOrchestrationBindings.resolverId] is `null`, return
+ * 7. Select the [io.dataloom.api.identifier.ConflictResolverId] with
+ *    [ConflictOrchestrationBindings.selectResolverId]: the optional
+ *    [ConflictResolverSelectionPolicy] (entity-type rule, then workflow rule,
+ *    then tenant rule), otherwise [ConflictOrchestrationBindings.resolverId]
+ *    as the global default. The context is the detected conflict's entity
+ *    type, the request's workflow ID, and the request's tenant ID when the
+ *    host supplied one. If nothing is selected, return
  *    [ConflictOrchestrationResult.ResolverNotConfigured].
- * 8. Look up the resolver by exact [io.dataloom.api.identifier.ConflictResolverId].
+ * 8. Look up the resolver by that exact [io.dataloom.api.identifier.ConflictResolverId]
+ *    in the [ConflictResolverRegistry] (application registrations first, then
+ *    built-ins -- the policy never bypasses this ordering).
  * 9. If missing, return [ConflictOrchestrationResult.ResolverNotFound].
  * 10. Build the exact [ConflictResolutionRequest] required by DL-014.
  * 11. Invoke the selected resolver exactly once.
@@ -138,9 +146,10 @@ public class SynchronizationConflictOrchestrator(
      * 2. If missing, return [ConflictOrchestrationResult.DetectorNotFound].
      * 3. Invoke the detector exactly once.
      * 4. If no conflict, return [ConflictOrchestrationResult.NoConflict].
-     * 5. If [ConflictOrchestrationBindings.resolverId] is `null`, return
-     *    [ConflictOrchestrationResult.ResolverNotConfigured].
-     * 6. Look up the resolver by exact [ConflictOrchestrationBindings.resolverId].
+     * 5. Select the resolver ID via [ConflictOrchestrationBindings.selectResolverId]
+     *    (policy tiers, then [ConflictOrchestrationBindings.resolverId]); when
+     *    nothing is selected, return [ConflictOrchestrationResult.ResolverNotConfigured].
+     * 6. Look up the resolver by that exact ID.
      * 7. If missing, return [ConflictOrchestrationResult.ResolverNotFound].
      * 8. Invoke the resolver exactly once with a [ConflictResolutionRequest]
      *    built from the detected conflict and the originating synchronization
@@ -188,7 +197,15 @@ public class SynchronizationConflictOrchestrator(
                     conflict = conflict,
                 )
 
-                val resolverId = request.bindings.resolverId
+                val synchronizationRequest = request.detectionRequest.synchronizationRequest
+                val resolverId = request.bindings
+                    .selectResolverId(
+                        ConflictResolverSelectionContext(
+                            entityType = conflict.entity.type,
+                            workflowId = synchronizationRequest.workflowId,
+                            tenantId = synchronizationRequest.context.tenantId,
+                        ),
+                    )
                     ?: return ConflictOrchestrationResult.ResolverNotConfigured(
                         conflict = conflict,
                         detectorId = detectorId,
