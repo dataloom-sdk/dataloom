@@ -128,6 +128,9 @@ class AndroidLifecycleProviderTest {
 
         val job = scope.launch { harness.provider.states().collect { received += it } }
         awaitOnMainLooper("observer registered on the main thread") { harness.registry.observerCount == 1 }
+        // The collector runs on Dispatchers.Default, so registration can finish before the
+        // initial state reaches it; wait for delivery instead of asserting immediately.
+        awaitOnMainLooper("initial state delivered") { received.isNotEmpty() }
         assertEquals(listOf(AppLifecycleState.BACKGROUND), received.toList())
 
         runBlocking { harness.drive(AppLifecycleState.FOREGROUND) }
