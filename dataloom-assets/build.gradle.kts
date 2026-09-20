@@ -12,9 +12,9 @@
 // - Depends on dataloom-api (asset manifest, provider result/error contracts)
 //   and dataloom-model (digest primitives, including the incremental digest
 //   capability) plus kotlinx.coroutines.core.
-// - Must not become a mandatory dependency of any existing module, and must
-//   not be wired into dataloom-runtime/DataLoomBuilder in this module's
-//   first slice.
+// - dataloom-runtime depends on this module only for the opt-in
+//   DataLoomBuilder.assetTransferConfiguration capability; absent that spec
+//   the module is inert.
 plugins {
     id("io.dataloom.kotlin.multiplatform-library")
 }

@@ -9,6 +9,7 @@ import io.dataloom.api.queue.QueueProvider
 import io.dataloom.api.scheduling.SchedulerProvider
 import io.dataloom.api.provider.ProviderBindingFailureReason
 import io.dataloom.api.provider.StrategyProviderBindings
+import io.dataloom.assets.AssetTransferEngine
 import io.dataloom.core.provider.ProviderLifecycleCoordinator
 import io.dataloom.core.provider.ProviderRegistry
 import io.dataloom.core.provider.ProviderResolutionResult
@@ -169,6 +170,7 @@ public class DataLoomBuilder {
     private var retryAdministrationSpec: DataLoomRetryAdministrationSpec? = null
     private var circuitAdministrationSpec: DataLoomCircuitAdministrationSpec? = null
     private var pluginSpec: DataLoomPluginSpec? = null
+    private var assetTransferSpec: DataLoomAssetTransferSpec? = null
 
     /**
      * The SDK version plugin compatibility is checked against. Always
@@ -837,6 +839,25 @@ public class DataLoomBuilder {
     }
 
     /**
+     * Configures the optional asset-transfer capability.
+     *
+     * When supplied, [DataLoom.assetTransfer] is a non-null
+     * [io.dataloom.assets.AssetTransferEngine] over the spec's provider,
+     * session store, and digest calculator after [build]. When never supplied,
+     * [DataLoom.assetTransfer] is `null` and [DataLoom] behavior is unchanged.
+     * [build] performs no provider or store I/O and never initializes the
+     * asset provider. See [DataLoomAssetTransferSpec].
+     *
+     * @param spec the asset provider, session store, and transfer settings.
+     * @return this builder for chaining.
+     */
+    public fun assetTransferConfiguration(
+        spec: DataLoomAssetTransferSpec,
+    ): DataLoomBuilder = apply {
+        assetTransferSpec = spec
+    }
+
+    /**
      * Configures the optional queue-worker capability.
      *
      * When supplied with valid configuration and a valid queue provider
@@ -1362,6 +1383,18 @@ public class DataLoomBuilder {
             )
         }
 
+        // --- 14d. Build optional asset-transfer capability ---
+        val assetTransfer = assetTransferSpec?.let { spec ->
+            AssetTransferEngine(
+                provider = spec.provider,
+                sessions = spec.sessionStore,
+                digests = spec.digestCalculator,
+                chunkSizeBytes = spec.chunkSizeBytes,
+                digestAlgorithm = spec.digestAlgorithm,
+                verifyBufferBytes = spec.verifyBufferBytes,
+            )
+        }
+
         return DefaultDataLoom(
             lifecycleCoordinator = lifecycleCoordinator,
             executionCoordinator = executionCoordinator,
@@ -1382,6 +1415,7 @@ public class DataLoomBuilder {
             circuitAdministration = circuitAdministration,
             conflictAdministration = conflictAdministration,
             pluginEngine = pluginEngine,
+            assetTransfer = assetTransfer,
         )
     }
 

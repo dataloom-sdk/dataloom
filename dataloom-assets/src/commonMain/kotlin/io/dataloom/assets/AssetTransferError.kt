@@ -66,6 +66,16 @@ public enum class AssetErrorKind(
 
     /** Writing the download sink failed transiently. Resumable. */
     SINK_FAILURE(ErrorCategory.STORAGE, Recoverability.RECOVERABLE),
+
+    /** The durable transfer-session store failed or was contended. The stored session is unchanged; retry. */
+    SESSION_STORE_FAILURE(ErrorCategory.STORAGE, Recoverability.RECOVERABLE),
+
+    /**
+     * A persisted transfer session is unusable: it failed decoding or an
+     * integrity check, or belongs to a different session id. Terminal for that
+     * session id; start a new session.
+     */
+    SESSION_STATE_CORRUPT(ErrorCategory.STORAGE, Recoverability.NON_RECOVERABLE),
     ;
 
     /** Stable machine-readable code, `dataloom.assets.<lowercase kind>`. */
