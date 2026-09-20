@@ -298,6 +298,17 @@ final enum class io.dataloom.runtime.operational/OperationalEnvelopeUpcastFailur
     final fun values(): kotlin/Array<io.dataloom.runtime.operational/OperationalEnvelopeUpcastFailure> // io.dataloom.runtime.operational/OperationalEnvelopeUpcastFailure.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.runtime.operational/OperationalEventOutboxOrderingPolicy : kotlin/Enum<io.dataloom.runtime.operational/OperationalEventOutboxOrderingPolicy> { // io.dataloom.runtime.operational/OperationalEventOutboxOrderingPolicy|null[0]
+    enum entry BLOCK_WORKFLOW_ON_UNFINISHED_ENTRY // io.dataloom.runtime.operational/OperationalEventOutboxOrderingPolicy.BLOCK_WORKFLOW_ON_UNFINISHED_ENTRY|null[0]
+    enum entry PRESENTATION_ORDER_ONLY // io.dataloom.runtime.operational/OperationalEventOutboxOrderingPolicy.PRESENTATION_ORDER_ONLY|null[0]
+
+    final val entries // io.dataloom.runtime.operational/OperationalEventOutboxOrderingPolicy.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.operational/OperationalEventOutboxOrderingPolicy> // io.dataloom.runtime.operational/OperationalEventOutboxOrderingPolicy.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.operational/OperationalEventOutboxOrderingPolicy // io.dataloom.runtime.operational/OperationalEventOutboxOrderingPolicy.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.operational/OperationalEventOutboxOrderingPolicy> // io.dataloom.runtime.operational/OperationalEventOutboxOrderingPolicy.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.runtime.queue/QueueCircuitProviderFailureDisposition : kotlin/Enum<io.dataloom.runtime.queue/QueueCircuitProviderFailureDisposition> { // io.dataloom.runtime.queue/QueueCircuitProviderFailureDisposition|null[0]
     enum entry CIRCUIT_FAILURE // io.dataloom.runtime.queue/QueueCircuitProviderFailureDisposition.CIRCUIT_FAILURE|null[0]
     enum entry NON_CIRCUIT_FAILURE // io.dataloom.runtime.queue/QueueCircuitProviderFailureDisposition.NON_CIRCUIT_FAILURE|null[0]
@@ -3308,6 +3319,7 @@ final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.
     final fun outboundConfiguration(io.dataloom.runtime.execution.outbound/OutboundPushPipelineConfiguration): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.outboundConfiguration|outboundConfiguration(io.dataloom.runtime.execution.outbound.OutboundPushPipelineConfiguration){}[0]
     final fun pipeline(io.dataloom.runtime.execution/SynchronizationPipeline): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.pipeline|pipeline(io.dataloom.runtime.execution.SynchronizationPipeline){}[0]
     final fun pluginConfiguration(io.dataloom.runtime.facade/DataLoomPluginSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.pluginConfiguration|pluginConfiguration(io.dataloom.runtime.facade.DataLoomPluginSpec){}[0]
+    final fun policyDecisionOperationalEventOutboxConfiguration(io.dataloom.runtime.facade/DataLoomPolicyDecisionOperationalEventOutboxSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.policyDecisionOperationalEventOutboxConfiguration|policyDecisionOperationalEventOutboxConfiguration(io.dataloom.runtime.facade.DataLoomPolicyDecisionOperationalEventOutboxSpec){}[0]
     final fun provider(io.dataloom.api.provider/DataLoomProvider): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.provider|provider(io.dataloom.api.provider.DataLoomProvider){}[0]
     final fun providerProtectionConfiguration(io.dataloom.runtime.facade/DataLoomProviderProtectionSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.providerProtectionConfiguration|providerProtectionConfiguration(io.dataloom.runtime.facade.DataLoomProviderProtectionSpec){}[0]
     final fun providers(kotlin/Array<out io.dataloom.api.provider/DataLoomProvider>...): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.providers|providers(kotlin.Array<out|io.dataloom.api.provider.DataLoomProvider>...){}[0]
@@ -3316,6 +3328,7 @@ final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.
     final fun queueSubmissionEncoder(io.dataloom.runtime.submission/QueuedSynchronizationWorkEncoder): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.queueSubmissionEncoder|queueSubmissionEncoder(io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder){}[0]
     final fun queueWorkerConfiguration(io.dataloom.runtime.facade/DataLoomQueueWorkerSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.queueWorkerConfiguration|queueWorkerConfiguration(io.dataloom.runtime.facade.DataLoomQueueWorkerSpec){}[0]
     final fun queueWorkerHealthTracker(io.dataloom.runtime.observation.health/QueueWorkerHealthTracker): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.queueWorkerHealthTracker|queueWorkerHealthTracker(io.dataloom.runtime.observation.health.QueueWorkerHealthTracker){}[0]
+    final fun queueWorkerSchedulingOperationalEventOutboxConfiguration(io.dataloom.runtime.facade/DataLoomQueueWorkerSchedulingOperationalEventOutboxSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.queueWorkerSchedulingOperationalEventOutboxConfiguration|queueWorkerSchedulingOperationalEventOutboxConfiguration(io.dataloom.runtime.facade.DataLoomQueueWorkerSchedulingOperationalEventOutboxSpec){}[0]
     final fun retryAdministrationConfiguration(io.dataloom.runtime.facade/DataLoomRetryAdministrationSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.retryAdministrationConfiguration|retryAdministrationConfiguration(io.dataloom.runtime.facade.DataLoomRetryAdministrationSpec){}[0]
     final fun retryCircuitAdministrationOperationalEventOutboxConfiguration(io.dataloom.runtime.facade/DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.retryCircuitAdministrationOperationalEventOutboxConfiguration|retryCircuitAdministrationOperationalEventOutboxConfiguration(io.dataloom.runtime.facade.DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec){}[0]
     final fun runtimeDependencies(io.dataloom.api.runtime/RuntimeDependencies): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.runtimeDependencies|runtimeDependencies(io.dataloom.api.runtime.RuntimeDependencies){}[0]
@@ -3458,6 +3471,19 @@ final class io.dataloom.runtime.facade/DataLoomPluginSpec { // io.dataloom.runti
     final fun toString(): kotlin/String // io.dataloom.runtime.facade/DataLoomPluginSpec.toString|toString(){}[0]
 }
 
+final class io.dataloom.runtime.facade/DataLoomPolicyDecisionOperationalEventOutboxSpec { // io.dataloom.runtime.facade/DataLoomPolicyDecisionOperationalEventOutboxSpec|null[0]
+    constructor <init>(io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState>, io.dataloom.api.operational/OperationalEventOutboxScope = ..., kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.runtime.facade/DataLoomPolicyDecisionOperationalEventOutboxSpec.<init>|<init>(io.dataloom.api.state.DurableStateStore<io.dataloom.api.operational.OperationalEventOutboxScope,io.dataloom.api.operational.OperationalEventOutboxState>;io.dataloom.api.operational.OperationalEventOutboxScope;kotlin.Int;kotlin.Int){}[0]
+
+    final val maximumStateUpdateAttempts // io.dataloom.runtime.facade/DataLoomPolicyDecisionOperationalEventOutboxSpec.maximumStateUpdateAttempts|{}maximumStateUpdateAttempts[0]
+        final fun <get-maximumStateUpdateAttempts>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomPolicyDecisionOperationalEventOutboxSpec.maximumStateUpdateAttempts.<get-maximumStateUpdateAttempts>|<get-maximumStateUpdateAttempts>(){}[0]
+    final val schemaVersion // io.dataloom.runtime.facade/DataLoomPolicyDecisionOperationalEventOutboxSpec.schemaVersion|{}schemaVersion[0]
+        final fun <get-schemaVersion>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomPolicyDecisionOperationalEventOutboxSpec.schemaVersion.<get-schemaVersion>|<get-schemaVersion>(){}[0]
+    final val scope // io.dataloom.runtime.facade/DataLoomPolicyDecisionOperationalEventOutboxSpec.scope|{}scope[0]
+        final fun <get-scope>(): io.dataloom.api.operational/OperationalEventOutboxScope // io.dataloom.runtime.facade/DataLoomPolicyDecisionOperationalEventOutboxSpec.scope.<get-scope>|<get-scope>(){}[0]
+    final val store // io.dataloom.runtime.facade/DataLoomPolicyDecisionOperationalEventOutboxSpec.store|{}store[0]
+        final fun <get-store>(): io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState> // io.dataloom.runtime.facade/DataLoomPolicyDecisionOperationalEventOutboxSpec.store.<get-store>|<get-store>(){}[0]
+}
+
 final class io.dataloom.runtime.facade/DataLoomProviderProtectionSpec { // io.dataloom.runtime.facade/DataLoomProviderProtectionSpec|null[0]
     constructor <init>(io.dataloom.runtime.facade/DataLoomStorageProtectionSpec, io.dataloom.runtime.facade/DataLoomTransportProtectionSpec) // io.dataloom.runtime.facade/DataLoomProviderProtectionSpec.<init>|<init>(io.dataloom.runtime.facade.DataLoomStorageProtectionSpec;io.dataloom.runtime.facade.DataLoomTransportProtectionSpec){}[0]
 
@@ -3490,6 +3516,19 @@ final class io.dataloom.runtime.facade/DataLoomQueueSubmissionSpec { // io.datal
         final fun <get-encoder>(): io.dataloom.runtime.submission/QueuedSynchronizationWorkEncoder // io.dataloom.runtime.facade/DataLoomQueueSubmissionSpec.encoder.<get-encoder>|<get-encoder>(){}[0]
     final val queueProviderTimeout // io.dataloom.runtime.facade/DataLoomQueueSubmissionSpec.queueProviderTimeout|{}queueProviderTimeout[0]
         final fun <get-queueProviderTimeout>(): io.dataloom.api.scheduling/SchedulingDelay? // io.dataloom.runtime.facade/DataLoomQueueSubmissionSpec.queueProviderTimeout.<get-queueProviderTimeout>|<get-queueProviderTimeout>(){}[0]
+}
+
+final class io.dataloom.runtime.facade/DataLoomQueueWorkerSchedulingOperationalEventOutboxSpec { // io.dataloom.runtime.facade/DataLoomQueueWorkerSchedulingOperationalEventOutboxSpec|null[0]
+    constructor <init>(io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState>, io.dataloom.api.operational/OperationalEventOutboxScope = ..., kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.runtime.facade/DataLoomQueueWorkerSchedulingOperationalEventOutboxSpec.<init>|<init>(io.dataloom.api.state.DurableStateStore<io.dataloom.api.operational.OperationalEventOutboxScope,io.dataloom.api.operational.OperationalEventOutboxState>;io.dataloom.api.operational.OperationalEventOutboxScope;kotlin.Int;kotlin.Int){}[0]
+
+    final val maximumStateUpdateAttempts // io.dataloom.runtime.facade/DataLoomQueueWorkerSchedulingOperationalEventOutboxSpec.maximumStateUpdateAttempts|{}maximumStateUpdateAttempts[0]
+        final fun <get-maximumStateUpdateAttempts>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomQueueWorkerSchedulingOperationalEventOutboxSpec.maximumStateUpdateAttempts.<get-maximumStateUpdateAttempts>|<get-maximumStateUpdateAttempts>(){}[0]
+    final val schemaVersion // io.dataloom.runtime.facade/DataLoomQueueWorkerSchedulingOperationalEventOutboxSpec.schemaVersion|{}schemaVersion[0]
+        final fun <get-schemaVersion>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomQueueWorkerSchedulingOperationalEventOutboxSpec.schemaVersion.<get-schemaVersion>|<get-schemaVersion>(){}[0]
+    final val scope // io.dataloom.runtime.facade/DataLoomQueueWorkerSchedulingOperationalEventOutboxSpec.scope|{}scope[0]
+        final fun <get-scope>(): io.dataloom.api.operational/OperationalEventOutboxScope // io.dataloom.runtime.facade/DataLoomQueueWorkerSchedulingOperationalEventOutboxSpec.scope.<get-scope>|<get-scope>(){}[0]
+    final val store // io.dataloom.runtime.facade/DataLoomQueueWorkerSchedulingOperationalEventOutboxSpec.store|{}store[0]
+        final fun <get-store>(): io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState> // io.dataloom.runtime.facade/DataLoomQueueWorkerSchedulingOperationalEventOutboxSpec.store.<get-store>|<get-store>(){}[0]
 }
 
 final class io.dataloom.runtime.facade/DataLoomQueueWorkerSpec { // io.dataloom.runtime.facade/DataLoomQueueWorkerSpec|null[0]
@@ -4325,7 +4364,7 @@ final class io.dataloom.runtime.observation/SynchronizationObserverRegistry { //
 final class io.dataloom.runtime.operational/DurableOperationalEventOutboxProcessor { // io.dataloom.runtime.operational/DurableOperationalEventOutboxProcessor|null[0]
     constructor <init>(io.dataloom.api.operational/DurableOperationalEventOutbox, io.dataloom.runtime.observation.health/OperationalEventOutboxHealthTracker? = ...) // io.dataloom.runtime.operational/DurableOperationalEventOutboxProcessor.<init>|<init>(io.dataloom.api.operational.DurableOperationalEventOutbox;io.dataloom.runtime.observation.health.OperationalEventOutboxHealthTracker?){}[0]
 
-    final suspend fun process(io.dataloom.api.operational/OperationalEventOutboxScope, kotlin/Int = ..., io.dataloom.runtime.operational/OperationalEventOutboxEntryFilter = ..., io.dataloom.runtime.operational/OperationalEventOutboxEntryHandler): io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult // io.dataloom.runtime.operational/DurableOperationalEventOutboxProcessor.process|process(io.dataloom.api.operational.OperationalEventOutboxScope;kotlin.Int;io.dataloom.runtime.operational.OperationalEventOutboxEntryFilter;io.dataloom.runtime.operational.OperationalEventOutboxEntryHandler){}[0]
+    final suspend fun process(io.dataloom.api.operational/OperationalEventOutboxScope, kotlin/Int = ..., io.dataloom.runtime.operational/OperationalEventOutboxEntryFilter = ..., io.dataloom.runtime.operational/OperationalEventOutboxOrderingPolicy = ..., io.dataloom.runtime.operational/OperationalEventOutboxEntryHandler): io.dataloom.runtime.operational/OperationalEventOutboxProcessingResult // io.dataloom.runtime.operational/DurableOperationalEventOutboxProcessor.process|process(io.dataloom.api.operational.OperationalEventOutboxScope;kotlin.Int;io.dataloom.runtime.operational.OperationalEventOutboxEntryFilter;io.dataloom.runtime.operational.OperationalEventOutboxOrderingPolicy;io.dataloom.runtime.operational.OperationalEventOutboxEntryHandler){}[0]
 }
 
 final class io.dataloom.runtime.operational/OperationalEnvelopeUpcasterRegistry { // io.dataloom.runtime.operational/OperationalEnvelopeUpcasterRegistry|null[0]
@@ -4339,7 +4378,7 @@ final class io.dataloom.runtime.operational/OperationalEnvelopeUpcasterRegistry 
 }
 
 final class io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary { // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary|null[0]
-    constructor <init>(kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int) // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.<init>|<init>(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+    constructor <init>(kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int = ...) // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.<init>|<init>(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
 
     final val acknowledgeFailed // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.acknowledgeFailed|{}acknowledgeFailed[0]
         final fun <get-acknowledgeFailed>(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.acknowledgeFailed.<get-acknowledgeFailed>|<get-acknowledgeFailed>(){}[0]
@@ -4347,6 +4386,8 @@ final class io.dataloom.runtime.operational/OperationalEventOutboxProcessingSumm
         final fun <get-acknowledgeRaced>(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.acknowledgeRaced.<get-acknowledgeRaced>|<get-acknowledgeRaced>(){}[0]
     final val acknowledged // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.acknowledged|{}acknowledged[0]
         final fun <get-acknowledged>(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.acknowledged.<get-acknowledged>|<get-acknowledged>(){}[0]
+    final val blocked // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.blocked|{}blocked[0]
+        final fun <get-blocked>(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.blocked.<get-blocked>|<get-blocked>(){}[0]
     final val failed // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.failed|{}failed[0]
         final fun <get-failed>(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.failed.<get-failed>|<get-failed>(){}[0]
     final val filteredOut // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.filteredOut|{}filteredOut[0]
@@ -4366,7 +4407,8 @@ final class io.dataloom.runtime.operational/OperationalEventOutboxProcessingSumm
     final fun component6(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.component6|component6(){}[0]
     final fun component7(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.component7|component7(){}[0]
     final fun component8(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.component8|component8(){}[0]
-    final fun copy(kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...): io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.copy|copy(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+    final fun component9(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.component9|component9(){}[0]
+    final fun copy(kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...): io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.copy|copy(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.runtime.operational/OperationalEventOutboxProcessingSummary.toString|toString(){}[0]
@@ -5249,8 +5291,16 @@ final object io.dataloom.runtime.observation.operational/ConflictResolutionOpera
     final fun toEnvelope(io.dataloom.api.identifier/ConflictId, io.dataloom.api.conflict/UnresolvedConflictRecord): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.runtime.observation.operational/ConflictResolutionOperationalEventBridge.toEnvelope|toEnvelope(io.dataloom.api.identifier.ConflictId;io.dataloom.api.conflict.UnresolvedConflictRecord){}[0]
 }
 
+final object io.dataloom.runtime.observation.operational/PolicyDecisionOperationalEventBridge { // io.dataloom.runtime.observation.operational/PolicyDecisionOperationalEventBridge|null[0]
+    final fun toEnvelope(io.dataloom.api.context/ExecutionContext, io.dataloom.api.identifier/WorkflowId?, io.dataloom.api.policy/PolicyDecision, io.dataloom.api.time/DataLoomInstant): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.runtime.observation.operational/PolicyDecisionOperationalEventBridge.toEnvelope|toEnvelope(io.dataloom.api.context.ExecutionContext;io.dataloom.api.identifier.WorkflowId?;io.dataloom.api.policy.PolicyDecision;io.dataloom.api.time.DataLoomInstant){}[0]
+}
+
 final object io.dataloom.runtime.observation.operational/QueueLifecycleOperationalEventBridge { // io.dataloom.runtime.observation.operational/QueueLifecycleOperationalEventBridge|null[0]
     final fun toEnvelope(io.dataloom.api.queue/QueueEntry, io.dataloom.api.identifier/QueueLeaseId, io.dataloom.runtime.queue/QueueEntryExecutionOutcome, io.dataloom.api.time/DataLoomInstant): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.runtime.observation.operational/QueueLifecycleOperationalEventBridge.toEnvelope|toEnvelope(io.dataloom.api.queue.QueueEntry;io.dataloom.api.identifier.QueueLeaseId;io.dataloom.runtime.queue.QueueEntryExecutionOutcome;io.dataloom.api.time.DataLoomInstant){}[0]
+}
+
+final object io.dataloom.runtime.observation.operational/QueueWorkerSchedulingOperationalEventBridge { // io.dataloom.runtime.observation.operational/QueueWorkerSchedulingOperationalEventBridge|null[0]
+    final fun toEnvelope(io.dataloom.api.identifier/QueueLeaseId, io.dataloom.runtime.worker/QueueWorkerSchedulingResult, io.dataloom.api.time/DataLoomInstant): io.dataloom.api.operational/OperationalEventEnvelope? // io.dataloom.runtime.observation.operational/QueueWorkerSchedulingOperationalEventBridge.toEnvelope|toEnvelope(io.dataloom.api.identifier.QueueLeaseId;io.dataloom.runtime.worker.QueueWorkerSchedulingResult;io.dataloom.api.time.DataLoomInstant){}[0]
 }
 
 final object io.dataloom.runtime.observation.operational/RetryCircuitAdministrationOperationalEventBridge { // io.dataloom.runtime.observation.operational/RetryCircuitAdministrationOperationalEventBridge|null[0]
