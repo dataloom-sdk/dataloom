@@ -189,10 +189,12 @@ it could have used. `entries`, `pendingEntries`, `acknowledgedEntries` and
 `DurableOperationalEventOutboxProcessor` all present entries in list order,
 which the state validates equals per-key sequence order.
 
-The processor presents a workflow's events in sequence order but does **not**
-hold later events back behind an earlier one whose handler outcome was
-`Skipped`/`Failed`; strict head-of-line blocking is not part of this
-contract.
+The processor always *presents* a workflow's events in sequence order. By
+default it does not hold later events back behind an earlier one whose handler
+outcome was `Skipped`/`Failed`; passing `ordering =
+OperationalEventOutboxOrderingPolicy.BLOCK_WORKFLOW_ON_UNFINISHED_ENTRY`
+opts into head-of-line blocking per workflow (see "Head-of-line blocking"
+below).
 
 ### Why this reuses `DurableStateStore`, not `QueueProvider`
 
@@ -389,6 +391,73 @@ envelopes, hard-delete acknowledgement) is still decoded -- sequences are
 assigned in list order, everything is pending -- so a scope persisted before
 this change loads and upgrades on its next write. There is no other migration.
 
+### Head-of-line blocking (opt-in)
+
+`DurableOperationalEventOutboxProcessor.process` takes `ordering:
+OperationalEventOutboxOrderingPolicy`, default `PRESENTATION_ORDER_ONLY`
+(unchanged behavior). With `BLOCK_WORKFLOW_ON_UNFINISHED_ENTRY`, once an entry
+that carries a workflow id is left pending by the cycle -- handler `Skipped` or
+`Failed`, or `Processed` but the acknowledgement failed -- none of that
+workflow's later entries is handed to the handler in that cycle; other
+workflows keep flowing.
+
+```kotlin
+processor.process(scope, ordering = OperationalEventOutboxOrderingPolicy.BLOCK_WORKFLOW_ON_UNFINISHED_ENTRY) { envelope ->
+    // a1 Failed  ->  a2, a3 (same workflow) are not delivered; b1, b2 (another workflow) are
+    downstream.deliver(envelope)
+}
+```
+
+- Blocked entries stay pending untouched, are counted in
+  `OperationalEventOutboxProcessingSummary.blocked`, are not counted in `read`,
+  and do not count toward `maxEntries`.
+- No extra state is needed: a pending entry is always presented before its
+  successors, so the hold persists across cycles. Successors are delivered, in
+  sequence order, once the blocker is `Processed`-and-acknowledged (in the same
+  cycle: handling is sequential) or acknowledged/removed by anyone else (next
+  cycle).
+- Entries **without** a workflow id neither block nor are blocked: their shared
+  global ordering key orders them, but tying unrelated subsystems' events behind
+  one failure would be a cross-subsystem stall, not a workflow guarantee.
+- An entry the `filter` rejects does not block its workflow: a consumer that
+  is not interested in an event must not be stalled by it.
+- Limits: per processor call, not a distributed lock (see "Concurrency"); the
+  policy sees only what the cycle reads.
+
+### Policy-decision and scheduler bridges
+
+Two more bridges follow the same shape as the others (pure mapping object,
+opt-in spec, swallowed failures, no effect unless the producing capability is
+configured, values classified through `StrictDataLoomRedactor` -- closed
+vocabularies `PUBLIC`, ids `INTERNAL` and therefore masked by the default
+policy, free text `CONFIDENTIAL` and therefore removed):
+
+- **Policy decisions** --
+  `DataLoomBuilder.policyDecisionOperationalEventOutboxConfiguration(DataLoomPolicyDecisionOperationalEventOutboxSpec)`.
+  Every `PolicyDecision` produced by strategy-admission policy evaluation
+  becomes an `AUDIT` envelope (`dataloom.policy.decision.allowed | denied |
+  user_action_required | deferred`, id `policy.decision.<policySetId>.<executionId>`,
+  correlation/trace/tenant from the execution context). No effect without
+  `strategyAdmissionPolicyConfiguration`; independent of that spec's decision log;
+  admission and the durable log commit are decided first and never altered.
+  `PolicyCheckOutcome.justification` is caller-supplied text and is removed;
+  check metadata is never read.
+- **Queue-worker wake-up scheduling** --
+  `DataLoomBuilder.queueWorkerSchedulingOperationalEventOutboxConfiguration(DataLoomQueueWorkerSchedulingOperationalEventOutboxSpec)`.
+  Each worker run's `QueueWorkerSchedulingResult` other than `NotRequired`
+  becomes a `SYSTEM` envelope (`dataloom.scheduler.wakeup.scheduled |
+  not_configured | failed | circuit_rejected`, id `scheduler.wakeup.<leaseId>`
+  -- unique per run, unlike the reused schedule id). It is attached by wrapping
+  the worker `build()` returns (direct or circuit-aware), so no coordinator
+  changed; the run result is returned unchanged.
+
+**Not bridged, and why.** *Configuration history*: `DurableConfigurationHistory`
+has no runtime caller that records a version, so there is no configuration
+event to bridge and none is invented. *Other scheduler events*: a synchronization
+retry's scheduling is already the bridged `RetryScheduled` event, and nothing
+else in the runtime calls the scheduler (nothing calls `cancel`). The plugin
+engine and assets are owned elsewhere.
+
 ### Health observation (opt-in)
 
 Because every outbox read suspends over a store, a synchronous health snapshot
@@ -522,12 +591,16 @@ design are in [`outbox-replay-investigation.md`](outbox-replay-investigation.md)
 - **Replay is bounded by acknowledged-history retention, single-entry, and
   ungated.** An entry whose tombstone was pruned cannot be replayed; there is
   no batch/by-workflow replay call; and `replay` performs no authorization.
-- **No head-of-line blocking per workflow.** The processor presents a
-  workflow's events in sequence order but does not hold later events behind an
-  earlier `Skipped`/`Failed` one.
-- **Five real wired callers so far — synchronization events, retry/circuit
+- **Head-of-line blocking is opt-in and per processor call.** It is not a
+  distributed lock: two concurrent `process` calls on one scope can each hand
+  the same head entry to their handler (see "Concurrency"), and a consumer that
+  changes its `filter` between cycles can deliver a successor of an entry it
+  previously skipped.
+- **Seven real wired callers — synchronization events, retry/circuit
   administration commands, strategy-decision diagnostics, queue lifecycle,
-  and conflict resolution.**
+  conflict resolution, policy decisions, and queue-worker wake-up scheduling
+  (the last two are described under "Policy-decision and scheduler bridges"
+  below; the seven-bridge total is the seven outboxes `DataLoomBuilder` can construct).**
   `SynchronizationOperationalEventBridge`
   (`io.dataloom.runtime.observation.operational`) maps every
   `SynchronizationEvent` variant (`Started`, `PhaseChanged`,
@@ -668,7 +741,7 @@ design are in [`outbox-replay-investigation.md`](outbox-replay-investigation.md)
   otherwise (mirroring why the strategy-decision spec above has no effect
   without `strategyDiagnosticsConfiguration`).
 
-  For all five bridges, bridging failures (envelope construction) and append
+  For all seven bridges, bridging failures (envelope construction) and append
   outcomes other than success (`Conflict`, `PersistenceFailure`,
   `ContentionLimitReached`) are always swallowed — consistent with
   `StrategySynchronizationExecutionCoordinator`'s own durable-diagnostics

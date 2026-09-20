@@ -171,6 +171,185 @@ class DurableOperationalEventOutboxProcessorTest {
         assertEquals(listOf("a1", "a2", "a3"), history.value.map { it.envelope.id.value })
     }
 
+    // ---- head-of-line blocking (opt-in) --------------------------------------------------------------
+
+    private val blocking = OperationalEventOutboxOrderingPolicy.BLOCK_WORKFLOW_ON_UNFINISHED_ENTRY
+
+    private suspend fun seeded(vararg specs: Pair<String, String?>): DurableOperationalEventOutbox {
+        val outbox = DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore(), outboxTestClock)
+        specs.forEach { (id, workflow) -> outbox.append(scope, envelope(id, workflow = workflow)) }
+        return outbox
+    }
+
+    @Test
+    fun byDefaultALaterEntryOfAWorkflowIsDeliveredEvenWhenAnEarlierOneWasLeftPending() = runTest {
+        val outbox = seeded("a1" to "a", "a2" to "a")
+        val seen = mutableListOf<String>()
+
+        val result = DurableOperationalEventOutboxProcessor(outbox).process(scope) { current ->
+            seen.add(current.id.value)
+            if (current.id.value == "a1") OperationalEventOutboxEntryOutcome.Failed() else OperationalEventOutboxEntryOutcome.Processed
+        }
+
+        assertEquals(listOf("a1", "a2"), seen)
+        assertEquals(0, assertIs<OperationalEventOutboxProcessingResult.Processed>(result).summary.blocked)
+        assertEquals(listOf("a1"), pendingIds(outbox))
+    }
+
+    @Test
+    fun aFailedEntryBlocksItsWorkflowsLaterEntriesWhileOtherWorkflowsKeepFlowing() = runTest {
+        val outbox = seeded("a1" to "a", "b1" to "b", "a2" to "a", "b2" to "b", "a3" to "a")
+        val seen = mutableListOf<String>()
+
+        val result = DurableOperationalEventOutboxProcessor(outbox).process(scope, ordering = blocking) { current ->
+            seen.add(current.id.value)
+            if (current.id.value == "a1") OperationalEventOutboxEntryOutcome.Failed() else OperationalEventOutboxEntryOutcome.Processed
+        }
+
+        assertEquals(listOf("a1", "b1", "b2"), seen) // a2 and a3 were never handed to the handler
+        val summary = assertIs<OperationalEventOutboxProcessingResult.Processed>(result).summary
+        assertEquals(3, summary.read)
+        assertEquals(2, summary.blocked)
+        assertEquals(1, summary.failed)
+        assertEquals(2, summary.acknowledged)
+        // The blocked entries stay pending, untouched, in order.
+        assertEquals(listOf("a1", "a2", "a3"), pendingIds(outbox))
+    }
+
+    @Test
+    fun aSkippedEntryBlocksTheSameWay() = runTest {
+        val outbox = seeded("a1" to "a", "a2" to "a")
+        val seen = mutableListOf<String>()
+
+        val result = DurableOperationalEventOutboxProcessor(outbox).process(scope, ordering = blocking) { current ->
+            seen.add(current.id.value)
+            OperationalEventOutboxEntryOutcome.Skipped
+        }
+
+        assertEquals(listOf("a1"), seen)
+        assertEquals(1, assertIs<OperationalEventOutboxProcessingResult.Processed>(result).summary.blocked)
+    }
+
+    @Test
+    fun theHoldPersistsAcrossCyclesUntilTheBlockerSucceedsThenSuccessorsAreDeliveredInOrderInTheSameCycle() = runTest {
+        val outbox = seeded("a1" to "a", "a2" to "a", "a3" to "a", "b1" to "b")
+        val processor = DurableOperationalEventOutboxProcessor(outbox)
+
+        repeat(2) { // a1 keeps failing for two cycles; a2/a3 never reach the handler
+            val seen = mutableListOf<String>()
+            processor.process(scope, ordering = blocking) { current ->
+                seen.add(current.id.value)
+                if (current.id.value == "a1") OperationalEventOutboxEntryOutcome.Failed() else OperationalEventOutboxEntryOutcome.Processed
+            }
+            assertEquals(if (it == 0) listOf("a1", "b1") else listOf("a1"), seen)
+        }
+        assertEquals(listOf("a1", "a2", "a3"), pendingIds(outbox))
+
+        val recovered = mutableListOf<String>()
+        val result = processor.process(scope, ordering = blocking) { current ->
+            recovered.add(current.id.value)
+            OperationalEventOutboxEntryOutcome.Processed
+        }
+
+        assertEquals(listOf("a1", "a2", "a3"), recovered)
+        assertEquals(0, assertIs<OperationalEventOutboxProcessingResult.Processed>(result).summary.blocked)
+        assertEquals(emptyList(), pendingIds(outbox))
+    }
+
+    @Test
+    fun anEntryAcknowledgedByAnotherCallerReleasesTheWorkflowOnTheNextCycle() = runTest {
+        val outbox = seeded("a1" to "a", "a2" to "a")
+        val processor = DurableOperationalEventOutboxProcessor(outbox)
+        processor.process(scope, ordering = blocking) { OperationalEventOutboxEntryOutcome.Skipped }
+
+        outbox.acknowledge(scope, OperationalEventId("a1")) // an operator dismisses the blocker
+        val seen = mutableListOf<String>()
+        processor.process(scope, ordering = blocking) { seen.add(it.id.value); OperationalEventOutboxEntryOutcome.Processed }
+
+        assertEquals(listOf("a2"), seen)
+    }
+
+    @Test
+    fun blockedEntriesDoNotCountAgainstMaxEntries() = runTest {
+        val outbox = seeded("a1" to "a", "a2" to "a", "a3" to "a", "b1" to "b", "b2" to "b")
+        val seen = mutableListOf<String>()
+
+        val result = DurableOperationalEventOutboxProcessor(outbox).process(scope, maxEntries = 2, ordering = blocking) { current ->
+            seen.add(current.id.value)
+            if (current.id.value == "a1") OperationalEventOutboxEntryOutcome.Failed() else OperationalEventOutboxEntryOutcome.Processed
+        }
+
+        // Two handled (a1, b1); a2 and a3 were skipped over as blocked rather than eating the bound.
+        assertEquals(listOf("a1", "b1"), seen)
+        val summary = assertIs<OperationalEventOutboxProcessingResult.Processed>(result).summary
+        assertEquals(2, summary.read)
+        assertEquals(2, summary.blocked)
+    }
+
+    @Test
+    fun anAcknowledgementFailureLeavesTheEntryPendingSoItBlocksToo() = runTest {
+        val record = DurableStateRecord(
+            state = OperationalEventOutboxState(
+                listOf(
+                    OperationalEventOutboxEntry(1L, envelope("a1", workflow = "a")),
+                    OperationalEventOutboxEntry(2L, envelope("a2", workflow = "a")),
+                ),
+            ),
+            version = 0L,
+            schemaVersion = 2,
+        )
+        val processor = DurableOperationalEventOutboxProcessor(
+            DurableOperationalEventOutbox(FoundStoreWithFailingCompareAndSet(record), outboxTestClock),
+        )
+        val seen = mutableListOf<String>()
+
+        val result = processor.process(scope, ordering = blocking) { seen.add(it.id.value); OperationalEventOutboxEntryOutcome.Processed }
+
+        assertEquals(listOf("a1"), seen)
+        val summary = assertIs<OperationalEventOutboxProcessingResult.Processed>(result).summary
+        assertEquals(1, summary.acknowledgeFailed)
+        assertEquals(1, summary.blocked)
+    }
+
+    @Test
+    fun entriesWithoutAWorkflowNeitherBlockNorAreBlocked() = runTest {
+        val outbox = seeded("g1" to null, "g2" to null, "a1" to "a")
+        val seen = mutableListOf<String>()
+
+        DurableOperationalEventOutboxProcessor(outbox).process(scope, ordering = blocking) { current ->
+            seen.add(current.id.value)
+            if (current.id.value == "g1") OperationalEventOutboxEntryOutcome.Failed() else OperationalEventOutboxEntryOutcome.Processed
+        }
+
+        assertEquals(listOf("g1", "g2", "a1"), seen)
+    }
+
+    @Test
+    fun anEntryTheFilterRejectsDoesNotBlockItsWorkflow() = runTest {
+        val outbox = DurableOperationalEventOutbox(InMemoryOperationalEventOutboxStore(), outboxTestClock)
+        val uninteresting = OperationalEventType("dataloom.test.uninteresting")
+        outbox.append(scope, envelope("a1", type = uninteresting, workflow = "a"))
+        outbox.append(scope, envelope("a2", workflow = "a"))
+        val seen = mutableListOf<String>()
+
+        DurableOperationalEventOutboxProcessor(outbox).process(
+            scope,
+            filter = OperationalEventOutboxEntryFilter { it.type != uninteresting },
+            ordering = blocking,
+        ) { seen.add(it.id.value); OperationalEventOutboxEntryOutcome.Processed }
+
+        assertEquals(listOf("a2"), seen)
+    }
+
+    @Test
+    fun blockingIsTrackedAsBlockedInTheSummaryAndTheDefaultPolicyReportsZero() = runTest {
+        val outbox = seeded("a1" to "a", "a2" to "a")
+
+        val result = DurableOperationalEventOutboxProcessor(outbox).process(scope) { OperationalEventOutboxEntryOutcome.Processed }
+
+        assertEquals(0, assertIs<OperationalEventOutboxProcessingResult.Processed>(result).summary.blocked)
+    }
+
     @Test
     fun maxEntriesBoundsOneCycleAndLeavesTheRestForALaterPass() = runTest {
         val store = InMemoryOperationalEventOutboxStore()
