@@ -804,6 +804,7 @@ public final class io/dataloom/runtime/facade/DataLoomOperationalEventOutboxSpec
 }
 
 public abstract interface class io/dataloom/runtime/facade/DataLoomPluginEngine {
+	public abstract fun compatibilityOf-WWrLh4Q (Ljava/lang/String;)Lio/dataloom/plugin/PluginCompatibilityResult;
 	public abstract fun execute-dkBeV0E (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getResolutionOrder ()Ljava/util/List;
 	public abstract fun stateOf-WWrLh4Q (Ljava/lang/String;)Lio/dataloom/api/plugin/PluginLifecycleState;
@@ -887,6 +888,11 @@ public final class io/dataloom/runtime/facade/DataLoomRetryCircuitAdministration
 	public final fun getSchemaVersion ()I
 	public final fun getScope--IyNcac ()Ljava/lang/String;
 	public final fun getStore ()Lio/dataloom/api/state/DurableStateStore;
+}
+
+public final class io/dataloom/runtime/facade/DataLoomRuntimeVersion {
+	public static final field INSTANCE Lio/dataloom/runtime/facade/DataLoomRuntimeVersion;
+	public final fun getCURRENT-bVFqHQY ()Ljava/lang/String;
 }
 
 public final class io/dataloom/runtime/facade/DataLoomStorageProtectionSpec {

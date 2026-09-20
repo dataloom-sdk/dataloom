@@ -194,11 +194,11 @@ class ProviderContractsTest {
     @Test
     fun `initialization context preserves supplied versions`() {
         val context: ProviderInitializationContext = ProviderInitializationContext(
-            runtimeVersion = RuntimeVersion("runtime-1.0.0"),
+            runtimeVersion = RuntimeVersion("1.0.0"),
             configurationVersion = ConfigurationVersion("config-1.0.0"),
         )
 
-        assertEquals("runtime-1.0.0", context.runtimeVersion?.value)
+        assertEquals("1.0.0", context.runtimeVersion?.value)
         assertEquals("config-1.0.0", context.configurationVersion?.value)
     }
 

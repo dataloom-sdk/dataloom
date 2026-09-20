@@ -207,23 +207,6 @@ public value class UserId(
 }
 
 /**
- * Canonical version label for the executing DataLoom runtime.
- *
- * Ownership: DataLoom runtime.
- */
-@JvmInline
-public value class RuntimeVersion(
-    /** Underlying runtime version value. */
-    public val value: String,
-) {
-    init {
-        require(value.isNotBlank()) { "RuntimeVersion must not be blank." }
-    }
-
-    override fun toString(): String = value
-}
-
-/**
  * Canonical version label for host-provided synchronization configuration.
  *
  * Ownership: configuration source or host integration.
