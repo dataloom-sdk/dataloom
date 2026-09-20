@@ -131,15 +131,19 @@ public final class io/dataloom/runtime/conflict/ConflictDetectorRegistry {
 }
 
 public final class io/dataloom/runtime/conflict/ConflictOrchestrationBindings {
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/runtime/conflict/ConflictResolverSelectionPolicy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/runtime/conflict/ConflictResolverSelectionPolicy;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-SQTsAXs ()Ljava/lang/String;
 	public final fun component2-5fmtlrw ()Ljava/lang/String;
-	public final fun copy--zkZ5XU (Ljava/lang/String;Ljava/lang/String;)Lio/dataloom/runtime/conflict/ConflictOrchestrationBindings;
-	public static synthetic fun copy--zkZ5XU$default (Lio/dataloom/runtime/conflict/ConflictOrchestrationBindings;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/runtime/conflict/ConflictOrchestrationBindings;
+	public final fun component3 ()Lio/dataloom/runtime/conflict/ConflictResolverSelectionPolicy;
+	public final fun copy-kmWkmnM (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/runtime/conflict/ConflictResolverSelectionPolicy;)Lio/dataloom/runtime/conflict/ConflictOrchestrationBindings;
+	public static synthetic fun copy-kmWkmnM$default (Lio/dataloom/runtime/conflict/ConflictOrchestrationBindings;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/runtime/conflict/ConflictResolverSelectionPolicy;ILjava/lang/Object;)Lio/dataloom/runtime/conflict/ConflictOrchestrationBindings;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getDetectorId-SQTsAXs ()Ljava/lang/String;
 	public final fun getResolverId-5fmtlrw ()Ljava/lang/String;
+	public final fun getResolverSelectionPolicy ()Lio/dataloom/runtime/conflict/ConflictResolverSelectionPolicy;
 	public fun hashCode ()I
+	public final fun selectResolverId-oNMfQJg (Lio/dataloom/runtime/conflict/ConflictResolverSelectionContext;)Ljava/lang/String;
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -225,6 +229,74 @@ public final class io/dataloom/runtime/conflict/ConflictResolverRegistry {
 	public fun <init> (Ljava/util/Collection;)V
 	public final fun getResolvers ()Ljava/util/List;
 	public final fun lookup-Zg7xl1M (Ljava/lang/String;)Lio/dataloom/api/conflict/ConflictResolver;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/conflict/ConflictResolverSelectionContext {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-ljejvTE ()Ljava/lang/String;
+	public final fun component2-AO9uWSE ()Ljava/lang/String;
+	public final fun component3-FOnZjVk ()Ljava/lang/String;
+	public final fun copy-N5Iuxy0 (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/dataloom/runtime/conflict/ConflictResolverSelectionContext;
+	public static synthetic fun copy-N5Iuxy0$default (Lio/dataloom/runtime/conflict/ConflictResolverSelectionContext;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/runtime/conflict/ConflictResolverSelectionContext;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntityType-ljejvTE ()Ljava/lang/String;
+	public final fun getTenantId-FOnZjVk ()Ljava/lang/String;
+	public final fun getWorkflowId-AO9uWSE ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/conflict/ConflictResolverSelectionPolicy {
+	public fun <init> (Ljava/util/Collection;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRules ()Ljava/util/List;
+	public fun hashCode ()I
+	public final fun select-oNMfQJg (Lio/dataloom/runtime/conflict/ConflictResolverSelectionContext;)Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/runtime/conflict/ConflictResolverSelectionRule {
+	public abstract fun getResolverId-wOiKSnc ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/conflict/ConflictResolverSelectionRule$ForEntityType : io/dataloom/runtime/conflict/ConflictResolverSelectionRule {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-ljejvTE ()Ljava/lang/String;
+	public final fun component2-wOiKSnc ()Ljava/lang/String;
+	public final fun copy-pidfcYg (Ljava/lang/String;Ljava/lang/String;)Lio/dataloom/runtime/conflict/ConflictResolverSelectionRule$ForEntityType;
+	public static synthetic fun copy-pidfcYg$default (Lio/dataloom/runtime/conflict/ConflictResolverSelectionRule$ForEntityType;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/runtime/conflict/ConflictResolverSelectionRule$ForEntityType;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntityType-ljejvTE ()Ljava/lang/String;
+	public fun getResolverId-wOiKSnc ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/conflict/ConflictResolverSelectionRule$ForTenant : io/dataloom/runtime/conflict/ConflictResolverSelectionRule {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-Eix2Umk ()Ljava/lang/String;
+	public final fun component2-wOiKSnc ()Ljava/lang/String;
+	public final fun copy-vZirI94 (Ljava/lang/String;Ljava/lang/String;)Lio/dataloom/runtime/conflict/ConflictResolverSelectionRule$ForTenant;
+	public static synthetic fun copy-vZirI94$default (Lio/dataloom/runtime/conflict/ConflictResolverSelectionRule$ForTenant;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/runtime/conflict/ConflictResolverSelectionRule$ForTenant;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getResolverId-wOiKSnc ()Ljava/lang/String;
+	public final fun getTenantId-Eix2Umk ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/conflict/ConflictResolverSelectionRule$ForWorkflow : io/dataloom/runtime/conflict/ConflictResolverSelectionRule {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-AO9uWSE ()Ljava/lang/String;
+	public final fun component2-wOiKSnc ()Ljava/lang/String;
+	public final fun copy-ScAhlSc (Ljava/lang/String;Ljava/lang/String;)Lio/dataloom/runtime/conflict/ConflictResolverSelectionRule$ForWorkflow;
+	public static synthetic fun copy-ScAhlSc$default (Lio/dataloom/runtime/conflict/ConflictResolverSelectionRule$ForWorkflow;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/runtime/conflict/ConflictResolverSelectionRule$ForWorkflow;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getResolverId-wOiKSnc ()Ljava/lang/String;
+	public final fun getWorkflowId-AO9uWSE ()Ljava/lang/String;
+	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -573,6 +645,7 @@ public abstract interface class io/dataloom/runtime/facade/DataLoom {
 	public fun getCircuitAdministration ()Lio/dataloom/runtime/facade/DataLoomCircuitAdministration;
 	public fun getCircuitQueueWorker ()Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorker;
 	public fun getConflictAdministration ()Lio/dataloom/runtime/facade/DataLoomConflictAdministration;
+	public fun getPluginEngine ()Lio/dataloom/runtime/facade/DataLoomPluginEngine;
 	public fun getProtectedStrategySynchronization ()Lio/dataloom/runtime/facade/DataLoomProtectedStrategySynchronization;
 	public fun getProtectedSynchronization ()Lio/dataloom/runtime/facade/DataLoomProtectedSynchronization;
 	public abstract fun getProviderLifecycleState ()Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;
@@ -593,6 +666,7 @@ public final class io/dataloom/runtime/facade/DataLoom$DefaultImpls {
 	public static fun getCircuitAdministration (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomCircuitAdministration;
 	public static fun getCircuitQueueWorker (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorker;
 	public static fun getConflictAdministration (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomConflictAdministration;
+	public static fun getPluginEngine (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomPluginEngine;
 	public static fun getProtectedStrategySynchronization (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomProtectedStrategySynchronization;
 	public static fun getProtectedSynchronization (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomProtectedSynchronization;
 	public static fun getRetryAdministration (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomRetryAdministration;
@@ -621,6 +695,7 @@ public final class io/dataloom/runtime/facade/DataLoomBuilder {
 	public final fun operationalEventOutboxConfiguration (Lio/dataloom/runtime/facade/DataLoomOperationalEventOutboxSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun outboundConfiguration (Lio/dataloom/runtime/execution/outbound/OutboundPushPipelineConfiguration;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun pipeline (Lio/dataloom/runtime/execution/SynchronizationPipeline;)Lio/dataloom/runtime/facade/DataLoomBuilder;
+	public final fun pluginConfiguration (Lio/dataloom/runtime/facade/DataLoomPluginSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun provider (Lio/dataloom/api/provider/DataLoomProvider;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun providerProtectionConfiguration (Lio/dataloom/runtime/facade/DataLoomProviderProtectionSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun providers ([Lio/dataloom/api/provider/DataLoomProvider;)Lio/dataloom/runtime/facade/DataLoomBuilder;
@@ -728,6 +803,21 @@ public final class io/dataloom/runtime/facade/DataLoomOperationalEventOutboxSpec
 	public final fun getStore ()Lio/dataloom/api/state/DurableStateStore;
 }
 
+public abstract interface class io/dataloom/runtime/facade/DataLoomPluginEngine {
+	public abstract fun compatibilityOf-WWrLh4Q (Ljava/lang/String;)Lio/dataloom/plugin/PluginCompatibilityResult;
+	public abstract fun execute-dkBeV0E (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getResolutionOrder ()Ljava/util/List;
+	public abstract fun stateOf-WWrLh4Q (Ljava/lang/String;)Lio/dataloom/api/plugin/PluginLifecycleState;
+	public abstract fun transition (Lio/dataloom/plugin/PluginLifecycleTransitionRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/facade/DataLoomPluginSpec {
+	public fun <init> (Ljava/util/List;Lio/dataloom/plugin/PluginLifecycleAdministrationAuthorizer;)V
+	public final fun getLifecycleAuthorizer ()Lio/dataloom/plugin/PluginLifecycleAdministrationAuthorizer;
+	public final fun getPlugins ()Ljava/util/List;
+	public fun toString ()Ljava/lang/String;
+}
+
 public abstract interface class io/dataloom/runtime/facade/DataLoomProtectedStrategySynchronization {
 	public abstract fun synchronize (Lio/dataloom/api/strategy/StrategySynchronizationRequest;Lio/dataloom/api/provider/StrategyProviderBindings;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun synchronize (Lio/dataloom/api/strategy/StrategySynchronizationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -798,6 +888,11 @@ public final class io/dataloom/runtime/facade/DataLoomRetryCircuitAdministration
 	public final fun getSchemaVersion ()I
 	public final fun getScope--IyNcac ()Ljava/lang/String;
 	public final fun getStore ()Lio/dataloom/api/state/DurableStateStore;
+}
+
+public final class io/dataloom/runtime/facade/DataLoomRuntimeVersion {
+	public static final field INSTANCE Lio/dataloom/runtime/facade/DataLoomRuntimeVersion;
+	public final fun getCURRENT-bVFqHQY ()Ljava/lang/String;
 }
 
 public final class io/dataloom/runtime/facade/DataLoomStorageProtectionSpec {

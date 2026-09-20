@@ -73,7 +73,7 @@ public class AssetChunkAuthenticationException(message: String) : RuntimeExcepti
  * and implementing a real algorithm (for example AES-256-GCM) is a later
  * slice. Whether integrity digests cover logical (plaintext) or transferred
  * (sealed) bytes when a cipher is in use is decided in that slice; see
- * `docs/adr/ADR-0003-asset-transfer-and-streaming-digest.md`.
+ * `docs/adr/ADR-0006-asset-transfer-and-streaming-digest.md`.
  */
 public interface AssetChunkCipher {
 

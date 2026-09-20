@@ -66,6 +66,22 @@ final enum class io.dataloom.api.error/RetryDelayHintSource : kotlin/Enum<io.dat
     final fun values(): kotlin/Array<io.dataloom.api.error/RetryDelayHintSource> // io.dataloom.api.error/RetryDelayHintSource.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.api.identifier/RuntimeVersionParseFailure : kotlin/Enum<io.dataloom.api.identifier/RuntimeVersionParseFailure> { // io.dataloom.api.identifier/RuntimeVersionParseFailure|null[0]
+    enum entry BLANK // io.dataloom.api.identifier/RuntimeVersionParseFailure.BLANK|null[0]
+    enum entry INVALID_BUILD_METADATA // io.dataloom.api.identifier/RuntimeVersionParseFailure.INVALID_BUILD_METADATA|null[0]
+    enum entry INVALID_PRE_RELEASE // io.dataloom.api.identifier/RuntimeVersionParseFailure.INVALID_PRE_RELEASE|null[0]
+    enum entry LEADING_ZERO_IN_CORE // io.dataloom.api.identifier/RuntimeVersionParseFailure.LEADING_ZERO_IN_CORE|null[0]
+    enum entry MALFORMED_CORE // io.dataloom.api.identifier/RuntimeVersionParseFailure.MALFORMED_CORE|null[0]
+    enum entry NUMBER_OUT_OF_RANGE // io.dataloom.api.identifier/RuntimeVersionParseFailure.NUMBER_OUT_OF_RANGE|null[0]
+    enum entry TOO_LONG // io.dataloom.api.identifier/RuntimeVersionParseFailure.TOO_LONG|null[0]
+
+    final val entries // io.dataloom.api.identifier/RuntimeVersionParseFailure.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.identifier/RuntimeVersionParseFailure> // io.dataloom.api.identifier/RuntimeVersionParseFailure.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.identifier/RuntimeVersionParseFailure // io.dataloom.api.identifier/RuntimeVersionParseFailure.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.identifier/RuntimeVersionParseFailure> // io.dataloom.api.identifier/RuntimeVersionParseFailure.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.api.security/DigestAlgorithm : kotlin/Enum<io.dataloom.api.security/DigestAlgorithm> { // io.dataloom.api.security/DigestAlgorithm|null[0]
     enum entry SHA_256 // io.dataloom.api.security/DigestAlgorithm.SHA_256|null[0]
     enum entry SHA_512 // io.dataloom.api.security/DigestAlgorithm.SHA_512|null[0]
@@ -144,6 +160,34 @@ abstract interface io.dataloom.api.time/DataLoomClock { // io.dataloom.api.time/
 
 abstract interface io.dataloom.api.time/DataLoomMonotonicClock { // io.dataloom.api.time/DataLoomMonotonicClock|null[0]
     abstract fun mark(): io.dataloom.api.time/DataLoomMonotonicReading // io.dataloom.api.time/DataLoomMonotonicClock.mark|mark(){}[0]
+}
+
+sealed interface io.dataloom.api.identifier/RuntimeVersionParseResult { // io.dataloom.api.identifier/RuntimeVersionParseResult|null[0]
+    final class Invalid : io.dataloom.api.identifier/RuntimeVersionParseResult { // io.dataloom.api.identifier/RuntimeVersionParseResult.Invalid|null[0]
+        constructor <init>(io.dataloom.api.identifier/RuntimeVersionParseFailure) // io.dataloom.api.identifier/RuntimeVersionParseResult.Invalid.<init>|<init>(io.dataloom.api.identifier.RuntimeVersionParseFailure){}[0]
+
+        final val failure // io.dataloom.api.identifier/RuntimeVersionParseResult.Invalid.failure|{}failure[0]
+            final fun <get-failure>(): io.dataloom.api.identifier/RuntimeVersionParseFailure // io.dataloom.api.identifier/RuntimeVersionParseResult.Invalid.failure.<get-failure>|<get-failure>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/RuntimeVersionParseFailure // io.dataloom.api.identifier/RuntimeVersionParseResult.Invalid.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.identifier/RuntimeVersionParseFailure = ...): io.dataloom.api.identifier/RuntimeVersionParseResult.Invalid // io.dataloom.api.identifier/RuntimeVersionParseResult.Invalid.copy|copy(io.dataloom.api.identifier.RuntimeVersionParseFailure){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/RuntimeVersionParseResult.Invalid.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/RuntimeVersionParseResult.Invalid.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.identifier/RuntimeVersionParseResult.Invalid.toString|toString(){}[0]
+    }
+
+    final class Parsed : io.dataloom.api.identifier/RuntimeVersionParseResult { // io.dataloom.api.identifier/RuntimeVersionParseResult.Parsed|null[0]
+        constructor <init>(io.dataloom.api.identifier/RuntimeVersion) // io.dataloom.api.identifier/RuntimeVersionParseResult.Parsed.<init>|<init>(io.dataloom.api.identifier.RuntimeVersion){}[0]
+
+        final val version // io.dataloom.api.identifier/RuntimeVersionParseResult.Parsed.version|{}version[0]
+            final fun <get-version>(): io.dataloom.api.identifier/RuntimeVersion // io.dataloom.api.identifier/RuntimeVersionParseResult.Parsed.version.<get-version>|<get-version>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/RuntimeVersion // io.dataloom.api.identifier/RuntimeVersionParseResult.Parsed.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.identifier/RuntimeVersion = ...): io.dataloom.api.identifier/RuntimeVersionParseResult.Parsed // io.dataloom.api.identifier/RuntimeVersionParseResult.Parsed.copy|copy(io.dataloom.api.identifier.RuntimeVersion){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/RuntimeVersionParseResult.Parsed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/RuntimeVersionParseResult.Parsed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.api.identifier/RuntimeVersionParseResult.Parsed.toString|toString(){}[0]
+    }
 }
 
 final class io.dataloom.api.context/DataLoomMetadata { // io.dataloom.api.context/DataLoomMetadata|null[0]
@@ -531,12 +575,32 @@ final value class io.dataloom.api.identifier/RetryPolicyId { // io.dataloom.api.
 final value class io.dataloom.api.identifier/RuntimeVersion { // io.dataloom.api.identifier/RuntimeVersion|null[0]
     constructor <init>(kotlin/String) // io.dataloom.api.identifier/RuntimeVersion.<init>|<init>(kotlin.String){}[0]
 
+    final val buildMetadata // io.dataloom.api.identifier/RuntimeVersion.buildMetadata|{}buildMetadata[0]
+        final fun <get-buildMetadata>(): kotlin/String? // io.dataloom.api.identifier/RuntimeVersion.buildMetadata.<get-buildMetadata>|<get-buildMetadata>(){}[0]
+    final val isPreRelease // io.dataloom.api.identifier/RuntimeVersion.isPreRelease|{}isPreRelease[0]
+        final fun <get-isPreRelease>(): kotlin/Boolean // io.dataloom.api.identifier/RuntimeVersion.isPreRelease.<get-isPreRelease>|<get-isPreRelease>(){}[0]
+    final val major // io.dataloom.api.identifier/RuntimeVersion.major|{}major[0]
+        final fun <get-major>(): kotlin/Int // io.dataloom.api.identifier/RuntimeVersion.major.<get-major>|<get-major>(){}[0]
+    final val minor // io.dataloom.api.identifier/RuntimeVersion.minor|{}minor[0]
+        final fun <get-minor>(): kotlin/Int // io.dataloom.api.identifier/RuntimeVersion.minor.<get-minor>|<get-minor>(){}[0]
+    final val patch // io.dataloom.api.identifier/RuntimeVersion.patch|{}patch[0]
+        final fun <get-patch>(): kotlin/Int // io.dataloom.api.identifier/RuntimeVersion.patch.<get-patch>|<get-patch>(){}[0]
+    final val preRelease // io.dataloom.api.identifier/RuntimeVersion.preRelease|{}preRelease[0]
+        final fun <get-preRelease>(): kotlin/String? // io.dataloom.api.identifier/RuntimeVersion.preRelease.<get-preRelease>|<get-preRelease>(){}[0]
     final val value // io.dataloom.api.identifier/RuntimeVersion.value|{}value[0]
         final fun <get-value>(): kotlin/String // io.dataloom.api.identifier/RuntimeVersion.value.<get-value>|<get-value>(){}[0]
 
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.identifier/RuntimeVersion.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.identifier/RuntimeVersion.hashCode|hashCode(){}[0]
+    final fun precedenceCompareTo(io.dataloom.api.identifier/RuntimeVersion): kotlin/Int // io.dataloom.api.identifier/RuntimeVersion.precedenceCompareTo|precedenceCompareTo(io.dataloom.api.identifier.RuntimeVersion){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.identifier/RuntimeVersion.toString|toString(){}[0]
+
+    final object Companion { // io.dataloom.api.identifier/RuntimeVersion.Companion|null[0]
+        final const val MAXIMUM_LENGTH // io.dataloom.api.identifier/RuntimeVersion.Companion.MAXIMUM_LENGTH|{}MAXIMUM_LENGTH[0]
+            final fun <get-MAXIMUM_LENGTH>(): kotlin/Int // io.dataloom.api.identifier/RuntimeVersion.Companion.MAXIMUM_LENGTH.<get-MAXIMUM_LENGTH>|<get-MAXIMUM_LENGTH>(){}[0]
+
+        final fun parse(kotlin/String): io.dataloom.api.identifier/RuntimeVersionParseResult // io.dataloom.api.identifier/RuntimeVersion.Companion.parse|parse(kotlin.String){}[0]
+    }
 }
 
 final value class io.dataloom.api.identifier/ScheduleId { // io.dataloom.api.identifier/ScheduleId|null[0]

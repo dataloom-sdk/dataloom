@@ -5,7 +5,7 @@
 // source/sink contracts, the transfer-session state machine, the
 // AssetProvider SPI, a sequential transfer engine, an in-memory reference
 // provider, a provider contract kit, and compression/encryption SPIs (identity
-// implementations only). See docs/adr/ADR-0003-asset-transfer-and-streaming-digest.md.
+// implementations only). See docs/adr/ADR-0006-asset-transfer-and-streaming-digest.md.
 //
 // Rules:
 // - Pure Kotlin multiplatform (jvm + iOS), no platform-specific source sets.

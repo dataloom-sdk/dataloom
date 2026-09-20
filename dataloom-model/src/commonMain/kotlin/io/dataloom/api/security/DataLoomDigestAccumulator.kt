@@ -75,7 +75,7 @@ public interface DataLoomDigestAccumulator : AutoCloseable {
  * [DataLoomDigestCalculator] — so existing one-shot implementations (test
  * fakes included) stay valid. The production JVM and Apple implementations
  * both implement this contract, and asset synchronization requires it for
- * whole-object verification (see `docs/adr/ADR-0003-asset-transfer-and-streaming-digest.md`).
+ * whole-object verification (see `docs/adr/ADR-0006-asset-transfer-and-streaming-digest.md`).
  * This reverses the earlier "one-shot only" design of
  * [DataLoomDigestCalculator]; the one-shot method is unchanged.
  */

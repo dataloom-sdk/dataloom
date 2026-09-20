@@ -88,7 +88,7 @@ val context = ExecutionContext(
     tenantId = TenantId("tenant-001"),
     userId = UserId("user-001"),
     localeTag = LocaleTag("en-US"),
-    runtimeVersion = RuntimeVersion("runtime-1.0.0"),
+    runtimeVersion = RuntimeVersion("1.0.0"),
     configurationVersion = ConfigurationVersion("config-2026-07-21"),
     metadata = DataLoomMetadata.of(
         mapOf(

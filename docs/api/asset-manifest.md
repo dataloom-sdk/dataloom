@@ -15,7 +15,7 @@
 > contracts, the transfer-session state machine and an `AssetProvider` SPI now
 > exist in the separate `dataloom-assets` module (slice 1 of `#97`, in-memory
 > reference behaviour only). See [asset-transfer.md](./asset-transfer.md) and
-> [ADR-0003](../adr/ADR-0003-asset-transfer-and-streaming-digest.md). This page
+> [ADR-0006](../adr/ADR-0006-asset-transfer-and-streaming-digest.md). This page
 > continues to describe only the manifest types.
 
 **Package:** `io.dataloom.api.asset` (`dataloom-api`), plus `AssetId` in

@@ -138,7 +138,7 @@ public class AssetChunkUpload(
  * `ProviderType` has no asset category, and giving asset providers a
  * lifecycle (`initialize`/`health`/`close`) plus a registry/binding slot is
  * part of the later `DataLoomBuilder` wiring slice
- * (`docs/adr/ADR-0003-asset-transfer-and-streaming-digest.md`).
+ * (`docs/adr/ADR-0006-asset-transfer-and-streaming-digest.md`).
  *
  * Failures are reported as [ProviderOperationResult.Failure] carrying an
  * [AssetTransferError]; providers must not throw for expected failures.

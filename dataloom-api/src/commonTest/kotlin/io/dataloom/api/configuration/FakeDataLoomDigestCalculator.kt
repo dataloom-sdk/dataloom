@@ -10,7 +10,7 @@ import io.dataloom.api.security.DigestAlgorithm
  *
  * This module (dataloom-api) has no platform-specific source set to host
  * the real SystemDataLoomDigestCalculator/AppleDataLoomDigestCalculator
- * implementations (those live in dataloom-model's jvmMain/iosMain), and
+ * implementations (those live in dataloom-model's jvmAndroidMain/iosMain), and
  * only determinism is needed for these tests — the same
  * fake-over-production-implementation posture docs/api/secure-random.md's
  * testing note already documents, and the same "inject a small test-local

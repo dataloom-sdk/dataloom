@@ -59,7 +59,7 @@ Chunk integrity is handled directly with one digest per chunk.
 > digests was **superseded**: `AssetManifest.checksum` is defined as a digest
 > of the asset's raw bytes, which needs bounded-memory streaming, not a hash
 > of hashes. See
-> [ADR-0003](../adr/ADR-0003-asset-transfer-and-streaming-digest.md) for the
+> [ADR-0006](../adr/ADR-0006-asset-transfer-and-streaming-digest.md) for the
 > decision and its Apple (CommonCrypto `Init`/`Update`/`Final`) lifecycle.
 
 ### `DigestAlgorithm`
@@ -226,7 +226,7 @@ those remain open follow-up work, same as the equivalent note on the
   Whole-array one-shot HMAC calls remain sufficient; no consumer needs a
   streaming MAC. (Incremental *digests* are no longer excluded — see the
   update note under [`DataLoomDigestCalculator`](#dataloomdigestcalculator)
-  and [ADR-0003](../adr/ADR-0003-asset-transfer-and-streaming-digest.md).)
+  and [ADR-0006](../adr/ADR-0006-asset-transfer-and-streaming-digest.md).)
 - **Encryption/decryption and a cipher-algorithm selector** (AES-GCM, IVs,
   nonces). Confidentiality is a distinct half of `FR-ASSET-008` from "key
   references" and is outside this design's integrity/signature-reference

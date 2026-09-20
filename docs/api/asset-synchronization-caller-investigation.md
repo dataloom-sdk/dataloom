@@ -4,7 +4,7 @@
 
 ## Status
 
-> **Superseded by [ADR-0003](../adr/ADR-0003-asset-transfer-and-streaming-digest.md)
+> **Superseded by [ADR-0006](../adr/ADR-0006-asset-transfer-and-streaming-digest.md)
 > (2026-09-19).** Both blockers named here were decided and slice 1 of `#97`
 > implements them: (1) the chunked-transfer/session design (`FR-ASSET-002`/`-003`)
 > is D6, shipped as the `dataloom-assets` module; (2) the streaming/incremental
@@ -154,7 +154,7 @@ either:
 Confirmed by reading both production `DataLoomDigestCalculator`
 implementations directly:
 
-- **JVM** ([`SystemDataLoomDigestCalculator.kt`](../../dataloom-model/src/jvmMain/kotlin/io/dataloom/api/security/SystemDataLoomDigestCalculator.kt))
+- **JVM** ([`SystemDataLoomDigestCalculator.kt`](../../dataloom-model/src/jvmAndroidMain/kotlin/io/dataloom/api/security/SystemDataLoomDigestCalculator.kt))
   calls `MessageDigest.getInstance(...).digest(input)` — the one-shot
   convenience method. The underlying JCA `MessageDigest` class *does*
   support incremental `update()`/`digest()` calls, but `DataLoomDigestCalculator`'s
@@ -227,7 +227,7 @@ To close either remaining candidate for real:
   the two shipped primitives this investigation searched for a real caller
   on top of.
 - `dataloom-model/src/commonMain/kotlin/io/dataloom/api/security/DataLoomDigestCalculator.kt`,
-  `dataloom-model/src/jvmMain/kotlin/io/dataloom/api/security/SystemDataLoomDigestCalculator.kt`,
+  `dataloom-model/src/jvmAndroidMain/kotlin/io/dataloom/api/security/SystemDataLoomDigestCalculator.kt`,
   `dataloom-model/src/iosMain/kotlin/io/dataloom/api/security/AppleDataLoomDigestCalculator.kt`
   — the one-shot digest contract and both platform implementations this
   investigation read to establish the streaming-verification gap.

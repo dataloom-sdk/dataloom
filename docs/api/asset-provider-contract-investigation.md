@@ -4,7 +4,7 @@
 
 ## Status
 
-> **Superseded by [ADR-0003](../adr/ADR-0003-asset-transfer-and-streaming-digest.md)
+> **Superseded by [ADR-0006](../adr/ADR-0006-asset-transfer-and-streaming-digest.md)
 > (2026-09-19).** The blocker this investigation named — no settled
 > chunked-transfer (`FR-ASSET-002`) or durable-session (`FR-ASSET-003`) design —
 > was resolved by the lead's decisions D5/D6, and slice 1 of `#97` now ships

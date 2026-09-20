@@ -15,7 +15,7 @@ import kotlin.test.assertTrue
  * test stub rather than a production digest implementation — this module
  * has no platform-specific source set to host
  * SystemDataLoomDigestCalculator/AppleDataLoomDigestCalculator (those live
- * in dataloom-model's jvmMain/iosMain), and only determinism is needed here,
+ * in dataloom-model's jvmAndroidMain/iosMain), and only determinism is needed here,
  * matching the same posture RuntimeDependenciesTest already uses for
  * DataLoomClock.
  */

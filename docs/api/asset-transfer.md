@@ -4,7 +4,7 @@
 > behaviour: not wired into `DataLoomBuilder`, no durable session persistence,
 > no real compression/encryption, no file-backed source/sink, no parallelism.
 > The decisions behind it are in
-> [ADR-0003](../adr/ADR-0003-asset-transfer-and-streaming-digest.md), which
+> [ADR-0006](../adr/ADR-0006-asset-transfer-and-streaming-digest.md), which
 > also lists the ordered next slices. `AssetManifest` itself is documented in
 > [asset-manifest.md](./asset-manifest.md).
 
