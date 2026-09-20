@@ -1,0 +1,407 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <dataloom:dataloom-governance>
+final enum class io.dataloom.governance.audit/AuditAppendRejection : kotlin/Enum<io.dataloom.governance.audit/AuditAppendRejection> { // io.dataloom.governance.audit/AuditAppendRejection|null[0]
+    enum entry CAPACITY_EXCEEDED // io.dataloom.governance.audit/AuditAppendRejection.CAPACITY_EXCEEDED|null[0]
+    enum entry HEAD_CONFLICT // io.dataloom.governance.audit/AuditAppendRejection.HEAD_CONFLICT|null[0]
+
+    final val entries // io.dataloom.governance.audit/AuditAppendRejection.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.governance.audit/AuditAppendRejection> // io.dataloom.governance.audit/AuditAppendRejection.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.governance.audit/AuditAppendRejection // io.dataloom.governance.audit/AuditAppendRejection.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.governance.audit/AuditAppendRejection> // io.dataloom.governance.audit/AuditAppendRejection.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.governance.audit/AuditVerificationFailure : kotlin/Enum<io.dataloom.governance.audit/AuditVerificationFailure> { // io.dataloom.governance.audit/AuditVerificationFailure|null[0]
+    enum entry ANCHOR_MISMATCH // io.dataloom.governance.audit/AuditVerificationFailure.ANCHOR_MISMATCH|null[0]
+    enum entry ANCHOR_TRUNCATED // io.dataloom.governance.audit/AuditVerificationFailure.ANCHOR_TRUNCATED|null[0]
+    enum entry MAC_MISMATCH // io.dataloom.governance.audit/AuditVerificationFailure.MAC_MISMATCH|null[0]
+    enum entry PREVIOUS_LINK_MISMATCH // io.dataloom.governance.audit/AuditVerificationFailure.PREVIOUS_LINK_MISMATCH|null[0]
+    enum entry SEQUENCE_MISMATCH // io.dataloom.governance.audit/AuditVerificationFailure.SEQUENCE_MISMATCH|null[0]
+
+    final val entries // io.dataloom.governance.audit/AuditVerificationFailure.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.governance.audit/AuditVerificationFailure> // io.dataloom.governance.audit/AuditVerificationFailure.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.governance.audit/AuditVerificationFailure // io.dataloom.governance.audit/AuditVerificationFailure.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.governance.audit/AuditVerificationFailure> // io.dataloom.governance.audit/AuditVerificationFailure.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.governance.rbac/AccessDecisionReason : kotlin/Enum<io.dataloom.governance.rbac/AccessDecisionReason> { // io.dataloom.governance.rbac/AccessDecisionReason|null[0]
+    enum entry ALLOWED_BY_ROLE // io.dataloom.governance.rbac/AccessDecisionReason.ALLOWED_BY_ROLE|null[0]
+    enum entry EXPLICIT_DENY // io.dataloom.governance.rbac/AccessDecisionReason.EXPLICIT_DENY|null[0]
+    enum entry NO_MATCHING_PERMISSION // io.dataloom.governance.rbac/AccessDecisionReason.NO_MATCHING_PERMISSION|null[0]
+    enum entry NO_ROLE_BINDING // io.dataloom.governance.rbac/AccessDecisionReason.NO_ROLE_BINDING|null[0]
+    enum entry TENANT_MISMATCH // io.dataloom.governance.rbac/AccessDecisionReason.TENANT_MISMATCH|null[0]
+
+    final val entries // io.dataloom.governance.rbac/AccessDecisionReason.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.governance.rbac/AccessDecisionReason> // io.dataloom.governance.rbac/AccessDecisionReason.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.governance.rbac/AccessDecisionReason // io.dataloom.governance.rbac/AccessDecisionReason.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.governance.rbac/AccessDecisionReason> // io.dataloom.governance.rbac/AccessDecisionReason.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.governance.rbac/Action : kotlin/Enum<io.dataloom.governance.rbac/Action> { // io.dataloom.governance.rbac/Action|null[0]
+    enum entry ADMINISTER // io.dataloom.governance.rbac/Action.ADMINISTER|null[0]
+    enum entry EXECUTE // io.dataloom.governance.rbac/Action.EXECUTE|null[0]
+    enum entry READ // io.dataloom.governance.rbac/Action.READ|null[0]
+    enum entry WRITE // io.dataloom.governance.rbac/Action.WRITE|null[0]
+
+    final val entries // io.dataloom.governance.rbac/Action.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.governance.rbac/Action> // io.dataloom.governance.rbac/Action.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.governance.rbac/Action // io.dataloom.governance.rbac/Action.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.governance.rbac/Action> // io.dataloom.governance.rbac/Action.values|values#static(){}[0]
+}
+
+abstract interface io.dataloom.governance.audit/AuditStore { // io.dataloom.governance.audit/AuditStore|null[0]
+    abstract suspend fun append(io.dataloom.governance.audit/AuditRecord) // io.dataloom.governance.audit/AuditStore.append|append(io.dataloom.governance.audit.AuditRecord){}[0]
+    abstract suspend fun head(): io.dataloom.governance.audit/AuditRecord? // io.dataloom.governance.audit/AuditStore.head|head(){}[0]
+    abstract suspend fun readAll(): kotlin.collections/List<io.dataloom.governance.audit/AuditRecord> // io.dataloom.governance.audit/AuditStore.readAll|readAll(){}[0]
+}
+
+sealed interface io.dataloom.governance.audit/AuditVerificationResult { // io.dataloom.governance.audit/AuditVerificationResult|null[0]
+    final class Invalid : io.dataloom.governance.audit/AuditVerificationResult { // io.dataloom.governance.audit/AuditVerificationResult.Invalid|null[0]
+        constructor <init>(io.dataloom.governance.audit/AuditVerificationFailure, kotlin/Int?) // io.dataloom.governance.audit/AuditVerificationResult.Invalid.<init>|<init>(io.dataloom.governance.audit.AuditVerificationFailure;kotlin.Int?){}[0]
+
+        final val failure // io.dataloom.governance.audit/AuditVerificationResult.Invalid.failure|{}failure[0]
+            final fun <get-failure>(): io.dataloom.governance.audit/AuditVerificationFailure // io.dataloom.governance.audit/AuditVerificationResult.Invalid.failure.<get-failure>|<get-failure>(){}[0]
+        final val recordIndex // io.dataloom.governance.audit/AuditVerificationResult.Invalid.recordIndex|{}recordIndex[0]
+            final fun <get-recordIndex>(): kotlin/Int? // io.dataloom.governance.audit/AuditVerificationResult.Invalid.recordIndex.<get-recordIndex>|<get-recordIndex>(){}[0]
+
+        final fun component1(): io.dataloom.governance.audit/AuditVerificationFailure // io.dataloom.governance.audit/AuditVerificationResult.Invalid.component1|component1(){}[0]
+        final fun component2(): kotlin/Int? // io.dataloom.governance.audit/AuditVerificationResult.Invalid.component2|component2(){}[0]
+        final fun copy(io.dataloom.governance.audit/AuditVerificationFailure = ..., kotlin/Int? = ...): io.dataloom.governance.audit/AuditVerificationResult.Invalid // io.dataloom.governance.audit/AuditVerificationResult.Invalid.copy|copy(io.dataloom.governance.audit.AuditVerificationFailure;kotlin.Int?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.audit/AuditVerificationResult.Invalid.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.governance.audit/AuditVerificationResult.Invalid.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.governance.audit/AuditVerificationResult.Invalid.toString|toString(){}[0]
+    }
+
+    final class Valid : io.dataloom.governance.audit/AuditVerificationResult { // io.dataloom.governance.audit/AuditVerificationResult.Valid|null[0]
+        constructor <init>(kotlin/Int, io.dataloom.governance.audit/AuditAnchor?, kotlin/Boolean) // io.dataloom.governance.audit/AuditVerificationResult.Valid.<init>|<init>(kotlin.Int;io.dataloom.governance.audit.AuditAnchor?;kotlin.Boolean){}[0]
+
+        final val anchorVerified // io.dataloom.governance.audit/AuditVerificationResult.Valid.anchorVerified|{}anchorVerified[0]
+            final fun <get-anchorVerified>(): kotlin/Boolean // io.dataloom.governance.audit/AuditVerificationResult.Valid.anchorVerified.<get-anchorVerified>|<get-anchorVerified>(){}[0]
+        final val head // io.dataloom.governance.audit/AuditVerificationResult.Valid.head|{}head[0]
+            final fun <get-head>(): io.dataloom.governance.audit/AuditAnchor? // io.dataloom.governance.audit/AuditVerificationResult.Valid.head.<get-head>|<get-head>(){}[0]
+        final val recordCount // io.dataloom.governance.audit/AuditVerificationResult.Valid.recordCount|{}recordCount[0]
+            final fun <get-recordCount>(): kotlin/Int // io.dataloom.governance.audit/AuditVerificationResult.Valid.recordCount.<get-recordCount>|<get-recordCount>(){}[0]
+
+        final fun component1(): kotlin/Int // io.dataloom.governance.audit/AuditVerificationResult.Valid.component1|component1(){}[0]
+        final fun component2(): io.dataloom.governance.audit/AuditAnchor? // io.dataloom.governance.audit/AuditVerificationResult.Valid.component2|component2(){}[0]
+        final fun component3(): kotlin/Boolean // io.dataloom.governance.audit/AuditVerificationResult.Valid.component3|component3(){}[0]
+        final fun copy(kotlin/Int = ..., io.dataloom.governance.audit/AuditAnchor? = ..., kotlin/Boolean = ...): io.dataloom.governance.audit/AuditVerificationResult.Valid // io.dataloom.governance.audit/AuditVerificationResult.Valid.copy|copy(kotlin.Int;io.dataloom.governance.audit.AuditAnchor?;kotlin.Boolean){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.audit/AuditVerificationResult.Valid.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.governance.audit/AuditVerificationResult.Valid.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.governance.audit/AuditVerificationResult.Valid.toString|toString(){}[0]
+    }
+}
+
+final class io.dataloom.governance.audit/AuditAnchor { // io.dataloom.governance.audit/AuditAnchor|null[0]
+    constructor <init>(kotlin/Long, io.dataloom.api.security/DataLoomMac) // io.dataloom.governance.audit/AuditAnchor.<init>|<init>(kotlin.Long;io.dataloom.api.security.DataLoomMac){}[0]
+
+    final val mac // io.dataloom.governance.audit/AuditAnchor.mac|{}mac[0]
+        final fun <get-mac>(): io.dataloom.api.security/DataLoomMac // io.dataloom.governance.audit/AuditAnchor.mac.<get-mac>|<get-mac>(){}[0]
+    final val sequence // io.dataloom.governance.audit/AuditAnchor.sequence|{}sequence[0]
+        final fun <get-sequence>(): kotlin/Long // io.dataloom.governance.audit/AuditAnchor.sequence.<get-sequence>|<get-sequence>(){}[0]
+
+    final fun component1(): kotlin/Long // io.dataloom.governance.audit/AuditAnchor.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.security/DataLoomMac // io.dataloom.governance.audit/AuditAnchor.component2|component2(){}[0]
+    final fun copy(kotlin/Long = ..., io.dataloom.api.security/DataLoomMac = ...): io.dataloom.governance.audit/AuditAnchor // io.dataloom.governance.audit/AuditAnchor.copy|copy(kotlin.Long;io.dataloom.api.security.DataLoomMac){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.audit/AuditAnchor.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.governance.audit/AuditAnchor.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.governance.audit/AuditAnchor.toString|toString(){}[0]
+}
+
+final class io.dataloom.governance.audit/AuditAppendRejectedException : kotlin/IllegalStateException { // io.dataloom.governance.audit/AuditAppendRejectedException|null[0]
+    constructor <init>(io.dataloom.governance.audit/AuditAppendRejection, kotlin/String) // io.dataloom.governance.audit/AuditAppendRejectedException.<init>|<init>(io.dataloom.governance.audit.AuditAppendRejection;kotlin.String){}[0]
+
+    final val rejection // io.dataloom.governance.audit/AuditAppendRejectedException.rejection|{}rejection[0]
+        final fun <get-rejection>(): io.dataloom.governance.audit/AuditAppendRejection // io.dataloom.governance.audit/AuditAppendRejectedException.rejection.<get-rejection>|<get-rejection>(){}[0]
+}
+
+final class io.dataloom.governance.audit/AuditChainVerifier { // io.dataloom.governance.audit/AuditChainVerifier|null[0]
+    constructor <init>(io.dataloom.api.security/DataLoomHmacCalculator) // io.dataloom.governance.audit/AuditChainVerifier.<init>|<init>(io.dataloom.api.security.DataLoomHmacCalculator){}[0]
+
+    final fun verify(kotlin.collections/List<io.dataloom.governance.audit/AuditRecord>, kotlin/ByteArray, io.dataloom.governance.audit/AuditAnchor? = ...): io.dataloom.governance.audit/AuditVerificationResult // io.dataloom.governance.audit/AuditChainVerifier.verify|verify(kotlin.collections.List<io.dataloom.governance.audit.AuditRecord>;kotlin.ByteArray;io.dataloom.governance.audit.AuditAnchor?){}[0]
+}
+
+final class io.dataloom.governance.audit/AuditEvent { // io.dataloom.governance.audit/AuditEvent|null[0]
+    constructor <init>(io.dataloom.api.identifier/TenantId, io.dataloom.governance.rbac/PrincipalId, io.dataloom.governance.audit/AuditEventType, io.dataloom.api.context/DataLoomMetadata = ...) // io.dataloom.governance.audit/AuditEvent.<init>|<init>(io.dataloom.api.identifier.TenantId;io.dataloom.governance.rbac.PrincipalId;io.dataloom.governance.audit.AuditEventType;io.dataloom.api.context.DataLoomMetadata){}[0]
+
+    final val details // io.dataloom.governance.audit/AuditEvent.details|{}details[0]
+        final fun <get-details>(): io.dataloom.api.context/DataLoomMetadata // io.dataloom.governance.audit/AuditEvent.details.<get-details>|<get-details>(){}[0]
+    final val eventType // io.dataloom.governance.audit/AuditEvent.eventType|{}eventType[0]
+        final fun <get-eventType>(): io.dataloom.governance.audit/AuditEventType // io.dataloom.governance.audit/AuditEvent.eventType.<get-eventType>|<get-eventType>(){}[0]
+    final val principalId // io.dataloom.governance.audit/AuditEvent.principalId|{}principalId[0]
+        final fun <get-principalId>(): io.dataloom.governance.rbac/PrincipalId // io.dataloom.governance.audit/AuditEvent.principalId.<get-principalId>|<get-principalId>(){}[0]
+    final val tenantId // io.dataloom.governance.audit/AuditEvent.tenantId|{}tenantId[0]
+        final fun <get-tenantId>(): io.dataloom.api.identifier/TenantId // io.dataloom.governance.audit/AuditEvent.tenantId.<get-tenantId>|<get-tenantId>(){}[0]
+
+    final fun component1(): io.dataloom.api.identifier/TenantId // io.dataloom.governance.audit/AuditEvent.component1|component1(){}[0]
+    final fun component2(): io.dataloom.governance.rbac/PrincipalId // io.dataloom.governance.audit/AuditEvent.component2|component2(){}[0]
+    final fun component3(): io.dataloom.governance.audit/AuditEventType // io.dataloom.governance.audit/AuditEvent.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.context/DataLoomMetadata // io.dataloom.governance.audit/AuditEvent.component4|component4(){}[0]
+    final fun copy(io.dataloom.api.identifier/TenantId = ..., io.dataloom.governance.rbac/PrincipalId = ..., io.dataloom.governance.audit/AuditEventType = ..., io.dataloom.api.context/DataLoomMetadata = ...): io.dataloom.governance.audit/AuditEvent // io.dataloom.governance.audit/AuditEvent.copy|copy(io.dataloom.api.identifier.TenantId;io.dataloom.governance.rbac.PrincipalId;io.dataloom.governance.audit.AuditEventType;io.dataloom.api.context.DataLoomMetadata){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.audit/AuditEvent.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.governance.audit/AuditEvent.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.governance.audit/AuditEvent.toString|toString(){}[0]
+
+    final object Companion { // io.dataloom.governance.audit/AuditEvent.Companion|null[0]
+        final const val MAXIMUM_DETAIL_ENTRIES // io.dataloom.governance.audit/AuditEvent.Companion.MAXIMUM_DETAIL_ENTRIES|{}MAXIMUM_DETAIL_ENTRIES[0]
+            final fun <get-MAXIMUM_DETAIL_ENTRIES>(): kotlin/Int // io.dataloom.governance.audit/AuditEvent.Companion.MAXIMUM_DETAIL_ENTRIES.<get-MAXIMUM_DETAIL_ENTRIES>|<get-MAXIMUM_DETAIL_ENTRIES>(){}[0]
+        final const val MAXIMUM_DETAIL_LENGTH // io.dataloom.governance.audit/AuditEvent.Companion.MAXIMUM_DETAIL_LENGTH|{}MAXIMUM_DETAIL_LENGTH[0]
+            final fun <get-MAXIMUM_DETAIL_LENGTH>(): kotlin/Int // io.dataloom.governance.audit/AuditEvent.Companion.MAXIMUM_DETAIL_LENGTH.<get-MAXIMUM_DETAIL_LENGTH>|<get-MAXIMUM_DETAIL_LENGTH>(){}[0]
+    }
+}
+
+final class io.dataloom.governance.audit/AuditLog { // io.dataloom.governance.audit/AuditLog|null[0]
+    constructor <init>(io.dataloom.governance.audit/AuditStore, io.dataloom.api.security/DataLoomHmacCalculator, io.dataloom.api.time/DataLoomClock, kotlin/ByteArray) // io.dataloom.governance.audit/AuditLog.<init>|<init>(io.dataloom.governance.audit.AuditStore;io.dataloom.api.security.DataLoomHmacCalculator;io.dataloom.api.time.DataLoomClock;kotlin.ByteArray){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.governance.audit/AuditLog.toString|toString(){}[0]
+    final suspend fun anchor(): io.dataloom.governance.audit/AuditAnchor? // io.dataloom.governance.audit/AuditLog.anchor|anchor(){}[0]
+    final suspend fun append(io.dataloom.governance.audit/AuditEvent): io.dataloom.governance.audit/AuditRecord // io.dataloom.governance.audit/AuditLog.append|append(io.dataloom.governance.audit.AuditEvent){}[0]
+    final suspend fun verify(io.dataloom.governance.audit/AuditAnchor? = ...): io.dataloom.governance.audit/AuditVerificationResult // io.dataloom.governance.audit/AuditLog.verify|verify(io.dataloom.governance.audit.AuditAnchor?){}[0]
+
+    final object Companion { // io.dataloom.governance.audit/AuditLog.Companion|null[0]
+        final val MAC_ALGORITHM // io.dataloom.governance.audit/AuditLog.Companion.MAC_ALGORITHM|{}MAC_ALGORITHM[0]
+            final fun <get-MAC_ALGORITHM>(): io.dataloom.api.security/HmacAlgorithm // io.dataloom.governance.audit/AuditLog.Companion.MAC_ALGORITHM.<get-MAC_ALGORITHM>|<get-MAC_ALGORITHM>(){}[0]
+    }
+}
+
+final class io.dataloom.governance.audit/AuditRecord { // io.dataloom.governance.audit/AuditRecord|null[0]
+    constructor <init>(kotlin/Long, io.dataloom.api.time/DataLoomInstant, io.dataloom.api.security/DataLoomMac?, io.dataloom.governance.audit/AuditEvent, io.dataloom.api.security/DataLoomMac) // io.dataloom.governance.audit/AuditRecord.<init>|<init>(kotlin.Long;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.security.DataLoomMac?;io.dataloom.governance.audit.AuditEvent;io.dataloom.api.security.DataLoomMac){}[0]
+
+    final val event // io.dataloom.governance.audit/AuditRecord.event|{}event[0]
+        final fun <get-event>(): io.dataloom.governance.audit/AuditEvent // io.dataloom.governance.audit/AuditRecord.event.<get-event>|<get-event>(){}[0]
+    final val mac // io.dataloom.governance.audit/AuditRecord.mac|{}mac[0]
+        final fun <get-mac>(): io.dataloom.api.security/DataLoomMac // io.dataloom.governance.audit/AuditRecord.mac.<get-mac>|<get-mac>(){}[0]
+    final val previousMac // io.dataloom.governance.audit/AuditRecord.previousMac|{}previousMac[0]
+        final fun <get-previousMac>(): io.dataloom.api.security/DataLoomMac? // io.dataloom.governance.audit/AuditRecord.previousMac.<get-previousMac>|<get-previousMac>(){}[0]
+    final val recordedAt // io.dataloom.governance.audit/AuditRecord.recordedAt|{}recordedAt[0]
+        final fun <get-recordedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.governance.audit/AuditRecord.recordedAt.<get-recordedAt>|<get-recordedAt>(){}[0]
+    final val sequence // io.dataloom.governance.audit/AuditRecord.sequence|{}sequence[0]
+        final fun <get-sequence>(): kotlin/Long // io.dataloom.governance.audit/AuditRecord.sequence.<get-sequence>|<get-sequence>(){}[0]
+
+    final fun component1(): kotlin/Long // io.dataloom.governance.audit/AuditRecord.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.time/DataLoomInstant // io.dataloom.governance.audit/AuditRecord.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.security/DataLoomMac? // io.dataloom.governance.audit/AuditRecord.component3|component3(){}[0]
+    final fun component4(): io.dataloom.governance.audit/AuditEvent // io.dataloom.governance.audit/AuditRecord.component4|component4(){}[0]
+    final fun component5(): io.dataloom.api.security/DataLoomMac // io.dataloom.governance.audit/AuditRecord.component5|component5(){}[0]
+    final fun copy(kotlin/Long = ..., io.dataloom.api.time/DataLoomInstant = ..., io.dataloom.api.security/DataLoomMac? = ..., io.dataloom.governance.audit/AuditEvent = ..., io.dataloom.api.security/DataLoomMac = ...): io.dataloom.governance.audit/AuditRecord // io.dataloom.governance.audit/AuditRecord.copy|copy(kotlin.Long;io.dataloom.api.time.DataLoomInstant;io.dataloom.api.security.DataLoomMac?;io.dataloom.governance.audit.AuditEvent;io.dataloom.api.security.DataLoomMac){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.audit/AuditRecord.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.governance.audit/AuditRecord.hashCode|hashCode(){}[0]
+    final fun toAnchor(): io.dataloom.governance.audit/AuditAnchor // io.dataloom.governance.audit/AuditRecord.toAnchor|toAnchor(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.governance.audit/AuditRecord.toString|toString(){}[0]
+}
+
+final class io.dataloom.governance.audit/InMemoryAuditStore : io.dataloom.governance.audit/AuditStore { // io.dataloom.governance.audit/InMemoryAuditStore|null[0]
+    constructor <init>(kotlin/Int = ...) // io.dataloom.governance.audit/InMemoryAuditStore.<init>|<init>(kotlin.Int){}[0]
+
+    final val capacity // io.dataloom.governance.audit/InMemoryAuditStore.capacity|{}capacity[0]
+        final fun <get-capacity>(): kotlin/Int // io.dataloom.governance.audit/InMemoryAuditStore.capacity.<get-capacity>|<get-capacity>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.governance.audit/InMemoryAuditStore.toString|toString(){}[0]
+    final suspend fun append(io.dataloom.governance.audit/AuditRecord) // io.dataloom.governance.audit/InMemoryAuditStore.append|append(io.dataloom.governance.audit.AuditRecord){}[0]
+    final suspend fun head(): io.dataloom.governance.audit/AuditRecord? // io.dataloom.governance.audit/InMemoryAuditStore.head|head(){}[0]
+    final suspend fun readAll(): kotlin.collections/List<io.dataloom.governance.audit/AuditRecord> // io.dataloom.governance.audit/InMemoryAuditStore.readAll|readAll(){}[0]
+
+    final object Companion { // io.dataloom.governance.audit/InMemoryAuditStore.Companion|null[0]
+        final const val DEFAULT_CAPACITY // io.dataloom.governance.audit/InMemoryAuditStore.Companion.DEFAULT_CAPACITY|{}DEFAULT_CAPACITY[0]
+            final fun <get-DEFAULT_CAPACITY>(): kotlin/Int // io.dataloom.governance.audit/InMemoryAuditStore.Companion.DEFAULT_CAPACITY.<get-DEFAULT_CAPACITY>|<get-DEFAULT_CAPACITY>(){}[0]
+    }
+}
+
+final class io.dataloom.governance.rbac/AccessRequest { // io.dataloom.governance.rbac/AccessRequest|null[0]
+    constructor <init>(io.dataloom.governance.rbac/Principal, io.dataloom.governance.rbac/Action, io.dataloom.governance.rbac/ResourceRef) // io.dataloom.governance.rbac/AccessRequest.<init>|<init>(io.dataloom.governance.rbac.Principal;io.dataloom.governance.rbac.Action;io.dataloom.governance.rbac.ResourceRef){}[0]
+
+    final val action // io.dataloom.governance.rbac/AccessRequest.action|{}action[0]
+        final fun <get-action>(): io.dataloom.governance.rbac/Action // io.dataloom.governance.rbac/AccessRequest.action.<get-action>|<get-action>(){}[0]
+    final val principal // io.dataloom.governance.rbac/AccessRequest.principal|{}principal[0]
+        final fun <get-principal>(): io.dataloom.governance.rbac/Principal // io.dataloom.governance.rbac/AccessRequest.principal.<get-principal>|<get-principal>(){}[0]
+    final val requiredPermission // io.dataloom.governance.rbac/AccessRequest.requiredPermission|{}requiredPermission[0]
+        final fun <get-requiredPermission>(): io.dataloom.governance.rbac/Permission // io.dataloom.governance.rbac/AccessRequest.requiredPermission.<get-requiredPermission>|<get-requiredPermission>(){}[0]
+    final val resource // io.dataloom.governance.rbac/AccessRequest.resource|{}resource[0]
+        final fun <get-resource>(): io.dataloom.governance.rbac/ResourceRef // io.dataloom.governance.rbac/AccessRequest.resource.<get-resource>|<get-resource>(){}[0]
+
+    final fun component1(): io.dataloom.governance.rbac/Principal // io.dataloom.governance.rbac/AccessRequest.component1|component1(){}[0]
+    final fun component2(): io.dataloom.governance.rbac/Action // io.dataloom.governance.rbac/AccessRequest.component2|component2(){}[0]
+    final fun component3(): io.dataloom.governance.rbac/ResourceRef // io.dataloom.governance.rbac/AccessRequest.component3|component3(){}[0]
+    final fun copy(io.dataloom.governance.rbac/Principal = ..., io.dataloom.governance.rbac/Action = ..., io.dataloom.governance.rbac/ResourceRef = ...): io.dataloom.governance.rbac/AccessRequest // io.dataloom.governance.rbac/AccessRequest.copy|copy(io.dataloom.governance.rbac.Principal;io.dataloom.governance.rbac.Action;io.dataloom.governance.rbac.ResourceRef){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.rbac/AccessRequest.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.governance.rbac/AccessRequest.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.governance.rbac/AccessRequest.toString|toString(){}[0]
+}
+
+final class io.dataloom.governance.rbac/Permission { // io.dataloom.governance.rbac/Permission|null[0]
+    constructor <init>(io.dataloom.governance.rbac/Action, io.dataloom.governance.rbac/ResourceType) // io.dataloom.governance.rbac/Permission.<init>|<init>(io.dataloom.governance.rbac.Action;io.dataloom.governance.rbac.ResourceType){}[0]
+
+    final val action // io.dataloom.governance.rbac/Permission.action|{}action[0]
+        final fun <get-action>(): io.dataloom.governance.rbac/Action // io.dataloom.governance.rbac/Permission.action.<get-action>|<get-action>(){}[0]
+    final val resourceType // io.dataloom.governance.rbac/Permission.resourceType|{}resourceType[0]
+        final fun <get-resourceType>(): io.dataloom.governance.rbac/ResourceType // io.dataloom.governance.rbac/Permission.resourceType.<get-resourceType>|<get-resourceType>(){}[0]
+
+    final fun component1(): io.dataloom.governance.rbac/Action // io.dataloom.governance.rbac/Permission.component1|component1(){}[0]
+    final fun component2(): io.dataloom.governance.rbac/ResourceType // io.dataloom.governance.rbac/Permission.component2|component2(){}[0]
+    final fun copy(io.dataloom.governance.rbac/Action = ..., io.dataloom.governance.rbac/ResourceType = ...): io.dataloom.governance.rbac/Permission // io.dataloom.governance.rbac/Permission.copy|copy(io.dataloom.governance.rbac.Action;io.dataloom.governance.rbac.ResourceType){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.rbac/Permission.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.governance.rbac/Permission.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.governance.rbac/Permission.toString|toString(){}[0]
+}
+
+final class io.dataloom.governance.rbac/Principal { // io.dataloom.governance.rbac/Principal|null[0]
+    constructor <init>(io.dataloom.governance.rbac/PrincipalId, io.dataloom.api.identifier/TenantId) // io.dataloom.governance.rbac/Principal.<init>|<init>(io.dataloom.governance.rbac.PrincipalId;io.dataloom.api.identifier.TenantId){}[0]
+
+    final val id // io.dataloom.governance.rbac/Principal.id|{}id[0]
+        final fun <get-id>(): io.dataloom.governance.rbac/PrincipalId // io.dataloom.governance.rbac/Principal.id.<get-id>|<get-id>(){}[0]
+    final val tenantId // io.dataloom.governance.rbac/Principal.tenantId|{}tenantId[0]
+        final fun <get-tenantId>(): io.dataloom.api.identifier/TenantId // io.dataloom.governance.rbac/Principal.tenantId.<get-tenantId>|<get-tenantId>(){}[0]
+
+    final fun component1(): io.dataloom.governance.rbac/PrincipalId // io.dataloom.governance.rbac/Principal.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.identifier/TenantId // io.dataloom.governance.rbac/Principal.component2|component2(){}[0]
+    final fun copy(io.dataloom.governance.rbac/PrincipalId = ..., io.dataloom.api.identifier/TenantId = ...): io.dataloom.governance.rbac/Principal // io.dataloom.governance.rbac/Principal.copy|copy(io.dataloom.governance.rbac.PrincipalId;io.dataloom.api.identifier.TenantId){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.rbac/Principal.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.governance.rbac/Principal.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.governance.rbac/Principal.toString|toString(){}[0]
+}
+
+final class io.dataloom.governance.rbac/RbacEvaluator { // io.dataloom.governance.rbac/RbacEvaluator|null[0]
+    constructor <init>(io.dataloom.governance.rbac/RbacPolicy) // io.dataloom.governance.rbac/RbacEvaluator.<init>|<init>(io.dataloom.governance.rbac.RbacPolicy){}[0]
+
+    final fun evaluate(io.dataloom.governance.rbac/AccessRequest): io.dataloom.api.policy/PolicyCheckOutcome // io.dataloom.governance.rbac/RbacEvaluator.evaluate|evaluate(io.dataloom.governance.rbac.AccessRequest){}[0]
+}
+
+final class io.dataloom.governance.rbac/RbacPolicy { // io.dataloom.governance.rbac/RbacPolicy|null[0]
+    constructor <init>(kotlin.collections/Collection<io.dataloom.governance.rbac/Role>, kotlin.collections/Collection<io.dataloom.governance.rbac/RoleBinding>) // io.dataloom.governance.rbac/RbacPolicy.<init>|<init>(kotlin.collections.Collection<io.dataloom.governance.rbac.Role>;kotlin.collections.Collection<io.dataloom.governance.rbac.RoleBinding>){}[0]
+
+    final val bindings // io.dataloom.governance.rbac/RbacPolicy.bindings|{}bindings[0]
+        final fun <get-bindings>(): kotlin.collections/List<io.dataloom.governance.rbac/RoleBinding> // io.dataloom.governance.rbac/RbacPolicy.bindings.<get-bindings>|<get-bindings>(){}[0]
+    final val roles // io.dataloom.governance.rbac/RbacPolicy.roles|{}roles[0]
+        final fun <get-roles>(): kotlin.collections/List<io.dataloom.governance.rbac/Role> // io.dataloom.governance.rbac/RbacPolicy.roles.<get-roles>|<get-roles>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.governance.rbac/RbacPolicy.toString|toString(){}[0]
+
+    final object Companion { // io.dataloom.governance.rbac/RbacPolicy.Companion|null[0]
+        final const val MAXIMUM_BINDINGS // io.dataloom.governance.rbac/RbacPolicy.Companion.MAXIMUM_BINDINGS|{}MAXIMUM_BINDINGS[0]
+            final fun <get-MAXIMUM_BINDINGS>(): kotlin/Int // io.dataloom.governance.rbac/RbacPolicy.Companion.MAXIMUM_BINDINGS.<get-MAXIMUM_BINDINGS>|<get-MAXIMUM_BINDINGS>(){}[0]
+        final const val MAXIMUM_ROLES // io.dataloom.governance.rbac/RbacPolicy.Companion.MAXIMUM_ROLES|{}MAXIMUM_ROLES[0]
+            final fun <get-MAXIMUM_ROLES>(): kotlin/Int // io.dataloom.governance.rbac/RbacPolicy.Companion.MAXIMUM_ROLES.<get-MAXIMUM_ROLES>|<get-MAXIMUM_ROLES>(){}[0]
+    }
+}
+
+final class io.dataloom.governance.rbac/ResourceRef { // io.dataloom.governance.rbac/ResourceRef|null[0]
+    constructor <init>(io.dataloom.api.identifier/TenantId, io.dataloom.governance.rbac/ResourceType) // io.dataloom.governance.rbac/ResourceRef.<init>|<init>(io.dataloom.api.identifier.TenantId;io.dataloom.governance.rbac.ResourceType){}[0]
+
+    final val tenantId // io.dataloom.governance.rbac/ResourceRef.tenantId|{}tenantId[0]
+        final fun <get-tenantId>(): io.dataloom.api.identifier/TenantId // io.dataloom.governance.rbac/ResourceRef.tenantId.<get-tenantId>|<get-tenantId>(){}[0]
+    final val type // io.dataloom.governance.rbac/ResourceRef.type|{}type[0]
+        final fun <get-type>(): io.dataloom.governance.rbac/ResourceType // io.dataloom.governance.rbac/ResourceRef.type.<get-type>|<get-type>(){}[0]
+
+    final fun component1(): io.dataloom.api.identifier/TenantId // io.dataloom.governance.rbac/ResourceRef.component1|component1(){}[0]
+    final fun component2(): io.dataloom.governance.rbac/ResourceType // io.dataloom.governance.rbac/ResourceRef.component2|component2(){}[0]
+    final fun copy(io.dataloom.api.identifier/TenantId = ..., io.dataloom.governance.rbac/ResourceType = ...): io.dataloom.governance.rbac/ResourceRef // io.dataloom.governance.rbac/ResourceRef.copy|copy(io.dataloom.api.identifier.TenantId;io.dataloom.governance.rbac.ResourceType){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.rbac/ResourceRef.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.governance.rbac/ResourceRef.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.governance.rbac/ResourceRef.toString|toString(){}[0]
+}
+
+final class io.dataloom.governance.rbac/Role { // io.dataloom.governance.rbac/Role|null[0]
+    constructor <init>(io.dataloom.governance.rbac/RoleId, kotlin.collections/Set<io.dataloom.governance.rbac/Permission>, kotlin.collections/Set<io.dataloom.governance.rbac/Permission> = ...) // io.dataloom.governance.rbac/Role.<init>|<init>(io.dataloom.governance.rbac.RoleId;kotlin.collections.Set<io.dataloom.governance.rbac.Permission>;kotlin.collections.Set<io.dataloom.governance.rbac.Permission>){}[0]
+
+    final val allow // io.dataloom.governance.rbac/Role.allow|{}allow[0]
+        final fun <get-allow>(): kotlin.collections/Set<io.dataloom.governance.rbac/Permission> // io.dataloom.governance.rbac/Role.allow.<get-allow>|<get-allow>(){}[0]
+    final val deny // io.dataloom.governance.rbac/Role.deny|{}deny[0]
+        final fun <get-deny>(): kotlin.collections/Set<io.dataloom.governance.rbac/Permission> // io.dataloom.governance.rbac/Role.deny.<get-deny>|<get-deny>(){}[0]
+    final val id // io.dataloom.governance.rbac/Role.id|{}id[0]
+        final fun <get-id>(): io.dataloom.governance.rbac/RoleId // io.dataloom.governance.rbac/Role.id.<get-id>|<get-id>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.rbac/Role.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.governance.rbac/Role.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.governance.rbac/Role.toString|toString(){}[0]
+
+    final object Companion { // io.dataloom.governance.rbac/Role.Companion|null[0]
+        final const val MAXIMUM_PERMISSIONS_PER_SET // io.dataloom.governance.rbac/Role.Companion.MAXIMUM_PERMISSIONS_PER_SET|{}MAXIMUM_PERMISSIONS_PER_SET[0]
+            final fun <get-MAXIMUM_PERMISSIONS_PER_SET>(): kotlin/Int // io.dataloom.governance.rbac/Role.Companion.MAXIMUM_PERMISSIONS_PER_SET.<get-MAXIMUM_PERMISSIONS_PER_SET>|<get-MAXIMUM_PERMISSIONS_PER_SET>(){}[0]
+    }
+}
+
+final class io.dataloom.governance.rbac/RoleBinding { // io.dataloom.governance.rbac/RoleBinding|null[0]
+    constructor <init>(io.dataloom.governance.rbac/PrincipalId, io.dataloom.api.identifier/TenantId, io.dataloom.governance.rbac/RoleId) // io.dataloom.governance.rbac/RoleBinding.<init>|<init>(io.dataloom.governance.rbac.PrincipalId;io.dataloom.api.identifier.TenantId;io.dataloom.governance.rbac.RoleId){}[0]
+
+    final val principalId // io.dataloom.governance.rbac/RoleBinding.principalId|{}principalId[0]
+        final fun <get-principalId>(): io.dataloom.governance.rbac/PrincipalId // io.dataloom.governance.rbac/RoleBinding.principalId.<get-principalId>|<get-principalId>(){}[0]
+    final val roleId // io.dataloom.governance.rbac/RoleBinding.roleId|{}roleId[0]
+        final fun <get-roleId>(): io.dataloom.governance.rbac/RoleId // io.dataloom.governance.rbac/RoleBinding.roleId.<get-roleId>|<get-roleId>(){}[0]
+    final val tenantId // io.dataloom.governance.rbac/RoleBinding.tenantId|{}tenantId[0]
+        final fun <get-tenantId>(): io.dataloom.api.identifier/TenantId // io.dataloom.governance.rbac/RoleBinding.tenantId.<get-tenantId>|<get-tenantId>(){}[0]
+
+    final fun component1(): io.dataloom.governance.rbac/PrincipalId // io.dataloom.governance.rbac/RoleBinding.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.identifier/TenantId // io.dataloom.governance.rbac/RoleBinding.component2|component2(){}[0]
+    final fun component3(): io.dataloom.governance.rbac/RoleId // io.dataloom.governance.rbac/RoleBinding.component3|component3(){}[0]
+    final fun copy(io.dataloom.governance.rbac/PrincipalId = ..., io.dataloom.api.identifier/TenantId = ..., io.dataloom.governance.rbac/RoleId = ...): io.dataloom.governance.rbac/RoleBinding // io.dataloom.governance.rbac/RoleBinding.copy|copy(io.dataloom.governance.rbac.PrincipalId;io.dataloom.api.identifier.TenantId;io.dataloom.governance.rbac.RoleId){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.rbac/RoleBinding.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.governance.rbac/RoleBinding.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.governance.rbac/RoleBinding.toString|toString(){}[0]
+}
+
+final value class io.dataloom.governance.audit/AuditEventType { // io.dataloom.governance.audit/AuditEventType|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.governance.audit/AuditEventType.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.governance.audit/AuditEventType.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.governance.audit/AuditEventType.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.audit/AuditEventType.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.governance.audit/AuditEventType.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.governance.audit/AuditEventType.toString|toString(){}[0]
+}
+
+final value class io.dataloom.governance.rbac/PrincipalId { // io.dataloom.governance.rbac/PrincipalId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.governance.rbac/PrincipalId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.governance.rbac/PrincipalId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.governance.rbac/PrincipalId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.rbac/PrincipalId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.governance.rbac/PrincipalId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.governance.rbac/PrincipalId.toString|toString(){}[0]
+}
+
+final value class io.dataloom.governance.rbac/ResourceType { // io.dataloom.governance.rbac/ResourceType|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.governance.rbac/ResourceType.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.governance.rbac/ResourceType.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.governance.rbac/ResourceType.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.rbac/ResourceType.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.governance.rbac/ResourceType.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.governance.rbac/ResourceType.toString|toString(){}[0]
+}
+
+final value class io.dataloom.governance.rbac/RoleId { // io.dataloom.governance.rbac/RoleId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.governance.rbac/RoleId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.governance.rbac/RoleId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.governance.rbac/RoleId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.rbac/RoleId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.governance.rbac/RoleId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.governance.rbac/RoleId.toString|toString(){}[0]
+}
+
+final object io.dataloom.governance.rbac/AccessDecisionMetadata { // io.dataloom.governance.rbac/AccessDecisionMetadata|null[0]
+    final const val DECIDING_ROLES_KEY // io.dataloom.governance.rbac/AccessDecisionMetadata.DECIDING_ROLES_KEY|{}DECIDING_ROLES_KEY[0]
+        final fun <get-DECIDING_ROLES_KEY>(): kotlin/String // io.dataloom.governance.rbac/AccessDecisionMetadata.DECIDING_ROLES_KEY.<get-DECIDING_ROLES_KEY>|<get-DECIDING_ROLES_KEY>(){}[0]
+    final const val REASON_KEY // io.dataloom.governance.rbac/AccessDecisionMetadata.REASON_KEY|{}REASON_KEY[0]
+        final fun <get-REASON_KEY>(): kotlin/String // io.dataloom.governance.rbac/AccessDecisionMetadata.REASON_KEY.<get-REASON_KEY>|<get-REASON_KEY>(){}[0]
+}
+
+final object io.dataloom.governance.rbac/TenantGuard { // io.dataloom.governance.rbac/TenantGuard|null[0]
+    final fun check(io.dataloom.governance.rbac/Principal, io.dataloom.governance.rbac/ResourceRef): io.dataloom.api.policy/PolicyCheckOutcome // io.dataloom.governance.rbac/TenantGuard.check|check(io.dataloom.governance.rbac.Principal;io.dataloom.governance.rbac.ResourceRef){}[0]
+}
+
+final val io.dataloom.governance.rbac/accessDecisionReason // io.dataloom.governance.rbac/accessDecisionReason|@io.dataloom.api.policy.PolicyCheckOutcome{}accessDecisionReason[0]
+    final fun (io.dataloom.api.policy/PolicyCheckOutcome).<get-accessDecisionReason>(): io.dataloom.governance.rbac/AccessDecisionReason? // io.dataloom.governance.rbac/accessDecisionReason.<get-accessDecisionReason>|<get-accessDecisionReason>@io.dataloom.api.policy.PolicyCheckOutcome(){}[0]
