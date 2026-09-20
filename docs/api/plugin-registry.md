@@ -73,13 +73,11 @@ prior prose summary, per this session's own standing discipline after
   (`Capability`/`GrantedCapabilities`/`isAuthorized`) directly. No new module
   dependency was actually needed. See
   [Permission-grant enforcement](#permission-grant-enforcement) below.
-- **Compatibility validation** genuinely is blocked on an undecided design
-  question, not just unbuilt: `RuntimeVersion` (`dataloom-model`) is a
-  plain non-blank `String` with no guaranteed semantic-version shape.
-  Existing call sites across this codebase use `"1.0.0"`, `"runtime-1.0.0"`,
-  and `"1.2.3"` — inconsistent formats a real comparator would need a
-  canonical parseable convention to resolve first, which is a product
-  decision this task should not make unilaterally.
+- **Compatibility validation** was blocked on an undecided design
+  question: `RuntimeVersion` (`dataloom-model`) was a plain non-blank
+  `String` with no guaranteed semantic-version shape. That is now decided
+  (strict Semantic Versioning, decision D12) and shipped; see
+  [Compatibility validation](#compatibility-validation-against-the-running-sdk-version).
 - **Hook-point callback dispatch** genuinely is blocked: each `PluginHookPoint`
   family's callback signature depends on the subsystem it extends (`#93`'s
   policy foundation, `#95`, `#96`, the runtime pipeline), none of which have
@@ -437,33 +435,13 @@ including when `operation` throws, times out, or is cancelled.
 
 ### What this does not do
 
-- **Does not check `PluginLifecycleState`.** This type enforces declared
-  time/concurrency bounds only, independent of `PluginLifecycleStateTracker`.
-  It does not require a plugin to be `ACTIVE` before running `operation`,
-  and — this is a deliberate, investigated omission, not an oversight — it
-  does not decide what happens to an already-in-flight invocation when a
-  plugin's tracked state changes mid-execution (for example
-  `ACTIVE -> DEGRADED` or `ACTIVE -> DISABLED`).
-
-  This was investigated as a candidate open design question before shipping
-  this slice, per this session's own "resolve it or flag it, don't assume"
-  discipline, and found to be a genuine open question rather than a
-  mechanical extension: `io.dataloom.core.provider.ProviderLifecycleCoordinator`,
-  the precedent this gate's own lifecycle types already follow, has no
-  analogous "cancel work in flight when state changes" behavior to mirror
-  either — it only documents that `CancellationException` during its own
-  `initialize`/`shutdown` calls propagates normally with an undefined
-  post-cancellation state, not a policy for cancelling unrelated in-flight
-  work on a state transition. More fundamentally, there is no real
-  invocation call site at all today — hook-point dispatch remains blocked
-  (see [What remains open](#what-remains-open)) — so there is no concrete
-  in-flight invocation this scenario could apply to yet, and inventing an
-  answer unilaterally here, ahead of any real caller, would be exactly the
-  kind of speculative design this project avoids building ahead of a
-  concrete consumer. Wiring this enforcer together with
-  `PluginLifecycleStateTracker` is left to whichever future slice adds a
-  real invocation call site, once that call site's own semantics make the
-  question concrete instead of hypothetical.
+- **Does not check `PluginLifecycleState` (superseded 2026-09-19).** This
+  page originally shipped the enforcer independent of
+  `PluginLifecycleStateTracker`, treating "what happens to an in-flight
+  invocation when its plugin's state changes" as an open design question.
+  Decision D13 resolved it: the enforcer is now bound to the tracker, refuses
+  new invocations unless the plugin is `ACTIVE`, and lets in-flight invocations
+  drain. See [Lifecycle gating of execution (D13)](#lifecycle-gating-of-execution-d13).
 - **Does not perform failure isolation/bulkheading beyond concurrency
   limiting.** A plugin operation throwing an ordinary exception propagates
   normally, uncaught — exactly as `TimeoutEnforcingSchedulerProvider` leaves
@@ -499,42 +477,117 @@ declarations now live in `dataloom-plugin/build.gradle.kts`.
 
 ## What remains open
 
-Everything this slice does not cover remains exactly as
+Everything this slice does not cover remains as
 `plugin-platform-first-slice-investigation.md` described it, except
-permission enforcement and execution-bounds enforcement (both now shipped,
-see above):
+permission enforcement, execution-bounds enforcement, compatibility
+validation against the running SDK, and tracker/enforcer lifecycle gating
+(all now shipped, see above):
 
-- **Compatibility validation before activation** — re-checked directly
-  against source this round (every `RuntimeVersion(...)` construction site
-  repository-wide), not just assumed still accurate: still blocked on a
-  canonical, parseable `RuntimeVersion` format decision. Current call sites
-  still use `"1.0.0"`, `"runtime-1.0.0"`, `"1.2.3"`, and plain
-  `"2.0.0"`/`"1.2.3"` inconsistently, confirming the same finding
-  `plugin-platform-first-slice-investigation.md` and this page's earlier
-  rounds already made.
-- **Hook-point callback signatures and dispatch** — re-checked directly
-  against source this round (a repository-wide search for `PluginHookPoint`):
-  still referenced only inside `dataloom-plugin-api` itself and its own
-  documentation, with zero adoption by any consuming subsystem (`#93`
-  policy, `#95`, `#96`, the runtime pipeline). Still genuinely blocked,
-  unchanged.
+- **Dependency version compatibility.** A `PluginDependency`'s declared
+  range is still not compared against the depended-upon plugin's
+  `PluginManifest.version`: `PluginVersion` has no canonical parseable
+  format. Nor is a plugin's activation gated on its dependencies' own
+  state or compatibility.
+- **Hook-point callback signatures and dispatch** — a repository-wide search
+  for `PluginHookPoint` still finds it referenced only inside
+  `dataloom-plugin-api` itself and its own documentation, with zero adoption
+  by any consuming subsystem (`#93` policy, `#95`, `#96`, the runtime
+  pipeline). Still genuinely blocked, unchanged.
 - **The certification kit** — its own unstarted design surface (what a
-  repeatable certification kit emits as evidence). Authorized transitions
-  and audit records — the other two items previously named alongside it —
-  have both shipped; see
-  [Authorized transitions ("authorized hot disable")](#authorized-transitions-authorized-hot-disable)
-  and [Audit records (operational-event bridge)](#audit-records-operational-event-bridge)
-  above.
-- **Wiring `PluginExecutionBoundsEnforcer` to `PluginLifecycleStateTracker`**
-  — see [What this does not do](#what-this-does-not-do-1) above: a genuine
-  open design question (what happens to an in-flight invocation on a state
-  transition away from `ACTIVE`), deliberately left unresolved until a real
-  invocation call site exists to make it concrete.
+  repeatable certification kit emits as evidence).
+- **Audit-trail bridging.** `PluginExecutionBoundsResult` outcomes (including
+  the new `NotActive`) are not bridged into the operational-event audit
+  trail, and the lifecycle bridge is not connected to an outbox through a
+  builder spec.
+- **Failure isolation/bulkheading** beyond concurrency limiting.
 - **A reference non-provider plugin** — demonstrating the full lifecycle
   end to end needs a real invocation call site (hook-point dispatch) to
-  exist first; execution-bounds enforcement alone is not sufficient without
-  something that actually calls a plugin.
+  exist first.
 
+## Compatibility validation against the running SDK version
+
+**Update (2026-09-19, decisions D12 and D13).**
+
+### Canonical `RuntimeVersion` (D12)
+
+`RuntimeVersion` (`dataloom-model`) is now strictly Semantic Versioning
+2.0.0: `MAJOR.MINOR.PATCH` with optional `-PRERELEASE` and `+BUILD`, no
+leading `v`, no label prefix, no leading zeros, core components within
+`Int`, at most 128 characters. Its constructor throws
+`IllegalArgumentException` for anything else, like every identifier type.
+`RuntimeVersion.parse(input)` is the non-throwing path for untrusted input and
+returns `RuntimeVersionParseResult.Parsed` or `Invalid(RuntimeVersionParseFailure)`,
+never echoing the input. `precedenceCompareTo` implements semver precedence
+(build metadata ignored, pre-release below its release); the type
+deliberately is not `Comparable` because two versions differing only in build
+metadata are unequal but tie on precedence.
+
+Every ad-hoc call site was migrated: the three `"runtime-1.0.0"` uses (two
+tests and their assertions, plus the identifier contract test) became
+`"1.0.0"`/`"1.1.0"`, and the two docs that showed the old spelling were
+corrected. `"1.0.0"`, `"1.2.3"`, and `"2.0.0"` were already canonical. The
+stored-value decoders (`dataloom-queue-room` and the Apple queue codec)
+construct `RuntimeVersion` from persisted strings and therefore now throw for
+a non-canonical stored value; that cannot occur for values written by a
+canonical `RuntimeVersion`, and nothing pre-V1 is published.
+
+### The running SDK version
+
+No version source existed anywhere (no Gradle project version, no generated
+build-config). The least invasive single source is a constant in the module
+that is "the running SDK": `DataLoomRuntimeVersion.CURRENT` in
+`dataloom-runtime`, currently `0.1.0`. It is hand-maintained, is a
+pre-release development value, and must be set to the real release version by
+the release process (DL-046) before publication. Consequence: a plugin
+declaring a minimum of `1.0.0` is correctly incompatible with a `0.x` SDK.
+
+### Compatibility check
+
+`PluginCompatibilityValidator.validate(range, sdkVersion)` is pure and
+returns `PluginCompatibilityResult.Compatible` or
+`Incompatible(sdkVersion, range, reason)`, never throwing. Both bounds are
+inclusive and compared by semver precedence; an absent maximum is unbounded;
+a minimum above the maximum is `EMPTY_RANGE` rather than a bound violation.
+
+`PluginLifecycleStateTracker` now takes the running `sdkVersion` (required, so
+there is no unchecked mode) and gates every `transition` overload on it:
+entering `VALIDATED` for a plugin whose range does not admit the SDK returns
+the new `PluginLifecycleTransitionResult.IncompatibleRuntime`, leaves state
+unchanged, and (for the authorizer-aware overload) never consults the
+authorizer. `VALIDATED` is the only route to `INITIALIZING`/`ACTIVE`, so an
+incompatible plugin can never become active; it can still be `DISABLED`.
+`compatibilityOf(id)` inspects without transitioning. The operational-event
+bridge maps the new variant (event type `...incompatible_runtime`; the SDK
+version and reason are public, plugin-declared bounds are `INTERNAL` and
+redacted).
+
+`DataLoomBuilder.pluginConfiguration` uses `DataLoomRuntimeVersion.CURRENT`;
+`build()` does not reject an incompatible plugin, and `DataLoom.pluginEngine`
+exposes `compatibilityOf(id)` and returns `IncompatibleRuntime` from
+`transition`.
+
+## Lifecycle gating of execution (D13)
+
+`PluginExecutionBoundsEnforcer` is now constructed from a
+`PluginLifecycleStateTracker` (it takes the tracker's registry) and consults
+the tracker's state once, at the start of each `execute`:
+
+- A plugin that is not `ACTIVE` (`LOADED`, `VALIDATED`, `INITIALIZING`,
+  `DEGRADED`, `DISABLED`) returns the new
+  `PluginExecutionBoundsResult.NotActive(pluginId, state)`. The operation never
+  runs and no concurrency slot is consumed. The state check precedes the
+  concurrency check.
+- An invocation already in flight when its plugin leaves `ACTIVE` is not
+  cancelled or shortened. It completes, or is cancelled by its own declared
+  timeout (`TimedOut`) or by caller cancellation, and releases its
+  concurrency slot on finishing, so a disabled plugin drains. Actively
+  cancelling in-flight work on disable would be a separate, new policy.
+- `DEGRADED` refuses new invocations until the plugin is `ACTIVE` again.
+
+To make the enforcer's cross-thread state read safe, the tracker now stores
+each plugin's state in a volatile cell over a fixed set of tracked plugins.
+`stateOf` and `compatibilityOf` are safe concurrently with a transition;
+`transition` calls still must be serialized by the caller.
 
 ## Relocation to `dataloom-plugin` and `DataLoomBuilder` wiring
 
@@ -577,8 +630,9 @@ What the wiring deliberately does not do:
   offers only the authorizer-gated path.
 - `PluginLifecycleAdministrationOperationalEventBridge` is not connected to an
   outbox, and `PluginExecutionBoundsResult` is not bridged into the audit trail.
-- The tracker and enforcer are still not integrated with each other, and no
-  subsystem dispatches hook points to plugins.
+- No subsystem dispatches hook points to plugins. (The tracker and enforcer
+  were integrated afterwards; see
+  [Lifecycle gating of execution (D13)](#lifecycle-gating-of-execution-d13).)
 
 ## Verification
 

@@ -179,7 +179,7 @@ workflow-aligned assemble, unit-test, lint, schema, and managed-device tasks.
 | Area | Current state | Required before V1 |
 |---|---|---|
 | Native Android | Connectivity, WorkManager, and Room queue/circuit foundations exist; aggregated into a real production platform artifact with public wiring helpers ([`dataloom-android`](dataloom-android.md)), dogfooded by a real `DataLoomBuilder` composition that compiles ([reference consumer](reference-consumer.md)) | Runtime (Robolectric/instrumented) proof, published-style artifact resolution, and end-to-end qualification |
-| KMP Android | Shared code has JVM and Apple targets; only `dataloom-model` has an explicit Android KMP target so far (pilot, `DATALOOM_ANDROID_BUILD=true`), the rest is a documented roll-out, see [kmp-android-target-blocker.md](kmp-android-target-blocker.md) | Published KMP Android variant and external consumer fixture |
+| KMP Android | Shared code has JVM and Apple targets; `dataloom-model`, `dataloom-provider-api`, `dataloom-plugin-api`, `dataloom-config` and `dataloom-api` have an explicit Android KMP target so far (`DATALOOM_ANDROID_BUILD=true`), the rest is a documented roll-out, see [kmp-android-target-blocker.md](kmp-android-target-blocker.md) | Published KMP Android variant and external consumer fixture |
 | KMP iOS | Producer compilation baseline exists | Apple adapters, executable consumer, and platform parity |
 | Native Swift | XCFramework compile smoke exists | Optional; qualify separately if distributed |
 | Six strategy profiles | Contracts and orchestration building blocks exist | Built-in policy behavior and parity suites for every profile |

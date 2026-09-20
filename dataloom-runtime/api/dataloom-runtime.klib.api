@@ -623,6 +623,7 @@ abstract interface io.dataloom.runtime.facade/DataLoomPluginEngine { // io.datal
     abstract val resolutionOrder // io.dataloom.runtime.facade/DataLoomPluginEngine.resolutionOrder|{}resolutionOrder[0]
         abstract fun <get-resolutionOrder>(): kotlin.collections/List<io.dataloom.api.plugin/PluginId> // io.dataloom.runtime.facade/DataLoomPluginEngine.resolutionOrder.<get-resolutionOrder>|<get-resolutionOrder>(){}[0]
 
+    abstract fun compatibilityOf(io.dataloom.api.plugin/PluginId): io.dataloom.plugin/PluginCompatibilityResult // io.dataloom.runtime.facade/DataLoomPluginEngine.compatibilityOf|compatibilityOf(io.dataloom.api.plugin.PluginId){}[0]
     abstract fun stateOf(io.dataloom.api.plugin/PluginId): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.runtime.facade/DataLoomPluginEngine.stateOf|stateOf(io.dataloom.api.plugin.PluginId){}[0]
     abstract suspend fun <#A1: kotlin/Any?> execute(io.dataloom.api.plugin/PluginId, kotlin.coroutines/SuspendFunction0<#A1>): io.dataloom.plugin/PluginExecutionBoundsResult<#A1> // io.dataloom.runtime.facade/DataLoomPluginEngine.execute|execute(io.dataloom.api.plugin.PluginId;kotlin.coroutines.SuspendFunction0<0:0>){0§<kotlin.Any?>}[0]
     abstract suspend fun transition(io.dataloom.plugin/PluginLifecycleTransitionRequest): io.dataloom.plugin/PluginLifecycleTransitionResult // io.dataloom.runtime.facade/DataLoomPluginEngine.transition|transition(io.dataloom.plugin.PluginLifecycleTransitionRequest){}[0]
@@ -1038,6 +1039,59 @@ sealed interface io.dataloom.runtime.conflict/ConflictOrchestrationResult { // i
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.runtime.conflict/ConflictResolverSelectionRule { // io.dataloom.runtime.conflict/ConflictResolverSelectionRule|null[0]
+    abstract val resolverId // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.resolverId|{}resolverId[0]
+        abstract fun <get-resolverId>(): io.dataloom.api.identifier/ConflictResolverId // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.resolverId.<get-resolverId>|<get-resolverId>(){}[0]
+
+    final class ForEntityType : io.dataloom.runtime.conflict/ConflictResolverSelectionRule { // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForEntityType|null[0]
+        constructor <init>(io.dataloom.api.identifier/EntityType, io.dataloom.api.identifier/ConflictResolverId) // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForEntityType.<init>|<init>(io.dataloom.api.identifier.EntityType;io.dataloom.api.identifier.ConflictResolverId){}[0]
+
+        final val entityType // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForEntityType.entityType|{}entityType[0]
+            final fun <get-entityType>(): io.dataloom.api.identifier/EntityType // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForEntityType.entityType.<get-entityType>|<get-entityType>(){}[0]
+        final val resolverId // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForEntityType.resolverId|{}resolverId[0]
+            final fun <get-resolverId>(): io.dataloom.api.identifier/ConflictResolverId // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForEntityType.resolverId.<get-resolverId>|<get-resolverId>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/EntityType // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForEntityType.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.identifier/ConflictResolverId // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForEntityType.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.identifier/EntityType = ..., io.dataloom.api.identifier/ConflictResolverId = ...): io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForEntityType // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForEntityType.copy|copy(io.dataloom.api.identifier.EntityType;io.dataloom.api.identifier.ConflictResolverId){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForEntityType.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForEntityType.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForEntityType.toString|toString(){}[0]
+    }
+
+    final class ForTenant : io.dataloom.runtime.conflict/ConflictResolverSelectionRule { // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForTenant|null[0]
+        constructor <init>(io.dataloom.api.identifier/TenantId, io.dataloom.api.identifier/ConflictResolverId) // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForTenant.<init>|<init>(io.dataloom.api.identifier.TenantId;io.dataloom.api.identifier.ConflictResolverId){}[0]
+
+        final val resolverId // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForTenant.resolverId|{}resolverId[0]
+            final fun <get-resolverId>(): io.dataloom.api.identifier/ConflictResolverId // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForTenant.resolverId.<get-resolverId>|<get-resolverId>(){}[0]
+        final val tenantId // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForTenant.tenantId|{}tenantId[0]
+            final fun <get-tenantId>(): io.dataloom.api.identifier/TenantId // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForTenant.tenantId.<get-tenantId>|<get-tenantId>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/TenantId // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForTenant.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.identifier/ConflictResolverId // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForTenant.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.identifier/TenantId = ..., io.dataloom.api.identifier/ConflictResolverId = ...): io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForTenant // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForTenant.copy|copy(io.dataloom.api.identifier.TenantId;io.dataloom.api.identifier.ConflictResolverId){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForTenant.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForTenant.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForTenant.toString|toString(){}[0]
+    }
+
+    final class ForWorkflow : io.dataloom.runtime.conflict/ConflictResolverSelectionRule { // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForWorkflow|null[0]
+        constructor <init>(io.dataloom.api.identifier/WorkflowId, io.dataloom.api.identifier/ConflictResolverId) // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForWorkflow.<init>|<init>(io.dataloom.api.identifier.WorkflowId;io.dataloom.api.identifier.ConflictResolverId){}[0]
+
+        final val resolverId // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForWorkflow.resolverId|{}resolverId[0]
+            final fun <get-resolverId>(): io.dataloom.api.identifier/ConflictResolverId // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForWorkflow.resolverId.<get-resolverId>|<get-resolverId>(){}[0]
+        final val workflowId // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForWorkflow.workflowId|{}workflowId[0]
+            final fun <get-workflowId>(): io.dataloom.api.identifier/WorkflowId // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForWorkflow.workflowId.<get-workflowId>|<get-workflowId>(){}[0]
+
+        final fun component1(): io.dataloom.api.identifier/WorkflowId // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForWorkflow.component1|component1(){}[0]
+        final fun component2(): io.dataloom.api.identifier/ConflictResolverId // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForWorkflow.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.identifier/WorkflowId = ..., io.dataloom.api.identifier/ConflictResolverId = ...): io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForWorkflow // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForWorkflow.copy|copy(io.dataloom.api.identifier.WorkflowId;io.dataloom.api.identifier.ConflictResolverId){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForWorkflow.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForWorkflow.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictResolverSelectionRule.ForWorkflow.toString|toString(){}[0]
     }
 }
 
@@ -2895,18 +2949,22 @@ final class io.dataloom.runtime.conflict/ConflictDetectorRegistry { // io.datalo
 }
 
 final class io.dataloom.runtime.conflict/ConflictOrchestrationBindings { // io.dataloom.runtime.conflict/ConflictOrchestrationBindings|null[0]
-    constructor <init>(io.dataloom.api.identifier/ConflictDetectorId, io.dataloom.api.identifier/ConflictResolverId?) // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.<init>|<init>(io.dataloom.api.identifier.ConflictDetectorId;io.dataloom.api.identifier.ConflictResolverId?){}[0]
+    constructor <init>(io.dataloom.api.identifier/ConflictDetectorId, io.dataloom.api.identifier/ConflictResolverId?, io.dataloom.runtime.conflict/ConflictResolverSelectionPolicy? = ...) // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.<init>|<init>(io.dataloom.api.identifier.ConflictDetectorId;io.dataloom.api.identifier.ConflictResolverId?;io.dataloom.runtime.conflict.ConflictResolverSelectionPolicy?){}[0]
 
     final val detectorId // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.detectorId|{}detectorId[0]
         final fun <get-detectorId>(): io.dataloom.api.identifier/ConflictDetectorId // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.detectorId.<get-detectorId>|<get-detectorId>(){}[0]
     final val resolverId // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.resolverId|{}resolverId[0]
         final fun <get-resolverId>(): io.dataloom.api.identifier/ConflictResolverId? // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.resolverId.<get-resolverId>|<get-resolverId>(){}[0]
+    final val resolverSelectionPolicy // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.resolverSelectionPolicy|{}resolverSelectionPolicy[0]
+        final fun <get-resolverSelectionPolicy>(): io.dataloom.runtime.conflict/ConflictResolverSelectionPolicy? // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.resolverSelectionPolicy.<get-resolverSelectionPolicy>|<get-resolverSelectionPolicy>(){}[0]
 
     final fun component1(): io.dataloom.api.identifier/ConflictDetectorId // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.component1|component1(){}[0]
     final fun component2(): io.dataloom.api.identifier/ConflictResolverId? // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.component2|component2(){}[0]
-    final fun copy(io.dataloom.api.identifier/ConflictDetectorId = ..., io.dataloom.api.identifier/ConflictResolverId? = ...): io.dataloom.runtime.conflict/ConflictOrchestrationBindings // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.copy|copy(io.dataloom.api.identifier.ConflictDetectorId;io.dataloom.api.identifier.ConflictResolverId?){}[0]
+    final fun component3(): io.dataloom.runtime.conflict/ConflictResolverSelectionPolicy? // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.component3|component3(){}[0]
+    final fun copy(io.dataloom.api.identifier/ConflictDetectorId = ..., io.dataloom.api.identifier/ConflictResolverId? = ..., io.dataloom.runtime.conflict/ConflictResolverSelectionPolicy? = ...): io.dataloom.runtime.conflict/ConflictOrchestrationBindings // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.copy|copy(io.dataloom.api.identifier.ConflictDetectorId;io.dataloom.api.identifier.ConflictResolverId?;io.dataloom.runtime.conflict.ConflictResolverSelectionPolicy?){}[0]
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.hashCode|hashCode(){}[0]
+    final fun selectResolverId(io.dataloom.runtime.conflict/ConflictResolverSelectionContext): io.dataloom.api.identifier/ConflictResolverId? // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.selectResolverId|selectResolverId(io.dataloom.runtime.conflict.ConflictResolverSelectionContext){}[0]
     final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.toString|toString(){}[0]
 }
 
@@ -2934,6 +2992,37 @@ final class io.dataloom.runtime.conflict/ConflictResolverRegistry { // io.datalo
 
     final fun lookup(io.dataloom.api.identifier/ConflictResolverId): io.dataloom.api.conflict/ConflictResolver? // io.dataloom.runtime.conflict/ConflictResolverRegistry.lookup|lookup(io.dataloom.api.identifier.ConflictResolverId){}[0]
     final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictResolverRegistry.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.conflict/ConflictResolverSelectionContext { // io.dataloom.runtime.conflict/ConflictResolverSelectionContext|null[0]
+    constructor <init>(io.dataloom.api.identifier/EntityType, io.dataloom.api.identifier/WorkflowId, io.dataloom.api.identifier/TenantId? = ...) // io.dataloom.runtime.conflict/ConflictResolverSelectionContext.<init>|<init>(io.dataloom.api.identifier.EntityType;io.dataloom.api.identifier.WorkflowId;io.dataloom.api.identifier.TenantId?){}[0]
+
+    final val entityType // io.dataloom.runtime.conflict/ConflictResolverSelectionContext.entityType|{}entityType[0]
+        final fun <get-entityType>(): io.dataloom.api.identifier/EntityType // io.dataloom.runtime.conflict/ConflictResolverSelectionContext.entityType.<get-entityType>|<get-entityType>(){}[0]
+    final val tenantId // io.dataloom.runtime.conflict/ConflictResolverSelectionContext.tenantId|{}tenantId[0]
+        final fun <get-tenantId>(): io.dataloom.api.identifier/TenantId? // io.dataloom.runtime.conflict/ConflictResolverSelectionContext.tenantId.<get-tenantId>|<get-tenantId>(){}[0]
+    final val workflowId // io.dataloom.runtime.conflict/ConflictResolverSelectionContext.workflowId|{}workflowId[0]
+        final fun <get-workflowId>(): io.dataloom.api.identifier/WorkflowId // io.dataloom.runtime.conflict/ConflictResolverSelectionContext.workflowId.<get-workflowId>|<get-workflowId>(){}[0]
+
+    final fun component1(): io.dataloom.api.identifier/EntityType // io.dataloom.runtime.conflict/ConflictResolverSelectionContext.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.identifier/WorkflowId // io.dataloom.runtime.conflict/ConflictResolverSelectionContext.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.identifier/TenantId? // io.dataloom.runtime.conflict/ConflictResolverSelectionContext.component3|component3(){}[0]
+    final fun copy(io.dataloom.api.identifier/EntityType = ..., io.dataloom.api.identifier/WorkflowId = ..., io.dataloom.api.identifier/TenantId? = ...): io.dataloom.runtime.conflict/ConflictResolverSelectionContext // io.dataloom.runtime.conflict/ConflictResolverSelectionContext.copy|copy(io.dataloom.api.identifier.EntityType;io.dataloom.api.identifier.WorkflowId;io.dataloom.api.identifier.TenantId?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictResolverSelectionContext.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictResolverSelectionContext.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictResolverSelectionContext.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.conflict/ConflictResolverSelectionPolicy { // io.dataloom.runtime.conflict/ConflictResolverSelectionPolicy|null[0]
+    constructor <init>(kotlin.collections/Collection<io.dataloom.runtime.conflict/ConflictResolverSelectionRule>) // io.dataloom.runtime.conflict/ConflictResolverSelectionPolicy.<init>|<init>(kotlin.collections.Collection<io.dataloom.runtime.conflict.ConflictResolverSelectionRule>){}[0]
+
+    final val rules // io.dataloom.runtime.conflict/ConflictResolverSelectionPolicy.rules|{}rules[0]
+        final fun <get-rules>(): kotlin.collections/List<io.dataloom.runtime.conflict/ConflictResolverSelectionRule> // io.dataloom.runtime.conflict/ConflictResolverSelectionPolicy.rules.<get-rules>|<get-rules>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictResolverSelectionPolicy.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictResolverSelectionPolicy.hashCode|hashCode(){}[0]
+    final fun select(io.dataloom.runtime.conflict/ConflictResolverSelectionContext): io.dataloom.api.identifier/ConflictResolverId? // io.dataloom.runtime.conflict/ConflictResolverSelectionPolicy.select|select(io.dataloom.runtime.conflict.ConflictResolverSelectionContext){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictResolverSelectionPolicy.toString|toString(){}[0]
 }
 
 final class io.dataloom.runtime.conflict/DurableConflictDetectionCoordinator { // io.dataloom.runtime.conflict/DurableConflictDetectionCoordinator|null[0]
@@ -5147,6 +5236,11 @@ final value class io.dataloom.runtime.observation.retry/RetryCircuitTelemetryExp
 
 final object io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationRuntime { // io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationRuntime|null[0]
     final suspend fun execute(io.dataloom.runtime.execution/SynchronizationExecutionContext, io.dataloom.runtime.execution/SynchronizationPipeline, io.dataloom.runtime.retry/ProtectedStorageOperations, io.dataloom.runtime.retry/ProtectedTransportOperations): io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationResult // io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationRuntime.execute|execute(io.dataloom.runtime.execution.SynchronizationExecutionContext;io.dataloom.runtime.execution.SynchronizationPipeline;io.dataloom.runtime.retry.ProtectedStorageOperations;io.dataloom.runtime.retry.ProtectedTransportOperations){}[0]
+}
+
+final object io.dataloom.runtime.facade/DataLoomRuntimeVersion { // io.dataloom.runtime.facade/DataLoomRuntimeVersion|null[0]
+    final val CURRENT // io.dataloom.runtime.facade/DataLoomRuntimeVersion.CURRENT|{}CURRENT[0]
+        final fun <get-CURRENT>(): io.dataloom.api.identifier/RuntimeVersion // io.dataloom.runtime.facade/DataLoomRuntimeVersion.CURRENT.<get-CURRENT>|<get-CURRENT>(){}[0]
 }
 
 final object io.dataloom.runtime.observation.operational/ConflictResolutionOperationalEventBridge { // io.dataloom.runtime.observation.operational/ConflictResolutionOperationalEventBridge|null[0]

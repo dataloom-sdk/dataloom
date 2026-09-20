@@ -40,7 +40,9 @@ import io.dataloom.api.transport.PullChangesRequest
 import io.dataloom.api.transport.PullChangesResult
 import io.dataloom.api.transport.PushChangesRequest
 import io.dataloom.api.transport.TransportProvider
+import io.dataloom.plugin.PluginCompatibilityResult
 import io.dataloom.plugin.PluginExecutionBoundsResult
+import io.dataloom.plugin.PluginIncompatibilityReason
 import io.dataloom.plugin.PluginLifecycleAdministrationAuthorizationDecision
 import io.dataloom.plugin.PluginLifecycleAdministrationAuthorizer
 import io.dataloom.plugin.PluginLifecycleAdministrationCommandId
@@ -272,7 +274,7 @@ class DataLoomBuilderPluginEngineTest {
 
     @Test
     fun executeReturnsCompletedWithTheOperationValue() = runTest {
-        val engine = engineWith(RecordingAuthorizer(), plugin("plugin-a"))
+        val engine = activeEngineWith(plugin("plugin-a"))
 
         val result = engine.execute(PluginId("plugin-a")) { "done" }
 
@@ -281,7 +283,7 @@ class DataLoomBuilderPluginEngineTest {
 
     @Test
     fun executeReturnsTimedOutWhenTheDeclaredBoundIsExceeded() = runTest {
-        val engine = engineWith(RecordingAuthorizer(), plugin("plugin-a", maximumExecutionMillis = 100L))
+        val engine = activeEngineWith(plugin("plugin-a", maximumExecutionMillis = 100L))
 
         val result = engine.execute(PluginId("plugin-a")) {
             delay(1_000L)
@@ -296,7 +298,7 @@ class DataLoomBuilderPluginEngineTest {
 
     @Test
     fun executeRejectsAnInvocationBeyondTheDeclaredConcurrencyCeiling() = runTest {
-        val engine = engineWith(RecordingAuthorizer(), plugin("plugin-a", maximumConcurrentInvocations = 1))
+        val engine = activeEngineWith(plugin("plugin-a", maximumConcurrentInvocations = 1))
         val started = CompletableDeferred<Unit>()
         val inFlight = backgroundScope.async {
             engine.execute(PluginId("plugin-a")) {
@@ -333,6 +335,120 @@ class DataLoomBuilderPluginEngineTest {
     }
 
     // -------------------------------------------------------------------------
+    // Lifecycle gating of execution (decision D13)
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun executeRefusesAPluginThatIsNotActive() = runTest {
+        val engine = engineWith(RecordingAuthorizer(), plugin("plugin-a"))
+        var invoked = false
+
+        val result = engine.execute(PluginId("plugin-a")) {
+            invoked = true
+            "unreachable"
+        }
+
+        assertEquals(
+            PluginExecutionBoundsResult.NotActive(PluginId("plugin-a"), PluginLifecycleState.LOADED),
+            result,
+        )
+        assertFalse(invoked)
+    }
+
+    @Test
+    fun aDisabledPluginRefusesNewInvocationsButItsInFlightInvocationCompletes() = runTest {
+        val engine = activeEngineWith(plugin("plugin-a"))
+        val started = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<String>()
+        val inFlight = backgroundScope.async {
+            engine.execute(PluginId("plugin-a")) {
+                started.complete(Unit)
+                release.await()
+            }
+        }
+        started.await()
+
+        assertIs<PluginLifecycleTransitionResult.Allowed>(
+            engine.transition(transitionRequest("plugin-a", PluginLifecycleState.DISABLED)),
+        )
+
+        assertEquals(
+            PluginExecutionBoundsResult.NotActive(PluginId("plugin-a"), PluginLifecycleState.DISABLED),
+            engine.execute(PluginId("plugin-a")) { "new" },
+        )
+        release.complete("finished")
+        assertEquals(PluginExecutionBoundsResult.Completed("finished"), inFlight.await())
+    }
+
+    // -------------------------------------------------------------------------
+    // Compatibility against the running SDK version
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun runningSdkVersionIsACanonicalConstant() {
+        assertEquals("0.1.0", DataLoomRuntimeVersion.CURRENT.value)
+    }
+
+    @Test
+    fun aPluginWhoseRangeAdmitsTheRunningSdkIsCompatibleAndValidates() = runTest {
+        val engine = engineWith(RecordingAuthorizer(), plugin("plugin-a", minimumSdk = "1.0.0", maximumSdk = "2.0.0"))
+
+        assertEquals(PluginCompatibilityResult.Compatible, engine.compatibilityOf(PluginId("plugin-a")))
+        assertIs<PluginLifecycleTransitionResult.Allowed>(
+            engine.transition(transitionRequest("plugin-a", PluginLifecycleState.VALIDATED)),
+        )
+    }
+
+    @Test
+    fun anIncompatiblePluginIsRefusedWithoutThrowingAndWithoutConsultingTheAuthorizer() = runTest {
+        val authorizer = RecordingAuthorizer()
+        val engine = engineWith(authorizer, plugin("plugin-a", minimumSdk = "2.0.0"))
+
+        val result = engine.transition(transitionRequest("plugin-a", PluginLifecycleState.VALIDATED))
+
+        val incompatible = assertIs<PluginLifecycleTransitionResult.IncompatibleRuntime>(result)
+        assertEquals(PluginIncompatibilityReason.BELOW_MINIMUM, incompatible.incompatibility.reason)
+        assertEquals(TEST_SDK_VERSION, incompatible.incompatibility.sdkVersion)
+        assertEquals(PluginLifecycleState.LOADED, engine.stateOf(PluginId("plugin-a")))
+        assertTrue(authorizer.requests.isEmpty())
+        assertIs<PluginCompatibilityResult.Incompatible>(engine.compatibilityOf(PluginId("plugin-a")))
+    }
+
+    @Test
+    fun buildDoesNotRejectAnIncompatiblePlugin() {
+        val dataLoom = builder()
+            .pluginConfiguration(
+                DataLoomPluginSpec(listOf(plugin("plugin-a", minimumSdk = "9.0.0")), RecordingAuthorizer()),
+            )
+            .build()
+
+        assertNotNull(dataLoom.pluginEngine)
+    }
+
+    @Test
+    fun theProductionBuilderChecksAgainstTheRuntimeVersionConstant() {
+        val current = DataLoomRuntimeVersion.CURRENT
+        val engine = assertNotNull(
+            rawBuilder()
+                .pluginConfiguration(
+                    DataLoomPluginSpec(
+                        listOf(
+                            plugin("at-current", minimumSdk = current.value),
+                            plugin("needs-newer", minimumSdk = "${current.major + 1}.0.0"),
+                        ),
+                        RecordingAuthorizer(),
+                    ),
+                )
+                .build()
+                .pluginEngine,
+        )
+
+        assertEquals(PluginCompatibilityResult.Compatible, engine.compatibilityOf(PluginId("at-current")))
+        val newer = assertIs<PluginCompatibilityResult.Incompatible>(engine.compatibilityOf(PluginId("needs-newer")))
+        assertEquals(current, newer.sdkVersion)
+    }
+
+    // -------------------------------------------------------------------------
     // Fixtures
     // -------------------------------------------------------------------------
 
@@ -346,7 +462,27 @@ class DataLoomBuilderPluginEngineTest {
             .pluginEngine,
     )
 
-    private fun builder(): DataLoomBuilder {
+    /** Builds with every plugin already `ACTIVE`, walking the real authorized transitions. */
+    private suspend fun activeEngineWith(vararg plugins: DataLoomPlugin): DataLoomPluginEngine {
+        val engine = engineWith(RecordingAuthorizer(), *plugins)
+        for (plugin in plugins) {
+            for (state in listOf(
+                PluginLifecycleState.VALIDATED,
+                PluginLifecycleState.INITIALIZING,
+                PluginLifecycleState.ACTIVE,
+            )) {
+                assertIs<PluginLifecycleTransitionResult.Allowed>(
+                    engine.transition(transitionRequest(plugin.manifest.id.value, state)),
+                )
+            }
+        }
+        return engine
+    }
+
+    /** A builder whose running SDK version is [TEST_SDK_VERSION] rather than the production constant. */
+    private fun builder(): DataLoomBuilder = rawBuilder().apply { pluginSdkVersion = TEST_SDK_VERSION }
+
+    private fun rawBuilder(): DataLoomBuilder {
         val transport = StubTransportProvider()
         return DataLoomBuilder()
             .runtimeDependencies(runtimeDependencies())
@@ -355,6 +491,10 @@ class DataLoomBuilderPluginEngineTest {
     }
 
     private val compatibilityRange = PluginCompatibilityRange(minimumSdkVersion = RuntimeVersion("1.0.0"))
+
+    private companion object {
+        val TEST_SDK_VERSION = RuntimeVersion("1.5.0")
+    }
 
     private class FakePlugin(
         override val manifest: PluginManifest,
@@ -366,12 +506,17 @@ class DataLoomBuilderPluginEngineTest {
         dependsOn: Set<String> = emptySet(),
         maximumExecutionMillis: Long = 1_000L,
         maximumConcurrentInvocations: Int = 1,
+        minimumSdk: String = "1.0.0",
+        maximumSdk: String? = null,
     ): DataLoomPlugin = FakePlugin(
         manifest = PluginManifest(
             id = PluginId(id),
             version = PluginVersion("1.0.0"),
             vendor = PluginVendor("Acme Corp"),
-            compatibleSdkRange = compatibilityRange,
+            compatibleSdkRange = PluginCompatibilityRange(
+                RuntimeVersion(minimumSdk),
+                maximumSdk?.let(::RuntimeVersion),
+            ),
             dependencies = dependsOn.map { PluginDependency(PluginId(it), compatibilityRange) }.toSet(),
         ),
         executionBounds = PluginExecutionBounds(maximumExecutionMillis, maximumConcurrentInvocations),

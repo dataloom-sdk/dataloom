@@ -2,6 +2,7 @@ package io.dataloom.runtime.facade
 
 import io.dataloom.api.plugin.PluginId
 import io.dataloom.api.plugin.PluginLifecycleState
+import io.dataloom.plugin.PluginCompatibilityResult
 import io.dataloom.plugin.PluginExecutionBoundsResult
 import io.dataloom.plugin.PluginLifecycleTransitionRequest
 import io.dataloom.plugin.PluginLifecycleTransitionResult
@@ -44,15 +45,28 @@ public interface DataLoomPluginEngine {
     public fun stateOf(id: PluginId): PluginLifecycleState
 
     /**
+     * Checks [id]'s declared SDK range against [DataLoomRuntimeVersion.CURRENT]
+     * without changing any state. Never throws for an incompatible plugin.
+     *
+     * @throws IllegalArgumentException if [id] is not registered.
+     */
+    public fun compatibilityOf(id: PluginId): PluginCompatibilityResult
+
+    /**
      * Attempts the lifecycle transition described by [request].
      *
      * A structurally illegal transition returns
      * [PluginLifecycleTransitionResult.Rejected] without consulting the
-     * configured authorizer. A structurally legal transition is submitted to
-     * the authorizer supplied in [DataLoomPluginSpec.lifecycleAuthorizer]; a
-     * denial returns [PluginLifecycleTransitionResult.AuthorizationDenied].
-     * Tracked state changes only for [PluginLifecycleTransitionResult.Allowed].
-     * Caller cancellation propagates unchanged.
+     * configured authorizer. A request to enter
+     * [PluginLifecycleState.VALIDATED] for a plugin whose declared SDK range
+     * does not admit [DataLoomRuntimeVersion.CURRENT] returns
+     * [PluginLifecycleTransitionResult.IncompatibleRuntime], also without
+     * consulting the authorizer. Any other structurally legal transition is
+     * submitted to the authorizer supplied in
+     * [DataLoomPluginSpec.lifecycleAuthorizer]; a denial returns
+     * [PluginLifecycleTransitionResult.AuthorizationDenied]. Tracked state
+     * changes only for [PluginLifecycleTransitionResult.Allowed]. Caller
+     * cancellation propagates unchanged.
      *
      * @throws IllegalArgumentException if the request's plugin is not registered.
      */
@@ -66,7 +80,11 @@ public interface DataLoomPluginEngine {
      * is already at its concurrency ceiling. Neither outcome throws; see
      * [PluginExecutionBoundsResult].
      *
-     * Bounds are enforced independently of lifecycle state.
+     * A plugin that is not [PluginLifecycleState.ACTIVE] when this call starts
+     * is refused with [PluginExecutionBoundsResult.NotActive] and
+     * [operation] never runs. An invocation already in flight when its plugin
+     * leaves `ACTIVE` is not cancelled: it completes, or is cancelled by its
+     * own declared timeout.
      *
      * @throws IllegalArgumentException if [id] is not registered.
      */

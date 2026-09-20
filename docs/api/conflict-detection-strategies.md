@@ -9,7 +9,7 @@ reachable through the existing `ConflictDetectorRegistry` and exact
 
 This closes a named standard-detector gap in issue
 [#95](https://github.com/dataloom-sdk/dataloom/issues/95), but does not complete
-that issue. Atomic decision application, convergence, precedence, loop
+that issue. Atomic decision application, convergence, loop
 protection/quarantine, manual operations, complete operational evidence, and
 mandatory-platform end-to-end qualification remain release work.
 
@@ -24,6 +24,14 @@ the reference catalog. Therefore an application may register its own detector
 under a reference ID to intentionally replace that implementation. The
 registry's public `detectors` snapshot continues to contain only application
 registrations, preserving its historical size and order.
+
+Detector selection is unchanged and remains one exact ID per pipeline instance.
+*Resolver* selection is different: since design decision D11 (2026-09-19) the
+resolver applied to a detected conflict can vary by entity type, workflow, and
+tenant through an optional `ConflictResolverSelectionPolicy` on
+`ConflictOrchestrationBindings`, evaluated after detection. See
+[conflict-resolution-strategies.md](./conflict-resolution-strategies.md)'s
+"Resolver selection policy".
 
 ```kotlin
 val bindings = ConflictOrchestrationBindings(
@@ -261,7 +269,6 @@ Issue #95 remains open for at least:
 
 - schema-aware field-merge reference integration;
 - atomic decision application with checkpoint/outbox/audit effects;
-- entity, workflow, tenant, and global policy precedence;
 - fingerprints, bounded attempts, convergence limits, loop detection, and
   quarantine;
 - authorized query/resolve/manual operations (a bounded first slice, including

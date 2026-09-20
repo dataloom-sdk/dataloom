@@ -133,8 +133,8 @@ class IdentifierContractsTest {
         assertIdentifierBehavior(
             create = ::RuntimeVersion,
             extract = RuntimeVersion::value,
-            valid = "runtime-1.0.0",
-            different = "runtime-1.1.0",
+            valid = "1.0.0",
+            different = "1.1.0",
         )
     }
 

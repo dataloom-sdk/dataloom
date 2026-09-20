@@ -59,10 +59,20 @@ import io.dataloom.api.identifier.ConflictResolverId
  *
  * ## Selection key
  *
- * The explicit [ConflictResolverId] returned by [ConflictResolver.id] is the
- * only selection key. Resolvers are never selected automatically by conflict
- * type, class name, registration position, or ID sorting. Resolution policy
- * remains caller-controlled through explicit binding.
+ * This registry itself selects only by the exact [ConflictResolverId] returned
+ * by [ConflictResolver.id]. It never routes by conflict type, entity type,
+ * workflow, tenant, class name, registration position, or ID sorting.
+ *
+ * *Which* ID to look up is decided one step earlier, by
+ * [ConflictOrchestrationBindings.selectResolverId]: an optional, explicit,
+ * application-supplied [ConflictResolverSelectionPolicy] (entity-type rule >
+ * workflow rule > tenant rule) over the single global-default ID
+ * [ConflictOrchestrationBindings.resolverId]. Resolution policy therefore
+ * remains caller-controlled through explicit configuration; nothing is
+ * inferred. The ID the policy chooses is looked up here exactly like any
+ * other, so application registrations still override built-ins, and an ID
+ * with no resolver still yields `null` (surfaced by the orchestrator as
+ * [ConflictOrchestrationResult.ResolverNotFound]).
  *
  * ## No global mutable state
  *

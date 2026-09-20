@@ -5,11 +5,13 @@ import io.dataloom.api.identifier.RuntimeVersion
 /**
  * Declared inclusive SDK-version compatibility bounds for a plugin.
  *
- * This is a data shape only — it does not parse, order, or compare
- * [RuntimeVersion] values. Deciding whether a specific running SDK version
- * satisfies a declared range is compatibility-validation *behavior*, owned
- * by the plugin lifecycle engine (#98) per its "compatibility validation
- * before activation" acceptance criterion, not by this contract module.
+ * This is a data shape only — it does not compare [RuntimeVersion] values
+ * itself. A [RuntimeVersion] is always a valid semantic version, ordered by
+ * [RuntimeVersion.precedenceCompareTo]. Deciding whether a specific running
+ * SDK version satisfies a declared range is compatibility-validation
+ * *behavior*, owned by the plugin lifecycle engine (#98, `dataloom-plugin`'s
+ * `PluginCompatibilityValidator`) per its "compatibility validation before
+ * activation" acceptance criterion, not by this contract module.
  *
  * @param minimumSdkVersion the lowest compatible runtime version, inclusive.
  * @param maximumSdkVersion the highest compatible runtime version, inclusive,
