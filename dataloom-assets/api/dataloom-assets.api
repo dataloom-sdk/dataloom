@@ -1,0 +1,501 @@
+public final class io/dataloom/assets/AssetChunkPlan {
+	public static final field Companion Lio/dataloom/assets/AssetChunkPlan$Companion;
+	public fun <init> (JI)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChunkCount ()I
+	public final fun getChunkSizeBytes ()I
+	public final fun getTotalSizeBytes ()J
+	public fun hashCode ()I
+	public final fun lengthBytes (I)I
+	public final fun offsetBytes (I)J
+	public final fun toLayout (Ljava/util/List;)Lio/dataloom/api/asset/AssetChunkLayout;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/AssetChunkPlan$Companion {
+	public final fun negotiate (JILio/dataloom/assets/AssetChunkSizeBounds;)Lio/dataloom/assets/AssetChunkPlan;
+}
+
+public final class io/dataloom/assets/AssetChunkSizeBounds {
+	public static final field Companion Lio/dataloom/assets/AssetChunkSizeBounds$Companion;
+	public static final field DEFAULT_CHUNK_SIZE_BYTES I
+	public fun <init> (II)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun copy (II)Lio/dataloom/assets/AssetChunkSizeBounds;
+	public static synthetic fun copy$default (Lio/dataloom/assets/AssetChunkSizeBounds;IIILjava/lang/Object;)Lio/dataloom/assets/AssetChunkSizeBounds;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaxBytes ()I
+	public final fun getMinBytes ()I
+	public fun hashCode ()I
+	public final fun negotiate (I)I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/AssetChunkSizeBounds$Companion {
+	public final fun getDEFAULT ()Lio/dataloom/assets/AssetChunkSizeBounds;
+}
+
+public final class io/dataloom/assets/AssetChunkUpload {
+	public synthetic fun <init> (Ljava/lang/String;I[BLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getBytes ()[B
+	public final fun getIndex ()I
+	public final fun getSessionId-FHqHbzU ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/AssetErrorKind : java/lang/Enum {
+	public static final field ASSET_NOT_FOUND Lio/dataloom/assets/AssetErrorKind;
+	public static final field ASSET_VERSION_CONFLICT Lio/dataloom/assets/AssetErrorKind;
+	public static final field CHUNK_DIGEST_MISMATCH Lio/dataloom/assets/AssetErrorKind;
+	public static final field CHUNK_LENGTH_MISMATCH Lio/dataloom/assets/AssetErrorKind;
+	public static final field CHUNK_OUT_OF_RANGE Lio/dataloom/assets/AssetErrorKind;
+	public static final field EMPTY_ASSET Lio/dataloom/assets/AssetErrorKind;
+	public static final field INCOMPLETE_UPLOAD Lio/dataloom/assets/AssetErrorKind;
+	public static final field OBJECT_DIGEST_MISMATCH Lio/dataloom/assets/AssetErrorKind;
+	public static final field PROVIDER_REJECTED Lio/dataloom/assets/AssetErrorKind;
+	public static final field PROVIDER_UNAVAILABLE Lio/dataloom/assets/AssetErrorKind;
+	public static final field QUOTA_EXCEEDED Lio/dataloom/assets/AssetErrorKind;
+	public static final field SESSION_CONFLICT Lio/dataloom/assets/AssetErrorKind;
+	public static final field SESSION_NOT_FOUND Lio/dataloom/assets/AssetErrorKind;
+	public static final field SINK_FAILURE Lio/dataloom/assets/AssetErrorKind;
+	public static final field SOURCE_CONTENT_CHANGED Lio/dataloom/assets/AssetErrorKind;
+	public static final field SOURCE_FAILURE Lio/dataloom/assets/AssetErrorKind;
+	public final fun getCategory ()Lio/dataloom/api/error/ErrorCategory;
+	public final fun getCode-7tkViRw ()Ljava/lang/String;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getRecoverability ()Lio/dataloom/api/error/Recoverability;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/assets/AssetErrorKind;
+	public static fun values ()[Lio/dataloom/assets/AssetErrorKind;
+}
+
+public final class io/dataloom/assets/AssetIntegrityVerifier {
+	public static final field Companion Lio/dataloom/assets/AssetIntegrityVerifier$Companion;
+	public static final field DEFAULT_READ_BUFFER_BYTES I
+	public fun <init> (Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;I)V
+	public synthetic fun <init> (Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun prepareManifest-fdJrask (Ljava/lang/String;JLjava/lang/String;Lio/dataloom/assets/AssetSource;Lio/dataloom/assets/AssetChunkPlan;Lio/dataloom/api/security/DigestAlgorithm;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun verifyChunk (Lio/dataloom/api/asset/AssetChunkDescriptor;[B)Z
+	public final fun verifyObject (Lio/dataloom/api/asset/AssetManifest;Lio/dataloom/assets/AssetReadable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/assets/AssetIntegrityVerifier$Companion {
+}
+
+public abstract interface class io/dataloom/assets/AssetProvider {
+	public abstract fun abortUpload-fnV884s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun completeUpload-fnV884s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getChunkSizeBounds ()Lio/dataloom/assets/AssetChunkSizeBounds;
+	public abstract fun openUpload (Lio/dataloom/assets/AssetUploadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun readChunk-jJr0HPI (Ljava/lang/String;JILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun readManifest-NNrJYCg (Ljava/lang/String;Ljava/lang/Long;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun readManifest-NNrJYCg$default (Lio/dataloom/assets/AssetProvider;Ljava/lang/String;Ljava/lang/Long;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun uploadChunk (Lio/dataloom/assets/AssetChunkUpload;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/assets/AssetProvider$DefaultImpls {
+	public static synthetic fun readManifest-NNrJYCg$default (Lio/dataloom/assets/AssetProvider;Ljava/lang/String;Ljava/lang/Long;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/assets/AssetQuota {
+	public static final field Companion Lio/dataloom/assets/AssetQuota$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Long;Ljava/lang/Long;)V
+	public synthetic fun <init> (Ljava/lang/Long;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/Long;
+	public final fun component2 ()Ljava/lang/Long;
+	public final fun copy (Ljava/lang/Long;Ljava/lang/Long;)Lio/dataloom/assets/AssetQuota;
+	public static synthetic fun copy$default (Lio/dataloom/assets/AssetQuota;Ljava/lang/Long;Ljava/lang/Long;ILjava/lang/Object;)Lio/dataloom/assets/AssetQuota;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaxAssetSizeBytes ()Ljava/lang/Long;
+	public final fun getMaxTotalBytes ()Ljava/lang/Long;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/AssetQuota$Companion {
+	public final fun getUNLIMITED ()Lio/dataloom/assets/AssetQuota;
+}
+
+public abstract interface class io/dataloom/assets/AssetReadable {
+	public abstract fun read (J[BIILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/dataloom/assets/AssetSink : io/dataloom/assets/AssetReadable {
+	public abstract fun discard (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun reserve (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun write (J[BIILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/assets/AssetSink$DefaultImpls {
+	public static fun reserve (Lio/dataloom/assets/AssetSink;JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/assets/AssetSinkFullException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public abstract interface class io/dataloom/assets/AssetSource : io/dataloom/assets/AssetReadable {
+	public abstract fun sizeBytes (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/assets/AssetSourceChangedException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class io/dataloom/assets/AssetStreamsKt {
+	public static final fun readFully (Lio/dataloom/assets/AssetReadable;J[BIILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/assets/AssetTransferDirection : java/lang/Enum {
+	public static final field DOWNLOAD Lio/dataloom/assets/AssetTransferDirection;
+	public static final field UPLOAD Lio/dataloom/assets/AssetTransferDirection;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/assets/AssetTransferDirection;
+	public static fun values ()[Lio/dataloom/assets/AssetTransferDirection;
+}
+
+public final class io/dataloom/assets/AssetTransferEngine {
+	public fun <init> (Lio/dataloom/assets/AssetProvider;Lio/dataloom/assets/AssetTransferSessionStore;Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;ILio/dataloom/api/security/DigestAlgorithm;I)V
+	public synthetic fun <init> (Lio/dataloom/assets/AssetProvider;Lio/dataloom/assets/AssetTransferSessionStore;Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;ILio/dataloom/api/security/DigestAlgorithm;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun cancel-6lL3Q7Q (Ljava/lang/String;Lio/dataloom/assets/AssetSink;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun cancel-6lL3Q7Q$default (Lio/dataloom/assets/AssetTransferEngine;Ljava/lang/String;Lio/dataloom/assets/AssetSink;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun download-q0nRlsc (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Lio/dataloom/assets/AssetSink;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun upload-foKfO2M (Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Lio/dataloom/assets/AssetSource;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/assets/AssetTransferError : io/dataloom/api/error/DataLoomError {
+	public fun <init> (Lio/dataloom/assets/AssetErrorKind;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Lio/dataloom/assets/AssetErrorKind;Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCategory ()Lio/dataloom/api/error/ErrorCategory;
+	public fun getCause ()Ljava/lang/Throwable;
+	public fun getCode-7tkViRw ()Ljava/lang/String;
+	public final fun getKind ()Lio/dataloom/assets/AssetErrorKind;
+	public fun getMessage ()Ljava/lang/String;
+	public fun getRecoverability ()Lio/dataloom/api/error/Recoverability;
+	public fun getSeverity ()Lio/dataloom/api/error/ErrorSeverity;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/assets/AssetTransferEvent {
+}
+
+public final class io/dataloom/assets/AssetTransferEvent$BeginVerification : io/dataloom/assets/AssetTransferEvent {
+	public static final field INSTANCE Lio/dataloom/assets/AssetTransferEvent$BeginVerification;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/AssetTransferEvent$Cancel : io/dataloom/assets/AssetTransferEvent {
+	public static final field INSTANCE Lio/dataloom/assets/AssetTransferEvent$Cancel;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/AssetTransferEvent$ChunkCommitted : io/dataloom/assets/AssetTransferEvent {
+	public fun <init> (I)V
+	public final fun component1 ()I
+	public final fun copy (I)Lio/dataloom/assets/AssetTransferEvent$ChunkCommitted;
+	public static synthetic fun copy$default (Lio/dataloom/assets/AssetTransferEvent$ChunkCommitted;IILjava/lang/Object;)Lio/dataloom/assets/AssetTransferEvent$ChunkCommitted;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getIndex ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/AssetTransferEvent$Fail : io/dataloom/assets/AssetTransferEvent {
+	public fun <init> (Lio/dataloom/assets/AssetErrorKind;)V
+	public final fun component1 ()Lio/dataloom/assets/AssetErrorKind;
+	public final fun copy (Lio/dataloom/assets/AssetErrorKind;)Lio/dataloom/assets/AssetTransferEvent$Fail;
+	public static synthetic fun copy$default (Lio/dataloom/assets/AssetTransferEvent$Fail;Lio/dataloom/assets/AssetErrorKind;ILjava/lang/Object;)Lio/dataloom/assets/AssetTransferEvent$Fail;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKind ()Lio/dataloom/assets/AssetErrorKind;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/AssetTransferEvent$ReconcileCommitted : io/dataloom/assets/AssetTransferEvent {
+	public fun <init> (Ljava/util/Set;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getIndices ()Ljava/util/Set;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/AssetTransferEvent$Start : io/dataloom/assets/AssetTransferEvent {
+	public static final field INSTANCE Lio/dataloom/assets/AssetTransferEvent$Start;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/AssetTransferEvent$VerificationSucceeded : io/dataloom/assets/AssetTransferEvent {
+	public static final field INSTANCE Lio/dataloom/assets/AssetTransferEvent$VerificationSucceeded;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/assets/AssetTransferOutcome {
+}
+
+public final class io/dataloom/assets/AssetTransferOutcome$Cancelled : io/dataloom/assets/AssetTransferOutcome {
+	public fun <init> (Lio/dataloom/assets/AssetTransferSession;)V
+	public final fun component1 ()Lio/dataloom/assets/AssetTransferSession;
+	public final fun copy (Lio/dataloom/assets/AssetTransferSession;)Lio/dataloom/assets/AssetTransferOutcome$Cancelled;
+	public static synthetic fun copy$default (Lio/dataloom/assets/AssetTransferOutcome$Cancelled;Lio/dataloom/assets/AssetTransferSession;ILjava/lang/Object;)Lio/dataloom/assets/AssetTransferOutcome$Cancelled;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSession ()Lio/dataloom/assets/AssetTransferSession;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/AssetTransferOutcome$Completed : io/dataloom/assets/AssetTransferOutcome {
+	public fun <init> (Lio/dataloom/assets/AssetTransferSession;)V
+	public final fun component1 ()Lio/dataloom/assets/AssetTransferSession;
+	public final fun copy (Lio/dataloom/assets/AssetTransferSession;)Lio/dataloom/assets/AssetTransferOutcome$Completed;
+	public static synthetic fun copy$default (Lio/dataloom/assets/AssetTransferOutcome$Completed;Lio/dataloom/assets/AssetTransferSession;ILjava/lang/Object;)Lio/dataloom/assets/AssetTransferOutcome$Completed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSession ()Lio/dataloom/assets/AssetTransferSession;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/AssetTransferOutcome$Failed : io/dataloom/assets/AssetTransferOutcome {
+	public fun <init> (Lio/dataloom/assets/AssetTransferSession;)V
+	public final fun getError ()Lio/dataloom/assets/AssetTransferError;
+	public final fun getSession ()Lio/dataloom/assets/AssetTransferSession;
+}
+
+public final class io/dataloom/assets/AssetTransferOutcome$Interrupted : io/dataloom/assets/AssetTransferOutcome {
+	public fun <init> (Lio/dataloom/assets/AssetTransferSession;Lio/dataloom/api/error/DataLoomError;)V
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public final fun getSession ()Lio/dataloom/assets/AssetTransferSession;
+}
+
+public final class io/dataloom/assets/AssetTransferOutcome$NotStarted : io/dataloom/assets/AssetTransferOutcome {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+}
+
+public final class io/dataloom/assets/AssetTransferPhase : java/lang/Enum {
+	public static final field CANCELLED Lio/dataloom/assets/AssetTransferPhase;
+	public static final field COMPLETED Lio/dataloom/assets/AssetTransferPhase;
+	public static final field CREATED Lio/dataloom/assets/AssetTransferPhase;
+	public static final field FAILED Lio/dataloom/assets/AssetTransferPhase;
+	public static final field TRANSFERRING Lio/dataloom/assets/AssetTransferPhase;
+	public static final field VERIFYING Lio/dataloom/assets/AssetTransferPhase;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun isTerminal ()Z
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/assets/AssetTransferPhase;
+	public static fun values ()[Lio/dataloom/assets/AssetTransferPhase;
+}
+
+public final class io/dataloom/assets/AssetTransferRejection : java/lang/Enum {
+	public static final field CHUNKS_MISSING Lio/dataloom/assets/AssetTransferRejection;
+	public static final field CHUNK_OUT_OF_RANGE Lio/dataloom/assets/AssetTransferRejection;
+	public static final field INVALID_PHASE Lio/dataloom/assets/AssetTransferRejection;
+	public static final field SESSION_TERMINAL Lio/dataloom/assets/AssetTransferRejection;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/assets/AssetTransferRejection;
+	public static fun values ()[Lio/dataloom/assets/AssetTransferRejection;
+}
+
+public final class io/dataloom/assets/AssetTransferSession {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/assets/AssetTransferDirection;Lio/dataloom/api/asset/AssetManifest;Lio/dataloom/assets/AssetTransferPhase;Ljava/util/Set;Lio/dataloom/assets/AssetErrorKind;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/assets/AssetTransferDirection;Lio/dataloom/api/asset/AssetManifest;Lio/dataloom/assets/AssetTransferPhase;Ljava/util/Set;Lio/dataloom/assets/AssetErrorKind;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCommittedChunks ()Ljava/util/Set;
+	public final fun getDirection ()Lio/dataloom/assets/AssetTransferDirection;
+	public final fun getFailure ()Lio/dataloom/assets/AssetErrorKind;
+	public final fun getManifest ()Lio/dataloom/api/asset/AssetManifest;
+	public final fun getMissingChunks ()Ljava/util/List;
+	public final fun getPhase ()Lio/dataloom/assets/AssetTransferPhase;
+	public final fun getRevision ()J
+	public final fun getSessionId-FHqHbzU ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isFullyCommitted ()Z
+	public final fun reduce (Lio/dataloom/assets/AssetTransferEvent;)Lio/dataloom/assets/AssetTransferTransition;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/AssetTransferSessionId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/assets/AssetTransferSessionId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/assets/AssetTransferSessionStore {
+	public abstract fun load-fnV884s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun save (Lio/dataloom/assets/AssetTransferSession;Ljava/lang/Long;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/assets/AssetTransferSessionStoreKt {
+	public static final fun applyEvent-qxwvf3o (Lio/dataloom/assets/AssetTransferSessionStore;Ljava/lang/String;Lio/dataloom/assets/AssetTransferEvent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/dataloom/assets/AssetTransferTransition {
+	public abstract fun getSession ()Lio/dataloom/assets/AssetTransferSession;
+}
+
+public final class io/dataloom/assets/AssetTransferTransition$Applied : io/dataloom/assets/AssetTransferTransition {
+	public fun <init> (Lio/dataloom/assets/AssetTransferSession;)V
+	public final fun component1 ()Lio/dataloom/assets/AssetTransferSession;
+	public final fun copy (Lio/dataloom/assets/AssetTransferSession;)Lio/dataloom/assets/AssetTransferTransition$Applied;
+	public static synthetic fun copy$default (Lio/dataloom/assets/AssetTransferTransition$Applied;Lio/dataloom/assets/AssetTransferSession;ILjava/lang/Object;)Lio/dataloom/assets/AssetTransferTransition$Applied;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getSession ()Lio/dataloom/assets/AssetTransferSession;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/AssetTransferTransition$Rejected : io/dataloom/assets/AssetTransferTransition {
+	public fun <init> (Lio/dataloom/assets/AssetTransferSession;Lio/dataloom/assets/AssetTransferRejection;)V
+	public final fun component1 ()Lio/dataloom/assets/AssetTransferSession;
+	public final fun component2 ()Lio/dataloom/assets/AssetTransferRejection;
+	public final fun copy (Lio/dataloom/assets/AssetTransferSession;Lio/dataloom/assets/AssetTransferRejection;)Lio/dataloom/assets/AssetTransferTransition$Rejected;
+	public static synthetic fun copy$default (Lio/dataloom/assets/AssetTransferTransition$Rejected;Lio/dataloom/assets/AssetTransferSession;Lio/dataloom/assets/AssetTransferRejection;ILjava/lang/Object;)Lio/dataloom/assets/AssetTransferTransition$Rejected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReason ()Lio/dataloom/assets/AssetTransferRejection;
+	public fun getSession ()Lio/dataloom/assets/AssetTransferSession;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/AssetTransferTransition$Unchanged : io/dataloom/assets/AssetTransferTransition {
+	public fun <init> (Lio/dataloom/assets/AssetTransferSession;)V
+	public final fun component1 ()Lio/dataloom/assets/AssetTransferSession;
+	public final fun copy (Lio/dataloom/assets/AssetTransferSession;)Lio/dataloom/assets/AssetTransferTransition$Unchanged;
+	public static synthetic fun copy$default (Lio/dataloom/assets/AssetTransferTransition$Unchanged;Lio/dataloom/assets/AssetTransferSession;ILjava/lang/Object;)Lio/dataloom/assets/AssetTransferTransition$Unchanged;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getSession ()Lio/dataloom/assets/AssetTransferSession;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/AssetUploadRequest {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/asset/AssetManifest;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-FHqHbzU ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/asset/AssetManifest;
+	public final fun copy-fnV884s (Ljava/lang/String;Lio/dataloom/api/asset/AssetManifest;)Lio/dataloom/assets/AssetUploadRequest;
+	public static synthetic fun copy-fnV884s$default (Lio/dataloom/assets/AssetUploadRequest;Ljava/lang/String;Lio/dataloom/api/asset/AssetManifest;ILjava/lang/Object;)Lio/dataloom/assets/AssetUploadRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getManifest ()Lio/dataloom/api/asset/AssetManifest;
+	public final fun getSessionId-FHqHbzU ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/AssetUploadStatus {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/Set;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCommittedChunks ()Ljava/util/Set;
+	public final fun getSessionId-FHqHbzU ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/InMemoryAssetTransferSessionStore : io/dataloom/assets/AssetTransferSessionStore {
+	public fun <init> ()V
+	public fun load-fnV884s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun save (Lio/dataloom/assets/AssetTransferSession;Ljava/lang/Long;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/assets/memory/InMemoryAssetProvider : io/dataloom/assets/AssetProvider {
+	public fun <init> (Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;Lio/dataloom/assets/AssetQuota;Lio/dataloom/assets/AssetChunkSizeBounds;)V
+	public synthetic fun <init> (Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;Lio/dataloom/assets/AssetQuota;Lio/dataloom/assets/AssetChunkSizeBounds;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun abortUpload-fnV884s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun completeUpload-fnV884s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getChunkSizeBounds ()Lio/dataloom/assets/AssetChunkSizeBounds;
+	public fun openUpload (Lio/dataloom/assets/AssetUploadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun readChunk-jJr0HPI (Ljava/lang/String;JILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun readManifest-NNrJYCg (Ljava/lang/String;Ljava/lang/Long;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun uploadChunk (Lio/dataloom/assets/AssetChunkUpload;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/assets/memory/InMemoryAssetSink : io/dataloom/assets/AssetSink {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Long;)V
+	public synthetic fun <init> (Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun discard (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun read (J[BIILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun reserve (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun snapshot (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun write (J[BIILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/assets/memory/InMemoryAssetSource : io/dataloom/assets/AssetSource {
+	public fun <init> ([B)V
+	public fun read (J[BIILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun sizeBytes (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/assets/testkit/AssetProviderContractKit {
+	public fun <init> (Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;Lkotlin/jvm/functions/Function2;)V
+	public final fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/assets/testkit/AssetProviderContractReport {
+	public final fun assertAllPassed ()V
+	public final fun getFailures ()Ljava/util/List;
+	public final fun getResults ()Ljava/util/List;
+}
+
+public final class io/dataloom/assets/testkit/AssetProviderContractReport$Result {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public final fun getFailure ()Ljava/lang/Throwable;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPassed ()Z
+}
+
+public final class io/dataloom/assets/transform/AssetChunkAuthenticationException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public abstract interface class io/dataloom/assets/transform/AssetChunkCipher {
+	public abstract fun getAlgorithm-r1VcTaU ()Ljava/lang/String;
+	public abstract fun open-sPZQwjs (Ljava/lang/String;ILio/dataloom/assets/transform/AssetSealedChunk;[BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun seal-sPZQwjs (Ljava/lang/String;I[B[BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/dataloom/assets/transform/AssetCompressor {
+	public abstract fun compress ([BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun decompress ([BILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getAlgorithm-aDT3bAo ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/transform/AssetSealedChunk {
+	public fun <init> ([B[B)V
+	public final fun copyCiphertext ()[B
+	public final fun copyNonce ()[B
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/transform/IdentityAssetCipher : io/dataloom/assets/transform/AssetChunkCipher {
+	public fun <init> ()V
+	public fun getAlgorithm-r1VcTaU ()Ljava/lang/String;
+	public fun open-sPZQwjs (Ljava/lang/String;ILio/dataloom/assets/transform/AssetSealedChunk;[BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun seal-sPZQwjs (Ljava/lang/String;I[B[BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/assets/transform/IdentityAssetCompressor : io/dataloom/assets/transform/AssetCompressor {
+	public fun <init> ()V
+	public fun compress ([BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun decompress ([BILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getAlgorithm-aDT3bAo ()Ljava/lang/String;
+}
+

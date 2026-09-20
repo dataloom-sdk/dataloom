@@ -9,6 +9,7 @@ import io.dataloom.api.operational.OperationalEventOutboxScope
 import io.dataloom.api.operational.OperationalEventSource
 import io.dataloom.api.operational.OperationalEventType
 import io.dataloom.api.provider.ProviderOperationResult
+import io.dataloom.runtime.observation.health.OperationalEventOutboxHealthTracker
 
 /**
  * Per-entry outcome an [OperationalEventOutboxEntryHandler] reports for one
@@ -414,9 +415,14 @@ public sealed interface OperationalEventOutboxProcessingResult {
  *
  * @param outbox the [DurableOperationalEventOutbox] this processor reads from
  *   and acknowledges into. Required.
+ * @param healthTracker optional; when supplied, each completed [process]
+ *   cycle's outcome and left-pending counts are reported to it (see
+ *   [OperationalEventOutboxHealthTracker]) -- the outbox alone cannot know what
+ *   a handler decided. `null` (the default) records nothing.
  */
 public class DurableOperationalEventOutboxProcessor(
     private val outbox: DurableOperationalEventOutbox,
+    private val healthTracker: OperationalEventOutboxHealthTracker? = null,
 ) {
 
     /**
@@ -444,6 +450,17 @@ public class DurableOperationalEventOutboxProcessor(
         scope: OperationalEventOutboxScope,
         maxEntries: Int = DEFAULT_MAX_ENTRIES,
         filter: OperationalEventOutboxEntryFilter = OperationalEventOutboxEntryFilter { true },
+        handler: OperationalEventOutboxEntryHandler,
+    ): OperationalEventOutboxProcessingResult {
+        val result = processCycle(scope, maxEntries, filter, handler)
+        healthTracker?.recordProcessingCycle(scope, result)
+        return result
+    }
+
+    private suspend fun processCycle(
+        scope: OperationalEventOutboxScope,
+        maxEntries: Int,
+        filter: OperationalEventOutboxEntryFilter,
         handler: OperationalEventOutboxEntryHandler,
     ): OperationalEventOutboxProcessingResult {
         require(maxEntries >= 1) { "maxEntries must be at least 1, but was $maxEntries." }

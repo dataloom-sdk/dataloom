@@ -47,11 +47,20 @@ public interface DataLoomDigestCalculator {
 ```
 
 Computes an unkeyed cryptographic digest (hash) of `input`. One-shot and
-stateless — mirrors `DataLoomSecureRandom.nextBytes`'s single-call shape
-rather than an incremental hasher. Chunk integrity is handled directly with
-one digest per chunk; whole-object integrity is achievable by digesting the
-ordered concatenation of chunk digests, the same technique multipart
-uploads and content-addressable stores already use.
+stateless — mirrors `DataLoomSecureRandom.nextBytes`'s single-call shape.
+Chunk integrity is handled directly with one digest per chunk.
+
+> **Update (asset transfer slice 1, `#97`):** an incremental digest
+> capability now exists alongside this one-shot contract —
+> `DataLoomIncrementalDigestCalculator` (extends `DataLoomDigestCalculator`
+> with `newAccumulator(algorithm)`) and `DataLoomDigestAccumulator`
+> (`update(bytes, offset, length)` / `finish()` / `close()`). The earlier
+> guidance to derive whole-object integrity from a digest of the chunk
+> digests was **superseded**: `AssetManifest.checksum` is defined as a digest
+> of the asset's raw bytes, which needs bounded-memory streaming, not a hash
+> of hashes. See
+> [ADR-0006](../adr/ADR-0006-asset-transfer-and-streaming-digest.md) for the
+> decision and its Apple (CommonCrypto `Init`/`Update`/`Final`) lifecycle.
 
 ### `DigestAlgorithm`
 
@@ -179,10 +188,13 @@ share across threads.
   `MessageDigest.isEqual`.
 - Both Apple implementations are reached through Kotlin/Native's built-in
   `platform.CoreCrypto` cinterop binding — bundled with the Kotlin/Native
-  distribution since 1.3, no new `.def` file needed — and use CommonCrypto's
-  one-shot convenience functions (`CC_SHA256`/`CC_SHA512`/`CCHmac`) rather
-  than the stateful `Init`/`Update`/`Final` trio, keeping this at the same
-  complexity level as `AppleDataLoomSecureRandom`'s `arc4random_buf` usage.
+  distribution since 1.3, no new `.def` file needed. The one-shot digest and
+  HMAC calls use CommonCrypto's one-shot convenience functions
+  (`CC_SHA256`/`CC_SHA512`/`CCHmac`), keeping them at the same complexity
+  level as `AppleDataLoomSecureRandom`'s `arc4random_buf` usage. Only the
+  *incremental digest* accumulator uses the stateful `Init`/`Update`/`Final`
+  trio (a `nativeHeap` context freed by `finish`/`close`, with a Kotlin/Native
+  `Cleaner` safety net); there is still no incremental HMAC.
 
 Neither pair is wired into `RuntimeDependencies`/`DataLoomBuilder`
 automatically yet, and no current subsystem consumes these boundaries —
@@ -210,12 +222,11 @@ those remain open follow-up work, same as the equivalent note on the
   variants.** V1 ships exactly the algorithms confirmed natively available
   on both target platforms without extra dependencies. Both enums are
   closed but additive: a new named constant is a non-breaking change.
-- **Streaming/incremental digest or MAC APIs** (`update()`/`doFinal()`-style
-  stateful hashers) and offset/length overloads. Whole-array one-shot calls
-  suffice given bounded chunk sizes (once asset chunking is decided) and the
-  hash-of-chunk-hashes technique for whole-object integrity. A genuine
-  streaming hasher is a clean, additive future extension if a real
-  non-chunked need appears.
+- **Incremental MAC APIs** (`update()`/`doFinal()`-style stateful HMAC).
+  Whole-array one-shot HMAC calls remain sufficient; no consumer needs a
+  streaming MAC. (Incremental *digests* are no longer excluded — see the
+  update note under [`DataLoomDigestCalculator`](#dataloomdigestcalculator)
+  and [ADR-0006](../adr/ADR-0006-asset-transfer-and-streaming-digest.md).)
 - **Encryption/decryption and a cipher-algorithm selector** (AES-GCM, IVs,
   nonces). Confidentiality is a distinct half of `FR-ASSET-008` from "key
   references" and is outside this design's integrity/signature-reference

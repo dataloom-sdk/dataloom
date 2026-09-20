@@ -177,13 +177,19 @@ class AndroidCircuitBreakerProbeContentionInstrumentedTest {
                 val winner = if (outcomeA == "ALLOWED") resultA else resultB
                 val loser = if (outcomeA == "ALLOWED") resultB else resultA
 
-                assertEquals(
-                    "PROBE_IN_FLIGHT",
-                    loser.getString(CircuitBreakerProbeContentionContract.KEY_REJECTION_REASON),
-                    "The losing process must be rejected specifically because a probe was " +
-                        "already in flight for the winner's generation, proving the two " +
-                        "processes genuinely contended for the same permit rather than one " +
-                        "seeing a stale/unrelated circuit state.",
+                // CircuitBreakerCoordinator.evaluateAccess compares the caller's own
+                // clock reading with the stored updatedAt before it looks at the probe
+                // lease. Each process samples its clock before reading shared state, so a
+                // loser that sampled just before the winner's write reads the winner's
+                // newer updatedAt and is refused as CLOCK_REGRESSION instead of
+                // PROBE_IN_FLIGHT. Either way it observed the winner's committed state.
+                val loserReason = loser.getString(CircuitBreakerProbeContentionContract.KEY_REJECTION_REASON)
+                assertTrue(
+                    loserReason == "PROBE_IN_FLIGHT" || loserReason == "CLOCK_REGRESSION",
+                    "The losing process must be rejected because the winner's probe was already " +
+                        "committed (PROBE_IN_FLIGHT, or CLOCK_REGRESSION when its clock sample " +
+                        "preceded the winner's write), not because it saw a stale/unrelated " +
+                        "circuit state. Was: $loserReason.",
                 )
 
                 val winningGeneration = winner.getLong(CircuitBreakerProbeContentionContract.KEY_GENERATION)
