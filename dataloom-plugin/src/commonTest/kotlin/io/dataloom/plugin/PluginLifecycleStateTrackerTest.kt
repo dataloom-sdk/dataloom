@@ -1,4 +1,4 @@
-package io.dataloom.core.plugin
+package io.dataloom.plugin
 
 import io.dataloom.api.identifier.RuntimeVersion
 import io.dataloom.api.plugin.DataLoomPlugin
@@ -30,6 +30,8 @@ class PluginLifecycleStateTrackerTest {
         minimumSdkVersion = RuntimeVersion("1.0.0"),
     )
 
+    private val sdkVersion = RuntimeVersion("1.5.0")
+
     private val defaultBounds = PluginExecutionBounds(
         maximumExecutionMillis = 1_000L,
         maximumConcurrentInvocations = 1,
@@ -58,7 +60,7 @@ class PluginLifecycleStateTrackerTest {
     @Test
     fun `newly tracked plugin starts at LOADED`() {
         val registry = PluginRegistry(listOf(plugin("a")))
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
 
         assertEquals(PluginLifecycleState.LOADED, tracker.stateOf(PluginId("a")))
     }
@@ -66,7 +68,7 @@ class PluginLifecycleStateTrackerTest {
     @Test
     fun `multiple plugins each independently start at LOADED`() {
         val registry = PluginRegistry(listOf(plugin("a"), plugin("b")))
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
 
         assertEquals(PluginLifecycleState.LOADED, tracker.stateOf(PluginId("a")))
         assertEquals(PluginLifecycleState.LOADED, tracker.stateOf(PluginId("b")))
@@ -75,7 +77,7 @@ class PluginLifecycleStateTrackerTest {
     @Test
     fun `stateOf throws for an unregistered plugin id`() {
         val registry = PluginRegistry(listOf(plugin("a")))
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
 
         assertFailsWith<IllegalArgumentException> {
             tracker.stateOf(PluginId("missing"))
@@ -89,7 +91,7 @@ class PluginLifecycleStateTrackerTest {
     @Test
     fun `legal transition updates tracked state and returns Allowed`() {
         val registry = PluginRegistry(listOf(plugin("a")))
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
 
         val result = tracker.transition(PluginId("a"), PluginLifecycleState.VALIDATED)
 
@@ -100,7 +102,7 @@ class PluginLifecycleStateTrackerTest {
     @Test
     fun `full happy path reaches ACTIVE`() {
         val registry = PluginRegistry(listOf(plugin("a")))
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
         val id = PluginId("a")
 
         tracker.transition(id, PluginLifecycleState.VALIDATED)
@@ -114,7 +116,7 @@ class PluginLifecycleStateTrackerTest {
     @Test
     fun `one plugin transition does not affect another plugin's state`() {
         val registry = PluginRegistry(listOf(plugin("a"), plugin("b")))
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
 
         tracker.transition(PluginId("a"), PluginLifecycleState.VALIDATED)
 
@@ -129,7 +131,7 @@ class PluginLifecycleStateTrackerTest {
     @Test
     fun `illegal transition leaves tracked state unchanged and returns Rejected`() {
         val registry = PluginRegistry(listOf(plugin("a")))
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
         val id = PluginId("a")
 
         val result = tracker.transition(id, PluginLifecycleState.ACTIVE)
@@ -141,7 +143,7 @@ class PluginLifecycleStateTrackerTest {
     @Test
     fun `transition throws for an unregistered plugin id`() {
         val registry = PluginRegistry(listOf(plugin("a")))
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
 
         assertFailsWith<IllegalArgumentException> {
             tracker.transition(PluginId("missing"), PluginLifecycleState.VALIDATED)
@@ -151,7 +153,7 @@ class PluginLifecycleStateTrackerTest {
     @Test
     fun `disabled plugin cannot be re-activated`() {
         val registry = PluginRegistry(listOf(plugin("a")))
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
         val id = PluginId("a")
 
         tracker.transition(id, PluginLifecycleState.DISABLED)
@@ -164,7 +166,7 @@ class PluginLifecycleStateTrackerTest {
     @Test
     fun `disabled plugin can be unloaded`() {
         val registry = PluginRegistry(listOf(plugin("a")))
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
         val id = PluginId("a")
 
         tracker.transition(id, PluginLifecycleState.DISABLED)
@@ -183,7 +185,7 @@ class PluginLifecycleStateTrackerTest {
         val registry = PluginRegistry(
             listOf(plugin("a", permissions = setOf(PluginPermission("storage.read")))),
         )
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
         val id = PluginId("a")
         val granted = GrantedCapabilities.of(setOf(Capability("storage.read")))
 
@@ -205,7 +207,7 @@ class PluginLifecycleStateTrackerTest {
                 ),
             ),
         )
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
         val id = PluginId("a")
         val granted = GrantedCapabilities.of(setOf(Capability("storage.read")))
 
@@ -223,7 +225,7 @@ class PluginLifecycleStateTrackerTest {
         val registry = PluginRegistry(
             listOf(plugin("a", permissions = setOf(PluginPermission("storage.read")))),
         )
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
         val id = PluginId("a")
 
         tracker.transition(id, PluginLifecycleState.VALIDATED, GrantedCapabilities.None)
@@ -238,7 +240,7 @@ class PluginLifecycleStateTrackerTest {
     @Test
     fun `capability-aware transition allows a plugin with no declared permissions to become ACTIVE with no grant`() {
         val registry = PluginRegistry(listOf(plugin("a")))
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
         val id = PluginId("a")
 
         tracker.transition(id, PluginLifecycleState.VALIDATED, GrantedCapabilities.None)
@@ -254,7 +256,7 @@ class PluginLifecycleStateTrackerTest {
         val registry = PluginRegistry(
             listOf(plugin("a", permissions = setOf(PluginPermission("storage.read")))),
         )
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
         val id = PluginId("a")
 
         val result = tracker.transition(id, PluginLifecycleState.VALIDATED, GrantedCapabilities.None)
@@ -268,7 +270,7 @@ class PluginLifecycleStateTrackerTest {
         val registry = PluginRegistry(
             listOf(plugin("a", permissions = setOf(PluginPermission("storage.read")))),
         )
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
         val id = PluginId("a")
 
         val result = tracker.transition(id, PluginLifecycleState.ACTIVE, GrantedCapabilities.None)
@@ -282,7 +284,7 @@ class PluginLifecycleStateTrackerTest {
         val registry = PluginRegistry(
             listOf(plugin("a", permissions = setOf(PluginPermission("storage.read")))),
         )
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
         val id = PluginId("a")
         val granted = GrantedCapabilities.of(setOf(Capability("storage.read")))
 
@@ -303,7 +305,7 @@ class PluginLifecycleStateTrackerTest {
     @Test
     fun `capability-aware transition throws for an unregistered plugin id`() {
         val registry = PluginRegistry(listOf(plugin("a")))
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
 
         assertFailsWith<IllegalArgumentException> {
             tracker.transition(PluginId("missing"), PluginLifecycleState.VALIDATED, GrantedCapabilities.None)
@@ -344,7 +346,7 @@ class PluginLifecycleStateTrackerTest {
     @Test
     fun `authorizer-aware transition applies the transition when authorized`() = runTest {
         val registry = PluginRegistry(listOf(plugin("a")))
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
         val id = PluginId("a")
         val authorizer = FakeAuthorizer(PluginLifecycleAdministrationAuthorizationDecision.Authorized)
 
@@ -358,7 +360,7 @@ class PluginLifecycleStateTrackerTest {
     @Test
     fun `authorizer-aware transition leaves state unchanged and returns AuthorizationDenied when denied`() = runTest {
         val registry = PluginRegistry(listOf(plugin("a")))
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
         val id = PluginId("a")
         val authorizer = FakeAuthorizer(
             PluginLifecycleAdministrationAuthorizationDecision.Denied("NOT_AN_OPERATOR"),
@@ -376,7 +378,7 @@ class PluginLifecycleStateTrackerTest {
     @Test
     fun `authorizer-aware transition rejects an illegal transition before consulting the authorizer`() = runTest {
         val registry = PluginRegistry(listOf(plugin("a")))
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
         val id = PluginId("a")
         val authorizer = FakeAuthorizer(PluginLifecycleAdministrationAuthorizationDecision.Authorized)
 
@@ -390,7 +392,7 @@ class PluginLifecycleStateTrackerTest {
     @Test
     fun `authorizer-aware transition applies to a DISABLED target -- the hot-disable case`() = runTest {
         val registry = PluginRegistry(listOf(plugin("a")))
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
         val id = PluginId("a")
         val authorizer = FakeAuthorizer(PluginLifecycleAdministrationAuthorizationDecision.Authorized)
 
@@ -406,7 +408,7 @@ class PluginLifecycleStateTrackerTest {
     @Test
     fun `authorizer-aware transition applies to a non-DISABLED target too`() = runTest {
         val registry = PluginRegistry(listOf(plugin("a")))
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
         val id = PluginId("a")
         val authorized = FakeAuthorizer(PluginLifecycleAdministrationAuthorizationDecision.Authorized)
         val denied = FakeAuthorizer(PluginLifecycleAdministrationAuthorizationDecision.Denied("NOT_AN_OPERATOR"))
@@ -423,7 +425,7 @@ class PluginLifecycleStateTrackerTest {
     @Test
     fun `authorizer-aware transition throws for an unregistered plugin id`() = runTest {
         val registry = PluginRegistry(listOf(plugin("a")))
-        val tracker = PluginLifecycleStateTracker(registry)
+        val tracker = PluginLifecycleStateTracker(registry, sdkVersion)
         val authorizer = FakeAuthorizer(PluginLifecycleAdministrationAuthorizationDecision.Authorized)
 
         assertFailsWith<IllegalArgumentException> {

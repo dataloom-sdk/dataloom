@@ -404,17 +404,68 @@ public final class io/dataloom/api/identifier/RetryPolicyId {
 }
 
 public final class io/dataloom/api/identifier/RuntimeVersion {
+	public static final field Companion Lio/dataloom/api/identifier/RuntimeVersion$Companion;
+	public static final field MAXIMUM_LENGTH I
 	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/api/identifier/RuntimeVersion;
 	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
 	public fun equals (Ljava/lang/Object;)Z
 	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
 	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public static final fun getBuildMetadata-impl (Ljava/lang/String;)Ljava/lang/String;
+	public static final fun getMajor-impl (Ljava/lang/String;)I
+	public static final fun getMinor-impl (Ljava/lang/String;)I
+	public static final fun getPatch-impl (Ljava/lang/String;)I
+	public static final fun getPreRelease-impl (Ljava/lang/String;)Ljava/lang/String;
 	public final fun getValue ()Ljava/lang/String;
 	public fun hashCode ()I
 	public static fun hashCode-impl (Ljava/lang/String;)I
+	public static final fun isPreRelease-impl (Ljava/lang/String;)Z
+	public static final fun precedenceCompareTo-bM9bOw4 (Ljava/lang/String;Ljava/lang/String;)I
 	public fun toString ()Ljava/lang/String;
 	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
 	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/RuntimeVersion$Companion {
+	public final fun parse (Ljava/lang/String;)Lio/dataloom/api/identifier/RuntimeVersionParseResult;
+}
+
+public final class io/dataloom/api/identifier/RuntimeVersionParseFailure : java/lang/Enum {
+	public static final field BLANK Lio/dataloom/api/identifier/RuntimeVersionParseFailure;
+	public static final field INVALID_BUILD_METADATA Lio/dataloom/api/identifier/RuntimeVersionParseFailure;
+	public static final field INVALID_PRE_RELEASE Lio/dataloom/api/identifier/RuntimeVersionParseFailure;
+	public static final field LEADING_ZERO_IN_CORE Lio/dataloom/api/identifier/RuntimeVersionParseFailure;
+	public static final field MALFORMED_CORE Lio/dataloom/api/identifier/RuntimeVersionParseFailure;
+	public static final field NUMBER_OUT_OF_RANGE Lio/dataloom/api/identifier/RuntimeVersionParseFailure;
+	public static final field TOO_LONG Lio/dataloom/api/identifier/RuntimeVersionParseFailure;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/identifier/RuntimeVersionParseFailure;
+	public static fun values ()[Lio/dataloom/api/identifier/RuntimeVersionParseFailure;
+}
+
+public abstract interface class io/dataloom/api/identifier/RuntimeVersionParseResult {
+}
+
+public final class io/dataloom/api/identifier/RuntimeVersionParseResult$Invalid : io/dataloom/api/identifier/RuntimeVersionParseResult {
+	public fun <init> (Lio/dataloom/api/identifier/RuntimeVersionParseFailure;)V
+	public final fun component1 ()Lio/dataloom/api/identifier/RuntimeVersionParseFailure;
+	public final fun copy (Lio/dataloom/api/identifier/RuntimeVersionParseFailure;)Lio/dataloom/api/identifier/RuntimeVersionParseResult$Invalid;
+	public static synthetic fun copy$default (Lio/dataloom/api/identifier/RuntimeVersionParseResult$Invalid;Lio/dataloom/api/identifier/RuntimeVersionParseFailure;ILjava/lang/Object;)Lio/dataloom/api/identifier/RuntimeVersionParseResult$Invalid;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFailure ()Lio/dataloom/api/identifier/RuntimeVersionParseFailure;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/identifier/RuntimeVersionParseResult$Parsed : io/dataloom/api/identifier/RuntimeVersionParseResult {
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-bVFqHQY ()Ljava/lang/String;
+	public final fun copy-bM9bOw4 (Ljava/lang/String;)Lio/dataloom/api/identifier/RuntimeVersionParseResult$Parsed;
+	public static synthetic fun copy-bM9bOw4$default (Lio/dataloom/api/identifier/RuntimeVersionParseResult$Parsed;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/identifier/RuntimeVersionParseResult$Parsed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getVersion-bVFqHQY ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/dataloom/api/identifier/ScheduleId {

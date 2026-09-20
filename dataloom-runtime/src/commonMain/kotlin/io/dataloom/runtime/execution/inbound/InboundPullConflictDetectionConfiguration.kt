@@ -19,8 +19,12 @@ import io.dataloom.runtime.conflict.DurableConflictDetectionCoordinator
  *   each incoming event that has a local counterpart.
  * @param bindings the [ConflictOrchestrationBindings] (detector, optional
  *   resolver) used for every detection call this pipeline execution makes.
- *   One binding applies to the whole pipeline instance — there is no
- *   per-entity-type binding.
+ *   One binding applies to the whole pipeline instance. Per-entity-type,
+ *   per-workflow and per-tenant resolver selection is expressed by the
+ *   binding's optional
+ *   [io.dataloom.runtime.conflict.ConflictResolverSelectionPolicy], evaluated
+ *   per detected conflict; without one, the binding's single resolver ID
+ *   applies to every conflict.
  */
 public class InboundPullConflictDetectionConfiguration(
     public val coordinator: DurableConflictDetectionCoordinator,

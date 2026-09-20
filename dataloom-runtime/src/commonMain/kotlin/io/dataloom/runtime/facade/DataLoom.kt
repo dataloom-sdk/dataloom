@@ -189,6 +189,20 @@ public interface DataLoom {
         get() = null
 
     /**
+     * Optional plugin-engine capability: registered-plugin lifecycle state,
+     * authorized lifecycle transitions, and bounded execution.
+     *
+     * `null` unless [DataLoomBuilder.pluginConfiguration] was supplied. Property
+     * access performs no authorization, clock read, I/O, or provider
+     * initialization, and never activates a plugin.
+     *
+     * A default getter preserves source compatibility for custom pre-V1
+     * [DataLoom] implementations.
+     */
+    public val pluginEngine: DataLoomPluginEngine?
+        get() = null
+
+    /**
      * Initializes all registered providers in registration order.
      *
      * Initializes the internal provider lifecycle coordinator and returns its

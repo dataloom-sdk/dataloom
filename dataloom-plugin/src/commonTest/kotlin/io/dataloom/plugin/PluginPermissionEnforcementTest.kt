@@ -1,4 +1,4 @@
-package io.dataloom.core.plugin
+package io.dataloom.plugin
 
 import io.dataloom.api.plugin.PluginPermission
 import io.dataloom.api.security.Capability

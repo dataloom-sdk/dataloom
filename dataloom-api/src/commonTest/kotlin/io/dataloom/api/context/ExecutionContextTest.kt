@@ -53,7 +53,7 @@ class ExecutionContextTest {
             tenantId = TenantId("tenant-001"),
             userId = UserId("user-001"),
             localeTag = LocaleTag("en-US"),
-            runtimeVersion = RuntimeVersion("runtime-1.0.0"),
+            runtimeVersion = RuntimeVersion("1.0.0"),
             configurationVersion = ConfigurationVersion("config-1.0.0"),
             metadata = metadata,
         )
@@ -63,7 +63,7 @@ class ExecutionContextTest {
         assertEquals("tenant-001", context.tenantId?.value)
         assertEquals("user-001", context.userId?.value)
         assertEquals("en-US", context.localeTag?.value)
-        assertEquals("runtime-1.0.0", context.runtimeVersion?.value)
+        assertEquals("1.0.0", context.runtimeVersion?.value)
         assertEquals("config-1.0.0", context.configurationVersion?.value)
         assertEquals("manual", context.metadata["path"])
     }

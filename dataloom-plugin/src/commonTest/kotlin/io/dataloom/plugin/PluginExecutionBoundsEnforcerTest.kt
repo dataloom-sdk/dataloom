@@ -1,10 +1,11 @@
-package io.dataloom.core.plugin
+package io.dataloom.plugin
 
 import io.dataloom.api.identifier.RuntimeVersion
 import io.dataloom.api.plugin.DataLoomPlugin
 import io.dataloom.api.plugin.PluginCompatibilityRange
 import io.dataloom.api.plugin.PluginExecutionBounds
 import io.dataloom.api.plugin.PluginId
+import io.dataloom.api.plugin.PluginLifecycleState
 import io.dataloom.api.plugin.PluginManifest
 import io.dataloom.api.plugin.PluginVendor
 import io.dataloom.api.plugin.PluginVersion
@@ -43,6 +44,25 @@ class PluginExecutionBoundsEnforcerTest {
         override val executionBounds: PluginExecutionBounds,
     ) : DataLoomPlugin
 
+    /**
+     * Builds an enforcer over [registry] with every plugin already ACTIVE, so
+     * these bounds tests exercise time and concurrency limits only. Lifecycle
+     * gating is covered by [PluginExecutionLifecycleGatingTest].
+     */
+    private fun activeEnforcer(registry: PluginRegistry): PluginExecutionBoundsEnforcer {
+        val tracker = PluginLifecycleStateTracker(registry, RuntimeVersion("1.5.0"))
+        for (plugin in registry.plugins) {
+            for (state in listOf(
+                PluginLifecycleState.VALIDATED,
+                PluginLifecycleState.INITIALIZING,
+                PluginLifecycleState.ACTIVE,
+            )) {
+                tracker.transition(plugin.manifest.id, state)
+            }
+        }
+        return PluginExecutionBoundsEnforcer(tracker)
+    }
+
     private fun plugin(
         id: String,
         maximumExecutionMillis: Long = 1_000L,
@@ -66,7 +86,7 @@ class PluginExecutionBoundsEnforcerTest {
 
     @Test
     fun `execute throws for an unregistered plugin id`() = runTest {
-        val enforcer = PluginExecutionBoundsEnforcer(PluginRegistry(emptyList()))
+        val enforcer = activeEnforcer(PluginRegistry(emptyList()))
 
         assertFailsWith<IllegalArgumentException> {
             enforcer.execute(PluginId("missing")) { "unreachable" }
@@ -80,7 +100,7 @@ class PluginExecutionBoundsEnforcerTest {
     @Test
     fun `operation completing within the timeout returns Completed with its value`() = runTest {
         val id = PluginId("plugin-a")
-        val enforcer = PluginExecutionBoundsEnforcer(PluginRegistry(listOf(plugin(id.value))))
+        val enforcer = activeEnforcer(PluginRegistry(listOf(plugin(id.value))))
 
         val result = enforcer.execute(id) { "done" }
 
@@ -90,7 +110,7 @@ class PluginExecutionBoundsEnforcerTest {
     @Test
     fun `a null operation result is preserved exactly`() = runTest {
         val id = PluginId("plugin-a")
-        val enforcer = PluginExecutionBoundsEnforcer(PluginRegistry(listOf(plugin(id.value))))
+        val enforcer = activeEnforcer(PluginRegistry(listOf(plugin(id.value))))
 
         val result: PluginExecutionBoundsResult<String?> = enforcer.execute(id) { null }
 
@@ -100,7 +120,7 @@ class PluginExecutionBoundsEnforcerTest {
     @Test
     fun `the concurrency slot is released after a normal completion`() = runTest {
         val id = PluginId("plugin-a")
-        val enforcer = PluginExecutionBoundsEnforcer(
+        val enforcer = activeEnforcer(
             PluginRegistry(listOf(plugin(id.value, maximumConcurrentInvocations = 1))),
         )
 
@@ -118,7 +138,7 @@ class PluginExecutionBoundsEnforcerTest {
     @Test
     fun `own timeout cancels the operation and returns TimedOut`() = runTest {
         val id = PluginId("plugin-a")
-        val enforcer = PluginExecutionBoundsEnforcer(
+        val enforcer = activeEnforcer(
             PluginRegistry(listOf(plugin(id.value, maximumExecutionMillis = 100L))),
         )
         var finallyExecuted = false
@@ -141,7 +161,7 @@ class PluginExecutionBoundsEnforcerTest {
     @Test
     fun `the concurrency slot is released after a timeout`() = runTest {
         val id = PluginId("plugin-a")
-        val enforcer = PluginExecutionBoundsEnforcer(
+        val enforcer = activeEnforcer(
             PluginRegistry(
                 listOf(plugin(id.value, maximumExecutionMillis = 100L, maximumConcurrentInvocations = 1)),
             ),
@@ -160,7 +180,7 @@ class PluginExecutionBoundsEnforcerTest {
     @Test
     fun `caller cancellation propagates instead of becoming TimedOut`() = runTest {
         val id = PluginId("plugin-a")
-        val enforcer = PluginExecutionBoundsEnforcer(
+        val enforcer = activeEnforcer(
             PluginRegistry(listOf(plugin(id.value, maximumExecutionMillis = 10_000L))),
         )
         val started = CompletableDeferred<Unit>()
@@ -187,7 +207,7 @@ class PluginExecutionBoundsEnforcerTest {
     @Test
     fun `a call beyond the concurrency ceiling is rejected without invoking the operation`() = runTest {
         val id = PluginId("plugin-a")
-        val enforcer = PluginExecutionBoundsEnforcer(
+        val enforcer = activeEnforcer(
             PluginRegistry(listOf(plugin(id.value, maximumConcurrentInvocations = 1))),
         )
         val started = CompletableDeferred<Unit>()
@@ -217,7 +237,7 @@ class PluginExecutionBoundsEnforcerTest {
     @Test
     fun `up to the declared ceiling of concurrent invocations are admitted`() = runTest {
         val id = PluginId("plugin-a")
-        val enforcer = PluginExecutionBoundsEnforcer(
+        val enforcer = activeEnforcer(
             PluginRegistry(listOf(plugin(id.value, maximumConcurrentInvocations = 2))),
         )
         val firstStarted = CompletableDeferred<Unit>()
@@ -258,7 +278,7 @@ class PluginExecutionBoundsEnforcerTest {
     fun `each plugin has an independent concurrency ceiling`() = runTest {
         val busyId = PluginId("busy-plugin")
         val idleId = PluginId("idle-plugin")
-        val enforcer = PluginExecutionBoundsEnforcer(
+        val enforcer = activeEnforcer(
             PluginRegistry(
                 listOf(
                     plugin(busyId.value, maximumConcurrentInvocations = 1),

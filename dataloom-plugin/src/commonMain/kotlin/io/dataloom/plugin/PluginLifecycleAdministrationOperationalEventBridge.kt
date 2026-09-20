@@ -1,4 +1,4 @@
-package io.dataloom.core.plugin
+package io.dataloom.plugin
 
 import io.dataloom.api.identifier.CorrelationId
 import io.dataloom.api.operational.OperationalEventCategory
@@ -24,7 +24,7 @@ import io.dataloom.api.security.StrictDataLoomRedactor
  * the canonical DL-042 envelope
  * [io.dataloom.api.operational.DurableOperationalEventOutbox] persists.
  *
- * ## Why this lives in `dataloom-core`, not `dataloom-runtime`
+ * ## Why this lives in `dataloom-plugin`, not `dataloom-runtime`
  *
  * The directly analogous precedents this bridge follows --
  * [io.dataloom.runtime.observation.operational.RetryCircuitAdministrationOperationalEventBridge]
@@ -34,11 +34,10 @@ import io.dataloom.api.security.StrictDataLoomRedactor
  * (`RetryAdministrationResult`, `CircuitAdministrationResult`,
  * `UnresolvedConflictRecord`) live there. [PluginLifecycleTransitionRequest]
  * and [PluginLifecycleTransitionResult] live in this module
- * (`io.dataloom.core.plugin`), and [OperationalEventEnvelope] itself lives in
- * `dataloom-api`, which `dataloom-core` already depends on directly (see
- * `docs/architecture/modules.md`) -- so, unlike execution-bounds enforcement's
- * new `kotlinx-coroutines-core` dependency, this bridge needs no new module
- * dependency and no new module at all. It is colocated with the rest of
+ * (`io.dataloom.plugin`), and [OperationalEventEnvelope] itself lives in
+ * `dataloom-api`, which this module already depends on directly (see
+ * `docs/architecture/modules.md`) -- so this bridge needs no additional module
+ * dependency. It is colocated with the rest of
  * `#98`'s own engine, the same way [PluginPermission.asCapability] is
  * colocated here rather than pushed into a separate module.
  *
@@ -190,6 +189,8 @@ public object PluginLifecycleAdministrationOperationalEventBridge {
             "dataloom.plugin.lifecycle.administration.permission_denied"
         is PluginLifecycleTransitionResult.AuthorizationDenied ->
             "dataloom.plugin.lifecycle.administration.authorization_denied"
+        is PluginLifecycleTransitionResult.IncompatibleRuntime ->
+            "dataloom.plugin.lifecycle.administration.incompatible_runtime"
     }
 
     private fun classifiedAttributesFor(
@@ -224,6 +225,23 @@ public object PluginLifecycleAdministrationOperationalEventBridge {
                 attributes["result.from"] = ClassifiedDataValue(result.from.name, DataClassification.PUBLIC)
                 attributes["result.to"] = ClassifiedDataValue(result.to.name, DataClassification.PUBLIC)
                 attributes["result.reasonCode"] = ClassifiedDataValue(result.reasonCode, DataClassification.INTERNAL)
+            }
+            is PluginLifecycleTransitionResult.IncompatibleRuntime -> {
+                val incompatibility = result.incompatibility
+                attributes["result.from"] = ClassifiedDataValue(result.from.name, DataClassification.PUBLIC)
+                attributes["result.to"] = ClassifiedDataValue(result.to.name, DataClassification.PUBLIC)
+                attributes["result.incompatibilityReason"] =
+                    ClassifiedDataValue(incompatibility.reason.name, DataClassification.PUBLIC)
+                attributes["result.sdkVersion"] =
+                    ClassifiedDataValue(incompatibility.sdkVersion.value, DataClassification.PUBLIC)
+                // Plugin-manifest-declared bounds are validated semantic versions but
+                // host- or vendor-supplied, so they get the conservative INTERNAL treatment.
+                attributes["result.minimumSdkVersion"] =
+                    ClassifiedDataValue(incompatibility.range.minimumSdkVersion.value, DataClassification.INTERNAL)
+                incompatibility.range.maximumSdkVersion?.let { maximum ->
+                    attributes["result.maximumSdkVersion"] =
+                        ClassifiedDataValue(maximum.value, DataClassification.INTERNAL)
+                }
             }
         }
         return attributes

@@ -1,4 +1,4 @@
-package io.dataloom.core.plugin
+package io.dataloom.plugin
 
 import kotlin.test.Test
 import kotlin.test.assertFailsWith

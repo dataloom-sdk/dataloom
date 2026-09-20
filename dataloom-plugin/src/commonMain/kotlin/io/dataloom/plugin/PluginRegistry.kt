@@ -1,4 +1,4 @@
-package io.dataloom.core.plugin
+package io.dataloom.plugin
 
 import io.dataloom.api.plugin.DataLoomPlugin
 import io.dataloom.api.plugin.PluginId
@@ -54,13 +54,14 @@ import io.dataloom.api.plugin.PluginId
  *   declared [io.dataloom.api.plugin.PluginCompatibilityRange] is not
  *   parsed or compared against the depended-upon plugin's actual
  *   [io.dataloom.api.plugin.PluginManifest.version] here.
- *   `io.dataloom.api.identifier.RuntimeVersion` (`dataloom-model`) is a plain
- *   non-blank string with no guaranteed semantic-version shape across this
- *   codebase's existing call sites (`"1.0.0"`, `"runtime-1.0.0"`,
- *   `"1.2.3"` all appear), so a real comparison requires a canonical
- *   parseable version format decision this registry does not make
- *   unilaterally. This registry validates the dependency *graph shape*
- *   only.
+ *   [io.dataloom.api.plugin.PluginVersion] is still a plain non-blank
+ *   string with no canonical parseable format (unlike
+ *   `io.dataloom.api.identifier.RuntimeVersion`, which is strict semantic
+ *   versioning), so comparing a dependency's declared range against the
+ *   depended-upon plugin's version needs that format decision first. This
+ *   registry validates the dependency *graph shape* only. A plugin's own
+ *   SDK-range compatibility is checked separately, against the running SDK
+ *   version, by [PluginLifecycleStateTracker] via [PluginCompatibilityValidator].
  * - **Lifecycle state.** Registering a plugin here does not grant it any
  *   [io.dataloom.api.plugin.PluginLifecycleState]. Use
  *   [PluginLifecycleStateTracker] to track and transition each registered

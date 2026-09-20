@@ -1,4 +1,4 @@
-package io.dataloom.core.plugin
+package io.dataloom.plugin
 
 import io.dataloom.api.plugin.PluginLifecycleState
 import io.dataloom.api.plugin.PluginPermission
@@ -54,6 +54,22 @@ public sealed class PluginLifecycleTransitionResult {
         public val from: PluginLifecycleState,
         public val to: PluginLifecycleState,
         public val reasonCode: String,
+    ) : PluginLifecycleTransitionResult()
+
+    /**
+     * The requested transition is structurally legal, but the plugin's
+     * declared SDK range does not admit the running SDK version, so it may
+     * not enter [PluginLifecycleState.VALIDATED] (and therefore can never
+     * reach `INITIALIZING` or `ACTIVE`). Tracked state is unchanged.
+     *
+     * Returned by every [PluginLifecycleStateTracker] `transition` overload
+     * when the target is `VALIDATED`. See [PluginCompatibilityValidator] for
+     * the exact comparison semantics.
+     */
+    public data class IncompatibleRuntime(
+        public val from: PluginLifecycleState,
+        public val to: PluginLifecycleState,
+        public val incompatibility: PluginCompatibilityResult.Incompatible,
     ) : PluginLifecycleTransitionResult()
 }
 

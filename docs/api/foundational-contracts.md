@@ -67,10 +67,21 @@ val executionId = ExecutionId("execution-001")
 val requestId = RequestId("request-001")
 val tenantId = TenantId("tenant-001")
 val userId = UserId("user-001")
-val runtimeVersion = RuntimeVersion("runtime-1.0.0")
+val runtimeVersion = RuntimeVersion("1.0.0")
 val configurationVersion = ConfigurationVersion("config-2026-07-21")
 val localeTag = LocaleTag("en-US")
 ```
+
+### `RuntimeVersion` canonical format
+
+`RuntimeVersion` holds only strictly valid Semantic Versioning 2.0.0 strings
+(`MAJOR.MINOR.PATCH`, optional `-PRERELEASE` and `+BUILD`). The constructor
+throws `IllegalArgumentException` for anything else (`"runtime-1.0.0"`, `"v1.0.0"`,
+`"1.0"`), like the other identifiers. Untrusted input goes through
+`RuntimeVersion.parse(value)`, which never throws and returns
+`RuntimeVersionParseResult.Parsed` or `Invalid` with a
+`RuntimeVersionParseFailure`. `precedenceCompareTo` orders versions by semver
+precedence (build metadata ignored), which is why the type is not `Comparable`.
 
 ## Execution context and synchronization request contracts
 

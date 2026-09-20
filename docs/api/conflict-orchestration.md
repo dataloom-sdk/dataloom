@@ -51,7 +51,7 @@ The orchestrator does **not**:
 An optional runtime event emitter reports actual conflict detection before
 resolver lookup. The current orchestrator still does not apply the resulting
 decision or provide the mandatory V1 built-in policy, persistence, audit,
-precedence, convergence, loop-protection, or quarantine engine.
+convergence, loop-protection, or quarantine engine.
 
 ---
 
@@ -129,10 +129,13 @@ class ConflictResolverRegistry(
 
 #### Selection key
 
-The explicit `ConflictResolverId` returned by `ConflictResolver.id` is the
-selection key. Resolvers are **never** automatically selected by conflict type,
-class name, registration order, or ID sorting. Resolution policy is
-application-controlled through explicit `ConflictOrchestrationBindings`.
+The registry selects by the exact `ConflictResolverId` returned by
+`ConflictResolver.id`. It **never** selects by conflict type, class name,
+registration order, or ID sorting. Which ID is looked up is decided earlier by
+explicit, application-controlled `ConflictOrchestrationBindings`: its
+`resolverId`, optionally refined per entity type / workflow / tenant by a
+`ConflictResolverSelectionPolicy` (see
+[conflict-resolution-strategies.md](./conflict-resolution-strategies.md), "Resolver selection policy").
 
 #### API
 
@@ -155,6 +158,7 @@ optional [`ConflictResolverId`](./conflict-contracts.md#conflict-identifiers).
 data class ConflictOrchestrationBindings(
     val detectorId: ConflictDetectorId,
     val resolverId: ConflictResolverId?,
+    val resolverSelectionPolicy: ConflictResolverSelectionPolicy? = null,
 )
 ```
 
@@ -162,7 +166,11 @@ data class ConflictOrchestrationBindings(
 
 - `detectorId` is required. The orchestrator performs exactly one detector
   lookup using this value.
-- `resolverId` is optional. When `null`:
+- `resolverSelectionPolicy` is optional (default `null`). When present, the
+  resolver ID for a detected conflict is chosen by strict precedence: entity-type
+  rule, workflow rule, tenant rule (only when the request carries a tenant), then
+  `resolverId` as the global default. When `null`, `resolverId` alone decides.
+- `resolverId` is optional. When it is `null` and no policy rule matches:
   - Detection is still performed.
   - A detected conflict is represented as
     `ConflictOrchestrationResult.ResolverNotConfigured`.
@@ -322,8 +330,9 @@ detectAndResolve(request)
     → if NoConflict: return NoConflict
     → if ConflictDetected:
         → optionally emit ConflictDetected
-        → if resolverId is null: return ResolverNotConfigured
-        → look up resolver by resolverId
+        → select resolverId (policy tiers, then bindings.resolverId)
+        → if none selected: return ResolverNotConfigured
+        → look up resolver by the selected resolverId
         → if absent: return ResolverNotFound
         → build ConflictResolutionRequest
         → invoke resolver.resolve(request) exactly once
@@ -335,7 +344,8 @@ detectAndResolve(request)
 - Detector lookup occurs before detector execution.
 - Resolver lookup occurs only after conflict detection.
 - The resolver is never called when no conflict exists.
-- The resolver is never called when `resolverId` is `null`.
+- The resolver is never called when no resolver ID is selected (`resolverId`
+  is `null` and no policy rule matches).
 - The resolver is never called when its ID is absent.
 - Each selected component is invoked at most once per call.
 - No fallback detector or resolver is selected.

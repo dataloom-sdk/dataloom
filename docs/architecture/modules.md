@@ -34,6 +34,7 @@ flowchart TD
     model[dataloom-model]
     providerApi[dataloom-provider-api]
     pluginApi[dataloom-plugin-api]
+    plugin[dataloom-plugin]
     api[dataloom-api]
     core[dataloom-core]
     runtime[dataloom-runtime]
@@ -59,7 +60,10 @@ flowchart TD
     providerApi --> api
     model --> core
     providerApi --> core
-    pluginApi --> core
+    pluginApi --> plugin
+    api --> plugin
+    plugin --> runtime
+    pluginApi --> runtime
     api --> core
     model --> runtime
     providerApi --> runtime
@@ -87,10 +91,14 @@ flowchart TD
     runtime --> work
     model --> apple
     providerApi --> apple
+    pluginApi --> apple
+    plugin --> apple
     api --> apple
     runtime --> apple
     model --> externalConsumer
     providerApi --> externalConsumer
+    pluginApi --> externalConsumer
+    plugin --> externalConsumer
     api --> externalConsumer
     runtime --> externalConsumer
     testing --> externalConsumer
@@ -116,7 +124,8 @@ Apple distribution boundary.
 |---|---|---|
 | `dataloom-model` | Library module | Dependency-root canonical models; first slice contains clock primitives |
 | `dataloom-provider-api` | Library module | Minimal provider lifecycle, descriptor, binding, and registry contracts |
-| `dataloom-plugin-api` | Library module | Plugin manifest, permission, lifecycle-label, hook-point, and execution-bounds SPI contracts, zero behavior itself ([details](../api/plugin-api.md)); consumed by `dataloom-core`'s registration/lifecycle-state engine ([details](../api/plugin-registry.md)) |
+| `dataloom-plugin-api` | Library module | Plugin manifest, permission, lifecycle-label, hook-point, and execution-bounds SPI contracts, zero behavior itself ([details](../api/plugin-api.md)); consumed by `dataloom-plugin`'s registration/lifecycle-state engine ([details](../api/plugin-registry.md)) |
+| `dataloom-plugin` | Library module | `#98` plugin engine: `PluginRegistry`, lifecycle state tracker and its request/decision/result types, `PluginExecutionBoundsEnforcer`, and the lifecycle audit bridge; wired into `DataLoomBuilder` as the opt-in `pluginConfiguration` capability ([ADR-0003](../adr/ADR-0003-plugin-engine-module.md)) |
 | `dataloom-config` | Library module | Typed configuration values/keys/schema/sources, versioned immutable snapshots, and deterministic precedence/rollback history — moved out of `dataloom-api` (`#93`), which now depends on it |
 | `dataloom-api` | Library module | Current public contracts, models, and error types |
 | `dataloom-core` | Library module | Internal platform-independent foundation |
@@ -200,6 +209,28 @@ Rules:
 
 ---
 
+### `dataloom-plugin`
+
+Published as `io.dataloom:dataloom-plugin` per
+[ADR-0003](../adr/ADR-0003-plugin-engine-module.md). Owns `#98`'s runtime
+engine (`io.dataloom.plugin`): `PluginRegistry`, `PluginLifecycleTransitions`,
+`PluginLifecycleStateTracker` with its request, decision, and result types,
+`PluginExecutionBoundsEnforcer`, and
+`PluginLifecycleAdministrationOperationalEventBridge`. It was relocated from
+`dataloom-core` so `dataloom-runtime` can expose the engine's result types
+publicly; see [`plugin-registry.md`](../api/plugin-registry.md).
+
+Rules:
+
+- May depend on `dataloom-model`, `dataloom-plugin-api`, `dataloom-api`, and
+  `kotlinx-coroutines`.
+- Must not depend on `dataloom-core`, `dataloom-runtime`, or
+  `dataloom-testing`.
+- `dataloom-plugin-api` and `dataloom-api` must not depend on it.
+- Public types must not reference an internal engine namespace.
+
+---
+
 ### `dataloom-config`
 
 Published as `dataloom-config` per ADR-0002: typed configuration values,
@@ -257,20 +288,18 @@ Rules:
 
 Provides internal, platform-independent foundations shared across runtime
 components, including provider registration/lifecycle coordination
-(`io.dataloom.core.provider`) and, since `#98`'s first bounded runtime
-slice, plugin registration/lifecycle-state tracking and execution-bounds
-enforcement (`io.dataloom.core.plugin`: `PluginRegistry`,
-`PluginLifecycleTransitions`, `PluginLifecycleStateTracker`,
-`PluginExecutionBoundsEnforcer` — see
-[`plugin-registry.md`](../api/plugin-registry.md)). Future content includes:
+(`io.dataloom.core.provider`). Plugin registration and lifecycle code lived
+here until `#98`'s engine was relocated to `dataloom-plugin`
+([ADR-0003](../adr/ADR-0003-plugin-engine-module.md)); this module holds no
+plugin code. Future content includes:
 
 - Internal utilities used by `dataloom-runtime`
 - Shared internal models and helpers
 
 Rules:
 
-- May depend on `dataloom-model`, `dataloom-provider-api`,
-  `dataloom-plugin-api`, and `dataloom-api`.
+- May depend on `dataloom-model`, `dataloom-provider-api`, and
+  `dataloom-api`.
 - Must not depend on `dataloom-runtime`.
 - Must not depend on `dataloom-testing`.
 - Internal implementation details must not be exposed as public API.
@@ -288,8 +317,9 @@ Provides the synchronization runtime. Future content includes:
 
 Rules:
 
-- Public API may depend on `dataloom-model`, `dataloom-provider-api`, and
-  `dataloom-api`; implementation may depend on `dataloom-core`.
+- Public API may depend on `dataloom-model`, `dataloom-provider-api`,
+  `dataloom-api`, `dataloom-plugin-api`, and `dataloom-plugin`;
+  implementation may depend on `dataloom-core`.
 - Must not depend on `dataloom-testing`.
 - Must not expose internal implementation types publicly.
 - Must not depend on Android APIs.
@@ -355,6 +385,11 @@ dataloom-storage-sqldelight
 ├── depends on dataloom-model
 └── depends on dataloom-api
 
+dataloom-plugin
+├── depends on dataloom-model
+├── depends on dataloom-plugin-api
+└── depends on dataloom-api
+
 dataloom-core
 ├── depends on dataloom-model
 ├── depends on dataloom-provider-api
@@ -364,6 +399,8 @@ dataloom-runtime
 ├── depends on dataloom-model
 ├── depends on dataloom-provider-api
 ├── depends on dataloom-api
+├── depends on dataloom-plugin-api
+├── depends on dataloom-plugin
 └── depends on dataloom-core
 
 dataloom-testing
@@ -415,12 +452,16 @@ dataloom-apple
 ├── exports dataloom-model
 ├── exports dataloom-provider-api
 ├── exports dataloom-api
+├── exports dataloom-plugin-api
+├── exports dataloom-plugin
 └── exports dataloom-runtime
 
 runtime-external-consumer
 ├── depends on dataloom-model
 ├── depends on dataloom-provider-api
 ├── depends on dataloom-api
+├── depends on dataloom-plugin-api
+├── depends on dataloom-plugin
 ├── depends on dataloom-runtime
 └── depends on dataloom-testing (compile-only fixture dependency)
 
@@ -443,6 +484,8 @@ dataloom-provider-api → dataloom-api or any implementation module
 dataloom-api     → any DataLoom implementation module
 dataloom-core    → dataloom-runtime
 dataloom-core    → dataloom-testing
+dataloom-plugin  → dataloom-core, dataloom-runtime, or dataloom-testing
+dataloom-plugin-api, dataloom-api → dataloom-plugin
 dataloom-runtime → dataloom-testing
 production code  → dataloom-testing
 Android adapters → unrelated Android adapter modules

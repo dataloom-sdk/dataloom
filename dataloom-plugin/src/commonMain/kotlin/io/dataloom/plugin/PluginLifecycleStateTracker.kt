@@ -1,9 +1,11 @@
-package io.dataloom.core.plugin
+package io.dataloom.plugin
 
+import io.dataloom.api.identifier.RuntimeVersion
 import io.dataloom.api.plugin.PluginId
 import io.dataloom.api.plugin.PluginLifecycleState
 import io.dataloom.api.security.GrantedCapabilities
 import io.dataloom.api.security.isAuthorized
+import kotlin.concurrent.Volatile
 
 /**
  * Tracks each plugin registered in a [PluginRegistry] through its
@@ -44,21 +46,49 @@ import io.dataloom.api.security.isAuthorized
  * [PluginLifecycleAdministrationOperationalEventBridge] for turning a
  * transition request and result into a durable audit record.
  *
+ * ## Compatibility gate
+ *
+ * Every `transition` overload refuses to move a plugin into
+ * [PluginLifecycleState.VALIDATED] unless its manifest's
+ * [io.dataloom.api.plugin.PluginManifest.compatibleSdkRange] admits
+ * [sdkVersion], returning [PluginLifecycleTransitionResult.IncompatibleRuntime]
+ * and leaving state unchanged. Because `VALIDATED` is the only way forward
+ * from `LOADED` to `INITIALIZING`/`ACTIVE`, an incompatible plugin can never
+ * become active; it can still be moved to `DISABLED`. The check runs after
+ * structural legality and before any permission or authorizer check. See
+ * [PluginCompatibilityValidator] for the comparison semantics and
+ * [compatibilityOf] to inspect a plugin without attempting a transition.
+ *
  * ## Thread-safety boundary
  *
- * [PluginLifecycleStateTracker] does not provide concurrency control.
- * Callers must serialize [transition] calls per plugin ID; concurrent
- * calls without external coordination produce undefined behavior — the
- * same boundary `io.dataloom.core.provider.ProviderLifecycleCoordinator`
- * documents for itself.
+ * [PluginLifecycleStateTracker] does not provide concurrency control over
+ * [transition]. Callers must serialize [transition] calls per plugin ID;
+ * concurrent calls without external coordination produce undefined
+ * behavior — the same boundary
+ * `io.dataloom.core.provider.ProviderLifecycleCoordinator` documents for
+ * itself. [stateOf] and [compatibilityOf] are safe to call from any thread
+ * concurrently with a transition and observe the latest completed
+ * transition: each plugin's state lives in a volatile cell, and the set of
+ * tracked plugins never changes after construction. This is what lets
+ * [PluginExecutionBoundsEnforcer] consult state from invocation threads.
  *
  * @param registry the plugin registry whose registered plugins this tracker
  *   tracks lifecycle state for.
+ * @param sdkVersion the running SDK version every plugin's declared
+ *   compatibility range is checked against.
  */
-public class PluginLifecycleStateTracker(private val registry: PluginRegistry) {
+public class PluginLifecycleStateTracker(
+    public val registry: PluginRegistry,
+    public val sdkVersion: RuntimeVersion,
+) {
 
-    private val states: MutableMap<PluginId, PluginLifecycleState> =
-        registry.plugins.associate { it.manifest.id to PluginLifecycleState.LOADED }.toMutableMap()
+    private class StateCell(initial: PluginLifecycleState) {
+        @Volatile
+        var state: PluginLifecycleState = initial
+    }
+
+    private val cells: Map<PluginId, StateCell> =
+        registry.plugins.associate { it.manifest.id to StateCell(PluginLifecycleState.LOADED) }
 
     /**
      * Returns the current tracked [PluginLifecycleState] for [id].
@@ -66,19 +96,55 @@ public class PluginLifecycleStateTracker(private val registry: PluginRegistry) {
      * @throws IllegalArgumentException if [id] is not registered in
      *   [registry].
      */
-    public fun stateOf(id: PluginId): PluginLifecycleState =
-        states[id] ?: throw IllegalArgumentException(
+    public fun stateOf(id: PluginId): PluginLifecycleState = cellOf(id).state
+
+    /**
+     * Checks [id]'s declared SDK range against [sdkVersion] without changing
+     * any state.
+     *
+     * @throws IllegalArgumentException if [id] is not registered in
+     *   [registry].
+     */
+    public fun compatibilityOf(id: PluginId): PluginCompatibilityResult {
+        cellOf(id)
+        val manifest = requireNotNull(registry.findById(id)) {
+            "PluginLifecycleStateTracker: '$id' is tracked but not found in its registry."
+        }.manifest
+        return PluginCompatibilityValidator.validate(manifest.compatibleSdkRange, sdkVersion)
+    }
+
+    private fun cellOf(id: PluginId): StateCell =
+        cells[id] ?: throw IllegalArgumentException(
             "PluginLifecycleStateTracker: '$id' is not registered in this tracker's registry.",
         )
+
+    /**
+     * Returns [PluginLifecycleTransitionResult.IncompatibleRuntime] when
+     * [target] is `VALIDATED` and [id]'s range does not admit [sdkVersion];
+     * `null` otherwise.
+     */
+    private fun incompatibility(
+        id: PluginId,
+        current: PluginLifecycleState,
+        target: PluginLifecycleState,
+    ): PluginLifecycleTransitionResult.IncompatibleRuntime? {
+        if (target != PluginLifecycleState.VALIDATED) return null
+        val result = compatibilityOf(id)
+        return if (result is PluginCompatibilityResult.Incompatible) {
+            PluginLifecycleTransitionResult.IncompatibleRuntime(from = current, to = target, incompatibility = result)
+        } else {
+            null
+        }
+    }
 
     /**
      * Requests a transition of [id]'s tracked state to [target].
      *
      * When [PluginLifecycleTransitions.validate] reports the transition as
-     * [io.dataloom.core.plugin.PluginLifecycleTransitionResult.Allowed],
+     * [io.dataloom.plugin.PluginLifecycleTransitionResult.Allowed],
      * the tracked state for [id] is updated to [target] and the same
      * result is returned. When it reports
-     * [io.dataloom.core.plugin.PluginLifecycleTransitionResult.Rejected],
+     * [io.dataloom.plugin.PluginLifecycleTransitionResult.Rejected],
      * the tracked state is left unchanged and that result is returned —
      * this method never throws for an illegal transition.
      *
@@ -88,9 +154,11 @@ public class PluginLifecycleStateTracker(private val registry: PluginRegistry) {
     public fun transition(id: PluginId, target: PluginLifecycleState): PluginLifecycleTransitionResult {
         val current = stateOf(id)
         val result = PluginLifecycleTransitions.validate(current, target)
-        if (result is PluginLifecycleTransitionResult.Allowed) {
-            states[id] = target
+        if (result !is PluginLifecycleTransitionResult.Allowed) {
+            return result
         }
+        incompatibility(id, current, target)?.let { return it }
+        cellOf(id).state = target
         return result
     }
 
@@ -148,6 +216,7 @@ public class PluginLifecycleStateTracker(private val registry: PluginRegistry) {
         if (structuralResult !is PluginLifecycleTransitionResult.Allowed) {
             return structuralResult
         }
+        incompatibility(id, current, target)?.let { return it }
 
         if (target == PluginLifecycleState.ACTIVE) {
             val manifest = requireNotNull(registry.findById(id)) {
@@ -166,7 +235,7 @@ public class PluginLifecycleStateTracker(private val registry: PluginRegistry) {
             }
         }
 
-        states[id] = target
+        cellOf(id).state = target
         return structuralResult
     }
 
@@ -183,12 +252,16 @@ public class PluginLifecycleStateTracker(private val registry: PluginRegistry) {
      *    [PluginLifecycleTransitionResult.Rejected] immediately and
      *    [authorizer] is never called. A caller is never asked to authorize a
      *    request this tracker would have rejected anyway.
-     * 2. Only once the transition is structurally legal is [authorizer]
-     *    consulted. A [PluginLifecycleAdministrationAuthorizationDecision.Denied]
+     * 2. For a target of `VALIDATED`, SDK compatibility is checked next: an
+     *    incompatible plugin returns
+     *    [PluginLifecycleTransitionResult.IncompatibleRuntime] and
+     *    [authorizer] is never called.
+     * 3. Only once the transition is structurally legal and compatible is
+     *    [authorizer] consulted. A [PluginLifecycleAdministrationAuthorizationDecision.Denied]
      *    result leaves tracked state unchanged and returns
      *    [PluginLifecycleTransitionResult.AuthorizationDenied] naming the
      *    denial's reason code.
-     * 3. Otherwise tracked state is updated to the requested target and
+     * 4. Otherwise tracked state is updated to the requested target and
      *    [PluginLifecycleTransitionResult.Allowed] is returned.
      *
      * This method never throws for an illegal transition or a denied
@@ -220,6 +293,7 @@ public class PluginLifecycleStateTracker(private val registry: PluginRegistry) {
         if (structuralResult !is PluginLifecycleTransitionResult.Allowed) {
             return structuralResult
         }
+        incompatibility(request.pluginId, current, request.target)?.let { return it }
 
         return when (val decision = authorizer.authorize(request)) {
             is PluginLifecycleAdministrationAuthorizationDecision.Denied -> {
@@ -230,7 +304,7 @@ public class PluginLifecycleStateTracker(private val registry: PluginRegistry) {
                 )
             }
             PluginLifecycleAdministrationAuthorizationDecision.Authorized -> {
-                states[request.pluginId] = request.target
+                cellOf(request.pluginId).state = request.target
                 structuralResult
             }
         }
