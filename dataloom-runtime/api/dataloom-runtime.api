@@ -642,6 +642,7 @@ public final class io/dataloom/runtime/execution/protection/ProviderProtectionPr
 }
 
 public abstract interface class io/dataloom/runtime/facade/DataLoom {
+	public fun getAssetTransfer ()Lio/dataloom/assets/AssetTransferEngine;
 	public fun getCircuitAdministration ()Lio/dataloom/runtime/facade/DataLoomCircuitAdministration;
 	public fun getCircuitQueueWorker ()Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorker;
 	public fun getConflictAdministration ()Lio/dataloom/runtime/facade/DataLoomConflictAdministration;
@@ -663,6 +664,7 @@ public abstract interface class io/dataloom/runtime/facade/DataLoom {
 }
 
 public final class io/dataloom/runtime/facade/DataLoom$DefaultImpls {
+	public static fun getAssetTransfer (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/assets/AssetTransferEngine;
 	public static fun getCircuitAdministration (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomCircuitAdministration;
 	public static fun getCircuitQueueWorker (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorker;
 	public static fun getConflictAdministration (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomConflictAdministration;
@@ -672,12 +674,25 @@ public final class io/dataloom/runtime/facade/DataLoom$DefaultImpls {
 	public static fun getRetryAdministration (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomRetryAdministration;
 }
 
+public final class io/dataloom/runtime/facade/DataLoomAssetTransferSpec {
+	public fun <init> (Lio/dataloom/assets/AssetProvider;Lio/dataloom/assets/AssetTransferSessionStore;Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;ILio/dataloom/api/security/DigestAlgorithm;I)V
+	public synthetic fun <init> (Lio/dataloom/assets/AssetProvider;Lio/dataloom/assets/AssetTransferSessionStore;Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;ILio/dataloom/api/security/DigestAlgorithm;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getChunkSizeBytes ()I
+	public final fun getDigestAlgorithm ()Lio/dataloom/api/security/DigestAlgorithm;
+	public final fun getDigestCalculator ()Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;
+	public final fun getProvider ()Lio/dataloom/assets/AssetProvider;
+	public final fun getSessionStore ()Lio/dataloom/assets/AssetTransferSessionStore;
+	public final fun getVerifyBufferBytes ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/runtime/facade/DataLoomBuildException : java/lang/IllegalStateException {
 	public fun <init> (Ljava/lang/String;)V
 }
 
 public final class io/dataloom/runtime/facade/DataLoomBuilder {
 	public fun <init> ()V
+	public final fun assetTransferConfiguration (Lio/dataloom/runtime/facade/DataLoomAssetTransferSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun bidirectionalConfiguration (Lio/dataloom/runtime/execution/bidirectional/BidirectionalPipelineConfiguration;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun build ()Lio/dataloom/runtime/facade/DataLoom;
 	public final fun circuitAdministrationConfiguration (Lio/dataloom/runtime/facade/DataLoomCircuitAdministrationSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;

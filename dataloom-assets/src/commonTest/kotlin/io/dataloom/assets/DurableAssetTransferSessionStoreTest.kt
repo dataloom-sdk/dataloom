@@ -25,7 +25,7 @@ class DurableAssetTransferSessionStoreTest {
     // ----------------------------------------------------------- basic typed outcomes
 
     @Test
-    fun `a new session is saved and loaded back, and persisted through the codec`() = runTest {
+    fun `a new session is saved and loaded back and persisted through the codec`() = runTest {
         val backing = EncodingDurableStateStore()
         val store = DurableAssetTransferSessionStore(backing)
         val s = newSession()
@@ -73,7 +73,7 @@ class DurableAssetTransferSessionStoreTest {
     }
 
     @Test
-    fun `a second store instance over the same rows sees the persisted session, as after a restart`() = runTest {
+    fun `a second store instance over the same rows sees the persisted session as after a restart`() = runTest {
         val backing = EncodingDurableStateStore()
         val first = DurableAssetTransferSessionStore(backing)
         val s = advanced(advanced(newSession(), AssetTransferEvent.Start), AssetTransferEvent.ChunkCommitted(2))
