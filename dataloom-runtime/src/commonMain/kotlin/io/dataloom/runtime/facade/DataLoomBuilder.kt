@@ -48,6 +48,8 @@ import io.dataloom.runtime.execution.outbound.OutboundPushPipelineConfiguration
 import io.dataloom.runtime.execution.outbound.OutboundPushSynchronizationPipeline
 import io.dataloom.runtime.observation.SynchronizationEventDispatcher
 import io.dataloom.runtime.observation.SynchronizationObserverRegistry
+import io.dataloom.runtime.observation.health.OperationalEventOutboxHealthTracker
+import io.dataloom.runtime.observation.health.QueueWorkerHealthTracker
 import io.dataloom.runtime.observation.operational.QueueLifecycleOperationalEventRecorder
 import io.dataloom.runtime.queue.DurableQueueExecutionProcessor
 import io.dataloom.runtime.queue.QueueEntryTransitionObserver
@@ -187,6 +189,8 @@ public class DataLoomBuilder {
     private var queueLifecycleOperationalEventOutboxSpec: DataLoomQueueLifecycleOperationalEventOutboxSpec? = null
     private var conflictResolutionOperationalEventOutboxSpec:
         DataLoomConflictResolutionOperationalEventOutboxSpec? = null
+    private var operationalEventOutboxHealthTracker: OperationalEventOutboxHealthTracker? = null
+    private var queueWorkerHealthTracker: QueueWorkerHealthTracker? = null
     private var built: Boolean = false
 
     // =========================================================================
@@ -594,6 +598,37 @@ public class DataLoomBuilder {
     }
 
     /**
+     * Opts every durable operational-event outbox this builder constructs (each
+     * `*OperationalEventOutboxConfiguration` spec) into health observation:
+     * [tracker] becomes each outbox's `stateObserver`, so
+     * `tracker.snapshot()` can feed `dataLoomHealthSnapshot`. Not calling this
+     * leaves every outbox exactly as before -- no observer, no extra work.
+     *
+     * Give the tracker the same clock as this builder's runtime dependencies.
+     * The outboxes are distinguished by scope, so keep their scopes distinct
+     * (their defaults already are).
+     *
+     * @return this builder for chaining.
+     */
+    public fun operationalEventOutboxHealthTracker(tracker: OperationalEventOutboxHealthTracker): DataLoomBuilder = apply {
+        operationalEventOutboxHealthTracker = tracker
+    }
+
+    /**
+     * Opts the configured queue worker (direct or circuit-aware) into health
+     * tracking: the worker `build()` returns is wrapped with
+     * `withHealthTracking(tracker)`, so every run through
+     * `DataLoom.queueWorker` / `DataLoom.circuitQueueWorker` is reported to
+     * [tracker]. Not calling this returns the worker unwrapped, exactly as
+     * before. Has no effect when no queue worker is configured.
+     *
+     * @return this builder for chaining.
+     */
+    public fun queueWorkerHealthTracker(tracker: QueueWorkerHealthTracker): DataLoomBuilder = apply {
+        queueWorkerHealthTracker = tracker
+    }
+
+    /**
      * Enables the durable operational-event outbox bridge for the conflict
      * engine: every already-durably-recorded
      * [io.dataloom.api.conflict.UnresolvedConflictRecord]/
@@ -994,6 +1029,7 @@ public class DataLoomBuilder {
                 clock = deps.clock,
                 schemaVersion = spec.schemaVersion,
                 maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
+                stateObserver = operationalEventOutboxHealthTracker,
             )
         }
         val lifecycleEventEmitter = if (observerList.isNotEmpty() || operationalEventOutboxSpec != null) {
@@ -1018,6 +1054,7 @@ public class DataLoomBuilder {
                 clock = deps.clock,
                 schemaVersion = spec.schemaVersion,
                 maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
+                stateObserver = operationalEventOutboxHealthTracker,
             )
         }
 
@@ -1099,6 +1136,7 @@ public class DataLoomBuilder {
                 clock = deps.clock,
                 schemaVersion = spec.schemaVersion,
                 maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
+                stateObserver = operationalEventOutboxHealthTracker,
             )
         }
         // --- 8d. Build strategy-admission policy evaluation (optional) ---
@@ -1183,6 +1221,7 @@ public class DataLoomBuilder {
                 clock = deps.clock,
                 schemaVersion = spec.schemaVersion,
                 maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
+                stateObserver = operationalEventOutboxHealthTracker,
             )
         }
         val queueLifecycleTransitionObserver = queueLifecycleOperationalEventOutbox?.let { outbox ->
@@ -1252,6 +1291,7 @@ public class DataLoomBuilder {
                     clock = deps.clock,
                     schemaVersion = spec.schemaVersion,
                     maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
+                    stateObserver = operationalEventOutboxHealthTracker,
                 )
             }
 
@@ -1329,8 +1369,12 @@ public class DataLoomBuilder {
             acceptedStrategyPlanCoordinator = acceptedStrategyPlanCoordinator,
             defaultBindings = bindings,
             defaultStrategyBindings = strategyBindings,
-            queueWorker = queueWorker,
-            circuitQueueWorker = circuitQueueWorker,
+            queueWorker = queueWorker?.let { worker ->
+                queueWorkerHealthTracker?.let { worker.withHealthTracking(it) } ?: worker
+            },
+            circuitQueueWorker = circuitQueueWorker?.let { worker ->
+                queueWorkerHealthTracker?.let { worker.withHealthTracking(it) } ?: worker
+            },
             protectedSynchronization = protectedSynchronization,
             protectedStrategySynchronization = protectedStrategySynchronization,
             queueSubmission = queueSubmission,

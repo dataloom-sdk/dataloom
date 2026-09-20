@@ -680,6 +680,10 @@ abstract fun interface <#A: kotlin/Any> io.dataloom.api.state/DurableStateScopeK
     abstract fun encode(#A): kotlin/String // io.dataloom.api.state/DurableStateScopeKeyEncoder.encode|encode(1:0){}[0]
 }
 
+abstract fun interface io.dataloom.api.operational/OperationalEventOutboxStateObserver { // io.dataloom.api.operational/OperationalEventOutboxStateObserver|null[0]
+    abstract fun onStateObserved(io.dataloom.api.operational/OperationalEventOutboxStateObservation) // io.dataloom.api.operational/OperationalEventOutboxStateObserver.onStateObserved|onStateObserved(io.dataloom.api.operational.OperationalEventOutboxStateObservation){}[0]
+}
+
 abstract fun interface io.dataloom.api.security/DataLoomRedactor { // io.dataloom.api.security/DataLoomRedactor|null[0]
     abstract fun redact(io.dataloom.api.security/ClassifiedData): io.dataloom.api.security/RedactionResult // io.dataloom.api.security/DataLoomRedactor.redact|redact(io.dataloom.api.security.ClassifiedData){}[0]
 }
@@ -3658,7 +3662,7 @@ final class io.dataloom.api.model/SynchronizationRequest { // io.dataloom.api.mo
 }
 
 final class io.dataloom.api.operational/DurableOperationalEventOutbox { // io.dataloom.api.operational/DurableOperationalEventOutbox|null[0]
-    constructor <init>(io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState>, io.dataloom.api.time/DataLoomClock, kotlin/Int = ..., kotlin/Int = ..., kotlin/Int? = ..., kotlin.time/Duration? = ..., kotlin/Int = ..., kotlin.time/Duration? = ...) // io.dataloom.api.operational/DurableOperationalEventOutbox.<init>|<init>(io.dataloom.api.state.DurableStateStore<io.dataloom.api.operational.OperationalEventOutboxScope,io.dataloom.api.operational.OperationalEventOutboxState>;io.dataloom.api.time.DataLoomClock;kotlin.Int;kotlin.Int;kotlin.Int?;kotlin.time.Duration?;kotlin.Int;kotlin.time.Duration?){}[0]
+    constructor <init>(io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState>, io.dataloom.api.time/DataLoomClock, kotlin/Int = ..., kotlin/Int = ..., kotlin/Int? = ..., kotlin.time/Duration? = ..., kotlin/Int = ..., kotlin.time/Duration? = ..., io.dataloom.api.operational/OperationalEventOutboxStateObserver? = ...) // io.dataloom.api.operational/DurableOperationalEventOutbox.<init>|<init>(io.dataloom.api.state.DurableStateStore<io.dataloom.api.operational.OperationalEventOutboxScope,io.dataloom.api.operational.OperationalEventOutboxState>;io.dataloom.api.time.DataLoomClock;kotlin.Int;kotlin.Int;kotlin.Int?;kotlin.time.Duration?;kotlin.Int;kotlin.time.Duration?;io.dataloom.api.operational.OperationalEventOutboxStateObserver?){}[0]
 
     final suspend fun acknowledge(io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventId): io.dataloom.api.operational/DurableOperationalEventOutboxAcknowledgeOutcome // io.dataloom.api.operational/DurableOperationalEventOutbox.acknowledge|acknowledge(io.dataloom.api.operational.OperationalEventOutboxScope;io.dataloom.api.operational.OperationalEventId){}[0]
     final suspend fun acknowledgedEntries(io.dataloom.api.operational/OperationalEventOutboxScope): io.dataloom.api.provider/ProviderOperationResult<kotlin.collections/List<io.dataloom.api.operational/OperationalEventOutboxEntry>> // io.dataloom.api.operational/DurableOperationalEventOutbox.acknowledgedEntries|acknowledgedEntries(io.dataloom.api.operational.OperationalEventOutboxScope){}[0]
@@ -3771,6 +3775,47 @@ final class io.dataloom.api.operational/OperationalEventOutboxStateCodec : io.da
 
     final fun decode(kotlin/String): io.dataloom.api.operational/OperationalEventOutboxState // io.dataloom.api.operational/OperationalEventOutboxStateCodec.decode|decode(kotlin.String){}[0]
     final fun encode(io.dataloom.api.operational/OperationalEventOutboxState): kotlin/String // io.dataloom.api.operational/OperationalEventOutboxStateCodec.encode|encode(io.dataloom.api.operational.OperationalEventOutboxState){}[0]
+}
+
+final class io.dataloom.api.operational/OperationalEventOutboxStateObservation { // io.dataloom.api.operational/OperationalEventOutboxStateObservation|null[0]
+    constructor <init>(io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxSummary, kotlin/Long?, io.dataloom.api.time/DataLoomInstant) // io.dataloom.api.operational/OperationalEventOutboxStateObservation.<init>|<init>(io.dataloom.api.operational.OperationalEventOutboxScope;io.dataloom.api.operational.OperationalEventOutboxSummary;kotlin.Long?;io.dataloom.api.time.DataLoomInstant){}[0]
+
+    final val observedAt // io.dataloom.api.operational/OperationalEventOutboxStateObservation.observedAt|{}observedAt[0]
+        final fun <get-observedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.operational/OperationalEventOutboxStateObservation.observedAt.<get-observedAt>|<get-observedAt>(){}[0]
+    final val scope // io.dataloom.api.operational/OperationalEventOutboxStateObservation.scope|{}scope[0]
+        final fun <get-scope>(): io.dataloom.api.operational/OperationalEventOutboxScope // io.dataloom.api.operational/OperationalEventOutboxStateObservation.scope.<get-scope>|<get-scope>(){}[0]
+    final val storeVersion // io.dataloom.api.operational/OperationalEventOutboxStateObservation.storeVersion|{}storeVersion[0]
+        final fun <get-storeVersion>(): kotlin/Long? // io.dataloom.api.operational/OperationalEventOutboxStateObservation.storeVersion.<get-storeVersion>|<get-storeVersion>(){}[0]
+    final val summary // io.dataloom.api.operational/OperationalEventOutboxStateObservation.summary|{}summary[0]
+        final fun <get-summary>(): io.dataloom.api.operational/OperationalEventOutboxSummary // io.dataloom.api.operational/OperationalEventOutboxStateObservation.summary.<get-summary>|<get-summary>(){}[0]
+
+    final fun component1(): io.dataloom.api.operational/OperationalEventOutboxScope // io.dataloom.api.operational/OperationalEventOutboxStateObservation.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.operational/OperationalEventOutboxSummary // io.dataloom.api.operational/OperationalEventOutboxStateObservation.component2|component2(){}[0]
+    final fun component3(): kotlin/Long? // io.dataloom.api.operational/OperationalEventOutboxStateObservation.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.time/DataLoomInstant // io.dataloom.api.operational/OperationalEventOutboxStateObservation.component4|component4(){}[0]
+    final fun copy(io.dataloom.api.operational/OperationalEventOutboxScope = ..., io.dataloom.api.operational/OperationalEventOutboxSummary = ..., kotlin/Long? = ..., io.dataloom.api.time/DataLoomInstant = ...): io.dataloom.api.operational/OperationalEventOutboxStateObservation // io.dataloom.api.operational/OperationalEventOutboxStateObservation.copy|copy(io.dataloom.api.operational.OperationalEventOutboxScope;io.dataloom.api.operational.OperationalEventOutboxSummary;kotlin.Long?;io.dataloom.api.time.DataLoomInstant){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/OperationalEventOutboxStateObservation.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.operational/OperationalEventOutboxStateObservation.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.operational/OperationalEventOutboxStateObservation.toString|toString(){}[0]
+}
+
+final class io.dataloom.api.operational/OperationalEventOutboxSummary { // io.dataloom.api.operational/OperationalEventOutboxSummary|null[0]
+    constructor <init>(kotlin/Int, io.dataloom.api.time/DataLoomInstant?, kotlin/Int) // io.dataloom.api.operational/OperationalEventOutboxSummary.<init>|<init>(kotlin.Int;io.dataloom.api.time.DataLoomInstant?;kotlin.Int){}[0]
+
+    final val acknowledgedRetainedCount // io.dataloom.api.operational/OperationalEventOutboxSummary.acknowledgedRetainedCount|{}acknowledgedRetainedCount[0]
+        final fun <get-acknowledgedRetainedCount>(): kotlin/Int // io.dataloom.api.operational/OperationalEventOutboxSummary.acknowledgedRetainedCount.<get-acknowledgedRetainedCount>|<get-acknowledgedRetainedCount>(){}[0]
+    final val oldestPendingOccurredAt // io.dataloom.api.operational/OperationalEventOutboxSummary.oldestPendingOccurredAt|{}oldestPendingOccurredAt[0]
+        final fun <get-oldestPendingOccurredAt>(): io.dataloom.api.time/DataLoomInstant? // io.dataloom.api.operational/OperationalEventOutboxSummary.oldestPendingOccurredAt.<get-oldestPendingOccurredAt>|<get-oldestPendingOccurredAt>(){}[0]
+    final val pendingCount // io.dataloom.api.operational/OperationalEventOutboxSummary.pendingCount|{}pendingCount[0]
+        final fun <get-pendingCount>(): kotlin/Int // io.dataloom.api.operational/OperationalEventOutboxSummary.pendingCount.<get-pendingCount>|<get-pendingCount>(){}[0]
+
+    final fun component1(): kotlin/Int // io.dataloom.api.operational/OperationalEventOutboxSummary.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.time/DataLoomInstant? // io.dataloom.api.operational/OperationalEventOutboxSummary.component2|component2(){}[0]
+    final fun component3(): kotlin/Int // io.dataloom.api.operational/OperationalEventOutboxSummary.component3|component3(){}[0]
+    final fun copy(kotlin/Int = ..., io.dataloom.api.time/DataLoomInstant? = ..., kotlin/Int = ...): io.dataloom.api.operational/OperationalEventOutboxSummary // io.dataloom.api.operational/OperationalEventOutboxSummary.copy|copy(kotlin.Int;io.dataloom.api.time.DataLoomInstant?;kotlin.Int){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.operational/OperationalEventOutboxSummary.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.api.operational/OperationalEventOutboxSummary.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.api.operational/OperationalEventOutboxSummary.toString|toString(){}[0]
 }
 
 final class io.dataloom.api.operational/OperationalPayloadDescriptor { // io.dataloom.api.operational/OperationalPayloadDescriptor|null[0]

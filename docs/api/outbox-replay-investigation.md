@@ -26,8 +26,8 @@ Decisions (numbered as in the design request):
   pruned deterministically. Pre-V1 there are no external consumers, so the
   persisted schema and codec version changed with no elaborate migration.
 - **D4 -- health.** A synchronous read path for outbox and queue-worker state,
-  so `dataLoomHealthSnapshot` can aggregate them, is planned as a separate
-  slice; it is not part of this change (see "Not done").
+  so `dataLoomHealthSnapshot` can aggregate them, was built as slice 2 (see
+  [Health snapshot](./health-snapshot.md)); it was not part of the ordering/replay change.
 
 ## What was built
 
@@ -143,11 +143,11 @@ its acknowledgement deleted. Nothing else is migrated.
 
 ## Not done (next slices)
 
-- **D4 health aggregation.** `dataLoomHealthSnapshot` still covers only
-  provider lifecycle, retry/circuit telemetry and caller-supplied provider
-  health. Outbox pending/acknowledged counts and oldest-pending age need a
-  synchronous read path (today `entries` is `suspend` over a
-  `DurableStateStore`), and queue-worker state needs the same.
+- ~~D4 health aggregation~~ -- done in slice 2: outbox counts/oldest-pending age
+  reach `dataLoomHealthSnapshot` through a pushed cache
+  (`DurableOperationalEventOutbox.stateObserver` + `OperationalEventOutboxHealthTracker`)
+  with an explicit as-of time and staleness marker, not a store read; see
+  [Health snapshot](./health-snapshot.md).
 - Head-of-line blocking, batch/by-workflow replay, and replay authorization,
   if a real consumer needs them.
 - Subscription delivery and cross-scope enumeration (unchanged from before).

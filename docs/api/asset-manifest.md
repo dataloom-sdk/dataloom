@@ -10,6 +10,13 @@
 > `FR-ASSET-001` through `FR-ASSET-012` in
 > [DL-AUDIT-005](../audits/DL-AUDIT-005-current-v1-conformance.md) and
 > issue `#97` for the full remaining scope this type does not attempt.
+>
+> **Update (2026-09-19):** chunked resumable transfer, streaming source/sink
+> contracts, the transfer-session state machine and an `AssetProvider` SPI now
+> exist in the separate `dataloom-assets` module (slice 1 of `#97`, in-memory
+> reference behaviour only). See [asset-transfer.md](./asset-transfer.md) and
+> [ADR-0006](../adr/ADR-0006-asset-transfer-and-streaming-digest.md). This page
+> continues to describe only the manifest types.
 
 **Package:** `io.dataloom.api.asset` (`dataloom-api`), plus `AssetId` in
 `io.dataloom.api.identifier` (`dataloom-model`).
