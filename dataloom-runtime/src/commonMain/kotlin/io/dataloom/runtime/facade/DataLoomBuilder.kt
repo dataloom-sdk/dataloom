@@ -26,6 +26,7 @@ import io.dataloom.runtime.execution.SynchronizationPipeline
 import io.dataloom.runtime.execution.SynchronizationPipelineRegistry
 import io.dataloom.runtime.execution.bidirectional.BidirectionalPipelineConfiguration
 import io.dataloom.runtime.execution.bidirectional.BidirectionalSynchronizationPipeline
+import io.dataloom.api.conflict.DurableConflictQuarantineLog
 import io.dataloom.api.conflict.DurableResolvedConflictDecisionLog
 import io.dataloom.api.conflict.DurableUnresolvedConflictLog
 import io.dataloom.api.operational.DurableOperationalEventOutbox
@@ -34,6 +35,7 @@ import io.dataloom.api.strategy.DurableStrategyDecisionEventLog
 import io.dataloom.api.strategy.DurableStrategyDecisionOutcomeHistory
 import io.dataloom.runtime.conflict.ConflictAdministrationCoordinator
 import io.dataloom.runtime.conflict.ConflictDetectorRegistry
+import io.dataloom.runtime.conflict.ConflictQuarantineTracker
 import io.dataloom.runtime.conflict.ConflictResolverRegistry
 import io.dataloom.runtime.conflict.DurableConflictDetectionCoordinator
 import io.dataloom.runtime.conflict.SynchronizationConflictOrchestrator
@@ -1066,6 +1068,17 @@ public class DataLoomBuilder {
                         detectorRegistry = ConflictDetectorRegistry(spec.detectors),
                         resolverRegistry = ConflictResolverRegistry(spec.resolvers),
                         eventEmitter = lifecycleEventEmitter as? SynchronizationRuntimeEventEmitter,
+                        quarantineTracker = spec.quarantine?.let { quarantine ->
+                            ConflictQuarantineTracker(
+                                log = DurableConflictQuarantineLog(
+                                    store = quarantine.store,
+                                    schemaVersion = quarantine.schemaVersion,
+                                    maximumStateUpdateAttempts = quarantine.maximumStateUpdateAttempts,
+                                ),
+                                clock = deps.clock,
+                                policy = quarantine.policy,
+                            )
+                        },
                     ),
                     unresolvedConflictLog = DurableUnresolvedConflictLog(
                         store = spec.unresolvedConflictStore,
@@ -1344,6 +1357,13 @@ public class DataLoomBuilder {
                         maximumStateUpdateAttempts = spec.resolvedConflictDecisionLogMaximumStateUpdateAttempts,
                     ),
                     maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
+                    quarantineLog = spec.quarantine?.let { quarantine ->
+                        DurableConflictQuarantineLog(
+                            store = quarantine.store,
+                            schemaVersion = quarantine.schemaVersion,
+                            maximumStateUpdateAttempts = quarantine.maximumStateUpdateAttempts,
+                        )
+                    },
                 ),
                 operationalEventOutbox = conflictResolutionOperationalEventOutbox,
                 operationalEventOutboxScope = conflictResolutionOperationalEventOutboxSpec?.scope,

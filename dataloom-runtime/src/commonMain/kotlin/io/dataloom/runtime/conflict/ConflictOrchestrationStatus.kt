@@ -67,6 +67,21 @@ public enum class ConflictOrchestrationStatus {
     RESOLVER_NOT_FOUND,
 
     /**
+     * A conflict was detected on a quarantined entity (see
+     * [ConflictQuarantineTracker]). Preserved in
+     * [ConflictOrchestrationResult.Quarantined]. No resolver was invoked.
+     */
+    QUARANTINED,
+
+    /**
+     * A conflict was detected but the quarantine counter could not be durably
+     * updated; the orchestrator failed closed. Preserved in
+     * [ConflictOrchestrationResult.QuarantineUnavailable]. No resolver was
+     * invoked.
+     */
+    QUARANTINE_UNAVAILABLE,
+
+    /**
      * A conflict was detected, the configured resolver was found, and the
      * resolver returned a [io.dataloom.api.conflict.ConflictResolutionDecision].
      *

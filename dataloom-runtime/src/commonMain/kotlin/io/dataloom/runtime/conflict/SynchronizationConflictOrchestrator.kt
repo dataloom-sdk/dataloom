@@ -1,6 +1,7 @@
 package io.dataloom.runtime.conflict
 
 import io.dataloom.api.conflict.ConflictDetectionResult
+import io.dataloom.api.conflict.ConflictQuarantineObservation
 import io.dataloom.api.conflict.ConflictResolutionRequest
 import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitter
@@ -35,14 +36,22 @@ import io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitte
  *    as the global default. The context is the detected conflict's entity
  *    type, the request's workflow ID, and the request's tenant ID when the
  *    host supplied one. If nothing is selected, return
- *    [ConflictOrchestrationResult.ResolverNotConfigured].
- * 8. Look up the resolver by that exact [io.dataloom.api.identifier.ConflictResolverId]
+ *    [ConflictOrchestrationResult.ResolverNotConfigured] -- but see step 8.
+ * 8. Only with a [ConflictQuarantineTracker]: count this occurrence against
+ *    the conflict's entity (recording the ID selected in step 7, which may be
+ *    `null`). If the entity is quarantined, return
+ *    [ConflictOrchestrationResult.Quarantined]; if the counter cannot be
+ *    updated, return [ConflictOrchestrationResult.QuarantineUnavailable].
+ *    Either way no resolver is looked up or invoked. This precedes the
+ *    [ConflictOrchestrationResult.ResolverNotConfigured] return, so an entity
+ *    whose conflicts are never resolved is still counted.
+ * 9. Look up the resolver by that exact [io.dataloom.api.identifier.ConflictResolverId]
  *    in the [ConflictResolverRegistry] (application registrations first, then
  *    built-ins -- the policy never bypasses this ordering).
- * 9. If missing, return [ConflictOrchestrationResult.ResolverNotFound].
- * 10. Build the exact [ConflictResolutionRequest] required by DL-014.
- * 11. Invoke the selected resolver exactly once.
- * 12. Preserve and return the exact [io.dataloom.api.conflict.ConflictResolutionDecision].
+ * 10. If missing, return [ConflictOrchestrationResult.ResolverNotFound].
+ * 11. Build the exact [ConflictResolutionRequest] required by DL-014.
+ * 12. Invoke the selected resolver exactly once.
+ * 13. Preserve and return the exact [io.dataloom.api.conflict.ConflictResolutionDecision].
  *
  * ## Caller responsibility
  *
@@ -127,11 +136,19 @@ import io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitte
  *   to emit [io.dataloom.api.synchronization.SynchronizationEvent.ConflictDetected]
  *   after a real conflict is detected. When `null`, no event is emitted.
  *   Defaults to `null` for backward compatibility.
+ * @param quarantineTracker the optional [ConflictQuarantineTracker]. When
+ *   non-`null`, every detected conflict is counted against its entity before
+ *   resolver lookup; an entity whose count reaches the tracker's threshold
+ *   yields [ConflictOrchestrationResult.Quarantined] instead of a resolver
+ *   invocation, and a counter that cannot be updated yields
+ *   [ConflictOrchestrationResult.QuarantineUnavailable] (fail closed). When
+ *   `null` (the default) behavior is exactly as before quarantine existed.
  */
 public class SynchronizationConflictOrchestrator(
     private val detectorRegistry: ConflictDetectorRegistry,
     private val resolverRegistry: ConflictResolverRegistry,
     private val eventEmitter: SynchronizationRuntimeEventEmitter? = null,
+    private val quarantineTracker: ConflictQuarantineTracker? = null,
 ) {
 
     /**
@@ -198,14 +215,35 @@ public class SynchronizationConflictOrchestrator(
                 )
 
                 val synchronizationRequest = request.detectionRequest.synchronizationRequest
-                val resolverId = request.bindings
-                    .selectResolverId(
-                        ConflictResolverSelectionContext(
-                            entityType = conflict.entity.type,
-                            workflowId = synchronizationRequest.workflowId,
-                            tenantId = synchronizationRequest.context.tenantId,
-                        ),
-                    )
+                val selectedResolverId = request.bindings.selectResolverId(
+                    ConflictResolverSelectionContext(
+                        entityType = conflict.entity.type,
+                        workflowId = synchronizationRequest.workflowId,
+                        tenantId = synchronizationRequest.context.tenantId,
+                    ),
+                )
+
+                // Opt-in loop guard: count this occurrence against its entity
+                // before any resolver is looked up or invoked, whatever the
+                // outcome would have been. Absent tracker: skipped entirely.
+                when (val observation = quarantineTracker?.observe(conflict, selectedResolverId)) {
+                    is ConflictQuarantineObservation.Quarantined ->
+                        return ConflictOrchestrationResult.Quarantined(
+                            conflict = conflict,
+                            detectorId = detectorId,
+                            record = observation.record,
+                            newlyQuarantined = observation.newlyQuarantined,
+                        )
+                    is ConflictQuarantineObservation.Unavailable ->
+                        return ConflictOrchestrationResult.QuarantineUnavailable(
+                            conflict = conflict,
+                            detectorId = detectorId,
+                            observation = observation,
+                        )
+                    is ConflictQuarantineObservation.Counted, null -> Unit
+                }
+
+                val resolverId = selectedResolverId
                     ?: return ConflictOrchestrationResult.ResolverNotConfigured(
                         conflict = conflict,
                         detectorId = detectorId,

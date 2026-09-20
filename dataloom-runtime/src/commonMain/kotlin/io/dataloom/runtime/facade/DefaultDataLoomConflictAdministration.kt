@@ -1,6 +1,8 @@
 package io.dataloom.runtime.facade
 
 import io.dataloom.api.conflict.ConflictAdministrationRequest
+import io.dataloom.api.conflict.ConflictQuarantineReleaseRequest
+import io.dataloom.runtime.conflict.ConflictQuarantineReleaseResult
 import io.dataloom.api.operational.DurableOperationalEventOutbox
 import io.dataloom.api.operational.OperationalEventOutboxScope
 import io.dataloom.runtime.conflict.ConflictAdministrationCoordinator
@@ -47,6 +49,10 @@ internal class DefaultDataLoomConflictAdministration(
         recordOperationalEvent(request, result)
         return result
     }
+
+    override suspend fun releaseQuarantine(
+        request: ConflictQuarantineReleaseRequest,
+    ): ConflictQuarantineReleaseResult = coordinator.releaseQuarantine(request)
 
     private suspend fun recordOperationalEvent(
         request: ConflictAdministrationRequest,

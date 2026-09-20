@@ -15,7 +15,12 @@ import io.dataloom.api.conflict.ConflictAdministrationPrincipalId
 import io.dataloom.api.conflict.ConflictAdministrationRequest
 import io.dataloom.api.conflict.ConflictAdministrationStateRecord
 import io.dataloom.api.conflict.ConflictAdministrationStateStore
+import io.dataloom.api.conflict.ConflictQuarantineRecord
+import io.dataloom.api.conflict.ConflictQuarantineRelease
+import io.dataloom.api.conflict.ConflictQuarantineReleaseOutcome
+import io.dataloom.api.conflict.ConflictQuarantineReleaseRequest
 import io.dataloom.api.conflict.ConflictResolutionDecision
+import io.dataloom.api.conflict.DurableConflictQuarantineLog
 import io.dataloom.api.conflict.DurableResolvedConflictDecisionLog
 import io.dataloom.api.conflict.DurableResolvedConflictDecisionRecordOutcome
 import io.dataloom.api.conflict.DurableUnresolvedConflictLog
@@ -95,10 +100,65 @@ public class ConflictAdministrationCoordinator(
     private val unresolvedConflictLog: DurableUnresolvedConflictLog,
     private val resolvedConflictDecisionLog: DurableResolvedConflictDecisionLog,
     private val maximumStateUpdateAttempts: Int = DEFAULT_MAX_STATE_UPDATE_ATTEMPTS,
+    private val quarantineLog: DurableConflictQuarantineLog? = null,
 ) {
     init {
         require(maximumStateUpdateAttempts >= 1) {
             "ConflictAdministrationCoordinator maximumStateUpdateAttempts must be at least one."
+        }
+    }
+
+    /**
+     * Releases an entity from loop/non-convergence quarantine on behalf of an
+     * authorized operator, so its conflicts are resolved again.
+     *
+     * Uses the same host-owned [ConflictAdministrationAuthorizer] as manual
+     * conflict resolution -- through
+     * [ConflictAdministrationAuthorizer.authorizeQuarantineRelease], which is
+     * deny-by-default -- rather than a second privilege model. The command is
+     * authorized *before* the quarantine state is read, so a denied caller
+     * learns nothing about whether the entity is quarantined.
+     *
+     * ## Durable evidence and idempotency
+     *
+     * The release evidence (command ID, principal, authorization ID, reason,
+     * time) is written into the entity's [ConflictQuarantineRecord] in the same
+     * compare-and-set as the state change, and a replay of the same
+     * [ConflictQuarantineReleaseRequest.commandId] reports
+     * [ConflictQuarantineReleaseResult.AlreadyReleased] instead of releasing
+     * again. Unlike [execute], a denied release is returned but not persisted:
+     * this path has no [ConflictAdministrationStateStore] entry, because that
+     * store's state type is bound to decision-carrying requests.
+     *
+     * Releasing only restarts the count; it applies no decision and advances no
+     * checkpoint.
+     */
+    public suspend fun releaseQuarantine(
+        request: ConflictQuarantineReleaseRequest,
+    ): ConflictQuarantineReleaseResult {
+        val log = quarantineLog ?: return ConflictQuarantineReleaseResult.NotConfigured
+        val authorization = when (val decision = authorizer.authorizeQuarantineRelease(request)) {
+            is ConflictAdministrationAuthorizationDecision.Denied ->
+                return ConflictQuarantineReleaseResult.AuthorizationDenied(decision.reasonCode)
+            is ConflictAdministrationAuthorizationDecision.Authorized -> decision
+        }
+        val release = ConflictQuarantineRelease(
+            commandId = request.commandId,
+            principalId = request.principalId,
+            authorizationId = authorization.authorizationId,
+            reason = request.reason,
+            releasedAt = clock.now(),
+        )
+        return when (val outcome = log.release(request.scope, release)) {
+            is ConflictQuarantineReleaseOutcome.Released -> ConflictQuarantineReleaseResult.Released(outcome.record)
+            is ConflictQuarantineReleaseOutcome.AlreadyReleased ->
+                ConflictQuarantineReleaseResult.AlreadyReleased(outcome.record)
+            is ConflictQuarantineReleaseOutcome.NotQuarantined ->
+                ConflictQuarantineReleaseResult.NotQuarantined(outcome.record)
+            is ConflictQuarantineReleaseOutcome.PersistenceFailure ->
+                ConflictQuarantineReleaseResult.PersistenceFailure(outcome.error)
+            ConflictQuarantineReleaseOutcome.ContentionLimitReached ->
+                ConflictQuarantineReleaseResult.ContentionLimitReached
         }
     }
 
@@ -500,6 +560,30 @@ public sealed interface ConflictAdministrationResult {
     ) : ConflictAdministrationResult
 
     public data object ContentionLimitReached : ConflictAdministrationResult
+}
+
+/** Exact outcome of one [ConflictAdministrationCoordinator.releaseQuarantine] attempt. */
+public sealed interface ConflictQuarantineReleaseResult {
+    /** The entity was quarantined and is now released; its count restarts from zero. */
+    public data class Released(public val record: ConflictQuarantineRecord) : ConflictQuarantineReleaseResult
+
+    /** The same command already released this entity; nothing changed. */
+    public data class AlreadyReleased(public val record: ConflictQuarantineRecord) : ConflictQuarantineReleaseResult
+
+    /** The host authorizer denied the command (deny-by-default). Nothing was read or changed. */
+    public data class AuthorizationDenied(public val reasonCode: String) : ConflictQuarantineReleaseResult
+
+    /** The entity is not currently quarantined (or has no record). Nothing changed. */
+    public data class NotQuarantined(public val record: ConflictQuarantineRecord?) : ConflictQuarantineReleaseResult
+
+    /** No quarantine store was configured on this coordinator. */
+    public data object NotConfigured : ConflictQuarantineReleaseResult
+
+    /** The quarantine store failed. Nothing was persisted. */
+    public data class PersistenceFailure(public val error: DataLoomError) : ConflictQuarantineReleaseResult
+
+    /** Every bounded compare-and-set attempt lost to a concurrent writer; the caller may retry. */
+    public data object ContentionLimitReached : ConflictQuarantineReleaseResult
 }
 
 private sealed interface Eligibility {
