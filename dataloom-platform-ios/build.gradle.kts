@@ -12,14 +12,17 @@
 // - AppleConnectivityProvider: a single bounded synchronous query of the
 //   current NWPathMonitor network path, translated into a ConnectivitySnapshot.
 // - AppleSchedulerProvider: BGTaskScheduler-backed schedule()/cancel().
+// - AppleLifecycleProvider: UIApplication lifecycle notifications observed
+//   through NSNotificationCenter as a cold Flow<AppLifecycleState> (ADR-0007).
 // - AppleDataLoomProviders / appleDataLoomProviders() / installAppleProviders():
 //   real, public wiring code bundling the four core iOS providers, matching
 //   dataloom-android's AndroidDataLoomProviders in shape and philosophy. See
 //   docs/apple/dataloom-ios.md.
 //
 // Deliberately NOT in scope (future #101 slices):
-// - iOS lifecycle integration (no LifecycleProvider contract exists in this
-//   codebase at all yet)
+// - consuming the lifecycle signal (AppleLifecycleProvider only observes and
+//   reports; it triggers no queue drain, scheduling, or retry -- see
+//   docs/api/app-lifecycle-provider.md and ADR-0007)
 // - secure/Keychain-backed platform integration (DataLoom never generates,
 //   stores, resolves, or rotates key material -- see KeyReference's own
 //   KDoc; this is intentionally the host application's job)
@@ -36,7 +39,9 @@
 //   this module's own inclusion in settings.gradle.kts uses -- no gating
 //   mismatch.
 // - Must not depend on dataloom-core implementation internals or
-//   dataloom-testing.
+//   dataloom-testing in its main source sets (dataloom-testing is a
+//   test-only dependency here, for the shared AppLifecycleProvider contract
+//   suite).
 // - Must not leak NWPathMonitor, nw_path_t, dispatch queue,
 //   BGTaskScheduler, BGTaskRequest, or any other Apple platform type through
 //   its public API.
@@ -84,6 +89,9 @@ kotlin {
         commonTest {
             dependencies {
                 implementation(kotlin("test"))
+                implementation(libs.kotlinx.coroutines.test)
+                // Test-only: the shared AppLifecycleProvider contract suite.
+                implementation(project(":dataloom-testing"))
             }
         }
     }

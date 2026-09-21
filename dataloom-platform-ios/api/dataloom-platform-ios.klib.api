@@ -18,6 +18,20 @@ final class io.dataloom.platform.ios.connectivity/AppleConnectivityProvider : io
     final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.platform.ios.connectivity/AppleConnectivityProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
 }
 
+final class io.dataloom.platform.ios.lifecycle/AppleLifecycleProvider : io.dataloom.api.lifecycle/AppLifecycleProvider { // io.dataloom.platform.ios.lifecycle/AppleLifecycleProvider|null[0]
+    constructor <init>() // io.dataloom.platform.ios.lifecycle/AppleLifecycleProvider.<init>|<init>(){}[0]
+
+    final val current // io.dataloom.platform.ios.lifecycle/AppleLifecycleProvider.current|{}current[0]
+        final fun <get-current>(): io.dataloom.api.lifecycle/AppLifecycleState // io.dataloom.platform.ios.lifecycle/AppleLifecycleProvider.current.<get-current>|<get-current>(){}[0]
+    final val descriptor // io.dataloom.platform.ios.lifecycle/AppleLifecycleProvider.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.platform.ios.lifecycle/AppleLifecycleProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    final fun states(): kotlinx.coroutines.flow/Flow<io.dataloom.api.lifecycle/AppLifecycleState> // io.dataloom.platform.ios.lifecycle/AppleLifecycleProvider.states|states(){}[0]
+    final suspend fun close(): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.platform.ios.lifecycle/AppleLifecycleProvider.close|close(){}[0]
+    final suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.platform.ios.lifecycle/AppleLifecycleProvider.health|health(){}[0]
+    final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.platform.ios.lifecycle/AppleLifecycleProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
+}
+
 final class io.dataloom.platform.ios.scheduling/AppleSchedulerProvider : io.dataloom.api.scheduling/SchedulerProvider { // io.dataloom.platform.ios.scheduling/AppleSchedulerProvider|null[0]
     constructor <init>(kotlin.collections/Set<kotlin/String>) // io.dataloom.platform.ios.scheduling/AppleSchedulerProvider.<init>|<init>(kotlin.collections.Set<kotlin.String>){}[0]
 

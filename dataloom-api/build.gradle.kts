@@ -43,6 +43,9 @@ kotlin {
                 api(project(":dataloom-model"))
                 api(project(":dataloom-provider-api"))
                 api(project(":dataloom-config"))
+                // AppLifecycleProvider.states() exposes kotlinx.coroutines.flow.Flow,
+                // the only coroutines type in this module's public API (ADR-0007).
+                api(libs.kotlinx.coroutines.core)
             }
         }
         commonTest {

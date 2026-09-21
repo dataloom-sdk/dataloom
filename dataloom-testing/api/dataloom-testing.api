@@ -52,6 +52,44 @@ public final class io/dataloom/testing/identifier/SequenceIdentifierGenerator : 
 	public fun generate ()Ljava/lang/Object;
 }
 
+public abstract interface class io/dataloom/testing/lifecycle/AppLifecycleContractHarness {
+	public abstract fun activeObserverCount ()I
+	public abstract fun drive (Lio/dataloom/api/lifecycle/AppLifecycleState;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getProvider ()Lio/dataloom/api/lifecycle/AppLifecycleProvider;
+}
+
+public final class io/dataloom/testing/lifecycle/AppLifecycleProviderContract {
+	public fun <init> (Lkotlin/jvm/functions/Function0;)V
+	public final fun cancellingCollectionReleasesObserver (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun collectionDeliversTransitionsInOrder (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun collectionIsSeededWithCurrentState (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun collectionSuppressesConsecutiveDuplicates (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun collectorsAreIndependent (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun creatingFlowRegistersNothing (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun currentTracksPlatformState (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun descriptorDeclaresLifecycleContract (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun noDeliveryAfterCancellation (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun recollectionRegistersAgain (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun runAll (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun slowCollectorObservesLatestState (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun terminatingSoonIsDeliveredOnlyWhenDeclared (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/testing/lifecycle/MutableAppLifecycleProvider : io/dataloom/api/lifecycle/AppLifecycleProvider {
+	public fun <init> ()V
+	public fun <init> (Lio/dataloom/api/lifecycle/AppLifecycleState;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/testing/provider/TestProviderLifecycleController;)V
+	public synthetic fun <init> (Lio/dataloom/api/lifecycle/AppLifecycleState;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/api/error/DataLoomError;Lio/dataloom/testing/provider/TestProviderLifecycleController;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getActiveCollectorCount ()I
+	public fun getCurrent ()Lio/dataloom/api/lifecycle/AppLifecycleState;
+	public fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun resetState ()V
+	public final fun setState (Lio/dataloom/api/lifecycle/AppLifecycleState;)V
+	public fun states ()Lkotlinx/coroutines/flow/Flow;
+}
+
 public final class io/dataloom/testing/observation/RecordingSynchronizationObserver : io/dataloom/api/observation/SynchronizationObserver {
 	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/internal/DefaultConstructorMarker;)V

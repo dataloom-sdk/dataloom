@@ -6,6 +6,14 @@
 // - Show declarations: true
 
 // Library unique name: <dataloom:dataloom-testing>
+abstract interface io.dataloom.testing.lifecycle/AppLifecycleContractHarness { // io.dataloom.testing.lifecycle/AppLifecycleContractHarness|null[0]
+    abstract val provider // io.dataloom.testing.lifecycle/AppLifecycleContractHarness.provider|{}provider[0]
+        abstract fun <get-provider>(): io.dataloom.api.lifecycle/AppLifecycleProvider // io.dataloom.testing.lifecycle/AppLifecycleContractHarness.provider.<get-provider>|<get-provider>(){}[0]
+
+    abstract fun activeObserverCount(): kotlin/Int // io.dataloom.testing.lifecycle/AppLifecycleContractHarness.activeObserverCount|activeObserverCount(){}[0]
+    abstract suspend fun drive(io.dataloom.api.lifecycle/AppLifecycleState) // io.dataloom.testing.lifecycle/AppLifecycleContractHarness.drive|drive(io.dataloom.api.lifecycle.AppLifecycleState){}[0]
+}
+
 final class <#A: kotlin/Any?> io.dataloom.testing.identifier/ConstantIdentifierGenerator : io.dataloom.api.identifier/IdentifierGenerator<#A> { // io.dataloom.testing.identifier/ConstantIdentifierGenerator|null[0]
     constructor <init>(#A) // io.dataloom.testing.identifier/ConstantIdentifierGenerator.<init>|<init>(1:0){}[0]
 
@@ -67,6 +75,42 @@ final class io.dataloom.testing.connectivity/MutableConnectivityProvider : io.da
     final suspend fun currentConnectivity(io.dataloom.api.connectivity/ConnectivityCheckRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.connectivity/ConnectivitySnapshot> // io.dataloom.testing.connectivity/MutableConnectivityProvider.currentConnectivity|currentConnectivity(io.dataloom.api.connectivity.ConnectivityCheckRequest){}[0]
     final suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.testing.connectivity/MutableConnectivityProvider.health|health(){}[0]
     final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.connectivity/MutableConnectivityProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
+}
+
+final class io.dataloom.testing.lifecycle/AppLifecycleProviderContract { // io.dataloom.testing.lifecycle/AppLifecycleProviderContract|null[0]
+    constructor <init>(kotlin/Function0<io.dataloom.testing.lifecycle/AppLifecycleContractHarness>) // io.dataloom.testing.lifecycle/AppLifecycleProviderContract.<init>|<init>(kotlin.Function0<io.dataloom.testing.lifecycle.AppLifecycleContractHarness>){}[0]
+
+    final suspend fun cancellingCollectionReleasesObserver() // io.dataloom.testing.lifecycle/AppLifecycleProviderContract.cancellingCollectionReleasesObserver|cancellingCollectionReleasesObserver(){}[0]
+    final suspend fun collectionDeliversTransitionsInOrder() // io.dataloom.testing.lifecycle/AppLifecycleProviderContract.collectionDeliversTransitionsInOrder|collectionDeliversTransitionsInOrder(){}[0]
+    final suspend fun collectionIsSeededWithCurrentState() // io.dataloom.testing.lifecycle/AppLifecycleProviderContract.collectionIsSeededWithCurrentState|collectionIsSeededWithCurrentState(){}[0]
+    final suspend fun collectionSuppressesConsecutiveDuplicates() // io.dataloom.testing.lifecycle/AppLifecycleProviderContract.collectionSuppressesConsecutiveDuplicates|collectionSuppressesConsecutiveDuplicates(){}[0]
+    final suspend fun collectorsAreIndependent() // io.dataloom.testing.lifecycle/AppLifecycleProviderContract.collectorsAreIndependent|collectorsAreIndependent(){}[0]
+    final suspend fun creatingFlowRegistersNothing() // io.dataloom.testing.lifecycle/AppLifecycleProviderContract.creatingFlowRegistersNothing|creatingFlowRegistersNothing(){}[0]
+    final suspend fun currentTracksPlatformState() // io.dataloom.testing.lifecycle/AppLifecycleProviderContract.currentTracksPlatformState|currentTracksPlatformState(){}[0]
+    final suspend fun descriptorDeclaresLifecycleContract() // io.dataloom.testing.lifecycle/AppLifecycleProviderContract.descriptorDeclaresLifecycleContract|descriptorDeclaresLifecycleContract(){}[0]
+    final suspend fun noDeliveryAfterCancellation() // io.dataloom.testing.lifecycle/AppLifecycleProviderContract.noDeliveryAfterCancellation|noDeliveryAfterCancellation(){}[0]
+    final suspend fun recollectionRegistersAgain() // io.dataloom.testing.lifecycle/AppLifecycleProviderContract.recollectionRegistersAgain|recollectionRegistersAgain(){}[0]
+    final suspend fun runAll() // io.dataloom.testing.lifecycle/AppLifecycleProviderContract.runAll|runAll(){}[0]
+    final suspend fun slowCollectorObservesLatestState() // io.dataloom.testing.lifecycle/AppLifecycleProviderContract.slowCollectorObservesLatestState|slowCollectorObservesLatestState(){}[0]
+    final suspend fun terminatingSoonIsDeliveredOnlyWhenDeclared() // io.dataloom.testing.lifecycle/AppLifecycleProviderContract.terminatingSoonIsDeliveredOnlyWhenDeclared|terminatingSoonIsDeliveredOnlyWhenDeclared(){}[0]
+}
+
+final class io.dataloom.testing.lifecycle/MutableAppLifecycleProvider : io.dataloom.api.lifecycle/AppLifecycleProvider { // io.dataloom.testing.lifecycle/MutableAppLifecycleProvider|null[0]
+    constructor <init>(io.dataloom.api.lifecycle/AppLifecycleState = ..., io.dataloom.api.provider/ProviderDescriptor = ..., io.dataloom.api.error/DataLoomError? = ..., io.dataloom.testing.provider/TestProviderLifecycleController = ...) // io.dataloom.testing.lifecycle/MutableAppLifecycleProvider.<init>|<init>(io.dataloom.api.lifecycle.AppLifecycleState;io.dataloom.api.provider.ProviderDescriptor;io.dataloom.api.error.DataLoomError?;io.dataloom.testing.provider.TestProviderLifecycleController){}[0]
+
+    final val activeCollectorCount // io.dataloom.testing.lifecycle/MutableAppLifecycleProvider.activeCollectorCount|{}activeCollectorCount[0]
+        final fun <get-activeCollectorCount>(): kotlin/Int // io.dataloom.testing.lifecycle/MutableAppLifecycleProvider.activeCollectorCount.<get-activeCollectorCount>|<get-activeCollectorCount>(){}[0]
+    final val current // io.dataloom.testing.lifecycle/MutableAppLifecycleProvider.current|{}current[0]
+        final fun <get-current>(): io.dataloom.api.lifecycle/AppLifecycleState // io.dataloom.testing.lifecycle/MutableAppLifecycleProvider.current.<get-current>|<get-current>(){}[0]
+    final val descriptor // io.dataloom.testing.lifecycle/MutableAppLifecycleProvider.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.testing.lifecycle/MutableAppLifecycleProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    final fun resetState() // io.dataloom.testing.lifecycle/MutableAppLifecycleProvider.resetState|resetState(){}[0]
+    final fun setState(io.dataloom.api.lifecycle/AppLifecycleState) // io.dataloom.testing.lifecycle/MutableAppLifecycleProvider.setState|setState(io.dataloom.api.lifecycle.AppLifecycleState){}[0]
+    final fun states(): kotlinx.coroutines.flow/Flow<io.dataloom.api.lifecycle/AppLifecycleState> // io.dataloom.testing.lifecycle/MutableAppLifecycleProvider.states|states(){}[0]
+    final suspend fun close(): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.lifecycle/MutableAppLifecycleProvider.close|close(){}[0]
+    final suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.testing.lifecycle/MutableAppLifecycleProvider.health|health(){}[0]
+    final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.testing.lifecycle/MutableAppLifecycleProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
 }
 
 final class io.dataloom.testing.observation/RecordingSynchronizationObserver : io.dataloom.api.observation/SynchronizationObserver { // io.dataloom.testing.observation/RecordingSynchronizationObserver|null[0]

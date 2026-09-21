@@ -30,6 +30,7 @@ class ProviderContractsTest {
                 "LOGGING",
                 "MONITORING",
                 "QUEUE",
+                "APP_LIFECYCLE",
             ),
             ProviderType.entries.map { it.name }.toSet(),
         )

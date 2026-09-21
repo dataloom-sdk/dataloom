@@ -150,6 +150,18 @@ final enum class io.dataloom.api.connectivity/ConnectivityStatus : kotlin/Enum<i
     final fun values(): kotlin/Array<io.dataloom.api.connectivity/ConnectivityStatus> // io.dataloom.api.connectivity/ConnectivityStatus.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.api.lifecycle/AppLifecycleState : kotlin/Enum<io.dataloom.api.lifecycle/AppLifecycleState> { // io.dataloom.api.lifecycle/AppLifecycleState|null[0]
+    enum entry BACKGROUND // io.dataloom.api.lifecycle/AppLifecycleState.BACKGROUND|null[0]
+    enum entry FOREGROUND // io.dataloom.api.lifecycle/AppLifecycleState.FOREGROUND|null[0]
+    enum entry TERMINATING_SOON // io.dataloom.api.lifecycle/AppLifecycleState.TERMINATING_SOON|null[0]
+
+    final val entries // io.dataloom.api.lifecycle/AppLifecycleState.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.api.lifecycle/AppLifecycleState> // io.dataloom.api.lifecycle/AppLifecycleState.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.api.lifecycle/AppLifecycleState // io.dataloom.api.lifecycle/AppLifecycleState.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.api.lifecycle/AppLifecycleState> // io.dataloom.api.lifecycle/AppLifecycleState.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.api.model/ChangeOperation : kotlin/Enum<io.dataloom.api.model/ChangeOperation> { // io.dataloom.api.model/ChangeOperation|null[0]
     enum entry CREATE // io.dataloom.api.model/ChangeOperation.CREATE|null[0]
     enum entry DELETE // io.dataloom.api.model/ChangeOperation.DELETE|null[0]
@@ -782,6 +794,15 @@ abstract interface io.dataloom.api.execution/SynchronizationProviderSet { // io.
         abstract fun <get-storageProvider>(): io.dataloom.api.storage/StorageProvider // io.dataloom.api.execution/SynchronizationProviderSet.storageProvider.<get-storageProvider>|<get-storageProvider>(){}[0]
     abstract val transportProvider // io.dataloom.api.execution/SynchronizationProviderSet.transportProvider|{}transportProvider[0]
         abstract fun <get-transportProvider>(): io.dataloom.api.transport/TransportProvider // io.dataloom.api.execution/SynchronizationProviderSet.transportProvider.<get-transportProvider>|<get-transportProvider>(){}[0]
+}
+
+abstract interface io.dataloom.api.lifecycle/AppLifecycleProvider : io.dataloom.api.provider/DataLoomProvider { // io.dataloom.api.lifecycle/AppLifecycleProvider|null[0]
+    abstract val current // io.dataloom.api.lifecycle/AppLifecycleProvider.current|{}current[0]
+        abstract fun <get-current>(): io.dataloom.api.lifecycle/AppLifecycleState // io.dataloom.api.lifecycle/AppLifecycleProvider.current.<get-current>|<get-current>(){}[0]
+    abstract val descriptor // io.dataloom.api.lifecycle/AppLifecycleProvider.descriptor|{}descriptor[0]
+        abstract fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.api.lifecycle/AppLifecycleProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    abstract fun states(): kotlinx.coroutines.flow/Flow<io.dataloom.api.lifecycle/AppLifecycleState> // io.dataloom.api.lifecycle/AppLifecycleProvider.states|states(){}[0]
 }
 
 abstract interface io.dataloom.api.observation/SynchronizationObserver { // io.dataloom.api.observation/SynchronizationObserver|null[0]
@@ -3884,6 +3905,13 @@ final class io.dataloom.api.context/ExecutionContext { // io.dataloom.api.contex
     final fun toString(): kotlin/String // io.dataloom.api.context/ExecutionContext.toString|toString(){}[0]
 }
 
+final class io.dataloom.api.lifecycle/AppLifecycleObservationException : kotlin/Exception { // io.dataloom.api.lifecycle/AppLifecycleObservationException|null[0]
+    constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.api.lifecycle/AppLifecycleObservationException.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+    final val error // io.dataloom.api.lifecycle/AppLifecycleObservationException.error|{}error[0]
+        final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.api.lifecycle/AppLifecycleObservationException.error.<get-error>|<get-error>(){}[0]
+}
+
 final class io.dataloom.api.model/SynchronizationRequest { // io.dataloom.api.model/SynchronizationRequest|null[0]
     constructor <init>(io.dataloom.api.identifier/WorkflowId, io.dataloom.api.identifier/SynchronizationSessionId, io.dataloom.api.model/SynchronizationDirection, io.dataloom.api.model/SynchronizationMode, io.dataloom.api.model/WorkflowPriority = ..., io.dataloom.api.context/ExecutionContext) // io.dataloom.api.model/SynchronizationRequest.<init>|<init>(io.dataloom.api.identifier.WorkflowId;io.dataloom.api.identifier.SynchronizationSessionId;io.dataloom.api.model.SynchronizationDirection;io.dataloom.api.model.SynchronizationMode;io.dataloom.api.model.WorkflowPriority;io.dataloom.api.context.ExecutionContext){}[0]
 
@@ -6114,6 +6142,13 @@ final value class io.dataloom.api.strategy/StrategyProfileId { // io.dataloom.ap
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.api.strategy/StrategyProfileId.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.api.strategy/StrategyProfileId.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.api.strategy/StrategyProfileId.toString|toString(){}[0]
+}
+
+final object io.dataloom.api.lifecycle/AppLifecycleCapabilities { // io.dataloom.api.lifecycle/AppLifecycleCapabilities|null[0]
+    final val STATE_STREAM // io.dataloom.api.lifecycle/AppLifecycleCapabilities.STATE_STREAM|{}STATE_STREAM[0]
+        final fun <get-STATE_STREAM>(): io.dataloom.api.provider/ProviderCapability // io.dataloom.api.lifecycle/AppLifecycleCapabilities.STATE_STREAM.<get-STATE_STREAM>|<get-STATE_STREAM>(){}[0]
+    final val TERMINATING_SOON // io.dataloom.api.lifecycle/AppLifecycleCapabilities.TERMINATING_SOON|{}TERMINATING_SOON[0]
+        final fun <get-TERMINATING_SOON>(): io.dataloom.api.provider/ProviderCapability // io.dataloom.api.lifecycle/AppLifecycleCapabilities.TERMINATING_SOON.<get-TERMINATING_SOON>|<get-TERMINATING_SOON>(){}[0]
 }
 
 final object io.dataloom.api.operational/OperationalEnvelopeWireCodec { // io.dataloom.api.operational/OperationalEnvelopeWireCodec|null[0]
