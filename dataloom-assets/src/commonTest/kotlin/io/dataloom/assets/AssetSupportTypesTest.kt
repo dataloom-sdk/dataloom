@@ -191,6 +191,7 @@ class AssetSupportTypesTest {
                 AssetErrorKind.PROVIDER_UNAVAILABLE,
                 AssetErrorKind.SOURCE_FAILURE,
                 AssetErrorKind.SINK_FAILURE,
+                AssetErrorKind.SESSION_STORE_FAILURE,
             ),
             recoverable,
         )

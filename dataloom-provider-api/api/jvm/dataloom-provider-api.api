@@ -251,6 +251,7 @@ public final class io/dataloom/api/provider/ProviderOperationResult$Success : io
 }
 
 public final class io/dataloom/api/provider/ProviderType : java/lang/Enum {
+	public static final field APP_LIFECYCLE Lio/dataloom/api/provider/ProviderType;
 	public static final field AUTHENTICATION Lio/dataloom/api/provider/ProviderType;
 	public static final field COMPRESSION Lio/dataloom/api/provider/ProviderType;
 	public static final field CONNECTIVITY Lio/dataloom/api/provider/ProviderType;

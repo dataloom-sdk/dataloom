@@ -124,11 +124,11 @@ mismatch between this module and its two new dependencies.
 This slice is **only** the aggregation wiring described above. It does
 **not** attempt, and must not be read as claiming, any of the following:
 
-- **iOS lifecycle integration.** There is no `LifecycleProvider` contract
-  anywhere in this codebase -- not a partial implementation, not a stub.
-  Designing one (and deciding whether/how it maps to `UIApplication`
-  lifecycle notifications) is a design question for a future session, not
-  something this slice attempts.
+- **iOS lifecycle integration.** This aggregation slice did not attempt it.
+  The lifecycle contract and its iOS implementation, `AppleLifecycleProvider`,
+  were added afterwards (ADR-0007, [app-lifecycle-provider.md](../api/app-lifecycle-provider.md)).
+  It is deliberately not part of `AppleDataLoomProviders`: nothing in the
+  runtime consumes lifecycle signals yet.
 - **Secure platform integration (Keychain-backed key storage).**
   `KeyReference` (`dataloom-model/.../security/KeyReference.kt`) explicitly
   states in its own KDoc that "DataLoom never generates, stores, resolves,
@@ -213,10 +213,10 @@ device available. As a direct consequence, matching every prior
 
 ## Remaining `#101` iOS parity gaps after this slice
 
-- **iOS lifecycle integration** -- no `LifecycleProvider` contract exists in
-  this codebase at all. This is a design question (what the contract should
-  even look like, and how it maps to `UIApplication` lifecycle
-  notifications) for a future session, not something attempted here.
+- **iOS lifecycle integration** -- not attempted by this slice. It has since
+  been designed (ADR-0007) and implemented as `AppleLifecycleProvider`; what
+  remains open is *consuming* the signal (see
+  [app-lifecycle-provider.md](../api/app-lifecycle-provider.md)).
 - **Actual device/simulator/CI runtime proof** -- for `AppleConnectivityProvider`,
   `AppleSchedulerProvider`, and now this aggregation, every claim made in
   this repository about iOS behavior rests on successful klib

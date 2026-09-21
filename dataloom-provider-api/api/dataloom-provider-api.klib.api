@@ -74,6 +74,7 @@ final enum class io.dataloom.api.provider/ProviderLifecycleState : kotlin/Enum<i
 }
 
 final enum class io.dataloom.api.provider/ProviderType : kotlin/Enum<io.dataloom.api.provider/ProviderType> { // io.dataloom.api.provider/ProviderType|null[0]
+    enum entry APP_LIFECYCLE // io.dataloom.api.provider/ProviderType.APP_LIFECYCLE|null[0]
     enum entry AUTHENTICATION // io.dataloom.api.provider/ProviderType.AUTHENTICATION|null[0]
     enum entry COMPRESSION // io.dataloom.api.provider/ProviderType.COMPRESSION|null[0]
     enum entry CONNECTIVITY // io.dataloom.api.provider/ProviderType.CONNECTIVITY|null[0]

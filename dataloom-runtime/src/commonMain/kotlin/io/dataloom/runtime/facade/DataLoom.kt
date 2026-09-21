@@ -5,6 +5,7 @@ import io.dataloom.api.provider.ProviderLifecycleCoordinatorState
 import io.dataloom.api.provider.ProviderLifecycleResult
 import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.api.provider.SynchronizationProviderBindings
+import io.dataloom.assets.AssetTransferEngine
 import io.dataloom.api.strategy.PersistedStrategyDecision
 import io.dataloom.api.strategy.StrategyExecutionPlan
 import io.dataloom.api.strategy.StrategySynchronizationRequest
@@ -200,6 +201,21 @@ public interface DataLoom {
      * [DataLoom] implementations.
      */
     public val pluginEngine: DataLoomPluginEngine?
+        get() = null
+
+    /**
+     * Optional chunked, resumable asset upload/download engine.
+     *
+     * `null` unless [DataLoomBuilder.assetTransferConfiguration] was supplied.
+     * Property access performs no provider or session-store I/O and does not
+     * initialize the asset provider. Whether an interrupted transfer survives
+     * a restart depends on the configured
+     * [io.dataloom.assets.AssetTransferSessionStore].
+     *
+     * A default getter preserves source compatibility for custom pre-V1
+     * [DataLoom] implementations.
+     */
+    public val assetTransfer: AssetTransferEngine?
         get() = null
 
     /**

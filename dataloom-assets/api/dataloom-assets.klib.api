@@ -20,6 +20,8 @@ final enum class io.dataloom.assets/AssetErrorKind : kotlin/Enum<io.dataloom.ass
     enum entry QUOTA_EXCEEDED // io.dataloom.assets/AssetErrorKind.QUOTA_EXCEEDED|null[0]
     enum entry SESSION_CONFLICT // io.dataloom.assets/AssetErrorKind.SESSION_CONFLICT|null[0]
     enum entry SESSION_NOT_FOUND // io.dataloom.assets/AssetErrorKind.SESSION_NOT_FOUND|null[0]
+    enum entry SESSION_STATE_CORRUPT // io.dataloom.assets/AssetErrorKind.SESSION_STATE_CORRUPT|null[0]
+    enum entry SESSION_STORE_FAILURE // io.dataloom.assets/AssetErrorKind.SESSION_STORE_FAILURE|null[0]
     enum entry SINK_FAILURE // io.dataloom.assets/AssetErrorKind.SINK_FAILURE|null[0]
     enum entry SOURCE_CONTENT_CHANGED // io.dataloom.assets/AssetErrorKind.SOURCE_CONTENT_CHANGED|null[0]
     enum entry SOURCE_FAILURE // io.dataloom.assets/AssetErrorKind.SOURCE_FAILURE|null[0]
@@ -239,6 +241,13 @@ sealed interface io.dataloom.assets/AssetTransferOutcome { // io.dataloom.assets
         final val error // io.dataloom.assets/AssetTransferOutcome.NotStarted.error|{}error[0]
             final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.assets/AssetTransferOutcome.NotStarted.error.<get-error>|<get-error>(){}[0]
     }
+
+    final class SessionStoreFailure : io.dataloom.assets/AssetTransferOutcome { // io.dataloom.assets/AssetTransferOutcome.SessionStoreFailure|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.assets/AssetTransferOutcome.SessionStoreFailure.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.assets/AssetTransferOutcome.SessionStoreFailure.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.assets/AssetTransferOutcome.SessionStoreFailure.error.<get-error>|<get-error>(){}[0]
+    }
 }
 
 sealed interface io.dataloom.assets/AssetTransferTransition { // io.dataloom.assets/AssetTransferTransition|null[0]
@@ -285,6 +294,87 @@ sealed interface io.dataloom.assets/AssetTransferTransition { // io.dataloom.ass
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets/AssetTransferTransition.Unchanged.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.assets/AssetTransferTransition.Unchanged.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.assets/AssetTransferTransition.Unchanged.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.assets/DurableAssetTransferSessionLoadOutcome { // io.dataloom.assets/DurableAssetTransferSessionLoadOutcome|null[0]
+    final class Found : io.dataloom.assets/DurableAssetTransferSessionLoadOutcome { // io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.Found|null[0]
+        constructor <init>(io.dataloom.assets/AssetTransferSession) // io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.Found.<init>|<init>(io.dataloom.assets.AssetTransferSession){}[0]
+
+        final val session // io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.Found.session|{}session[0]
+            final fun <get-session>(): io.dataloom.assets/AssetTransferSession // io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.Found.session.<get-session>|<get-session>(){}[0]
+
+        final fun component1(): io.dataloom.assets/AssetTransferSession // io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.Found.component1|component1(){}[0]
+        final fun copy(io.dataloom.assets/AssetTransferSession = ...): io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.Found // io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.Found.copy|copy(io.dataloom.assets.AssetTransferSession){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.Found.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.Found.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.Found.toString|toString(){}[0]
+    }
+
+    final class PersistenceFailure : io.dataloom.assets/DurableAssetTransferSessionLoadOutcome { // io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.PersistenceFailure|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.PersistenceFailure.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.PersistenceFailure.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.PersistenceFailure.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.PersistenceFailure.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.PersistenceFailure // io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.PersistenceFailure.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.PersistenceFailure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.PersistenceFailure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.PersistenceFailure.toString|toString(){}[0]
+    }
+
+    final object Missing : io.dataloom.assets/DurableAssetTransferSessionLoadOutcome { // io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.Missing|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.Missing.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.Missing.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.assets/DurableAssetTransferSessionLoadOutcome.Missing.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.assets/DurableAssetTransferSessionSaveOutcome { // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome|null[0]
+    final class PersistenceFailure : io.dataloom.assets/DurableAssetTransferSessionSaveOutcome { // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.PersistenceFailure|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.PersistenceFailure.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.PersistenceFailure.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.PersistenceFailure.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.PersistenceFailure.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.PersistenceFailure // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.PersistenceFailure.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.PersistenceFailure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.PersistenceFailure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.PersistenceFailure.toString|toString(){}[0]
+    }
+
+    final class Saved : io.dataloom.assets/DurableAssetTransferSessionSaveOutcome { // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.Saved|null[0]
+        constructor <init>(io.dataloom.assets/AssetTransferSession) // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.Saved.<init>|<init>(io.dataloom.assets.AssetTransferSession){}[0]
+
+        final val session // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.Saved.session|{}session[0]
+            final fun <get-session>(): io.dataloom.assets/AssetTransferSession // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.Saved.session.<get-session>|<get-session>(){}[0]
+
+        final fun component1(): io.dataloom.assets/AssetTransferSession // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.Saved.component1|component1(){}[0]
+        final fun copy(io.dataloom.assets/AssetTransferSession = ...): io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.Saved // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.Saved.copy|copy(io.dataloom.assets.AssetTransferSession){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.Saved.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.Saved.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.Saved.toString|toString(){}[0]
+    }
+
+    final class StaleRevision : io.dataloom.assets/DurableAssetTransferSessionSaveOutcome { // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.StaleRevision|null[0]
+        constructor <init>(io.dataloom.assets/AssetTransferSession?) // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.StaleRevision.<init>|<init>(io.dataloom.assets.AssetTransferSession?){}[0]
+
+        final val current // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.StaleRevision.current|{}current[0]
+            final fun <get-current>(): io.dataloom.assets/AssetTransferSession? // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.StaleRevision.current.<get-current>|<get-current>(){}[0]
+
+        final fun component1(): io.dataloom.assets/AssetTransferSession? // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.StaleRevision.component1|component1(){}[0]
+        final fun copy(io.dataloom.assets/AssetTransferSession? = ...): io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.StaleRevision // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.StaleRevision.copy|copy(io.dataloom.assets.AssetTransferSession?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.StaleRevision.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.StaleRevision.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.StaleRevision.toString|toString(){}[0]
+    }
+
+    final object ContentionLimitReached : io.dataloom.assets/DurableAssetTransferSessionSaveOutcome { // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.ContentionLimitReached|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.ContentionLimitReached.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.ContentionLimitReached.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.assets/DurableAssetTransferSessionSaveOutcome.ContentionLimitReached.toString|toString(){}[0]
     }
 }
 
@@ -540,6 +630,25 @@ final class io.dataloom.assets/AssetTransferSession { // io.dataloom.assets/Asse
     final fun toString(): kotlin/String // io.dataloom.assets/AssetTransferSession.toString|toString(){}[0]
 }
 
+final class io.dataloom.assets/AssetTransferSessionCodec : io.dataloom.api.state/DurableStateCodec<io.dataloom.assets/AssetTransferSession> { // io.dataloom.assets/AssetTransferSessionCodec|null[0]
+    constructor <init>() // io.dataloom.assets/AssetTransferSessionCodec.<init>|<init>(){}[0]
+
+    final fun decode(kotlin/String): io.dataloom.assets/AssetTransferSession // io.dataloom.assets/AssetTransferSessionCodec.decode|decode(kotlin.String){}[0]
+    final fun encode(io.dataloom.assets/AssetTransferSession): kotlin/String // io.dataloom.assets/AssetTransferSessionCodec.encode|encode(io.dataloom.assets.AssetTransferSession){}[0]
+
+    final object Companion { // io.dataloom.assets/AssetTransferSessionCodec.Companion|null[0]
+        final const val MAX_ENCODED_LENGTH // io.dataloom.assets/AssetTransferSessionCodec.Companion.MAX_ENCODED_LENGTH|{}MAX_ENCODED_LENGTH[0]
+            final fun <get-MAX_ENCODED_LENGTH>(): kotlin/Int // io.dataloom.assets/AssetTransferSessionCodec.Companion.MAX_ENCODED_LENGTH.<get-MAX_ENCODED_LENGTH>|<get-MAX_ENCODED_LENGTH>(){}[0]
+    }
+}
+
+final class io.dataloom.assets/AssetTransferSessionStoreException : kotlin/RuntimeException { // io.dataloom.assets/AssetTransferSessionStoreException|null[0]
+    constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.assets/AssetTransferSessionStoreException.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+    final val error // io.dataloom.assets/AssetTransferSessionStoreException.error|{}error[0]
+        final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.assets/AssetTransferSessionStoreException.error.<get-error>|<get-error>(){}[0]
+}
+
 final class io.dataloom.assets/AssetUploadRequest { // io.dataloom.assets/AssetUploadRequest|null[0]
     constructor <init>(io.dataloom.assets/AssetTransferSessionId, io.dataloom.api.asset/AssetManifest) // io.dataloom.assets/AssetUploadRequest.<init>|<init>(io.dataloom.assets.AssetTransferSessionId;io.dataloom.api.asset.AssetManifest){}[0]
 
@@ -567,6 +676,20 @@ final class io.dataloom.assets/AssetUploadStatus { // io.dataloom.assets/AssetUp
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets/AssetUploadStatus.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.assets/AssetUploadStatus.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.assets/AssetUploadStatus.toString|toString(){}[0]
+}
+
+final class io.dataloom.assets/DurableAssetTransferSessionStore : io.dataloom.assets/AssetTransferSessionStore { // io.dataloom.assets/DurableAssetTransferSessionStore|null[0]
+    constructor <init>(io.dataloom.api.state/DurableStateStore<io.dataloom.assets/AssetTransferSessionId, io.dataloom.assets/AssetTransferSession>, kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.assets/DurableAssetTransferSessionStore.<init>|<init>(io.dataloom.api.state.DurableStateStore<io.dataloom.assets.AssetTransferSessionId,io.dataloom.assets.AssetTransferSession>;kotlin.Int;kotlin.Int){}[0]
+
+    final suspend fun load(io.dataloom.assets/AssetTransferSessionId): io.dataloom.assets/AssetTransferSession? // io.dataloom.assets/DurableAssetTransferSessionStore.load|load(io.dataloom.assets.AssetTransferSessionId){}[0]
+    final suspend fun save(io.dataloom.assets/AssetTransferSession, kotlin/Long?): kotlin/Boolean // io.dataloom.assets/DurableAssetTransferSessionStore.save|save(io.dataloom.assets.AssetTransferSession;kotlin.Long?){}[0]
+    final suspend fun tryLoad(io.dataloom.assets/AssetTransferSessionId): io.dataloom.assets/DurableAssetTransferSessionLoadOutcome // io.dataloom.assets/DurableAssetTransferSessionStore.tryLoad|tryLoad(io.dataloom.assets.AssetTransferSessionId){}[0]
+    final suspend fun trySave(io.dataloom.assets/AssetTransferSession, kotlin/Long?): io.dataloom.assets/DurableAssetTransferSessionSaveOutcome // io.dataloom.assets/DurableAssetTransferSessionStore.trySave|trySave(io.dataloom.assets.AssetTransferSession;kotlin.Long?){}[0]
+
+    final object Companion { // io.dataloom.assets/DurableAssetTransferSessionStore.Companion|null[0]
+        final val KeyEncoder // io.dataloom.assets/DurableAssetTransferSessionStore.Companion.KeyEncoder|{}KeyEncoder[0]
+            final fun <get-KeyEncoder>(): io.dataloom.api.state/DurableStateScopeKeyEncoder<io.dataloom.assets/AssetTransferSessionId> // io.dataloom.assets/DurableAssetTransferSessionStore.Companion.KeyEncoder.<get-KeyEncoder>|<get-KeyEncoder>(){}[0]
+    }
 }
 
 final class io.dataloom.assets/InMemoryAssetTransferSessionStore : io.dataloom.assets/AssetTransferSessionStore { // io.dataloom.assets/InMemoryAssetTransferSessionStore|null[0]

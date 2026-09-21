@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+        No permissions required. The AndroidX process lifecycle is started by
+        ProcessLifecycleInitializer, which lifecycle-process contributes to the
+        merged manifest through androidx.startup.
+    -->
+</manifest>

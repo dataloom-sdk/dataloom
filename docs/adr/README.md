@@ -14,6 +14,7 @@ direction; they do not prove that every part of the decision is implemented.
 | [ADR-0004](./ADR-0004-runtime-version-and-plugin-compatibility.md) | Accepted | Strict semantic-version `RuntimeVersion`, running-SDK version source, plugin compatibility gate, and lifecycle-gated execution |
 | [ADR-0005](./ADR-0005-enterprise-governance-foundation.md) | Accepted | Enterprise governance foundation: closed RBAC model, tenant isolation, hash-chained tamper-evident audit, HMAC-signed policy packs (signed packs decided, not yet built) |
 | [ADR-0006](./ADR-0006-asset-transfer-and-streaming-digest.md) | Accepted; slice 1 implemented | Chunked resumable asset transfer, transfer-session state machine, and incremental (streaming) digest alongside the one-shot digest |
+| [ADR-0008](./ADR-0008-durable-asset-transfer-sessions.md) | Accepted; implemented | Durable asset transfer sessions on `DurableStateStore`, typed store-failure outcome, and opt-in `assetTransferConfiguration` builder wiring |
 
 ## Decision lifecycle
 

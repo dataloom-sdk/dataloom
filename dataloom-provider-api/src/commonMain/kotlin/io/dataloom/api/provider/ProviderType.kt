@@ -43,4 +43,12 @@ public enum class ProviderType {
      * This is a pre-release public API addition introduced in DL-015.
      */
     QUEUE,
+
+    /**
+     * Provider category for observing the application's coarse lifecycle
+     * (foreground, background, imminent termination).
+     *
+     * This is a pre-release public API addition introduced with ADR-0007.
+     */
+    APP_LIFECYCLE,
 }
