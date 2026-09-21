@@ -50,8 +50,15 @@ The orchestrator does **not**:
 
 An optional runtime event emitter reports actual conflict detection before
 resolver lookup. The current orchestrator still does not apply the resulting
-decision or provide the mandatory V1 built-in policy, persistence, audit,
-convergence, loop-protection, or quarantine engine.
+decision or provide the mandatory V1 built-in policy, persistence, audit, or
+convergence engine. Loop/non-convergence quarantine is an opt-in first slice:
+given a `ConflictQuarantineTracker`, the orchestrator counts each detected
+conflict per entity before resolver lookup and returns
+`ConflictOrchestrationResult.Quarantined` (no resolver invoked) once the
+threshold is reached, or `QuarantineUnavailable` (fail closed) when the counter
+cannot be updated. Without a tracker neither variant is ever produced. See
+[conflict-resolution-strategies.md](./conflict-resolution-strategies.md),
+"Loop/non-convergence quarantine".
 
 ---
 
@@ -229,6 +236,8 @@ enum class ConflictOrchestrationStatus {
     NO_CONFLICT,
     RESOLVER_NOT_CONFIGURED,
     RESOLVER_NOT_FOUND,
+    QUARANTINED,
+    QUARANTINE_UNAVAILABLE,
     RESOLVED,
 }
 ```
@@ -239,6 +248,8 @@ enum class ConflictOrchestrationStatus {
 | `NO_CONFLICT` | The detector completed and reported no conflict. No resolver ran. |
 | `RESOLVER_NOT_CONFIGURED` | A conflict was detected but `resolverId` is `null`. No resolver ran. |
 | `RESOLVER_NOT_FOUND` | A conflict was detected and a resolver ID was supplied, but no matching resolver exists. No resolver ran. |
+| `QUARANTINED` | A conflict was detected on a quarantined entity (only with a `ConflictQuarantineTracker`). No resolver ran. |
+| `QUARANTINE_UNAVAILABLE` | The quarantine counter could not be updated; failed closed (only with a tracker). No resolver ran. |
 | `RESOLVED` | A conflict was detected, the resolver was found, and the resolver returned a decision. |
 
 Do not persist or serialize enum ordinals. Use variant names for any durable
@@ -331,6 +342,8 @@ detectAndResolve(request)
     → if ConflictDetected:
         → optionally emit ConflictDetected
         → select resolverId (policy tiers, then bindings.resolverId)
+        → only with a quarantine tracker: count the occurrence; if quarantined return Quarantined,
+          if the counter is unavailable return QuarantineUnavailable (no resolver looked up either way)
         → if none selected: return ResolverNotConfigured
         → look up resolver by the selected resolverId
         → if absent: return ResolverNotFound

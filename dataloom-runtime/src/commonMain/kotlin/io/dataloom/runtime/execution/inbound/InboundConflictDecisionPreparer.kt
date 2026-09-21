@@ -3,6 +3,7 @@ package io.dataloom.runtime.execution.inbound
 import io.dataloom.api.change.ChangeEvent
 import io.dataloom.api.change.ChangeSet
 import io.dataloom.api.conflict.ConflictDetectionRequest
+import io.dataloom.api.conflict.ConflictQuarantineObservation
 import io.dataloom.api.conflict.ConflictResolutionDecision
 import io.dataloom.api.conflict.DurableResolvedConflictDecisionRecordOutcome
 import io.dataloom.api.conflict.DurableUnresolvedConflictRecordOutcome
@@ -71,6 +72,8 @@ internal class InboundConflictDecisionPreparer(
                 is ConflictOrchestrationResult.ResolverNotConfigured,
                 is ConflictOrchestrationResult.ResolverNotFound,
                 is ConflictOrchestrationResult.Resolved,
+                is ConflictOrchestrationResult.Quarantined,
+                is ConflictOrchestrationResult.QuarantineUnavailable,
                 -> conflictCount++
                 is ConflictOrchestrationResult.DetectorNotFound,
                 is ConflictOrchestrationResult.NoConflict,
@@ -141,6 +144,40 @@ internal class InboundConflictDecisionPreparer(
                     }
                     return InboundConflictPreparation.Blocked(
                         unresolvedBarrierError(durable.unresolvedRecordOutcome),
+                        conflictCount,
+                    )
+                }
+
+                is ConflictOrchestrationResult.Quarantined -> {
+                    conflictCount++
+                    validateConflictInputs(localEvent, remoteEvent, orchestration.conflict)?.let {
+                        return InboundConflictPreparation.Blocked(it, conflictCount)
+                    }
+                    // Same fail-closed shape as Defer/Fail: nothing in the batch
+                    // reaches storage and the checkpoint does not advance. Only
+                    // an authorized release makes the entity resolvable again.
+                    return blocked(
+                        code = "DL-CONFLICT-QUARANTINED",
+                        category = ErrorCategory.CONFLICT,
+                        recoverability = Recoverability.NON_RECOVERABLE,
+                        message = "Conflicts on this entity repeated beyond the quarantine threshold; " +
+                            "an authorized release is required.",
+                        conflictsDetected = conflictCount,
+                    )
+                }
+
+                is ConflictOrchestrationResult.QuarantineUnavailable -> {
+                    conflictCount++
+                    return InboundConflictPreparation.Blocked(
+                        when (val failure = orchestration.observation) {
+                            is ConflictQuarantineObservation.PersistenceFailure -> failure.error
+                            is ConflictQuarantineObservation.ContentionLimitReached -> error(
+                                "DL-CONFLICT-QUARANTINE-CONTENTION",
+                                ErrorCategory.STATE,
+                                Recoverability.RECOVERABLE,
+                                "Conflict quarantine counter exceeded the configured contention bound.",
+                            )
+                        },
                         conflictCount,
                     )
                 }

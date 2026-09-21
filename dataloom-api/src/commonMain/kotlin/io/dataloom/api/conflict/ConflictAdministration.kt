@@ -6,6 +6,8 @@ import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
 import io.dataloom.api.identifier.ConflictId
+import io.dataloom.api.identifier.EntityId
+import io.dataloom.api.identifier.EntityType
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.time.DataLoomInstant
 import kotlin.jvm.JvmInline
@@ -124,6 +126,43 @@ public interface ConflictAdministrationAuthorizer {
     public suspend fun authorize(
         request: ConflictAdministrationRequest,
     ): ConflictAdministrationAuthorizationDecision
+
+    /**
+     * Returns an authorization decision for a
+     * [ConflictQuarantineReleaseRequest] -- an operator releasing an entity
+     * from loop/non-convergence quarantine.
+     *
+     * Deny-by-default: an authorizer written before quarantine existed does
+     * not override this and therefore cannot release anything; a host opts in
+     * by overriding it with its own permission check. The same idempotency and
+     * cancellation rules as [authorize] apply.
+     */
+    public suspend fun authorizeQuarantineRelease(
+        request: ConflictQuarantineReleaseRequest,
+    ): ConflictAdministrationAuthorizationDecision =
+        ConflictAdministrationAuthorizationDecision.Denied("QUARANTINE_RELEASE_NOT_AUTHORIZED")
+}
+
+/**
+ * Immutable administrative command: release the entity `entityType`/`entityId`
+ * from conflict quarantine so its conflicts are resolved again.
+ *
+ * Releasing restarts the entity's occurrence count from zero; it does not
+ * resolve any conflict, apply any decision, or advance any checkpoint. The
+ * next inbound pull that carries a conflict on the entity is counted and
+ * resolved as normal (and quarantines again if the loop persists).
+ */
+public data class ConflictQuarantineReleaseRequest(
+    public val commandId: ConflictAdministrationCommandId,
+    public val entityType: EntityType,
+    public val entityId: EntityId,
+    public val principalId: ConflictAdministrationPrincipalId,
+    public val requestedAt: DataLoomInstant,
+    public val reason: ConflictAdministrationReason,
+) {
+    /** The quarantine scope this command addresses. */
+    public val scope: ConflictQuarantineScope
+        get() = ConflictQuarantineScope(entityType, entityId)
 }
 
 /** Durable lifecycle status for one administrative manual-conflict command. */

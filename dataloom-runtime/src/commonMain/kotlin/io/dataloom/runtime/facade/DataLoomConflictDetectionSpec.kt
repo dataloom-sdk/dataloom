@@ -94,6 +94,15 @@ import io.dataloom.runtime.conflict.ConflictOrchestrationBindings
  * @param resolvedConflictDecisionLogMaximumStateUpdateAttempts passed
  *   through to [DurableResolvedConflictDecisionLog]'s own retry-bound
  *   parameter.
+ * @param quarantine optional loop/non-convergence quarantine. `null` (the
+ *   default) leaves behavior exactly as it was. When supplied, every detected
+ *   conflict is counted per entity; the occurrence that reaches the policy
+ *   threshold (default 5) is not resolved -- it blocks application and
+ *   checkpoint advancement like `Defer`/`Fail` -- and neither is any later
+ *   occurrence until an authorized release
+ *   ([DataLoomConflictAdministration.releaseQuarantine]). Requires
+ *   [resolvedConflictDecisionStore]: quarantine's effect is blocking
+ *   application, which only exists when resolved decisions are applied.
  */
 public class DataLoomConflictDetectionSpec(
     public val detectors: Collection<ConflictDetector>,
@@ -105,4 +114,12 @@ public class DataLoomConflictDetectionSpec(
     public val resolvedConflictDecisionStore: DurableStateStore<ConflictId, ResolvedConflictDecisionRecord>? = null,
     public val resolvedConflictDecisionLogSchemaVersion: Int = 1,
     public val resolvedConflictDecisionLogMaximumStateUpdateAttempts: Int = 8,
-)
+    public val quarantine: DataLoomConflictQuarantineSpec? = null,
+) {
+    init {
+        require(quarantine == null || resolvedConflictDecisionStore != null) {
+            "DataLoomConflictDetectionSpec quarantine requires resolvedConflictDecisionStore: " +
+                "quarantine only takes effect when inbound pull applies resolved decisions."
+        }
+    }
+}

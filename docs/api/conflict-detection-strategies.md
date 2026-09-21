@@ -9,8 +9,7 @@ reachable through the existing `ConflictDetectorRegistry` and exact
 
 This closes a named standard-detector gap in issue
 [#95](https://github.com/dataloom-sdk/dataloom/issues/95), but does not complete
-that issue. Atomic decision application, convergence, loop
-protection/quarantine, manual operations, complete operational evidence, and
+that issue. Atomic decision application, convergence, manual operations, complete operational evidence, and
 mandatory-platform end-to-end qualification remain release work.
 
 ## Selection model
@@ -269,8 +268,11 @@ Issue #95 remains open for at least:
 
 - schema-aware field-merge reference integration;
 - atomic decision application with checkpoint/outbox/audit effects;
-- fingerprints, bounded attempts, convergence limits, loop detection, and
-  quarantine;
+- conflict fingerprints and convergence limits beyond the per-entity
+  occurrence counter (loop/non-convergence quarantine with authorized release
+  ships as a bounded first slice — see
+  [conflict-resolution-strategies.md](./conflict-resolution-strategies.md)'s
+  "Loop/non-convergence quarantine");
 - authorized query/resolve/manual operations (a bounded first slice, including
   operational-event/audit bridging, now ships — see
   [conflict-resolution-strategies.md](./conflict-resolution-strategies.md)'s
