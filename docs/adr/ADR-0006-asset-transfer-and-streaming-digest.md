@@ -281,7 +281,8 @@ corrupted chunks, never completes, or ignores quota.
 
 ## What slice 1 does not do
 
-Ordered next slices:
+Ordered next slices (slice 2, [ADR-0008](./ADR-0008-durable-asset-transfer-sessions.md),
+delivered item 1 and the opt-in builder-configuration part of item 6):
 
 1. Durable session persistence: `AssetTransferSessionStore` over
    `DurableStateStore` (the established domain-adoption pattern, as

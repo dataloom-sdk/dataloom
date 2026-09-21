@@ -1,16 +1,22 @@
 package io.dataloom.assets
 
+import io.dataloom.api.error.DataLoomError
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
  * Persistence seam for [AssetTransferSession]s.
  *
- * This slice ships only [InMemoryAssetTransferSessionStore]. A later slice
- * adds a durable implementation on the existing `DurableStateStore` domain
- * adoption pattern; because the seam is a compare-and-set on
- * [AssetTransferSession.revision], that adoption needs no change to the
- * engine or the session state machine.
+ * [InMemoryAssetTransferSessionStore] is the volatile implementation;
+ * [DurableAssetTransferSessionStore] persists through the generic
+ * `DurableStateStore` so an in-flight transfer survives a process restart.
+ * Both are compare-and-set on [AssetTransferSession.revision], so the engine
+ * and the session state machine are identical over either.
+ *
+ * A store that can fail for reasons other than a lost race (I/O, corruption)
+ * reports it by throwing [AssetTransferSessionStoreException]; the engine turns
+ * that into [AssetTransferOutcome.SessionStoreFailure] instead of guessing at
+ * session state.
  */
 public interface AssetTransferSessionStore {
 
@@ -26,6 +32,16 @@ public interface AssetTransferSessionStore {
      */
     public suspend fun save(updated: AssetTransferSession, expectedRevision: Long?): Boolean
 }
+
+/**
+ * Thrown by an [AssetTransferSessionStore] whose backing storage failed, was
+ * contended past its retry bound, or holds an unusable record. [error] is the
+ * sanitised canonical error (an [AssetTransferError] for failures this module
+ * classifies, or the underlying store's own [DataLoomError]).
+ */
+public class AssetTransferSessionStoreException(
+    public val error: DataLoomError,
+) : RuntimeException("Asset transfer session store failed: ${error.code}")
 
 /** Volatile [AssetTransferSessionStore] for tests and the in-memory reference flow. */
 public class InMemoryAssetTransferSessionStore : AssetTransferSessionStore {

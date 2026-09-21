@@ -58,6 +58,8 @@ public final class io/dataloom/assets/AssetErrorKind : java/lang/Enum {
 	public static final field QUOTA_EXCEEDED Lio/dataloom/assets/AssetErrorKind;
 	public static final field SESSION_CONFLICT Lio/dataloom/assets/AssetErrorKind;
 	public static final field SESSION_NOT_FOUND Lio/dataloom/assets/AssetErrorKind;
+	public static final field SESSION_STATE_CORRUPT Lio/dataloom/assets/AssetErrorKind;
+	public static final field SESSION_STORE_FAILURE Lio/dataloom/assets/AssetErrorKind;
 	public static final field SINK_FAILURE Lio/dataloom/assets/AssetErrorKind;
 	public static final field SOURCE_CONTENT_CHANGED Lio/dataloom/assets/AssetErrorKind;
 	public static final field SOURCE_FAILURE Lio/dataloom/assets/AssetErrorKind;
@@ -282,6 +284,11 @@ public final class io/dataloom/assets/AssetTransferOutcome$NotStarted : io/datal
 	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
 }
 
+public final class io/dataloom/assets/AssetTransferOutcome$SessionStoreFailure : io/dataloom/assets/AssetTransferOutcome {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+}
+
 public final class io/dataloom/assets/AssetTransferPhase : java/lang/Enum {
 	public static final field CANCELLED Lio/dataloom/assets/AssetTransferPhase;
 	public static final field COMPLETED Lio/dataloom/assets/AssetTransferPhase;
@@ -323,6 +330,19 @@ public final class io/dataloom/assets/AssetTransferSession {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/assets/AssetTransferSessionCodec : io/dataloom/api/state/DurableStateCodec {
+	public static final field Companion Lio/dataloom/assets/AssetTransferSessionCodec$Companion;
+	public static final field MAX_ENCODED_LENGTH I
+	public fun <init> ()V
+	public fun decode (Ljava/lang/String;)Lio/dataloom/assets/AssetTransferSession;
+	public synthetic fun decode (Ljava/lang/String;)Ljava/lang/Object;
+	public fun encode (Lio/dataloom/assets/AssetTransferSession;)Ljava/lang/String;
+	public synthetic fun encode (Ljava/lang/Object;)Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/AssetTransferSessionCodec$Companion {
+}
+
 public final class io/dataloom/assets/AssetTransferSessionId {
 	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/assets/AssetTransferSessionId;
 	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
@@ -340,6 +360,11 @@ public final class io/dataloom/assets/AssetTransferSessionId {
 public abstract interface class io/dataloom/assets/AssetTransferSessionStore {
 	public abstract fun load-fnV884s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun save (Lio/dataloom/assets/AssetTransferSession;Ljava/lang/Long;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/assets/AssetTransferSessionStoreException : java/lang/RuntimeException {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
 }
 
 public final class io/dataloom/assets/AssetTransferSessionStoreKt {
@@ -405,6 +430,95 @@ public final class io/dataloom/assets/AssetUploadStatus {
 	public final fun getSessionId-FHqHbzU ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/assets/DurableAssetTransferSessionLoadOutcome {
+}
+
+public final class io/dataloom/assets/DurableAssetTransferSessionLoadOutcome$Found : io/dataloom/assets/DurableAssetTransferSessionLoadOutcome {
+	public fun <init> (Lio/dataloom/assets/AssetTransferSession;)V
+	public final fun component1 ()Lio/dataloom/assets/AssetTransferSession;
+	public final fun copy (Lio/dataloom/assets/AssetTransferSession;)Lio/dataloom/assets/DurableAssetTransferSessionLoadOutcome$Found;
+	public static synthetic fun copy$default (Lio/dataloom/assets/DurableAssetTransferSessionLoadOutcome$Found;Lio/dataloom/assets/AssetTransferSession;ILjava/lang/Object;)Lio/dataloom/assets/DurableAssetTransferSessionLoadOutcome$Found;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSession ()Lio/dataloom/assets/AssetTransferSession;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/DurableAssetTransferSessionLoadOutcome$Missing : io/dataloom/assets/DurableAssetTransferSessionLoadOutcome {
+	public static final field INSTANCE Lio/dataloom/assets/DurableAssetTransferSessionLoadOutcome$Missing;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/DurableAssetTransferSessionLoadOutcome$PersistenceFailure : io/dataloom/assets/DurableAssetTransferSessionLoadOutcome {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/assets/DurableAssetTransferSessionLoadOutcome$PersistenceFailure;
+	public static synthetic fun copy$default (Lio/dataloom/assets/DurableAssetTransferSessionLoadOutcome$PersistenceFailure;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/assets/DurableAssetTransferSessionLoadOutcome$PersistenceFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/assets/DurableAssetTransferSessionSaveOutcome {
+}
+
+public final class io/dataloom/assets/DurableAssetTransferSessionSaveOutcome$ContentionLimitReached : io/dataloom/assets/DurableAssetTransferSessionSaveOutcome {
+	public static final field INSTANCE Lio/dataloom/assets/DurableAssetTransferSessionSaveOutcome$ContentionLimitReached;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/DurableAssetTransferSessionSaveOutcome$PersistenceFailure : io/dataloom/assets/DurableAssetTransferSessionSaveOutcome {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/assets/DurableAssetTransferSessionSaveOutcome$PersistenceFailure;
+	public static synthetic fun copy$default (Lio/dataloom/assets/DurableAssetTransferSessionSaveOutcome$PersistenceFailure;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/assets/DurableAssetTransferSessionSaveOutcome$PersistenceFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/DurableAssetTransferSessionSaveOutcome$Saved : io/dataloom/assets/DurableAssetTransferSessionSaveOutcome {
+	public fun <init> (Lio/dataloom/assets/AssetTransferSession;)V
+	public final fun component1 ()Lio/dataloom/assets/AssetTransferSession;
+	public final fun copy (Lio/dataloom/assets/AssetTransferSession;)Lio/dataloom/assets/DurableAssetTransferSessionSaveOutcome$Saved;
+	public static synthetic fun copy$default (Lio/dataloom/assets/DurableAssetTransferSessionSaveOutcome$Saved;Lio/dataloom/assets/AssetTransferSession;ILjava/lang/Object;)Lio/dataloom/assets/DurableAssetTransferSessionSaveOutcome$Saved;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSession ()Lio/dataloom/assets/AssetTransferSession;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/DurableAssetTransferSessionSaveOutcome$StaleRevision : io/dataloom/assets/DurableAssetTransferSessionSaveOutcome {
+	public fun <init> (Lio/dataloom/assets/AssetTransferSession;)V
+	public final fun component1 ()Lio/dataloom/assets/AssetTransferSession;
+	public final fun copy (Lio/dataloom/assets/AssetTransferSession;)Lio/dataloom/assets/DurableAssetTransferSessionSaveOutcome$StaleRevision;
+	public static synthetic fun copy$default (Lio/dataloom/assets/DurableAssetTransferSessionSaveOutcome$StaleRevision;Lio/dataloom/assets/AssetTransferSession;ILjava/lang/Object;)Lio/dataloom/assets/DurableAssetTransferSessionSaveOutcome$StaleRevision;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCurrent ()Lio/dataloom/assets/AssetTransferSession;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/DurableAssetTransferSessionStore : io/dataloom/assets/AssetTransferSessionStore {
+	public static final field Companion Lio/dataloom/assets/DurableAssetTransferSessionStore$Companion;
+	public fun <init> (Lio/dataloom/api/state/DurableStateStore;II)V
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun load-fnV884s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun save (Lio/dataloom/assets/AssetTransferSession;Ljava/lang/Long;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun tryLoad-fnV884s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun trySave (Lio/dataloom/assets/AssetTransferSession;Ljava/lang/Long;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/assets/DurableAssetTransferSessionStore$Companion {
+	public final fun getKeyEncoder ()Lio/dataloom/api/state/DurableStateScopeKeyEncoder;
 }
 
 public final class io/dataloom/assets/InMemoryAssetTransferSessionStore : io/dataloom/assets/AssetTransferSessionStore {

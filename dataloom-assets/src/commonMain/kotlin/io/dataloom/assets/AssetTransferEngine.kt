@@ -41,6 +41,17 @@ public sealed interface AssetTransferOutcome {
 
     /** Nothing was started and no session exists (for example the asset was not found, or the source is empty). */
     public class NotStarted(public val error: DataLoomError) : AssetTransferOutcome
+
+    /**
+     * The [AssetTransferSessionStore] failed (durable storage error, contention
+     * past its retry bound, or an unusable persisted session), so the engine
+     * could not read or record session state and stopped without guessing.
+     * Nothing beyond what was already durably recorded has been decided.
+     * [error] classifies it: [io.dataloom.api.error.Recoverability.RECOVERABLE]
+     * means the same call can simply be repeated to resume;
+     * [AssetErrorKind.SESSION_STATE_CORRUPT] means that session id is unusable.
+     */
+    public class SessionStoreFailure(public val error: DataLoomError) : AssetTransferOutcome
 }
 
 /**
@@ -79,9 +90,11 @@ public sealed interface AssetTransferOutcome {
  *
  * ## Out of scope for this slice
  *
- * Parallel chunk transfer, fairness controls, compression/encryption wiring,
- * content-policy hooks, and durable persistence of sessions are later slices.
- * The engine is not connected to `DataLoomBuilder`.
+ * Parallel chunk transfer, fairness controls, compression/encryption wiring
+ * and content-policy hooks are later slices. Session persistence is the
+ * caller's choice of [AssetTransferSessionStore]: with
+ * [DurableAssetTransferSessionStore] a restart resumes where the last durably
+ * recorded chunk left off.
  *
  * @param chunkSizeBytes requested chunk size for new uploads; clamped into the
  *   provider's [AssetProvider.chunkSizeBounds].
@@ -111,6 +124,15 @@ public class AssetTransferEngine(
      * uploading mismatched data.
      */
     public suspend fun upload(
+        sessionId: AssetTransferSessionId,
+        assetId: AssetId,
+        version: Long,
+        mediaType: AssetMediaType,
+        source: AssetSource,
+    ): AssetTransferOutcome =
+        guardStore { uploadUnguarded(sessionId, assetId, version, mediaType, source) }
+
+    private suspend fun uploadUnguarded(
         sessionId: AssetTransferSessionId,
         assetId: AssetId,
         version: Long,
@@ -148,6 +170,14 @@ public class AssetTransferEngine(
         assetId: AssetId,
         version: Long?,
         sink: AssetSink,
+    ): AssetTransferOutcome =
+        guardStore { downloadUnguarded(sessionId, assetId, version, sink) }
+
+    private suspend fun downloadUnguarded(
+        sessionId: AssetTransferSessionId,
+        assetId: AssetId,
+        version: Long?,
+        sink: AssetSink,
     ): AssetTransferOutcome {
         val existing = sessions.load(sessionId)
         val session = if (existing != null) {
@@ -178,7 +208,10 @@ public class AssetTransferEngine(
      * is already `COMPLETED` or `FAILED` changes nothing and reports that
      * terminal outcome — a completed transfer is never falsely cancelled.
      */
-    public suspend fun cancel(sessionId: AssetTransferSessionId, sink: AssetSink? = null): AssetTransferOutcome {
+    public suspend fun cancel(sessionId: AssetTransferSessionId, sink: AssetSink? = null): AssetTransferOutcome =
+        guardStore { cancelUnguarded(sessionId, sink) }
+
+    private suspend fun cancelUnguarded(sessionId: AssetTransferSessionId, sink: AssetSink?): AssetTransferOutcome {
         if (sessions.load(sessionId) == null) {
             return AssetTransferOutcome.NotStarted(
                 AssetTransferError(AssetErrorKind.SESSION_NOT_FOUND, "No such transfer session."),
@@ -350,6 +383,18 @@ public class AssetTransferEngine(
     }
 
     // --------------------------------------------------------------- helpers
+
+    /**
+     * Converts a durable-store failure into an outcome. The store keeps the
+     * last session state it successfully persisted and every provider
+     * operation is idempotent, so the caller can simply repeat the call.
+     */
+    private suspend fun guardStore(block: suspend () -> AssetTransferOutcome): AssetTransferOutcome =
+        try {
+            block()
+        } catch (e: AssetTransferSessionStoreException) {
+            AssetTransferOutcome.SessionStoreFailure(e.error)
+        }
 
     /** Stores a brand-new session, or returns the one a concurrent caller stored first. */
     private suspend fun createSession(session: AssetTransferSession): AssetTransferSession =

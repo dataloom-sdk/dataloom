@@ -22,6 +22,9 @@ kotlin {
                 // result/request types and dataloom-plugin-api's identifiers.
                 api(project(":dataloom-plugin-api"))
                 api(project(":dataloom-plugin"))
+                // DataLoom.assetTransfer's public signature uses dataloom-assets'
+                // AssetTransferEngine.
+                api(project(":dataloom-assets"))
                 implementation(project(":dataloom-core"))
                 implementation(libs.kotlinx.coroutines.core)
             }
