@@ -78,6 +78,7 @@ import io.dataloom.api.transport.TransportProvider
 import io.dataloom.core.provider.ResolvedSynchronizationProviders
 import io.dataloom.runtime.conflict.ConflictDetectorRegistry
 import io.dataloom.runtime.conflict.ConflictOrchestrationBindings
+import io.dataloom.runtime.conflict.ConflictQuarantineTracker
 import io.dataloom.runtime.conflict.ConflictResolverRegistry
 import io.dataloom.runtime.conflict.DurableConflictDetectionCoordinator
 import io.dataloom.runtime.conflict.SynchronizationConflictOrchestrator
@@ -127,12 +128,14 @@ abstract class ConflictDecisionApplicationFixture {
         unresolvedStore: DurableStateStore<ConflictId, UnresolvedConflictRecord> =
             InMemoryDurableStore(),
         resolvedStore: DurableStateStore<ConflictId, ResolvedConflictDecisionRecord>?,
+        quarantineTracker: ConflictQuarantineTracker? = null,
     ): InboundPullSynchronizationPipeline {
         val orchestrator = SynchronizationConflictOrchestrator(
             detectorRegistry = ConflictDetectorRegistry(listOf(detector)),
             resolverRegistry = ConflictResolverRegistry(
                 if (resolver == null) emptyList() else listOf(resolver),
             ),
+            quarantineTracker = quarantineTracker,
         )
         val coordinator = DurableConflictDetectionCoordinator(
             orchestrator = orchestrator,

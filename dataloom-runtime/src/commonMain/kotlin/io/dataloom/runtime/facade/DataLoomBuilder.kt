@@ -26,6 +26,7 @@ import io.dataloom.runtime.execution.SynchronizationPipeline
 import io.dataloom.runtime.execution.SynchronizationPipelineRegistry
 import io.dataloom.runtime.execution.bidirectional.BidirectionalPipelineConfiguration
 import io.dataloom.runtime.execution.bidirectional.BidirectionalSynchronizationPipeline
+import io.dataloom.api.conflict.DurableConflictQuarantineLog
 import io.dataloom.api.conflict.DurableResolvedConflictDecisionLog
 import io.dataloom.api.conflict.DurableUnresolvedConflictLog
 import io.dataloom.api.operational.DurableOperationalEventOutbox
@@ -34,6 +35,7 @@ import io.dataloom.api.strategy.DurableStrategyDecisionEventLog
 import io.dataloom.api.strategy.DurableStrategyDecisionOutcomeHistory
 import io.dataloom.runtime.conflict.ConflictAdministrationCoordinator
 import io.dataloom.runtime.conflict.ConflictDetectorRegistry
+import io.dataloom.runtime.conflict.ConflictQuarantineTracker
 import io.dataloom.runtime.conflict.ConflictResolverRegistry
 import io.dataloom.runtime.conflict.DurableConflictDetectionCoordinator
 import io.dataloom.runtime.conflict.SynchronizationConflictOrchestrator
@@ -169,6 +171,7 @@ public class DataLoomBuilder {
     private var retryAdministrationSpec: DataLoomRetryAdministrationSpec? = null
     private var circuitAdministrationSpec: DataLoomCircuitAdministrationSpec? = null
     private var pluginSpec: DataLoomPluginSpec? = null
+    private var pluginOperationalEventOutboxSpec: DataLoomPluginOperationalEventOutboxSpec? = null
 
     /**
      * The SDK version plugin compatibility is checked against. Always
@@ -875,6 +878,29 @@ public class DataLoomBuilder {
     }
 
     /**
+     * Enables the durable operational-event outbox bridge for the plugin engine:
+     * every result [DataLoomPluginEngine.transition] and
+     * [DataLoomPluginEngine.execute] return is also translated into an
+     * [io.dataloom.api.operational.OperationalEventEnvelope] and durably
+     * appended, in order, under [DataLoomPluginOperationalEventOutboxSpec.scope].
+     * See [DataLoomPluginOperationalEventOutboxSpec] for what is and is not
+     * recorded.
+     *
+     * When this is not called, or [pluginConfiguration] is not called, no
+     * envelope is constructed or appended and behavior is unchanged. Nothing is
+     * appended, and no clock is read, during [build]. The runtime clock from
+     * [runtimeDependencies] is used only when a result is recorded.
+     *
+     * @param spec the store, scope, and outbox tuning.
+     * @return this builder for chaining.
+     */
+    public fun pluginOperationalEventOutboxConfiguration(
+        spec: DataLoomPluginOperationalEventOutboxSpec,
+    ): DataLoomBuilder = apply {
+        pluginOperationalEventOutboxSpec = spec
+    }
+
+    /**
      * Configures the optional queue-worker capability.
      *
      * When supplied with valid configuration and a valid queue provider
@@ -1104,6 +1130,17 @@ public class DataLoomBuilder {
                         detectorRegistry = ConflictDetectorRegistry(spec.detectors),
                         resolverRegistry = ConflictResolverRegistry(spec.resolvers),
                         eventEmitter = lifecycleEventEmitter as? SynchronizationRuntimeEventEmitter,
+                        quarantineTracker = spec.quarantine?.let { quarantine ->
+                            ConflictQuarantineTracker(
+                                log = DurableConflictQuarantineLog(
+                                    store = quarantine.store,
+                                    schemaVersion = quarantine.schemaVersion,
+                                    maximumStateUpdateAttempts = quarantine.maximumStateUpdateAttempts,
+                                ),
+                                clock = deps.clock,
+                                policy = quarantine.policy,
+                            )
+                        },
                     ),
                     unresolvedConflictLog = DurableUnresolvedConflictLog(
                         store = spec.unresolvedConflictStore,
@@ -1404,6 +1441,13 @@ public class DataLoomBuilder {
                         maximumStateUpdateAttempts = spec.resolvedConflictDecisionLogMaximumStateUpdateAttempts,
                     ),
                     maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
+                    quarantineLog = spec.quarantine?.let { quarantine ->
+                        DurableConflictQuarantineLog(
+                            store = quarantine.store,
+                            schemaVersion = quarantine.schemaVersion,
+                            maximumStateUpdateAttempts = quarantine.maximumStateUpdateAttempts,
+                        )
+                    },
                 ),
                 operationalEventOutbox = conflictResolutionOperationalEventOutbox,
                 operationalEventOutboxScope = conflictResolutionOperationalEventOutboxSpec?.scope,
@@ -1414,11 +1458,23 @@ public class DataLoomBuilder {
         val pluginEngine = pluginSpec?.let { spec ->
             val pluginRegistry = PluginRegistry(spec.plugins)
             val pluginTracker = PluginLifecycleStateTracker(pluginRegistry, pluginSdkVersion)
+            val pluginOperationalEventOutbox = pluginOperationalEventOutboxSpec?.let { outboxSpec ->
+                DurableOperationalEventOutbox(
+                    store = outboxSpec.store,
+                    clock = deps.clock,
+                    schemaVersion = outboxSpec.schemaVersion,
+                    maximumStateUpdateAttempts = outboxSpec.maximumStateUpdateAttempts,
+                    stateObserver = operationalEventOutboxHealthTracker,
+                )
+            }
             DefaultDataLoomPluginEngine(
                 registry = pluginRegistry,
                 tracker = pluginTracker,
                 enforcer = PluginExecutionBoundsEnforcer(pluginTracker),
                 authorizer = spec.lifecycleAuthorizer,
+                operationalEventOutbox = pluginOperationalEventOutbox,
+                operationalEventOutboxScope = pluginOperationalEventOutboxSpec?.scope,
+                clock = deps.clock,
             )
         }
 

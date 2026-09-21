@@ -902,6 +902,11 @@ public final class io/dataloom/api/conflict/ConflictAdministrationAuthorizationI
 
 public abstract interface class io/dataloom/api/conflict/ConflictAdministrationAuthorizer {
 	public abstract fun authorize (Lio/dataloom/api/conflict/ConflictAdministrationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun authorizeQuarantineRelease (Lio/dataloom/api/conflict/ConflictQuarantineReleaseRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/api/conflict/ConflictAdministrationAuthorizer$DefaultImpls {
+	public static fun authorizeQuarantineRelease (Lio/dataloom/api/conflict/ConflictAdministrationAuthorizer;Lio/dataloom/api/conflict/ConflictQuarantineReleaseRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/dataloom/api/conflict/ConflictAdministrationCommandId {
@@ -1177,6 +1182,233 @@ public abstract interface class io/dataloom/api/conflict/ConflictDetector {
 	public abstract fun getId-SQTsAXs ()Ljava/lang/String;
 }
 
+public abstract interface class io/dataloom/api/conflict/ConflictQuarantineObservation {
+}
+
+public final class io/dataloom/api/conflict/ConflictQuarantineObservation$ContentionLimitReached : io/dataloom/api/conflict/ConflictQuarantineObservation$Unavailable {
+	public static final field INSTANCE Lio/dataloom/api/conflict/ConflictQuarantineObservation$ContentionLimitReached;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictQuarantineObservation$Counted : io/dataloom/api/conflict/ConflictQuarantineObservation {
+	public fun <init> (Lio/dataloom/api/conflict/ConflictQuarantineRecord;)V
+	public final fun component1 ()Lio/dataloom/api/conflict/ConflictQuarantineRecord;
+	public final fun copy (Lio/dataloom/api/conflict/ConflictQuarantineRecord;)Lio/dataloom/api/conflict/ConflictQuarantineObservation$Counted;
+	public static synthetic fun copy$default (Lio/dataloom/api/conflict/ConflictQuarantineObservation$Counted;Lio/dataloom/api/conflict/ConflictQuarantineRecord;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictQuarantineObservation$Counted;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/conflict/ConflictQuarantineRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictQuarantineObservation$PersistenceFailure : io/dataloom/api/conflict/ConflictQuarantineObservation$Unavailable {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/api/conflict/ConflictQuarantineObservation$PersistenceFailure;
+	public static synthetic fun copy$default (Lio/dataloom/api/conflict/ConflictQuarantineObservation$PersistenceFailure;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictQuarantineObservation$PersistenceFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictQuarantineObservation$Quarantined : io/dataloom/api/conflict/ConflictQuarantineObservation {
+	public fun <init> (Lio/dataloom/api/conflict/ConflictQuarantineRecord;Z)V
+	public final fun component1 ()Lio/dataloom/api/conflict/ConflictQuarantineRecord;
+	public final fun component2 ()Z
+	public final fun copy (Lio/dataloom/api/conflict/ConflictQuarantineRecord;Z)Lio/dataloom/api/conflict/ConflictQuarantineObservation$Quarantined;
+	public static synthetic fun copy$default (Lio/dataloom/api/conflict/ConflictQuarantineObservation$Quarantined;Lio/dataloom/api/conflict/ConflictQuarantineRecord;ZILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictQuarantineObservation$Quarantined;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getNewlyQuarantined ()Z
+	public final fun getRecord ()Lio/dataloom/api/conflict/ConflictQuarantineRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/conflict/ConflictQuarantineObservation$Unavailable : io/dataloom/api/conflict/ConflictQuarantineObservation {
+}
+
+public final class io/dataloom/api/conflict/ConflictQuarantinePolicy {
+	public static final field Companion Lio/dataloom/api/conflict/ConflictQuarantinePolicy$Companion;
+	public static final field DEFAULT_OCCURRENCE_THRESHOLD I
+	public fun <init> ()V
+	public fun <init> (ILjava/lang/Long;)V
+	public synthetic fun <init> (ILjava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/lang/Long;
+	public final fun copy (ILjava/lang/Long;)Lio/dataloom/api/conflict/ConflictQuarantinePolicy;
+	public static synthetic fun copy$default (Lio/dataloom/api/conflict/ConflictQuarantinePolicy;ILjava/lang/Long;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictQuarantinePolicy;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getOccurrenceThreshold ()I
+	public final fun getWindowMillis ()Ljava/lang/Long;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictQuarantinePolicy$Companion {
+}
+
+public final class io/dataloom/api/conflict/ConflictQuarantineRecord {
+	public synthetic fun <init> (Lio/dataloom/api/conflict/ConflictQuarantineStatus;ILio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;ILio/dataloom/api/conflict/ConflictQuarantineRelease;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/conflict/ConflictQuarantineStatus;ILio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;ILio/dataloom/api/conflict/ConflictQuarantineRelease;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/dataloom/api/conflict/ConflictQuarantineStatus;
+	public final fun component2 ()I
+	public final fun component3 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component4 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component5-AkQi5Yo ()Ljava/lang/String;
+	public final fun component6-5fmtlrw ()Ljava/lang/String;
+	public final fun component7 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component8 ()I
+	public final fun component9 ()Lio/dataloom/api/conflict/ConflictQuarantineRelease;
+	public final fun copy-QIsZPq8 (Lio/dataloom/api/conflict/ConflictQuarantineStatus;ILio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;ILio/dataloom/api/conflict/ConflictQuarantineRelease;)Lio/dataloom/api/conflict/ConflictQuarantineRecord;
+	public static synthetic fun copy-QIsZPq8$default (Lio/dataloom/api/conflict/ConflictQuarantineRecord;Lio/dataloom/api/conflict/ConflictQuarantineStatus;ILio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;ILio/dataloom/api/conflict/ConflictQuarantineRelease;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictQuarantineRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFirstSeenAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getLastConflictId-AkQi5Yo ()Ljava/lang/String;
+	public final fun getLastRelease ()Lio/dataloom/api/conflict/ConflictQuarantineRelease;
+	public final fun getLastResolverId-5fmtlrw ()Ljava/lang/String;
+	public final fun getLastSeenAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getOccurrenceCount ()I
+	public final fun getQuarantinedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getReleaseCount ()I
+	public final fun getStatus ()Lio/dataloom/api/conflict/ConflictQuarantineStatus;
+	public fun hashCode ()I
+	public final fun isQuarantined ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictQuarantineRecordCodec : io/dataloom/api/state/DurableStateCodec {
+	public fun <init> ()V
+	public fun decode (Ljava/lang/String;)Lio/dataloom/api/conflict/ConflictQuarantineRecord;
+	public synthetic fun decode (Ljava/lang/String;)Ljava/lang/Object;
+	public fun encode (Lio/dataloom/api/conflict/ConflictQuarantineRecord;)Ljava/lang/String;
+	public synthetic fun encode (Ljava/lang/Object;)Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictQuarantineRelease {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-2_kwmeA ()Ljava/lang/String;
+	public final fun component2-aS8_ASQ ()Ljava/lang/String;
+	public final fun component3-TJfn21M ()Ljava/lang/String;
+	public final fun component4-bZQyE88 ()Ljava/lang/String;
+	public final fun component5 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy-HhOHIqs (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/api/conflict/ConflictQuarantineRelease;
+	public static synthetic fun copy-HhOHIqs$default (Lio/dataloom/api/conflict/ConflictQuarantineRelease;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictQuarantineRelease;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAuthorizationId-TJfn21M ()Ljava/lang/String;
+	public final fun getCommandId-2_kwmeA ()Ljava/lang/String;
+	public final fun getPrincipalId-aS8_ASQ ()Ljava/lang/String;
+	public final fun getReason-bZQyE88 ()Ljava/lang/String;
+	public final fun getReleasedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/api/conflict/ConflictQuarantineReleaseOutcome {
+}
+
+public final class io/dataloom/api/conflict/ConflictQuarantineReleaseOutcome$AlreadyReleased : io/dataloom/api/conflict/ConflictQuarantineReleaseOutcome {
+	public fun <init> (Lio/dataloom/api/conflict/ConflictQuarantineRecord;)V
+	public final fun component1 ()Lio/dataloom/api/conflict/ConflictQuarantineRecord;
+	public final fun copy (Lio/dataloom/api/conflict/ConflictQuarantineRecord;)Lio/dataloom/api/conflict/ConflictQuarantineReleaseOutcome$AlreadyReleased;
+	public static synthetic fun copy$default (Lio/dataloom/api/conflict/ConflictQuarantineReleaseOutcome$AlreadyReleased;Lio/dataloom/api/conflict/ConflictQuarantineRecord;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictQuarantineReleaseOutcome$AlreadyReleased;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/conflict/ConflictQuarantineRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictQuarantineReleaseOutcome$ContentionLimitReached : io/dataloom/api/conflict/ConflictQuarantineReleaseOutcome {
+	public static final field INSTANCE Lio/dataloom/api/conflict/ConflictQuarantineReleaseOutcome$ContentionLimitReached;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictQuarantineReleaseOutcome$NotQuarantined : io/dataloom/api/conflict/ConflictQuarantineReleaseOutcome {
+	public fun <init> (Lio/dataloom/api/conflict/ConflictQuarantineRecord;)V
+	public final fun component1 ()Lio/dataloom/api/conflict/ConflictQuarantineRecord;
+	public final fun copy (Lio/dataloom/api/conflict/ConflictQuarantineRecord;)Lio/dataloom/api/conflict/ConflictQuarantineReleaseOutcome$NotQuarantined;
+	public static synthetic fun copy$default (Lio/dataloom/api/conflict/ConflictQuarantineReleaseOutcome$NotQuarantined;Lio/dataloom/api/conflict/ConflictQuarantineRecord;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictQuarantineReleaseOutcome$NotQuarantined;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/conflict/ConflictQuarantineRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictQuarantineReleaseOutcome$PersistenceFailure : io/dataloom/api/conflict/ConflictQuarantineReleaseOutcome {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/api/conflict/ConflictQuarantineReleaseOutcome$PersistenceFailure;
+	public static synthetic fun copy$default (Lio/dataloom/api/conflict/ConflictQuarantineReleaseOutcome$PersistenceFailure;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictQuarantineReleaseOutcome$PersistenceFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictQuarantineReleaseOutcome$Released : io/dataloom/api/conflict/ConflictQuarantineReleaseOutcome {
+	public fun <init> (Lio/dataloom/api/conflict/ConflictQuarantineRecord;)V
+	public final fun component1 ()Lio/dataloom/api/conflict/ConflictQuarantineRecord;
+	public final fun copy (Lio/dataloom/api/conflict/ConflictQuarantineRecord;)Lio/dataloom/api/conflict/ConflictQuarantineReleaseOutcome$Released;
+	public static synthetic fun copy$default (Lio/dataloom/api/conflict/ConflictQuarantineReleaseOutcome$Released;Lio/dataloom/api/conflict/ConflictQuarantineRecord;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictQuarantineReleaseOutcome$Released;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/api/conflict/ConflictQuarantineRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictQuarantineReleaseRequest {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-2_kwmeA ()Ljava/lang/String;
+	public final fun component2-ljejvTE ()Ljava/lang/String;
+	public final fun component3-TLcFPyM ()Ljava/lang/String;
+	public final fun component4-aS8_ASQ ()Ljava/lang/String;
+	public final fun component5 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component6-bZQyE88 ()Ljava/lang/String;
+	public final fun copy-rTQz09U (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;)Lio/dataloom/api/conflict/ConflictQuarantineReleaseRequest;
+	public static synthetic fun copy-rTQz09U$default (Lio/dataloom/api/conflict/ConflictQuarantineReleaseRequest;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictQuarantineReleaseRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCommandId-2_kwmeA ()Ljava/lang/String;
+	public final fun getEntityId-TLcFPyM ()Ljava/lang/String;
+	public final fun getEntityType-ljejvTE ()Ljava/lang/String;
+	public final fun getPrincipalId-aS8_ASQ ()Ljava/lang/String;
+	public final fun getReason-bZQyE88 ()Ljava/lang/String;
+	public final fun getRequestedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getScope ()Lio/dataloom/api/conflict/ConflictQuarantineScope;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictQuarantineScope {
+	public static final field Companion Lio/dataloom/api/conflict/ConflictQuarantineScope$Companion;
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-ljejvTE ()Ljava/lang/String;
+	public final fun component2-TLcFPyM ()Ljava/lang/String;
+	public final fun copy-F1aib0E (Ljava/lang/String;Ljava/lang/String;)Lio/dataloom/api/conflict/ConflictQuarantineScope;
+	public static synthetic fun copy-F1aib0E$default (Lio/dataloom/api/conflict/ConflictQuarantineScope;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/conflict/ConflictQuarantineScope;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntityId-TLcFPyM ()Ljava/lang/String;
+	public final fun getEntityType-ljejvTE ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/conflict/ConflictQuarantineScope$Companion {
+	public final fun getKeyEncoder ()Lio/dataloom/api/state/DurableStateScopeKeyEncoder;
+	public final fun of (Lio/dataloom/api/change/EntityReference;)Lio/dataloom/api/conflict/ConflictQuarantineScope;
+}
+
+public final class io/dataloom/api/conflict/ConflictQuarantineStatus : java/lang/Enum {
+	public static final field COUNTING Lio/dataloom/api/conflict/ConflictQuarantineStatus;
+	public static final field QUARANTINED Lio/dataloom/api/conflict/ConflictQuarantineStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/conflict/ConflictQuarantineStatus;
+	public static fun values ()[Lio/dataloom/api/conflict/ConflictQuarantineStatus;
+}
+
 public abstract interface class io/dataloom/api/conflict/ConflictResolutionDecision {
 }
 
@@ -1280,6 +1512,18 @@ public final class io/dataloom/api/conflict/ConflictType : java/lang/Enum {
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/conflict/ConflictType;
 	public static fun values ()[Lio/dataloom/api/conflict/ConflictType;
+}
+
+public final class io/dataloom/api/conflict/DurableConflictQuarantineLog {
+	public static final field Companion Lio/dataloom/api/conflict/DurableConflictQuarantineLog$Companion;
+	public fun <init> (Lio/dataloom/api/state/DurableStateStore;II)V
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun current (Lio/dataloom/api/conflict/ConflictQuarantineScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun recordOccurrence-u57aoNY (Lio/dataloom/api/conflict/ConflictQuarantineScope;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/conflict/ConflictQuarantinePolicy;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun release (Lio/dataloom/api/conflict/ConflictQuarantineScope;Lio/dataloom/api/conflict/ConflictQuarantineRelease;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/api/conflict/DurableConflictQuarantineLog$Companion {
 }
 
 public final class io/dataloom/api/conflict/DurableResolvedConflictDecisionLog {

@@ -1,5 +1,7 @@
 package io.dataloom.runtime.conflict
 
+import io.dataloom.api.conflict.ConflictQuarantineObservation
+import io.dataloom.api.conflict.ConflictQuarantineRecord
 import io.dataloom.api.conflict.ConflictResolutionDecision
 import io.dataloom.api.conflict.SynchronizationConflict
 import io.dataloom.api.identifier.ConflictDetectorId
@@ -18,6 +20,11 @@ import io.dataloom.api.identifier.ConflictResolverId
  * - [ResolverNotFound] — a conflict was detected and a resolver ID was
  *   configured, but no matching resolver exists in the registry.
  * - [Resolved] — a conflict was detected and the resolver returned a decision.
+ * - [Quarantined] — a conflict was detected on an entity whose repeated
+ *   conflicts reached the quarantine threshold; no resolver ran. Only with a
+ *   [ConflictQuarantineTracker].
+ * - [QuarantineUnavailable] — the quarantine counter could not be updated;
+ *   fail closed, no resolver ran. Only with a [ConflictQuarantineTracker].
  *
  * ## No raw Throwable exposure
  *
@@ -160,6 +167,116 @@ public sealed interface ConflictOrchestrationResult {
         override fun hashCode(): Int {
             var result = conflict.hashCode()
             result = 31 * result + resolverId.hashCode()
+            return result
+        }
+    }
+
+    /**
+     * A conflict was detected on an entity that is quarantined -- its repeated
+     * conflicts reached the [ConflictQuarantineTracker]'s threshold and no
+     * authorized release has happened since. Only produced when the
+     * orchestrator was given a [ConflictQuarantineTracker].
+     *
+     * No resolver lookup occurred and no resolver was invoked. The exact
+     * [SynchronizationConflict] is preserved unchanged. The durable
+     * [ConflictQuarantineRecord] is the record of the quarantine.
+     *
+     * @param conflict the exact [SynchronizationConflict] reported by the
+     *   detector. Not mutated.
+     * @param detectorId the [ConflictDetectorId] of the detector that reported
+     *   the conflict.
+     * @param record the entity's durable quarantine record.
+     * @param newlyQuarantined `true` for the one occurrence that reached the
+     *   threshold; `false` when the entity was already quarantined.
+     */
+    public class Quarantined(
+        /** The exact [SynchronizationConflict] reported by the detector. */
+        public val conflict: SynchronizationConflict,
+
+        /** The [ConflictDetectorId] of the detector that reported the conflict. */
+        public val detectorId: ConflictDetectorId,
+
+        /** The entity's durable quarantine record. */
+        public val record: ConflictQuarantineRecord,
+
+        /** `true` when this occurrence is the one that reached the threshold. */
+        public val newlyQuarantined: Boolean,
+    ) : ConflictOrchestrationResult {
+
+        /** Safe diagnostic string: conflict ID, type, detector ID, occurrence count. No payload content. */
+        override fun toString(): String =
+            "ConflictOrchestrationResult.Quarantined(" +
+                "conflictId=${conflict.id.value}, " +
+                "conflictType=${conflict.type}, " +
+                "detectorId=${detectorId.value}, " +
+                "occurrenceCount=${record.occurrenceCount}, " +
+                "newlyQuarantined=$newlyQuarantined" +
+                ")"
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Quarantined) return false
+            return conflict == other.conflict &&
+                detectorId == other.detectorId &&
+                record == other.record &&
+                newlyQuarantined == other.newlyQuarantined
+        }
+
+        override fun hashCode(): Int {
+            var result = conflict.hashCode()
+            result = 31 * result + detectorId.hashCode()
+            result = 31 * result + record.hashCode()
+            result = 31 * result + newlyQuarantined.hashCode()
+            return result
+        }
+    }
+
+    /**
+     * A conflict was detected but the [ConflictQuarantineTracker] could not
+     * durably count it, so whether the entity is quarantined is unknown. The
+     * orchestrator fails closed: no resolver lookup occurred and no resolver
+     * was invoked. Only produced when the orchestrator was given a
+     * [ConflictQuarantineTracker].
+     *
+     * @param conflict the exact [SynchronizationConflict] reported by the
+     *   detector. Not mutated.
+     * @param detectorId the [ConflictDetectorId] of the detector that reported
+     *   the conflict.
+     * @param observation why counting failed: a persistence failure or the
+     *   contention bound.
+     */
+    public class QuarantineUnavailable(
+        /** The exact [SynchronizationConflict] reported by the detector. */
+        public val conflict: SynchronizationConflict,
+
+        /** The [ConflictDetectorId] of the detector that reported the conflict. */
+        public val detectorId: ConflictDetectorId,
+
+        /** The failed observation. */
+        public val observation: ConflictQuarantineObservation.Unavailable,
+    ) : ConflictOrchestrationResult {
+
+        /** Safe diagnostic string: conflict ID, type, detector ID, failure kind. */
+        override fun toString(): String =
+            "ConflictOrchestrationResult.QuarantineUnavailable(" +
+                "conflictId=${conflict.id.value}, " +
+                "conflictType=${conflict.type}, " +
+                "detectorId=${detectorId.value}, " +
+                "observation=${observation::class.simpleName}" +
+                ")"
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is QuarantineUnavailable) return false
+            return conflict == other.conflict &&
+                detectorId == other.detectorId &&
+                observation == other.observation
+        }
+
+        override fun hashCode(): Int {
+            var result = conflict.hashCode()
+            result = 31 * result + detectorId.hashCode()
+            result = 31 * result + observation.hashCode()
             return result
         }
     }

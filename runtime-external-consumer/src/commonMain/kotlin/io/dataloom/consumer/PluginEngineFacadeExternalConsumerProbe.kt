@@ -1,13 +1,17 @@
 package io.dataloom.consumer
 
+import io.dataloom.api.operational.OperationalEventOutboxScope
+import io.dataloom.api.operational.OperationalEventOutboxState
 import io.dataloom.api.plugin.DataLoomPlugin
 import io.dataloom.api.plugin.PluginId
+import io.dataloom.api.state.DurableStateStore
 import io.dataloom.plugin.PluginExecutionBoundsResult
 import io.dataloom.plugin.PluginLifecycleAdministrationAuthorizer
 import io.dataloom.plugin.PluginLifecycleTransitionRequest
 import io.dataloom.plugin.PluginLifecycleTransitionResult
 import io.dataloom.runtime.facade.DataLoom
 import io.dataloom.runtime.facade.DataLoomBuilder
+import io.dataloom.runtime.facade.DataLoomPluginOperationalEventOutboxSpec
 import io.dataloom.runtime.facade.DataLoomPluginSpec
 
 /**
@@ -22,6 +26,12 @@ public object PluginEngineFacadeExternalConsumerProbe {
         plugins: List<DataLoomPlugin>,
         authorizer: PluginLifecycleAdministrationAuthorizer,
     ): DataLoomBuilder = builder.pluginConfiguration(DataLoomPluginSpec(plugins, authorizer))
+
+    public fun configureAudit(
+        builder: DataLoomBuilder,
+        store: DurableStateStore<OperationalEventOutboxScope, OperationalEventOutboxState>,
+    ): DataLoomBuilder =
+        builder.pluginOperationalEventOutboxConfiguration(DataLoomPluginOperationalEventOutboxSpec(store))
 
     public suspend fun transition(
         dataLoom: DataLoom,

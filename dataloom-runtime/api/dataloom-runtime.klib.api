@@ -9,6 +9,8 @@
 final enum class io.dataloom.runtime.conflict/ConflictOrchestrationStatus : kotlin/Enum<io.dataloom.runtime.conflict/ConflictOrchestrationStatus> { // io.dataloom.runtime.conflict/ConflictOrchestrationStatus|null[0]
     enum entry DETECTOR_NOT_FOUND // io.dataloom.runtime.conflict/ConflictOrchestrationStatus.DETECTOR_NOT_FOUND|null[0]
     enum entry NO_CONFLICT // io.dataloom.runtime.conflict/ConflictOrchestrationStatus.NO_CONFLICT|null[0]
+    enum entry QUARANTINED // io.dataloom.runtime.conflict/ConflictOrchestrationStatus.QUARANTINED|null[0]
+    enum entry QUARANTINE_UNAVAILABLE // io.dataloom.runtime.conflict/ConflictOrchestrationStatus.QUARANTINE_UNAVAILABLE|null[0]
     enum entry RESOLVED // io.dataloom.runtime.conflict/ConflictOrchestrationStatus.RESOLVED|null[0]
     enum entry RESOLVER_NOT_CONFIGURED // io.dataloom.runtime.conflict/ConflictOrchestrationStatus.RESOLVER_NOT_CONFIGURED|null[0]
     enum entry RESOLVER_NOT_FOUND // io.dataloom.runtime.conflict/ConflictOrchestrationStatus.RESOLVER_NOT_FOUND|null[0]
@@ -628,6 +630,7 @@ abstract interface io.dataloom.runtime.facade/DataLoomCircuitQueueWorker { // io
 
 abstract interface io.dataloom.runtime.facade/DataLoomConflictAdministration { // io.dataloom.runtime.facade/DataLoomConflictAdministration|null[0]
     abstract suspend fun execute(io.dataloom.api.conflict/ConflictAdministrationRequest): io.dataloom.runtime.conflict/ConflictAdministrationResult // io.dataloom.runtime.facade/DataLoomConflictAdministration.execute|execute(io.dataloom.api.conflict.ConflictAdministrationRequest){}[0]
+    abstract suspend fun releaseQuarantine(io.dataloom.api.conflict/ConflictQuarantineReleaseRequest): io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult // io.dataloom.runtime.facade/DataLoomConflictAdministration.releaseQuarantine|releaseQuarantine(io.dataloom.api.conflict.ConflictQuarantineReleaseRequest){}[0]
 }
 
 abstract interface io.dataloom.runtime.facade/DataLoomPluginEngine { // io.dataloom.runtime.facade/DataLoomPluginEngine|null[0]
@@ -1009,6 +1012,38 @@ sealed interface io.dataloom.runtime.conflict/ConflictOrchestrationResult { // i
         final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictOrchestrationResult.NoConflict.toString|toString(){}[0]
     }
 
+    final class QuarantineUnavailable : io.dataloom.runtime.conflict/ConflictOrchestrationResult { // io.dataloom.runtime.conflict/ConflictOrchestrationResult.QuarantineUnavailable|null[0]
+        constructor <init>(io.dataloom.api.conflict/SynchronizationConflict, io.dataloom.api.identifier/ConflictDetectorId, io.dataloom.api.conflict/ConflictQuarantineObservation.Unavailable) // io.dataloom.runtime.conflict/ConflictOrchestrationResult.QuarantineUnavailable.<init>|<init>(io.dataloom.api.conflict.SynchronizationConflict;io.dataloom.api.identifier.ConflictDetectorId;io.dataloom.api.conflict.ConflictQuarantineObservation.Unavailable){}[0]
+
+        final val conflict // io.dataloom.runtime.conflict/ConflictOrchestrationResult.QuarantineUnavailable.conflict|{}conflict[0]
+            final fun <get-conflict>(): io.dataloom.api.conflict/SynchronizationConflict // io.dataloom.runtime.conflict/ConflictOrchestrationResult.QuarantineUnavailable.conflict.<get-conflict>|<get-conflict>(){}[0]
+        final val detectorId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.QuarantineUnavailable.detectorId|{}detectorId[0]
+            final fun <get-detectorId>(): io.dataloom.api.identifier/ConflictDetectorId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.QuarantineUnavailable.detectorId.<get-detectorId>|<get-detectorId>(){}[0]
+        final val observation // io.dataloom.runtime.conflict/ConflictOrchestrationResult.QuarantineUnavailable.observation|{}observation[0]
+            final fun <get-observation>(): io.dataloom.api.conflict/ConflictQuarantineObservation.Unavailable // io.dataloom.runtime.conflict/ConflictOrchestrationResult.QuarantineUnavailable.observation.<get-observation>|<get-observation>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictOrchestrationResult.QuarantineUnavailable.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictOrchestrationResult.QuarantineUnavailable.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictOrchestrationResult.QuarantineUnavailable.toString|toString(){}[0]
+    }
+
+    final class Quarantined : io.dataloom.runtime.conflict/ConflictOrchestrationResult { // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Quarantined|null[0]
+        constructor <init>(io.dataloom.api.conflict/SynchronizationConflict, io.dataloom.api.identifier/ConflictDetectorId, io.dataloom.api.conflict/ConflictQuarantineRecord, kotlin/Boolean) // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Quarantined.<init>|<init>(io.dataloom.api.conflict.SynchronizationConflict;io.dataloom.api.identifier.ConflictDetectorId;io.dataloom.api.conflict.ConflictQuarantineRecord;kotlin.Boolean){}[0]
+
+        final val conflict // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Quarantined.conflict|{}conflict[0]
+            final fun <get-conflict>(): io.dataloom.api.conflict/SynchronizationConflict // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Quarantined.conflict.<get-conflict>|<get-conflict>(){}[0]
+        final val detectorId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Quarantined.detectorId|{}detectorId[0]
+            final fun <get-detectorId>(): io.dataloom.api.identifier/ConflictDetectorId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Quarantined.detectorId.<get-detectorId>|<get-detectorId>(){}[0]
+        final val newlyQuarantined // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Quarantined.newlyQuarantined|{}newlyQuarantined[0]
+            final fun <get-newlyQuarantined>(): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Quarantined.newlyQuarantined.<get-newlyQuarantined>|<get-newlyQuarantined>(){}[0]
+        final val record // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Quarantined.record|{}record[0]
+            final fun <get-record>(): io.dataloom.api.conflict/ConflictQuarantineRecord // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Quarantined.record.<get-record>|<get-record>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Quarantined.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Quarantined.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Quarantined.toString|toString(){}[0]
+    }
+
     final class Resolved : io.dataloom.runtime.conflict/ConflictOrchestrationResult { // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved|null[0]
         constructor <init>(io.dataloom.api.conflict/SynchronizationConflict, io.dataloom.api.conflict/ConflictResolutionDecision, io.dataloom.api.identifier/ConflictDetectorId, io.dataloom.api.identifier/ConflictResolverId) // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.<init>|<init>(io.dataloom.api.conflict.SynchronizationConflict;io.dataloom.api.conflict.ConflictResolutionDecision;io.dataloom.api.identifier.ConflictDetectorId;io.dataloom.api.identifier.ConflictResolverId){}[0]
 
@@ -1050,6 +1085,85 @@ sealed interface io.dataloom.runtime.conflict/ConflictOrchestrationResult { // i
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult { // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult|null[0]
+    final class AlreadyReleased : io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult { // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.AlreadyReleased|null[0]
+        constructor <init>(io.dataloom.api.conflict/ConflictQuarantineRecord) // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.AlreadyReleased.<init>|<init>(io.dataloom.api.conflict.ConflictQuarantineRecord){}[0]
+
+        final val record // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.AlreadyReleased.record|{}record[0]
+            final fun <get-record>(): io.dataloom.api.conflict/ConflictQuarantineRecord // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.AlreadyReleased.record.<get-record>|<get-record>(){}[0]
+
+        final fun component1(): io.dataloom.api.conflict/ConflictQuarantineRecord // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.AlreadyReleased.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.conflict/ConflictQuarantineRecord = ...): io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.AlreadyReleased // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.AlreadyReleased.copy|copy(io.dataloom.api.conflict.ConflictQuarantineRecord){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.AlreadyReleased.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.AlreadyReleased.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.AlreadyReleased.toString|toString(){}[0]
+    }
+
+    final class AuthorizationDenied : io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult { // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.AuthorizationDenied|null[0]
+        constructor <init>(kotlin/String) // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.AuthorizationDenied.<init>|<init>(kotlin.String){}[0]
+
+        final val reasonCode // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.AuthorizationDenied.reasonCode|{}reasonCode[0]
+            final fun <get-reasonCode>(): kotlin/String // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.AuthorizationDenied.reasonCode.<get-reasonCode>|<get-reasonCode>(){}[0]
+
+        final fun component1(): kotlin/String // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.AuthorizationDenied.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.AuthorizationDenied // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.AuthorizationDenied.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.AuthorizationDenied.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.AuthorizationDenied.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.AuthorizationDenied.toString|toString(){}[0]
+    }
+
+    final class NotQuarantined : io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult { // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.NotQuarantined|null[0]
+        constructor <init>(io.dataloom.api.conflict/ConflictQuarantineRecord?) // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.NotQuarantined.<init>|<init>(io.dataloom.api.conflict.ConflictQuarantineRecord?){}[0]
+
+        final val record // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.NotQuarantined.record|{}record[0]
+            final fun <get-record>(): io.dataloom.api.conflict/ConflictQuarantineRecord? // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.NotQuarantined.record.<get-record>|<get-record>(){}[0]
+
+        final fun component1(): io.dataloom.api.conflict/ConflictQuarantineRecord? // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.NotQuarantined.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.conflict/ConflictQuarantineRecord? = ...): io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.NotQuarantined // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.NotQuarantined.copy|copy(io.dataloom.api.conflict.ConflictQuarantineRecord?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.NotQuarantined.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.NotQuarantined.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.NotQuarantined.toString|toString(){}[0]
+    }
+
+    final class PersistenceFailure : io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult { // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.PersistenceFailure|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.PersistenceFailure.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.PersistenceFailure.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.PersistenceFailure.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.PersistenceFailure.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.PersistenceFailure // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.PersistenceFailure.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.PersistenceFailure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.PersistenceFailure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.PersistenceFailure.toString|toString(){}[0]
+    }
+
+    final class Released : io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult { // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.Released|null[0]
+        constructor <init>(io.dataloom.api.conflict/ConflictQuarantineRecord) // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.Released.<init>|<init>(io.dataloom.api.conflict.ConflictQuarantineRecord){}[0]
+
+        final val record // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.Released.record|{}record[0]
+            final fun <get-record>(): io.dataloom.api.conflict/ConflictQuarantineRecord // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.Released.record.<get-record>|<get-record>(){}[0]
+
+        final fun component1(): io.dataloom.api.conflict/ConflictQuarantineRecord // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.Released.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.conflict/ConflictQuarantineRecord = ...): io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.Released // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.Released.copy|copy(io.dataloom.api.conflict.ConflictQuarantineRecord){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.Released.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.Released.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.Released.toString|toString(){}[0]
+    }
+
+    final object ContentionLimitReached : io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult { // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.ContentionLimitReached|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.ContentionLimitReached.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.ContentionLimitReached.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.ContentionLimitReached.toString|toString(){}[0]
+    }
+
+    final object NotConfigured : io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult { // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.NotConfigured|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.NotConfigured.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.NotConfigured.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult.NotConfigured.toString|toString(){}[0]
     }
 }
 
@@ -2942,9 +3056,10 @@ final class <#A: kotlin/Any, #B: kotlin/Any> io.dataloom.runtime.state/AppleFile
 }
 
 final class io.dataloom.runtime.conflict/ConflictAdministrationCoordinator { // io.dataloom.runtime.conflict/ConflictAdministrationCoordinator|null[0]
-    constructor <init>(io.dataloom.api.time/DataLoomClock, io.dataloom.api.conflict/ConflictAdministrationAuthorizer, io.dataloom.api.conflict/ConflictAdministrationStateStore, io.dataloom.api.conflict/ConflictAdministrationExecutor, io.dataloom.api.conflict/DurableUnresolvedConflictLog, io.dataloom.api.conflict/DurableResolvedConflictDecisionLog, kotlin/Int = ...) // io.dataloom.runtime.conflict/ConflictAdministrationCoordinator.<init>|<init>(io.dataloom.api.time.DataLoomClock;io.dataloom.api.conflict.ConflictAdministrationAuthorizer;io.dataloom.api.conflict.ConflictAdministrationStateStore;io.dataloom.api.conflict.ConflictAdministrationExecutor;io.dataloom.api.conflict.DurableUnresolvedConflictLog;io.dataloom.api.conflict.DurableResolvedConflictDecisionLog;kotlin.Int){}[0]
+    constructor <init>(io.dataloom.api.time/DataLoomClock, io.dataloom.api.conflict/ConflictAdministrationAuthorizer, io.dataloom.api.conflict/ConflictAdministrationStateStore, io.dataloom.api.conflict/ConflictAdministrationExecutor, io.dataloom.api.conflict/DurableUnresolvedConflictLog, io.dataloom.api.conflict/DurableResolvedConflictDecisionLog, kotlin/Int = ..., io.dataloom.api.conflict/DurableConflictQuarantineLog? = ...) // io.dataloom.runtime.conflict/ConflictAdministrationCoordinator.<init>|<init>(io.dataloom.api.time.DataLoomClock;io.dataloom.api.conflict.ConflictAdministrationAuthorizer;io.dataloom.api.conflict.ConflictAdministrationStateStore;io.dataloom.api.conflict.ConflictAdministrationExecutor;io.dataloom.api.conflict.DurableUnresolvedConflictLog;io.dataloom.api.conflict.DurableResolvedConflictDecisionLog;kotlin.Int;io.dataloom.api.conflict.DurableConflictQuarantineLog?){}[0]
 
     final suspend fun execute(io.dataloom.api.conflict/ConflictAdministrationRequest): io.dataloom.runtime.conflict/ConflictAdministrationResult // io.dataloom.runtime.conflict/ConflictAdministrationCoordinator.execute|execute(io.dataloom.api.conflict.ConflictAdministrationRequest){}[0]
+    final suspend fun releaseQuarantine(io.dataloom.api.conflict/ConflictQuarantineReleaseRequest): io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult // io.dataloom.runtime.conflict/ConflictAdministrationCoordinator.releaseQuarantine|releaseQuarantine(io.dataloom.api.conflict.ConflictQuarantineReleaseRequest){}[0]
 
     final object Companion // io.dataloom.runtime.conflict/ConflictAdministrationCoordinator.Companion|null[0]
 }
@@ -2993,6 +3108,13 @@ final class io.dataloom.runtime.conflict/ConflictOrchestrationRequest { // io.da
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictOrchestrationRequest.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictOrchestrationRequest.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictOrchestrationRequest.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.conflict/ConflictQuarantineTracker { // io.dataloom.runtime.conflict/ConflictQuarantineTracker|null[0]
+    constructor <init>(io.dataloom.api.conflict/DurableConflictQuarantineLog, io.dataloom.api.time/DataLoomClock, io.dataloom.api.conflict/ConflictQuarantinePolicy = ...) // io.dataloom.runtime.conflict/ConflictQuarantineTracker.<init>|<init>(io.dataloom.api.conflict.DurableConflictQuarantineLog;io.dataloom.api.time.DataLoomClock;io.dataloom.api.conflict.ConflictQuarantinePolicy){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictQuarantineTracker.toString|toString(){}[0]
+    final suspend fun observe(io.dataloom.api.conflict/SynchronizationConflict, io.dataloom.api.identifier/ConflictResolverId?): io.dataloom.api.conflict/ConflictQuarantineObservation // io.dataloom.runtime.conflict/ConflictQuarantineTracker.observe|observe(io.dataloom.api.conflict.SynchronizationConflict;io.dataloom.api.identifier.ConflictResolverId?){}[0]
 }
 
 final class io.dataloom.runtime.conflict/ConflictResolverRegistry { // io.dataloom.runtime.conflict/ConflictResolverRegistry|null[0]
@@ -3078,7 +3200,7 @@ final class io.dataloom.runtime.conflict/LastWriteWinsConflictResolver : io.data
 }
 
 final class io.dataloom.runtime.conflict/SynchronizationConflictOrchestrator { // io.dataloom.runtime.conflict/SynchronizationConflictOrchestrator|null[0]
-    constructor <init>(io.dataloom.runtime.conflict/ConflictDetectorRegistry, io.dataloom.runtime.conflict/ConflictResolverRegistry, io.dataloom.runtime.execution.lifecycle/SynchronizationRuntimeEventEmitter? = ...) // io.dataloom.runtime.conflict/SynchronizationConflictOrchestrator.<init>|<init>(io.dataloom.runtime.conflict.ConflictDetectorRegistry;io.dataloom.runtime.conflict.ConflictResolverRegistry;io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitter?){}[0]
+    constructor <init>(io.dataloom.runtime.conflict/ConflictDetectorRegistry, io.dataloom.runtime.conflict/ConflictResolverRegistry, io.dataloom.runtime.execution.lifecycle/SynchronizationRuntimeEventEmitter? = ..., io.dataloom.runtime.conflict/ConflictQuarantineTracker? = ...) // io.dataloom.runtime.conflict/SynchronizationConflictOrchestrator.<init>|<init>(io.dataloom.runtime.conflict.ConflictDetectorRegistry;io.dataloom.runtime.conflict.ConflictResolverRegistry;io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitter?;io.dataloom.runtime.conflict.ConflictQuarantineTracker?){}[0]
 
     final fun toString(): kotlin/String // io.dataloom.runtime.conflict/SynchronizationConflictOrchestrator.toString|toString(){}[0]
     final suspend fun detectAndResolve(io.dataloom.runtime.conflict/ConflictOrchestrationRequest): io.dataloom.runtime.conflict/ConflictOrchestrationResult // io.dataloom.runtime.conflict/SynchronizationConflictOrchestrator.detectAndResolve|detectAndResolve(io.dataloom.runtime.conflict.ConflictOrchestrationRequest){}[0]
@@ -3319,6 +3441,7 @@ final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.
     final fun outboundConfiguration(io.dataloom.runtime.execution.outbound/OutboundPushPipelineConfiguration): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.outboundConfiguration|outboundConfiguration(io.dataloom.runtime.execution.outbound.OutboundPushPipelineConfiguration){}[0]
     final fun pipeline(io.dataloom.runtime.execution/SynchronizationPipeline): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.pipeline|pipeline(io.dataloom.runtime.execution.SynchronizationPipeline){}[0]
     final fun pluginConfiguration(io.dataloom.runtime.facade/DataLoomPluginSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.pluginConfiguration|pluginConfiguration(io.dataloom.runtime.facade.DataLoomPluginSpec){}[0]
+    final fun pluginOperationalEventOutboxConfiguration(io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.pluginOperationalEventOutboxConfiguration|pluginOperationalEventOutboxConfiguration(io.dataloom.runtime.facade.DataLoomPluginOperationalEventOutboxSpec){}[0]
     final fun policyDecisionOperationalEventOutboxConfiguration(io.dataloom.runtime.facade/DataLoomPolicyDecisionOperationalEventOutboxSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.policyDecisionOperationalEventOutboxConfiguration|policyDecisionOperationalEventOutboxConfiguration(io.dataloom.runtime.facade.DataLoomPolicyDecisionOperationalEventOutboxSpec){}[0]
     final fun provider(io.dataloom.api.provider/DataLoomProvider): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.provider|provider(io.dataloom.api.provider.DataLoomProvider){}[0]
     final fun providerProtectionConfiguration(io.dataloom.runtime.facade/DataLoomProviderProtectionSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.providerProtectionConfiguration|providerProtectionConfiguration(io.dataloom.runtime.facade.DataLoomProviderProtectionSpec){}[0]
@@ -3385,7 +3508,7 @@ final class io.dataloom.runtime.facade/DataLoomCircuitQueueWorkerSpec { // io.da
 }
 
 final class io.dataloom.runtime.facade/DataLoomConflictAdministrationSpec { // io.dataloom.runtime.facade/DataLoomConflictAdministrationSpec|null[0]
-    constructor <init>(io.dataloom.api.conflict/ConflictAdministrationAuthorizer, io.dataloom.api.conflict/ConflictAdministrationStateStore, io.dataloom.api.conflict/ConflictAdministrationExecutor, io.dataloom.api.state/DurableStateStore<io.dataloom.api.identifier/ConflictId, io.dataloom.api.conflict/UnresolvedConflictRecord>, io.dataloom.api.state/DurableStateStore<io.dataloom.api.identifier/ConflictId, io.dataloom.api.conflict/ResolvedConflictDecisionRecord>, kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.runtime.facade/DataLoomConflictAdministrationSpec.<init>|<init>(io.dataloom.api.conflict.ConflictAdministrationAuthorizer;io.dataloom.api.conflict.ConflictAdministrationStateStore;io.dataloom.api.conflict.ConflictAdministrationExecutor;io.dataloom.api.state.DurableStateStore<io.dataloom.api.identifier.ConflictId,io.dataloom.api.conflict.UnresolvedConflictRecord>;io.dataloom.api.state.DurableStateStore<io.dataloom.api.identifier.ConflictId,io.dataloom.api.conflict.ResolvedConflictDecisionRecord>;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+    constructor <init>(io.dataloom.api.conflict/ConflictAdministrationAuthorizer, io.dataloom.api.conflict/ConflictAdministrationStateStore, io.dataloom.api.conflict/ConflictAdministrationExecutor, io.dataloom.api.state/DurableStateStore<io.dataloom.api.identifier/ConflictId, io.dataloom.api.conflict/UnresolvedConflictRecord>, io.dataloom.api.state/DurableStateStore<io.dataloom.api.identifier/ConflictId, io.dataloom.api.conflict/ResolvedConflictDecisionRecord>, kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., io.dataloom.runtime.facade/DataLoomConflictQuarantineSpec? = ...) // io.dataloom.runtime.facade/DataLoomConflictAdministrationSpec.<init>|<init>(io.dataloom.api.conflict.ConflictAdministrationAuthorizer;io.dataloom.api.conflict.ConflictAdministrationStateStore;io.dataloom.api.conflict.ConflictAdministrationExecutor;io.dataloom.api.state.DurableStateStore<io.dataloom.api.identifier.ConflictId,io.dataloom.api.conflict.UnresolvedConflictRecord>;io.dataloom.api.state.DurableStateStore<io.dataloom.api.identifier.ConflictId,io.dataloom.api.conflict.ResolvedConflictDecisionRecord>;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;io.dataloom.runtime.facade.DataLoomConflictQuarantineSpec?){}[0]
 
     final val authorizer // io.dataloom.runtime.facade/DataLoomConflictAdministrationSpec.authorizer|{}authorizer[0]
         final fun <get-authorizer>(): io.dataloom.api.conflict/ConflictAdministrationAuthorizer // io.dataloom.runtime.facade/DataLoomConflictAdministrationSpec.authorizer.<get-authorizer>|<get-authorizer>(){}[0]
@@ -3393,6 +3516,8 @@ final class io.dataloom.runtime.facade/DataLoomConflictAdministrationSpec { // i
         final fun <get-executor>(): io.dataloom.api.conflict/ConflictAdministrationExecutor // io.dataloom.runtime.facade/DataLoomConflictAdministrationSpec.executor.<get-executor>|<get-executor>(){}[0]
     final val maximumStateUpdateAttempts // io.dataloom.runtime.facade/DataLoomConflictAdministrationSpec.maximumStateUpdateAttempts|{}maximumStateUpdateAttempts[0]
         final fun <get-maximumStateUpdateAttempts>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomConflictAdministrationSpec.maximumStateUpdateAttempts.<get-maximumStateUpdateAttempts>|<get-maximumStateUpdateAttempts>(){}[0]
+    final val quarantine // io.dataloom.runtime.facade/DataLoomConflictAdministrationSpec.quarantine|{}quarantine[0]
+        final fun <get-quarantine>(): io.dataloom.runtime.facade/DataLoomConflictQuarantineSpec? // io.dataloom.runtime.facade/DataLoomConflictAdministrationSpec.quarantine.<get-quarantine>|<get-quarantine>(){}[0]
     final val resolvedConflictDecisionLogMaximumStateUpdateAttempts // io.dataloom.runtime.facade/DataLoomConflictAdministrationSpec.resolvedConflictDecisionLogMaximumStateUpdateAttempts|{}resolvedConflictDecisionLogMaximumStateUpdateAttempts[0]
         final fun <get-resolvedConflictDecisionLogMaximumStateUpdateAttempts>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomConflictAdministrationSpec.resolvedConflictDecisionLogMaximumStateUpdateAttempts.<get-resolvedConflictDecisionLogMaximumStateUpdateAttempts>|<get-resolvedConflictDecisionLogMaximumStateUpdateAttempts>(){}[0]
     final val resolvedConflictDecisionLogSchemaVersion // io.dataloom.runtime.facade/DataLoomConflictAdministrationSpec.resolvedConflictDecisionLogSchemaVersion|{}resolvedConflictDecisionLogSchemaVersion[0]
@@ -3412,12 +3537,14 @@ final class io.dataloom.runtime.facade/DataLoomConflictAdministrationSpec { // i
 }
 
 final class io.dataloom.runtime.facade/DataLoomConflictDetectionSpec { // io.dataloom.runtime.facade/DataLoomConflictDetectionSpec|null[0]
-    constructor <init>(kotlin.collections/Collection<io.dataloom.api.conflict/ConflictDetector>, kotlin.collections/Collection<io.dataloom.api.conflict/ConflictResolver>, io.dataloom.runtime.conflict/ConflictOrchestrationBindings, io.dataloom.api.state/DurableStateStore<io.dataloom.api.identifier/ConflictId, io.dataloom.api.conflict/UnresolvedConflictRecord>, kotlin/Int = ..., kotlin/Int = ..., io.dataloom.api.state/DurableStateStore<io.dataloom.api.identifier/ConflictId, io.dataloom.api.conflict/ResolvedConflictDecisionRecord>? = ..., kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.runtime.facade/DataLoomConflictDetectionSpec.<init>|<init>(kotlin.collections.Collection<io.dataloom.api.conflict.ConflictDetector>;kotlin.collections.Collection<io.dataloom.api.conflict.ConflictResolver>;io.dataloom.runtime.conflict.ConflictOrchestrationBindings;io.dataloom.api.state.DurableStateStore<io.dataloom.api.identifier.ConflictId,io.dataloom.api.conflict.UnresolvedConflictRecord>;kotlin.Int;kotlin.Int;io.dataloom.api.state.DurableStateStore<io.dataloom.api.identifier.ConflictId,io.dataloom.api.conflict.ResolvedConflictDecisionRecord>?;kotlin.Int;kotlin.Int){}[0]
+    constructor <init>(kotlin.collections/Collection<io.dataloom.api.conflict/ConflictDetector>, kotlin.collections/Collection<io.dataloom.api.conflict/ConflictResolver>, io.dataloom.runtime.conflict/ConflictOrchestrationBindings, io.dataloom.api.state/DurableStateStore<io.dataloom.api.identifier/ConflictId, io.dataloom.api.conflict/UnresolvedConflictRecord>, kotlin/Int = ..., kotlin/Int = ..., io.dataloom.api.state/DurableStateStore<io.dataloom.api.identifier/ConflictId, io.dataloom.api.conflict/ResolvedConflictDecisionRecord>? = ..., kotlin/Int = ..., kotlin/Int = ..., io.dataloom.runtime.facade/DataLoomConflictQuarantineSpec? = ...) // io.dataloom.runtime.facade/DataLoomConflictDetectionSpec.<init>|<init>(kotlin.collections.Collection<io.dataloom.api.conflict.ConflictDetector>;kotlin.collections.Collection<io.dataloom.api.conflict.ConflictResolver>;io.dataloom.runtime.conflict.ConflictOrchestrationBindings;io.dataloom.api.state.DurableStateStore<io.dataloom.api.identifier.ConflictId,io.dataloom.api.conflict.UnresolvedConflictRecord>;kotlin.Int;kotlin.Int;io.dataloom.api.state.DurableStateStore<io.dataloom.api.identifier.ConflictId,io.dataloom.api.conflict.ResolvedConflictDecisionRecord>?;kotlin.Int;kotlin.Int;io.dataloom.runtime.facade.DataLoomConflictQuarantineSpec?){}[0]
 
     final val bindings // io.dataloom.runtime.facade/DataLoomConflictDetectionSpec.bindings|{}bindings[0]
         final fun <get-bindings>(): io.dataloom.runtime.conflict/ConflictOrchestrationBindings // io.dataloom.runtime.facade/DataLoomConflictDetectionSpec.bindings.<get-bindings>|<get-bindings>(){}[0]
     final val detectors // io.dataloom.runtime.facade/DataLoomConflictDetectionSpec.detectors|{}detectors[0]
         final fun <get-detectors>(): kotlin.collections/Collection<io.dataloom.api.conflict/ConflictDetector> // io.dataloom.runtime.facade/DataLoomConflictDetectionSpec.detectors.<get-detectors>|<get-detectors>(){}[0]
+    final val quarantine // io.dataloom.runtime.facade/DataLoomConflictDetectionSpec.quarantine|{}quarantine[0]
+        final fun <get-quarantine>(): io.dataloom.runtime.facade/DataLoomConflictQuarantineSpec? // io.dataloom.runtime.facade/DataLoomConflictDetectionSpec.quarantine.<get-quarantine>|<get-quarantine>(){}[0]
     final val resolvedConflictDecisionLogMaximumStateUpdateAttempts // io.dataloom.runtime.facade/DataLoomConflictDetectionSpec.resolvedConflictDecisionLogMaximumStateUpdateAttempts|{}resolvedConflictDecisionLogMaximumStateUpdateAttempts[0]
         final fun <get-resolvedConflictDecisionLogMaximumStateUpdateAttempts>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomConflictDetectionSpec.resolvedConflictDecisionLogMaximumStateUpdateAttempts.<get-resolvedConflictDecisionLogMaximumStateUpdateAttempts>|<get-resolvedConflictDecisionLogMaximumStateUpdateAttempts>(){}[0]
     final val resolvedConflictDecisionLogSchemaVersion // io.dataloom.runtime.facade/DataLoomConflictDetectionSpec.resolvedConflictDecisionLogSchemaVersion|{}resolvedConflictDecisionLogSchemaVersion[0]
@@ -3432,6 +3559,21 @@ final class io.dataloom.runtime.facade/DataLoomConflictDetectionSpec { // io.dat
         final fun <get-unresolvedConflictLogSchemaVersion>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomConflictDetectionSpec.unresolvedConflictLogSchemaVersion.<get-unresolvedConflictLogSchemaVersion>|<get-unresolvedConflictLogSchemaVersion>(){}[0]
     final val unresolvedConflictStore // io.dataloom.runtime.facade/DataLoomConflictDetectionSpec.unresolvedConflictStore|{}unresolvedConflictStore[0]
         final fun <get-unresolvedConflictStore>(): io.dataloom.api.state/DurableStateStore<io.dataloom.api.identifier/ConflictId, io.dataloom.api.conflict/UnresolvedConflictRecord> // io.dataloom.runtime.facade/DataLoomConflictDetectionSpec.unresolvedConflictStore.<get-unresolvedConflictStore>|<get-unresolvedConflictStore>(){}[0]
+}
+
+final class io.dataloom.runtime.facade/DataLoomConflictQuarantineSpec { // io.dataloom.runtime.facade/DataLoomConflictQuarantineSpec|null[0]
+    constructor <init>(io.dataloom.api.state/DurableStateStore<io.dataloom.api.conflict/ConflictQuarantineScope, io.dataloom.api.conflict/ConflictQuarantineRecord>, io.dataloom.api.conflict/ConflictQuarantinePolicy = ..., kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.runtime.facade/DataLoomConflictQuarantineSpec.<init>|<init>(io.dataloom.api.state.DurableStateStore<io.dataloom.api.conflict.ConflictQuarantineScope,io.dataloom.api.conflict.ConflictQuarantineRecord>;io.dataloom.api.conflict.ConflictQuarantinePolicy;kotlin.Int;kotlin.Int){}[0]
+
+    final val maximumStateUpdateAttempts // io.dataloom.runtime.facade/DataLoomConflictQuarantineSpec.maximumStateUpdateAttempts|{}maximumStateUpdateAttempts[0]
+        final fun <get-maximumStateUpdateAttempts>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomConflictQuarantineSpec.maximumStateUpdateAttempts.<get-maximumStateUpdateAttempts>|<get-maximumStateUpdateAttempts>(){}[0]
+    final val policy // io.dataloom.runtime.facade/DataLoomConflictQuarantineSpec.policy|{}policy[0]
+        final fun <get-policy>(): io.dataloom.api.conflict/ConflictQuarantinePolicy // io.dataloom.runtime.facade/DataLoomConflictQuarantineSpec.policy.<get-policy>|<get-policy>(){}[0]
+    final val schemaVersion // io.dataloom.runtime.facade/DataLoomConflictQuarantineSpec.schemaVersion|{}schemaVersion[0]
+        final fun <get-schemaVersion>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomConflictQuarantineSpec.schemaVersion.<get-schemaVersion>|<get-schemaVersion>(){}[0]
+    final val store // io.dataloom.runtime.facade/DataLoomConflictQuarantineSpec.store|{}store[0]
+        final fun <get-store>(): io.dataloom.api.state/DurableStateStore<io.dataloom.api.conflict/ConflictQuarantineScope, io.dataloom.api.conflict/ConflictQuarantineRecord> // io.dataloom.runtime.facade/DataLoomConflictQuarantineSpec.store.<get-store>|<get-store>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.runtime.facade/DataLoomConflictQuarantineSpec.toString|toString(){}[0]
 }
 
 final class io.dataloom.runtime.facade/DataLoomConflictResolutionOperationalEventOutboxSpec { // io.dataloom.runtime.facade/DataLoomConflictResolutionOperationalEventOutboxSpec|null[0]
@@ -3458,6 +3600,19 @@ final class io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec { // i
         final fun <get-scope>(): io.dataloom.api.operational/OperationalEventOutboxScope // io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec.scope.<get-scope>|<get-scope>(){}[0]
     final val store // io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec.store|{}store[0]
         final fun <get-store>(): io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState> // io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec.store.<get-store>|<get-store>(){}[0]
+}
+
+final class io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec { // io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec|null[0]
+    constructor <init>(io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState>, io.dataloom.api.operational/OperationalEventOutboxScope = ..., kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec.<init>|<init>(io.dataloom.api.state.DurableStateStore<io.dataloom.api.operational.OperationalEventOutboxScope,io.dataloom.api.operational.OperationalEventOutboxState>;io.dataloom.api.operational.OperationalEventOutboxScope;kotlin.Int;kotlin.Int){}[0]
+
+    final val maximumStateUpdateAttempts // io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec.maximumStateUpdateAttempts|{}maximumStateUpdateAttempts[0]
+        final fun <get-maximumStateUpdateAttempts>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec.maximumStateUpdateAttempts.<get-maximumStateUpdateAttempts>|<get-maximumStateUpdateAttempts>(){}[0]
+    final val schemaVersion // io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec.schemaVersion|{}schemaVersion[0]
+        final fun <get-schemaVersion>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec.schemaVersion.<get-schemaVersion>|<get-schemaVersion>(){}[0]
+    final val scope // io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec.scope|{}scope[0]
+        final fun <get-scope>(): io.dataloom.api.operational/OperationalEventOutboxScope // io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec.scope.<get-scope>|<get-scope>(){}[0]
+    final val store // io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec.store|{}store[0]
+        final fun <get-store>(): io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState> // io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec.store.<get-store>|<get-store>(){}[0]
 }
 
 final class io.dataloom.runtime.facade/DataLoomPluginSpec { // io.dataloom.runtime.facade/DataLoomPluginSpec|null[0]
