@@ -20,7 +20,8 @@ package io.dataloom.api.plugin
  * deliberately does not accommodate.
  *
  * @param id stable machine-readable identifier for this plugin.
- * @param version this plugin's own version label.
+ * @param version this plugin's own canonical semantic version; a dependent
+ *   plugin's [PluginDependency.supportedVersionRange] is checked against it.
  * @param vendor the publishing vendor or author.
  * @param compatibleSdkRange the DataLoom SDK version range this plugin
  *   declares support for.
