@@ -56,6 +56,8 @@ dependencies {
     ksp(libs.room.compiler)
 
     testImplementation(kotlin("test-junit"))
+    // Only for RoomDurableStateStoreAssetTransferSessionIntegrationTest.
+    testImplementation(project(":dataloom-assets"))
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.room.testing)
 

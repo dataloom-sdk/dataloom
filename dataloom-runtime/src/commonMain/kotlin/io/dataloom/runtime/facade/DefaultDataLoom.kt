@@ -1,6 +1,7 @@
 package io.dataloom.runtime.facade
 
 import io.dataloom.api.model.SynchronizationRequest
+import io.dataloom.assets.AssetTransferEngine
 import io.dataloom.core.provider.ProviderLifecycleCoordinator
 import io.dataloom.api.provider.ProviderLifecycleCoordinatorState
 import io.dataloom.api.provider.ProviderLifecycleResult
@@ -61,6 +62,8 @@ import io.dataloom.runtime.submission.DataLoomQueueSubmission
  *   conflict-resolution operations capability; `null` when not configured.
  * @param pluginEngine the optional plugin-engine capability; `null` when not
  *   configured.
+ * @param assetTransfer the optional asset-transfer engine; `null` when not
+ *   configured.
  */
 internal class DefaultDataLoom(
     private val lifecycleCoordinator: ProviderLifecycleCoordinator,
@@ -78,6 +81,7 @@ internal class DefaultDataLoom(
     override val circuitAdministration: DataLoomCircuitAdministration?,
     override val conflictAdministration: DataLoomConflictAdministration?,
     override val pluginEngine: DataLoomPluginEngine?,
+    override val assetTransfer: AssetTransferEngine?,
 ) : DataLoom {
 
     override val providerLifecycleState: ProviderLifecycleCoordinatorState
