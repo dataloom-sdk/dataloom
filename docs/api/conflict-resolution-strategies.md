@@ -10,9 +10,10 @@ of DL-041, but it is not the completion claim for issue
 [#95](https://github.com/dataloom-sdk/dataloom/issues/95).
 
 Still required for the full gate are decision application and convergence,
-standard detector utilities, loop/non-convergence quarantine, complete
-metrics/retry integration (entity/workflow/tenant/global resolver-selection
-precedence now ships as a first slice — see "Resolver selection policy" below),
+standard detector utilities, complete metrics/retry integration
+(entity/workflow/tenant/global resolver-selection precedence and
+loop/non-convergence quarantine now ship as bounded first slices — see
+"Resolver selection policy" and "Loop/non-convergence quarantine" below),
 AC-FUNC-002, and mandatory-platform qualification. Authorized manual
 conflict-resolution operations now ship as a bounded first slice — see
 "Authorized manual conflict-resolution operations" below — and administration
@@ -142,6 +143,115 @@ new parameter, a pre-V1 ABI change with no shim (baselines regenerated).
 Not implemented: compound rules (entity type *and* workflow), wildcard/pattern
 matching, per-detector selection, and build-time validation of policy IDs
 against the registry.
+
+## Loop/non-convergence quarantine
+
+**Design decision D18 (2026-09-20).** With fail-closed application (`Defer`,
+`Fail`, and unresolved outcomes block the batch and leave the checkpoint
+unadvanced), the same remote batch is delivered again and re-conflicts on the
+same entity indefinitely. Nothing bounded that. Quarantine is an opt-in,
+durable, per-entity counter that stops the loop: when the same entity has
+conflicted a configurable number of times, further conflicts on it are not
+re-resolved until an authorized operator releases it.
+
+### Configuration
+
+```kotlin
+val quarantine = DataLoomConflictQuarantineSpec(
+    store = quarantineStore, // DurableStateStore<ConflictQuarantineScope, ConflictQuarantineRecord>
+    policy = ConflictQuarantinePolicy(occurrenceThreshold = 5, windowMillis = null), // the defaults
+)
+
+DataLoomConflictDetectionSpec(/* ... */ resolvedConflictDecisionStore = resolvedStore, quarantine = quarantine)
+DataLoomConflictAdministrationSpec(/* ... */ quarantine = quarantine) // enables release
+```
+
+Both specs must be given the same store. Omitting `quarantine` from both leaves
+every code path byte-for-byte as before. `DataLoomConflictDetectionSpec`
+requires `resolvedConflictDecisionStore` when `quarantine` is set, because
+quarantine's effect is blocking application, which only exists when resolved
+decisions are applied (`IllegalArgumentException` at construction otherwise).
+Hosts backing the store with a string-payload store use
+`ConflictQuarantineRecordCodec` and `ConflictQuarantineScope.KeyEncoder`.
+
+### Counting and the threshold
+
+`SynchronizationConflictOrchestrator` counts every detected conflict against
+its entity (entity type plus ID; the version is not part of the key) after
+resolver-ID selection and before resolver lookup, whatever the outcome would
+have been, including `ResolverNotConfigured` and `ResolverNotFound`. The
+**threshold-th** occurrence is not resolved: with the default of 5, occurrences
+1-4 resolve as normal and the 5th returns
+`ConflictOrchestrationResult.Quarantined`. `newlyQuarantined` is `true` for
+exactly that occurrence and `false` afterwards. Once quarantined the check is
+read-only (no writes).
+
+The optional `windowMillis` bounds accumulation: an occurrence more than that
+long after the first occurrence of the current window starts a new window at
+count 1. With no window (the default) occurrences accumulate until quarantine
+or release. Counting is deliberately simple: a conflict that is correctly
+resolved and applied still counts, and a replayed delivery of the same
+`ConflictId` counts too (that replay *is* the loop). Hosts whose entities
+legitimately conflict often should set a window or a higher threshold. A crash
+between counting and finishing the batch replays the occurrence, so counts
+are conservative, never lower than the true number.
+
+### Fail-closed behaviour
+
+`InboundConflictDecisionPreparer` treats `Quarantined` exactly like the
+existing `Defer`/`Fail` outcomes: nothing in the batch reaches storage and the
+checkpoint does not advance; the pull fails with `DL-CONFLICT-QUARANTINED`
+(`CONFLICT`, non-recoverable). If the counter itself cannot be updated the
+orchestrator returns `QuarantineUnavailable` and application fails closed with
+the store's error, or `DL-CONFLICT-QUARANTINE-CONTENTION` (`STATE`,
+recoverable) when the bounded compare-and-set attempts are exhausted; no
+resolver is invoked in either case.
+
+### Durability and concurrency
+
+`DurableConflictQuarantineLog` follows the `DurableUnresolvedConflictLog`
+pattern: a `DurableStateStore` keyed by `ConflictQuarantineScope`, payload-free
+`ConflictQuarantineRecord` (status, occurrence count, first/last seen, last
+`ConflictId`, last selected resolver ID, quarantine time, release evidence),
+and a bounded load-evaluate-compare-and-set loop. Concurrent occurrences on
+one entity each land exactly once: a loser reloads the winner's count and
+increments from it, so no increment is lost and none is counted twice. The
+record survives restart because it lives in the store.
+
+### Release
+
+Release goes through `ConflictAdministrationCoordinator.releaseQuarantine`
+(exposed as `DataLoomConflictAdministration.releaseQuarantine`) rather than a
+new privilege model:
+
+- Authorization uses the same host `ConflictAdministrationAuthorizer`, via a new
+  `authorizeQuarantineRelease` method that **defaults to `Denied`**. An
+  authorizer written before quarantine existed cannot release anything; a host
+  opts in by overriding it. The command is authorized *before* any state is
+  read.
+- Release restarts the count from zero and writes the release evidence (command
+  ID, principal, authorization ID, reason, time) into the quarantine record in
+  the same compare-and-set as the state change, so the entity is never released
+  without its audit evidence. It is idempotent by command ID
+  (`AlreadyReleased` on replay), and releasing an entity that is not quarantined
+  is `NotQuarantined`.
+- It applies no decision and advances no checkpoint; the next pull that
+  conflicts on the entity is counted and resolved as normal and quarantines
+  again if the loop persists.
+
+Differences from manual resolution, stated plainly: a denied release is
+returned but not persisted, and there is no `ConflictAdministrationStateStore`
+entry, because that store's state type is bound to decision-carrying requests.
+Operational-event outbox bridging of quarantine and release events is not
+implemented in this slice.
+
+### Interaction with the resolved-decision log
+
+The resolved-decision log is commit-once per `ConflictId`. If a loop repeats
+the *same* `ConflictId` with a different decision after release, that log's
+existing non-convergence guard (`DL-CONFLICT-DECISION-NON-CONVERGENT`)
+applies, exactly as it did before quarantine. Detectors that mint a fresh ID
+per detection are unaffected.
 
 ## Timestamp-evidence policy
 
@@ -390,8 +500,9 @@ The following are not claimed by this page:
 - version/vector/ETag and other standard detector utilities;
 - atomic application of `UseLocal`, `UseRemote`, and `Merge` decisions with
   checkpoint/outbox/audit effects;
-- fingerprints, bounded attempts, loop detection, convergence limits, and
-  quarantine;
+- conflict fingerprints and convergence limits beyond the per-entity
+  occurrence counter (which ships — see "Loop/non-convergence quarantine");
+  quarantine/release events in the operational-event outbox;
 - complete metrics and retry integration (immutable audit/event bridging is
   now shipped for both automatic conflict-detection outcomes and authorized
   manual conflict-administration commands — see "Operational-event bridging"

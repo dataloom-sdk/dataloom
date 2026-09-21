@@ -111,6 +111,10 @@ public class DurableConflictDetectionCoordinator(
                     )
                 }
 
+            // Quarantine outcomes are already durable: the quarantine record
+            // is written by the orchestrator's tracker, so nothing is recorded here.
+            is ConflictOrchestrationResult.Quarantined,
+            is ConflictOrchestrationResult.QuarantineUnavailable,
             is ConflictOrchestrationResult.DetectorNotFound,
             is ConflictOrchestrationResult.NoConflict,
             -> Unit

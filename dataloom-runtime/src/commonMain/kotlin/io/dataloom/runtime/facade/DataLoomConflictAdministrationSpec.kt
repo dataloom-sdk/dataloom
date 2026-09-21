@@ -60,6 +60,14 @@ public class DataLoomConflictAdministrationSpec(
 
     /** Maximum bounded compare-and-set attempts for one command execution. */
     public val maximumStateUpdateAttempts: Int = 8,
+
+    /**
+     * Optional quarantine state, enabling [DataLoomConflictAdministration.releaseQuarantine].
+     * Must share its store with [DataLoomConflictDetectionSpec.quarantine]. When
+     * `null`, [DataLoomConflictAdministration.releaseQuarantine] reports
+     * [io.dataloom.runtime.conflict.ConflictQuarantineReleaseResult.NotConfigured].
+     */
+    public val quarantine: DataLoomConflictQuarantineSpec? = null,
 ) {
     init {
         require(maximumStateUpdateAttempts >= 1) {

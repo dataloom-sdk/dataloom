@@ -1,7 +1,9 @@
 package io.dataloom.runtime.facade
 
 import io.dataloom.api.conflict.ConflictAdministrationRequest
+import io.dataloom.api.conflict.ConflictQuarantineReleaseRequest
 import io.dataloom.runtime.conflict.ConflictAdministrationResult
+import io.dataloom.runtime.conflict.ConflictQuarantineReleaseResult
 
 /**
  * Public operations capability for authorized manual conflict-resolution
@@ -30,4 +32,16 @@ public interface DataLoomConflictAdministration {
     public suspend fun execute(
         request: ConflictAdministrationRequest,
     ): ConflictAdministrationResult
+
+    /**
+     * Releases an entity from loop/non-convergence quarantine, authorized by
+     * the same host authorizer (through its deny-by-default
+     * `authorizeQuarantineRelease`). See
+     * [io.dataloom.runtime.conflict.ConflictAdministrationCoordinator.releaseQuarantine].
+     * Reports [ConflictQuarantineReleaseResult.NotConfigured] unless
+     * [DataLoomConflictAdministrationSpec.quarantine] was supplied.
+     */
+    public suspend fun releaseQuarantine(
+        request: ConflictQuarantineReleaseRequest,
+    ): ConflictQuarantineReleaseResult
 }
