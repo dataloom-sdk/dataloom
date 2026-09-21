@@ -196,6 +196,17 @@ final class io.dataloom.plugin/PluginRegistry { // io.dataloom.plugin/PluginRegi
     final fun isEmpty(): kotlin/Boolean // io.dataloom.plugin/PluginRegistry.isEmpty|isEmpty(){}[0]
 }
 
+final value class io.dataloom.plugin/PluginExecutionInvocationId { // io.dataloom.plugin/PluginExecutionInvocationId|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.plugin/PluginExecutionInvocationId.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.plugin/PluginExecutionInvocationId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.plugin/PluginExecutionInvocationId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.plugin/PluginExecutionInvocationId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.plugin/PluginExecutionInvocationId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.plugin/PluginExecutionInvocationId.toString|toString(){}[0]
+}
+
 final value class io.dataloom.plugin/PluginLifecycleAdministrationCommandId { // io.dataloom.plugin/PluginLifecycleAdministrationCommandId|null[0]
     constructor <init>(kotlin/String) // io.dataloom.plugin/PluginLifecycleAdministrationCommandId.<init>|<init>(kotlin.String){}[0]
 
@@ -325,6 +336,10 @@ sealed class io.dataloom.plugin/PluginLifecycleTransitionResult { // io.dataloom
 
 final object io.dataloom.plugin/PluginCompatibilityValidator { // io.dataloom.plugin/PluginCompatibilityValidator|null[0]
     final fun validate(io.dataloom.api.plugin/PluginCompatibilityRange, io.dataloom.api.identifier/RuntimeVersion): io.dataloom.plugin/PluginCompatibilityResult // io.dataloom.plugin/PluginCompatibilityValidator.validate|validate(io.dataloom.api.plugin.PluginCompatibilityRange;io.dataloom.api.identifier.RuntimeVersion){}[0]
+}
+
+final object io.dataloom.plugin/PluginExecutionBoundsOperationalEventBridge { // io.dataloom.plugin/PluginExecutionBoundsOperationalEventBridge|null[0]
+    final fun toEnvelope(io.dataloom.api.plugin/PluginId, io.dataloom.plugin/PluginExecutionInvocationId, io.dataloom.plugin/PluginExecutionBoundsResult<*>, io.dataloom.api.time/DataLoomInstant): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.plugin/PluginExecutionBoundsOperationalEventBridge.toEnvelope|toEnvelope(io.dataloom.api.plugin.PluginId;io.dataloom.plugin.PluginExecutionInvocationId;io.dataloom.plugin.PluginExecutionBoundsResult<*>;io.dataloom.api.time.DataLoomInstant){}[0]
 }
 
 final object io.dataloom.plugin/PluginLifecycleAdministrationOperationalEventBridge { // io.dataloom.plugin/PluginLifecycleAdministrationOperationalEventBridge|null[0]

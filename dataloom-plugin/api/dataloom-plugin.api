@@ -33,6 +33,11 @@ public final class io/dataloom/plugin/PluginExecutionBoundsEnforcer {
 	public final fun execute-dkBeV0E (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
+public final class io/dataloom/plugin/PluginExecutionBoundsOperationalEventBridge {
+	public static final field INSTANCE Lio/dataloom/plugin/PluginExecutionBoundsOperationalEventBridge;
+	public final fun toEnvelope-dKqjmPQ (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/plugin/PluginExecutionBoundsResult;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/api/operational/OperationalEventEnvelope;
+}
+
 public abstract interface class io/dataloom/plugin/PluginExecutionBoundsResult {
 }
 
@@ -84,6 +89,20 @@ public final class io/dataloom/plugin/PluginExecutionBoundsResult$TimedOut : io/
 	public final fun getPluginId-zTuMttM ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/plugin/PluginExecutionInvocationId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/plugin/PluginExecutionInvocationId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
 }
 
 public final class io/dataloom/plugin/PluginIncompatibilityReason : java/lang/Enum {

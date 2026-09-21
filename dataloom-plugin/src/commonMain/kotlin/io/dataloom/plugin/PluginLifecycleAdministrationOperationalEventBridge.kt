@@ -104,15 +104,14 @@ import io.dataloom.api.security.StrictDataLoomRedactor
  * own convention: every field this bridge has to offer already goes through
  * [OperationalEventEnvelope.attributes] instead.
  *
- * ## No wiring yet
+ * ## Wiring
  *
- * Nothing in this codebase calls [toEnvelope] today. Exactly like
- * [PluginExecutionBoundsEnforcer] before it, this is available infrastructure
- * for a future facade (mirroring
- * `io.dataloom.runtime.facade.DefaultDataLoomRetryAdministration`'s "swallow
- * append failures" posture) once one is wired into `DataLoomBuilder` for the
- * plugin engine -- see `docs/api/plugin-registry.md`'s "No wiring into
- * `DataLoomBuilder` yet".
+ * `dataloom-runtime`'s plugin engine facade calls [toEnvelope] for every
+ * transition it attempts when the application supplies
+ * `DataLoomBuilder.pluginOperationalEventOutboxConfiguration`, and swallows
+ * append failures (mirroring
+ * `io.dataloom.runtime.facade.DefaultDataLoomRetryAdministration`). The
+ * execution-bounds counterpart is [PluginExecutionBoundsOperationalEventBridge].
  */
 public object PluginLifecycleAdministrationOperationalEventBridge {
 

@@ -105,6 +105,7 @@ prior prose summary, per this session's own standing discipline after
 | `PluginExecutionBoundsEnforcer` | `PluginExecutionBoundsEnforcement.kt` | Wraps an arbitrary `suspend () -> T` invocation of a registered plugin with coroutine-cancellation timeout enforcement (`maximumExecutionMillis`) and per-plugin concurrency limiting (`maximumConcurrentInvocations`), returning a non-throwing `PluginExecutionBoundsResult`. See [Execution-bounds enforcement](#execution-bounds-enforcement). |
 | `PluginLifecycleAdministrationAuthorizer` / `PluginLifecycleTransitionRequest` | `PluginLifecycleAdministration.kt` | Host-owned, deny-by-default authorization boundary for *who* may request a `PluginLifecycleStateTracker.transition` call, consulted via the tracker's authorizer-aware `transition(request, authorizer)` overload. See [Authorized transitions ("authorized hot disable")](#authorized-transitions-authorized-hot-disable). |
 | `PluginLifecycleAdministrationOperationalEventBridge` | `PluginLifecycleAdministrationOperationalEventBridge.kt` | Stateless mapping from a `PluginLifecycleTransitionRequest`/`PluginLifecycleTransitionResult` pair to a redacted `OperationalEventEnvelope`, for a caller to append into `DurableOperationalEventOutbox`. See [Audit records (operational-event bridge)](#audit-records-operational-event-bridge). |
+| `PluginExecutionBoundsOperationalEventBridge` | `PluginExecutionBoundsOperationalEventBridge.kt` | The execution-bounds counterpart: maps each `PluginExecutionBoundsResult` (plus a caller-minted `PluginExecutionInvocationId`) to a redacted `OperationalEventEnvelope`, never reading the plugin's output. See [Execution outcome audit records and outbox wiring](#execution-outcome-audit-records-and-outbox-wiring). |
 
 ## Deny-by-default registration and enablement
 
@@ -356,21 +357,13 @@ free-text `PluginLifecycleTransitionRequest.reason` is never included at
 all, exactly as the precedent excludes `RetryAdministrationReason`/
 `CircuitAdministrationReason`.
 
-### No wiring yet
+### Wiring
 
-Nothing in this codebase calls `toEnvelope` today. Exactly like
-`PluginExecutionBoundsEnforcer` before it, this is available
-infrastructure for a future facade — mirroring
-`io.dataloom.runtime.facade.DefaultDataLoomRetryAdministration`'s "swallow
-append failures" posture — once one is wired into `DataLoomBuilder` for the
-plugin engine. This was investigated specifically, not assumed: today
-nothing calls `PluginLifecycleStateTracker.transition` from application
-code at all (see [No wiring into `DataLoomBuilder` yet](#no-wiring-into-dataloombuilder-yet)
-below), so there is no real caller yet to also wire into
-`DurableOperationalEventOutbox`. The bridge itself does not need a real
-caller to be genuinely real, tested infrastructure, though — the same
-reasoning that already justified shipping `PluginExecutionBoundsEnforcer`
-ahead of hook-point dispatch.
+**Update (2026-09-20):** the "no caller yet" note that used to sit here is
+resolved. `DataLoom.pluginEngine`'s transition path calls `toEnvelope` and
+appends to `DurableOperationalEventOutbox` when the application supplies
+`DataLoomBuilder.pluginOperationalEventOutboxConfiguration`; see
+[Execution outcome audit records and outbox wiring](#execution-outcome-audit-records-and-outbox-wiring).
 
 ## Execution-bounds enforcement
 
@@ -447,12 +440,10 @@ including when `operation` throws, times out, or is cancelled.
   normally, uncaught — exactly as `TimeoutEnforcingSchedulerProvider` leaves
   "unexpected programming exceptions" to propagate rather than converting
   them into a bounded result.
-- **Does not audit timeout or concurrency-rejection events.**
-  `PluginExecutionBoundsResult` is not bridged by
-  [Audit records (operational-event bridge)](#audit-records-operational-event-bridge)
-  above — that bridge covers `PluginLifecycleTransitionResult` only.
-  Bridging execution-bounds outcomes too is separate follow-up work, not
-  addressed by this page's most recent round.
+- **Does not audit timeout or concurrency-rejection events (superseded
+  2026-09-20).** `PluginExecutionBoundsOperationalEventBridge` now bridges
+  every `PluginExecutionBoundsResult`; see
+  [Execution outcome audit records and outbox wiring](#execution-outcome-audit-records-and-outbox-wiring).
 
 ### Thread-safety
 
@@ -495,10 +486,6 @@ validation against the running SDK, and tracker/enforcer lifecycle gating
   pipeline). Still genuinely blocked, unchanged.
 - **The certification kit** — its own unstarted design surface (what a
   repeatable certification kit emits as evidence).
-- **Audit-trail bridging.** `PluginExecutionBoundsResult` outcomes (including
-  the new `NotActive`) are not bridged into the operational-event audit
-  trail, and the lifecycle bridge is not connected to an outbox through a
-  builder spec.
 - **Failure isolation/bulkheading** beyond concurrency limiting.
 - **A reference non-provider plugin** — demonstrating the full lifecycle
   end to end needs a real invocation call site (hook-point dispatch) to
@@ -589,6 +576,69 @@ each plugin's state in a volatile cell over a fixed set of tracked plugins.
 `stateOf` and `compatibilityOf` are safe concurrently with a transition;
 `transition` calls still must be serialized by the caller.
 
+## Execution outcome audit records and outbox wiring
+
+**Update (2026-09-20).**
+
+### `PluginExecutionBoundsOperationalEventBridge`
+
+The execution-bounds counterpart of
+`PluginLifecycleAdministrationOperationalEventBridge`, with the same shape: a
+stateless `toEnvelope(pluginId, invocationId, result, occurredAt)` in
+`dataloom-plugin`. Every `PluginExecutionBoundsResult` variant has its own
+event type, all category `AUDIT`, source `dataloom.plugin.execution.bounds`:
+
+| Result | Event type suffix | Attributes |
+|---|---|---|
+| `Completed` | `completed` | `request.pluginId` |
+| `TimedOut` | `timed_out` | plus `result.maximumExecutionMillis` |
+| `ConcurrencyLimitExceeded` | `concurrency_limit_exceeded` | plus `result.maximumConcurrentInvocations` |
+| `NotActive` | `not_active` | plus `result.state` |
+
+(Event types are prefixed `dataloom.plugin.execution.bounds.`.) Redaction
+follows the lifecycle bridge: the plugin id is `INTERNAL` (so redacted), the
+numeric bounds and the observed lifecycle state are `PUBLIC`, every attribute
+passes through `ClassifiedData` and `StrictDataLoomRedactor`. `Completed.value`
+is never read, and an exception thrown by an operation is not a result at all,
+so plugin output and exception messages cannot reach an envelope. Only stable
+ids and closed values are recorded.
+
+Identity: the envelope id is `plugin.execution.<invocation id>` (sanitized and
+capped at 128 characters), the correlation id reuses the invocation id, and
+`occurredAt` is supplied by the caller. A bounded invocation has no natural
+unique id, so the new `PluginExecutionInvocationId` value class is minted by
+the caller. The lifecycle bridge is unchanged apart from its documentation.
+
+### Builder wiring
+
+`DataLoomBuilder.pluginOperationalEventOutboxConfiguration(DataLoomPluginOperationalEventOutboxSpec)`
+follows the existing `*OperationalEventOutboxSpec` family (a store, a scope
+defaulting to `plugin-events`, schema version, and attempt bound; the builder
+supplies the runtime clock and the optional outbox health tracker). It is
+opt-in and inert when absent: with no spec, or with the spec but no
+`pluginConfiguration`, nothing is constructed, appended, or clocked.
+
+With both configured, `DataLoom.pluginEngine` appends after each result exists:
+
+- every `transition` result (`Allowed`, `Rejected`, `PermissionDenied`,
+  `AuthorizationDenied`, `IncompatibleRuntime`), keyed by its command id;
+- every `execute` result, keyed by an id the engine mints from the plugin id,
+  the runtime clock's millisecond reading, and an in-process counter (guarded
+  by a mutex, since `execute` is concurrent).
+
+Append failures and envelope-construction failures are swallowed and never
+change or break the returned result; only cancellation propagates. A call that
+throws records nothing. Both kinds of event share one scope, so the outbox
+assigns them consecutive per-key sequence numbers in append order (envelopes
+carry no workflow id, so they use the global ordering key).
+
+Known limits: reusing a lifecycle command id is idempotent (a differing
+outcome for the reused id is dropped by the outbox as a conflict); an
+invocation id could in principle collide across a restart only for the same
+plugin, millisecond, and counter value, costing one dropped audit record; and
+every completed invocation is recorded, which is high-volume for a busy
+plugin, so bound it with the outbox's own retention and acknowledgement.
+
 ## Relocation to `dataloom-plugin` and `DataLoomBuilder` wiring
 
 **Update (2026-09-19):** the module-ownership question the
@@ -628,8 +678,9 @@ What the wiring deliberately does not do:
 - The capability-aware `transition(id, target, grantedCapabilities)` overload
   (permission enforcement on entry to `ACTIVE`) is not exposed; the facade
   offers only the authorizer-gated path.
-- `PluginLifecycleAdministrationOperationalEventBridge` is not connected to an
-  outbox, and `PluginExecutionBoundsResult` is not bridged into the audit trail.
+- Audit recording is a separate opt-in
+  (`pluginOperationalEventOutboxConfiguration`); see
+  [Execution outcome audit records and outbox wiring](#execution-outcome-audit-records-and-outbox-wiring).
 - No subsystem dispatches hook points to plugins. (The tracker and enforcer
   were integrated afterwards; see
   [Lifecycle gating of execution (D13)](#lifecycle-gating-of-execution-d13).)
