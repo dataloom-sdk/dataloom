@@ -1,6 +1,7 @@
 package io.dataloom.runtime.operational
 
 import io.dataloom.api.error.DataLoomError
+import io.dataloom.api.identifier.WorkflowId
 import io.dataloom.api.operational.DurableOperationalEventOutbox
 import io.dataloom.api.operational.DurableOperationalEventOutboxAcknowledgeOutcome
 import io.dataloom.api.operational.OperationalEventCategory
@@ -154,6 +155,11 @@ public fun interface OperationalEventOutboxEntryFilter {
  *   acknowledgement reported [DurableOperationalEventOutboxAcknowledgeOutcome.PersistenceFailure]
  *   or [DurableOperationalEventOutboxAcknowledgeOutcome.ContentionLimitReached].
  *   The entry remains retained and is presented again on a later pass.
+ * @param blocked entries **not** handed to the handler because
+ *   [OperationalEventOutboxOrderingPolicy.BLOCK_WORKFLOW_ON_UNFINISHED_ENTRY] held
+ *   them behind an earlier entry of the same workflow that this cycle left
+ *   pending. Left retained untouched, not counted in [read], and not counted
+ *   toward the `maxEntries` bound. Always `0` under the default policy.
  */
 public data class OperationalEventOutboxProcessingSummary(
     public val read: Int,
@@ -164,7 +170,49 @@ public data class OperationalEventOutboxProcessingSummary(
     public val acknowledged: Int,
     public val acknowledgeRaced: Int,
     public val acknowledgeFailed: Int,
+    public val blocked: Int = 0,
 )
+
+/**
+ * Opt-in delivery-ordering policy for [DurableOperationalEventOutboxProcessor.process].
+ *
+ * Either way a workflow's entries are *presented* in durable sequence order
+ * (see [io.dataloom.api.operational.DurableOperationalEventOutbox]'s "Ordering"
+ * documentation); the policy decides whether one entry's outcome gates the
+ * ones after it.
+ */
+public enum class OperationalEventOutboxOrderingPolicy {
+
+    /**
+     * The default. Each entry's outcome is independent: a later event of a
+     * workflow can be `Processed` and acknowledged while an earlier one stays
+     * pending. Byte-for-byte the behavior before this policy existed.
+     */
+    PRESENTATION_ORDER_ONLY,
+
+    /**
+     * Head-of-line blocking per workflow: once an entry that carries a
+     * workflow id is left pending by the cycle -- its handler reported
+     * `Skipped` or `Failed`, or it was `Processed` but acknowledging it
+     * failed -- **no later entry of that same workflow is handed to the
+     * handler in that cycle**. Entries of other workflows keep flowing.
+     * Because a pending entry is always presented before the later ones of its
+     * workflow, an unfinished entry keeps holding its workflow's successors
+     * back on every later cycle too, until it is `Processed` and acknowledged
+     * or is acknowledged/removed by anyone else; the next cycle after that
+     * delivers the successors, in order.
+     *
+     * Entries **without** a workflow id are never blocked and never block:
+     * their shared "global" ordering key exists to order them, but coupling
+     * unrelated subsystems' events behind one failed event would be a
+     * cross-subsystem stall, not a workflow guarantee.
+     *
+     * An entry the `filter` rejects is not "unfinished by this consumer" and
+     * does not block its workflow -- otherwise a consumer that is not
+     * interested in an event could never see the workflow's later events.
+     */
+    BLOCK_WORKFLOW_ON_UNFINISHED_ENTRY,
+}
 
 /**
  * Sealed result returned by [DurableOperationalEventOutboxProcessor.process].
@@ -391,16 +439,35 @@ public sealed interface OperationalEventOutboxProcessingResult {
  * point of its own -- see `docs/api/outbox-replay-investigation.md` for the
  * decided design.
  *
- * ## Per-workflow presentation order
+ * ## Head-of-line blocking (opt-in)
  *
  * Entries reach [handler] in [io.dataloom.api.operational.DurableOperationalEventOutbox.entries]
- * order, so one workflow's events are always presented in sequence order.
- * What this processor does **not** do is hold back a workflow's later events
- * behind an earlier one the handler reported `Skipped`/`Failed`: each entry's
- * outcome is independent, so a later event of the same workflow can be
- * `Processed` and acknowledged while an earlier one stays pending. A handler
- * that needs strict head-of-line semantics must itself report `Skipped` for
- * an event whose predecessor it has not finished.
+ * order, so one workflow's events are always *presented* in sequence order.
+ * By default ([OperationalEventOutboxOrderingPolicy.PRESENTATION_ORDER_ONLY])
+ * each entry's outcome is independent: a later event of the same workflow can
+ * be `Processed` and acknowledged while an earlier one stays pending.
+ *
+ * Passing [OperationalEventOutboxOrderingPolicy.BLOCK_WORKFLOW_ON_UNFINISHED_ENTRY]
+ * as `ordering` makes a workflow's outcomes gate its successors: when an
+ * entry of a workflow is left pending by the cycle (`Skipped`, `Failed`, or
+ * `Processed` whose acknowledgement failed), none of that workflow's later
+ * entries is handed to [handler] until it is `Processed` and acknowledged
+ * (or acknowledged/removed by anyone else). The blocked entries stay pending
+ * untouched, are counted in [OperationalEventOutboxProcessingSummary.blocked],
+ * and do not count toward `maxEntries`; other workflows -- and entries with no
+ * workflow id, which neither block nor are blocked -- keep flowing. Since a
+ * pending entry is always presented before its successors, the hold persists
+ * across cycles with no extra state. The successors are delivered, in
+ * sequence order, as soon as the blocker clears: in the very same cycle when
+ * the handler now `Processed`-and-acknowledges it (handling is sequential), or
+ * in the next cycle when someone else acknowledged it in between. An entry rejected by `filter` does not block its workflow, so a
+ * consumer uninterested in an event is never stalled by it.
+ *
+ * Guarantee limits: blocking is per processor call. It is not a distributed
+ * lock -- two concurrent [process] calls on one scope can each hand the same
+ * head entry to their handler (see "Concurrency"), and the policy compares
+ * only the entries a cycle reads, so a consumer that changes its `filter`
+ * between cycles can deliver a successor of an entry it previously skipped.
  *
  * ## Cancellation
  *
@@ -440,6 +507,10 @@ public class DurableOperationalEventOutboxProcessor(
      *   to a filter that accepts every entry, making this parameter purely
      *   additive over unconfigured callers -- see this class's "Filtering"
      *   documentation.
+     * @param ordering whether one entry's outcome gates its workflow's later
+     *   entries. Defaults to [OperationalEventOutboxOrderingPolicy.PRESENTATION_ORDER_ONLY]
+     *   (no gating), making this parameter purely additive -- see this class's
+     *   "Head-of-line blocking" documentation.
      * @param handler invoked once per filter-accepted, read entry,
      *   sequentially, in the same oldest-first order
      *   [DurableOperationalEventOutbox.entries] returns.
@@ -450,9 +521,10 @@ public class DurableOperationalEventOutboxProcessor(
         scope: OperationalEventOutboxScope,
         maxEntries: Int = DEFAULT_MAX_ENTRIES,
         filter: OperationalEventOutboxEntryFilter = OperationalEventOutboxEntryFilter { true },
+        ordering: OperationalEventOutboxOrderingPolicy = OperationalEventOutboxOrderingPolicy.PRESENTATION_ORDER_ONLY,
         handler: OperationalEventOutboxEntryHandler,
     ): OperationalEventOutboxProcessingResult {
-        val result = processCycle(scope, maxEntries, filter, handler)
+        val result = processCycle(scope, maxEntries, filter, ordering, handler)
         healthTracker?.recordProcessingCycle(scope, result)
         return result
     }
@@ -461,6 +533,7 @@ public class DurableOperationalEventOutboxProcessor(
         scope: OperationalEventOutboxScope,
         maxEntries: Int,
         filter: OperationalEventOutboxEntryFilter,
+        ordering: OperationalEventOutboxOrderingPolicy,
         handler: OperationalEventOutboxEntryHandler,
     ): OperationalEventOutboxProcessingResult {
         require(maxEntries >= 1) { "maxEntries must be at least 1, but was $maxEntries." }
@@ -475,15 +548,26 @@ public class DurableOperationalEventOutboxProcessor(
 
         val matching = allRetained.filter { filter.matches(it) }
         val filteredOut = allRetained.size - matching.size
-        val batch = matching.take(maxEntries)
+        var read = 0
+        var blocked = 0
         var processed = 0
         var skipped = 0
         var failed = 0
         var acknowledged = 0
         var acknowledgeRaced = 0
         var acknowledgeFailed = 0
+        val blockedWorkflows = HashSet<WorkflowId>()
 
-        for (envelope in batch) {
+        for (envelope in matching) {
+            if (read >= maxEntries) break
+            val workflowId = envelope.workflowId
+            if (workflowId != null && workflowId in blockedWorkflows) {
+                blocked++
+                continue
+            }
+            read++
+            // Whether this entry is still pending after the cycle handled it.
+            var leftPending = false
             when (handler.handle(envelope)) {
                 is OperationalEventOutboxEntryOutcome.Processed -> {
                     processed++
@@ -494,17 +578,33 @@ public class DurableOperationalEventOutboxProcessor(
                         -> acknowledgeRaced++
                         is DurableOperationalEventOutboxAcknowledgeOutcome.PersistenceFailure,
                         is DurableOperationalEventOutboxAcknowledgeOutcome.ContentionLimitReached,
-                        -> acknowledgeFailed++
+                        -> {
+                            acknowledgeFailed++
+                            leftPending = true
+                        }
                     }
                 }
-                is OperationalEventOutboxEntryOutcome.Skipped -> skipped++
-                is OperationalEventOutboxEntryOutcome.Failed -> failed++
+                is OperationalEventOutboxEntryOutcome.Skipped -> {
+                    skipped++
+                    leftPending = true
+                }
+                is OperationalEventOutboxEntryOutcome.Failed -> {
+                    failed++
+                    leftPending = true
+                }
+            }
+            if (leftPending &&
+                workflowId != null &&
+                ordering == OperationalEventOutboxOrderingPolicy.BLOCK_WORKFLOW_ON_UNFINISHED_ENTRY
+            ) {
+                blockedWorkflows += workflowId
             }
         }
 
         return OperationalEventOutboxProcessingResult.Processed(
             OperationalEventOutboxProcessingSummary(
-                read = batch.size,
+                read = read,
+                blocked = blocked,
                 filteredOut = filteredOut,
                 processed = processed,
                 skipped = skipped,

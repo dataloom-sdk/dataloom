@@ -95,6 +95,7 @@ import io.dataloom.runtime.queue.QueuedSynchronizationWorkResolver
 import io.dataloom.runtime.worker.QueueWorkerConfiguration
 import io.dataloom.runtime.worker.QueueWorkerRunRequest
 import io.dataloom.runtime.worker.QueueWorkerRunResult
+import io.dataloom.runtime.worker.QueueWorkerSchedulingResult
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -247,6 +248,88 @@ class DataLoomBuilderQueueLifecycleOperationalEventOutboxTest {
     }
 
     @Test
+    fun wakeUpSchedulingResult_isBridged_whenAWakeUpIsRequired() = runTest {
+        val queue = RecordingQueueProvider()
+        val schedulingStore = InMemoryOperationalEventOutboxStore()
+        val scope = OperationalEventOutboxScope("integration-scheduling-events")
+        val dataLoom = builder(queue)
+            .pipeline(SucceedingPipeline(SynchronizationDirection.PUSH))
+            .queueWorkerConfiguration(queueWorkerSpec())
+            .queueWorkerSchedulingOperationalEventOutboxConfiguration(
+                DataLoomQueueWorkerSchedulingOperationalEventOutboxSpec(store = schedulingStore, scope = scope),
+            )
+            .build()
+        assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
+
+        // maxEntries = 1 and one entry acquired: the acquisition limit is reached, so the worker
+        // plans a wake-up; no scheduler provider is configured, which is itself the bridged fact.
+        val result = dataLoom.queueWorker!!.run(workerRunRequest(maxEntries = 1))
+
+        val completed = assertIs<QueueWorkerRunResult.ProcessingCompleted>(result)
+        assertIs<QueueWorkerSchedulingResult.SchedulerNotConfigured>(completed.schedulingResult)
+        val envelope = schedulingStore.envelopes(scope).single()
+        assertEquals("dataloom.scheduler.wakeup.not_configured", envelope.type.value)
+        assertEquals("scheduler.wakeup.queue-lifecycle-lease", envelope.id.value)
+        assertEquals("ACQUISITION_LIMIT_REACHED", envelope.attributes["wakeup.reason"])
+        assertEquals("SCHEDULER_NOT_CONFIGURED", envelope.attributes["wakeup.result"])
+    }
+
+    @Test
+    fun wakeUpSchedulingResult_bridgesNothing_whenNoWakeUpIsRequired() = runTest {
+        val queue = RecordingQueueProvider()
+        val schedulingStore = InMemoryOperationalEventOutboxStore()
+        val scope = OperationalEventOutboxScope("integration-no-wakeup-events")
+        val dataLoom = builder(queue)
+            .pipeline(SucceedingPipeline(SynchronizationDirection.PUSH))
+            .queueWorkerConfiguration(queueWorkerSpec())
+            .queueWorkerSchedulingOperationalEventOutboxConfiguration(
+                DataLoomQueueWorkerSchedulingOperationalEventOutboxSpec(store = schedulingStore, scope = scope),
+            )
+            .build()
+        assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
+
+        val result = dataLoom.queueWorker!!.run(workerRunRequest()) // maxEntries = 5, one entry: no wake-up
+
+        val completed = assertIs<QueueWorkerRunResult.ProcessingCompleted>(result)
+        assertIs<QueueWorkerSchedulingResult.NotRequired>(completed.schedulingResult)
+        assertEquals(0, schedulingStore.recordedEntryCount(scope))
+    }
+
+    @Test
+    fun wakeUpSchedulingBridge_neverChangesTheRunResult_whenTheOutboxFails() = runTest {
+        val queue = RecordingQueueProvider()
+        val dataLoom = builder(queue)
+            .pipeline(SucceedingPipeline(SynchronizationDirection.PUSH))
+            .queueWorkerConfiguration(queueWorkerSpec())
+            .queueWorkerSchedulingOperationalEventOutboxConfiguration(
+                DataLoomQueueWorkerSchedulingOperationalEventOutboxSpec(store = AlwaysFailingOperationalEventOutboxStore()),
+            )
+            .build()
+        assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
+
+        val result = dataLoom.queueWorker!!.run(workerRunRequest(maxEntries = 1))
+
+        val completed = assertIs<QueueWorkerRunResult.ProcessingCompleted>(result)
+        assertIs<QueueWorkerSchedulingResult.SchedulerNotConfigured>(completed.schedulingResult)
+    }
+
+    @Test
+    fun wakeUpSchedulingBridge_hasNoEffect_withoutAQueueWorker() = runTest {
+        val queue = RecordingQueueProvider()
+        val schedulingStore = InMemoryOperationalEventOutboxStore()
+        val scope = OperationalEventOutboxScope("integration-no-worker-scheduling-events")
+        val dataLoom = builder(queue)
+            .pipeline(SucceedingPipeline(SynchronizationDirection.PUSH))
+            .queueWorkerSchedulingOperationalEventOutboxConfiguration(
+                DataLoomQueueWorkerSchedulingOperationalEventOutboxSpec(store = schedulingStore, scope = scope),
+            )
+            .build()
+
+        assertEquals(null, dataLoom.queueWorker)
+        assertEquals(0, schedulingStore.recordedEntryCount(scope))
+    }
+
+    @Test
     fun healthTrackers_areInert_whenNotConfigured() = runTest {
         val queue = RecordingQueueProvider()
         val outboxStore = InMemoryOperationalEventOutboxStore()
@@ -316,14 +399,14 @@ class DataLoomBuilderQueueLifecycleOperationalEventOutboxTest {
         ),
     )
 
-    private fun workerRunRequest(): QueueWorkerRunRequest = QueueWorkerRunRequest(
+    private fun workerRunRequest(maxEntries: Int = 5): QueueWorkerRunRequest = QueueWorkerRunRequest(
         processingRequest = QueueProcessingRequest(
             acquireRequest = QueueAcquireRequest(
                 consumerId = QueueConsumerId("queue-lifecycle-consumer"),
                 leaseId = QueueLeaseId("queue-lifecycle-lease"),
                 acquiredAt = DataLoomInstant(1_000_000L),
                 leaseExpiresAt = DataLoomInstant(2_000_000L),
-                maxEntries = 5,
+                maxEntries = maxEntries,
             ),
         ),
         recoveryRequest = null,
@@ -502,6 +585,9 @@ class DataLoomBuilderQueueLifecycleOperationalEventOutboxTest {
         private val records = mutableMapOf<OperationalEventOutboxScope, DurableStateRecord<OperationalEventOutboxState>>()
 
         suspend fun recordedEntryCount(scope: OperationalEventOutboxScope): Int = records[scope]?.state?.entries?.size ?: 0
+
+        fun envelopes(scope: OperationalEventOutboxScope): List<io.dataloom.api.operational.OperationalEventEnvelope> =
+            records[scope]?.state?.entries?.map { it.envelope } ?: emptyList()
 
         override suspend fun load(
             scope: OperationalEventOutboxScope,

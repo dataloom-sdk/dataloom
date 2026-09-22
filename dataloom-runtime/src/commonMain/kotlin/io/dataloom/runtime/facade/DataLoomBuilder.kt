@@ -191,6 +191,9 @@ public class DataLoomBuilder {
     private var retryCircuitAdministrationOperationalEventOutboxSpec:
         DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec? = null
     private var strategyDecisionOperationalEventOutboxSpec: DataLoomStrategyDecisionOperationalEventOutboxSpec? = null
+    private var policyDecisionOperationalEventOutboxSpec: DataLoomPolicyDecisionOperationalEventOutboxSpec? = null
+    private var queueWorkerSchedulingOperationalEventOutboxSpec:
+        DataLoomQueueWorkerSchedulingOperationalEventOutboxSpec? = null
     private var queueLifecycleOperationalEventOutboxSpec: DataLoomQueueLifecycleOperationalEventOutboxSpec? = null
     private var conflictResolutionOperationalEventOutboxSpec:
         DataLoomConflictResolutionOperationalEventOutboxSpec? = null
@@ -549,6 +552,41 @@ public class DataLoomBuilder {
         spec: DataLoomStrategyDecisionOperationalEventOutboxSpec,
     ): DataLoomBuilder = apply {
         strategyDecisionOperationalEventOutboxSpec = spec
+    }
+
+    /**
+     * Enables the durable operational-event outbox bridge for policy
+     * decisions: every [io.dataloom.api.policy.PolicyDecision] strategy-admission
+     * policy evaluation produces is bridged into an
+     * [io.dataloom.api.operational.OperationalEventEnvelope] by
+     * [io.dataloom.runtime.observation.operational.PolicyDecisionOperationalEventBridge]
+     * and durably appended. Has no effect unless
+     * [strategyAdmissionPolicyConfiguration] is also configured; independent of
+     * that spec's own decision log. Not calling this leaves behavior unchanged.
+     * See [DataLoomPolicyDecisionOperationalEventOutboxSpec].
+     *
+     * @return this builder for chaining.
+     */
+    public fun policyDecisionOperationalEventOutboxConfiguration(
+        spec: DataLoomPolicyDecisionOperationalEventOutboxSpec,
+    ): DataLoomBuilder = apply {
+        policyDecisionOperationalEventOutboxSpec = spec
+    }
+
+    /**
+     * Enables the durable operational-event outbox bridge for the queue
+     * worker's wake-up scheduling: the worker [build] returns (direct or
+     * circuit-aware) is wrapped so each run's scheduling result other than
+     * "not required" is appended as an envelope. Has no effect without a
+     * configured queue worker; not calling this leaves the worker unwrapped.
+     * See [DataLoomQueueWorkerSchedulingOperationalEventOutboxSpec].
+     *
+     * @return this builder for chaining.
+     */
+    public fun queueWorkerSchedulingOperationalEventOutboxConfiguration(
+        spec: DataLoomQueueWorkerSchedulingOperationalEventOutboxSpec,
+    ): DataLoomBuilder = apply {
+        queueWorkerSchedulingOperationalEventOutboxSpec = spec
     }
 
     /**
@@ -1197,6 +1235,26 @@ public class DataLoomBuilder {
                 stateObserver = operationalEventOutboxHealthTracker,
             )
         }
+        // --- 8c'. Build policy-decision operational-event outbox (optional) ---
+        val policyDecisionOperationalEventOutbox = policyDecisionOperationalEventOutboxSpec?.let { spec ->
+            DurableOperationalEventOutbox(
+                store = spec.store,
+                clock = deps.clock,
+                schemaVersion = spec.schemaVersion,
+                maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
+                stateObserver = operationalEventOutboxHealthTracker,
+            )
+        }
+        // --- 8c''. Build queue-worker scheduling operational-event outbox (optional) ---
+        val queueWorkerSchedulingOperationalEventOutbox = queueWorkerSchedulingOperationalEventOutboxSpec?.let { spec ->
+            DurableOperationalEventOutbox(
+                store = spec.store,
+                clock = deps.clock,
+                schemaVersion = spec.schemaVersion,
+                maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
+                stateObserver = operationalEventOutboxHealthTracker,
+            )
+        }
         // --- 8d. Build strategy-admission policy evaluation (optional) ---
         val strategyAdmissionPolicyDecisionLog = strategyAdmissionPolicySpec?.decisionLogStore?.let { store ->
             DurablePolicyDecisionLog(
@@ -1212,6 +1270,8 @@ public class DataLoomBuilder {
                 budget = spec.budget,
                 configurationSnapshot = spec.configurationSnapshot,
                 decisionLog = strategyAdmissionPolicyDecisionLog,
+                decisionOutbox = policyDecisionOperationalEventOutbox,
+                decisionOutboxScope = policyDecisionOperationalEventOutboxSpec?.scope,
             )
         }
         val strategyExecutionCoordinator = StrategySynchronizationExecutionCoordinator(
@@ -1459,10 +1519,24 @@ public class DataLoomBuilder {
             defaultBindings = bindings,
             defaultStrategyBindings = strategyBindings,
             queueWorker = queueWorker?.let { worker ->
-                queueWorkerHealthTracker?.let { worker.withHealthTracking(it) } ?: worker
+                val bridged = queueWorkerSchedulingOperationalEventOutbox?.let { outbox ->
+                    worker.bridgingSchedulingEvents(
+                        outbox,
+                        checkNotNull(queueWorkerSchedulingOperationalEventOutboxSpec).scope,
+                        deps.clock,
+                    )
+                } ?: worker
+                queueWorkerHealthTracker?.let { bridged.withHealthTracking(it) } ?: bridged
             },
             circuitQueueWorker = circuitQueueWorker?.let { worker ->
-                queueWorkerHealthTracker?.let { worker.withHealthTracking(it) } ?: worker
+                val bridged = queueWorkerSchedulingOperationalEventOutbox?.let { outbox ->
+                    worker.bridgingSchedulingEvents(
+                        outbox,
+                        checkNotNull(queueWorkerSchedulingOperationalEventOutboxSpec).scope,
+                        deps.clock,
+                    )
+                } ?: worker
+                queueWorkerHealthTracker?.let { bridged.withHealthTracking(it) } ?: bridged
             },
             protectedSynchronization = protectedSynchronization,
             protectedStrategySynchronization = protectedStrategySynchronization,
