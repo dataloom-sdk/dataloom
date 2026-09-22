@@ -28,6 +28,7 @@ import io.dataloom.core.provider.StrategyProviderResolutionResult
 import io.dataloom.core.provider.StrategyProviderResolver
 import io.dataloom.runtime.execution.SynchronizationPipelineRegistry
 import io.dataloom.runtime.execution.lifecycle.SynchronizationLifecycleEventEmitter
+import io.dataloom.runtime.observation.operational.PolicyDecisionOperationalEventBridge
 import io.dataloom.runtime.observation.operational.StrategyDecisionOperationalEventBridge
 import io.dataloom.runtime.submission.QueuedSynchronizationWorkEncoder
 import kotlin.coroutines.cancellation.CancellationException
@@ -581,7 +582,40 @@ internal class StrategySynchronizationExecutionCoordinator(
         )
         val decision = policy.evaluator.evaluate(policy.policySet, input, policy.budget)
         recordAdmissionPolicyDecision(policy, request, decision)
+        recordPolicyDecisionOperationalEvent(policy, request, decision)
         return decision.outcome is PolicyCheckOutcome.Allow
+    }
+
+    /**
+     * When [policy] carries a [StrategyAdmissionPolicyConfiguration.decisionOutbox]
+     * and scope, bridges [decision] into an
+     * [io.dataloom.api.operational.OperationalEventEnvelope] via
+     * [PolicyDecisionOperationalEventBridge] and durably appends it -- after
+     * [decision] has already determined admission and after the per-execution
+     * log commit above, never altering either. A construction or append
+     * failure is swallowed; only [CancellationException] propagates. With
+     * either collaborator `null` this performs no work.
+     */
+    private suspend fun recordPolicyDecisionOperationalEvent(
+        policy: StrategyAdmissionPolicyConfiguration,
+        request: StrategySynchronizationRequest,
+        decision: PolicyDecision,
+    ) {
+        val outbox = policy.decisionOutbox ?: return
+        val scope = policy.decisionOutboxScope ?: return
+        try {
+            val envelope = PolicyDecisionOperationalEventBridge.toEnvelope(
+                context = request.request.context,
+                workflowId = request.request.workflowId,
+                decision = decision,
+                evaluatedAt = clock.now(),
+            )
+            outbox.append(scope, envelope)
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (ordinary: Exception) {
+            // Intentionally swallowed -- see method doc above.
+        }
     }
 
     /**

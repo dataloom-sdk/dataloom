@@ -1,6 +1,8 @@
 package io.dataloom.runtime.strategy
 
 import io.dataloom.api.configuration.ConfigurationSnapshot
+import io.dataloom.api.operational.DurableOperationalEventOutbox
+import io.dataloom.api.operational.OperationalEventOutboxScope
 import io.dataloom.api.policy.DurablePolicyDecisionLog
 import io.dataloom.api.policy.PolicyEvaluationBudget
 import io.dataloom.api.policy.PolicyEvaluator
@@ -29,6 +31,12 @@ import io.dataloom.api.policy.PolicySet
  * @param decisionLog optional durable log every evaluated [io.dataloom.api.policy.PolicyDecision]
  *   is committed to, keyed by [io.dataloom.api.policy.PolicyDecisionScope]. `null`
  *   means decisions are evaluated and enforced but never durably recorded.
+ * @param decisionOutbox optional durable operational-event outbox every
+ *   evaluated decision is also bridged into, under [decisionOutboxScope]
+ *   (see [io.dataloom.runtime.observation.operational.PolicyDecisionOperationalEventBridge]).
+ *   Independent of [decisionLog]. `null` means no envelope is ever built.
+ * @param decisionOutboxScope the scope [decisionOutbox] appends under; both
+ *   must be non-null for bridging to occur.
  */
 internal class StrategyAdmissionPolicyConfiguration(
     val evaluator: PolicyEvaluator,
@@ -36,4 +44,6 @@ internal class StrategyAdmissionPolicyConfiguration(
     val budget: PolicyEvaluationBudget,
     val configurationSnapshot: ConfigurationSnapshot,
     val decisionLog: DurablePolicyDecisionLog?,
+    val decisionOutbox: DurableOperationalEventOutbox? = null,
+    val decisionOutboxScope: OperationalEventOutboxScope? = null,
 )
