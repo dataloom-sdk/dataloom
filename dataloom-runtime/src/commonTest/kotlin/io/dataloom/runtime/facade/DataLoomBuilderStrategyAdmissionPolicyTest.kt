@@ -16,6 +16,9 @@ import io.dataloom.api.identifier.WorkflowId
 import io.dataloom.api.model.SynchronizationDirection
 import io.dataloom.api.model.SynchronizationMode
 import io.dataloom.api.model.SynchronizationRequest
+import io.dataloom.api.operational.OperationalEventEnvelope
+import io.dataloom.api.operational.OperationalEventOutboxScope
+import io.dataloom.api.operational.OperationalEventOutboxState
 import io.dataloom.api.policy.PolicyCheck
 import io.dataloom.api.policy.PolicyCheckOutcome
 import io.dataloom.api.policy.PolicyDecisionRecord
@@ -193,9 +196,158 @@ class DataLoomBuilderStrategyAdmissionPolicyTest {
         assertEquals(1, transport.pullCallCount)
     }
 
+    @Test
+    fun allowedDecisionIsBridgedIntoTheOperationalEventOutboxWithoutADecisionLog() = runTest {
+        val transport = RecordingTransportProvider()
+        val bindings = StrategyProviderBindings(transportProviderId = transport.descriptor.id)
+        val outboxStore = InMemoryOutboxStore()
+        val scope = OperationalEventOutboxScope("policy-bridge-events")
+        val dataLoom = builder(transport, bindings)
+            .strategyAdmissionPolicyConfiguration(policySpec(AlwaysAllowCheck)) // no decisionLogStore
+            .policyDecisionOperationalEventOutboxConfiguration(
+                DataLoomPolicyDecisionOperationalEventOutboxSpec(store = outboxStore, scope = scope),
+            )
+            .build()
+        assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
+        val request = networkOnlyRequest("bridged-allow")
+
+        val result = dataLoom.synchronize(request, bindings)
+
+        assertIs<StrategySynchronizationExecutionResult.Executed>(result)
+        val envelope = outboxStore.envelopes(scope).single()
+        assertEquals("dataloom.policy.decision.allowed", envelope.type.value)
+        assertEquals(request.request.context.correlationId, envelope.correlationId)
+        assertEquals(request.request.workflowId, envelope.workflowId)
+        assertEquals(DataLoomInstant(epochMilliseconds = 9_000L), envelope.occurredAt)
+        assertEquals("ALLOW", envelope.attributes["policy.outcome"])
+        assertNull(envelope.attributes["policy.justification"]) // free text is removed outright
+    }
+
+    @Test
+    fun deniedDecisionIsBridgedAndAdmissionIsUnchanged() = runTest {
+        val transport = RecordingTransportProvider()
+        val bindings = StrategyProviderBindings(transportProviderId = transport.descriptor.id)
+        val outboxStore = InMemoryOutboxStore()
+        val scope = OperationalEventOutboxScope("policy-bridge-denied-events")
+        val dataLoom = builder(transport, bindings)
+            .strategyAdmissionPolicyConfiguration(policySpec(AlwaysDenyCheck))
+            .policyDecisionOperationalEventOutboxConfiguration(
+                DataLoomPolicyDecisionOperationalEventOutboxSpec(store = outboxStore, scope = scope),
+            )
+            .build()
+        assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
+
+        val result = dataLoom.synchronize(networkOnlyRequest("bridged-deny"), bindings)
+
+        assertIs<StrategySynchronizationExecutionResult.Rejected>(result)
+        assertEquals(StrategyExecutionRejectionReason.POLICY_DENIED, result.reason)
+        assertEquals(0, transport.pullCallCount)
+        val envelope = outboxStore.envelopes(scope).single()
+        assertEquals("dataloom.policy.decision.denied", envelope.type.value)
+        assertEquals("[REDACTED]", envelope.attributes["policy.winningCheckId"]) // INTERNAL id, masked by the default policy
+    }
+
+    @Test
+    fun anOutboxAppendFailureNeverChangesAdmissionOrTheResult() = runTest {
+        val transport = RecordingTransportProvider()
+        val bindings = StrategyProviderBindings(transportProviderId = transport.descriptor.id)
+        val dataLoom = builder(transport, bindings)
+            .strategyAdmissionPolicyConfiguration(policySpec(AlwaysAllowCheck))
+            .policyDecisionOperationalEventOutboxConfiguration(
+                DataLoomPolicyDecisionOperationalEventOutboxSpec(store = InMemoryOutboxStore(failWrites = true)),
+            )
+            .build()
+        assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
+
+        val result = dataLoom.synchronize(networkOnlyRequest("bridge-failure"), bindings)
+
+        assertIs<StrategySynchronizationExecutionResult.Executed>(result)
+        assertEquals(1, transport.pullCallCount)
+    }
+
+    @Test
+    fun nothingIsBridgedWhenTheOutboxIsConfiguredButNoPolicyIs() = runTest {
+        val transport = RecordingTransportProvider()
+        val bindings = StrategyProviderBindings(transportProviderId = transport.descriptor.id)
+        val outboxStore = InMemoryOutboxStore()
+        val scope = OperationalEventOutboxScope("policy-bridge-no-policy-events")
+        val dataLoom = builder(transport, bindings)
+            // strategyAdmissionPolicyConfiguration is never called.
+            .policyDecisionOperationalEventOutboxConfiguration(
+                DataLoomPolicyDecisionOperationalEventOutboxSpec(store = outboxStore, scope = scope),
+            )
+            .build()
+        assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
+
+        val result = dataLoom.synchronize(networkOnlyRequest("bridge-no-policy"), bindings)
+
+        assertIs<StrategySynchronizationExecutionResult.Executed>(result)
+        assertEquals(emptyList(), outboxStore.envelopes(scope))
+    }
+
+    @Test
+    fun nothingIsBridgedWhenThePolicyIsConfiguredButTheOutboxIsNot() = runTest {
+        val transport = RecordingTransportProvider()
+        val bindings = StrategyProviderBindings(transportProviderId = transport.descriptor.id)
+        val outboxStore = InMemoryOutboxStore()
+        val scope = OperationalEventOutboxScope("policy-bridge-no-outbox-events")
+        val dataLoom = builder(transport, bindings)
+            .strategyAdmissionPolicyConfiguration(policySpec(AlwaysAllowCheck))
+            // policyDecisionOperationalEventOutboxConfiguration is never called.
+            .build()
+        assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
+
+        assertIs<StrategySynchronizationExecutionResult.Executed>(
+            dataLoom.synchronize(networkOnlyRequest("bridge-no-outbox"), bindings),
+        )
+        assertEquals(emptyList(), outboxStore.envelopes(scope))
+    }
+
     // -------------------------------------------------------------------------
     // Fixtures
     // -------------------------------------------------------------------------
+
+    private fun policySpec(check: PolicyCheck): DataLoomStrategyAdmissionPolicySpec =
+        DataLoomStrategyAdmissionPolicySpec(
+            policySet = PolicySet(id = PolicySetId("admission-policy"), checks = listOf(check)),
+            evaluator = PolicyEvaluator(FixedMonotonicClock()),
+            budget = PolicyEvaluationBudget(maxElapsedNanoseconds = 1_000_000_000L),
+            configurationSnapshot = emptySnapshot(),
+        )
+
+    private class InMemoryOutboxStore(private val failWrites: Boolean = false) :
+        DurableStateStore<OperationalEventOutboxScope, OperationalEventOutboxState> {
+        private val records = mutableMapOf<OperationalEventOutboxScope, DurableStateRecord<OperationalEventOutboxState>>()
+
+        fun envelopes(scope: OperationalEventOutboxScope): List<OperationalEventEnvelope> =
+            records[scope]?.state?.entries?.map { it.envelope } ?: emptyList()
+
+        override suspend fun load(
+            scope: OperationalEventOutboxScope,
+        ): ProviderOperationResult<DurableStateLoadResult<OperationalEventOutboxState>> {
+            val record = records[scope]
+            return ProviderOperationResult.Success(
+                if (record == null) DurableStateLoadResult.Missing else DurableStateLoadResult.Found(record),
+            )
+        }
+
+        override suspend fun compareAndSet(
+            request: DurableStateCompareAndSetRequest<OperationalEventOutboxScope, OperationalEventOutboxState>,
+        ): ProviderOperationResult<DurableStateCompareAndSetResult<OperationalEventOutboxState>> {
+            check(!failWrites) { "simulated outbox write failure" }
+            val current = records[request.scope]
+            if (current?.version != request.expectedVersion) {
+                return ProviderOperationResult.Success(DurableStateCompareAndSetResult.Conflict(current))
+            }
+            val updated = DurableStateRecord(
+                state = request.nextState,
+                version = (current?.version ?: -1L) + 1L,
+                schemaVersion = request.nextSchemaVersion,
+            )
+            records[request.scope] = updated
+            return ProviderOperationResult.Success(DurableStateCompareAndSetResult.Updated(updated))
+        }
+    }
 
     private fun builder(
         transport: RecordingTransportProvider,

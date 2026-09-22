@@ -816,6 +816,7 @@ public final class io/dataloom/runtime/facade/DataLoomBuilder {
 	public final fun pipeline (Lio/dataloom/runtime/execution/SynchronizationPipeline;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun pluginConfiguration (Lio/dataloom/runtime/facade/DataLoomPluginSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun pluginOperationalEventOutboxConfiguration (Lio/dataloom/runtime/facade/DataLoomPluginOperationalEventOutboxSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
+	public final fun policyDecisionOperationalEventOutboxConfiguration (Lio/dataloom/runtime/facade/DataLoomPolicyDecisionOperationalEventOutboxSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun provider (Lio/dataloom/api/provider/DataLoomProvider;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun providerProtectionConfiguration (Lio/dataloom/runtime/facade/DataLoomProviderProtectionSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun providers ([Lio/dataloom/api/provider/DataLoomProvider;)Lio/dataloom/runtime/facade/DataLoomBuilder;
@@ -824,6 +825,7 @@ public final class io/dataloom/runtime/facade/DataLoomBuilder {
 	public final fun queueSubmissionEncoder (Lio/dataloom/runtime/submission/QueuedSynchronizationWorkEncoder;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun queueWorkerConfiguration (Lio/dataloom/runtime/facade/DataLoomQueueWorkerSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun queueWorkerHealthTracker (Lio/dataloom/runtime/observation/health/QueueWorkerHealthTracker;)Lio/dataloom/runtime/facade/DataLoomBuilder;
+	public final fun queueWorkerSchedulingOperationalEventOutboxConfiguration (Lio/dataloom/runtime/facade/DataLoomQueueWorkerSchedulingOperationalEventOutboxSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun retryAdministrationConfiguration (Lio/dataloom/runtime/facade/DataLoomRetryAdministrationSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun retryCircuitAdministrationOperationalEventOutboxConfiguration (Lio/dataloom/runtime/facade/DataLoomRetryCircuitAdministrationOperationalEventOutboxSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun runtimeDependencies (Lio/dataloom/api/runtime/RuntimeDependencies;)Lio/dataloom/runtime/facade/DataLoomBuilder;
@@ -961,6 +963,15 @@ public final class io/dataloom/runtime/facade/DataLoomPluginSpec {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/runtime/facade/DataLoomPolicyDecisionOperationalEventOutboxSpec {
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;Ljava/lang/String;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;Ljava/lang/String;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getMaximumStateUpdateAttempts ()I
+	public final fun getSchemaVersion ()I
+	public final fun getScope--IyNcac ()Ljava/lang/String;
+	public final fun getStore ()Lio/dataloom/api/state/DurableStateStore;
+}
+
 public abstract interface class io/dataloom/runtime/facade/DataLoomProtectedStrategySynchronization {
 	public abstract fun synchronize (Lio/dataloom/api/strategy/StrategySynchronizationRequest;Lio/dataloom/api/provider/StrategyProviderBindings;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun synchronize (Lio/dataloom/api/strategy/StrategySynchronizationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -998,6 +1009,15 @@ public final class io/dataloom/runtime/facade/DataLoomQueueSubmissionSpec {
 
 public abstract interface class io/dataloom/runtime/facade/DataLoomQueueWorker {
 	public abstract fun run (Lio/dataloom/runtime/worker/QueueWorkerRunRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/facade/DataLoomQueueWorkerSchedulingOperationalEventOutboxSpec {
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;Ljava/lang/String;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;Ljava/lang/String;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getMaximumStateUpdateAttempts ()I
+	public final fun getSchemaVersion ()I
+	public final fun getScope--IyNcac ()Ljava/lang/String;
+	public final fun getStore ()Lio/dataloom/api/state/DurableStateStore;
 }
 
 public final class io/dataloom/runtime/facade/DataLoomQueueWorkerSpec {
@@ -1608,6 +1628,11 @@ public final class io/dataloom/runtime/observation/operational/ConflictResolutio
 	public final fun toEnvelope-aFZlLws (Ljava/lang/String;Lio/dataloom/api/conflict/UnresolvedConflictRecord;)Lio/dataloom/api/operational/OperationalEventEnvelope;
 }
 
+public final class io/dataloom/runtime/observation/operational/PolicyDecisionOperationalEventBridge {
+	public static final field INSTANCE Lio/dataloom/runtime/observation/operational/PolicyDecisionOperationalEventBridge;
+	public final fun toEnvelope-ItRFP6A (Lio/dataloom/api/context/ExecutionContext;Ljava/lang/String;Lio/dataloom/api/policy/PolicyDecision;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/api/operational/OperationalEventEnvelope;
+}
+
 public final class io/dataloom/runtime/observation/operational/QueueLifecycleOperationalEventBridge {
 	public static final field INSTANCE Lio/dataloom/runtime/observation/operational/QueueLifecycleOperationalEventBridge;
 	public final fun toEnvelope-uzDoztY (Lio/dataloom/api/queue/QueueEntry;Ljava/lang/String;Lio/dataloom/runtime/queue/QueueEntryExecutionOutcome;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/api/operational/OperationalEventEnvelope;
@@ -1617,6 +1642,11 @@ public final class io/dataloom/runtime/observation/operational/QueueLifecycleOpe
 	public synthetic fun <init> (Lio/dataloom/api/operational/DurableOperationalEventOutbox;Ljava/lang/String;Lio/dataloom/api/time/DataLoomClock;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun onTransition-uzDoztY (Lio/dataloom/api/queue/QueueEntry;Ljava/lang/String;Lio/dataloom/runtime/queue/QueueEntryExecutionOutcome;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/observation/operational/QueueWorkerSchedulingOperationalEventBridge {
+	public static final field INSTANCE Lio/dataloom/runtime/observation/operational/QueueWorkerSchedulingOperationalEventBridge;
+	public final fun toEnvelope-jjLT8ms (Ljava/lang/String;Lio/dataloom/runtime/worker/QueueWorkerSchedulingResult;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/api/operational/OperationalEventEnvelope;
 }
 
 public final class io/dataloom/runtime/observation/operational/RetryCircuitAdministrationOperationalEventBridge {
@@ -1922,8 +1952,8 @@ public abstract interface class io/dataloom/runtime/observation/retry/RetryCircu
 public final class io/dataloom/runtime/operational/DurableOperationalEventOutboxProcessor {
 	public fun <init> (Lio/dataloom/api/operational/DurableOperationalEventOutbox;Lio/dataloom/runtime/observation/health/OperationalEventOutboxHealthTracker;)V
 	public synthetic fun <init> (Lio/dataloom/api/operational/DurableOperationalEventOutbox;Lio/dataloom/runtime/observation/health/OperationalEventOutboxHealthTracker;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun process-aeYNMOo (Ljava/lang/String;ILio/dataloom/runtime/operational/OperationalEventOutboxEntryFilter;Lio/dataloom/runtime/operational/OperationalEventOutboxEntryHandler;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun process-aeYNMOo$default (Lio/dataloom/runtime/operational/DurableOperationalEventOutboxProcessor;Ljava/lang/String;ILio/dataloom/runtime/operational/OperationalEventOutboxEntryFilter;Lio/dataloom/runtime/operational/OperationalEventOutboxEntryHandler;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun process-jbDi8FQ (Ljava/lang/String;ILio/dataloom/runtime/operational/OperationalEventOutboxEntryFilter;Lio/dataloom/runtime/operational/OperationalEventOutboxOrderingPolicy;Lio/dataloom/runtime/operational/OperationalEventOutboxEntryHandler;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun process-jbDi8FQ$default (Lio/dataloom/runtime/operational/DurableOperationalEventOutboxProcessor;Ljava/lang/String;ILio/dataloom/runtime/operational/OperationalEventOutboxEntryFilter;Lio/dataloom/runtime/operational/OperationalEventOutboxOrderingPolicy;Lio/dataloom/runtime/operational/OperationalEventOutboxEntryHandler;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public final class io/dataloom/runtime/operational/OperationalEnvelopeUpcastFailure : java/lang/Enum {
@@ -2031,6 +2061,14 @@ public final class io/dataloom/runtime/operational/OperationalEventOutboxEntryOu
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/runtime/operational/OperationalEventOutboxOrderingPolicy : java/lang/Enum {
+	public static final field BLOCK_WORKFLOW_ON_UNFINISHED_ENTRY Lio/dataloom/runtime/operational/OperationalEventOutboxOrderingPolicy;
+	public static final field PRESENTATION_ORDER_ONLY Lio/dataloom/runtime/operational/OperationalEventOutboxOrderingPolicy;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/operational/OperationalEventOutboxOrderingPolicy;
+	public static fun values ()[Lio/dataloom/runtime/operational/OperationalEventOutboxOrderingPolicy;
+}
+
 public abstract interface class io/dataloom/runtime/operational/OperationalEventOutboxProcessingResult {
 }
 
@@ -2064,7 +2102,8 @@ public final class io/dataloom/runtime/operational/OperationalEventOutboxProcess
 }
 
 public final class io/dataloom/runtime/operational/OperationalEventOutboxProcessingSummary {
-	public fun <init> (IIIIIIII)V
+	public fun <init> (IIIIIIIII)V
+	public synthetic fun <init> (IIIIIIIIIILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()I
 	public final fun component2 ()I
 	public final fun component3 ()I
@@ -2073,12 +2112,14 @@ public final class io/dataloom/runtime/operational/OperationalEventOutboxProcess
 	public final fun component6 ()I
 	public final fun component7 ()I
 	public final fun component8 ()I
-	public final fun copy (IIIIIIII)Lio/dataloom/runtime/operational/OperationalEventOutboxProcessingSummary;
-	public static synthetic fun copy$default (Lio/dataloom/runtime/operational/OperationalEventOutboxProcessingSummary;IIIIIIIIILjava/lang/Object;)Lio/dataloom/runtime/operational/OperationalEventOutboxProcessingSummary;
+	public final fun component9 ()I
+	public final fun copy (IIIIIIIII)Lio/dataloom/runtime/operational/OperationalEventOutboxProcessingSummary;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/operational/OperationalEventOutboxProcessingSummary;IIIIIIIIIILjava/lang/Object;)Lio/dataloom/runtime/operational/OperationalEventOutboxProcessingSummary;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAcknowledgeFailed ()I
 	public final fun getAcknowledgeRaced ()I
 	public final fun getAcknowledged ()I
+	public final fun getBlocked ()I
 	public final fun getFailed ()I
 	public final fun getFilteredOut ()I
 	public final fun getProcessed ()I

@@ -68,11 +68,13 @@ lowest mark first (ties by key value, deterministic), and raises
 a sequence it already used; the only cost is a larger first gap, which the
 contract allows.
 
-Not promised: strict head-of-line blocking. The processor presents a
-workflow's events in sequence order but each entry's handler outcome is
-independent, so a later event can be `Processed` and acknowledged while an
-earlier one stays pending. A handler that needs blocking must report `Skipped`
-for an event whose predecessor it has not finished.
+Head-of-line blocking is opt-in (added after this design, see
+[Operational envelope and redaction](./operational-envelope-redaction.md),
+"Head-of-line blocking"). By default the processor presents a workflow's events
+in sequence order but each entry's handler outcome is independent, so a later
+event can be `Processed` and acknowledged while an earlier one stays pending;
+with `OperationalEventOutboxOrderingPolicy.BLOCK_WORKFLOW_ON_UNFINISHED_ENTRY`
+an unfinished entry holds back its workflow's successors.
 
 ### Retention and replay (D3)
 
@@ -148,8 +150,8 @@ its acknowledgement deleted. Nothing else is migrated.
   (`DurableOperationalEventOutbox.stateObserver` + `OperationalEventOutboxHealthTracker`)
   with an explicit as-of time and staleness marker, not a store read; see
   [Health snapshot](./health-snapshot.md).
-- Head-of-line blocking, batch/by-workflow replay, and replay authorization,
-  if a real consumer needs them.
+- ~~Head-of-line blocking~~ -- done (opt-in processor policy). Still open:
+  batch/by-workflow replay and replay authorization, if a real consumer needs them.
 - Subscription delivery and cross-scope enumeration (unchanged from before).
 
 ## The original investigation (2026-08-26), kept for the record
