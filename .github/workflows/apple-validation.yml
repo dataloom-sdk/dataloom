@@ -1429,7 +1429,11 @@ jobs:
   apple-retry-budget-lease-contention-proof:
     name: Apple Simulator cross-process contention proof (retry-budget lease)
     runs-on: macos-15
-    timeout-minutes: 30
+    # 45, not 30: this job now boots two Simulator devices sequentially
+    # (one per racing app) instead of one; the prior run hit the 30-minute
+    # timeout at 35 elapsed minutes without reaching a race-outcome error,
+    # so the failure was the timeout itself, not the race under test.
+    timeout-minutes: 45
     continue-on-error: true
 
     steps:
@@ -1526,9 +1530,20 @@ jobs:
           xcrun simctl boot "$DEVICE_ID" || true
           xcrun simctl bootstatus "$DEVICE_ID" -b
 
+          # Second device: each racing app runs on its own Simulator so neither is
+          # backgrounded by the other's launch. With both on one device the
+          # first-launched app intermittently never reported a result.
+          DEVICE_ID_2=$(xcrun simctl create RetryBudgetLeaseContentionProofDevice2 "$DEVICETYPE_ID" "$RUNTIME_ID")
+          echo "Created second device: $DEVICE_ID_2"
+          echo "device_id_2=$DEVICE_ID_2" >> "$GITHUB_OUTPUT"
+
+          xcrun simctl boot "$DEVICE_ID_2" || true
+          xcrun simctl bootstatus "$DEVICE_ID_2" -b
+
       - name: Install both apps, race them, and verify exactly one lease winner
         env:
           DEVICE_ID: ${{ steps.boot_simulator.outputs.device_id }}
+          DEVICE_ID_2: ${{ steps.boot_simulator.outputs.device_id_2 }}
           BUNDLE_ID_A: io.dataloom.processcontentionproof.appa
           BUNDLE_ID_B: io.dataloom.processcontentionproof.appb
         run: |
@@ -1544,7 +1559,7 @@ jobs:
           done
 
           xcrun simctl install "$DEVICE_ID" "$APP_A_PATH"
-          xcrun simctl install "$DEVICE_ID" "$APP_B_PATH"
+          xcrun simctl install "$DEVICE_ID_2" "$APP_B_PATH"
 
           # A plain host-filesystem directory, exactly like
           # apple-process-contention-proof's own shared directory -- same
@@ -1599,7 +1614,7 @@ jobs:
           # SIMCTL_CHILD_DATALOOM_GO_SIGNAL are unchanged from app A's launch
           # above -- both apps must race in the exact same domain against the
           # exact same shared directory and go signal.
-          LAUNCH_B=$(xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID_B")
+          LAUNCH_B=$(xcrun simctl launch "$DEVICE_ID_2" "$BUNDLE_ID_B")
           echo "$LAUNCH_B"
           PID_B=$(echo "$LAUNCH_B" | sed -n 's/^.*: *\([0-9][0-9]*\)$/\1/p')
           if [ -z "$PID_B" ]; then
@@ -1737,14 +1752,17 @@ jobs:
         if: always()
         env:
           DEVICE_ID: ${{ steps.boot_simulator.outputs.device_id }}
+          DEVICE_ID_2: ${{ steps.boot_simulator.outputs.device_id_2 }}
           BUNDLE_ID_A: io.dataloom.processcontentionproof.appa
           BUNDLE_ID_B: io.dataloom.processcontentionproof.appb
         run: |
           if [ -n "${DEVICE_ID:-}" ]; then
             xcrun simctl terminate "$DEVICE_ID" "$BUNDLE_ID_A" || true
-            xcrun simctl terminate "$DEVICE_ID" "$BUNDLE_ID_B" || true
+            xcrun simctl terminate "$DEVICE_ID_2" "$BUNDLE_ID_B" || true
             xcrun simctl shutdown "$DEVICE_ID" || true
             xcrun simctl delete "$DEVICE_ID" || true
+            xcrun simctl shutdown "$DEVICE_ID_2" || true
+            xcrun simctl delete "$DEVICE_ID_2" || true
           fi
           rm -rf "${RUNNER_TEMP}/dataloom-retry-budget-lease-contention-proof" || true
 
