@@ -13,6 +13,11 @@ class PluginManifestTest {
         maximumSdkVersion = RuntimeVersion("2.0.0"),
     )
 
+    private val versionRange = PluginVersionRange(
+        minimum = PluginVersion("1.0.0"),
+        maximum = PluginVersion("2.0.0"),
+    )
+
     private fun manifest(
         capabilities: Set<PluginCapability> = emptySet(),
         permissions: Set<PluginPermission> = emptySet(),
@@ -42,7 +47,7 @@ class PluginManifestTest {
         val permission = PluginPermission("network-access")
         val dependency = PluginDependency(
             pluginId = PluginId("other-plugin"),
-            compatibilityRange = compatibilityRange,
+            supportedVersionRange = versionRange,
         )
 
         val result = manifest(
@@ -79,7 +84,7 @@ class PluginManifestTest {
         val tooMany = (1..65).map {
             PluginDependency(
                 pluginId = PluginId("plugin-$it"),
-                compatibilityRange = compatibilityRange,
+                supportedVersionRange = versionRange,
             )
         }.toSet()
 
