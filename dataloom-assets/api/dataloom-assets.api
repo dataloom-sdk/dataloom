@@ -47,10 +47,13 @@ public final class io/dataloom/assets/AssetChunkUpload {
 public final class io/dataloom/assets/AssetErrorKind : java/lang/Enum {
 	public static final field ASSET_NOT_FOUND Lio/dataloom/assets/AssetErrorKind;
 	public static final field ASSET_VERSION_CONFLICT Lio/dataloom/assets/AssetErrorKind;
+	public static final field CHUNK_AUTHENTICATION_FAILED Lio/dataloom/assets/AssetErrorKind;
 	public static final field CHUNK_DIGEST_MISMATCH Lio/dataloom/assets/AssetErrorKind;
 	public static final field CHUNK_LENGTH_MISMATCH Lio/dataloom/assets/AssetErrorKind;
 	public static final field CHUNK_OUT_OF_RANGE Lio/dataloom/assets/AssetErrorKind;
 	public static final field EMPTY_ASSET Lio/dataloom/assets/AssetErrorKind;
+	public static final field ENCRYPTION_KEY_INVALID Lio/dataloom/assets/AssetErrorKind;
+	public static final field ENCRYPTION_KEY_UNAVAILABLE Lio/dataloom/assets/AssetErrorKind;
 	public static final field INCOMPLETE_UPLOAD Lio/dataloom/assets/AssetErrorKind;
 	public static final field OBJECT_DIGEST_MISMATCH Lio/dataloom/assets/AssetErrorKind;
 	public static final field PROVIDER_REJECTED Lio/dataloom/assets/AssetErrorKind;
@@ -63,6 +66,8 @@ public final class io/dataloom/assets/AssetErrorKind : java/lang/Enum {
 	public static final field SINK_FAILURE Lio/dataloom/assets/AssetErrorKind;
 	public static final field SOURCE_CONTENT_CHANGED Lio/dataloom/assets/AssetErrorKind;
 	public static final field SOURCE_FAILURE Lio/dataloom/assets/AssetErrorKind;
+	public static final field TRANSFORM_FRAME_INVALID Lio/dataloom/assets/AssetErrorKind;
+	public static final field TRANSFORM_UNSUPPORTED Lio/dataloom/assets/AssetErrorKind;
 	public final fun getCategory ()Lio/dataloom/api/error/ErrorCategory;
 	public final fun getCode-7tkViRw ()Ljava/lang/String;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
@@ -158,8 +163,8 @@ public final class io/dataloom/assets/AssetTransferDirection : java/lang/Enum {
 }
 
 public final class io/dataloom/assets/AssetTransferEngine {
-	public fun <init> (Lio/dataloom/assets/AssetProvider;Lio/dataloom/assets/AssetTransferSessionStore;Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;ILio/dataloom/api/security/DigestAlgorithm;I)V
-	public synthetic fun <init> (Lio/dataloom/assets/AssetProvider;Lio/dataloom/assets/AssetTransferSessionStore;Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;ILio/dataloom/api/security/DigestAlgorithm;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/dataloom/assets/AssetProvider;Lio/dataloom/assets/AssetTransferSessionStore;Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;ILio/dataloom/api/security/DigestAlgorithm;ILio/dataloom/assets/transform/AssetTransferTransforms;)V
+	public synthetic fun <init> (Lio/dataloom/assets/AssetProvider;Lio/dataloom/assets/AssetTransferSessionStore;Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;ILio/dataloom/api/security/DigestAlgorithm;ILio/dataloom/assets/transform/AssetTransferTransforms;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun cancel-6lL3Q7Q (Ljava/lang/String;Lio/dataloom/assets/AssetSink;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun cancel-6lL3Q7Q$default (Lio/dataloom/assets/AssetTransferEngine;Ljava/lang/String;Lio/dataloom/assets/AssetSink;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public final fun download-q0nRlsc (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Lio/dataloom/assets/AssetSink;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -574,20 +579,59 @@ public final class io/dataloom/assets/testkit/AssetProviderContractReport$Result
 	public final fun getPassed ()Z
 }
 
+public final class io/dataloom/assets/transform/AesGcmAssetChunkCipher : io/dataloom/assets/transform/AssetChunkCipher {
+	public static final field Companion Lio/dataloom/assets/transform/AesGcmAssetChunkCipher$Companion;
+	public static final field KEY_BYTES I
+	public static final field NONCE_BYTES I
+	public static final field TAG_BYTES I
+	public fun <init> (Lio/dataloom/assets/transform/AssetKeyResolver;Lio/dataloom/api/random/DataLoomSecureRandom;)V
+	public fun getAlgorithm-r1VcTaU ()Ljava/lang/String;
+	public fun isSupported ()Z
+	public fun open-sPZQwjs (Ljava/lang/String;ILio/dataloom/assets/transform/AssetSealedChunk;[BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun seal-sPZQwjs (Ljava/lang/String;I[B[BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/assets/transform/AesGcmAssetChunkCipher$Companion {
+	public final fun getLABEL-r1VcTaU ()Ljava/lang/String;
+}
+
 public final class io/dataloom/assets/transform/AssetChunkAuthenticationException : java/lang/RuntimeException {
 	public fun <init> (Ljava/lang/String;)V
 }
 
 public abstract interface class io/dataloom/assets/transform/AssetChunkCipher {
 	public abstract fun getAlgorithm-r1VcTaU ()Ljava/lang/String;
+	public fun isSupported ()Z
 	public abstract fun open-sPZQwjs (Ljava/lang/String;ILio/dataloom/assets/transform/AssetSealedChunk;[BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun seal-sPZQwjs (Ljava/lang/String;I[B[BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/assets/transform/AssetChunkCipher$DefaultImpls {
+	public static fun isSupported (Lio/dataloom/assets/transform/AssetChunkCipher;)Z
 }
 
 public abstract interface class io/dataloom/assets/transform/AssetCompressor {
 	public abstract fun compress ([BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun decompress ([BILkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getAlgorithm-aDT3bAo ()Ljava/lang/String;
+	public fun isSupported ()Z
+}
+
+public final class io/dataloom/assets/transform/AssetCompressor$DefaultImpls {
+	public static fun isSupported (Lio/dataloom/assets/transform/AssetCompressor;)Z
+}
+
+public final class io/dataloom/assets/transform/AssetKeyInvalidException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public abstract interface class io/dataloom/assets/transform/AssetKeyResolver {
+	public abstract fun resolve-vHgRT0Y (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/assets/transform/AssetKeyUnavailableException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
 public final class io/dataloom/assets/transform/AssetSealedChunk {
@@ -599,9 +643,52 @@ public final class io/dataloom/assets/transform/AssetSealedChunk {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/assets/transform/AssetTransferTransforms {
+	public static final field Companion Lio/dataloom/assets/transform/AssetTransferTransforms$Companion;
+	public synthetic fun <init> (Lio/dataloom/assets/transform/AssetCompressor;Lio/dataloom/assets/transform/AssetChunkCipher;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/assets/transform/AssetCompressor;Lio/dataloom/assets/transform/AssetChunkCipher;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCipher ()Lio/dataloom/assets/transform/AssetChunkCipher;
+	public final fun getCompressor ()Lio/dataloom/assets/transform/AssetCompressor;
+	public final fun getKeyReference-l1OYy3E ()Ljava/lang/String;
+	public final fun isEmpty ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/transform/AssetTransferTransforms$Companion {
+	public final fun getNONE ()Lio/dataloom/assets/transform/AssetTransferTransforms;
+}
+
+public final class io/dataloom/assets/transform/AssetTransformUnsupportedException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class io/dataloom/assets/transform/AssetWireFormat {
+	public static final field FRAME_VERSION I
+	public static final field INSTANCE Lio/dataloom/assets/transform/AssetWireFormat;
+	public static final field MAX_FRAME_OVERHEAD_BYTES I
+	public final fun isTransformed (Lio/dataloom/api/asset/AssetManifest;)Z
+}
+
+public final class io/dataloom/assets/transform/DeflateAssetCompressor : io/dataloom/assets/transform/AssetCompressor {
+	public static final field Companion Lio/dataloom/assets/transform/DeflateAssetCompressor$Companion;
+	public static final field DEFAULT_LEVEL I
+	public fun <init> ()V
+	public fun <init> (I)V
+	public synthetic fun <init> (IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun compress ([BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun decompress ([BILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getAlgorithm-aDT3bAo ()Ljava/lang/String;
+	public fun isSupported ()Z
+}
+
+public final class io/dataloom/assets/transform/DeflateAssetCompressor$Companion {
+	public final fun getLABEL-aDT3bAo ()Ljava/lang/String;
+}
+
 public final class io/dataloom/assets/transform/IdentityAssetCipher : io/dataloom/assets/transform/AssetChunkCipher {
 	public fun <init> ()V
 	public fun getAlgorithm-r1VcTaU ()Ljava/lang/String;
+	public fun isSupported ()Z
 	public fun open-sPZQwjs (Ljava/lang/String;ILio/dataloom/assets/transform/AssetSealedChunk;[BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun seal-sPZQwjs (Ljava/lang/String;I[B[BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
@@ -611,5 +698,6 @@ public final class io/dataloom/assets/transform/IdentityAssetCompressor : io/dat
 	public fun compress ([BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun decompress ([BILkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getAlgorithm-aDT3bAo ()Ljava/lang/String;
+	public fun isSupported ()Z
 }
 

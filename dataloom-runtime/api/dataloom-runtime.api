@@ -780,13 +780,14 @@ public final class io/dataloom/runtime/facade/DataLoom$DefaultImpls {
 }
 
 public final class io/dataloom/runtime/facade/DataLoomAssetTransferSpec {
-	public fun <init> (Lio/dataloom/assets/AssetProvider;Lio/dataloom/assets/AssetTransferSessionStore;Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;ILio/dataloom/api/security/DigestAlgorithm;I)V
-	public synthetic fun <init> (Lio/dataloom/assets/AssetProvider;Lio/dataloom/assets/AssetTransferSessionStore;Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;ILio/dataloom/api/security/DigestAlgorithm;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/dataloom/assets/AssetProvider;Lio/dataloom/assets/AssetTransferSessionStore;Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;ILio/dataloom/api/security/DigestAlgorithm;ILio/dataloom/assets/transform/AssetTransferTransforms;)V
+	public synthetic fun <init> (Lio/dataloom/assets/AssetProvider;Lio/dataloom/assets/AssetTransferSessionStore;Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;ILio/dataloom/api/security/DigestAlgorithm;ILio/dataloom/assets/transform/AssetTransferTransforms;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getChunkSizeBytes ()I
 	public final fun getDigestAlgorithm ()Lio/dataloom/api/security/DigestAlgorithm;
 	public final fun getDigestCalculator ()Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;
 	public final fun getProvider ()Lio/dataloom/assets/AssetProvider;
 	public final fun getSessionStore ()Lio/dataloom/assets/AssetTransferSessionStore;
+	public final fun getTransforms ()Lio/dataloom/assets/transform/AssetTransferTransforms;
 	public final fun getVerifyBufferBytes ()I
 	public fun toString ()Ljava/lang/String;
 }

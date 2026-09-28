@@ -1,14 +1,17 @@
 # Asset transfer (`dataloom-assets`)
 
-> **Status:** Slices 1 and 2 of `#97` (DL-043). Contracts, in-memory reference
-> behaviour, and (slice 2) durable session persistence on `DurableStateStore`
-> plus opt-in `DataLoomBuilder.assetTransferConfiguration` wiring. Still no real
-> compression/encryption, no file-backed source/sink, no parallelism, no
-> content-policy hooks, and no transport-backed provider. The decisions behind
-> it are in
+> **Status:** Slices 1 to 3 of `#97` (DL-043). Contracts, in-memory reference
+> behaviour, (slice 2) durable session persistence on `DurableStateStore` plus
+> opt-in `DataLoomBuilder.assetTransferConfiguration` wiring, and (slice 3)
+> per-chunk zlib compression and AES-256-GCM encryption wired into the engine
+> (encryption is JVM/Android only; Apple returns a typed `Unsupported`). Still
+> no file-backed source/sink, no parallelism, no content-policy hooks, and no
+> transport-backed provider. The decisions behind it are in
 > [ADR-0006](../adr/ADR-0006-asset-transfer-and-streaming-digest.md) (transfer
-> design) and [ADR-0008](../adr/ADR-0008-durable-asset-transfer-sessions.md)
-> (durable sessions and wiring), which list the ordered next slices.
+> design), [ADR-0008](../adr/ADR-0008-durable-asset-transfer-sessions.md)
+> (durable sessions and wiring) and
+> [ADR-0014](../adr/ADR-0014-asset-chunk-transforms-and-digest-domain.md)
+> (transforms and the digest domain), which list the ordered next slices.
 > `AssetManifest` itself is documented in [asset-manifest.md](./asset-manifest.md).
 
 **Module:** `dataloom-assets` (`io.dataloom.assets`, plus `.memory`,
@@ -30,7 +33,9 @@ targets. The incremental digest lives in `dataloom-model`
 | `AssetIntegrityVerifier` | Per-chunk and streaming whole-object verification; manifest preparation |
 | `AssetTransferEngine`, `AssetTransferOutcome` | Sequential resumable upload/download/cancel |
 | `AssetErrorKind`, `AssetTransferError` | Closed failure classes as canonical `DataLoomError`s |
-| `AssetCompressor`, `AssetChunkCipher` (+ identity implementations) | Compression and AEAD-style cipher SPIs |
+| `AssetCompressor`, `AssetChunkCipher` (+ identity test doubles) | Compression and AEAD-style cipher SPIs; each reports `isSupported` |
+| `DeflateAssetCompressor`, `AesGcmAssetChunkCipher`, `AssetKeyResolver` | zlib/DEFLATE and AES-256-GCM (JVM/Android; typed `Unsupported` on Apple); host-supplied keys |
+| `AssetTransferTransforms`, `AssetWireFormat` | Transforms an engine applies; frame constants and `isTransformed(manifest)` for providers |
 | `InMemoryAssetProvider`, `InMemoryAssetSource`, `InMemoryAssetSink` | Reference implementations for tests and samples (not bounded-memory stores) |
 | `AssetProviderContractKit` | Provider test kit (framework-neutral) |
 
@@ -142,9 +147,59 @@ Single-owner, not thread-safe. `finish()` closes the accumulator; `close()` is
 idempotent. A running digest cannot be snapshotted, so a resumed download
 re-reads the staged bytes to verify.
 
+## Compression and encryption
+
+```kotlin
+val transforms = AssetTransferTransforms(
+    compressor = DeflateAssetCompressor(),                        // zlib/DEFLATE, all platforms
+    cipher = AesGcmAssetChunkCipher(keyResolver, secureRandom),   // AES-256-GCM, JVM/Android only
+    keyReference = KeyReference("asset-key-2026"),                // recorded in the manifest
+)
+val engine = AssetTransferEngine(provider, sessions, digests, transforms = transforms)
+// or: DataLoomAssetTransferSpec(provider, sessions, digests, transforms = transforms)
+```
+
+- **Keys are the host's.** `AssetKeyResolver` maps a `KeyReference` to 32 key
+  bytes when a chunk is sealed or opened (typically from a platform keystore).
+  DataLoom never generates, stores, caches or persists key material, and does not
+  modify the array you return. The same reference must keep resolving to the same
+  key for the life of an asset version. `secureRandom` is a
+  `DataLoomSecureRandom` (`SystemDataLoomSecureRandom` on JVM/Android,
+  `AppleDataLoomSecureRandom` on Apple); each chunk gets a fresh 96-bit nonce.
+- **Order.** Upload compresses then encrypts each chunk into a versioned frame;
+  download reverses it. A chunk that does not compress is stored raw, so
+  incompressible data is not enlarged beyond the 3-byte header (plus 28 bytes when
+  encrypted).
+- **Digests are over the logical bytes and verified by the client.** The
+  manifest's per-chunk and whole-object digests describe the plaintext, so a
+  provider that stores ciphertext cannot check them. The client checks each
+  chunk on upload before transforming and each decoded chunk plus the whole
+  assembled object on download; AES-GCM's tag protects the stored bytes.
+- **Provider obligations for transformed manifests** (`AssetWireFormat.isTransformed`):
+  store each frame exactly as received, return it exactly as stored, skip the
+  length and digest checks, do not verify the whole-object digest at completion.
+  `AssetProviderContractKit` has a scenario for it.
+- **What is bound as associated data:** frame version and flags, chunk index and
+  count, asset id, asset version and size (not the transfer session id, which
+  differs between uploader and downloader). Moving a chunk, or taking it from
+  another asset or version, fails authentication.
+- **Failures.** `TRANSFORM_UNSUPPORTED` (platform cannot run the algorithm, the
+  engine lacks a transform the manifest needs, or configured transforms differ
+  from a persisted session's) is raised before anything is transferred or, for a
+  resumed upload, fails the session rather than resuming it un-encrypted.
+  `ENCRYPTION_KEY_UNAVAILABLE` is resumable. `ENCRYPTION_KEY_INVALID`,
+  `CHUNK_AUTHENTICATION_FAILED` and `TRANSFORM_FRAME_INVALID` are terminal and
+  discard the download sink.
+- **Apple:** compression works; `AesGcmAssetChunkCipher.isSupported` is `false`
+  and any transfer configured with it returns `NotStarted(TRANSFORM_UNSUPPORTED)`.
+  See the ADR for why and for what closing the gap needs.
+- **Memory** is a small constant number of chunk-sized buffers, independent of
+  asset size. The provider's quota reservation counts the logical size; frames
+  can exceed it by up to 31 bytes per chunk.
+
 ## Not yet implemented
 
-Concrete compression and encryption algorithms, secure temp files and atomic
+AES-GCM on Apple, secure temp files and atomic
 promotion (and cleanup of abandoned persisted sessions), parallel transfer and
 fairness, content-policy hooks, `ProviderType`/lifecycle for asset providers, a
 transport-backed provider, and `AC-FUNC-005`. See

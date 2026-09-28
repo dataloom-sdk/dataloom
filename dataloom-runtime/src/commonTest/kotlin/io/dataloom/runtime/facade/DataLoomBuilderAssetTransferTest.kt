@@ -40,6 +40,7 @@ import io.dataloom.assets.memory.InMemoryAssetSink
 import io.dataloom.assets.memory.InMemoryAssetSource
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
@@ -101,6 +102,33 @@ class DataLoomBuilderAssetTransferTest {
         )
         assertIs<AssetTransferOutcome.Completed>(up)
         assertTrue(up.session.manifest.chunkLayout.chunkCount == 5, "the spec's chunk size was honoured")
+        val sink = InMemoryAssetSink()
+        assertIs<AssetTransferOutcome.Completed>(engine.download(AssetTransferSessionId("down"), AssetId("a"), null, sink))
+        assertContentEquals(bytes, sink.snapshot())
+    }
+
+    @Test
+    fun theSpecsTransformsReachTheEngineAndDefaultToNone() = runTest {
+        assertSame(io.dataloom.assets.transform.AssetTransferTransforms.NONE, spec(CountingAssetProvider(), RecordingStore()).transforms)
+
+        val provider = InMemoryAssetProvider(FnvDigests)
+        val dataLoom = builder()
+            .assetTransferConfiguration(
+                DataLoomAssetTransferSpec(
+                    provider, InMemoryAssetTransferSessionStore(), FnvDigests, chunkSizeBytes = 1_024,
+                    transforms = io.dataloom.assets.transform.AssetTransferTransforms(
+                        compressor = io.dataloom.assets.transform.DeflateAssetCompressor(),
+                    ),
+                ),
+            )
+            .build()
+        val engine = assertNotNull(dataLoom.assetTransfer)
+        val bytes = ByteArray(5_000) { 'q'.code.toByte() }
+        val up = engine.upload(
+            AssetTransferSessionId("up"), AssetId("a"), 1, AssetMediaType("application/octet-stream"), InMemoryAssetSource(bytes),
+        )
+        assertIs<AssetTransferOutcome.Completed>(up)
+        assertEquals("zlib-deflate", up.session.manifest.compression?.algorithm?.value)
         val sink = InMemoryAssetSink()
         assertIs<AssetTransferOutcome.Completed>(engine.download(AssetTransferSessionId("down"), AssetId("a"), null, sink))
         assertContentEquals(bytes, sink.snapshot())

@@ -3,13 +3,13 @@ package io.dataloom.assets.transform
 import io.dataloom.api.asset.AssetCompressionAlgorithm
 import io.dataloom.api.asset.AssetEncryptionAlgorithm
 import io.dataloom.api.security.KeyReference
+import io.dataloom.assets.AssetErrorKind
 
 /**
  * Per-chunk compression SPI (FR-ASSET-007).
  *
- * This slice ships the contract and an [IdentityAssetCompressor] only;
- * choosing and implementing a real algorithm (for example deflate) is a
- * later slice, made against this contract.
+ * Implementations: [IdentityAssetCompressor] (a test double) and
+ * [DeflateAssetCompressor] (zlib/DEFLATE, the algorithm ADR-0014 chose).
  *
  * Compression is applied to one chunk at a time so memory stays bounded by
  * the chunk size.
@@ -18,6 +18,13 @@ public interface AssetCompressor {
 
     /** The label recorded in `AssetCompressionMetadata.algorithm`. */
     public val algorithm: AssetCompressionAlgorithm
+
+    /**
+     * `false` if this platform cannot run the algorithm. The engine refuses to
+     * start a transfer with an unsupported transform
+     * ([AssetErrorKind.TRANSFORM_UNSUPPORTED]) instead of degrading.
+     */
+    public val isSupported: Boolean get() = true
 
     /** Compresses one chunk. */
     public suspend fun compress(chunk: ByteArray): ByteArray
@@ -69,16 +76,25 @@ public class AssetChunkAuthenticationException(message: String) : RuntimeExcepti
  * further context (asset id, version) as [associatedData] to bind a sealed
  * chunk to its position, so chunks cannot be swapped or replayed undetected.
  *
- * This slice ships only the contract and an [IdentityAssetCipher]; choosing
- * and implementing a real algorithm (for example AES-256-GCM) is a later
- * slice. Whether integrity digests cover logical (plaintext) or transferred
- * (sealed) bytes when a cipher is in use is decided in that slice; see
- * `docs/adr/ADR-0006-asset-transfer-and-streaming-digest.md`.
+ * Implementations: [IdentityAssetCipher] (a test double that encrypts
+ * nothing) and [AesGcmAssetChunkCipher] (AES-256-GCM, the algorithm ADR-0014
+ * chose; unsupported on Apple platforms, see [isSupported]). Integrity digests
+ * cover the *logical* (plaintext, uncompressed) bytes and are verified by the
+ * client; the AEAD tag is what protects the stored bytes (ADR-0014, D24).
  */
 public interface AssetChunkCipher {
 
     /** The label recorded in `AssetEncryptionMetadata.algorithm`. */
     public val algorithm: AssetEncryptionAlgorithm
+
+    /**
+     * `false` if this platform cannot run the algorithm. [seal] and [open]
+     * then throw [AssetTransformUnsupportedException], and the engine refuses
+     * to start a transfer with this cipher
+     * ([AssetErrorKind.TRANSFORM_UNSUPPORTED]) instead of degrading to
+     * plaintext.
+     */
+    public val isSupported: Boolean get() = true
 
     /** Seals [plaintext] under the key named by [keyReference], binding [associatedData]. */
     public suspend fun seal(
