@@ -145,6 +145,7 @@ public final class io/dataloom/runtime/conflict/ConflictOrchestrationBindings {
 	public final fun getResolverSelectionPolicy ()Lio/dataloom/runtime/conflict/ConflictResolverSelectionPolicy;
 	public fun hashCode ()I
 	public final fun selectResolverId-oNMfQJg (Lio/dataloom/runtime/conflict/ConflictResolverSelectionContext;)Ljava/lang/String;
+	public final fun selectedTier (Lio/dataloom/runtime/conflict/ConflictResolverSelectionContext;)Lio/dataloom/runtime/conflict/ConflictResolverSelectionTier;
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -356,6 +357,7 @@ public final class io/dataloom/runtime/conflict/ConflictResolverSelectionPolicy 
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getRules ()Ljava/util/List;
 	public fun hashCode ()I
+	public final fun matchedTier (Lio/dataloom/runtime/conflict/ConflictResolverSelectionContext;)Lio/dataloom/runtime/conflict/ConflictResolverSelectionTier;
 	public final fun select-oNMfQJg (Lio/dataloom/runtime/conflict/ConflictResolverSelectionContext;)Ljava/lang/String;
 	public fun toString ()Ljava/lang/String;
 }
@@ -401,6 +403,16 @@ public final class io/dataloom/runtime/conflict/ConflictResolverSelectionRule$Fo
 	public final fun getWorkflowId-AO9uWSE ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/conflict/ConflictResolverSelectionTier : java/lang/Enum {
+	public static final field ENTITY_TYPE Lio/dataloom/runtime/conflict/ConflictResolverSelectionTier;
+	public static final field GLOBAL Lio/dataloom/runtime/conflict/ConflictResolverSelectionTier;
+	public static final field TENANT Lio/dataloom/runtime/conflict/ConflictResolverSelectionTier;
+	public static final field WORKFLOW Lio/dataloom/runtime/conflict/ConflictResolverSelectionTier;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/conflict/ConflictResolverSelectionTier;
+	public static fun values ()[Lio/dataloom/runtime/conflict/ConflictResolverSelectionTier;
 }
 
 public final class io/dataloom/runtime/conflict/DurableConflictDetectionCoordinator {
@@ -1684,9 +1696,20 @@ public final class io/dataloom/runtime/observation/retry/ObservedCircuitBreakerE
 	public static synthetic fun execute$default (Lio/dataloom/runtime/observation/retry/ObservedCircuitBreakerExecutionGate;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryContext;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
+public final class io/dataloom/runtime/observation/retry/ObservedConflictAdministrationCoordinator {
+	public fun <init> (Lio/dataloom/runtime/conflict/ConflictAdministrationCoordinator;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/observation/retry/BoundedRetryCircuitTelemetry;)V
+	public final fun execute (Lio/dataloom/api/conflict/ConflictAdministrationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun releaseQuarantine (Lio/dataloom/api/conflict/ConflictQuarantineReleaseRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
 public final class io/dataloom/runtime/observation/retry/ObservedRetryAdministrationCoordinator {
 	public fun <init> (Lio/dataloom/runtime/retry/RetryAdministrationCoordinator;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/observation/retry/BoundedRetryCircuitTelemetry;)V
 	public final fun execute (Lio/dataloom/api/retry/RetryAdministrationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/observation/retry/ObservedSynchronizationConflictOrchestrator {
+	public fun <init> (Lio/dataloom/runtime/conflict/SynchronizationConflictOrchestrator;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/observation/retry/BoundedRetryCircuitTelemetry;)V
+	public final fun detectAndResolve (Lio/dataloom/runtime/conflict/ConflictOrchestrationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/dataloom/runtime/observation/retry/ObservedSynchronizationRetryOrchestrator {
@@ -1746,16 +1769,23 @@ public final class io/dataloom/runtime/observation/retry/RetryCircuitLogSeverity
 }
 
 public final class io/dataloom/runtime/observation/retry/RetryCircuitMetricKey {
-	public fun <init> (Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;Lio/dataloom/api/circuit/CircuitBreakerScopeKind;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;Lio/dataloom/api/circuit/CircuitBreakerScopeKind;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;Ljava/lang/String;Lio/dataloom/api/conflict/UnresolvedConflictReason;Lio/dataloom/runtime/conflict/ConflictResolverSelectionTier;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;Lio/dataloom/api/circuit/CircuitBreakerScopeKind;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;Ljava/lang/String;Lio/dataloom/api/conflict/UnresolvedConflictReason;Lio/dataloom/runtime/conflict/ConflictResolverSelectionTier;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
 	public final fun component2 ()Lio/dataloom/api/circuit/CircuitBreakerScopeKind;
 	public final fun component3 ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;
 	public final fun component4 ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;
-	public final fun copy (Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;Lio/dataloom/api/circuit/CircuitBreakerScopeKind;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;)Lio/dataloom/runtime/observation/retry/RetryCircuitMetricKey;
-	public static synthetic fun copy$default (Lio/dataloom/runtime/observation/retry/RetryCircuitMetricKey;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;Lio/dataloom/api/circuit/CircuitBreakerScopeKind;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;ILjava/lang/Object;)Lio/dataloom/runtime/observation/retry/RetryCircuitMetricKey;
+	public final fun component5-5fmtlrw ()Ljava/lang/String;
+	public final fun component6 ()Lio/dataloom/api/conflict/UnresolvedConflictReason;
+	public final fun component7 ()Lio/dataloom/runtime/conflict/ConflictResolverSelectionTier;
+	public final fun copy-fqpkalQ (Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;Lio/dataloom/api/circuit/CircuitBreakerScopeKind;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;Ljava/lang/String;Lio/dataloom/api/conflict/UnresolvedConflictReason;Lio/dataloom/runtime/conflict/ConflictResolverSelectionTier;)Lio/dataloom/runtime/observation/retry/RetryCircuitMetricKey;
+	public static synthetic fun copy-fqpkalQ$default (Lio/dataloom/runtime/observation/retry/RetryCircuitMetricKey;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;Lio/dataloom/api/circuit/CircuitBreakerScopeKind;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;Ljava/lang/String;Lio/dataloom/api/conflict/UnresolvedConflictReason;Lio/dataloom/runtime/conflict/ConflictResolverSelectionTier;ILjava/lang/Object;)Lio/dataloom/runtime/observation/retry/RetryCircuitMetricKey;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCircuitDetail ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;
 	public final fun getCircuitOperationOutcome ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;
+	public final fun getConflictResolverId-5fmtlrw ()Ljava/lang/String;
+	public final fun getConflictSelectionTier ()Lio/dataloom/runtime/conflict/ConflictResolverSelectionTier;
+	public final fun getConflictUnresolvedReason ()Lio/dataloom/api/conflict/UnresolvedConflictReason;
 	public final fun getScopeKind ()Lio/dataloom/api/circuit/CircuitBreakerScopeKind;
 	public final fun getSignal ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
 	public fun hashCode ()I
@@ -1828,11 +1858,14 @@ public final class io/dataloom/runtime/observation/retry/RetryCircuitTelemetryCo
 }
 
 public final class io/dataloom/runtime/observation/retry/RetryCircuitTelemetryEvent {
-	public synthetic fun <init> (Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryContext;Lio/dataloom/api/circuit/CircuitBreakerScopeKind;Lio/dataloom/api/circuit/CircuitBreakerPhase;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryContext;Lio/dataloom/api/circuit/CircuitBreakerScopeKind;Lio/dataloom/api/circuit/CircuitBreakerPhase;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryContext;Lio/dataloom/api/circuit/CircuitBreakerScopeKind;Lio/dataloom/api/circuit/CircuitBreakerPhase;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/conflict/UnresolvedConflictReason;Lio/dataloom/runtime/conflict/ConflictResolverSelectionTier;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryContext;Lio/dataloom/api/circuit/CircuitBreakerScopeKind;Lio/dataloom/api/circuit/CircuitBreakerPhase;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;Lio/dataloom/api/retry/RetryAttempt;Lio/dataloom/api/scheduling/SchedulingDelay;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/conflict/UnresolvedConflictReason;Lio/dataloom/runtime/conflict/ConflictResolverSelectionTier;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getCircuitDetail ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryCircuitDetail;
 	public final fun getCircuitOperationOutcome ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryOperationOutcome;
 	public final fun getCircuitPhase ()Lio/dataloom/api/circuit/CircuitBreakerPhase;
+	public final fun getConflictResolverId-5fmtlrw ()Ljava/lang/String;
+	public final fun getConflictSelectionTier ()Lio/dataloom/runtime/conflict/ConflictResolverSelectionTier;
+	public final fun getConflictUnresolvedReason ()Lio/dataloom/api/conflict/UnresolvedConflictReason;
 	public final fun getContext ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetryContext;
 	public final fun getErrorCode-xOVhP9Q ()Ljava/lang/String;
 	public final fun getOccurredAt ()Lio/dataloom/api/time/DataLoomInstant;
@@ -1901,6 +1934,14 @@ public final class io/dataloom/runtime/observation/retry/RetryCircuitTelemetrySi
 	public static final field CIRCUIT_PERMISSION_CONTENTION Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
 	public static final field CIRCUIT_PERMISSION_PERSISTENCE_FAILED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
 	public static final field CIRCUIT_REJECTED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field CONFLICT_DEFERRED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field CONFLICT_DETECTED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field CONFLICT_FAILED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field CONFLICT_QUARANTINED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field CONFLICT_QUARANTINE_RELEASED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field CONFLICT_RESOLVED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field CONFLICT_RESOLVER_SELECTION_TIER_HIT Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
+	public static final field CONFLICT_UNRESOLVED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
 	public static final field RETRY_ADMINISTRATION_AUTHORIZATION_DENIED Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
 	public static final field RETRY_ADMINISTRATION_CLOCK_REGRESSION Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
 	public static final field RETRY_ADMINISTRATION_COMMAND_CONFLICT Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySignal;
