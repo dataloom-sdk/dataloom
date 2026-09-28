@@ -325,7 +325,7 @@ class PluginDependencyGatingTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `every unsatisfied dependency is reported, not only the first`() {
+    fun `every unsatisfied dependency is reported and not only the first`() {
         val registry = PluginRegistry(
             listOf(
                 plugin("app", dependencies = setOf(dependency("missing-a"), dependency("missing-b"))),
