@@ -762,6 +762,7 @@ public abstract interface class io/dataloom/runtime/facade/DataLoom {
 	public fun getCircuitQueueWorker ()Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorker;
 	public fun getConflictAdministration ()Lio/dataloom/runtime/facade/DataLoomConflictAdministration;
 	public fun getGovernance ()Lio/dataloom/runtime/facade/DataLoomGovernance;
+	public fun getLifecycleDrain ()Lio/dataloom/runtime/facade/DataLoomLifecycleDrain;
 	public fun getPluginEngine ()Lio/dataloom/runtime/facade/DataLoomPluginEngine;
 	public fun getProtectedStrategySynchronization ()Lio/dataloom/runtime/facade/DataLoomProtectedStrategySynchronization;
 	public fun getProtectedSynchronization ()Lio/dataloom/runtime/facade/DataLoomProtectedSynchronization;
@@ -785,6 +786,7 @@ public final class io/dataloom/runtime/facade/DataLoom$DefaultImpls {
 	public static fun getCircuitQueueWorker (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorker;
 	public static fun getConflictAdministration (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomConflictAdministration;
 	public static fun getGovernance (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomGovernance;
+	public static fun getLifecycleDrain (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomLifecycleDrain;
 	public static fun getPluginEngine (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomPluginEngine;
 	public static fun getProtectedStrategySynchronization (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomProtectedStrategySynchronization;
 	public static fun getProtectedSynchronization (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomProtectedSynchronization;
@@ -823,6 +825,7 @@ public final class io/dataloom/runtime/facade/DataLoomBuilder {
 	public final fun defaultStrategyProviderBindings (Lio/dataloom/api/provider/StrategyProviderBindings;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun governanceConfiguration (Lio/dataloom/runtime/facade/DataLoomGovernanceSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun inboundConfiguration (Lio/dataloom/runtime/execution/inbound/InboundPullPipelineConfiguration;)Lio/dataloom/runtime/facade/DataLoomBuilder;
+	public final fun lifecycleDrainConfiguration (Lio/dataloom/runtime/facade/DataLoomLifecycleDrainSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun observer (Lio/dataloom/api/observation/SynchronizationObserver;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun observers ([Lio/dataloom/api/observation/SynchronizationObserver;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun operationalEventOutboxConfiguration (Lio/dataloom/runtime/facade/DataLoomOperationalEventOutboxSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
@@ -958,6 +961,19 @@ public final class io/dataloom/runtime/facade/DataLoomGovernanceSpec {
 	public final fun getAuditStore ()Lio/dataloom/governance/audit/AuditStore;
 	public final fun getHmacCalculator ()Lio/dataloom/api/security/DataLoomHmacCalculator;
 	public final fun getRbacPolicy ()Lio/dataloom/governance/rbac/RbacPolicy;
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/runtime/facade/DataLoomLifecycleDrain {
+	public abstract fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/runtime/facade/DataLoomLifecycleDrainSpec {
+	public synthetic fun <init> (Lio/dataloom/api/lifecycle/AppLifecycleProvider;Ljava/lang/String;Lio/dataloom/runtime/facade/LifecycleDrainPolicy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/lifecycle/AppLifecycleProvider;Ljava/lang/String;Lio/dataloom/runtime/facade/LifecycleDrainPolicy;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getConsumerId-fjIhat0 ()Ljava/lang/String;
+	public final fun getLifecycleProvider ()Lio/dataloom/api/lifecycle/AppLifecycleProvider;
+	public final fun getPolicy ()Lio/dataloom/runtime/facade/LifecycleDrainPolicy;
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -1186,6 +1202,40 @@ public final class io/dataloom/runtime/facade/DataLoomTransportProtectionSpec {
 public final class io/dataloom/runtime/facade/HealthTrackingQueueWorkersKt {
 	public static final fun withHealthTracking (Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorker;Lio/dataloom/runtime/observation/health/QueueWorkerHealthTracker;)Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorker;
 	public static final fun withHealthTracking (Lio/dataloom/runtime/facade/DataLoomQueueWorker;Lio/dataloom/runtime/observation/health/QueueWorkerHealthTracker;)Lio/dataloom/runtime/facade/DataLoomQueueWorker;
+}
+
+public abstract interface class io/dataloom/runtime/facade/LifecycleDrainEnd {
+}
+
+public final class io/dataloom/runtime/facade/LifecycleDrainEnd$ObservationFailed : io/dataloom/runtime/facade/LifecycleDrainEnd {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/runtime/facade/LifecycleDrainEnd$ObservationFailed;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/facade/LifecycleDrainEnd$ObservationFailed;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/runtime/facade/LifecycleDrainEnd$ObservationFailed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/facade/LifecycleDrainEnd$StreamCompleted : io/dataloom/runtime/facade/LifecycleDrainEnd {
+	public static final field INSTANCE Lio/dataloom/runtime/facade/LifecycleDrainEnd$StreamCompleted;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/facade/LifecycleDrainPolicy {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/Set;Lio/dataloom/api/scheduling/SchedulingDelay;ILio/dataloom/api/scheduling/SchedulingDelay;)V
+	public synthetic fun <init> (Ljava/util/Set;Lio/dataloom/api/scheduling/SchedulingDelay;ILio/dataloom/api/scheduling/SchedulingDelay;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLeaseDuration ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun getMaxEntriesPerDrain ()I
+	public final fun getMinimumInterval ()Lio/dataloom/api/scheduling/SchedulingDelay;
+	public final fun getTriggers ()Ljava/util/Set;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public abstract interface class io/dataloom/runtime/facade/ProviderProtectedSynchronizationExecutionResult {
