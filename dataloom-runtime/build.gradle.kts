@@ -6,7 +6,8 @@ import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 // orchestration, and engine coordination.
 //
 // Rules:
-// - May depend on dataloom-api, dataloom-core, and dataloom-plugin.
+// - May depend on dataloom-api, dataloom-core, dataloom-plugin, and
+//   dataloom-governance.
 // - Must not depend on dataloom-testing.
 // - Must not expose internal implementation types publicly.
 //
@@ -50,6 +51,9 @@ kotlin {
                 // DataLoom.assetTransfer's public signature uses dataloom-assets'
                 // AssetTransferEngine.
                 api(project(":dataloom-assets"))
+                // DataLoom.governance's public signature uses dataloom-governance's
+                // RbacEvaluator, AuditLog, and PolicyPackVerifier.
+                api(project(":dataloom-governance"))
                 implementation(project(":dataloom-core"))
                 implementation(libs.kotlinx.coroutines.core)
             }

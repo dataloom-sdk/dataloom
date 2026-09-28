@@ -2,6 +2,7 @@ package io.dataloom.governance.audit
 
 import io.dataloom.api.security.DataLoomMac
 import io.dataloom.api.time.DataLoomInstant
+import io.dataloom.governance.CanonicalWriter
 
 /**
  * Deterministic, unambiguous byte encoding of everything a record MAC covers.
@@ -59,53 +60,5 @@ internal object AuditCanonicalEncoding {
             writer.string(value)
         }
         return writer.toByteArray()
-    }
-}
-
-private class CanonicalWriter {
-    private var buffer = ByteArray(INITIAL_CAPACITY)
-    private var size = 0
-
-    fun u8(value: Int) {
-        ensureCapacity(1)
-        buffer[size++] = value.toByte()
-    }
-
-    fun u32(value: Int) {
-        ensureCapacity(4)
-        for (shift in 24 downTo 0 step 8) {
-            buffer[size++] = (value ushr shift).toByte()
-        }
-    }
-
-    fun u64(value: Long) {
-        ensureCapacity(8)
-        for (shift in 56 downTo 0 step 8) {
-            buffer[size++] = (value ushr shift).toByte()
-        }
-    }
-
-    fun bytes(value: ByteArray) {
-        u32(value.size)
-        ensureCapacity(value.size)
-        value.copyInto(buffer, destinationOffset = size)
-        size += value.size
-    }
-
-    fun string(value: String) {
-        bytes(value.encodeToByteArray())
-    }
-
-    fun toByteArray(): ByteArray = buffer.copyOf(size)
-
-    private fun ensureCapacity(additional: Int) {
-        val required = size + additional
-        if (required > buffer.size) {
-            buffer = buffer.copyOf(maxOf(required, buffer.size * 2))
-        }
-    }
-
-    private companion object {
-        const val INITIAL_CAPACITY = 256
     }
 }

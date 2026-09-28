@@ -129,6 +129,7 @@ Apple distribution boundary.
 | `dataloom-config` | Library module | Typed configuration values/keys/schema/sources, versioned immutable snapshots, and deterministic precedence/rollback history — moved out of `dataloom-api` (`#93`), which now depends on it |
 | `dataloom-api` | Library module | Current public contracts, models, and error types |
 | `dataloom-core` | Library module | Internal platform-independent foundation |
+| `dataloom-governance` | Library module | `#99` enterprise governance: closed RBAC model and evaluator, tenant guard, hash-chained audit log, and HMAC-SHA256 signed policy packs ([details](../api/governance-foundation.md)); wired into `DataLoomBuilder` as the opt-in `governanceConfiguration` capability ([ADR-0005](../adr/ADR-0005-enterprise-governance-foundation.md), [ADR-0010](../adr/ADR-0010-governance-signed-policy-packs-and-runtime-wiring.md)) |
 | `dataloom-runtime` | Library module | Synchronization runtime and engine coordination |
 | `dataloom-testing` | Library module | Testing utilities, fakes, and controlled providers |
 | `dataloom-transport-ktor` | Optional reference module | Ktor-backed reference `TransportProvider`; depends only on `dataloom-api` and Ktor client |
@@ -318,7 +319,8 @@ Provides the synchronization runtime. Future content includes:
 Rules:
 
 - Public API may depend on `dataloom-model`, `dataloom-provider-api`,
-  `dataloom-api`, `dataloom-plugin-api`, and `dataloom-plugin`;
+  `dataloom-api`, `dataloom-plugin-api`, `dataloom-plugin`, and
+  `dataloom-governance` ([ADR-0010](../adr/ADR-0010-governance-signed-policy-packs-and-runtime-wiring.md));
   implementation may depend on `dataloom-core`.
 - Must not depend on `dataloom-testing`.
 - Must not expose internal implementation types publicly.
@@ -401,7 +403,12 @@ dataloom-runtime
 ├── depends on dataloom-api
 ├── depends on dataloom-plugin-api
 ├── depends on dataloom-plugin
+├── depends on dataloom-governance
 └── depends on dataloom-core
+
+dataloom-governance
+├── depends on dataloom-model
+└── depends on dataloom-api
 
 dataloom-testing
 ├── depends on dataloom-model
