@@ -1,6 +1,7 @@
 package io.dataloom.runtime.conflict
 
 import io.dataloom.api.conflict.ConflictQuarantineObservation
+import io.dataloom.api.conflict.ConflictQuarantineOccurrence
 import io.dataloom.api.conflict.ConflictQuarantineRecord
 import io.dataloom.api.conflict.ConflictResolutionDecision
 import io.dataloom.api.conflict.SynchronizationConflict
@@ -98,6 +99,9 @@ public sealed interface ConflictOrchestrationResult {
 
         /** The [ConflictDetectorId] of the detector that reported the conflict. */
         public val detectorId: ConflictDetectorId,
+
+        /** The counted quarantine occurrence, or `null` without a [ConflictQuarantineTracker]. */
+        public val quarantineOccurrence: ConflictQuarantineOccurrence? = null,
     ) : ConflictOrchestrationResult {
 
         /**
@@ -116,12 +120,14 @@ public sealed interface ConflictOrchestrationResult {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is ResolverNotConfigured) return false
-            return conflict == other.conflict && detectorId == other.detectorId
+            return conflict == other.conflict && detectorId == other.detectorId &&
+                quarantineOccurrence == other.quarantineOccurrence
         }
 
         override fun hashCode(): Int {
             var result = conflict.hashCode()
             result = 31 * result + detectorId.hashCode()
+            result = 31 * result + (quarantineOccurrence?.hashCode() ?: 0)
             return result
         }
     }
@@ -143,6 +149,9 @@ public sealed interface ConflictOrchestrationResult {
 
         /** The [ConflictResolverId] that was requested but not found. */
         public val resolverId: ConflictResolverId,
+
+        /** The counted quarantine occurrence, or `null` without a [ConflictQuarantineTracker]. */
+        public val quarantineOccurrence: ConflictQuarantineOccurrence? = null,
     ) : ConflictOrchestrationResult {
 
         /**
@@ -161,12 +170,14 @@ public sealed interface ConflictOrchestrationResult {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is ResolverNotFound) return false
-            return conflict == other.conflict && resolverId == other.resolverId
+            return conflict == other.conflict && resolverId == other.resolverId &&
+                quarantineOccurrence == other.quarantineOccurrence
         }
 
         override fun hashCode(): Int {
             var result = conflict.hashCode()
             result = 31 * result + resolverId.hashCode()
+            result = 31 * result + (quarantineOccurrence?.hashCode() ?: 0)
             return result
         }
     }
@@ -310,6 +321,9 @@ public sealed interface ConflictOrchestrationResult {
 
         /** The [ConflictResolverId] of the resolver that produced the decision. */
         public val resolverId: ConflictResolverId,
+
+        /** The counted quarantine occurrence, or `null` without a [ConflictQuarantineTracker]. */
+        public val quarantineOccurrence: ConflictQuarantineOccurrence? = null,
     ) : ConflictOrchestrationResult {
 
         /**
@@ -333,7 +347,8 @@ public sealed interface ConflictOrchestrationResult {
             return conflict == other.conflict &&
                 decision == other.decision &&
                 detectorId == other.detectorId &&
-                resolverId == other.resolverId
+                resolverId == other.resolverId &&
+                quarantineOccurrence == other.quarantineOccurrence
         }
 
         override fun hashCode(): Int {
@@ -341,6 +356,7 @@ public sealed interface ConflictOrchestrationResult {
             result = 31 * result + decision.hashCode()
             result = 31 * result + detectorId.hashCode()
             result = 31 * result + resolverId.hashCode()
+            result = 31 * result + (quarantineOccurrence?.hashCode() ?: 0)
             return result
         }
     }

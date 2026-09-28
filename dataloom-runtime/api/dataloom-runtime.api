@@ -208,29 +208,35 @@ public final class io/dataloom/runtime/conflict/ConflictOrchestrationResult$Quar
 }
 
 public final class io/dataloom/runtime/conflict/ConflictOrchestrationResult$Resolved : io/dataloom/runtime/conflict/ConflictOrchestrationResult {
-	public synthetic fun <init> (Lio/dataloom/api/conflict/SynchronizationConflict;Lio/dataloom/api/conflict/ConflictResolutionDecision;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/conflict/SynchronizationConflict;Lio/dataloom/api/conflict/ConflictResolutionDecision;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/conflict/ConflictQuarantineOccurrence;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/conflict/SynchronizationConflict;Lio/dataloom/api/conflict/ConflictResolutionDecision;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/conflict/ConflictQuarantineOccurrence;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getConflict ()Lio/dataloom/api/conflict/SynchronizationConflict;
 	public final fun getDecision ()Lio/dataloom/api/conflict/ConflictResolutionDecision;
 	public final fun getDetectorId-SQTsAXs ()Ljava/lang/String;
+	public final fun getQuarantineOccurrence ()Lio/dataloom/api/conflict/ConflictQuarantineOccurrence;
 	public final fun getResolverId-wOiKSnc ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/dataloom/runtime/conflict/ConflictOrchestrationResult$ResolverNotConfigured : io/dataloom/runtime/conflict/ConflictOrchestrationResult {
-	public synthetic fun <init> (Lio/dataloom/api/conflict/SynchronizationConflict;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/conflict/SynchronizationConflict;Ljava/lang/String;Lio/dataloom/api/conflict/ConflictQuarantineOccurrence;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/conflict/SynchronizationConflict;Ljava/lang/String;Lio/dataloom/api/conflict/ConflictQuarantineOccurrence;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getConflict ()Lio/dataloom/api/conflict/SynchronizationConflict;
 	public final fun getDetectorId-SQTsAXs ()Ljava/lang/String;
+	public final fun getQuarantineOccurrence ()Lio/dataloom/api/conflict/ConflictQuarantineOccurrence;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/dataloom/runtime/conflict/ConflictOrchestrationResult$ResolverNotFound : io/dataloom/runtime/conflict/ConflictOrchestrationResult {
-	public synthetic fun <init> (Lio/dataloom/api/conflict/SynchronizationConflict;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/conflict/SynchronizationConflict;Ljava/lang/String;Lio/dataloom/api/conflict/ConflictQuarantineOccurrence;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/conflict/SynchronizationConflict;Ljava/lang/String;Lio/dataloom/api/conflict/ConflictQuarantineOccurrence;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getConflict ()Lio/dataloom/api/conflict/SynchronizationConflict;
+	public final fun getQuarantineOccurrence ()Lio/dataloom/api/conflict/ConflictQuarantineOccurrence;
 	public final fun getResolverId-wOiKSnc ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;

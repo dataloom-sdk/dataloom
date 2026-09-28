@@ -343,7 +343,9 @@ detectAndResolve(request)
         → optionally emit ConflictDetected
         → select resolverId (policy tiers, then bindings.resolverId)
         → only with a quarantine tracker: count the occurrence; if quarantined return Quarantined,
-          if the counter is unavailable return QuarantineUnavailable (no resolver looked up either way)
+          if the counter is unavailable return QuarantineUnavailable (no resolver looked up either way);
+          a counted occurrence rides on the Resolved/ResolverNotConfigured/ResolverNotFound result so the
+          inbound pipeline can credit it back if the batch fails with a retry-eligible error (D21)
         → if none selected: return ResolverNotConfigured
         → look up resolver by the selected resolverId
         → if absent: return ResolverNotFound

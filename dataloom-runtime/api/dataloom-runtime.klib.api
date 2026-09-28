@@ -1058,7 +1058,7 @@ sealed interface io.dataloom.runtime.conflict/ConflictOrchestrationResult { // i
     }
 
     final class Resolved : io.dataloom.runtime.conflict/ConflictOrchestrationResult { // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved|null[0]
-        constructor <init>(io.dataloom.api.conflict/SynchronizationConflict, io.dataloom.api.conflict/ConflictResolutionDecision, io.dataloom.api.identifier/ConflictDetectorId, io.dataloom.api.identifier/ConflictResolverId) // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.<init>|<init>(io.dataloom.api.conflict.SynchronizationConflict;io.dataloom.api.conflict.ConflictResolutionDecision;io.dataloom.api.identifier.ConflictDetectorId;io.dataloom.api.identifier.ConflictResolverId){}[0]
+        constructor <init>(io.dataloom.api.conflict/SynchronizationConflict, io.dataloom.api.conflict/ConflictResolutionDecision, io.dataloom.api.identifier/ConflictDetectorId, io.dataloom.api.identifier/ConflictResolverId, io.dataloom.api.conflict/ConflictQuarantineOccurrence? = ...) // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.<init>|<init>(io.dataloom.api.conflict.SynchronizationConflict;io.dataloom.api.conflict.ConflictResolutionDecision;io.dataloom.api.identifier.ConflictDetectorId;io.dataloom.api.identifier.ConflictResolverId;io.dataloom.api.conflict.ConflictQuarantineOccurrence?){}[0]
 
         final val conflict // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.conflict|{}conflict[0]
             final fun <get-conflict>(): io.dataloom.api.conflict/SynchronizationConflict // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.conflict.<get-conflict>|<get-conflict>(){}[0]
@@ -1066,6 +1066,8 @@ sealed interface io.dataloom.runtime.conflict/ConflictOrchestrationResult { // i
             final fun <get-decision>(): io.dataloom.api.conflict/ConflictResolutionDecision // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.decision.<get-decision>|<get-decision>(){}[0]
         final val detectorId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.detectorId|{}detectorId[0]
             final fun <get-detectorId>(): io.dataloom.api.identifier/ConflictDetectorId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.detectorId.<get-detectorId>|<get-detectorId>(){}[0]
+        final val quarantineOccurrence // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.quarantineOccurrence|{}quarantineOccurrence[0]
+            final fun <get-quarantineOccurrence>(): io.dataloom.api.conflict/ConflictQuarantineOccurrence? // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.quarantineOccurrence.<get-quarantineOccurrence>|<get-quarantineOccurrence>(){}[0]
         final val resolverId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.resolverId|{}resolverId[0]
             final fun <get-resolverId>(): io.dataloom.api.identifier/ConflictResolverId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.Resolved.resolverId.<get-resolverId>|<get-resolverId>(){}[0]
 
@@ -1075,12 +1077,14 @@ sealed interface io.dataloom.runtime.conflict/ConflictOrchestrationResult { // i
     }
 
     final class ResolverNotConfigured : io.dataloom.runtime.conflict/ConflictOrchestrationResult { // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotConfigured|null[0]
-        constructor <init>(io.dataloom.api.conflict/SynchronizationConflict, io.dataloom.api.identifier/ConflictDetectorId) // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotConfigured.<init>|<init>(io.dataloom.api.conflict.SynchronizationConflict;io.dataloom.api.identifier.ConflictDetectorId){}[0]
+        constructor <init>(io.dataloom.api.conflict/SynchronizationConflict, io.dataloom.api.identifier/ConflictDetectorId, io.dataloom.api.conflict/ConflictQuarantineOccurrence? = ...) // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotConfigured.<init>|<init>(io.dataloom.api.conflict.SynchronizationConflict;io.dataloom.api.identifier.ConflictDetectorId;io.dataloom.api.conflict.ConflictQuarantineOccurrence?){}[0]
 
         final val conflict // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotConfigured.conflict|{}conflict[0]
             final fun <get-conflict>(): io.dataloom.api.conflict/SynchronizationConflict // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotConfigured.conflict.<get-conflict>|<get-conflict>(){}[0]
         final val detectorId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotConfigured.detectorId|{}detectorId[0]
             final fun <get-detectorId>(): io.dataloom.api.identifier/ConflictDetectorId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotConfigured.detectorId.<get-detectorId>|<get-detectorId>(){}[0]
+        final val quarantineOccurrence // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotConfigured.quarantineOccurrence|{}quarantineOccurrence[0]
+            final fun <get-quarantineOccurrence>(): io.dataloom.api.conflict/ConflictQuarantineOccurrence? // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotConfigured.quarantineOccurrence.<get-quarantineOccurrence>|<get-quarantineOccurrence>(){}[0]
 
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotConfigured.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotConfigured.hashCode|hashCode(){}[0]
@@ -1088,10 +1092,12 @@ sealed interface io.dataloom.runtime.conflict/ConflictOrchestrationResult { // i
     }
 
     final class ResolverNotFound : io.dataloom.runtime.conflict/ConflictOrchestrationResult { // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound|null[0]
-        constructor <init>(io.dataloom.api.conflict/SynchronizationConflict, io.dataloom.api.identifier/ConflictResolverId) // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound.<init>|<init>(io.dataloom.api.conflict.SynchronizationConflict;io.dataloom.api.identifier.ConflictResolverId){}[0]
+        constructor <init>(io.dataloom.api.conflict/SynchronizationConflict, io.dataloom.api.identifier/ConflictResolverId, io.dataloom.api.conflict/ConflictQuarantineOccurrence? = ...) // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound.<init>|<init>(io.dataloom.api.conflict.SynchronizationConflict;io.dataloom.api.identifier.ConflictResolverId;io.dataloom.api.conflict.ConflictQuarantineOccurrence?){}[0]
 
         final val conflict // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound.conflict|{}conflict[0]
             final fun <get-conflict>(): io.dataloom.api.conflict/SynchronizationConflict // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound.conflict.<get-conflict>|<get-conflict>(){}[0]
+        final val quarantineOccurrence // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound.quarantineOccurrence|{}quarantineOccurrence[0]
+            final fun <get-quarantineOccurrence>(): io.dataloom.api.conflict/ConflictQuarantineOccurrence? // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound.quarantineOccurrence.<get-quarantineOccurrence>|<get-quarantineOccurrence>(){}[0]
         final val resolverId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound.resolverId|{}resolverId[0]
             final fun <get-resolverId>(): io.dataloom.api.identifier/ConflictResolverId // io.dataloom.runtime.conflict/ConflictOrchestrationResult.ResolverNotFound.resolverId.<get-resolverId>|<get-resolverId>(){}[0]
 
