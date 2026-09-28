@@ -1,19 +1,17 @@
 # ADR-0005: Enterprise governance foundation (RBAC, tenant isolation, tamper-evident audit, signed policy packs)
 
-> **Numbering note.** `main` currently holds only ADR-0001 and ADR-0002.
-> ADR-0003 (`ADR-0003-plugin-engine-module`) exists only on the open `#98` PR
-> branch (`feat/98-plugin-module-relocation`), so `0004` was chosen to avoid a
-> collision with it. If ADR numbering changes before merge, reconcile it; the
-> slug `enterprise-governance-foundation` is the stable identifier. This ADR is
-> deliberately not yet listed in the [decision index](./README.md) (that table
-> is edited by the `#98` PR too); the row is left for the merge that lands
-> second.
+> **Update (2026-09-28).** D10 is now implemented and the runtime wiring that
+> this ADR ruled out for slice 1 has landed; both are recorded in
+> [ADR-0010](./ADR-0010-governance-signed-policy-packs-and-runtime-wiring.md).
+> Where this document says nothing depends on `dataloom-governance` or that it is
+> not wired into `DataLoomBuilder`, that described slice 1 only.
 
 ## Status
 
 Accepted (decisions D7–D10 were delegated to and taken by the project lead on
-2026-09-19). Only the parts marked *implemented* below exist in source; the rest
-is accepted direction.
+2026-09-19). D7–D9 were implemented in slice 1 and D10 in slice 2
+([ADR-0010](./ADR-0010-governance-signed-policy-packs-and-runtime-wiring.md));
+the parts of this ADR not marked *implemented* remain accepted direction.
 
 ## Date
 
@@ -47,8 +45,11 @@ A new source module, `dataloom-governance`, package `io.dataloom.governance`.
 - It depends on `dataloom-api` (for the policy vocabulary) and, transitively,
   `dataloom-model` (identifiers, clocks, digest/HMAC primitives), plus
   `kotlinx.coroutines` for the audit log's writer mutex.
-- Nothing depends on it yet. It is not wired into `DataLoomBuilder`, and it must
-  not become a mandatory dependency of an existing module.
+- In slice 1 nothing depended on it and it was not wired into `DataLoomBuilder`.
+  From slice 2 `dataloom-runtime` depends on it to expose the opt-in
+  `DataLoom.governance` capability (ADR-0010); it still must not become a
+  mandatory *behavioral* dependency, and omitting the capability leaves runtime
+  behavior unchanged.
 - Platform-independent: no `expect`/`actual` in production code. The HMAC
   calculator is injected; the real JVM and Apple implementations from
   `dataloom-model` are what the tests bind.
@@ -132,7 +133,7 @@ persistence is a later slice. The chain always verifies from sequence 0;
 verifying retention-trimmed suffixes and key rotation (`KeyReference` in the
 record) are later design work.
 
-### D10 — Signed policy packs (*accepted, not yet implemented*)
+### D10 — Signed policy packs (*implemented in slice 2, see ADR-0010*)
 
 The V1 signature is **HMAC-SHA256 with a host-supplied key** via the existing
 `DataLoomHmacCalculator`. The scheme is symmetric; key custody, distribution, and

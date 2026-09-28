@@ -1,4 +1,4 @@
-# ADR-0010: Conflict metrics on the retry/circuit telemetry mechanism, and retry integration by existing machinery
+# ADR-0011: Conflict metrics on the retry/circuit telemetry mechanism, and retry integration by existing machinery
 
 - **Status:** Accepted (decision D20, taken by the project lead on 2026-09-21);
   implemented

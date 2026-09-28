@@ -166,7 +166,11 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                     goSignalPath: goSignalPath,
                     racerLeaseId: "lease-race-\(role.lowercased())",
                     racerConsumerId: "consumer-race-\(role.lowercased())",
-                    maxPollAttempts: 12000
+                    // 5ms * 240,000 == 20 min. The CI job runs each racing app on
+                    // its own Simulator, and a first launch on the second device
+                    // has taken 7 minutes, so a 60s window made the first app
+                    // give up before the second was even alive.
+                    maxPollAttempts: 240000
                 )
                 line = "\(result.outcome)\t\(result.retryAttemptNumber)\t" +
                     "\(result.retryWindowStartedAtEpochMillis)\t" +

@@ -10,6 +10,9 @@ import io.dataloom.api.scheduling.SchedulerProvider
 import io.dataloom.api.provider.ProviderBindingFailureReason
 import io.dataloom.api.provider.StrategyProviderBindings
 import io.dataloom.assets.AssetTransferEngine
+import io.dataloom.governance.audit.AuditLog
+import io.dataloom.governance.policy.PolicyPackVerifier
+import io.dataloom.governance.rbac.RbacEvaluator
 import io.dataloom.core.provider.ProviderLifecycleCoordinator
 import io.dataloom.core.provider.ProviderRegistry
 import io.dataloom.core.provider.ProviderResolutionResult
@@ -173,6 +176,7 @@ public class DataLoomBuilder {
     private var circuitAdministrationSpec: DataLoomCircuitAdministrationSpec? = null
     private var pluginSpec: DataLoomPluginSpec? = null
     private var assetTransferSpec: DataLoomAssetTransferSpec? = null
+    private var governanceSpec: DataLoomGovernanceSpec? = null
     private var pluginOperationalEventOutboxSpec: DataLoomPluginOperationalEventOutboxSpec? = null
 
     /**
@@ -899,6 +903,28 @@ public class DataLoomBuilder {
     }
 
     /**
+     * Configures the optional governance capability (`dataloom-governance`,
+     * ADR-0005): RBAC evaluation, tamper-evident audit logging, and
+     * signed-policy-pack verification.
+     *
+     * When supplied, [DataLoom.governance] is non-null after [build], with
+     * each of [DataLoomGovernance]'s own properties populated according to
+     * which pieces [spec] configured. When never supplied,
+     * [DataLoom.governance] is `null` and [DataLoom] behavior is unchanged.
+     * [build] performs no I/O, authorization, or clock read beyond
+     * constructing the configured collaborators; see [DataLoomGovernanceSpec].
+     *
+     * @param spec the RBAC policy, audit store/key, and/or HMAC calculator to
+     *   enable. See [DataLoomGovernanceSpec] for the full contract.
+     * @return this builder for chaining.
+     */
+    public fun governanceConfiguration(
+        spec: DataLoomGovernanceSpec,
+    ): DataLoomBuilder = apply {
+        governanceSpec = spec
+    }
+
+    /**
      * Enables the durable operational-event outbox bridge for the plugin engine:
      * every result [DataLoomPluginEngine.transition] and
      * [DataLoomPluginEngine.execute] return is also translated into an
@@ -1511,6 +1537,17 @@ public class DataLoomBuilder {
             )
         }
 
+        // --- 14e. Build optional governance capability ---
+        val governance = governanceSpec?.let { spec ->
+            DefaultDataLoomGovernance(
+                rbacEvaluator = spec.rbacPolicy?.let { RbacEvaluator(it) },
+                auditLog = spec.auditStore?.let { store ->
+                    AuditLog(store, checkNotNull(spec.hmacCalculator), deps.clock, checkNotNull(spec.auditKey))
+                },
+                policyPackVerifier = spec.hmacCalculator?.let { PolicyPackVerifier(it) },
+            )
+        }
+
         return DefaultDataLoom(
             lifecycleCoordinator = lifecycleCoordinator,
             executionCoordinator = executionCoordinator,
@@ -1546,6 +1583,7 @@ public class DataLoomBuilder {
             conflictAdministration = conflictAdministration,
             pluginEngine = pluginEngine,
             assetTransfer = assetTransfer,
+            governance = governance,
         )
     }
 

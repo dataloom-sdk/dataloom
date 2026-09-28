@@ -624,6 +624,8 @@ abstract interface io.dataloom.runtime.facade/DataLoom { // io.dataloom.runtime.
         open fun <get-circuitQueueWorker>(): io.dataloom.runtime.facade/DataLoomCircuitQueueWorker? // io.dataloom.runtime.facade/DataLoom.circuitQueueWorker.<get-circuitQueueWorker>|<get-circuitQueueWorker>(){}[0]
     open val conflictAdministration // io.dataloom.runtime.facade/DataLoom.conflictAdministration|{}conflictAdministration[0]
         open fun <get-conflictAdministration>(): io.dataloom.runtime.facade/DataLoomConflictAdministration? // io.dataloom.runtime.facade/DataLoom.conflictAdministration.<get-conflictAdministration>|<get-conflictAdministration>(){}[0]
+    open val governance // io.dataloom.runtime.facade/DataLoom.governance|{}governance[0]
+        open fun <get-governance>(): io.dataloom.runtime.facade/DataLoomGovernance? // io.dataloom.runtime.facade/DataLoom.governance.<get-governance>|<get-governance>(){}[0]
     open val pluginEngine // io.dataloom.runtime.facade/DataLoom.pluginEngine|{}pluginEngine[0]
         open fun <get-pluginEngine>(): io.dataloom.runtime.facade/DataLoomPluginEngine? // io.dataloom.runtime.facade/DataLoom.pluginEngine.<get-pluginEngine>|<get-pluginEngine>(){}[0]
     open val protectedStrategySynchronization // io.dataloom.runtime.facade/DataLoom.protectedStrategySynchronization|{}protectedStrategySynchronization[0]
@@ -654,6 +656,15 @@ abstract interface io.dataloom.runtime.facade/DataLoomCircuitQueueWorker { // io
 abstract interface io.dataloom.runtime.facade/DataLoomConflictAdministration { // io.dataloom.runtime.facade/DataLoomConflictAdministration|null[0]
     abstract suspend fun execute(io.dataloom.api.conflict/ConflictAdministrationRequest): io.dataloom.runtime.conflict/ConflictAdministrationResult // io.dataloom.runtime.facade/DataLoomConflictAdministration.execute|execute(io.dataloom.api.conflict.ConflictAdministrationRequest){}[0]
     abstract suspend fun releaseQuarantine(io.dataloom.api.conflict/ConflictQuarantineReleaseRequest): io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult // io.dataloom.runtime.facade/DataLoomConflictAdministration.releaseQuarantine|releaseQuarantine(io.dataloom.api.conflict.ConflictQuarantineReleaseRequest){}[0]
+}
+
+abstract interface io.dataloom.runtime.facade/DataLoomGovernance { // io.dataloom.runtime.facade/DataLoomGovernance|null[0]
+    abstract val auditLog // io.dataloom.runtime.facade/DataLoomGovernance.auditLog|{}auditLog[0]
+        abstract fun <get-auditLog>(): io.dataloom.governance.audit/AuditLog? // io.dataloom.runtime.facade/DataLoomGovernance.auditLog.<get-auditLog>|<get-auditLog>(){}[0]
+    abstract val policyPackVerifier // io.dataloom.runtime.facade/DataLoomGovernance.policyPackVerifier|{}policyPackVerifier[0]
+        abstract fun <get-policyPackVerifier>(): io.dataloom.governance.policy/PolicyPackVerifier? // io.dataloom.runtime.facade/DataLoomGovernance.policyPackVerifier.<get-policyPackVerifier>|<get-policyPackVerifier>(){}[0]
+    abstract val rbacEvaluator // io.dataloom.runtime.facade/DataLoomGovernance.rbacEvaluator|{}rbacEvaluator[0]
+        abstract fun <get-rbacEvaluator>(): io.dataloom.governance.rbac/RbacEvaluator? // io.dataloom.runtime.facade/DataLoomGovernance.rbacEvaluator.<get-rbacEvaluator>|<get-rbacEvaluator>(){}[0]
 }
 
 abstract interface io.dataloom.runtime.facade/DataLoomPluginEngine { // io.dataloom.runtime.facade/DataLoomPluginEngine|null[0]
@@ -3478,6 +3489,7 @@ final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.
     final fun connectivityConfiguration(io.dataloom.runtime.connectivity/SynchronizationConnectivityConfiguration): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.connectivityConfiguration|connectivityConfiguration(io.dataloom.runtime.connectivity.SynchronizationConnectivityConfiguration){}[0]
     final fun defaultProviderBindings(io.dataloom.api.provider/SynchronizationProviderBindings): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.defaultProviderBindings|defaultProviderBindings(io.dataloom.api.provider.SynchronizationProviderBindings){}[0]
     final fun defaultStrategyProviderBindings(io.dataloom.api.provider/StrategyProviderBindings): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.defaultStrategyProviderBindings|defaultStrategyProviderBindings(io.dataloom.api.provider.StrategyProviderBindings){}[0]
+    final fun governanceConfiguration(io.dataloom.runtime.facade/DataLoomGovernanceSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.governanceConfiguration|governanceConfiguration(io.dataloom.runtime.facade.DataLoomGovernanceSpec){}[0]
     final fun inboundConfiguration(io.dataloom.runtime.execution.inbound/InboundPullPipelineConfiguration): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.inboundConfiguration|inboundConfiguration(io.dataloom.runtime.execution.inbound.InboundPullPipelineConfiguration){}[0]
     final fun observer(io.dataloom.api.observation/SynchronizationObserver): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.observer|observer(io.dataloom.api.observation.SynchronizationObserver){}[0]
     final fun observers(kotlin/Array<out io.dataloom.api.observation/SynchronizationObserver>...): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.observers|observers(kotlin.Array<out|io.dataloom.api.observation.SynchronizationObserver>...){}[0]
@@ -3632,6 +3644,19 @@ final class io.dataloom.runtime.facade/DataLoomConflictResolutionOperationalEven
         final fun <get-scope>(): io.dataloom.api.operational/OperationalEventOutboxScope // io.dataloom.runtime.facade/DataLoomConflictResolutionOperationalEventOutboxSpec.scope.<get-scope>|<get-scope>(){}[0]
     final val store // io.dataloom.runtime.facade/DataLoomConflictResolutionOperationalEventOutboxSpec.store|{}store[0]
         final fun <get-store>(): io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState> // io.dataloom.runtime.facade/DataLoomConflictResolutionOperationalEventOutboxSpec.store.<get-store>|<get-store>(){}[0]
+}
+
+final class io.dataloom.runtime.facade/DataLoomGovernanceSpec { // io.dataloom.runtime.facade/DataLoomGovernanceSpec|null[0]
+    constructor <init>(io.dataloom.governance.rbac/RbacPolicy? = ..., io.dataloom.governance.audit/AuditStore? = ..., kotlin/ByteArray? = ..., io.dataloom.api.security/DataLoomHmacCalculator? = ...) // io.dataloom.runtime.facade/DataLoomGovernanceSpec.<init>|<init>(io.dataloom.governance.rbac.RbacPolicy?;io.dataloom.governance.audit.AuditStore?;kotlin.ByteArray?;io.dataloom.api.security.DataLoomHmacCalculator?){}[0]
+
+    final val auditStore // io.dataloom.runtime.facade/DataLoomGovernanceSpec.auditStore|{}auditStore[0]
+        final fun <get-auditStore>(): io.dataloom.governance.audit/AuditStore? // io.dataloom.runtime.facade/DataLoomGovernanceSpec.auditStore.<get-auditStore>|<get-auditStore>(){}[0]
+    final val hmacCalculator // io.dataloom.runtime.facade/DataLoomGovernanceSpec.hmacCalculator|{}hmacCalculator[0]
+        final fun <get-hmacCalculator>(): io.dataloom.api.security/DataLoomHmacCalculator? // io.dataloom.runtime.facade/DataLoomGovernanceSpec.hmacCalculator.<get-hmacCalculator>|<get-hmacCalculator>(){}[0]
+    final val rbacPolicy // io.dataloom.runtime.facade/DataLoomGovernanceSpec.rbacPolicy|{}rbacPolicy[0]
+        final fun <get-rbacPolicy>(): io.dataloom.governance.rbac/RbacPolicy? // io.dataloom.runtime.facade/DataLoomGovernanceSpec.rbacPolicy.<get-rbacPolicy>|<get-rbacPolicy>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.runtime.facade/DataLoomGovernanceSpec.toString|toString(){}[0]
 }
 
 final class io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec { // io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec|null[0]
