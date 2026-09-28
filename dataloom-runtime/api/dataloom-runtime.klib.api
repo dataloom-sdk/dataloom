@@ -22,6 +22,19 @@ final enum class io.dataloom.runtime.conflict/ConflictOrchestrationStatus : kotl
     final fun values(): kotlin/Array<io.dataloom.runtime.conflict/ConflictOrchestrationStatus> // io.dataloom.runtime.conflict/ConflictOrchestrationStatus.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.runtime.conflict/ConflictResolverSelectionTier : kotlin/Enum<io.dataloom.runtime.conflict/ConflictResolverSelectionTier> { // io.dataloom.runtime.conflict/ConflictResolverSelectionTier|null[0]
+    enum entry ENTITY_TYPE // io.dataloom.runtime.conflict/ConflictResolverSelectionTier.ENTITY_TYPE|null[0]
+    enum entry GLOBAL // io.dataloom.runtime.conflict/ConflictResolverSelectionTier.GLOBAL|null[0]
+    enum entry TENANT // io.dataloom.runtime.conflict/ConflictResolverSelectionTier.TENANT|null[0]
+    enum entry WORKFLOW // io.dataloom.runtime.conflict/ConflictResolverSelectionTier.WORKFLOW|null[0]
+
+    final val entries // io.dataloom.runtime.conflict/ConflictResolverSelectionTier.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.conflict/ConflictResolverSelectionTier> // io.dataloom.runtime.conflict/ConflictResolverSelectionTier.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.conflict/ConflictResolverSelectionTier // io.dataloom.runtime.conflict/ConflictResolverSelectionTier.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.conflict/ConflictResolverSelectionTier> // io.dataloom.runtime.conflict/ConflictResolverSelectionTier.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.runtime.execution.bidirectional/BidirectionalExecutionOrder : kotlin/Enum<io.dataloom.runtime.execution.bidirectional/BidirectionalExecutionOrder> { // io.dataloom.runtime.execution.bidirectional/BidirectionalExecutionOrder|null[0]
     enum entry INBOUND_THEN_OUTBOUND // io.dataloom.runtime.execution.bidirectional/BidirectionalExecutionOrder.INBOUND_THEN_OUTBOUND|null[0]
     enum entry OUTBOUND_THEN_INBOUND // io.dataloom.runtime.execution.bidirectional/BidirectionalExecutionOrder.OUTBOUND_THEN_INBOUND|null[0]
@@ -253,6 +266,14 @@ final enum class io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySign
     enum entry CIRCUIT_PERMISSION_CONTENTION // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CIRCUIT_PERMISSION_CONTENTION|null[0]
     enum entry CIRCUIT_PERMISSION_PERSISTENCE_FAILED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CIRCUIT_PERMISSION_PERSISTENCE_FAILED|null[0]
     enum entry CIRCUIT_REJECTED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CIRCUIT_REJECTED|null[0]
+    enum entry CONFLICT_DEFERRED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CONFLICT_DEFERRED|null[0]
+    enum entry CONFLICT_DETECTED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CONFLICT_DETECTED|null[0]
+    enum entry CONFLICT_FAILED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CONFLICT_FAILED|null[0]
+    enum entry CONFLICT_QUARANTINED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CONFLICT_QUARANTINED|null[0]
+    enum entry CONFLICT_QUARANTINE_RELEASED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CONFLICT_QUARANTINE_RELEASED|null[0]
+    enum entry CONFLICT_RESOLVED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CONFLICT_RESOLVED|null[0]
+    enum entry CONFLICT_RESOLVER_SELECTION_TIER_HIT // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CONFLICT_RESOLVER_SELECTION_TIER_HIT|null[0]
+    enum entry CONFLICT_UNRESOLVED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.CONFLICT_UNRESOLVED|null[0]
     enum entry RETRY_ADMINISTRATION_AUTHORIZATION_DENIED // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.RETRY_ADMINISTRATION_AUTHORIZATION_DENIED|null[0]
     enum entry RETRY_ADMINISTRATION_CLOCK_REGRESSION // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.RETRY_ADMINISTRATION_CLOCK_REGRESSION|null[0]
     enum entry RETRY_ADMINISTRATION_COMMAND_CONFLICT // io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal.RETRY_ADMINISTRATION_COMMAND_CONFLICT|null[0]
@@ -3104,6 +3125,7 @@ final class io.dataloom.runtime.conflict/ConflictOrchestrationBindings { // io.d
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.hashCode|hashCode(){}[0]
     final fun selectResolverId(io.dataloom.runtime.conflict/ConflictResolverSelectionContext): io.dataloom.api.identifier/ConflictResolverId? // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.selectResolverId|selectResolverId(io.dataloom.runtime.conflict.ConflictResolverSelectionContext){}[0]
+    final fun selectedTier(io.dataloom.runtime.conflict/ConflictResolverSelectionContext): io.dataloom.runtime.conflict/ConflictResolverSelectionTier? // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.selectedTier|selectedTier(io.dataloom.runtime.conflict.ConflictResolverSelectionContext){}[0]
     final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictOrchestrationBindings.toString|toString(){}[0]
 }
 
@@ -3167,6 +3189,7 @@ final class io.dataloom.runtime.conflict/ConflictResolverSelectionPolicy { // io
 
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.conflict/ConflictResolverSelectionPolicy.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.runtime.conflict/ConflictResolverSelectionPolicy.hashCode|hashCode(){}[0]
+    final fun matchedTier(io.dataloom.runtime.conflict/ConflictResolverSelectionContext): io.dataloom.runtime.conflict/ConflictResolverSelectionTier? // io.dataloom.runtime.conflict/ConflictResolverSelectionPolicy.matchedTier|matchedTier(io.dataloom.runtime.conflict.ConflictResolverSelectionContext){}[0]
     final fun select(io.dataloom.runtime.conflict/ConflictResolverSelectionContext): io.dataloom.api.identifier/ConflictResolverId? // io.dataloom.runtime.conflict/ConflictResolverSelectionPolicy.select|select(io.dataloom.runtime.conflict.ConflictResolverSelectionContext){}[0]
     final fun toString(): kotlin/String // io.dataloom.runtime.conflict/ConflictResolverSelectionPolicy.toString|toString(){}[0]
 }
@@ -4279,10 +4302,23 @@ final class io.dataloom.runtime.observation.retry/ObservedCircuitBreakerExecutio
     final suspend fun <#A1: kotlin/Any?> execute(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.runtime.observation.retry/RetryCircuitTelemetryContext = ..., kotlin.coroutines/SuspendFunction0<io.dataloom.runtime.retry/CircuitProtectedOperationResult<#A1>>): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<#A1> // io.dataloom.runtime.observation.retry/ObservedCircuitBreakerExecutionGate.execute|execute(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryContext;kotlin.coroutines.SuspendFunction0<io.dataloom.runtime.retry.CircuitProtectedOperationResult<0:0>>){0§<kotlin.Any?>}[0]
 }
 
+final class io.dataloom.runtime.observation.retry/ObservedConflictAdministrationCoordinator { // io.dataloom.runtime.observation.retry/ObservedConflictAdministrationCoordinator|null[0]
+    constructor <init>(io.dataloom.runtime.conflict/ConflictAdministrationCoordinator, io.dataloom.api.time/DataLoomClock, io.dataloom.runtime.observation.retry/BoundedRetryCircuitTelemetry) // io.dataloom.runtime.observation.retry/ObservedConflictAdministrationCoordinator.<init>|<init>(io.dataloom.runtime.conflict.ConflictAdministrationCoordinator;io.dataloom.api.time.DataLoomClock;io.dataloom.runtime.observation.retry.BoundedRetryCircuitTelemetry){}[0]
+
+    final suspend fun execute(io.dataloom.api.conflict/ConflictAdministrationRequest): io.dataloom.runtime.conflict/ConflictAdministrationResult // io.dataloom.runtime.observation.retry/ObservedConflictAdministrationCoordinator.execute|execute(io.dataloom.api.conflict.ConflictAdministrationRequest){}[0]
+    final suspend fun releaseQuarantine(io.dataloom.api.conflict/ConflictQuarantineReleaseRequest): io.dataloom.runtime.conflict/ConflictQuarantineReleaseResult // io.dataloom.runtime.observation.retry/ObservedConflictAdministrationCoordinator.releaseQuarantine|releaseQuarantine(io.dataloom.api.conflict.ConflictQuarantineReleaseRequest){}[0]
+}
+
 final class io.dataloom.runtime.observation.retry/ObservedRetryAdministrationCoordinator { // io.dataloom.runtime.observation.retry/ObservedRetryAdministrationCoordinator|null[0]
     constructor <init>(io.dataloom.runtime.retry/RetryAdministrationCoordinator, io.dataloom.api.time/DataLoomClock, io.dataloom.runtime.observation.retry/BoundedRetryCircuitTelemetry) // io.dataloom.runtime.observation.retry/ObservedRetryAdministrationCoordinator.<init>|<init>(io.dataloom.runtime.retry.RetryAdministrationCoordinator;io.dataloom.api.time.DataLoomClock;io.dataloom.runtime.observation.retry.BoundedRetryCircuitTelemetry){}[0]
 
     final suspend fun execute(io.dataloom.api.retry/RetryAdministrationRequest): io.dataloom.runtime.retry/RetryAdministrationResult // io.dataloom.runtime.observation.retry/ObservedRetryAdministrationCoordinator.execute|execute(io.dataloom.api.retry.RetryAdministrationRequest){}[0]
+}
+
+final class io.dataloom.runtime.observation.retry/ObservedSynchronizationConflictOrchestrator { // io.dataloom.runtime.observation.retry/ObservedSynchronizationConflictOrchestrator|null[0]
+    constructor <init>(io.dataloom.runtime.conflict/SynchronizationConflictOrchestrator, io.dataloom.api.time/DataLoomClock, io.dataloom.runtime.observation.retry/BoundedRetryCircuitTelemetry) // io.dataloom.runtime.observation.retry/ObservedSynchronizationConflictOrchestrator.<init>|<init>(io.dataloom.runtime.conflict.SynchronizationConflictOrchestrator;io.dataloom.api.time.DataLoomClock;io.dataloom.runtime.observation.retry.BoundedRetryCircuitTelemetry){}[0]
+
+    final suspend fun detectAndResolve(io.dataloom.runtime.conflict/ConflictOrchestrationRequest): io.dataloom.runtime.conflict/ConflictOrchestrationResult // io.dataloom.runtime.observation.retry/ObservedSynchronizationConflictOrchestrator.detectAndResolve|detectAndResolve(io.dataloom.runtime.conflict.ConflictOrchestrationRequest){}[0]
 }
 
 final class io.dataloom.runtime.observation.retry/ObservedSynchronizationRetryOrchestrator { // io.dataloom.runtime.observation.retry/ObservedSynchronizationRetryOrchestrator|null[0]
@@ -4326,12 +4362,18 @@ final class io.dataloom.runtime.observation.retry/RetryCircuitExporterSnapshot {
 }
 
 final class io.dataloom.runtime.observation.retry/RetryCircuitMetricKey { // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey|null[0]
-    constructor <init>(io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal, io.dataloom.api.circuit/CircuitBreakerScopeKind?, io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome?, io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail?) // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.<init>|<init>(io.dataloom.runtime.observation.retry.RetryCircuitTelemetrySignal;io.dataloom.api.circuit.CircuitBreakerScopeKind?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryOperationOutcome?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryCircuitDetail?){}[0]
+    constructor <init>(io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal, io.dataloom.api.circuit/CircuitBreakerScopeKind?, io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome?, io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail?, io.dataloom.api.identifier/ConflictResolverId? = ..., io.dataloom.api.conflict/UnresolvedConflictReason? = ..., io.dataloom.runtime.conflict/ConflictResolverSelectionTier? = ...) // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.<init>|<init>(io.dataloom.runtime.observation.retry.RetryCircuitTelemetrySignal;io.dataloom.api.circuit.CircuitBreakerScopeKind?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryOperationOutcome?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryCircuitDetail?;io.dataloom.api.identifier.ConflictResolverId?;io.dataloom.api.conflict.UnresolvedConflictReason?;io.dataloom.runtime.conflict.ConflictResolverSelectionTier?){}[0]
 
     final val circuitDetail // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.circuitDetail|{}circuitDetail[0]
         final fun <get-circuitDetail>(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail? // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.circuitDetail.<get-circuitDetail>|<get-circuitDetail>(){}[0]
     final val circuitOperationOutcome // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.circuitOperationOutcome|{}circuitOperationOutcome[0]
         final fun <get-circuitOperationOutcome>(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome? // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.circuitOperationOutcome.<get-circuitOperationOutcome>|<get-circuitOperationOutcome>(){}[0]
+    final val conflictResolverId // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.conflictResolverId|{}conflictResolverId[0]
+        final fun <get-conflictResolverId>(): io.dataloom.api.identifier/ConflictResolverId? // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.conflictResolverId.<get-conflictResolverId>|<get-conflictResolverId>(){}[0]
+    final val conflictSelectionTier // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.conflictSelectionTier|{}conflictSelectionTier[0]
+        final fun <get-conflictSelectionTier>(): io.dataloom.runtime.conflict/ConflictResolverSelectionTier? // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.conflictSelectionTier.<get-conflictSelectionTier>|<get-conflictSelectionTier>(){}[0]
+    final val conflictUnresolvedReason // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.conflictUnresolvedReason|{}conflictUnresolvedReason[0]
+        final fun <get-conflictUnresolvedReason>(): io.dataloom.api.conflict/UnresolvedConflictReason? // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.conflictUnresolvedReason.<get-conflictUnresolvedReason>|<get-conflictUnresolvedReason>(){}[0]
     final val scopeKind // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.scopeKind|{}scopeKind[0]
         final fun <get-scopeKind>(): io.dataloom.api.circuit/CircuitBreakerScopeKind? // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.scopeKind.<get-scopeKind>|<get-scopeKind>(){}[0]
     final val signal // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.signal|{}signal[0]
@@ -4341,7 +4383,10 @@ final class io.dataloom.runtime.observation.retry/RetryCircuitMetricKey { // io.
     final fun component2(): io.dataloom.api.circuit/CircuitBreakerScopeKind? // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.component2|component2(){}[0]
     final fun component3(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome? // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.component3|component3(){}[0]
     final fun component4(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail? // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.component4|component4(){}[0]
-    final fun copy(io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal = ..., io.dataloom.api.circuit/CircuitBreakerScopeKind? = ..., io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome? = ..., io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail? = ...): io.dataloom.runtime.observation.retry/RetryCircuitMetricKey // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.copy|copy(io.dataloom.runtime.observation.retry.RetryCircuitTelemetrySignal;io.dataloom.api.circuit.CircuitBreakerScopeKind?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryOperationOutcome?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryCircuitDetail?){}[0]
+    final fun component5(): io.dataloom.api.identifier/ConflictResolverId? // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.component5|component5(){}[0]
+    final fun component6(): io.dataloom.api.conflict/UnresolvedConflictReason? // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.component6|component6(){}[0]
+    final fun component7(): io.dataloom.runtime.conflict/ConflictResolverSelectionTier? // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.component7|component7(){}[0]
+    final fun copy(io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal = ..., io.dataloom.api.circuit/CircuitBreakerScopeKind? = ..., io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome? = ..., io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail? = ..., io.dataloom.api.identifier/ConflictResolverId? = ..., io.dataloom.api.conflict/UnresolvedConflictReason? = ..., io.dataloom.runtime.conflict/ConflictResolverSelectionTier? = ...): io.dataloom.runtime.observation.retry/RetryCircuitMetricKey // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.copy|copy(io.dataloom.runtime.observation.retry.RetryCircuitTelemetrySignal;io.dataloom.api.circuit.CircuitBreakerScopeKind?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryOperationOutcome?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryCircuitDetail?;io.dataloom.api.identifier.ConflictResolverId?;io.dataloom.api.conflict.UnresolvedConflictReason?;io.dataloom.runtime.conflict.ConflictResolverSelectionTier?){}[0]
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.runtime.observation.retry/RetryCircuitMetricKey.toString|toString(){}[0]
@@ -4416,7 +4461,7 @@ final class io.dataloom.runtime.observation.retry/RetryCircuitTelemetryContext {
 }
 
 final class io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent { // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent|null[0]
-    constructor <init>(io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal, io.dataloom.api.time/DataLoomInstant, io.dataloom.runtime.observation.retry/RetryCircuitTelemetryContext = ..., io.dataloom.api.circuit/CircuitBreakerScopeKind? = ..., io.dataloom.api.circuit/CircuitBreakerPhase? = ..., io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome? = ..., io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail? = ..., io.dataloom.api.retry/RetryAttempt? = ..., io.dataloom.api.scheduling/SchedulingDelay? = ..., io.dataloom.api.error/ErrorCode? = ...) // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.<init>|<init>(io.dataloom.runtime.observation.retry.RetryCircuitTelemetrySignal;io.dataloom.api.time.DataLoomInstant;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryContext;io.dataloom.api.circuit.CircuitBreakerScopeKind?;io.dataloom.api.circuit.CircuitBreakerPhase?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryOperationOutcome?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryCircuitDetail?;io.dataloom.api.retry.RetryAttempt?;io.dataloom.api.scheduling.SchedulingDelay?;io.dataloom.api.error.ErrorCode?){}[0]
+    constructor <init>(io.dataloom.runtime.observation.retry/RetryCircuitTelemetrySignal, io.dataloom.api.time/DataLoomInstant, io.dataloom.runtime.observation.retry/RetryCircuitTelemetryContext = ..., io.dataloom.api.circuit/CircuitBreakerScopeKind? = ..., io.dataloom.api.circuit/CircuitBreakerPhase? = ..., io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome? = ..., io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail? = ..., io.dataloom.api.retry/RetryAttempt? = ..., io.dataloom.api.scheduling/SchedulingDelay? = ..., io.dataloom.api.error/ErrorCode? = ..., io.dataloom.api.identifier/ConflictResolverId? = ..., io.dataloom.api.conflict/UnresolvedConflictReason? = ..., io.dataloom.runtime.conflict/ConflictResolverSelectionTier? = ...) // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.<init>|<init>(io.dataloom.runtime.observation.retry.RetryCircuitTelemetrySignal;io.dataloom.api.time.DataLoomInstant;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryContext;io.dataloom.api.circuit.CircuitBreakerScopeKind?;io.dataloom.api.circuit.CircuitBreakerPhase?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryOperationOutcome?;io.dataloom.runtime.observation.retry.RetryCircuitTelemetryCircuitDetail?;io.dataloom.api.retry.RetryAttempt?;io.dataloom.api.scheduling.SchedulingDelay?;io.dataloom.api.error.ErrorCode?;io.dataloom.api.identifier.ConflictResolverId?;io.dataloom.api.conflict.UnresolvedConflictReason?;io.dataloom.runtime.conflict.ConflictResolverSelectionTier?){}[0]
 
     final val circuitDetail // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.circuitDetail|{}circuitDetail[0]
         final fun <get-circuitDetail>(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryCircuitDetail? // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.circuitDetail.<get-circuitDetail>|<get-circuitDetail>(){}[0]
@@ -4424,6 +4469,12 @@ final class io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent { /
         final fun <get-circuitOperationOutcome>(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryOperationOutcome? // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.circuitOperationOutcome.<get-circuitOperationOutcome>|<get-circuitOperationOutcome>(){}[0]
     final val circuitPhase // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.circuitPhase|{}circuitPhase[0]
         final fun <get-circuitPhase>(): io.dataloom.api.circuit/CircuitBreakerPhase? // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.circuitPhase.<get-circuitPhase>|<get-circuitPhase>(){}[0]
+    final val conflictResolverId // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.conflictResolverId|{}conflictResolverId[0]
+        final fun <get-conflictResolverId>(): io.dataloom.api.identifier/ConflictResolverId? // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.conflictResolverId.<get-conflictResolverId>|<get-conflictResolverId>(){}[0]
+    final val conflictSelectionTier // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.conflictSelectionTier|{}conflictSelectionTier[0]
+        final fun <get-conflictSelectionTier>(): io.dataloom.runtime.conflict/ConflictResolverSelectionTier? // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.conflictSelectionTier.<get-conflictSelectionTier>|<get-conflictSelectionTier>(){}[0]
+    final val conflictUnresolvedReason // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.conflictUnresolvedReason|{}conflictUnresolvedReason[0]
+        final fun <get-conflictUnresolvedReason>(): io.dataloom.api.conflict/UnresolvedConflictReason? // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.conflictUnresolvedReason.<get-conflictUnresolvedReason>|<get-conflictUnresolvedReason>(){}[0]
     final val context // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.context|{}context[0]
         final fun <get-context>(): io.dataloom.runtime.observation.retry/RetryCircuitTelemetryContext // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.context.<get-context>|<get-context>(){}[0]
     final val errorCode // io.dataloom.runtime.observation.retry/RetryCircuitTelemetryEvent.errorCode|{}errorCode[0]
