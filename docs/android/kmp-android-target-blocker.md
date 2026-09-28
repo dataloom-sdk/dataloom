@@ -2,23 +2,24 @@
 
 ## Status
 
-**Unblocked (2026-09-19). Roll-out: `dataloom-model` (pilot) plus
-`dataloom-provider-api`, `dataloom-plugin-api`, `dataloom-config` and
-`dataloom-api` (slice 1) are converted; `dataloom-core` and `dataloom-runtime`
-remain.** The "confirmed blocked" conclusion recorded in the
-historical sections below was wrong about the cause. The conflict was never
-inherent to AGP, Gradle classloading, or the Kotlin/AGP version pairing: it
-is triggered only by requesting the plugin **with a version** in a
-subproject. Applying `com.android.kotlin.multiplatform.library` by bare id
+**Unblocked (2026-09-19). Roll-out complete for `#101`'s named list:
+`dataloom-model` (pilot), `dataloom-provider-api`, `dataloom-plugin-api`,
+`dataloom-config`, `dataloom-api` (slice 1), and `dataloom-core` and
+`dataloom-runtime` (slice 2).** The "confirmed blocked" conclusion recorded in
+the historical sections below was wrong about the cause. The conflict was
+never inherent to AGP, Gradle classloading, or the Kotlin/AGP version
+pairing: it is triggered only by requesting the plugin **with a version** in
+a subproject. Applying `com.android.kotlin.multiplatform.library` by bare id
 works on the repository's current toolchain (Kotlin `2.4.10`, AGP `9.1.0`,
 Gradle `9.5.0`) with no version bump.
 
 `dataloom-model` is the pilot: it now exposes an explicit `android` KMP
 target (`androidRuntimeElements`, `org.jetbrains.kotlin.platform.type =
 androidJvm`) beside `jvm`/`iosArm64`/`iosSimulatorArm64`/`iosX64`, when
-`DATALOOM_ANDROID_BUILD=true`. Rolling the rest of `#101`'s list out
-(`dataloom-core`, `dataloom-runtime`) is a separate, mechanical follow-up: see
-"Roll-out recipe" below.
+`DATALOOM_ANDROID_BUILD=true`. `dataloom-runtime` (slice 2) needed
+build-logic changes too: see "Roll-out slice 2" below for what changed and
+what it showed about `dataloom-plugin`/`dataloom-assets`, its two
+dependencies that still have no Android target of their own.
 
 ## Root cause (2026-09-19)
 
@@ -200,8 +201,8 @@ apply-by-id plus reflection) so each module only supplies a namespace.
 | 0 (done, pilot) | `dataloom-model` | Needed the `jvmAndroid` source set because it has real JVM-only sources. |
 | 1 (done, slice 1) | `dataloom-provider-api`, `dataloom-plugin-api`, `dataloom-config` | Pure `commonMain`, only `api(project(":dataloom-model"))`. Converted with just the plugin/config block plus `api/jvm/<m>.api`; no source move, no `jvmAndroid` group. |
 | 2 (done, slice 1) | `dataloom-api` | `src/jvmMain`/`jvmTest` contain only `.gitkeep`; converted the same way. 969 tests pass on both `jvmTest` and `testAndroidHostTest`. |
-| 3 | `dataloom-core` | Same: only `.gitkeep` under `jvmMain`/`jvmTest`. |
-| 4 | `dataloom-runtime` | **Highest build-logic risk.** The convention plugin's `checkPublicAbiBoundaries` reads `build/kotlin/abi/dataloom-runtime.api`, which moves to `build/kotlin/abi/jvm/dataloom-runtime.api` once Android is on (verified for `dataloom-model`'s dump location); `checkResolvedDependencyBoundaries` inspects only `jvmRuntimeClasspath`, so the Android runtime classpath would be unguarded. Update `DataLoomKotlinMultiplatformLibraryPlugin.java` (conditionally on the env switch) and re-run `:build-logic:test`. Also has `iosMain` code; `jvmMain` is only `.gitkeep`. |
+| 3 (done, slice 2) | `dataloom-core` | Same: only `.gitkeep` under `jvmMain`/`jvmTest`. 133 tests pass on both `jvmTest` and `testAndroidHostTest`. |
+| 4 (done, slice 2) | `dataloom-runtime` | **Highest build-logic risk, confirmed.** `checkPublicAbiBoundaries` and `checkResolvedDependencyBoundaries` both needed the update described in "Roll-out slice 2" below. Also has `iosMain` code; `jvmMain` is only `.gitkeep`, so no `jvmAndroid` group was needed. 1982 tests pass on both `jvmTest` and `testAndroidHostTest`. |
 | 5 | `dataloom-testing`, `runtime-external-consumer` | Optional. `dataloom-testing` is `.gitkeep`-only for JVM. `runtime-external-consumer` disables ABI validation and its check task depends on `compileKotlinJvm` only. |
 | never/decide | `dataloom-storage-file` | `FileSystemFacade` (in `jvmMain`) uses `java.nio.file.Files`/`StandardCopyOption`, unavailable below Android API 26 while `android-minSdk` is 21. Needs a decision (raise minSdk for this module, rewrite with `java.io`, or keep JVM-only) before it can share a `jvmAndroid` source set. Not in `#101`'s named list. |
 | never/decide | `dataloom-storage-sqldelight` | Its `jvmMain` uses the SQLite JDBC driver, wrong for Android; Android is already served by the paired `dataloom-storage-sqldelight-android` module. Keep as is. |
@@ -237,16 +238,71 @@ and (as a separate commit) `dataloom-api`. Edits are limited to each module's
   not in `#101`'s list and can be converted the same way in a later slice once
   its owner is done.
 
+### Roll-out slice 2 (2026-09-22): dataloom-core, dataloom-runtime, build-logic
+
+Converted `dataloom-core` (its own commit; same shape as `dataloom-api`, no
+source move) and `dataloom-runtime` (with the build-logic changes below, in
+one commit since neither is independently meaningful without the other).
+
+- **`dataloom-core` transferred verbatim**, same as slice 1's `dataloom-api`:
+  `src/jvmMain`/`jvmTest` are `.gitkeep`-only, so the conversion is just the
+  plugin/config block plus `api/jvm/dataloom-core.api`. Namespace
+  `io.dataloom.core`. 133 tests pass on both `jvmTest` and
+  `testAndroidHostTest`.
+- **`dataloom-runtime`'s two build-logic checks both needed updating**, exactly
+  as this doc's roll-out table predicted:
+  - `checkPublicAbiBoundaries` now picks its ABI-dump path
+    (`kotlin/abi/dataloom-runtime.api` vs. `kotlin/abi/jvm/dataloom-runtime.api`)
+    by checking at task-execution time whether the module has a target whose
+    `platformType` is `androidJvm`, instead of a hardcoded path. Confirmed
+    against Kotlin's own `KotlinAbiDumpTaskImpl` source that this is exactly
+    the condition it uses for the same switch.
+  - `checkResolvedDependencyBoundaries` (`ResolvedDependencyBoundaryCheckTask`
+    rewritten) now checks `jvmRuntimeClasspath` **and** every Android target's
+    main runtime classpath (found via
+    `KotlinCompilation.runtimeDependencyConfigurationName`, not a hardcoded
+    name). It matches on resolved **component identities** (e.g.
+    `project :dataloom-testing`) from `Configuration.incoming.resolutionResult`,
+    not artifact file names: `androidRuntimeClasspath` cannot be resolved to
+    plain files without choosing one of its many artifact types (AAR metadata,
+    classes jar, manifest, ...), and those artifacts are generically named
+    (`classes.jar`) so a file-name marker could not see them regardless. Only
+    the dependency graph is resolved, never artifacts, so the check stays
+    cheap. Both checks are wired lazily against the module's actual targets,
+    so `build-logic` still needs no compile-time AGP dependency.
+  - `:build-logic:test` has no test sources yet (`NO-SOURCE`) in either
+    configuration; this is pre-existing, not introduced by this slice.
+- **`dataloom-plugin` and `dataloom-assets` (dataloom-runtime's two
+  dependencies with no Android target of their own) did not need
+  converting.** This was the open question slice 2 was scoped to answer.
+  Verified directly, not just inferred from finding 2's compile-classpath
+  result: `:dataloom-runtime:compileAndroidMain` succeeds, and
+  `checkResolvedDependencyBoundaries`'s rewritten Android-classpath check
+  above successfully resolves `androidRuntimeClasspath`'s **full component
+  graph** (compile time and runtime alike) with `dataloom-plugin` and
+  `dataloom-assets` falling back to their `jvm()` variant. End-to-end
+  confirmation: `dataloom-android:assembleDebug`,
+  `dataloom-scheduler-workmanager:assembleDebug`,
+  `dataloom-queue-room:assembleDebug` and
+  `runtime-android-reference-consumer:assembleDebug` all package a real AAR
+  that transitively includes `dataloom-runtime`'s new Android variant.
+- **`updateKotlinAbi` behaves the same as slice 1**: only the new
+  `api/jvm/dataloom-runtime.api` is added; `api/dataloom-runtime.api` and
+  `api/dataloom-runtime.klib.api` are unchanged, and the two `.api` files are
+  byte-identical.
+- **Android host tests run the same suite as `jvmTest`:** 1982 tests, 0
+  failures, in both tasks (dataloom-core: 133/133).
+
 ### Still to do
 
-1. `dataloom-core` (same shape as `dataloom-api`).
-2. `dataloom-runtime`, together with the build-logic changes described in its
-   row: make `checkPublicAbiBoundaries` read `build/kotlin/abi/jvm/dataloom-runtime.api`
-   when the Android target is enabled, and extend `checkResolvedDependencyBoundaries`
-   to the Android runtime classpath. Run `:build-logic:test` under both configurations.
-3. Optionally `dataloom-testing` and `runtime-external-consumer`.
-4. Fold the repeated build block into the convention plugin (now four modules
+1. Optionally `dataloom-testing` and `runtime-external-consumer`.
+2. Fold the repeated build block into the convention plugin (now six modules
    plus the pilot share it).
+3. Decide whether `dataloom-plugin` and `dataloom-assets` ever need their own
+   Android target: not required for `#101`'s acceptance criterion (satisfied
+   by `dataloom-runtime` resolving them through the `jvm()` fallback, proven
+   above), only if a future need calls for their own KMP-Android-aware public
+   surface.
 
 Decided (D15): the Android target stays env-gated on `DATALOOM_ANDROID_BUILD=true`,
 so a default build needs no Android SDK, and each converted module keeps two
