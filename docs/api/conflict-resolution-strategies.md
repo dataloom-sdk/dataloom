@@ -194,7 +194,9 @@ resolved and applied still counts, and a replayed delivery of the same
 `ConflictId` counts too (that replay *is* the loop). Hosts whose entities
 legitimately conflict often should set a window or a higher threshold. A crash
 between counting and finishing the batch replays the occurrence, so counts
-are conservative, never lower than the true number.
+are conservative, never lower than the true number. Replays caused by a
+retry-eligible infrastructure failure are credited back (see Amendment D21
+below); a crash cannot credit, so it stays conservative.
 
 ### Fail-closed behaviour
 
@@ -244,6 +246,47 @@ returned but not persisted, and there is no `ConflictAdministrationStateStore`
 entry, because that store's state type is bound to decision-carrying requests.
 Operational-event outbox bridging of quarantine and release events is not
 implemented in this slice.
+
+### Amendment D21 (2026-09-28): infrastructure failures are credited back
+
+D18 counted every replay, including a replay that follows a *transient
+infrastructure failure* (a storage or provider error while preparing, applying,
+or checkpointing the batch, which the existing retry policy and circuit breaker
+retry). A flaky store could therefore quarantine a healthy entity that was never
+in a conflict loop. D21 fixes this; the decision is recorded in
+[ADR-0012](../adr/ADR-0012-quarantine-credit-back-for-infrastructure-failures.md).
+
+Only occurrences caused by a genuine repeat of the same conflict count. When an
+inbound batch fails with a retry-eligible error, every occurrence that batch's
+attempt counted is credited back, so the count is unchanged by infrastructure
+noise:
+
+- *Retry-eligible* is the retry machinery's own test
+  (`protectedRetryStopReason(error) == null`): recoverable, not `UNKNOWN`, and
+  not in a category protected from automatic retry (`CONFLICT`, `CONFIGURATION`,
+  `POLICY`, and so on). A non-retryable failure, `Defer`, `Fail`, an unresolved
+  outcome and a quarantine block therefore still count exactly as before.
+- Each counted occurrence carries a `ConflictQuarantineOccurrence` (entity scope
+  plus a per-entity sequence number, on `Resolved`, `ResolverNotConfigured` and
+  `ResolverNotFound` results as `quarantineOccurrence`).
+  `DurableConflictQuarantineLog.creditOccurrence` un-counts one occurrence with a
+  bounded compare-and-set: it is idempotent per occurrence, never takes the count
+  below zero, never lifts a quarantine, and ignores an occurrence from a window
+  that already ended or was released. The record's codec moved to format
+  version 2 for the sequence bookkeeping.
+- Only the failing batch is credited. A batch that was applied and
+  checkpointed keeps its occurrences even if a later batch of the same
+  execution fails.
+- Crediting is best effort and never replaces the real error. If a credit cannot
+  be persisted the count stays as recorded, the conservative direction.
+
+Two consequences are deliberate. The occurrence that reaches the threshold
+quarantines immediately, before the attempt's later outcome is known, so
+`threshold - 1` genuine repeats plus one more conflicting attempt quarantine even
+if that attempt would have failed transiently afterwards. And a batch that fails
+transiently while writing its checkpoint, after a successful apply, is credited
+even though the applied conflict is unlikely to re-conflict on replay; the count
+is then one lower than "resolved occurrences", never higher.
 
 ### Interaction with the resolved-decision log
 

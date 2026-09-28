@@ -335,6 +335,61 @@ class DataLoomBuilderConflictQuarantineTest {
         assertEquals(null, f.quarantineStore.state(ConflictQuarantineScope.of(document)))
     }
 
+    private data class StorageDown(
+        override val code: io.dataloom.api.error.ErrorCode = io.dataloom.api.error.ErrorCode("STORAGE-DOWN"),
+        override val category: io.dataloom.api.error.ErrorCategory = io.dataloom.api.error.ErrorCategory.STORAGE,
+        override val recoverability: io.dataloom.api.error.Recoverability =
+            io.dataloom.api.error.Recoverability.RECOVERABLE,
+        override val severity: io.dataloom.api.error.ErrorSeverity = io.dataloom.api.error.ErrorSeverity.ERROR,
+        override val message: String = "Storage is down.",
+        override val cause: Throwable? = null,
+    ) : io.dataloom.api.error.DataLoomError
+
+    @Test
+    fun aTransientStorageFailureStreakAboveTheThresholdDoesNotQuarantineAHealthyEntity() = runBlocking {
+        val f = fixture(threshold = 3, releaseAuthorizer = OptedInAuthorizer())
+        f.resolver.decision = ConflictResolutionDecision.UseRemote()
+        val streak = 7
+        repeat(streak) { f.storage.applyFailures.addLast(StorageDown()) }
+
+        val codes = List(streak) { f.dataLoom.syncCode() }
+
+        assertTrue(codes.all { it == "STORAGE-DOWN" }, "every attempt reports the real infrastructure failure: $codes")
+        assertEquals(streak, f.storage.applyAttempts)
+        assertEquals(0, f.storage.checkpointWrites)
+        val afterStreak = assertNotNull(f.quarantineStore.state(ConflictQuarantineScope.of(invoice)))
+        assertEquals(0, afterStreak.occurrenceCount)
+        assertEquals(ConflictQuarantineStatus.COUNTING, afterStreak.status)
+
+        // The store recovers: the very next sync resolves, applies and checkpoints normally.
+        assertEquals(null, f.dataLoom.syncCode())
+        assertEquals(listOf(remote(invoice)), f.storage.appliedEvents)
+        assertEquals(1, f.storage.checkpointWrites)
+        assertEquals(1, f.quarantineStore.state(ConflictQuarantineScope.of(invoice))?.occurrenceCount)
+    }
+
+    @Test
+    fun aNonRetryableStorageFailureStillCountsTowardQuarantine() = runBlocking {
+        val f = fixture(threshold = 3)
+        f.resolver.decision = ConflictResolutionDecision.UseRemote()
+        repeat(2) {
+            f.storage.applyFailures.addLast(
+                StorageDown(
+                    code = io.dataloom.api.error.ErrorCode("STORAGE-REJECTED"),
+                    recoverability = io.dataloom.api.error.Recoverability.NON_RECOVERABLE,
+                ),
+            )
+        }
+
+        val codes = List(4) { f.dataLoom.syncCode() }
+
+        assertEquals(
+            listOf("STORAGE-REJECTED", "STORAGE-REJECTED", "DL-CONFLICT-QUARANTINED", "DL-CONFLICT-QUARANTINED"),
+            codes,
+        )
+        assertEquals(3, f.quarantineStore.state(ConflictQuarantineScope.of(invoice))?.occurrenceCount)
+    }
+
     @Test
     fun quarantineRequiresTheDecisionStore_failFastAtSpecConstruction() {
         assertFailsWith<IllegalArgumentException> {
@@ -457,6 +512,11 @@ class DataLoomBuilderConflictQuarantineTest {
         private val localCandidates: Map<String, ChangeEvent>,
     ) : StorageProvider {
         val appliedEvents = mutableListOf<ChangeEvent>()
+
+        /** Failures returned (one per call, in order) by [applyInboundChanges] before it starts succeeding. */
+        val applyFailures = ArrayDeque<io.dataloom.api.error.DataLoomError>()
+        var applyAttempts = 0
+            private set
         var checkpointWrites = 0
             private set
 
@@ -481,6 +541,8 @@ class DataLoomBuilderConflictQuarantineTest {
             ProviderOperationResult.Success(OutboundChangeReadResult.NoChanges)
 
         override suspend fun applyInboundChanges(request: InboundChangeApplyRequest): ProviderOperationResult<Unit> {
+            applyAttempts++
+            applyFailures.removeFirstOrNull()?.let { return ProviderOperationResult.Failure(it) }
             appliedEvents += request.changeSet.events
             return ProviderOperationResult.Success(Unit)
         }

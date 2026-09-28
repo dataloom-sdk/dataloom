@@ -2,6 +2,7 @@ package io.dataloom.runtime.conflict
 
 import io.dataloom.api.conflict.ConflictDetectionResult
 import io.dataloom.api.conflict.ConflictQuarantineObservation
+import io.dataloom.api.conflict.ConflictQuarantineOccurrence
 import io.dataloom.api.conflict.ConflictResolutionRequest
 import io.dataloom.api.model.SynchronizationRequest
 import io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitter
@@ -44,7 +45,12 @@ import io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitte
  *    updated, return [ConflictOrchestrationResult.QuarantineUnavailable].
  *    Either way no resolver is looked up or invoked. This precedes the
  *    [ConflictOrchestrationResult.ResolverNotConfigured] return, so an entity
- *    whose conflicts are never resolved is still counted.
+ *    whose conflicts are never resolved is still counted. A counted
+ *    occurrence is carried on the [ConflictOrchestrationResult.Resolved],
+ *    [ConflictOrchestrationResult.ResolverNotConfigured] or
+ *    [ConflictOrchestrationResult.ResolverNotFound] result as
+ *    `quarantineOccurrence`, so a caller whose attempt later fails for an
+ *    infrastructure reason can credit it back (D21).
  * 9. Look up the resolver by that exact [io.dataloom.api.identifier.ConflictResolverId]
  *    in the [ConflictResolverRegistry] (application registrations first, then
  *    built-ins -- the policy never bypasses this ordering).
@@ -226,6 +232,7 @@ public class SynchronizationConflictOrchestrator(
                 // Opt-in loop guard: count this occurrence against its entity
                 // before any resolver is looked up or invoked, whatever the
                 // outcome would have been. Absent tracker: skipped entirely.
+                var quarantineOccurrence: ConflictQuarantineOccurrence? = null
                 when (val observation = quarantineTracker?.observe(conflict, selectedResolverId)) {
                     is ConflictQuarantineObservation.Quarantined ->
                         return ConflictOrchestrationResult.Quarantined(
@@ -240,19 +247,22 @@ public class SynchronizationConflictOrchestrator(
                             detectorId = detectorId,
                             observation = observation,
                         )
-                    is ConflictQuarantineObservation.Counted, null -> Unit
+                    is ConflictQuarantineObservation.Counted -> quarantineOccurrence = observation.occurrence
+                    null -> Unit
                 }
 
                 val resolverId = selectedResolverId
                     ?: return ConflictOrchestrationResult.ResolverNotConfigured(
                         conflict = conflict,
                         detectorId = detectorId,
+                        quarantineOccurrence = quarantineOccurrence,
                     )
 
                 val resolver = resolverRegistry.lookup(resolverId)
                     ?: return ConflictOrchestrationResult.ResolverNotFound(
                         conflict = conflict,
                         resolverId = resolverId,
+                        quarantineOccurrence = quarantineOccurrence,
                     )
 
                 val resolutionRequest = ConflictResolutionRequest(
@@ -267,9 +277,20 @@ public class SynchronizationConflictOrchestrator(
                     decision = decision,
                     detectorId = detectorId,
                     resolverId = resolverId,
+                    quarantineOccurrence = quarantineOccurrence,
                 )
             }
         }
+    }
+
+    /**
+     * Credits back quarantine occurrences counted by a failed attempt (D21).
+     * A no-op without a [ConflictQuarantineTracker]. Module-internal: the
+     * inbound pipeline is the only caller that knows an attempt failed for a
+     * retry-eligible infrastructure reason.
+     */
+    internal suspend fun creditQuarantineOccurrences(occurrences: List<ConflictQuarantineOccurrence>) {
+        quarantineTracker?.credit(occurrences)
     }
 
     /**
