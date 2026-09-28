@@ -2,16 +2,19 @@
 
 [API reference index](./README.md)
 
-> **Status:** Available foundation (slice 1 of `#99`). Pure common Kotlin in the
-> new `dataloom-governance` module; JVM tests run, Apple targets cross-compile
-> (Apple test execution needs macOS CI). It is **not** wired into
-> `DataLoomBuilder`, nothing else depends on it, and it is not enterprise
+> **Status:** Available foundation (slices 1 and 2 of `#99`). Pure common Kotlin
+> in the `dataloom-governance` module; JVM tests run, Apple targets
+> cross-compile (Apple test execution needs macOS CI). Slice 2 added signed
+> policy packs and an opt-in `DataLoom.governance` capability. Nothing in the
+> runtime *enforces* governance at a boundary yet, and this is not enterprise
 > governance as a whole: see [What is not included](#what-is-not-included).
 > Decisions are recorded in
-> [ADR-0005](../adr/ADR-0005-enterprise-governance-foundation.md).
+> [ADR-0005](../adr/ADR-0005-enterprise-governance-foundation.md) and
+> [ADR-0010](../adr/ADR-0010-governance-signed-policy-packs-and-runtime-wiring.md).
 
 **Audience:** engineers integrating or extending governance.
-**Packages:** `io.dataloom.governance.rbac`, `io.dataloom.governance.audit`.
+**Packages:** `io.dataloom.governance.rbac`, `io.dataloom.governance.audit`,
+`io.dataloom.governance.policy`.
 
 ## Overview
 
@@ -21,6 +24,8 @@
 | Evaluation | `RbacEvaluator`, `AccessRequest`, `ResourceRef`, `AccessDecisionReason` |
 | Tenant isolation | `TenantGuard` |
 | Audit | `AuditEvent`, `AuditRecord`, `AuditAnchor`, `AuditLog`, `AuditChainVerifier`, `AuditStore`, `InMemoryAuditStore` |
+| Signed policy packs | `PolicyPackManifest`, `SignedPolicyPack`, `PolicyPackVerifier`, `PolicyPackVerificationResult`, `PolicyPackKeyResolver` |
+| Runtime wiring (`dataloom-runtime`) | `DataLoomGovernanceSpec`, `DataLoomGovernance`, `DataLoomBuilder.governanceConfiguration`, `DataLoom.governance` |
 
 ## RBAC and tenant isolation
 
@@ -97,21 +102,96 @@ from sequence 0; `AuditEvent.details` must not contain secrets or personal data.
 `InMemoryAuditStore` is bounded and refuses (never drops) appends past capacity;
 it is not durable.
 
+## Signed policy packs
+
+A policy pack is a `PolicyPackManifest` (a `PolicySetId`, a positive version, the
+signing `KeyReference`, an ordered unique list of `PolicyCheckId`, and bounded
+metadata) encoded to canonical bytes and signed with HMAC-SHA256. A manifest
+**names** checks; it carries no code. The host resolves each named check to its own
+`PolicyCheck`, exactly as it supplies plugin instances.
+
+```kotlin
+val manifest = PolicyPackManifest(PolicySetId("residency"), 3L, KeyReference("policy-2026q3"), listOf(PolicyCheckId("region-allowlist")))
+val pack = SignedPolicyPack.sign(manifest, hmacCalculator, signingKeyBytes)   // control plane
+
+val result = PolicyPackVerifier(hmacCalculator).verify(pack, PolicyPackKeyResolver { id -> keyStore[id] })
+```
+
+`verify` never throws. Its result and the order of checks:
+
+| Result | Meaning |
+|---|---|
+| `Malformed(reason)` | Not a well-formed pack: wrong domain tag, truncated or empty input, overrunning length, non-canonical UTF-8, trailing bytes, duplicate metadata key, or a manifest outside its bounds. `reason` is static text, never input content. |
+| `UnsupportedVersion(formatVersion)` | Well-formed, but a format version this build does not support (older or newer). Refused even when validly signed. |
+| `UnknownKeyId(keyId)` | The resolver returned `null` or empty key material. No signature comparison was attempted. |
+| `InvalidSignature` | The signature does not authenticate the received bytes under the resolved key: modified pack, modified signature, or wrong key (indistinguishable by design). |
+| `Valid(manifest)` | Authentic. Only this outcome exposes a manifest. |
+
+The signature covers the exact received bytes and is compared through
+`DataLoomHmacCalculator.verify` (constant time). The layout is length-prefixed,
+domain-tagged (`dataloom.governance.policypack`) and versioned, and is pinned by
+known-answer tests whose MACs were computed with OpenSSL; see
+[ADR-0010](../adr/ADR-0010-governance-signed-policy-packs-and-runtime-wiring.md)
+for the byte layout.
+
+Limits worth knowing:
+
+- **No rollback protection.** The manifest version is signed and returned but the
+  verifier is stateless, so a validly signed older pack still verifies. The host
+  must compare versions against what it has admitted.
+- The MAC is symmetric: anyone who can verify a pack on a device can also sign
+  one. Use per-tenant or per-device keys; asymmetric signatures remain deferred.
+- Key custody, distribution, rotation (several key ids may resolve at once) and
+  revocation (stop resolving an id) belong to the host. There is no expiry.
+- Turning a verified manifest into a `PolicySet` is the host's job in this slice.
+
+## Runtime wiring
+
+```kotlin
+val dataLoom = DataLoomBuilder()
+    /* ... */
+    .governanceConfiguration(
+        DataLoomGovernanceSpec(
+            rbacPolicy = policy,                       // optional
+            auditStore = InMemoryAuditStore(),         // optional, with auditKey
+            auditKey = auditKeyBytes,
+            hmacCalculator = hmacCalculator,           // audit and/or policy-pack verification
+        ),
+    )
+    .build()
+
+dataLoom.governance?.rbacEvaluator?.evaluate(request)
+dataLoom.governance?.auditLog?.append(event)
+dataLoom.governance?.policyPackVerifier?.verify(pack, keyResolver)
+```
+
+`DataLoom.governance` is `null` unless the spec is supplied, and its three
+properties are independently nullable, each present only when its own piece was
+configured. The audit log is timestamped by the builder's runtime clock. `build()`
+performs no store I/O. The spec requires at least one piece, an audit store and key
+together, and an HMAC calculator whenever an audit store is given. Nothing in the
+runtime consults these at a boundary; hosts call them.
+
 ## What is not included
 
-Ordered next slices: (1) signed policy packs (D10: HMAC-SHA256 with a
-host-supplied key, verified before admission); (2) `DataLoomBuilder` wiring
-(governance behind a `PolicyCheck`, decisions into `DurablePolicyDecisionLog`);
-(3) durable audit persistence through `DurableStateStore` and operational-event
-bridging; (4) configuration locks; (5) residency; (6) support/fleet
-diagnostics; (7) LTS/catalog governance; (8) `AC-FUNC-010` cross-subsystem
+Ordered next slices: (1) durable audit persistence through `DurableStateStore`
+with retention, overflow and delivery semantics (FR-ENT-008), and operational-event
+bridging; (2) a `PolicyCheck` adapter so RBAC decisions flow through
+`PolicyEvaluator` into `DurablePolicyDecisionLog`, plus pack admission into a
+`PolicySet`, rollout/rollback and a version floor; (3) configuration locks (only
+worthwhile once `LOCAL_OVERRIDE` has a producer); (4) residency; (5) support/fleet
+diagnostics; (6) LTS/catalog governance; (7) `AC-FUNC-010` cross-subsystem
 tenant-isolation acceptance.
 
 ## Verification
 
 - `./gradlew :dataloom-governance:jvmTest`: table-driven and exhaustive
-  cross-product RBAC tests, tenant-guard tests, and audit tamper tests against the
-  real `SystemDataLoomHmacCalculator`.
+  cross-product RBAC tests, tenant-guard tests, audit tamper tests, and signed
+  policy pack tests (modified byte at every offset, wrong key, truncation, empty
+  input, downgraded format version, unknown key id) against the real
+  `SystemDataLoomHmacCalculator`.
+- `:dataloom-runtime:jvmTest --tests '*DataLoomBuilderGovernanceTest*'`: wiring
+  tests with a fake HMAC calculator.
 - `:dataloom-governance:compileTestKotlinIosSimulatorArm64` with
   `-Pdataloom.appleKlibCrossCompile=true`: shared tests compile against the real
   `AppleDataLoomHmacCalculator`; running them requires macOS.

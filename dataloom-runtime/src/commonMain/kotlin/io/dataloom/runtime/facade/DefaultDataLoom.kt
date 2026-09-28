@@ -64,6 +64,8 @@ import io.dataloom.runtime.submission.DataLoomQueueSubmission
  *   configured.
  * @param assetTransfer the optional asset-transfer engine; `null` when not
  *   configured.
+ * @param governance the optional governance capability; `null` when not
+ *   configured.
  */
 internal class DefaultDataLoom(
     private val lifecycleCoordinator: ProviderLifecycleCoordinator,
@@ -82,6 +84,7 @@ internal class DefaultDataLoom(
     override val conflictAdministration: DataLoomConflictAdministration?,
     override val pluginEngine: DataLoomPluginEngine?,
     override val assetTransfer: AssetTransferEngine?,
+    override val governance: DataLoomGovernance?,
 ) : DataLoom {
 
     override val providerLifecycleState: ProviderLifecycleCoordinatorState

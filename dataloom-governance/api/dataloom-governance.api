@@ -166,6 +166,102 @@ public final class io/dataloom/governance/audit/InMemoryAuditStore : io/dataloom
 public final class io/dataloom/governance/audit/InMemoryAuditStore$Companion {
 }
 
+public abstract interface class io/dataloom/governance/policy/PolicyPackKeyResolver {
+	public abstract fun resolve-VLs1G0I (Ljava/lang/String;)[B
+}
+
+public final class io/dataloom/governance/policy/PolicyPackManifest {
+	public static final field Companion Lio/dataloom/governance/policy/PolicyPackManifest$Companion;
+	public static final field MAXIMUM_CHECKS I
+	public static final field MAXIMUM_METADATA_ENTRIES I
+	public static final field MAXIMUM_METADATA_ENTRY_LENGTH I
+	public synthetic fun <init> (Ljava/lang/String;JLjava/lang/String;Ljava/util/List;Lio/dataloom/api/context/DataLoomMetadata;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;JLjava/lang/String;Ljava/util/List;Lio/dataloom/api/context/DataLoomMetadata;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCheckIds ()Ljava/util/List;
+	public final fun getKeyId-iiCU0As ()Ljava/lang/String;
+	public final fun getMetadata ()Lio/dataloom/api/context/DataLoomMetadata;
+	public final fun getPolicySetId-hkzOuTw ()Ljava/lang/String;
+	public final fun getVersion ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/policy/PolicyPackManifest$Companion {
+}
+
+public abstract interface class io/dataloom/governance/policy/PolicyPackVerificationResult {
+}
+
+public final class io/dataloom/governance/policy/PolicyPackVerificationResult$InvalidSignature : io/dataloom/governance/policy/PolicyPackVerificationResult {
+	public static final field INSTANCE Lio/dataloom/governance/policy/PolicyPackVerificationResult$InvalidSignature;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/policy/PolicyPackVerificationResult$Malformed : io/dataloom/governance/policy/PolicyPackVerificationResult {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lio/dataloom/governance/policy/PolicyPackVerificationResult$Malformed;
+	public static synthetic fun copy$default (Lio/dataloom/governance/policy/PolicyPackVerificationResult$Malformed;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/governance/policy/PolicyPackVerificationResult$Malformed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReason ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/policy/PolicyPackVerificationResult$UnknownKeyId : io/dataloom/governance/policy/PolicyPackVerificationResult {
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-iiCU0As ()Ljava/lang/String;
+	public final fun copy-VLs1G0I (Ljava/lang/String;)Lio/dataloom/governance/policy/PolicyPackVerificationResult$UnknownKeyId;
+	public static synthetic fun copy-VLs1G0I$default (Lio/dataloom/governance/policy/PolicyPackVerificationResult$UnknownKeyId;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/governance/policy/PolicyPackVerificationResult$UnknownKeyId;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKeyId-iiCU0As ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/policy/PolicyPackVerificationResult$UnsupportedVersion : io/dataloom/governance/policy/PolicyPackVerificationResult {
+	public fun <init> (I)V
+	public final fun component1 ()I
+	public final fun copy (I)Lio/dataloom/governance/policy/PolicyPackVerificationResult$UnsupportedVersion;
+	public static synthetic fun copy$default (Lio/dataloom/governance/policy/PolicyPackVerificationResult$UnsupportedVersion;IILjava/lang/Object;)Lio/dataloom/governance/policy/PolicyPackVerificationResult$UnsupportedVersion;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFormatVersion ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/policy/PolicyPackVerificationResult$Valid : io/dataloom/governance/policy/PolicyPackVerificationResult {
+	public fun <init> (Lio/dataloom/governance/policy/PolicyPackManifest;)V
+	public final fun component1 ()Lio/dataloom/governance/policy/PolicyPackManifest;
+	public final fun copy (Lio/dataloom/governance/policy/PolicyPackManifest;)Lio/dataloom/governance/policy/PolicyPackVerificationResult$Valid;
+	public static synthetic fun copy$default (Lio/dataloom/governance/policy/PolicyPackVerificationResult$Valid;Lio/dataloom/governance/policy/PolicyPackManifest;ILjava/lang/Object;)Lio/dataloom/governance/policy/PolicyPackVerificationResult$Valid;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getManifest ()Lio/dataloom/governance/policy/PolicyPackManifest;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/policy/PolicyPackVerifier {
+	public fun <init> (Lio/dataloom/api/security/DataLoomHmacCalculator;)V
+	public final fun verify (Lio/dataloom/governance/policy/SignedPolicyPack;Lio/dataloom/governance/policy/PolicyPackKeyResolver;)Lio/dataloom/governance/policy/PolicyPackVerificationResult;
+}
+
+public final class io/dataloom/governance/policy/SignedPolicyPack {
+	public static final field Companion Lio/dataloom/governance/policy/SignedPolicyPack$Companion;
+	public fun <init> ([BLio/dataloom/api/security/DataLoomMac;)V
+	public final fun getMac ()Lio/dataloom/api/security/DataLoomMac;
+	public final fun getPackBytes ()[B
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/policy/SignedPolicyPack$Companion {
+	public final fun getMAC_ALGORITHM ()Lio/dataloom/api/security/HmacAlgorithm;
+	public final fun sign (Lio/dataloom/governance/policy/PolicyPackManifest;Lio/dataloom/api/security/DataLoomHmacCalculator;[B)Lio/dataloom/governance/policy/SignedPolicyPack;
+}
+
 public final class io/dataloom/governance/rbac/AccessDecisionKt {
 	public static final fun getAccessDecisionReason (Lio/dataloom/api/policy/PolicyCheckOutcome;)Lio/dataloom/governance/rbac/AccessDecisionReason;
 }
