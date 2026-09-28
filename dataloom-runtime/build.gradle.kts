@@ -25,6 +25,9 @@ kotlin {
                 // DataLoom.assetTransfer's public signature uses dataloom-assets'
                 // AssetTransferEngine.
                 api(project(":dataloom-assets"))
+                // DataLoom.governance's public signature uses dataloom-governance's
+                // RbacEvaluator, AuditLog, and PolicyPackVerifier.
+                api(project(":dataloom-governance"))
                 implementation(project(":dataloom-core"))
                 implementation(libs.kotlinx.coroutines.core)
             }

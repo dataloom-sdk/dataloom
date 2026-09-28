@@ -219,6 +219,22 @@ public interface DataLoom {
         get() = null
 
     /**
+     * Optional governance capability: RBAC evaluation, tamper-evident audit
+     * logging, and signed-policy-pack verification (`dataloom-governance`,
+     * ADR-0005).
+     *
+     * `null` unless [DataLoomBuilder.governanceConfiguration] was supplied.
+     * Each of [DataLoomGovernance]'s own properties is independently
+     * nullable; property access here performs no I/O, authorization, or
+     * clock read by itself.
+     *
+     * A default getter preserves source compatibility for custom pre-V1
+     * [DataLoom] implementations.
+     */
+    public val governance: DataLoomGovernance?
+        get() = null
+
+    /**
      * Initializes all registered providers in registration order.
      *
      * Initializes the internal provider lifecycle coordinator and returns its
