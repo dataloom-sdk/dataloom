@@ -1429,10 +1429,10 @@ jobs:
   apple-retry-budget-lease-contention-proof:
     name: Apple Simulator cross-process contention proof (retry-budget lease)
     runs-on: macos-15
-    # 45, not 30: this job now boots two Simulator devices sequentially
-    # (one per racing app) instead of one; the prior run hit the 30-minute
-    # timeout at 35 elapsed minutes without reaching a race-outcome error,
-    # so the failure was the timeout itself, not the race under test.
+    # 60, not 30: this job boots two Simulator devices (one per racing app)
+    # and the first launch on the second one has taken up to 26 minutes on
+    # these runners; a 30-minute limit cancelled an earlier run at 35 elapsed
+    # minutes before it reached a race outcome.
     timeout-minutes: 60
     continue-on-error: true
 
