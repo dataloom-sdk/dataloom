@@ -605,6 +605,8 @@ abstract interface io.dataloom.runtime.facade/DataLoom { // io.dataloom.runtime.
         open fun <get-conflictAdministration>(): io.dataloom.runtime.facade/DataLoomConflictAdministration? // io.dataloom.runtime.facade/DataLoom.conflictAdministration.<get-conflictAdministration>|<get-conflictAdministration>(){}[0]
     open val governance // io.dataloom.runtime.facade/DataLoom.governance|{}governance[0]
         open fun <get-governance>(): io.dataloom.runtime.facade/DataLoomGovernance? // io.dataloom.runtime.facade/DataLoom.governance.<get-governance>|<get-governance>(){}[0]
+    open val lifecycleDrain // io.dataloom.runtime.facade/DataLoom.lifecycleDrain|{}lifecycleDrain[0]
+        open fun <get-lifecycleDrain>(): io.dataloom.runtime.facade/DataLoomLifecycleDrain? // io.dataloom.runtime.facade/DataLoom.lifecycleDrain.<get-lifecycleDrain>|<get-lifecycleDrain>(){}[0]
     open val pluginEngine // io.dataloom.runtime.facade/DataLoom.pluginEngine|{}pluginEngine[0]
         open fun <get-pluginEngine>(): io.dataloom.runtime.facade/DataLoomPluginEngine? // io.dataloom.runtime.facade/DataLoom.pluginEngine.<get-pluginEngine>|<get-pluginEngine>(){}[0]
     open val protectedStrategySynchronization // io.dataloom.runtime.facade/DataLoom.protectedStrategySynchronization|{}protectedStrategySynchronization[0]
@@ -644,6 +646,10 @@ abstract interface io.dataloom.runtime.facade/DataLoomGovernance { // io.dataloo
         abstract fun <get-policyPackVerifier>(): io.dataloom.governance.policy/PolicyPackVerifier? // io.dataloom.runtime.facade/DataLoomGovernance.policyPackVerifier.<get-policyPackVerifier>|<get-policyPackVerifier>(){}[0]
     abstract val rbacEvaluator // io.dataloom.runtime.facade/DataLoomGovernance.rbacEvaluator|{}rbacEvaluator[0]
         abstract fun <get-rbacEvaluator>(): io.dataloom.governance.rbac/RbacEvaluator? // io.dataloom.runtime.facade/DataLoomGovernance.rbacEvaluator.<get-rbacEvaluator>|<get-rbacEvaluator>(){}[0]
+}
+
+abstract interface io.dataloom.runtime.facade/DataLoomLifecycleDrain { // io.dataloom.runtime.facade/DataLoomLifecycleDrain|null[0]
+    abstract suspend fun run(): io.dataloom.runtime.facade/LifecycleDrainEnd // io.dataloom.runtime.facade/DataLoomLifecycleDrain.run|run(){}[0]
 }
 
 abstract interface io.dataloom.runtime.facade/DataLoomPluginEngine { // io.dataloom.runtime.facade/DataLoomPluginEngine|null[0]
@@ -1316,6 +1322,27 @@ sealed interface io.dataloom.runtime.execution/SynchronizationExecutionResult { 
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.execution/SynchronizationExecutionResult.Rejected.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.runtime.execution/SynchronizationExecutionResult.Rejected.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.runtime.execution/SynchronizationExecutionResult.Rejected.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.runtime.facade/LifecycleDrainEnd { // io.dataloom.runtime.facade/LifecycleDrainEnd|null[0]
+    final class ObservationFailed : io.dataloom.runtime.facade/LifecycleDrainEnd { // io.dataloom.runtime.facade/LifecycleDrainEnd.ObservationFailed|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.runtime.facade/LifecycleDrainEnd.ObservationFailed.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.runtime.facade/LifecycleDrainEnd.ObservationFailed.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.facade/LifecycleDrainEnd.ObservationFailed.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.runtime.facade/LifecycleDrainEnd.ObservationFailed.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.runtime.facade/LifecycleDrainEnd.ObservationFailed // io.dataloom.runtime.facade/LifecycleDrainEnd.ObservationFailed.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.facade/LifecycleDrainEnd.ObservationFailed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.facade/LifecycleDrainEnd.ObservationFailed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.facade/LifecycleDrainEnd.ObservationFailed.toString|toString(){}[0]
+    }
+
+    final object StreamCompleted : io.dataloom.runtime.facade/LifecycleDrainEnd { // io.dataloom.runtime.facade/LifecycleDrainEnd.StreamCompleted|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.facade/LifecycleDrainEnd.StreamCompleted.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.runtime.facade/LifecycleDrainEnd.StreamCompleted.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.runtime.facade/LifecycleDrainEnd.StreamCompleted.toString|toString(){}[0]
     }
 }
 
@@ -3468,6 +3495,7 @@ final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.
     final fun defaultStrategyProviderBindings(io.dataloom.api.provider/StrategyProviderBindings): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.defaultStrategyProviderBindings|defaultStrategyProviderBindings(io.dataloom.api.provider.StrategyProviderBindings){}[0]
     final fun governanceConfiguration(io.dataloom.runtime.facade/DataLoomGovernanceSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.governanceConfiguration|governanceConfiguration(io.dataloom.runtime.facade.DataLoomGovernanceSpec){}[0]
     final fun inboundConfiguration(io.dataloom.runtime.execution.inbound/InboundPullPipelineConfiguration): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.inboundConfiguration|inboundConfiguration(io.dataloom.runtime.execution.inbound.InboundPullPipelineConfiguration){}[0]
+    final fun lifecycleDrainConfiguration(io.dataloom.runtime.facade/DataLoomLifecycleDrainSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.lifecycleDrainConfiguration|lifecycleDrainConfiguration(io.dataloom.runtime.facade.DataLoomLifecycleDrainSpec){}[0]
     final fun observer(io.dataloom.api.observation/SynchronizationObserver): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.observer|observer(io.dataloom.api.observation.SynchronizationObserver){}[0]
     final fun observers(kotlin/Array<out io.dataloom.api.observation/SynchronizationObserver>...): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.observers|observers(kotlin.Array<out|io.dataloom.api.observation.SynchronizationObserver>...){}[0]
     final fun operationalEventOutboxConfiguration(io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.operationalEventOutboxConfiguration|operationalEventOutboxConfiguration(io.dataloom.runtime.facade.DataLoomOperationalEventOutboxSpec){}[0]
@@ -3634,6 +3662,19 @@ final class io.dataloom.runtime.facade/DataLoomGovernanceSpec { // io.dataloom.r
         final fun <get-rbacPolicy>(): io.dataloom.governance.rbac/RbacPolicy? // io.dataloom.runtime.facade/DataLoomGovernanceSpec.rbacPolicy.<get-rbacPolicy>|<get-rbacPolicy>(){}[0]
 
     final fun toString(): kotlin/String // io.dataloom.runtime.facade/DataLoomGovernanceSpec.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.facade/DataLoomLifecycleDrainSpec { // io.dataloom.runtime.facade/DataLoomLifecycleDrainSpec|null[0]
+    constructor <init>(io.dataloom.api.lifecycle/AppLifecycleProvider, io.dataloom.api.identifier/QueueConsumerId, io.dataloom.runtime.facade/LifecycleDrainPolicy = ...) // io.dataloom.runtime.facade/DataLoomLifecycleDrainSpec.<init>|<init>(io.dataloom.api.lifecycle.AppLifecycleProvider;io.dataloom.api.identifier.QueueConsumerId;io.dataloom.runtime.facade.LifecycleDrainPolicy){}[0]
+
+    final val consumerId // io.dataloom.runtime.facade/DataLoomLifecycleDrainSpec.consumerId|{}consumerId[0]
+        final fun <get-consumerId>(): io.dataloom.api.identifier/QueueConsumerId // io.dataloom.runtime.facade/DataLoomLifecycleDrainSpec.consumerId.<get-consumerId>|<get-consumerId>(){}[0]
+    final val lifecycleProvider // io.dataloom.runtime.facade/DataLoomLifecycleDrainSpec.lifecycleProvider|{}lifecycleProvider[0]
+        final fun <get-lifecycleProvider>(): io.dataloom.api.lifecycle/AppLifecycleProvider // io.dataloom.runtime.facade/DataLoomLifecycleDrainSpec.lifecycleProvider.<get-lifecycleProvider>|<get-lifecycleProvider>(){}[0]
+    final val policy // io.dataloom.runtime.facade/DataLoomLifecycleDrainSpec.policy|{}policy[0]
+        final fun <get-policy>(): io.dataloom.runtime.facade/LifecycleDrainPolicy // io.dataloom.runtime.facade/DataLoomLifecycleDrainSpec.policy.<get-policy>|<get-policy>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.runtime.facade/DataLoomLifecycleDrainSpec.toString|toString(){}[0]
 }
 
 final class io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec { // io.dataloom.runtime.facade/DataLoomOperationalEventOutboxSpec|null[0]
@@ -3916,6 +3957,23 @@ final class io.dataloom.runtime.facade/DataLoomTransportProtectionSpec { // io.d
         final fun <get-scopes>(): io.dataloom.runtime.retry/TransportCircuitScopes // io.dataloom.runtime.facade/DataLoomTransportProtectionSpec.scopes.<get-scopes>|<get-scopes>(){}[0]
 
     final fun toString(): kotlin/String // io.dataloom.runtime.facade/DataLoomTransportProtectionSpec.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.facade/LifecycleDrainPolicy { // io.dataloom.runtime.facade/LifecycleDrainPolicy|null[0]
+    constructor <init>(kotlin.collections/Set<io.dataloom.api.lifecycle/AppLifecycleState> = ..., io.dataloom.api.scheduling/SchedulingDelay = ..., kotlin/Int = ..., io.dataloom.api.scheduling/SchedulingDelay = ...) // io.dataloom.runtime.facade/LifecycleDrainPolicy.<init>|<init>(kotlin.collections.Set<io.dataloom.api.lifecycle.AppLifecycleState>;io.dataloom.api.scheduling.SchedulingDelay;kotlin.Int;io.dataloom.api.scheduling.SchedulingDelay){}[0]
+
+    final val leaseDuration // io.dataloom.runtime.facade/LifecycleDrainPolicy.leaseDuration|{}leaseDuration[0]
+        final fun <get-leaseDuration>(): io.dataloom.api.scheduling/SchedulingDelay // io.dataloom.runtime.facade/LifecycleDrainPolicy.leaseDuration.<get-leaseDuration>|<get-leaseDuration>(){}[0]
+    final val maxEntriesPerDrain // io.dataloom.runtime.facade/LifecycleDrainPolicy.maxEntriesPerDrain|{}maxEntriesPerDrain[0]
+        final fun <get-maxEntriesPerDrain>(): kotlin/Int // io.dataloom.runtime.facade/LifecycleDrainPolicy.maxEntriesPerDrain.<get-maxEntriesPerDrain>|<get-maxEntriesPerDrain>(){}[0]
+    final val minimumInterval // io.dataloom.runtime.facade/LifecycleDrainPolicy.minimumInterval|{}minimumInterval[0]
+        final fun <get-minimumInterval>(): io.dataloom.api.scheduling/SchedulingDelay // io.dataloom.runtime.facade/LifecycleDrainPolicy.minimumInterval.<get-minimumInterval>|<get-minimumInterval>(){}[0]
+    final val triggers // io.dataloom.runtime.facade/LifecycleDrainPolicy.triggers|{}triggers[0]
+        final fun <get-triggers>(): kotlin.collections/Set<io.dataloom.api.lifecycle/AppLifecycleState> // io.dataloom.runtime.facade/LifecycleDrainPolicy.triggers.<get-triggers>|<get-triggers>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.facade/LifecycleDrainPolicy.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.facade/LifecycleDrainPolicy.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.facade/LifecycleDrainPolicy.toString|toString(){}[0]
 }
 
 final class io.dataloom.runtime.observation.health/DataLoomHealthFinding { // io.dataloom.runtime.observation.health/DataLoomHealthFinding|null[0]
