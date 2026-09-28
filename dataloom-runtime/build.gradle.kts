@@ -4,7 +4,8 @@
 // orchestration, and engine coordination.
 //
 // Rules:
-// - May depend on dataloom-api, dataloom-core, and dataloom-plugin.
+// - May depend on dataloom-api, dataloom-core, dataloom-plugin, and
+//   dataloom-governance.
 // - Must not depend on dataloom-testing.
 // - Must not expose internal implementation types publicly.
 plugins {

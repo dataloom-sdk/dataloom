@@ -103,7 +103,7 @@ class DataLoomBuilderGovernanceTest {
     }
 
     @Test
-    fun onlyAuditConfiguredLeavesRbacAndPolicyPackVerificationNull() {
+    fun auditConfiguredLeavesRbacNullAndSharesItsHmacCalculatorWithPolicyPackVerification() {
         val store = RecordingAuditStore()
         val governance = assertNotNull(
             builder()
@@ -115,7 +115,8 @@ class DataLoomBuilderGovernanceTest {
         )
         assertNull(governance.rbacEvaluator)
         assertNotNull(governance.auditLog)
-        assertNull(governance.policyPackVerifier)
+        // The audit log needs an HMAC calculator, and supplying one is what enables pack verification.
+        assertNotNull(governance.policyPackVerifier)
     }
 
     @Test

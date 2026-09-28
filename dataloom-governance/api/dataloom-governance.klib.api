@@ -58,6 +58,10 @@ final enum class io.dataloom.governance.rbac/Action : kotlin/Enum<io.dataloom.go
     final fun values(): kotlin/Array<io.dataloom.governance.rbac/Action> // io.dataloom.governance.rbac/Action.values|values#static(){}[0]
 }
 
+abstract fun interface io.dataloom.governance.policy/PolicyPackKeyResolver { // io.dataloom.governance.policy/PolicyPackKeyResolver|null[0]
+    abstract fun resolve(io.dataloom.api.security/KeyReference): kotlin/ByteArray? // io.dataloom.governance.policy/PolicyPackKeyResolver.resolve|resolve(io.dataloom.api.security.KeyReference){}[0]
+}
+
 abstract interface io.dataloom.governance.audit/AuditStore { // io.dataloom.governance.audit/AuditStore|null[0]
     abstract suspend fun append(io.dataloom.governance.audit/AuditRecord) // io.dataloom.governance.audit/AuditStore.append|append(io.dataloom.governance.audit.AuditRecord){}[0]
     abstract suspend fun head(): io.dataloom.governance.audit/AuditRecord? // io.dataloom.governance.audit/AuditStore.head|head(){}[0]
@@ -98,6 +102,66 @@ sealed interface io.dataloom.governance.audit/AuditVerificationResult { // io.da
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.audit/AuditVerificationResult.Valid.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.governance.audit/AuditVerificationResult.Valid.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.governance.audit/AuditVerificationResult.Valid.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.governance.policy/PolicyPackVerificationResult { // io.dataloom.governance.policy/PolicyPackVerificationResult|null[0]
+    final class Malformed : io.dataloom.governance.policy/PolicyPackVerificationResult { // io.dataloom.governance.policy/PolicyPackVerificationResult.Malformed|null[0]
+        constructor <init>(kotlin/String) // io.dataloom.governance.policy/PolicyPackVerificationResult.Malformed.<init>|<init>(kotlin.String){}[0]
+
+        final val reason // io.dataloom.governance.policy/PolicyPackVerificationResult.Malformed.reason|{}reason[0]
+            final fun <get-reason>(): kotlin/String // io.dataloom.governance.policy/PolicyPackVerificationResult.Malformed.reason.<get-reason>|<get-reason>(){}[0]
+
+        final fun component1(): kotlin/String // io.dataloom.governance.policy/PolicyPackVerificationResult.Malformed.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): io.dataloom.governance.policy/PolicyPackVerificationResult.Malformed // io.dataloom.governance.policy/PolicyPackVerificationResult.Malformed.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.policy/PolicyPackVerificationResult.Malformed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.governance.policy/PolicyPackVerificationResult.Malformed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.governance.policy/PolicyPackVerificationResult.Malformed.toString|toString(){}[0]
+    }
+
+    final class UnknownKeyId : io.dataloom.governance.policy/PolicyPackVerificationResult { // io.dataloom.governance.policy/PolicyPackVerificationResult.UnknownKeyId|null[0]
+        constructor <init>(io.dataloom.api.security/KeyReference) // io.dataloom.governance.policy/PolicyPackVerificationResult.UnknownKeyId.<init>|<init>(io.dataloom.api.security.KeyReference){}[0]
+
+        final val keyId // io.dataloom.governance.policy/PolicyPackVerificationResult.UnknownKeyId.keyId|{}keyId[0]
+            final fun <get-keyId>(): io.dataloom.api.security/KeyReference // io.dataloom.governance.policy/PolicyPackVerificationResult.UnknownKeyId.keyId.<get-keyId>|<get-keyId>(){}[0]
+
+        final fun component1(): io.dataloom.api.security/KeyReference // io.dataloom.governance.policy/PolicyPackVerificationResult.UnknownKeyId.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.security/KeyReference = ...): io.dataloom.governance.policy/PolicyPackVerificationResult.UnknownKeyId // io.dataloom.governance.policy/PolicyPackVerificationResult.UnknownKeyId.copy|copy(io.dataloom.api.security.KeyReference){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.policy/PolicyPackVerificationResult.UnknownKeyId.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.governance.policy/PolicyPackVerificationResult.UnknownKeyId.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.governance.policy/PolicyPackVerificationResult.UnknownKeyId.toString|toString(){}[0]
+    }
+
+    final class UnsupportedVersion : io.dataloom.governance.policy/PolicyPackVerificationResult { // io.dataloom.governance.policy/PolicyPackVerificationResult.UnsupportedVersion|null[0]
+        constructor <init>(kotlin/Int) // io.dataloom.governance.policy/PolicyPackVerificationResult.UnsupportedVersion.<init>|<init>(kotlin.Int){}[0]
+
+        final val formatVersion // io.dataloom.governance.policy/PolicyPackVerificationResult.UnsupportedVersion.formatVersion|{}formatVersion[0]
+            final fun <get-formatVersion>(): kotlin/Int // io.dataloom.governance.policy/PolicyPackVerificationResult.UnsupportedVersion.formatVersion.<get-formatVersion>|<get-formatVersion>(){}[0]
+
+        final fun component1(): kotlin/Int // io.dataloom.governance.policy/PolicyPackVerificationResult.UnsupportedVersion.component1|component1(){}[0]
+        final fun copy(kotlin/Int = ...): io.dataloom.governance.policy/PolicyPackVerificationResult.UnsupportedVersion // io.dataloom.governance.policy/PolicyPackVerificationResult.UnsupportedVersion.copy|copy(kotlin.Int){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.policy/PolicyPackVerificationResult.UnsupportedVersion.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.governance.policy/PolicyPackVerificationResult.UnsupportedVersion.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.governance.policy/PolicyPackVerificationResult.UnsupportedVersion.toString|toString(){}[0]
+    }
+
+    final class Valid : io.dataloom.governance.policy/PolicyPackVerificationResult { // io.dataloom.governance.policy/PolicyPackVerificationResult.Valid|null[0]
+        constructor <init>(io.dataloom.governance.policy/PolicyPackManifest) // io.dataloom.governance.policy/PolicyPackVerificationResult.Valid.<init>|<init>(io.dataloom.governance.policy.PolicyPackManifest){}[0]
+
+        final val manifest // io.dataloom.governance.policy/PolicyPackVerificationResult.Valid.manifest|{}manifest[0]
+            final fun <get-manifest>(): io.dataloom.governance.policy/PolicyPackManifest // io.dataloom.governance.policy/PolicyPackVerificationResult.Valid.manifest.<get-manifest>|<get-manifest>(){}[0]
+
+        final fun component1(): io.dataloom.governance.policy/PolicyPackManifest // io.dataloom.governance.policy/PolicyPackVerificationResult.Valid.component1|component1(){}[0]
+        final fun copy(io.dataloom.governance.policy/PolicyPackManifest = ...): io.dataloom.governance.policy/PolicyPackVerificationResult.Valid // io.dataloom.governance.policy/PolicyPackVerificationResult.Valid.copy|copy(io.dataloom.governance.policy.PolicyPackManifest){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.policy/PolicyPackVerificationResult.Valid.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.governance.policy/PolicyPackVerificationResult.Valid.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.governance.policy/PolicyPackVerificationResult.Valid.toString|toString(){}[0]
+    }
+
+    final object InvalidSignature : io.dataloom.governance.policy/PolicyPackVerificationResult { // io.dataloom.governance.policy/PolicyPackVerificationResult.InvalidSignature|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.policy/PolicyPackVerificationResult.InvalidSignature.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.governance.policy/PolicyPackVerificationResult.InvalidSignature.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.governance.policy/PolicyPackVerificationResult.InvalidSignature.toString|toString(){}[0]
     }
 }
 
@@ -213,6 +277,58 @@ final class io.dataloom.governance.audit/InMemoryAuditStore : io.dataloom.govern
     final object Companion { // io.dataloom.governance.audit/InMemoryAuditStore.Companion|null[0]
         final const val DEFAULT_CAPACITY // io.dataloom.governance.audit/InMemoryAuditStore.Companion.DEFAULT_CAPACITY|{}DEFAULT_CAPACITY[0]
             final fun <get-DEFAULT_CAPACITY>(): kotlin/Int // io.dataloom.governance.audit/InMemoryAuditStore.Companion.DEFAULT_CAPACITY.<get-DEFAULT_CAPACITY>|<get-DEFAULT_CAPACITY>(){}[0]
+    }
+}
+
+final class io.dataloom.governance.policy/PolicyPackManifest { // io.dataloom.governance.policy/PolicyPackManifest|null[0]
+    constructor <init>(io.dataloom.api.identifier/PolicySetId, kotlin/Long, io.dataloom.api.security/KeyReference, kotlin.collections/List<io.dataloom.api.identifier/PolicyCheckId>, io.dataloom.api.context/DataLoomMetadata = ...) // io.dataloom.governance.policy/PolicyPackManifest.<init>|<init>(io.dataloom.api.identifier.PolicySetId;kotlin.Long;io.dataloom.api.security.KeyReference;kotlin.collections.List<io.dataloom.api.identifier.PolicyCheckId>;io.dataloom.api.context.DataLoomMetadata){}[0]
+
+    final val checkIds // io.dataloom.governance.policy/PolicyPackManifest.checkIds|{}checkIds[0]
+        final fun <get-checkIds>(): kotlin.collections/List<io.dataloom.api.identifier/PolicyCheckId> // io.dataloom.governance.policy/PolicyPackManifest.checkIds.<get-checkIds>|<get-checkIds>(){}[0]
+    final val keyId // io.dataloom.governance.policy/PolicyPackManifest.keyId|{}keyId[0]
+        final fun <get-keyId>(): io.dataloom.api.security/KeyReference // io.dataloom.governance.policy/PolicyPackManifest.keyId.<get-keyId>|<get-keyId>(){}[0]
+    final val metadata // io.dataloom.governance.policy/PolicyPackManifest.metadata|{}metadata[0]
+        final fun <get-metadata>(): io.dataloom.api.context/DataLoomMetadata // io.dataloom.governance.policy/PolicyPackManifest.metadata.<get-metadata>|<get-metadata>(){}[0]
+    final val policySetId // io.dataloom.governance.policy/PolicyPackManifest.policySetId|{}policySetId[0]
+        final fun <get-policySetId>(): io.dataloom.api.identifier/PolicySetId // io.dataloom.governance.policy/PolicyPackManifest.policySetId.<get-policySetId>|<get-policySetId>(){}[0]
+    final val version // io.dataloom.governance.policy/PolicyPackManifest.version|{}version[0]
+        final fun <get-version>(): kotlin/Long // io.dataloom.governance.policy/PolicyPackManifest.version.<get-version>|<get-version>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.policy/PolicyPackManifest.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.governance.policy/PolicyPackManifest.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.governance.policy/PolicyPackManifest.toString|toString(){}[0]
+
+    final object Companion { // io.dataloom.governance.policy/PolicyPackManifest.Companion|null[0]
+        final const val MAXIMUM_CHECKS // io.dataloom.governance.policy/PolicyPackManifest.Companion.MAXIMUM_CHECKS|{}MAXIMUM_CHECKS[0]
+            final fun <get-MAXIMUM_CHECKS>(): kotlin/Int // io.dataloom.governance.policy/PolicyPackManifest.Companion.MAXIMUM_CHECKS.<get-MAXIMUM_CHECKS>|<get-MAXIMUM_CHECKS>(){}[0]
+        final const val MAXIMUM_METADATA_ENTRIES // io.dataloom.governance.policy/PolicyPackManifest.Companion.MAXIMUM_METADATA_ENTRIES|{}MAXIMUM_METADATA_ENTRIES[0]
+            final fun <get-MAXIMUM_METADATA_ENTRIES>(): kotlin/Int // io.dataloom.governance.policy/PolicyPackManifest.Companion.MAXIMUM_METADATA_ENTRIES.<get-MAXIMUM_METADATA_ENTRIES>|<get-MAXIMUM_METADATA_ENTRIES>(){}[0]
+        final const val MAXIMUM_METADATA_ENTRY_LENGTH // io.dataloom.governance.policy/PolicyPackManifest.Companion.MAXIMUM_METADATA_ENTRY_LENGTH|{}MAXIMUM_METADATA_ENTRY_LENGTH[0]
+            final fun <get-MAXIMUM_METADATA_ENTRY_LENGTH>(): kotlin/Int // io.dataloom.governance.policy/PolicyPackManifest.Companion.MAXIMUM_METADATA_ENTRY_LENGTH.<get-MAXIMUM_METADATA_ENTRY_LENGTH>|<get-MAXIMUM_METADATA_ENTRY_LENGTH>(){}[0]
+    }
+}
+
+final class io.dataloom.governance.policy/PolicyPackVerifier { // io.dataloom.governance.policy/PolicyPackVerifier|null[0]
+    constructor <init>(io.dataloom.api.security/DataLoomHmacCalculator) // io.dataloom.governance.policy/PolicyPackVerifier.<init>|<init>(io.dataloom.api.security.DataLoomHmacCalculator){}[0]
+
+    final fun verify(io.dataloom.governance.policy/SignedPolicyPack, io.dataloom.governance.policy/PolicyPackKeyResolver): io.dataloom.governance.policy/PolicyPackVerificationResult // io.dataloom.governance.policy/PolicyPackVerifier.verify|verify(io.dataloom.governance.policy.SignedPolicyPack;io.dataloom.governance.policy.PolicyPackKeyResolver){}[0]
+}
+
+final class io.dataloom.governance.policy/SignedPolicyPack { // io.dataloom.governance.policy/SignedPolicyPack|null[0]
+    constructor <init>(kotlin/ByteArray, io.dataloom.api.security/DataLoomMac) // io.dataloom.governance.policy/SignedPolicyPack.<init>|<init>(kotlin.ByteArray;io.dataloom.api.security.DataLoomMac){}[0]
+
+    final val mac // io.dataloom.governance.policy/SignedPolicyPack.mac|{}mac[0]
+        final fun <get-mac>(): io.dataloom.api.security/DataLoomMac // io.dataloom.governance.policy/SignedPolicyPack.mac.<get-mac>|<get-mac>(){}[0]
+    final val packBytes // io.dataloom.governance.policy/SignedPolicyPack.packBytes|{}packBytes[0]
+        final fun <get-packBytes>(): kotlin/ByteArray // io.dataloom.governance.policy/SignedPolicyPack.packBytes.<get-packBytes>|<get-packBytes>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.governance.policy/SignedPolicyPack.toString|toString(){}[0]
+
+    final object Companion { // io.dataloom.governance.policy/SignedPolicyPack.Companion|null[0]
+        final val MAC_ALGORITHM // io.dataloom.governance.policy/SignedPolicyPack.Companion.MAC_ALGORITHM|{}MAC_ALGORITHM[0]
+            final fun <get-MAC_ALGORITHM>(): io.dataloom.api.security/HmacAlgorithm // io.dataloom.governance.policy/SignedPolicyPack.Companion.MAC_ALGORITHM.<get-MAC_ALGORITHM>|<get-MAC_ALGORITHM>(){}[0]
+
+        final fun sign(io.dataloom.governance.policy/PolicyPackManifest, io.dataloom.api.security/DataLoomHmacCalculator, kotlin/ByteArray): io.dataloom.governance.policy/SignedPolicyPack // io.dataloom.governance.policy/SignedPolicyPack.Companion.sign|sign(io.dataloom.governance.policy.PolicyPackManifest;io.dataloom.api.security.DataLoomHmacCalculator;kotlin.ByteArray){}[0]
     }
 }
 

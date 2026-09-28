@@ -60,8 +60,12 @@ public class DataLoomGovernanceSpec(
     auditKey: ByteArray? = null,
     public val hmacCalculator: DataLoomHmacCalculator? = null,
 ) {
-    /** Defensive copy of the supplied audit key, or `null` when [auditStore] is not configured. */
-    public val auditKey: ByteArray? = auditKey?.copyOf()
+    /**
+     * Defensive copy of the supplied audit key, or `null` when [auditStore] is not configured.
+     * Module-internal on purpose: only [DataLoomBuilder] reads it, and a public getter would
+     * hand callers the secret array itself.
+     */
+    internal val auditKey: ByteArray? = auditKey?.copyOf()
 
     init {
         require((auditStore == null) == (this.auditKey == null)) {
