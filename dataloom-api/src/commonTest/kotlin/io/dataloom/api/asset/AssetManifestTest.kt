@@ -163,14 +163,14 @@ class AssetManifestTest {
     // --- AssetEncryptionMetadata ---
 
     @Test
-    fun encryptionMetadataRejectsEmptyNonce() {
-        assertFailsWith<IllegalArgumentException> {
-            AssetEncryptionMetadata(
-                AssetEncryptionAlgorithm("AES-256-GCM"),
-                KeyReference("app-managed-key-001"),
-                ByteArray(0),
-            )
-        }
+    fun encryptionMetadataAcceptsEmptyNonceForPerChunkNonceSchemes() {
+        val metadata = AssetEncryptionMetadata(
+            AssetEncryptionAlgorithm("AES-256-GCM"),
+            KeyReference("app-managed-key-001"),
+            ByteArray(0),
+        )
+        assertEquals(0, metadata.nonceSize)
+        assertEquals(0, metadata.copyNonceBytes().size)
     }
 
     @Test

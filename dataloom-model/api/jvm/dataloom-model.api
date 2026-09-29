@@ -80,6 +80,12 @@ public final class io/dataloom/api/error/Recoverability : java/lang/Enum {
 	public static fun values ()[Lio/dataloom/api/error/Recoverability;
 }
 
+public final class io/dataloom/api/error/RetryAfterParser {
+	public static final field INSTANCE Lio/dataloom/api/error/RetryAfterParser;
+	public static final field MAXIMUM_DELAY_MILLISECONDS J
+	public final fun parse (Ljava/util/List;Lio/dataloom/api/time/DataLoomClock;)Lio/dataloom/api/error/RetryDelayHint;
+}
+
 public final class io/dataloom/api/error/RetryDelayHint {
 	public fun <init> (JLio/dataloom/api/error/RetryDelayHintSource;)V
 	public final fun component1 ()J

@@ -266,7 +266,9 @@ corrupted chunks, never completes, or ignores quota.
 
 ## Open decisions deliberately left for later slices
 
-1. **Digest domain when transforms are enabled.** Chunk and whole-object digests
+1. **Digest domain when transforms are enabled** (*resolved by
+   [ADR-0014](./ADR-0014-asset-chunk-transforms-and-digest-domain.md), D24: the
+   working recommendation below was adopted*). Chunk and whole-object digests
    are over the asset's *logical* bytes (the manifest documents `sizeBytes` as
    decompressed and unencrypted). When compression/encryption are wired in, a
    provider that stores sealed bytes cannot verify a logical digest. The

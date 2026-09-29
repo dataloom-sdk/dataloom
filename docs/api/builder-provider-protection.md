@@ -146,3 +146,22 @@ This slice does not complete DL-040. Remaining work includes:
   diagnostics; and
 - multi-process, process-death, high-contention, restart, failure-injection, and
   Book 2 `AC-FUNC-004` qualification.
+
+**Updated 2026-09-28.** The last bullet is now partly resolved for this exact
+capability: `AndroidReferenceConsumerRetryCircuitQualificationInstrumentedTest`
+and `IosReferenceConsumerRetryCircuitQualificationTest` (both merged 2026-08-26)
+drive real `DataLoomBuilder.providerProtectionConfiguration` /
+`DataLoom.protectedSynchronization` calls through the real
+`RoomCircuitBreakerStateStore` (native Android, Gradle Managed Device) and
+`AppleFileCircuitBreakerStateStore` (KMP iOS, `iosSimulatorArm64Test`),
+proving two failures open the circuit, a third is rejected before the real
+transport, one connection wins the half-open probe lease while a competitor is
+rejected `PROBE_IN_FLIGHT`, and normal operation recovers. Genuine
+process-death and multi-process evidence also now exists for the underlying
+circuit-breaker and retry-budget stores on both platforms (see
+[`docs/audits/DL-040-current-acceptance-reconciliation.md`](../audits/DL-040-current-acceptance-reconciliation.md)'s
+2026-09-28 update). Not yet closed: retry delay in the composed test above
+comes from calling `SynchronizationRetryEvaluator` by hand between calls, not
+from a durable queue worker; failure-injection is limited to the fault
+transport these two tests configure; and "KMP Android" has no dedicated
+consumer module.

@@ -96,14 +96,54 @@ Orchestrator or equivalent host-controlled test-runner infrastructure, so a
 genuinely separate OS process reachable from within instrumentation is the
 strongest mechanism currently available here. Neither test exercises
 cross-process *contention* (for the half-open probe lease, or for queue
-acquisition), and neither runs the full retry-scheduling/transport-provider
-AC-FUNC-004 flow through a composed `DataLoomBuilder` instance.
+acquisition) -- **the half-open-probe half of that gap is now covered by
+`AndroidCircuitBreakerProbeContentionInstrumentedTest` (`#346`, 2026-08-24,
+see "Remaining Android acceptance work" below); queue-lease contention is
+still uncovered**, and neither runs the full retry-scheduling/transport-provider
+AC-FUNC-004 flow through a composed `DataLoomBuilder` instance -- **the
+provider-flow half of that is now covered, with residuals, by
+`AndroidReferenceConsumerRetryCircuitQualificationInstrumentedTest` (`#369`,
+2026-08-26, see "Remaining Android acceptance work" below).**
 
 ## Remaining Android acceptance work
 
 - execute genuine cross-process probe/acquisition contention if the supported
   Android deployment topology permits multiple workers;
+
+  **Resolved 2026-09-28 for the circuit's half-open probe.**
+  `AndroidCircuitBreakerProbeContentionInstrumentedTest` (`#346`, 2026-08-24)
+  drives two genuinely separate `:circuitprobea`/`:circuitprobeb` processes to
+  race for the probe lease on a real Gradle Managed Device
+  (`android-validation.yml`, no `continue-on-error`); exactly one wins,
+  the other is rejected `PROBE_IN_FLIGHT` or `CLOCK_REGRESSION`. Still open:
+  no equivalent test exists for cross-process **queue-lease** acquisition (a
+  `RETRY_WAITING` entry's `acquire`) -- `dataloom-queue-room/src/androidTest`
+  has only the in-process `concurrentConsumersDoNotAcquireTheSameEntry`
+  (`RoomQueueProviderInstrumentedTest`), and no "document the single-process
+  topology instead" statement was written for it either.
 - run the full retry scheduling and transport-provider reference flow on both
   native Android and KMP Android consumer paths; and
+
+  **Partially resolved 2026-09-28.**
+  `AndroidReferenceConsumerRetryCircuitQualificationInstrumentedTest` (`#369`,
+  2026-08-26) drives the real composed `DataLoomBuilder` provider flow -- two
+  injected failures open the circuit, a third is rejected before the real
+  transport, a second Room connection wins the half-open probe lease while a
+  competitor is rejected `PROBE_IN_FLIGHT`, and normal operation recovers --
+  against the real `RoomCircuitBreakerStateStore` on a Gradle Managed Device.
+  Two residuals, not yet closed: (1) retry delay in this test comes from
+  calling `SynchronizationRetryEvaluator` by hand between calls, not from a
+  durable queue worker rescheduling the entry through `DurableQueueExecutionProcessor`
+  and the real `RoomQueueProvider`/`RoomCircuitBreakerStateStore` pair; (2)
+  "KMP Android consumer path" has no dedicated module --
+  `runtime-android-reference-consumer` is a plain `com.android.library`, not a
+  KMP module with a `commonMain` compiled for an `android` target. Since
+  `#425` (2026-09-28) `dataloom-core`/`dataloom-runtime` carry an env-gated
+  `android` KMP target and the native Android consumer now packages that
+  variant (confirmed by the managed-device task graph showing
+  `:dataloom-runtime:compileAndroidMain`/`bundleAndroidMainClassesToRuntimeJar`,
+  not `compileKotlinJvm`), so the existing proof above runs against the KMP
+  variant since that date -- whether that counts as "the mandatory KMP Android
+  consumer path" is a release-lead decision, not stated here as resolved.
 - retain the permanent Android unit, ABI, schema, migration, and managed-device
   validation lanes on the review commit.

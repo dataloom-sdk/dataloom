@@ -161,3 +161,13 @@ consumer compilation. Remaining work includes:
   integration; and
 - restart, multi-process, contention, fault-injection, and full AC-FUNC-004
   qualification.
+
+**Updated 2026-09-28.** No process-restart, multi-process, or contention proof
+exists for circuit *administration* specifically (`RoomCircuitAdministrationExecutorInstrumentedTest`
+and `AppleFileCircuitAdministrationExecutorTest` are in-process only). The
+restart/contention/AC-FUNC-004 evidence that does exist since this page was
+written covers the underlying `CircuitBreakerCoordinator`/state-store path,
+not the administration command path -- see
+[`docs/audits/DL-040-current-acceptance-reconciliation.md`](../audits/DL-040-current-acceptance-reconciliation.md)'s
+2026-09-28 update for exactly what is proven there. This page's own bullet is
+unaffected.

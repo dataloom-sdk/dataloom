@@ -3485,7 +3485,7 @@ final class io.dataloom.runtime.execution/SynchronizationPipelineRegistry { // i
 }
 
 final class io.dataloom.runtime.facade/DataLoomAssetTransferSpec { // io.dataloom.runtime.facade/DataLoomAssetTransferSpec|null[0]
-    constructor <init>(io.dataloom.assets/AssetProvider, io.dataloom.assets/AssetTransferSessionStore, io.dataloom.api.security/DataLoomIncrementalDigestCalculator, kotlin/Int = ..., io.dataloom.api.security/DigestAlgorithm = ..., kotlin/Int = ...) // io.dataloom.runtime.facade/DataLoomAssetTransferSpec.<init>|<init>(io.dataloom.assets.AssetProvider;io.dataloom.assets.AssetTransferSessionStore;io.dataloom.api.security.DataLoomIncrementalDigestCalculator;kotlin.Int;io.dataloom.api.security.DigestAlgorithm;kotlin.Int){}[0]
+    constructor <init>(io.dataloom.assets/AssetProvider, io.dataloom.assets/AssetTransferSessionStore, io.dataloom.api.security/DataLoomIncrementalDigestCalculator, kotlin/Int = ..., io.dataloom.api.security/DigestAlgorithm = ..., kotlin/Int = ..., io.dataloom.assets.transform/AssetTransferTransforms = ...) // io.dataloom.runtime.facade/DataLoomAssetTransferSpec.<init>|<init>(io.dataloom.assets.AssetProvider;io.dataloom.assets.AssetTransferSessionStore;io.dataloom.api.security.DataLoomIncrementalDigestCalculator;kotlin.Int;io.dataloom.api.security.DigestAlgorithm;kotlin.Int;io.dataloom.assets.transform.AssetTransferTransforms){}[0]
 
     final val chunkSizeBytes // io.dataloom.runtime.facade/DataLoomAssetTransferSpec.chunkSizeBytes|{}chunkSizeBytes[0]
         final fun <get-chunkSizeBytes>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomAssetTransferSpec.chunkSizeBytes.<get-chunkSizeBytes>|<get-chunkSizeBytes>(){}[0]
@@ -3497,6 +3497,8 @@ final class io.dataloom.runtime.facade/DataLoomAssetTransferSpec { // io.dataloo
         final fun <get-provider>(): io.dataloom.assets/AssetProvider // io.dataloom.runtime.facade/DataLoomAssetTransferSpec.provider.<get-provider>|<get-provider>(){}[0]
     final val sessionStore // io.dataloom.runtime.facade/DataLoomAssetTransferSpec.sessionStore|{}sessionStore[0]
         final fun <get-sessionStore>(): io.dataloom.assets/AssetTransferSessionStore // io.dataloom.runtime.facade/DataLoomAssetTransferSpec.sessionStore.<get-sessionStore>|<get-sessionStore>(){}[0]
+    final val transforms // io.dataloom.runtime.facade/DataLoomAssetTransferSpec.transforms|{}transforms[0]
+        final fun <get-transforms>(): io.dataloom.assets.transform/AssetTransferTransforms // io.dataloom.runtime.facade/DataLoomAssetTransferSpec.transforms.<get-transforms>|<get-transforms>(){}[0]
     final val verifyBufferBytes // io.dataloom.runtime.facade/DataLoomAssetTransferSpec.verifyBufferBytes|{}verifyBufferBytes[0]
         final fun <get-verifyBufferBytes>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomAssetTransferSpec.verifyBufferBytes.<get-verifyBufferBytes>|<get-verifyBufferBytes>(){}[0]
 

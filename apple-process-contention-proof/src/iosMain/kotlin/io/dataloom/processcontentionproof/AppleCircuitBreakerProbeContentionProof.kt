@@ -215,15 +215,32 @@ public object AppleCircuitBreakerProbeContentionProof {
      * app setup/launch comfortably finishes before it elapses, but short
      * enough that the CI script only needs a brief real sleep to guarantee
      * it has elapsed before racing; the wide [CircuitBreakerConfiguration.failureWindow]
-     * and [CircuitBreakerConfiguration.halfOpenProbeLeaseDuration] exist
-     * purely to avoid any timing coincidence unrelated to the actual race
-     * under test.
+     * exists purely to avoid any timing coincidence unrelated to the actual
+     * race under test.
+     *
+     * [CircuitBreakerConfiguration.halfOpenProbeLeaseDuration] is 20s, not a
+     * short value, for a real observed reason, not just margin: App A is
+     * always launched first and is the one iOS backgrounds (and CPU-throttles)
+     * once App B launches and takes foreground focus. If A's own `acquire()`
+     * call is delayed by that throttling past the winner's lease, A
+     * legitimately observes an expired lease and is granted a fresh,
+     * correctly-serialized probe at the next generation -- proven-correct
+     * recovery behavior (`CircuitBreakerProbeLeaseRecoveryTest`), not a bug,
+     * but it makes this proof's own "exactly one ALLOWED" assertion fail. A
+     * 5s lease had insufficient margin against that Simulator-throttling
+     * delay on this CI runner; 20s stays comfortably inside the CI script's
+     * own 30s result-file wait budget (`apple-validation.yml`) while giving
+     * the backgrounded/throttled loser's late `acquire()` call a much larger
+     * window to still land inside the winner's active lease and be correctly
+     * rejected with `PROBE_IN_FLIGHT`. This narrows, but does not
+     * structurally eliminate, the race: iOS background-throttling delay is
+     * not formally bounded.
      */
     private fun configuration(): CircuitBreakerConfiguration = CircuitBreakerConfiguration(
         failureThreshold = 2,
         failureWindow = SchedulingDelay(30_000L),
         openDuration = SchedulingDelay(400L),
-        halfOpenProbeLeaseDuration = SchedulingDelay(5_000L),
+        halfOpenProbeLeaseDuration = SchedulingDelay(20_000L),
     )
 
     private fun touchFile(path: String) {

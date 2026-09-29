@@ -106,6 +106,18 @@ This slice does not complete:
 - multi-process, process-death, high-contention, and Book 2 `AC-FUNC-004`
   qualification.
 
+**Updated 2026-09-28.** This capability (`DataLoomProtectedStrategySynchronization`)
+is distinct from `DataLoomBuilder.providerProtectionConfiguration` /
+`DataLoom.protectedSynchronization`, which is what the composed AC-FUNC-004
+provider-flow proofs drive (see
+[`builder-provider-protection.md`](./builder-provider-protection.md)'s own
+2026-09-28 update). No such proof exists for strategy execution, so this
+page's bullets remain open. Process-death and half-open-probe cross-process
+contention evidence now exists for the underlying circuit/queue stores this
+capability also depends on (see
+[`docs/audits/DL-040-current-acceptance-reconciliation.md`](../audits/DL-040-current-acceptance-reconciliation.md)),
+but that evidence does not drive strategy execution itself.
+
 ## Persisted accepted-plan execution
 
 `DataLoomProtectedStrategySynchronization.synchronizeAcceptedPlan(...)` executes

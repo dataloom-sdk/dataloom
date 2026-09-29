@@ -121,3 +121,15 @@ This slice does not complete DL-040. Remaining work includes:
 - complete retry/circuit events, metrics, logs, traces, health, and diagnostics;
 - multi-process, process-death, high-contention, restart, failure-injection, and
   Book 2 `AC-FUNC-004` qualification.
+
+**Updated 2026-09-28.** `DataLoomBuilder` adoption of this specific
+`ProviderProtectedSynchronizationRuntime` bridge still has not landed (first
+bullet above, unaffected). The separate `providerProtectionConfiguration`
+capability `DataLoomBuilder` does expose now has composed AC-FUNC-004 evidence
+on native Android and KMP iOS -- see
+[`builder-provider-protection.md`](./builder-provider-protection.md)'s own
+2026-09-28 update and
+[`docs/audits/DL-040-current-acceptance-reconciliation.md`](../audits/DL-040-current-acceptance-reconciliation.md).
+Process-death and cross-process probe-contention evidence also now exists for
+the underlying circuit/queue stores (same update), but not for this bridge
+specifically.

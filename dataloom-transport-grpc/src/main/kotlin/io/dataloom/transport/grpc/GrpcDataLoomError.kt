@@ -5,6 +5,8 @@ import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
+import io.dataloom.api.error.RetryDelayHint
+import io.dataloom.api.error.RetryDelayHintCarrier
 
 /**
  * Concrete [DataLoomError] produced by the gRPC transport provider.
@@ -32,3 +34,23 @@ public data class GrpcDataLoomError(
     override val message: String,
     override val cause: Throwable?,
 ) : DataLoomError
+
+/**
+ * [GrpcDataLoomError] carrying normalized `grpc-retry-pushback-ms` guidance.
+ *
+ * Produced only for a RESOURCE_EXHAUSTED or UNAVAILABLE failure whose status
+ * trailers carried a valid, non-negative `grpc-retry-pushback-ms` value; see
+ * [GrpcStatusMapper]. All other properties and restrictions mirror
+ * [GrpcDataLoomError].
+ *
+ * @param retryDelayHint normalized, bounded minimum delay guidance.
+ */
+public data class GrpcRetryableDataLoomError(
+    override val code: ErrorCode,
+    override val category: ErrorCategory,
+    override val severity: ErrorSeverity,
+    override val recoverability: Recoverability,
+    override val message: String,
+    override val cause: Throwable?,
+    override val retryDelayHint: RetryDelayHint,
+) : DataLoomError, RetryDelayHintCarrier

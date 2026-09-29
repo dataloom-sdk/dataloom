@@ -11,6 +11,8 @@ abstract class io.dataloom.transport.graphql/ApolloGraphQLTransportProvider : io
 
     abstract val apolloClient // io.dataloom.transport.graphql/ApolloGraphQLTransportProvider.apolloClient|{}apolloClient[0]
         abstract fun <get-apolloClient>(): com.apollographql.apollo/ApolloClient // io.dataloom.transport.graphql/ApolloGraphQLTransportProvider.apolloClient.<get-apolloClient>|<get-apolloClient>(){}[0]
+    open val clock // io.dataloom.transport.graphql/ApolloGraphQLTransportProvider.clock|{}clock[0]
+        open fun <get-clock>(): io.dataloom.api.time/DataLoomClock? // io.dataloom.transport.graphql/ApolloGraphQLTransportProvider.clock.<get-clock>|<get-clock>(){}[0]
 
     abstract suspend fun executePull(io.dataloom.api.transport/PullChangesRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.transport/PullChangesResult> // io.dataloom.transport.graphql/ApolloGraphQLTransportProvider.executePull|executePull(io.dataloom.api.transport.PullChangesRequest){}[0]
     abstract suspend fun executePush(io.dataloom.api.transport/PushChangesRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.synchronization/ChangeSetAcknowledgement> // io.dataloom.transport.graphql/ApolloGraphQLTransportProvider.executePush|executePush(io.dataloom.api.transport.PushChangesRequest){}[0]
@@ -18,6 +20,37 @@ abstract class io.dataloom.transport.graphql/ApolloGraphQLTransportProvider : io
     final fun <#A1: com.apollographql.apollo.api/Query.Data> adaptQueryResponse(com.apollographql.apollo.api/ApolloResponse<#A1>, kotlin/Function1<#A1, io.dataloom.api.transport/PullChangesResult>): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.transport/PullChangesResult> // io.dataloom.transport.graphql/ApolloGraphQLTransportProvider.adaptQueryResponse|adaptQueryResponse(com.apollographql.apollo.api.ApolloResponse<0:0>;kotlin.Function1<0:0,io.dataloom.api.transport.PullChangesResult>){0§<com.apollographql.apollo.api.Query.Data>}[0]
     final suspend fun pullChanges(io.dataloom.api.transport/PullChangesRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.transport/PullChangesResult> // io.dataloom.transport.graphql/ApolloGraphQLTransportProvider.pullChanges|pullChanges(io.dataloom.api.transport.PullChangesRequest){}[0]
     final suspend fun pushChanges(io.dataloom.api.transport/PushChangesRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.synchronization/ChangeSetAcknowledgement> // io.dataloom.transport.graphql/ApolloGraphQLTransportProvider.pushChanges|pushChanges(io.dataloom.api.transport.PushChangesRequest){}[0]
+}
+
+final class io.dataloom.transport.graphql/GraphQLRetryableTransportError : io.dataloom.api.error/DataLoomError, io.dataloom.api.error/RetryDelayHintCarrier { // io.dataloom.transport.graphql/GraphQLRetryableTransportError|null[0]
+    constructor <init>(io.dataloom.api.error/ErrorCode, io.dataloom.api.error/ErrorCategory, io.dataloom.api.error/ErrorSeverity, io.dataloom.api.error/Recoverability, kotlin/String, kotlin/Throwable? = ..., io.dataloom.api.error/RetryDelayHint) // io.dataloom.transport.graphql/GraphQLRetryableTransportError.<init>|<init>(io.dataloom.api.error.ErrorCode;io.dataloom.api.error.ErrorCategory;io.dataloom.api.error.ErrorSeverity;io.dataloom.api.error.Recoverability;kotlin.String;kotlin.Throwable?;io.dataloom.api.error.RetryDelayHint){}[0]
+
+    final val category // io.dataloom.transport.graphql/GraphQLRetryableTransportError.category|{}category[0]
+        final fun <get-category>(): io.dataloom.api.error/ErrorCategory // io.dataloom.transport.graphql/GraphQLRetryableTransportError.category.<get-category>|<get-category>(){}[0]
+    final val cause // io.dataloom.transport.graphql/GraphQLRetryableTransportError.cause|{}cause[0]
+        final fun <get-cause>(): kotlin/Throwable? // io.dataloom.transport.graphql/GraphQLRetryableTransportError.cause.<get-cause>|<get-cause>(){}[0]
+    final val code // io.dataloom.transport.graphql/GraphQLRetryableTransportError.code|{}code[0]
+        final fun <get-code>(): io.dataloom.api.error/ErrorCode // io.dataloom.transport.graphql/GraphQLRetryableTransportError.code.<get-code>|<get-code>(){}[0]
+    final val message // io.dataloom.transport.graphql/GraphQLRetryableTransportError.message|{}message[0]
+        final fun <get-message>(): kotlin/String // io.dataloom.transport.graphql/GraphQLRetryableTransportError.message.<get-message>|<get-message>(){}[0]
+    final val recoverability // io.dataloom.transport.graphql/GraphQLRetryableTransportError.recoverability|{}recoverability[0]
+        final fun <get-recoverability>(): io.dataloom.api.error/Recoverability // io.dataloom.transport.graphql/GraphQLRetryableTransportError.recoverability.<get-recoverability>|<get-recoverability>(){}[0]
+    final val retryDelayHint // io.dataloom.transport.graphql/GraphQLRetryableTransportError.retryDelayHint|{}retryDelayHint[0]
+        final fun <get-retryDelayHint>(): io.dataloom.api.error/RetryDelayHint // io.dataloom.transport.graphql/GraphQLRetryableTransportError.retryDelayHint.<get-retryDelayHint>|<get-retryDelayHint>(){}[0]
+    final val severity // io.dataloom.transport.graphql/GraphQLRetryableTransportError.severity|{}severity[0]
+        final fun <get-severity>(): io.dataloom.api.error/ErrorSeverity // io.dataloom.transport.graphql/GraphQLRetryableTransportError.severity.<get-severity>|<get-severity>(){}[0]
+
+    final fun component1(): io.dataloom.api.error/ErrorCode // io.dataloom.transport.graphql/GraphQLRetryableTransportError.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.error/ErrorCategory // io.dataloom.transport.graphql/GraphQLRetryableTransportError.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.error/ErrorSeverity // io.dataloom.transport.graphql/GraphQLRetryableTransportError.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.error/Recoverability // io.dataloom.transport.graphql/GraphQLRetryableTransportError.component4|component4(){}[0]
+    final fun component5(): kotlin/String // io.dataloom.transport.graphql/GraphQLRetryableTransportError.component5|component5(){}[0]
+    final fun component6(): kotlin/Throwable? // io.dataloom.transport.graphql/GraphQLRetryableTransportError.component6|component6(){}[0]
+    final fun component7(): io.dataloom.api.error/RetryDelayHint // io.dataloom.transport.graphql/GraphQLRetryableTransportError.component7|component7(){}[0]
+    final fun copy(io.dataloom.api.error/ErrorCode = ..., io.dataloom.api.error/ErrorCategory = ..., io.dataloom.api.error/ErrorSeverity = ..., io.dataloom.api.error/Recoverability = ..., kotlin/String = ..., kotlin/Throwable? = ..., io.dataloom.api.error/RetryDelayHint = ...): io.dataloom.transport.graphql/GraphQLRetryableTransportError // io.dataloom.transport.graphql/GraphQLRetryableTransportError.copy|copy(io.dataloom.api.error.ErrorCode;io.dataloom.api.error.ErrorCategory;io.dataloom.api.error.ErrorSeverity;io.dataloom.api.error.Recoverability;kotlin.String;kotlin.Throwable?;io.dataloom.api.error.RetryDelayHint){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.transport.graphql/GraphQLRetryableTransportError.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.transport.graphql/GraphQLRetryableTransportError.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.transport.graphql/GraphQLRetryableTransportError.toString|toString(){}[0]
 }
 
 final class io.dataloom.transport.graphql/GraphQLTransportError : io.dataloom.api.error/DataLoomError { // io.dataloom.transport.graphql/GraphQLTransportError|null[0]

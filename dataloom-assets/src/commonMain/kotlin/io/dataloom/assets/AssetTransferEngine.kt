@@ -7,6 +7,8 @@ import io.dataloom.api.identifier.AssetId
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.security.DataLoomIncrementalDigestCalculator
 import io.dataloom.api.security.DigestAlgorithm
+import io.dataloom.assets.transform.AssetTransferTransforms
+import io.dataloom.assets.transform.AssetWireFormat
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -88,19 +90,34 @@ public sealed interface AssetTransferOutcome {
  * complete. A whole-object mismatch fails the session and discards the
  * download sink; nothing corrupted is ever reported as completed.
  *
+ * ## Transforms (compression and encryption)
+ *
+ * With [transforms] configured, an upload compresses then encrypts each chunk
+ * into a versioned frame (see [AssetWireFormat]) and records the algorithms in
+ * the manifest; a download reverses them, driven by the manifest. Digests stay
+ * over the *logical* bytes and are verified by this engine, never by a
+ * provider that stores ciphertext (ADR-0014, D24): the upload verifies each
+ * source chunk against the manifest before transforming it, and the download
+ * verifies each decoded chunk and the whole assembled object. Peak memory is a
+ * small constant number of chunk-sized buffers (the chunk, its compressed
+ * form, its frame), still independent of the asset size. A transform this
+ * platform cannot run fails with [AssetErrorKind.TRANSFORM_UNSUPPORTED]
+ * before anything is transferred; it is never skipped.
+ *
  * ## Out of scope for this slice
  *
- * Parallel chunk transfer, fairness controls, compression/encryption wiring
- * and content-policy hooks are later slices. Session persistence is the
- * caller's choice of [AssetTransferSessionStore]: with
- * [DurableAssetTransferSessionStore] a restart resumes where the last durably
- * recorded chunk left off.
+ * Parallel chunk transfer, fairness controls and content-policy hooks are later
+ * slices. Session persistence is the caller's choice of
+ * [AssetTransferSessionStore]: with [DurableAssetTransferSessionStore] a
+ * restart resumes where the last durably recorded chunk left off.
  *
  * @param chunkSizeBytes requested chunk size for new uploads; clamped into the
  *   provider's [AssetProvider.chunkSizeBounds].
  * @param digestAlgorithm algorithm for the chunk and whole-object digests of
  *   new uploads.
  * @param verifyBufferBytes streaming buffer size for whole-object verification.
+ * @param transforms compression and encryption applied to uploads and reversed
+ *   on download; [AssetTransferTransforms.NONE] transfers chunks as-is.
  */
 public class AssetTransferEngine(
     private val provider: AssetProvider,
@@ -109,6 +126,7 @@ public class AssetTransferEngine(
     private val chunkSizeBytes: Int = AssetChunkSizeBounds.DEFAULT_CHUNK_SIZE_BYTES,
     private val digestAlgorithm: DigestAlgorithm = DigestAlgorithm.SHA_256,
     verifyBufferBytes: Int = AssetIntegrityVerifier.DEFAULT_READ_BUFFER_BYTES,
+    private val transforms: AssetTransferTransforms = AssetTransferTransforms.NONE,
 ) {
     private val verifier = AssetIntegrityVerifier(digests, verifyBufferBytes)
 
@@ -191,9 +209,16 @@ public class AssetTransferEngine(
         } else {
             when (val manifest = provider.readManifest(assetId, version)) {
                 is ProviderOperationResult.Failure -> return AssetTransferOutcome.NotStarted(manifest.error)
-                is ProviderOperationResult.Success -> createSession(
-                    AssetTransferSession(sessionId, AssetTransferDirection.DOWNLOAD, manifest.value),
-                )
+                is ProviderOperationResult.Success -> {
+                    // Refuse before creating a session if this engine cannot reverse the asset's transforms.
+                    val resolved = AssetChunkPipeline.forManifest(manifest.value, transforms, upload = false)
+                    if (resolved is AssetChunkPipeline.Resolution.Refused) {
+                        return AssetTransferOutcome.NotStarted(resolved.error)
+                    }
+                    createSession(
+                        AssetTransferSession(sessionId, AssetTransferDirection.DOWNLOAD, manifest.value),
+                    )
+                }
             }
         }
         return driveDownload(session, sink)
@@ -241,13 +266,16 @@ public class AssetTransferEngine(
         mediaType: AssetMediaType,
         source: AssetSource,
     ): Prepared {
+        // Refuse an unusable transform before reading a single source byte.
+        AssetChunkPipeline.availability(transforms)?.let { return Prepared.Refused(AssetTransferOutcome.NotStarted(it)) }
         val manifest = try {
             val size = source.sizeBytes()
             if (size <= 0) {
                 return refused(AssetErrorKind.EMPTY_ASSET, "Asset has no bytes.")
             }
             val plan = AssetChunkPlan.negotiate(size, chunkSizeBytes, provider.chunkSizeBounds)
-            verifier.prepareManifest(assetId, version, mediaType, source, plan, digestAlgorithm)
+            val logical = verifier.prepareManifest(assetId, version, mediaType, source, plan, digestAlgorithm)
+            AssetChunkPipeline.describe(logical, transforms)
         } catch (e: CancellationException) {
             throw e
         } catch (e: AssetSourceChangedException) {
@@ -266,6 +294,10 @@ public class AssetTransferEngine(
         var session = initial
         terminalOutcome(session)?.let { return it }
         val abortProvider: suspend () -> Unit = { provider.abortUpload(sessionId) }
+        val pipeline = when (val resolved = AssetChunkPipeline.forManifest(session.manifest, transforms, upload = true)) {
+            is AssetChunkPipeline.Resolution.Refused -> return onError(sessionId, resolved.error, abortProvider)
+            is AssetChunkPipeline.Resolution.Ready -> resolved.pipeline
+        }
 
         // Open (or re-open) the provider session; its committed set is authoritative.
         val status = when (val opened = provider.openUpload(AssetUploadRequest(sessionId, session.manifest))) {
@@ -304,7 +336,15 @@ public class AssetTransferEngine(
                         abortProvider,
                     )
                 }
-                when (val uploaded = provider.uploadChunk(AssetChunkUpload(sessionId, index, chunk))) {
+                val wire = if (pipeline == null) {
+                    chunk
+                } else {
+                    when (val framed = attempt(AssetErrorKind.TRANSFORM_UNSUPPORTED) { pipeline.toWire(index, chunk) }) {
+                        is Attempt.Err -> return onError(sessionId, framed.error, abortProvider)
+                        is Attempt.Ok -> framed.value
+                    }
+                }
+                when (val uploaded = provider.uploadChunk(AssetChunkUpload(sessionId, index, wire))) {
                     is ProviderOperationResult.Failure -> return onError(sessionId, uploaded.error, abortProvider)
                     is ProviderOperationResult.Success ->
                         session = advance(sessionId, AssetTransferEvent.ChunkCommitted(index))
@@ -331,6 +371,10 @@ public class AssetTransferEngine(
         terminalOutcome(session)?.let { return it }
         val discardSink: suspend () -> Unit = { sink.discard() }
         val manifest = session.manifest
+        val pipeline = when (val resolved = AssetChunkPipeline.forManifest(manifest, transforms, upload = false)) {
+            is AssetChunkPipeline.Resolution.Refused -> return onError(sessionId, resolved.error, discardSink)
+            is AssetChunkPipeline.Resolution.Ready -> resolved.pipeline
+        }
 
         (attempt(AssetErrorKind.SINK_FAILURE) { sink.reserve(manifest.sizeBytes) } as? Attempt.Err)
             ?.let { return onError(sessionId, it.error, discardSink) }
@@ -344,9 +388,18 @@ public class AssetTransferEngine(
                 if (index in session.committedChunks) continue
 
                 val descriptor = manifest.chunkLayout.chunks[index]
-                val bytes = when (val read = provider.readChunk(manifest.assetId, manifest.version, index)) {
+                val stored = when (val read = provider.readChunk(manifest.assetId, manifest.version, index)) {
                     is ProviderOperationResult.Failure -> return onError(sessionId, read.error, discardSink)
                     is ProviderOperationResult.Success -> read.value
+                }
+                val bytes = if (pipeline == null) {
+                    stored
+                } else {
+                    val expected = descriptor.lengthBytes.toInt()
+                    when (val decoded = attempt(AssetErrorKind.TRANSFORM_FRAME_INVALID) { pipeline.fromWire(index, stored, expected) }) {
+                        is Attempt.Err -> return onError(sessionId, decoded.error, discardSink)
+                        is Attempt.Ok -> decoded.value
+                    }
                 }
                 if (!verifier.verifyChunk(descriptor, bytes)) {
                     return onError(
@@ -465,6 +518,6 @@ public class AssetTransferEngine(
         } catch (e: AssetSourceChangedException) {
             Attempt.Err(AssetTransferError(AssetErrorKind.SOURCE_CONTENT_CHANGED, "Source content changed.", e))
         } catch (e: Exception) {
-            Attempt.Err(AssetTransferError(failureKind, "Local asset I/O failed.", e))
+            Attempt.Err(transformError(e) ?: AssetTransferError(failureKind, "Local asset I/O failed.", e))
         }
 }

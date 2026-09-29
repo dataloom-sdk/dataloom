@@ -98,3 +98,19 @@ mutation with its successful command receipt.
 - canonical circuit events, metrics, logs, and trace fields;
 - process-death, multi-process, and high-contention platform qualification; and
 - Book 2 AC-FUNC-004 end-to-end recovery evidence.
+
+**Updated 2026-09-28.** The second and third bullets are each partly resolved;
+see [`docs/audits/DL-040-current-acceptance-reconciliation.md`](../audits/DL-040-current-acceptance-reconciliation.md)'s
+2026-09-28 update for full citations. In summary: `RoomCircuitBreakerStateStore`
+and `AppleFileCircuitBreakerStateStore` both now have genuine OS/Simulator
+process-kill/relaunch evidence (`AndroidProcessTerminationCircuitBreakerInstrumentedTest`,
+`apple-process-termination-proof`); cross-process contention for the half-open
+probe is proven on both platforms (`AndroidCircuitBreakerProbeContentionInstrumentedTest`,
+`apple-process-contention-proof`); and the composed `DataLoomBuilder`
+provider-protection flow proves the full backoff/open/reject/probe/recover
+sequence on native Android and KMP iOS
+(`AndroidReferenceConsumerRetryCircuitQualificationInstrumentedTest`,
+`IosReferenceConsumerRetryCircuitQualificationTest`). None of this re-drives
+the real gate after a process kill, and no test exercises the composed
+queue-worker-to-circuit loop over a real durable queue store -- both remain
+open, per the same update.

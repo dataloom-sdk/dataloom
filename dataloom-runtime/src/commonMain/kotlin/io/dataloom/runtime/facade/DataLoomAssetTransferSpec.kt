@@ -6,6 +6,7 @@ import io.dataloom.assets.AssetChunkSizeBounds
 import io.dataloom.assets.AssetIntegrityVerifier
 import io.dataloom.assets.AssetProvider
 import io.dataloom.assets.AssetTransferSessionStore
+import io.dataloom.assets.transform.AssetTransferTransforms
 
 /**
  * Immutable configuration for the optional asset-transfer capability.
@@ -50,6 +51,14 @@ public class DataLoomAssetTransferSpec(
 
     /** Streaming buffer size for whole-object verification. */
     public val verifyBufferBytes: Int = AssetIntegrityVerifier.DEFAULT_READ_BUFFER_BYTES,
+
+    /**
+     * Compression and encryption applied to uploaded chunks and reversed on
+     * download; [AssetTransferTransforms.NONE] (the default) transfers chunks
+     * as-is. The host supplies encryption keys through the cipher's
+     * [io.dataloom.assets.transform.AssetKeyResolver]; DataLoom never stores them.
+     */
+    public val transforms: AssetTransferTransforms = AssetTransferTransforms.NONE,
 ) {
     init {
         require(chunkSizeBytes >= 1) {
@@ -63,5 +72,5 @@ public class DataLoomAssetTransferSpec(
     /** Avoids rendering collaborator implementation state in diagnostics. */
     override fun toString(): String =
         "DataLoomAssetTransferSpec(chunkSizeBytes=$chunkSizeBytes, digestAlgorithm=$digestAlgorithm, " +
-            "verifyBufferBytes=$verifyBufferBytes)"
+            "verifyBufferBytes=$verifyBufferBytes, transforms=$transforms)"
 }

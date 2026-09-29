@@ -7,6 +7,7 @@ import com.apollographql.apollo.api.Query
 import com.apollographql.apollo.exception.ApolloException
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.synchronization.ChangeSetAcknowledgement
+import io.dataloom.api.time.DataLoomClock
 import io.dataloom.api.transport.PullChangesRequest
 import io.dataloom.api.transport.PullChangesResult
 import io.dataloom.api.transport.PushChangesRequest
@@ -75,6 +76,16 @@ public abstract class ApolloGraphQLTransportProvider : TransportProvider {
      */
     protected abstract val apolloClient: ApolloClient
 
+    /**
+     * Source of "now" used only to convert an HTTP-date `Retry-After` response
+     * header into a delay when a GraphQL-over-HTTP backend rejects a request
+     * with 429 or 503 (see [ApolloErrorMapper]). Left `null` by default: the
+     * delay-seconds form of `Retry-After` is still honored without a clock,
+     * and this provider never reads a wall clock on its own. Override to
+     * supply one.
+     */
+    protected open val clock: DataLoomClock? = null
+
     // -------------------------------------------------------------------------
     // TransportProvider — push
     // -------------------------------------------------------------------------
@@ -104,7 +115,7 @@ public abstract class ApolloGraphQLTransportProvider : TransportProvider {
         } catch (e: CancellationException) {
             throw e
         } catch (e: ApolloException) {
-            ProviderOperationResult.Failure(ApolloErrorMapper.fromApolloException(e))
+            ProviderOperationResult.Failure(ApolloErrorMapper.fromApolloException(e, clock))
         }
     }
 
@@ -134,7 +145,7 @@ public abstract class ApolloGraphQLTransportProvider : TransportProvider {
         } catch (e: CancellationException) {
             throw e
         } catch (e: ApolloException) {
-            ProviderOperationResult.Failure(ApolloErrorMapper.fromApolloException(e))
+            ProviderOperationResult.Failure(ApolloErrorMapper.fromApolloException(e, clock))
         }
     }
 
@@ -275,7 +286,7 @@ public abstract class ApolloGraphQLTransportProvider : TransportProvider {
         adapt: (D) -> ChangeSetAcknowledgement,
     ): ProviderOperationResult<ChangeSetAcknowledgement> {
         response.exception?.let { ex ->
-            return ProviderOperationResult.Failure(ApolloErrorMapper.fromApolloException(ex))
+            return ProviderOperationResult.Failure(ApolloErrorMapper.fromApolloException(ex, clock))
         }
         if (response.hasErrors()) {
             return ProviderOperationResult.Failure(
@@ -307,7 +318,7 @@ public abstract class ApolloGraphQLTransportProvider : TransportProvider {
         adapt: (D) -> PullChangesResult,
     ): ProviderOperationResult<PullChangesResult> {
         response.exception?.let { ex ->
-            return ProviderOperationResult.Failure(ApolloErrorMapper.fromApolloException(ex))
+            return ProviderOperationResult.Failure(ApolloErrorMapper.fromApolloException(ex, clock))
         }
         if (response.hasErrors()) {
             return ProviderOperationResult.Failure(

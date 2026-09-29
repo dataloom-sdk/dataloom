@@ -5,6 +5,9 @@ import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
+import io.dataloom.api.error.RetryAfterParser
+import io.dataloom.api.error.RetryDelayHint
+import io.dataloom.api.error.RetryDelayHintCarrier
 import io.dataloom.api.provider.ProviderDescriptor
 import io.dataloom.api.provider.ProviderHealth
 import io.dataloom.api.provider.ProviderHealthStatus
@@ -12,6 +15,7 @@ import io.dataloom.api.provider.ProviderInitializationContext
 import io.dataloom.api.provider.ProviderOperationResult
 import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.synchronization.ChangeSetAcknowledgement
+import io.dataloom.api.time.DataLoomClock
 import io.dataloom.api.transport.PullChangesRequest
 import io.dataloom.api.transport.PullChangesResult
 import io.dataloom.api.transport.PushChangesRequest
@@ -38,6 +42,11 @@ import retrofit2.HttpException
  *
  * Raw Retrofit/OkHttp errors do not escape [pushChanges] or [pullChanges]. Failures are mapped to
  * canonical [DataLoomError] values via [errorMapper].
+ *
+ * HTTP 429 and 503 [HttpException] failures carrying a valid `Retry-After` response header
+ * (delay seconds, or an HTTP-date when [clock] is supplied) produce an error that also
+ * implements [RetryDelayHintCarrier] when [errorMapper] is left at its default; see
+ * [RetryAfterParser].
  */
 public class RetrofitTransportProvider<PushRequestBody, PushResponseBody, PullRequestBody, PullResponseBody>(
     override val descriptor: ProviderDescriptor,
@@ -47,7 +56,8 @@ public class RetrofitTransportProvider<PushRequestBody, PushResponseBody, PullRe
     private val pullCall: suspend (PullRequestBody) -> PullResponseBody,
     private val pushResponseMapper: (PushChangesRequest, PushResponseBody) -> ChangeSetAcknowledgement,
     private val pullResponseMapper: (PullChangesRequest, PullResponseBody) -> PullChangesResult,
-    private val errorMapper: RetrofitTransportErrorMapper = RetrofitTransportErrorMapper.Default,
+    private val clock: DataLoomClock? = null,
+    private val errorMapper: RetrofitTransportErrorMapper = RetrofitTransportErrorMapper.Default(clock),
 ) : TransportProvider {
 
     init {
@@ -104,14 +114,18 @@ public fun interface RetrofitTransportErrorMapper {
          * Default Retrofit/OkHttp error mapper.
          *
          * Messages intentionally exclude headers, tokens, credentials, URLs, and payload content.
+         *
+         * @param clock source of "now" used only to convert an HTTP-date `Retry-After` value
+         *   into a delay. When `null` (the default), only the delay-seconds form is honored; the
+         *   mapper never reads a wall clock on its own.
          */
-        public val Default: RetrofitTransportErrorMapper =
-            RetrofitTransportErrorMapper { throwable -> DefaultRetrofitTransportErrorMapper.map(throwable) }
+        public fun Default(clock: DataLoomClock? = null): RetrofitTransportErrorMapper =
+            RetrofitTransportErrorMapper { throwable -> DefaultRetrofitTransportErrorMapper.map(throwable, clock) }
     }
 }
 
 private object DefaultRetrofitTransportErrorMapper {
-    fun map(throwable: Throwable): DataLoomError {
+    fun map(throwable: Throwable, clock: DataLoomClock?): DataLoomError {
         return when (throwable) {
             is InterruptedIOException,
             // OkHttp's per-call timeout (callTimeoutMillis) does not throw
@@ -139,7 +153,7 @@ private object DefaultRetrofitTransportErrorMapper {
                 )
             }
 
-            is HttpException -> mapHttpException(throwable)
+            is HttpException -> mapHttpException(throwable, clock)
             is IOException -> error(
                 code = "RETROFIT_NETWORK_IO",
                 category = ErrorCategory.NETWORK,
@@ -160,7 +174,7 @@ private object DefaultRetrofitTransportErrorMapper {
         }
     }
 
-    private fun mapHttpException(httpException: HttpException): DataLoomError {
+    private fun mapHttpException(httpException: HttpException, clock: DataLoomClock?): DataLoomError {
         val statusCode: Int = httpException.code()
         return when (statusCode) {
             401 -> error(
@@ -202,8 +216,13 @@ private object DefaultRetrofitTransportErrorMapper {
                 cause = httpException,
             )
 
-            408,
+            // Retry-After is only meaningful on 429 and 503 (RFC 9110); the other
+            // recoverable statuses below never carry a hint.
             429,
+            503,
+            -> retryableError(httpException, statusCode, clock)
+
+            408,
             in 500..599,
             -> error(
                 code = "RETROFIT_HTTP_${statusCode}",
@@ -223,6 +242,48 @@ private object DefaultRetrofitTransportErrorMapper {
                 cause = httpException,
             )
         }
+    }
+
+    private fun retryableError(
+        httpException: HttpException,
+        statusCode: Int,
+        clock: DataLoomClock?,
+    ): DataLoomError {
+        val message = "Transport HTTP request failed with status $statusCode."
+        val retryDelayHint: RetryDelayHint? = parseRetryDelayHint(httpException, clock)
+        return if (retryDelayHint == null) {
+            error(
+                code = "RETROFIT_HTTP_${statusCode}",
+                category = ErrorCategory.NETWORK,
+                severity = ErrorSeverity.ERROR,
+                recoverability = Recoverability.RECOVERABLE,
+                message = message,
+                cause = httpException,
+            )
+        } else {
+            RetrofitRetryableTransportError(
+                code = ErrorCode("RETROFIT_HTTP_${statusCode}"),
+                category = ErrorCategory.NETWORK,
+                severity = ErrorSeverity.ERROR,
+                recoverability = Recoverability.RECOVERABLE,
+                message = message,
+                cause = httpException,
+                retryDelayHint = retryDelayHint,
+            )
+        }
+    }
+
+    /**
+     * Retrofit's [HttpException] carries the raw [retrofit2.Response] (and therefore its
+     * [okhttp3.Headers]) that caused it, so — unlike the GraphQL and gRPC adapters — this is
+     * transport data this adapter can see directly; no synthetic header is invented.
+     */
+    private fun parseRetryDelayHint(httpException: HttpException, clock: DataLoomClock?): RetryDelayHint? {
+        val retryAfterValues: List<String> = httpException.response()
+            ?.headers()
+            ?.values("Retry-After")
+            ?: emptyList()
+        return RetryAfterParser.parse(retryAfterValues, clock)
     }
 
     private fun error(
@@ -249,4 +310,14 @@ private object DefaultRetrofitTransportErrorMapper {
         override val message: String,
         override val cause: Throwable?,
     ) : DataLoomError
+
+    private data class RetrofitRetryableTransportError(
+        override val code: ErrorCode,
+        override val category: ErrorCategory,
+        override val severity: ErrorSeverity,
+        override val recoverability: Recoverability,
+        override val message: String,
+        override val cause: Throwable?,
+        override val retryDelayHint: RetryDelayHint,
+    ) : DataLoomError, RetryDelayHintCarrier
 }

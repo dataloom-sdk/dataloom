@@ -713,5 +713,12 @@ final value class io.dataloom.api.security/KeyReference { // io.dataloom.api.sec
     final fun toString(): kotlin/String // io.dataloom.api.security/KeyReference.toString|toString(){}[0]
 }
 
+final object io.dataloom.api.error/RetryAfterParser { // io.dataloom.api.error/RetryAfterParser|null[0]
+    final const val MAXIMUM_DELAY_MILLISECONDS // io.dataloom.api.error/RetryAfterParser.MAXIMUM_DELAY_MILLISECONDS|{}MAXIMUM_DELAY_MILLISECONDS[0]
+        final fun <get-MAXIMUM_DELAY_MILLISECONDS>(): kotlin/Long // io.dataloom.api.error/RetryAfterParser.MAXIMUM_DELAY_MILLISECONDS.<get-MAXIMUM_DELAY_MILLISECONDS>|<get-MAXIMUM_DELAY_MILLISECONDS>(){}[0]
+
+    final fun parse(kotlin.collections/List<kotlin/String>, io.dataloom.api.time/DataLoomClock?): io.dataloom.api.error/RetryDelayHint? // io.dataloom.api.error/RetryAfterParser.parse|parse(kotlin.collections.List<kotlin.String>;io.dataloom.api.time.DataLoomClock?){}[0]
+}
+
 final fun (io.dataloom.api.error/DataLoomError).io.dataloom.api.error/safeDiagnosticString(): kotlin/String // io.dataloom.api.error/safeDiagnosticString|safeDiagnosticString@io.dataloom.api.error.DataLoomError(){}[0]
 final fun io.dataloom.api.security/isAuthorized(kotlin.collections/Set<io.dataloom.api.security/Capability>, io.dataloom.api.security/GrantedCapabilities): kotlin/Boolean // io.dataloom.api.security/isAuthorized|isAuthorized(kotlin.collections.Set<io.dataloom.api.security.Capability>;io.dataloom.api.security.GrantedCapabilities){}[0]

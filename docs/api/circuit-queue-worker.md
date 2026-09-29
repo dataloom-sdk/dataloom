@@ -174,3 +174,12 @@ This slice does not complete DL-040. V1 still requires:
 - authorized manual retry, reclassification, circuit open/close/reset;
 - multi-process, process-death, contention, and restart qualification; and
 - complete Book 2 `AC-FUNC-004` evidence.
+
+**Updated 2026-09-28.** Process-death/multi-process/contention evidence now
+exists for the underlying stores and for the circuit's half-open probe (both
+platforms; see
+[`docs/audits/DL-040-current-acceptance-reconciliation.md`](../audits/DL-040-current-acceptance-reconciliation.md)'s
+2026-09-28 update), but not for `CircuitBreakerQueueWorkerCoordinator` itself:
+no test drives the composed queue-worker -> retry-reschedule -> circuit loop
+over a real queue store plus a real circuit store, so this page's bullets
+remain open as written.

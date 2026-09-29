@@ -1,12 +1,17 @@
 package io.dataloom.transport.graphql
 
 import com.apollographql.apollo.api.Error
+import com.apollographql.apollo.api.http.HttpHeader
 import com.apollographql.apollo.exception.ApolloException
 import com.apollographql.apollo.exception.ApolloHttpException
 import com.apollographql.apollo.exception.ApolloNetworkException
+import io.dataloom.api.error.DataLoomError
 import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
+import io.dataloom.api.error.RetryAfterParser
+import io.dataloom.api.error.RetryDelayHint
+import io.dataloom.api.time.DataLoomClock
 
 /**
  * Internal error-mapping utilities for the Apollo GraphQL transport provider.
@@ -32,8 +37,16 @@ internal object ApolloErrorMapper {
      * platform exception's message is not something this codebase controls or
      * can assume is free of URLs, tokens, or other sensitive content (see
      * [safeMessage]), so only the exception's type name is surfaced.
+     *
+     * A 429 or 503 [ApolloHttpException] whose [ApolloHttpException.headers] carry a valid
+     * `Retry-After` value produces a [GraphQLRetryableTransportError] instead, normalized by
+     * [RetryAfterParser] exactly as the Ktor and Retrofit transports do. [clock] converts an
+     * HTTP-date value into a delay; when `null`, only the delay-seconds form is honored.
      */
-    fun fromApolloException(exception: ApolloException): GraphQLTransportError =
+    fun fromApolloException(
+        exception: ApolloException,
+        clock: DataLoomClock? = null,
+    ): DataLoomError =
         when (exception) {
             is ApolloNetworkException -> GraphQLTransportError(
                 code = GraphQLTransportErrorCode.NETWORK_FAILURE,
@@ -44,22 +57,7 @@ internal object ApolloErrorMapper {
                 cause = exception,
             )
 
-            is ApolloHttpException -> {
-                val status = exception.statusCode
-                val recoverability = when {
-                    status == 429 -> Recoverability.RECOVERABLE
-                    status in 500..599 -> Recoverability.RECOVERABLE
-                    else -> Recoverability.NON_RECOVERABLE
-                }
-                GraphQLTransportError(
-                    code = GraphQLTransportErrorCode.HTTP_ERROR,
-                    category = ErrorCategory.NETWORK,
-                    severity = ErrorSeverity.ERROR,
-                    recoverability = recoverability,
-                    message = "GraphQL transport HTTP error: status=$status",
-                    cause = exception,
-                )
-            }
+            is ApolloHttpException -> fromHttpException(exception, clock)
 
             else -> GraphQLTransportError(
                 code = GraphQLTransportErrorCode.NETWORK_FAILURE,
@@ -70,6 +68,53 @@ internal object ApolloErrorMapper {
                 cause = exception,
             )
         }
+
+    private fun fromHttpException(
+        exception: ApolloHttpException,
+        clock: DataLoomClock?,
+    ): DataLoomError {
+        val status = exception.statusCode
+        val recoverability = when {
+            status == 429 -> Recoverability.RECOVERABLE
+            status in 500..599 -> Recoverability.RECOVERABLE
+            else -> Recoverability.NON_RECOVERABLE
+        }
+        val message = "GraphQL transport HTTP error: status=$status"
+        // Retry-After is only meaningful on 429 and 503 (RFC 9110).
+        val retryDelayHint: RetryDelayHint? =
+            if (status == 429 || status == 503) parseRetryDelayHint(exception.headers, clock) else null
+        if (retryDelayHint == null) {
+            return GraphQLTransportError(
+                code = GraphQLTransportErrorCode.HTTP_ERROR,
+                category = ErrorCategory.NETWORK,
+                severity = ErrorSeverity.ERROR,
+                recoverability = recoverability,
+                message = message,
+                cause = exception,
+            )
+        }
+        return GraphQLRetryableTransportError(
+            code = GraphQLTransportErrorCode.HTTP_ERROR,
+            category = ErrorCategory.NETWORK,
+            severity = ErrorSeverity.ERROR,
+            recoverability = recoverability,
+            message = message,
+            cause = exception,
+            retryDelayHint = retryDelayHint,
+        )
+    }
+
+    /**
+     * [ApolloHttpException.headers] is the raw HTTP response header list Apollo's HTTP engine
+     * captured, so — as with the Ktor and Retrofit adapters — this is transport data the
+     * adapter can see directly; no synthetic header is invented.
+     */
+    private fun parseRetryDelayHint(headers: List<HttpHeader>, clock: DataLoomClock?): RetryDelayHint? {
+        val retryAfterValues: List<String> = headers
+            .filter { header -> header.name.equals("Retry-After", ignoreCase = true) }
+            .map { header -> header.value }
+        return RetryAfterParser.parse(retryAfterValues, clock)
+    }
 
     /**
      * Maps a non-empty list of GraphQL response-level [Error] values to a

@@ -192,6 +192,7 @@ class AssetSupportTypesTest {
                 AssetErrorKind.SOURCE_FAILURE,
                 AssetErrorKind.SINK_FAILURE,
                 AssetErrorKind.SESSION_STORE_FAILURE,
+                AssetErrorKind.ENCRYPTION_KEY_UNAVAILABLE,
             ),
             recoverable,
         )

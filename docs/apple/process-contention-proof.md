@@ -12,10 +12,19 @@ the same disclosure shape
 used for round 31's single-process kill/relaunch proof. See "Update:
 `continue-on-error` removed (round 33, 2026-09-17)" below for the full
 confirmation. `#94`/`#95`'s dashboard percentages remain unchanged: this
-proof exercises the circuit-breaker domain specifically, not `#94`'s
-retry-budget structure or either of `#95`'s own two conflict-log domains --
-extending the identical app/module/CI shape to those is a named, bounded
-follow-up, not yet done.
+proof, as originally written, exercised the circuit-breaker domain
+specifically, not `#94`'s retry-budget structure or either of `#95`'s own two
+conflict-log domains -- extending the identical app/module/CI shape to those
+was a named, bounded follow-up.
+
+**Updated 2026-09-28.** Both extensions this section named have since landed:
+the two conflict-log domains ("Update: extended to `#95`'s conflict-log
+domains" below, round 33, 2026-09-17, now proven and required) and `#94`'s own
+retry-budget lease structure (`#402`, 2026-09-19, job
+`apple-retry-budget-lease-contention-proof` -- still `continue-on-error: true`
+and intermittent; see "Deliberately out of scope for this same change" below,
+also updated, and `docs/apple/process-termination-proof.md`'s own update for
+the exact pass/fail counts).
 
 This document acts on
 [`docs/apple/cross-process-contention-investigation.md`](cross-process-contention-investigation.md)'s
@@ -345,9 +354,13 @@ across two genuinely independent processes) is confirmed real for the
 circuit-breaker domain specifically. Extending the identical app/module/CI
 shape to `#95`'s own two conflict-log domains (`DurableUnresolvedConflictLog`,
 `DurableResolvedConflictDecisionLog`) and to `#94`'s retry-budget structure's
-own contention proof remain named, bounded follow-ups -- not part of this
-update, and not yet reflected in `#94`/`#95`'s dashboard percentages, which
-stay at their current values pending that follow-up work actually landing.
+own contention proof were, at the time this update was written, named, bounded
+follow-ups -- not part of this update, and not yet reflected in `#94`/`#95`'s
+dashboard percentages, which stayed at their current values pending that
+follow-up work actually landing. **Both have since landed** (conflict-log
+domains: the section immediately below, round 33, 2026-09-17; retry-budget
+lease contention: `#402`, 2026-09-19, `continue-on-error` still set -- see the
+"Deliberately out of scope for this same change" section below, also updated).
 
 ## Update: extended to `#95`'s conflict-log domains (round 33, 2026-09-17)
 
@@ -514,9 +527,18 @@ now applying to the two new app targets and the new job:
 
 ### Deliberately out of scope for this same change
 
+**Resolved 2026-09-19 (`#402`).** Retry-budget's own Apple cross-process
+contention proof was added as `AppleRetryBudgetLeaseContentionProof` and CI job
+`apple-retry-budget-lease-contention-proof`, racing for a `RETRY_WAITING`
+queue entry's lease rather than a compare-and-set on a single record -- see
+`docs/apple/process-termination-proof.md`'s own update for the design and the
+current pass/fail counts (`continue-on-error: true`, 36 green / 10 red job
+conclusions as of 2026-09-28). The paragraph below describes why this was
+originally scoped out, and is retained for that history.
+
 Retry-budget's own Apple cross-process contention proof
-(`AppleFileQueueProvider`'s retry-budget compare-and-set) is **not**
-attempted here. Unlike the two conflict-log domains above, no Android
+(`AppleFileQueueProvider`'s retry-budget compare-and-set) was **not**
+attempted in this same change. Unlike the two conflict-log domains above, no Android
 retry-budget-*contention*-specific instrumented test exists as a precedent
 to mirror (only `AndroidProcessTerminationRetryBudgetInstrumentedTest`,
 a process-*kill* proof, exists for that structure) -- extending the

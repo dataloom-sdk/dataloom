@@ -302,7 +302,10 @@ public value class AssetEncryptionAlgorithm(
  * @param algorithm the encryption algorithm used.
  * @param keyReference opaque reference to the key used. Never resolved to
  *   key bytes by DataLoom.
- * @param nonce the nonce/IV used, defensively copied. Must not be empty.
+ * @param nonce a nonce/IV that applies to the whole asset, defensively
+ *   copied. Empty means the scheme uses a fresh nonce per chunk and carries it
+ *   with each chunk (as `dataloom-assets`' AES-256-GCM frames do), so there is
+ *   no single asset-wide nonce to record.
  */
 public class AssetEncryptionMetadata(
     public val algorithm: AssetEncryptionAlgorithm,
@@ -310,10 +313,6 @@ public class AssetEncryptionMetadata(
     nonce: ByteArray,
 ) {
     private val nonce: ByteArray = nonce.copyOf()
-
-    init {
-        require(this.nonce.isNotEmpty()) { "AssetEncryptionMetadata.nonce must not be empty." }
-    }
 
     /** Number of bytes in [nonce]. */
     public val nonceSize: Int

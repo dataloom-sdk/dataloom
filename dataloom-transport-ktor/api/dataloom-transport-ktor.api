@@ -64,8 +64,8 @@ public final class io/dataloom/transport/ktor/KtorTransportHttpResponse {
 }
 
 public final class io/dataloom/transport/ktor/KtorTransportProvider : io/dataloom/api/transport/TransportProvider {
-	public fun <init> (Lio/dataloom/transport/ktor/KtorTransportCodec;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/transport/ktor/KtorTransportHttpConfiguration;)V
-	public synthetic fun <init> (Lio/dataloom/transport/ktor/KtorTransportCodec;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/transport/ktor/KtorTransportHttpConfiguration;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/dataloom/transport/ktor/KtorTransportCodec;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/transport/ktor/KtorTransportHttpConfiguration;Lio/dataloom/api/time/DataLoomClock;)V
+	public synthetic fun <init> (Lio/dataloom/transport/ktor/KtorTransportCodec;Lio/dataloom/api/provider/ProviderDescriptor;Lio/dataloom/transport/ktor/KtorTransportHttpConfiguration;Lio/dataloom/api/time/DataLoomClock;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
 	public fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

@@ -5,6 +5,8 @@ import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
+import io.dataloom.api.error.RetryDelayHint
+import io.dataloom.api.error.RetryDelayHintCarrier
 import io.dataloom.api.error.safeDiagnosticString
 
 /**
@@ -46,5 +48,27 @@ public data class GraphQLTransportError(
     override val message: String,
     override val cause: Throwable? = null,
 ) : DataLoomError {
+    override fun toString(): String = safeDiagnosticString()
+}
+
+/**
+ * [GraphQLTransportError] carrying normalized `Retry-After` guidance.
+ *
+ * Produced only for a 429 or 503 [com.apollographql.apollo.exception.ApolloHttpException]
+ * whose response carried a valid `Retry-After` header; see [ApolloErrorMapper]
+ * and [io.dataloom.api.error.RetryAfterParser]. All other properties and
+ * restrictions mirror [GraphQLTransportError].
+ *
+ * @param retryDelayHint normalized, bounded minimum delay guidance.
+ */
+public data class GraphQLRetryableTransportError(
+    override val code: ErrorCode,
+    override val category: ErrorCategory,
+    override val severity: ErrorSeverity,
+    override val recoverability: Recoverability,
+    override val message: String,
+    override val cause: Throwable? = null,
+    override val retryDelayHint: RetryDelayHint,
+) : DataLoomError, RetryDelayHintCarrier {
     override fun toString(): String = safeDiagnosticString()
 }
