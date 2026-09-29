@@ -43,14 +43,29 @@ remote HTTP failures, to `ClassifiedStrategyRemoteError` where applicable.
 | `401` | `ClassifiedStrategyRemoteError` with `remoteOutcome = AUTHENTICATION_FAILURE` |
 | `403` | `ClassifiedStrategyRemoteError` with `remoteOutcome = AUTHORIZATION_FAILURE` |
 | `409` | `ClassifiedStrategyRemoteError` with `remoteOutcome = CONFLICT` |
-| `429` | `ClassifiedStrategyRemoteError` with `remoteOutcome = RATE_LIMITED` and a normalized retry hint when `Retry-After` is numeric seconds |
-| `502` / `503` | `ClassifiedStrategyRemoteError` with `remoteOutcome = UNAVAILABLE` |
+| `429` | `ClassifiedStrategyRemoteError` with `remoteOutcome = RATE_LIMITED` and a normalized retry hint when `Retry-After` is present and valid |
+| `502` | `ClassifiedStrategyRemoteError` with `remoteOutcome = UNAVAILABLE` |
+| `503` | `ClassifiedStrategyRemoteError` with `remoteOutcome = UNAVAILABLE` and a normalized retry hint when `Retry-After` is present and valid |
 | Other `5xx` | `ClassifiedStrategyRemoteError` with `remoteOutcome = SERVER_FAILURE` |
 | Other `4xx` | `ClassifiedStrategyRemoteError` with `remoteOutcome = VALIDATION_FAILURE` |
 | Codec encode/decode failure | Canonical `DataLoomError` with `SERIALIZATION` category |
 | Invalid request configuration | Canonical `DataLoomError` with `CONFIGURATION` category |
 
 Cancellation still propagates as `CancellationException`.
+
+### `Retry-After` parsing
+
+`Retry-After` is normalized by the shared `io.dataloom.api.error.RetryAfterParser`
+(in `dataloom-model`), which every HTTP-based transport adapter — Ktor,
+Retrofit, and the GraphQL-over-HTTP adapter — uses so they accept and reject
+the same inputs. It honors both the delta-seconds form (`Retry-After: 120`)
+and the three RFC 9110 `HTTP-date` forms; converting an `HTTP-date` requires a
+clock, supplied via the optional `clock: DataLoomClock?` constructor
+parameter (`null` by default, in which case only delta-seconds is honored — a
+`Retry-After` HTTP-date without a configured clock produces no hint rather
+than reading the wall clock). Every value is bounded to at most 24 hours and
+never negative; malformed, negative, or missing values simply produce no
+hint. Raw header text never reaches the produced error or hint.
 
 ## Safe diagnostics
 
