@@ -5,6 +5,10 @@ import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
+import io.dataloom.api.error.RetryAfterParser
+import io.dataloom.api.error.RetryDelayHint
+import io.dataloom.api.error.RetryDelayHintSource
+import io.grpc.Metadata
 import io.grpc.Status
 import io.grpc.StatusException
 import io.grpc.StatusRuntimeException
@@ -19,8 +23,28 @@ import io.grpc.StatusRuntimeException
  * **Sensitive-data restriction:** No credential, token, call-metadata, or
  * header value may appear in mapped error messages. Only the gRPC status code
  * name and a brief neutral description are included.
+ *
+ * ## Retry guidance
+ *
+ * gRPC has no `Retry-After` header; the standard mechanism is the
+ * `grpc-retry-pushback-ms` status trailer (see the
+ * [gRPC retry design](https://github.com/grpc/proposal/blob/master/A6-client-retries.md)).
+ * A [RESOURCE_EXHAUSTED][Status.Code.RESOURCE_EXHAUSTED] or
+ * [UNAVAILABLE][Status.Code.UNAVAILABLE] failure — the two codes this mapper
+ * already classifies as server-throttling-shaped [Recoverability.RECOVERABLE]
+ * outcomes — whose trailers carry a valid non-negative `grpc-retry-pushback-ms`
+ * value produces an error that also implements
+ * [io.dataloom.api.error.RetryDelayHintCarrier]. A negative value is the
+ * server explicitly saying "do not retry" per the same spec, so — like every
+ * other malformed or absent value — it produces no hint; this mapper does not
+ * change the code's [Recoverability] classification to represent that, since
+ * doing so is out of scope for a hint-mapping change. No other status code
+ * carries a hint: nothing in the gRPC retry spec associates pushback with
+ * them, so inventing one there would not be an "equivalent, correct mapping."
  */
 public object GrpcStatusMapper {
+    private val PUSHBACK_TRAILER_KEY: Metadata.Key<String> =
+        Metadata.Key.of("grpc-retry-pushback-ms", Metadata.ASCII_STRING_MARSHALLER)
 
     /**
      * Maps a gRPC [StatusException] to a canonical [DataLoomError].
@@ -31,7 +55,7 @@ public object GrpcStatusMapper {
      *   as [DataLoomError.cause] for diagnostics.
      */
     public fun map(exception: StatusException): DataLoomError =
-        fromStatus(exception.status, exception)
+        fromStatus(exception.status, exception.trailers, exception)
 
     /**
      * Maps a gRPC [StatusRuntimeException] to a canonical [DataLoomError].
@@ -42,21 +66,63 @@ public object GrpcStatusMapper {
      *   as [DataLoomError.cause] for diagnostics.
      */
     public fun map(exception: StatusRuntimeException): DataLoomError =
-        fromStatus(exception.status, exception)
+        fromStatus(exception.status, exception.trailers, exception)
 
-    private fun fromStatus(status: Status, cause: Throwable): DataLoomError {
+    private fun fromStatus(status: Status, trailers: Metadata?, cause: Throwable): DataLoomError {
         val code = status.code ?: Status.Code.UNKNOWN
         val sanitizedMessage = "gRPC call failed: ${code.name}"
-        return GrpcDataLoomError(
+        val recoverability = recoverabilityFor(code)
+        val transportCause = GrpcTransportCause(sanitizedMessage, cause)
+        val retryDelayHint: RetryDelayHint? =
+            if (code == Status.Code.RESOURCE_EXHAUSTED || code == Status.Code.UNAVAILABLE) {
+                parseRetryPushbackHint(trailers)
+            } else {
+                null
+            }
+        if (retryDelayHint == null) {
+            return GrpcDataLoomError(
+                code = ErrorCode(errorCodeFor(code)),
+                category = categoryFor(code),
+                severity = ErrorSeverity.ERROR,
+                recoverability = recoverability,
+                message = sanitizedMessage,
+                // Wrap in a transport-neutral cause so no io.grpc.* type is
+                // accessible via the DataLoomError.cause property type.
+                cause = transportCause,
+            )
+        }
+        return GrpcRetryableDataLoomError(
             code = ErrorCode(errorCodeFor(code)),
             category = categoryFor(code),
             severity = ErrorSeverity.ERROR,
-            recoverability = recoverabilityFor(code),
+            recoverability = recoverability,
             message = sanitizedMessage,
-            // Wrap in a transport-neutral cause so no io.grpc.* type is
-            // accessible via the DataLoomError.cause property type.
-            cause = GrpcTransportCause(sanitizedMessage, cause),
+            cause = transportCause,
+            retryDelayHint = retryDelayHint,
         )
+    }
+
+    /**
+     * Parses the `grpc-retry-pushback-ms` trailer, if present, into a bounded
+     * [RetryDelayHint]. [Metadata] carries raw ASCII header text; per the
+     * sensitive-data restriction above, that text is discarded once parsed —
+     * only the closed numeric delay survives into the hint.
+     */
+    private fun parseRetryPushbackHint(trailers: Metadata?): RetryDelayHint? {
+        val raw: String = trailers?.get(PUSHBACK_TRAILER_KEY) ?: return null
+        // A leading '-' is intentionally excluded from the digit check: per the
+        // gRPC retry spec, a negative value means "the server says do not
+        // retry," which — like a malformed or missing value — yields no hint.
+        if (raw.isEmpty() || !raw.all { it in '0'..'9' }) return null
+        var milliseconds = 0L
+        for (digit in raw) {
+            milliseconds = milliseconds * 10L + (digit - '0')
+            if (milliseconds >= RetryAfterParser.MAXIMUM_DELAY_MILLISECONDS) {
+                milliseconds = RetryAfterParser.MAXIMUM_DELAY_MILLISECONDS
+                break
+            }
+        }
+        return RetryDelayHint(delayMilliseconds = milliseconds, source = RetryDelayHintSource.SERVER)
     }
 
     private fun errorCodeFor(code: Status.Code): String = when (code) {

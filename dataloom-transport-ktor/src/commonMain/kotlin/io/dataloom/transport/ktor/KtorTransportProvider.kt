@@ -5,9 +5,9 @@ import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorCode
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
+import io.dataloom.api.error.RetryAfterParser
 import io.dataloom.api.error.RetryDelayHint
 import io.dataloom.api.error.RetryDelayHintCarrier
-import io.dataloom.api.error.RetryDelayHintSource
 import io.dataloom.api.error.safeDiagnosticString
 import io.dataloom.api.provider.ProviderCapability
 import io.dataloom.api.provider.ProviderDescriptor
@@ -22,6 +22,7 @@ import io.dataloom.api.provider.ProviderVersion
 import io.dataloom.api.strategy.ClassifiedStrategyRemoteError
 import io.dataloom.api.strategy.StrategyRemoteOutcome
 import io.dataloom.api.synchronization.ChangeSetAcknowledgement
+import io.dataloom.api.time.DataLoomClock
 import io.dataloom.api.transport.PullChangesRequest
 import io.dataloom.api.transport.PullChangesResult
 import io.dataloom.api.transport.PushChangesRequest
@@ -50,6 +51,10 @@ import kotlinx.coroutines.CancellationException
  * or replace. Endpoint selection, authentication headers, and payload
  * serialization remain application-owned through [codec].
  *
+ * HTTP 429 and 503 responses carrying a valid `Retry-After` header (delay
+ * seconds, or an HTTP-date when a [clock] is supplied) produce an error that
+ * also implements [RetryDelayHintCarrier]; see [RetryAfterParser].
+ *
  * The provider is safe for concurrent use when the supplied [codec] is safe for
  * concurrent use.
  */
@@ -58,6 +63,7 @@ public class KtorTransportProvider private constructor(
     override val descriptor: ProviderDescriptor,
     private val httpClient: HttpClient,
     private val closeHttpClientOnClose: Boolean,
+    private val clock: DataLoomClock?,
 ) : TransportProvider {
     init {
         require(descriptor.type == ProviderType.TRANSPORT) {
@@ -67,16 +73,23 @@ public class KtorTransportProvider private constructor(
 
     /**
      * Creates a provider backed by an internally managed Ktor client.
+     *
+     * @param clock source of "now" used only to convert an HTTP-date
+     *   `Retry-After` value into a delay. When `null` (the default), only the
+     *   delay-seconds form is honored and an HTTP-date value produces no hint;
+     *   the provider never reads a wall clock on its own.
      */
     public constructor(
         codec: KtorTransportCodec,
         descriptor: ProviderDescriptor = defaultDescriptor(),
         httpConfiguration: KtorTransportHttpConfiguration = KtorTransportHttpConfiguration(),
+        clock: DataLoomClock? = null,
     ) : this(
         codec = codec,
         descriptor = descriptor,
         httpClient = createHttpClient(httpConfiguration),
         closeHttpClientOnClose = true,
+        clock = clock,
     )
 
     internal companion object {
@@ -85,11 +98,13 @@ public class KtorTransportProvider private constructor(
             descriptor: ProviderDescriptor,
             httpClient: HttpClient,
             closeHttpClientOnClose: Boolean,
+            clock: DataLoomClock? = null,
         ): KtorTransportProvider = KtorTransportProvider(
                 codec = codec,
                 descriptor = descriptor,
                 httpClient = httpClient,
                 closeHttpClientOnClose = closeHttpClientOnClose,
+                clock = clock,
             )
     }
 
@@ -150,7 +165,7 @@ public class KtorTransportProvider private constructor(
 
         if (httpResponse.statusCode !in 200..299) {
             return ProviderOperationResult.Failure(
-                KtorTransportError.httpFailure(operation, httpResponse),
+                KtorTransportError.httpFailure(operation, httpResponse, clock),
             )
         }
 
@@ -292,6 +307,7 @@ private object KtorTransportError {
     fun httpFailure(
         operation: TransportOperation,
         response: KtorTransportHttpResponse,
+        clock: DataLoomClock?,
     ): DataLoomError {
         val statusCode: Int = response.statusCode
         return when {
@@ -332,7 +348,7 @@ private object KtorTransportError {
             )
 
             statusCode == 429 -> {
-                val retryDelayHint: RetryDelayHint? = parseRetryDelayHint(response)
+                val retryDelayHint: RetryDelayHint? = parseRetryDelayHint(response, clock)
                 if (retryDelayHint == null) {
                     RemoteError(
                         code = ErrorCode("KTOR_TRANSPORT_RATE_LIMITED"),
@@ -364,14 +380,31 @@ private object KtorTransportError {
                 remoteOutcome = StrategyRemoteOutcome.VALIDATION_FAILURE,
             )
 
-            statusCode == 502 || statusCode == 503 -> RemoteError(
-                code = ErrorCode("KTOR_TRANSPORT_REMOTE_UNAVAILABLE"),
-                category = ErrorCategory.NETWORK,
-                severity = ErrorSeverity.ERROR,
-                recoverability = Recoverability.RECOVERABLE,
-                message = "The remote endpoint was unavailable for ${operation.label} (HTTP $statusCode).",
-                remoteOutcome = StrategyRemoteOutcome.UNAVAILABLE,
-            )
+            statusCode == 502 || statusCode == 503 -> {
+                // Retry-After is only meaningful on 503 (RFC 9110); a 502 never carries a hint.
+                val retryDelayHint: RetryDelayHint? =
+                    if (statusCode == 503) parseRetryDelayHint(response, clock) else null
+                if (retryDelayHint == null) {
+                    RemoteError(
+                        code = ErrorCode("KTOR_TRANSPORT_REMOTE_UNAVAILABLE"),
+                        category = ErrorCategory.NETWORK,
+                        severity = ErrorSeverity.ERROR,
+                        recoverability = Recoverability.RECOVERABLE,
+                        message = "The remote endpoint was unavailable for ${operation.label} (HTTP $statusCode).",
+                        remoteOutcome = StrategyRemoteOutcome.UNAVAILABLE,
+                    )
+                } else {
+                    RetryableRemoteError(
+                        code = ErrorCode("KTOR_TRANSPORT_REMOTE_UNAVAILABLE"),
+                        category = ErrorCategory.NETWORK,
+                        severity = ErrorSeverity.ERROR,
+                        recoverability = Recoverability.RECOVERABLE,
+                        message = "The remote endpoint was unavailable for ${operation.label} (HTTP $statusCode).",
+                        remoteOutcome = StrategyRemoteOutcome.UNAVAILABLE,
+                        retryDelayHint = retryDelayHint,
+                    )
+                }
+            }
 
             statusCode in 500..599 -> RemoteError(
                 code = ErrorCode("KTOR_TRANSPORT_SERVER_FAILURE"),
@@ -393,15 +426,14 @@ private object KtorTransportError {
         }
     }
 
-    private fun parseRetryDelayHint(response: KtorTransportHttpResponse): RetryDelayHint? {
-        val retryAfterHeader: String = response.headers.entries.firstOrNull { (name, _) ->
-            name.equals("Retry-After", ignoreCase = true)
-        }?.value?.firstOrNull() ?: return null
-        val seconds: Long = retryAfterHeader.toLongOrNull() ?: return null
-        return RetryDelayHint(
-            delayMilliseconds = seconds * 1000L,
-            source = RetryDelayHintSource.SERVER,
-        )
+    private fun parseRetryDelayHint(
+        response: KtorTransportHttpResponse,
+        clock: DataLoomClock?,
+    ): RetryDelayHint? {
+        val retryAfterValues: List<String> = response.headers.entries
+            .filter { (name, _) -> name.equals("Retry-After", ignoreCase = true) }
+            .flatMap { (_, values) -> values }
+        return RetryAfterParser.parse(retryAfterValues, clock)
     }
 
     private data class BasicError(
