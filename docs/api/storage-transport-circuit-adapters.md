@@ -115,3 +115,15 @@ This slice does not complete DL-040. Remaining work includes:
 - complete events, metrics, logs, traces, diagnostics, and health integration;
 - multi-process, high-contention, restart, failure-injection, and
   `AC-FUNC-004` qualification.
+
+**Updated 2026-09-28.** `DataLoomBuilder.providerProtectionConfiguration`,
+which assembles these storage/transport circuit adapters, now has composed
+`AC-FUNC-004` evidence on native Android and KMP iOS -- see
+[`builder-provider-protection.md`](./builder-provider-protection.md)'s own
+2026-09-28 update. Process-death and half-open-probe cross-process contention
+evidence also now exists for the underlying circuit/queue stores (see
+[`docs/audits/DL-040-current-acceptance-reconciliation.md`](../audits/DL-040-current-acceptance-reconciliation.md)).
+"Direct pipeline ... adoption" (the Status line's other remaining item) refers
+to the separate `ProviderProtectedSynchronizationRuntime` bridge
+([`provider-protected-pipeline.md`](./provider-protected-pipeline.md)) and
+remains open.

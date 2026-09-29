@@ -797,11 +797,29 @@ applying identically here:
   this gap is a named, separate follow-up.
 - **Apple process-kill/relaunch evidence for retry-budget state's own
   cross-process *contention*** (the retry-budget analog of
-  `apple-conflict-log-contention-proof`) remains a distinct, still fully open
-  follow-up — this PR closes "conflict-log process-kill/relaunch evidence"
-  (2026-09-18) and round 33 already closed "conflict-log contention evidence"
-  (2026-09-17), but retry-budget's own contention proof was deliberately not
-  attempted in either round and remains unaddressed.
+  `apple-conflict-log-contention-proof`) remained a distinct, still fully open
+  follow-up as of this section's original writing (2026-09-18) — this PR
+  closed "conflict-log process-kill/relaunch evidence" (2026-09-18) and round
+  33 already closed "conflict-log contention evidence" (2026-09-17), but
+  retry-budget's own contention proof was deliberately not attempted in either
+  round.
+
+  **Resolved 2026-09-19, with a reliability caveat.** `#402` added
+  `AppleRetryBudgetLeaseContentionProof` and the CI job
+  `apple-retry-budget-lease-contention-proof`
+  (`.github/workflows/apple-validation.yml`), racing two Simulator apps for
+  the same `RETRY_WAITING` queue entry's lease via `AppleFileQueueProvider`.
+  Unlike the other jobs in this document, it carries `continue-on-error: true`
+  and has not been promoted to a required check: as of 2026-09-28 it shows 36
+  green / 10 red job conclusions across the 80 most recent
+  `apple-validation.yml` runs (5 green / 3 red since `#423`, 2026-09-22, moved
+  it to two Simulator devices), with every one of the reds being the
+  non-seeding app's cold second-device launch taking 7, 23, or 26 minutes
+  (`#429`'s 20-minute go-signal window, merged 2026-09-27, has not yet been
+  exercised by a launch that slow in a completed run). No android:process
+  equivalent test exists for the same lock on Android. See
+  `docs/apple/process-contention-proof.md`'s own "Deliberately out of scope"
+  section, also updated, for the original design rationale.
 
 ## References
 

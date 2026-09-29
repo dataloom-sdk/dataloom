@@ -119,3 +119,10 @@ expose no Android, Room, SQLite, SQLDelight, JVM-only, or Apple storage types.
 - authorized and audited circuit administration; and
 - multi-process, process-death, restart, contention, and Book 2 `AC-FUNC-004`
   evidence.
+
+**Updated 2026-09-28.** Process-death and cross-process contention evidence
+now exists for the underlying queue/circuit stores and for the circuit's
+half-open probe (both platforms; see
+[`docs/audits/DL-040-current-acceptance-reconciliation.md`](../audits/DL-040-current-acceptance-reconciliation.md)'s
+2026-09-28 update), but `CircuitBreakerQueueSubmission` itself has not been
+driven through any of those proofs, so this page's bullets remain open.

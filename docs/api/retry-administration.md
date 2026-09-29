@@ -181,3 +181,15 @@ execution. Remaining work includes role and UI integration beyond the host
 authorizer SPI, circuit administration, complete administration events/metrics/
 logs/tracing/health, executable process-loss and higher-contention evidence,
 and full cross-platform `AC-FUNC-004` qualification.
+
+**Updated 2026-09-28.** No process-loss or contention proof exists for the
+retry-*administration* executors specifically (`RoomRetryAdministrationExecutorInstrumentedTest`
+and `AppleFileRetryAdministrationExecutorTest` are in-process only). Process-death
+and half-open-probe cross-process contention evidence that has since landed
+covers the production retry/circuit path
+(`RoomQueueProvider`/`RoomCircuitBreakerStateStore`,
+`AppleFileQueueProvider`/`AppleFileCircuitBreakerStateStore`), not the
+administration command path -- see
+[`docs/audits/DL-040-current-acceptance-reconciliation.md`](../audits/DL-040-current-acceptance-reconciliation.md)'s
+2026-09-28 update for the exact evidence. This page's own bullet is
+unaffected.
