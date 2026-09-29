@@ -50,4 +50,13 @@ internal object RetryBudgetProcessTerminationContract {
 
     /** Sum of delays accepted for durable retry transitions, in milliseconds. */
     const val KEY_RETRY_CUMULATIVE_DELAY_MILLIS: String = "retryCumulativeDelayMillis"
+
+    /**
+     * Epoch-millisecond [io.dataloom.api.queue.QueueEntry.availableAt] read back
+     * from the acquired entry -- the "next time" the entry becomes eligible for
+     * acquisition. Not to be confused with [KEY_RETRY_WINDOW_STARTED_AT_MILLIS]
+     * or [KEY_RETRY_LAST_EVALUATED_AT_MILLIS], which describe retry-budget
+     * bookkeeping rather than queue-provider eligibility.
+     */
+    const val KEY_AVAILABLE_AT_MILLIS: String = "availableAtMillis"
 }
