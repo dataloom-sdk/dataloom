@@ -67,12 +67,16 @@ class GrpcRetryPushbackTest {
     }
 
     @Test
-    fun `multiple values use the first one gRPC metadata returns`() {
+    fun `multiple values use whichever one gRPC Metadata returns`() {
+        // io.grpc.Metadata#get(Key) returns the LAST entry added for a repeated
+        // ASCII key (unlike the HTTP header lists the other transports read,
+        // which are read in wire order); this pins that this adapter simply
+        // defers to it rather than re-implementing header selection.
         val error = GrpcStatusMapper.map(
             StatusException(Status.RESOURCE_EXHAUSTED, trailersOf("3", "300")),
         )
         val hint = assertIs<RetryDelayHintCarrier>(error)
-        assertEquals(3L, hint.retryDelayHint.delayMilliseconds)
+        assertEquals(300L, hint.retryDelayHint.delayMilliseconds)
     }
 
     @Test

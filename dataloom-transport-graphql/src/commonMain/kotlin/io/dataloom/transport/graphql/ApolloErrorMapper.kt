@@ -5,6 +5,7 @@ import com.apollographql.apollo.api.http.HttpHeader
 import com.apollographql.apollo.exception.ApolloException
 import com.apollographql.apollo.exception.ApolloHttpException
 import com.apollographql.apollo.exception.ApolloNetworkException
+import io.dataloom.api.error.DataLoomError
 import io.dataloom.api.error.ErrorCategory
 import io.dataloom.api.error.ErrorSeverity
 import io.dataloom.api.error.Recoverability
@@ -42,7 +43,10 @@ internal object ApolloErrorMapper {
      * [RetryAfterParser] exactly as the Ktor and Retrofit transports do. [clock] converts an
      * HTTP-date value into a delay; when `null`, only the delay-seconds form is honored.
      */
-    fun fromApolloException(exception: ApolloException, clock: DataLoomClock? = null): GraphQLTransportError =
+    fun fromApolloException(
+        exception: ApolloException,
+        clock: DataLoomClock? = null,
+    ): DataLoomError =
         when (exception) {
             is ApolloNetworkException -> GraphQLTransportError(
                 code = GraphQLTransportErrorCode.NETWORK_FAILURE,
@@ -65,7 +69,10 @@ internal object ApolloErrorMapper {
             )
         }
 
-    private fun fromHttpException(exception: ApolloHttpException, clock: DataLoomClock?): GraphQLTransportError {
+    private fun fromHttpException(
+        exception: ApolloHttpException,
+        clock: DataLoomClock?,
+    ): DataLoomError {
         val status = exception.statusCode
         val recoverability = when {
             status == 429 -> Recoverability.RECOVERABLE

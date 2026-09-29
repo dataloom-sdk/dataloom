@@ -89,7 +89,7 @@ final class io.dataloom.transport.ktor/KtorTransportHttpResponse { // io.dataloo
 }
 
 final class io.dataloom.transport.ktor/KtorTransportProvider : io.dataloom.api.transport/TransportProvider { // io.dataloom.transport.ktor/KtorTransportProvider|null[0]
-    constructor <init>(io.dataloom.transport.ktor/KtorTransportCodec, io.dataloom.api.provider/ProviderDescriptor = ..., io.dataloom.transport.ktor/KtorTransportHttpConfiguration = ...) // io.dataloom.transport.ktor/KtorTransportProvider.<init>|<init>(io.dataloom.transport.ktor.KtorTransportCodec;io.dataloom.api.provider.ProviderDescriptor;io.dataloom.transport.ktor.KtorTransportHttpConfiguration){}[0]
+    constructor <init>(io.dataloom.transport.ktor/KtorTransportCodec, io.dataloom.api.provider/ProviderDescriptor = ..., io.dataloom.transport.ktor/KtorTransportHttpConfiguration = ..., io.dataloom.api.time/DataLoomClock? = ...) // io.dataloom.transport.ktor/KtorTransportProvider.<init>|<init>(io.dataloom.transport.ktor.KtorTransportCodec;io.dataloom.api.provider.ProviderDescriptor;io.dataloom.transport.ktor.KtorTransportHttpConfiguration;io.dataloom.api.time.DataLoomClock?){}[0]
 
     final val descriptor // io.dataloom.transport.ktor/KtorTransportProvider.descriptor|{}descriptor[0]
         final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.transport.ktor/KtorTransportProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]

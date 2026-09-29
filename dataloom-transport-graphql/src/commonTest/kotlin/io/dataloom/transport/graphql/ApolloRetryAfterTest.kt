@@ -58,7 +58,7 @@ class ApolloRetryAfterTest {
         statusCode: Int,
         headerLines: List<Pair<String, String>>,
         clock: DataLoomClock?,
-    ) = StubTransportProvider(
+    ) = RetryAfterStubTransportProvider(
         pushBehaviour = {
             throw ApolloHttpException(
                 statusCode = statusCode,
@@ -182,7 +182,7 @@ class ApolloRetryAfterTest {
     )
 }
 
-private class StubTransportProvider(
+private class RetryAfterStubTransportProvider(
     private val pushBehaviour: suspend () -> ProviderOperationResult<ChangeSetAcknowledgement>,
     override val clock: DataLoomClock?,
 ) : ApolloGraphQLTransportProvider() {
