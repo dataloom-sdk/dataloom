@@ -40,6 +40,7 @@ public data class ServedFromCache(
     override val completedAt: DataLoomInstant,
     public val cacheState: StrategyCacheState,       // FRESH or STALE
     public val refreshOutput: StrategyTransportOutput? = null,
+    public val durableQueueEntryId: QueueEntryId? = null,
 ) : StrategySynchronizationExecutionResult
 ```
 
@@ -47,6 +48,24 @@ public data class ServedFromCache(
 alongside serving local state. Its presence does not change `cacheState`,
 which always describes what was actually served to evidence at admission
 time — not the outcome of the refresh that may have run afterward.
+
+**A failed synchronous refresh does not turn a served cache into a failure**
+(ADR-0015, "D27"). `docs/strategies/cache-first.md`'s failure/fallback table
+("Remote transient failure after stale state was served: Preserve the served
+result and report refresh failure/retry state separately") is the
+specification; the executor and its tests were previously the ones that
+disagreed with it (mapping a failed refresh straight to a terminal `Failed`,
+discarding the already-served cache) and have been corrected to match. A
+failed refresh is still visible: `refreshOutput` carries the failed
+`StrategyTransportOutput.ProviderBacked` wrapping the underlying
+`SynchronizationResult.Failed`, and `StrategyDecisionEvent.outcomeDetail`
+(when `strategyDiagnosticsConfiguration` is set) encodes it as
+`"<cacheState>:REFRESH_FAILED:<errorCode>"` rather than just the bare cache
+state name. Durable queue replay of a `ServedFromCache` result with a failed
+`refreshOutput` still goes through the retry policy exactly as before this
+fix — see `StrategyQueueExecutionOutcomeMapper`'s `ServedFromCache` branch,
+which was already written to inspect `refreshOutput` and was not changed by
+this fix.
 
 ## Local-state consistency
 
