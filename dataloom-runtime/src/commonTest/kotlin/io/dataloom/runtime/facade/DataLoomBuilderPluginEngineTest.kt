@@ -20,6 +20,7 @@ import io.dataloom.api.plugin.PluginLifecycleState
 import io.dataloom.api.plugin.PluginManifest
 import io.dataloom.api.plugin.PluginVendor
 import io.dataloom.api.plugin.PluginVersion
+import io.dataloom.api.plugin.PluginVersionRange
 import io.dataloom.api.provider.ProviderDescriptor
 import io.dataloom.api.provider.ProviderHealth
 import io.dataloom.api.provider.ProviderHealthStatus
@@ -41,6 +42,8 @@ import io.dataloom.api.transport.PullChangesResult
 import io.dataloom.api.transport.PushChangesRequest
 import io.dataloom.api.transport.TransportProvider
 import io.dataloom.plugin.PluginCompatibilityResult
+import io.dataloom.plugin.PluginDependencyIssue
+import io.dataloom.plugin.PluginDependencyIssueReason
 import io.dataloom.plugin.PluginExecutionBoundsResult
 import io.dataloom.plugin.PluginIncompatibilityReason
 import io.dataloom.plugin.PluginLifecycleAdministrationAuthorizationDecision
@@ -160,9 +163,6 @@ class DataLoomBuilderPluginEngineTest {
         val duplicate = builder().pluginConfiguration(
             DataLoomPluginSpec(listOf(plugin("plugin-a"), plugin("plugin-a")), RecordingAuthorizer()),
         )
-        val unresolved = builder().pluginConfiguration(
-            DataLoomPluginSpec(listOf(plugin("plugin-a", dependsOn = setOf("missing"))), RecordingAuthorizer()),
-        )
         val cyclic = builder().pluginConfiguration(
             DataLoomPluginSpec(
                 listOf(plugin("a", dependsOn = setOf("b")), plugin("b", dependsOn = setOf("a"))),
@@ -171,8 +171,21 @@ class DataLoomBuilderPluginEngineTest {
         )
 
         assertFailsWith<IllegalArgumentException> { duplicate.build() }
-        assertFailsWith<IllegalArgumentException> { unresolved.build() }
         assertFailsWith<IllegalArgumentException> { cyclic.build() }
+    }
+
+    @Test
+    fun aPluginDependingOnAnUnregisteredPluginBuildsButCannotBeValidated() = runTest {
+        val engine = engineWith(RecordingAuthorizer(), plugin("plugin-a", dependsOn = setOf("missing")))
+
+        val result = engine.transition(transitionRequest("plugin-a", PluginLifecycleState.VALIDATED))
+
+        val unsatisfied = assertIs<PluginLifecycleTransitionResult.DependencyUnsatisfied>(result)
+        assertEquals(
+            listOf(PluginDependencyIssue(PluginId("missing"), PluginDependencyIssueReason.NOT_REGISTERED)),
+            unsatisfied.issues,
+        )
+        assertEquals(PluginLifecycleState.LOADED, engine.stateOf(PluginId("plugin-a")))
     }
 
     @Test
@@ -490,7 +503,7 @@ class DataLoomBuilderPluginEngineTest {
             .defaultStrategyProviderBindings(StrategyProviderBindings(transportProviderId = transport.descriptor.id))
     }
 
-    private val compatibilityRange = PluginCompatibilityRange(minimumSdkVersion = RuntimeVersion("1.0.0"))
+    private val versionRange = PluginVersionRange(minimum = PluginVersion("1.0.0"))
 
     private companion object {
         val TEST_SDK_VERSION = RuntimeVersion("1.5.0")
@@ -517,7 +530,7 @@ class DataLoomBuilderPluginEngineTest {
                 RuntimeVersion(minimumSdk),
                 maximumSdk?.let(::RuntimeVersion),
             ),
-            dependencies = dependsOn.map { PluginDependency(PluginId(it), compatibilityRange) }.toSet(),
+            dependencies = dependsOn.map { PluginDependency(PluginId(it), versionRange) }.toSet(),
         ),
         executionBounds = PluginExecutionBounds(maximumExecutionMillis, maximumConcurrentInvocations),
     )

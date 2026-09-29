@@ -1,6 +1,7 @@
 package io.dataloom.runtime.conflict
 
 import io.dataloom.api.conflict.ConflictQuarantineObservation
+import io.dataloom.api.conflict.ConflictQuarantineOccurrence
 import io.dataloom.api.conflict.ConflictQuarantinePolicy
 import io.dataloom.api.conflict.ConflictQuarantineScope
 import io.dataloom.api.conflict.DurableConflictQuarantineLog
@@ -43,6 +44,19 @@ public class ConflictQuarantineTracker(
             observedAt = clock.now(),
             policy = policy,
         )
+
+    /**
+     * Credits back the [occurrences] an attempt counted, when that attempt
+     * failed with a retry-eligible infrastructure error and will merely be
+     * replayed (D21). Best effort: a credit that cannot be persisted leaves the
+     * count as recorded, which is the conservative direction, so outcomes are
+     * not surfaced. Cancellation propagates.
+     */
+    internal suspend fun credit(occurrences: List<ConflictQuarantineOccurrence>) {
+        for (occurrence in occurrences) {
+            log.creditOccurrence(occurrence)
+        }
+    }
 
     override fun toString(): String = "ConflictQuarantineTracker(policy=$policy)"
 }

@@ -35,10 +35,22 @@ class ConflictQuarantineRecordCodecTest {
     }
 
     @Test
+    fun roundTripsSequenceAndCreditBookkeeping() {
+        val record = counting.copy(
+            occurrenceCount = 3,
+            occurrenceSequence = 9L,
+            creditableFromSequence = 4L,
+            creditedSequences = listOf(5L, 7L, 8L),
+        )
+        assertEquals(record, codec.decode(codec.encode(record)))
+    }
+
+    @Test
     fun roundTripsAQuarantinedRecordWithNoResolver() {
         val record = counting.copy(
             status = ConflictQuarantineStatus.QUARANTINED,
             occurrenceCount = 5,
+            occurrenceSequence = 5L,
             lastResolverId = null,
             quarantinedAt = DataLoomInstant(3_000L),
         )
@@ -60,7 +72,7 @@ class ConflictQuarantineRecordCodecTest {
     fun encodedFormContainsNoRawIdentifiers() {
         val encoded = codec.encode(counting.copy(occurrenceCount = 0, releaseCount = 1, lastRelease = release))
         // Identifiers are hex-encoded, so a raw separator inside a value cannot shift a field.
-        assertEquals(15, encoded.split('|').size)
+        assertEquals(18, encoded.split('|').size)
     }
 
     @Test
@@ -70,7 +82,12 @@ class ConflictQuarantineRecordCodecTest {
             "",
             "garbage",
             valid.replace("DATALOOM_CONFLICT_QUARANTINE_RECORD", "OTHER_HEADER"),
-            valid.replaceFirst("|1|", "|2|"),
+            valid.replaceFirst("|2|COUNTING", "|1|COUNTING"),
+            // Version 1 (15-field) payloads are no longer readable.
+            valid.split('|').take(15).joinToString("|").replaceFirst("|2|COUNTING", "|1|COUNTING"),
+            // Credit bookkeeping is validated on decode.
+            valid.split('|').toMutableList().also { it[17] = "1,notanumber" }.joinToString("|"),
+            valid.split('|').toMutableList().also { it[15] = "1" }.joinToString("|"),
             valid.replace("COUNTING", "UNKNOWN_STATUS"),
             valid + "|extra",
             valid.replace("|2|1000|", "|not-a-number|1000|"),

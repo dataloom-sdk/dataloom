@@ -98,6 +98,13 @@ import io.dataloom.api.security.StrictDataLoomRedactor
  * gives caller-supplied metadata such as `RetryAdministrationReason`/
  * `CircuitAdministrationReason`.
  *
+ * A [PluginLifecycleTransitionResult.DependencyUnsatisfied] outcome records how
+ * many dependencies blocked the transition and which closed
+ * [PluginDependencyIssueReason] values were involved (all `PUBLIC`: counts and
+ * enum names), plus the blocking dependency ids paired with their reasons as
+ * one `INTERNAL` attribute, like every other plugin identifier. Nothing else
+ * from the dependency graph, and no version, reaches the envelope.
+ *
  * ## Payload descriptor
  *
  * Content-free, following [RetryCircuitAdministrationOperationalEventBridge]'s
@@ -190,6 +197,8 @@ public object PluginLifecycleAdministrationOperationalEventBridge {
             "dataloom.plugin.lifecycle.administration.authorization_denied"
         is PluginLifecycleTransitionResult.IncompatibleRuntime ->
             "dataloom.plugin.lifecycle.administration.incompatible_runtime"
+        is PluginLifecycleTransitionResult.DependencyUnsatisfied ->
+            "dataloom.plugin.lifecycle.administration.dependency_unsatisfied"
     }
 
     private fun classifiedAttributesFor(
@@ -241,6 +250,20 @@ public object PluginLifecycleAdministrationOperationalEventBridge {
                     attributes["result.maximumSdkVersion"] =
                         ClassifiedDataValue(maximum.value, DataClassification.INTERNAL)
                 }
+            }
+            is PluginLifecycleTransitionResult.DependencyUnsatisfied -> {
+                attributes["result.from"] = ClassifiedDataValue(result.from.name, DataClassification.PUBLIC)
+                attributes["result.to"] = ClassifiedDataValue(result.to.name, DataClassification.PUBLIC)
+                attributes["result.unsatisfiedCount"] =
+                    ClassifiedDataValue(result.issues.size.toString(), DataClassification.PUBLIC)
+                attributes["result.unsatisfiedReasons"] = ClassifiedDataValue(
+                    result.issues.map { it.reason.name }.distinct().sorted().joinToString(separator = ","),
+                    DataClassification.PUBLIC,
+                )
+                attributes["result.unsatisfiedDependencies"] = ClassifiedDataValue(
+                    result.issues.joinToString(separator = ",") { "${it.dependencyId.value}:${it.reason.name}" },
+                    DataClassification.INTERNAL,
+                )
             }
         }
         return attributes

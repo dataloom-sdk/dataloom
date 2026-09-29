@@ -1,6 +1,7 @@
 package io.dataloom.runtime.conflict
 
 import io.dataloom.api.change.ChangeEvent
+import io.dataloom.api.conflict.ConflictQuarantineOccurrence
 import io.dataloom.api.conflict.ConflictResolutionDecision
 import io.dataloom.api.conflict.DurableResolvedConflictDecisionLog
 import io.dataloom.api.conflict.DurableResolvedConflictDecisionRecordOutcome
@@ -68,6 +69,15 @@ public class DurableConflictDetectionCoordinator(
      */
     internal val hasResolvedDecisionLog: Boolean
         get() = resolvedConflictDecisionLog != null
+
+    /**
+     * Credits back quarantine occurrences counted by an attempt that failed
+     * for a retry-eligible infrastructure reason (D21). No-op when the
+     * orchestrator has no quarantine tracker.
+     */
+    internal suspend fun creditQuarantineOccurrences(occurrences: List<ConflictQuarantineOccurrence>) {
+        if (occurrences.isNotEmpty()) orchestrator.creditQuarantineOccurrences(occurrences)
+    }
 
     /**
      * Detects and optionally resolves one conflict, then records whichever

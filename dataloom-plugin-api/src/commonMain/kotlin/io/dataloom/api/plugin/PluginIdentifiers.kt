@@ -20,26 +20,6 @@ public value class PluginId(
 }
 
 /**
- * Stable plugin version label.
- *
- * Values are validated as non-blank and preserved exactly as supplied. This
- * type does not parse or compare versions — semantic-version comparison for
- * compatibility validation belongs to the plugin lifecycle engine (#98), not
- * this contract module.
- */
-@JvmInline
-public value class PluginVersion(
-    /** Underlying plugin version value. */
-    public val value: String,
-) {
-    init {
-        require(value.isNotBlank()) { "PluginVersion must not be blank." }
-    }
-
-    override fun toString(): String = value
-}
-
-/**
  * Stable identifier for a plugin's publishing vendor or author.
  *
  * Values are validated as non-blank and preserved exactly as supplied.
