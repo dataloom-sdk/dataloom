@@ -52,6 +52,11 @@ import io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitte
  * a replay must reproduce the same decision; the commit-once decision log
  * returns `AlreadyRecorded`. A different decision for the same conflict is
  * rejected before storage access, preventing silent non-convergence.
+ *
+ * With conflict quarantine (D18), a batch that fails with a retry-eligible
+ * infrastructure error -- while preparing, applying, or writing this batch's
+ * checkpoint -- credits back the quarantine occurrences it counted (D21), so
+ * only genuine repeats of a conflict consume the quarantine budget.
  */
 public class InboundPullSynchronizationPipeline(
     private val configuration: InboundPullPipelineConfiguration,
@@ -221,6 +226,10 @@ public class InboundPullSynchronizationPipeline(
                             ),
                         )
                         if (applyOutcome is ProviderOperationResult.Failure) {
+                            conflictPreparer.creditAfterFailure(
+                                preparation.quarantineOccurrences,
+                                applyOutcome.error,
+                            )
                             return SynchronizationResult.Failed(
                                 request = request,
                                 completedAt = terminalTimestamp(),
@@ -246,6 +255,10 @@ public class InboundPullSynchronizationPipeline(
                             ),
                         )
                         if (writeOutcome is ProviderOperationResult.Failure) {
+                            conflictPreparer.creditAfterFailure(
+                                preparation.quarantineOccurrences,
+                                writeOutcome.error,
+                            )
                             return SynchronizationResult.Failed(
                                 request = request,
                                 completedAt = terminalTimestamp(),

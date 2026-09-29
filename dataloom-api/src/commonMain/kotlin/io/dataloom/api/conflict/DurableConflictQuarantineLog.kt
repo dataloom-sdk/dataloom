@@ -128,6 +128,16 @@ public data class ConflictQuarantineRelease(
  * @param releaseCount how many times this entity has been released.
  * @param lastRelease evidence of the most recent release; non-`null` exactly
  *   when [releaseCount] is positive.
+ * @param occurrenceSequence how many occurrences were ever recorded for this
+ *   entity. Unlike [occurrenceCount] it never decreases and is not reset by a
+ *   release or a window expiry; it is the identity of an occurrence for
+ *   [DurableConflictQuarantineLog.creditOccurrence].
+ * @param creditableFromSequence the earliest occurrence sequence that a credit
+ *   may still apply to. Occurrences before the current window (or before the
+ *   last release) are not creditable.
+ * @param creditedSequences the creditable occurrences already credited back, in
+ *   ascending order, at most [MAX_TRACKED_CREDITS]; makes a repeated credit for
+ *   the same occurrence a no-op.
  */
 public data class ConflictQuarantineRecord(
     public val status: ConflictQuarantineStatus,
@@ -139,8 +149,26 @@ public data class ConflictQuarantineRecord(
     public val quarantinedAt: DataLoomInstant?,
     public val releaseCount: Int = 0,
     public val lastRelease: ConflictQuarantineRelease? = null,
+    public val occurrenceSequence: Long = occurrenceCount.toLong(),
+    public val creditableFromSequence: Long = 1L,
+    public val creditedSequences: List<Long> = emptyList(),
 ) {
     init {
+        require(occurrenceSequence >= occurrenceCount) {
+            "ConflictQuarantineRecord occurrenceSequence must not be below occurrenceCount."
+        }
+        require(creditableFromSequence in 1L..(occurrenceSequence + 1L)) {
+            "ConflictQuarantineRecord creditableFromSequence must be within 1..occurrenceSequence + 1."
+        }
+        require(creditedSequences.size <= MAX_TRACKED_CREDITS) {
+            "ConflictQuarantineRecord tracks at most $MAX_TRACKED_CREDITS credited occurrences."
+        }
+        require(
+            creditedSequences.all { it in creditableFromSequence..occurrenceSequence } &&
+                creditedSequences.zipWithNext().all { (a, b) -> a < b },
+        ) {
+            "ConflictQuarantineRecord creditedSequences must be strictly ascending creditable sequences."
+        }
         require(occurrenceCount >= 0) { "ConflictQuarantineRecord occurrenceCount must not be negative." }
         require((status == ConflictQuarantineStatus.QUARANTINED) == (quarantinedAt != null)) {
             "ConflictQuarantineRecord quarantinedAt must be present exactly when status is QUARANTINED."
@@ -157,13 +185,61 @@ public data class ConflictQuarantineRecord(
     /** `true` while conflicts on this entity are not being re-resolved. */
     public val isQuarantined: Boolean
         get() = status == ConflictQuarantineStatus.QUARANTINED
+
+    public companion object {
+        /** Most credited occurrences a record remembers (bounds the record and its encoding). */
+        public const val MAX_TRACKED_CREDITS: Int = 64
+    }
+}
+
+/**
+ * Identifies one counted occurrence so it can be credited back exactly once with
+ * [DurableConflictQuarantineLog.creditOccurrence]. Payload-free.
+ */
+public data class ConflictQuarantineOccurrence(
+    public val scope: ConflictQuarantineScope,
+    public val sequence: Long,
+) {
+    init {
+        require(sequence >= 1L) { "ConflictQuarantineOccurrence sequence must be positive." }
+    }
+}
+
+/** Outcome of one [DurableConflictQuarantineLog.creditOccurrence] call. */
+public sealed interface ConflictQuarantineCreditOutcome {
+
+    /** The occurrence was credited: the count dropped by one. */
+    public data class Credited(public val record: ConflictQuarantineRecord) : ConflictQuarantineCreditOutcome
+
+    /** This occurrence was already credited: an idempotent replay. Nothing was persisted. */
+    public data class AlreadyCredited(public val record: ConflictQuarantineRecord) : ConflictQuarantineCreditOutcome
+
+    /**
+     * Nothing to credit, and nothing was persisted: no record, the entity is
+     * quarantined (only an authorized release clears that), the occurrence
+     * belongs to a window that already ended or was released, or it is no
+     * longer tracked.
+     */
+    public data class NotApplicable(public val record: ConflictQuarantineRecord?) : ConflictQuarantineCreditOutcome
+
+    /** The underlying [DurableStateStore] failed. Nothing was persisted. */
+    public data class PersistenceFailure(public val error: DataLoomError) : ConflictQuarantineCreditOutcome
+
+    /** Every bounded compare-and-set attempt lost to a concurrent writer. */
+    public data object ContentionLimitReached : ConflictQuarantineCreditOutcome
 }
 
 /** Outcome of one [DurableConflictQuarantineLog.recordOccurrence] call. */
 public sealed interface ConflictQuarantineObservation {
 
-    /** The occurrence was counted and the threshold is not reached: resolve as normal. */
-    public data class Counted(public val record: ConflictQuarantineRecord) : ConflictQuarantineObservation
+    /**
+     * The occurrence was counted and the threshold is not reached: resolve as normal.
+     * [occurrence] identifies it for [DurableConflictQuarantineLog.creditOccurrence].
+     */
+    public data class Counted(
+        public val record: ConflictQuarantineRecord,
+        public val occurrence: ConflictQuarantineOccurrence,
+    ) : ConflictQuarantineObservation
 
     /**
      * The entity is quarantined: do not resolve. [newlyQuarantined] is `true`
@@ -238,6 +314,18 @@ public sealed interface ConflictQuarantineReleaseOutcome {
  * should set [ConflictQuarantinePolicy.windowMillis] or a higher threshold.
  * A crash between recording an occurrence and finishing the batch replays the
  * occurrence, so counts are conservative (never lower than the true number).
+ *
+ * ## Infrastructure failures are not conflicts (D21)
+ *
+ * A replay that follows a transient storage or provider failure is not a
+ * conflict loop, so it must not consume the quarantine budget. Every counted
+ * occurrence is returned with a [ConflictQuarantineOccurrence]; a caller whose
+ * attempt then fails with a retry-eligible infrastructure error hands those
+ * back to [creditOccurrence], which un-counts each exactly once. A failure that
+ * is not retry-eligible, and a genuine re-conflict, are never credited.
+ *
+ * Crediting is best effort and never lifts a quarantine: if a credit cannot be
+ * persisted, the count stays as recorded (the conservative direction).
  *
  * ## Concurrency
  *
@@ -318,7 +406,10 @@ public class DurableConflictQuarantineLog(
                     is DurableStateCompareAndSetResult.Updated -> return if (next.isQuarantined) {
                         ConflictQuarantineObservation.Quarantined(next, newlyQuarantined = true)
                     } else {
-                        ConflictQuarantineObservation.Counted(next)
+                        ConflictQuarantineObservation.Counted(
+                            record = next,
+                            occurrence = ConflictQuarantineOccurrence(scope, next.occurrenceSequence),
+                        )
                     }
                     // Lost the race: reload and increment from whatever won.
                     is DurableStateCompareAndSetResult.Conflict -> Unit
@@ -326,6 +417,68 @@ public class DurableConflictQuarantineLog(
             }
         }
         return ConflictQuarantineObservation.ContentionLimitReached
+    }
+
+    /**
+     * Credits one previously counted [occurrence] back: the count drops by one,
+     * never below zero, and never for the same occurrence twice. This is how a
+     * caller whose attempt failed for an infrastructure reason (so the same
+     * conflict will merely be replayed) undoes the count for that attempt.
+     *
+     * Does nothing (and writes nothing) when the entity is quarantined -- a
+     * credit can never lift a quarantine -- or when the occurrence belongs to a
+     * window that has ended or was released, so a late credit cannot erase a
+     * newer window's occurrences. A failed credit leaves the count as it was,
+     * which is the conservative direction.
+     */
+    public suspend fun creditOccurrence(occurrence: ConflictQuarantineOccurrence): ConflictQuarantineCreditOutcome {
+        val scope = occurrence.scope
+        repeat(maximumStateUpdateAttempts) {
+            val loaded = when (val result = store.load(scope)) {
+                is ProviderOperationResult.Failure -> return ConflictQuarantineCreditOutcome.PersistenceFailure(result.error)
+                is ProviderOperationResult.Success -> result.value
+            }
+            val found = (loaded as? DurableStateLoadResult.Found)?.record
+            val existing = found?.state
+            if (found == null || existing == null) {
+                return ConflictQuarantineCreditOutcome.NotApplicable(existing)
+            }
+            if (occurrence.sequence in existing.creditedSequences) {
+                return ConflictQuarantineCreditOutcome.AlreadyCredited(existing)
+            }
+            if (existing.isQuarantined ||
+                existing.occurrenceCount == 0 ||
+                occurrence.sequence !in existing.creditableFromSequence..existing.occurrenceSequence
+            ) {
+                return ConflictQuarantineCreditOutcome.NotApplicable(existing)
+            }
+
+            val credited = existing.creditedSequences + occurrence.sequence
+            // Forgetting the oldest credit also makes everything up to it
+            // uncreditable, so a replay of a forgotten credit cannot double-credit.
+            val overflow = credited.size > ConflictQuarantineRecord.MAX_TRACKED_CREDITS
+            val next = existing.copy(
+                occurrenceCount = existing.occurrenceCount - 1,
+                creditedSequences = if (overflow) credited.drop(1) else credited,
+                creditableFromSequence = if (overflow) credited.first() + 1L else existing.creditableFromSequence,
+            )
+            val update = store.compareAndSet(
+                DurableStateCompareAndSetRequest(
+                    scope = scope,
+                    expectedVersion = found.version,
+                    nextState = next,
+                    nextSchemaVersion = schemaVersion,
+                ),
+            )
+            when (update) {
+                is ProviderOperationResult.Failure -> return ConflictQuarantineCreditOutcome.PersistenceFailure(update.error)
+                is ProviderOperationResult.Success -> when (update.value) {
+                    is DurableStateCompareAndSetResult.Updated -> return ConflictQuarantineCreditOutcome.Credited(next)
+                    is DurableStateCompareAndSetResult.Conflict -> Unit
+                }
+            }
+        }
+        return ConflictQuarantineCreditOutcome.ContentionLimitReached
     }
 
     /**
@@ -357,6 +510,8 @@ public class DurableConflictQuarantineLog(
                 quarantinedAt = null,
                 releaseCount = existing.releaseCount + 1,
                 lastRelease = release,
+                creditableFromSequence = existing.occurrenceSequence + 1L,
+                creditedSequences = emptyList(),
             )
             val update = store.compareAndSet(
                 DurableStateCompareAndSetRequest(
@@ -391,6 +546,7 @@ public class DurableConflictQuarantineLog(
             } == true
         val count = if (startsNewWindow) 1 else checkNotNull(existing).occurrenceCount + 1
         val quarantined = count >= policy.occurrenceThreshold
+        val sequence = (existing?.occurrenceSequence ?: 0L) + 1L
         return ConflictQuarantineRecord(
             status = if (quarantined) ConflictQuarantineStatus.QUARANTINED else ConflictQuarantineStatus.COUNTING,
             occurrenceCount = count,
@@ -406,6 +562,9 @@ public class DurableConflictQuarantineLog(
             quarantinedAt = if (quarantined) observedAt else null,
             releaseCount = existing?.releaseCount ?: 0,
             lastRelease = existing?.lastRelease,
+            occurrenceSequence = sequence,
+            creditableFromSequence = if (startsNewWindow) sequence else checkNotNull(existing).creditableFromSequence,
+            creditedSequences = if (startsNewWindow) emptyList() else checkNotNull(existing).creditedSequences,
         )
     }
 

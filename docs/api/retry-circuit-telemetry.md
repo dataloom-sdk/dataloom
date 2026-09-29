@@ -41,9 +41,11 @@ that caller's coroutine.
 - an optional canonical `ErrorCode`.
 
 It has no payload, exception, credential, free-form message, tag map, or
-arbitrary metadata field. Metric keys use only signal and closed circuit enums.
-Workflow, tenant, correlation, trace, and error-code values are never metric
-labels, so adversarial dynamic identities cannot grow the metric-key space.
+arbitrary metadata field. Metric keys use only signal and closed circuit enums
+(plus, for conflict signals only, the bounded dimensions described in
+"Conflict telemetry" below). Workflow, tenant, correlation, trace, and
+error-code values are never metric labels, so adversarial dynamic identities
+cannot grow the metric-key space.
 
 ## Exporters, logs, and traces
 
@@ -88,6 +90,54 @@ The delegate completes before telemetry is assembled. A clock or telemetry
 exception therefore cannot replace an already-produced retry, circuit, or
 administrative result. Caller cancellation from the delegate still propagates
 and is never translated into telemetry.
+
+## Conflict telemetry
+
+The conflict engine (DL-041, issue #95) reports through this same pipeline
+rather than a second one: the same `BoundedRetryCircuitTelemetry`, exporters,
+`RetryCircuitTelemetryEvent`, and `RetryCircuitMetricKey`, with additional
+closed signals and three optional dimensions. Like every other `Observed*`
+wrapper here, the two conflict wrappers are opt-in classes a host composes
+around the runtime component; `DataLoomBuilder` does not assemble them (it
+does not assemble the retry/circuit wrappers either), and a component that is
+not wrapped emits nothing.
+
+`ObservedSynchronizationConflictOrchestrator` wraps
+`SynchronizationConflictOrchestrator.detectAndResolve`, returns the exact
+delegate result, and records after it completes:
+
+| Orchestration result | Signals |
+|---|---|
+| `DetectorNotFound`, `NoConflict` | none (no conflict occurred) |
+| `ResolverNotConfigured` | `CONFLICT_DETECTED`, `CONFLICT_UNRESOLVED` (reason `RESOLVER_NOT_CONFIGURED`) |
+| `ResolverNotFound` | `CONFLICT_DETECTED`, `CONFLICT_UNRESOLVED` (reason `RESOLVER_NOT_FOUND`), tier hit |
+| `Resolved` with `UseLocal`, `UseRemote` or `Merge` | `CONFLICT_DETECTED`, `CONFLICT_RESOLVED` (resolver ID), tier hit |
+| `Resolved` with `Defer` | `CONFLICT_DETECTED`, `CONFLICT_DEFERRED` (resolver ID), tier hit |
+| `Resolved` with `Fail` | `CONFLICT_DETECTED`, `CONFLICT_FAILED` (resolver ID), tier hit |
+| `Quarantined` | `CONFLICT_DETECTED`, `CONFLICT_QUARANTINED`, tier hit |
+| `QuarantineUnavailable` | `CONFLICT_DETECTED`, `CONFLICT_FAILED` (no resolver: none was invoked), tier hit |
+
+`CONFLICT_RESOLVER_SELECTION_TIER_HIT` carries a `ConflictResolverSelectionTier`
+(`ENTITY_TYPE`, `WORKFLOW`, `TENANT`, `GLOBAL`) and is recorded whenever a tier
+selected a resolver ID, even if that ID was then not found; it is not recorded
+when nothing was selected. The tier is computed by
+`ConflictOrchestrationBindings.selectedTier`, which shares its implementation
+with `selectResolverId`, so the reported tier cannot disagree with the tier
+actually used. A detector or resolver exception propagates as before and
+records no outcome signal. `ObservedConflictAdministrationCoordinator` records
+`CONFLICT_QUARANTINE_RELEASED` only for a `Released` result (not
+`AlreadyReleased`, denial, or failure); full command audit stays in the
+operational-event outbox.
+
+Cardinality: the only new dimensions are the closed `ConflictResolverSelectionTier`
+and `UnresolvedConflictReason` enums and the `ConflictResolverId`. A resolver ID
+is recorded only for a `Resolved` result, which exists only after a lookup in
+the orchestrator's immutable `ConflictResolverRegistry` (application
+registrations plus the fixed built-in catalog), so its label set is closed for
+the lifetime of one instance. Entity IDs, change IDs, conflict IDs, and tenant
+IDs never appear in a metric key, and no signal carries a payload. The mechanism
+has counters only; there are no gauges and no latency metric (a monotonic
+duration model remains DL-042 work).
 
 ## Example
 

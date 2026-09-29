@@ -277,7 +277,9 @@ Issue #95 remains open for at least:
   operational-event/audit bridging, now ships — see
   [conflict-resolution-strategies.md](./conflict-resolution-strategies.md)'s
   "Authorized manual conflict-resolution operations"/"Operational-event
-  bridging"); complete metric and retry integration remain open;
+  bridging"); conflict metrics and retry/circuit integration now ship (see
+  "Conflict metrics" and "Retry and circuit-breaker integration"), with
+  builder-assembled telemetry, gauges, and latency still open;
 - restart, migration, duplicate, contention, and concurrent-resolution tests;
 - AC-FUNC-002; and
 - native Android, KMP Android, and KMP iOS parity qualification on one reviewed

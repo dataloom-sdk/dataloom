@@ -10,8 +10,10 @@ import io.dataloom.api.time.DataLoomInstant
  * with a generic string-payload [io.dataloom.api.state.DurableStateStore]
  * implementation (for example `RoomDurableStateStore`).
  *
- * The format contains only counts, timestamps, enum names, and identifiers --
- * never change-event payload content.
+ * The format contains only counts, sequence numbers, timestamps, enum names, and
+ * identifiers -- never change-event payload content. Format version 2 added the
+ * occurrence-sequence and credited-occurrence fields (D21); pre-V1 there is no
+ * reader for version 1.
  */
 public class ConflictQuarantineRecordCodec : DurableStateCodec<ConflictQuarantineRecord> {
 
@@ -33,6 +35,9 @@ public class ConflictQuarantineRecordCodec : DurableStateCodec<ConflictQuarantin
             release?.authorizationId?.value?.let { hexEncode(it) } ?: NULL,
             release?.reason?.value?.let { hexEncode(it) } ?: NULL,
             release?.releasedAt?.epochMilliseconds?.toString() ?: NULL,
+            state.occurrenceSequence.toString(),
+            state.creditableFromSequence.toString(),
+            state.creditedSequences.takeIf { it.isNotEmpty() }?.joinToString(",") ?: NULL,
         )
         val encoded = fields.joinToString("|")
         require(encoded.length <= MAX_ENCODED_LENGTH) {
@@ -73,6 +78,9 @@ public class ConflictQuarantineRecordCodec : DurableStateCodec<ConflictQuarantin
                 quarantinedAt = if (fields[8] == NULL) null else DataLoomInstant(fields[8].toLong()),
                 releaseCount = fields[9].toInt(),
                 lastRelease = release,
+                occurrenceSequence = fields[15].toLong(),
+                creditableFromSequence = fields[16].toLong(),
+                creditedSequences = if (fields[17] == NULL) emptyList() else fields[17].split(',').map { it.toLong() },
             )
         } catch (malformed: Exception) {
             throw IllegalArgumentException("Malformed conflict quarantine record payload.", malformed)
@@ -106,9 +114,9 @@ public class ConflictQuarantineRecordCodec : DurableStateCodec<ConflictQuarantin
 
     private companion object {
         const val HEADER: String = "DATALOOM_CONFLICT_QUARANTINE_RECORD"
-        const val FORMAT_VERSION: String = "1"
+        const val FORMAT_VERSION: String = "2"
         const val NULL: String = "-"
-        const val FIELD_COUNT: Int = 15
+        const val FIELD_COUNT: Int = 18
         const val MAX_ENCODED_LENGTH: Int = 65_536
         const val HEX: String = "0123456789abcdef"
     }

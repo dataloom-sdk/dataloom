@@ -71,6 +71,35 @@ public sealed class PluginLifecycleTransitionResult {
         public val to: PluginLifecycleState,
         public val incompatibility: PluginCompatibilityResult.Incompatible,
     ) : PluginLifecycleTransitionResult()
+
+    /**
+     * The requested transition is structurally legal and the plugin is
+     * runtime-compatible, but at least one of its declared dependencies does not
+     * allow it to enter [PluginLifecycleState.VALIDATED] or
+     * [PluginLifecycleState.ACTIVE]. Tracked state is unchanged.
+     *
+     * Returned by every [PluginLifecycleStateTracker] `transition` overload when
+     * the target is `VALIDATED` or `ACTIVE` (including the `DEGRADED -> ACTIVE`
+     * recovery edge) and a dependency is missing, outside its declared version
+     * range, retired, or (for `ACTIVE`) not itself `ACTIVE`. It never throws and
+     * carries only stable plugin ids and closed [PluginDependencyIssueReason]
+     * values, never free text. See [PluginDependencyIssueReason] for the checks
+     * and their order.
+     *
+     * @property issues every blocking dependency, ordered by dependency id then
+     *   reason name. Never empty.
+     */
+    public data class DependencyUnsatisfied(
+        public val from: PluginLifecycleState,
+        public val to: PluginLifecycleState,
+        public val issues: List<PluginDependencyIssue>,
+    ) : PluginLifecycleTransitionResult() {
+        init {
+            require(issues.isNotEmpty()) {
+                "PluginLifecycleTransitionResult.DependencyUnsatisfied must carry at least one issue."
+            }
+        }
+    }
 }
 
 /**

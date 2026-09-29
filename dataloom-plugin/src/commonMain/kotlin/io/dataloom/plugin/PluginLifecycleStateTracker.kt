@@ -59,6 +59,29 @@ import kotlin.concurrent.Volatile
  * [PluginCompatibilityValidator] for the comparison semantics and
  * [compatibilityOf] to inspect a plugin without attempting a transition.
  *
+ * ## Dependency gate
+ *
+ * Every `transition` overload also refuses to move a plugin into
+ * [PluginLifecycleState.VALIDATED] or [PluginLifecycleState.ACTIVE] (the latter
+ * including the `DEGRADED -> ACTIVE` recovery edge) while one of its declared
+ * [io.dataloom.api.plugin.PluginManifest.dependencies] blocks it, returning
+ * [PluginLifecycleTransitionResult.DependencyUnsatisfied] and leaving state
+ * unchanged. A dependency blocks when it is not registered, its
+ * [io.dataloom.api.plugin.PluginManifest.version] is outside the declared
+ * [io.dataloom.api.plugin.PluginVersionRange], or it is `DISABLED` or
+ * `UNLOADED`; entering `ACTIVE` additionally needs it to be `ACTIVE`. Each
+ * blocking dependency is reported with one closed
+ * [PluginDependencyIssueReason]; see it for the check order. The gate runs
+ * after structural legality and the compatibility gate, and before any
+ * permission or authorizer check. Entering any other state, in particular
+ * `DISABLED`, is never gated.
+ *
+ * Only a plugin's own declared dependencies are read, at the moment of the
+ * transition. The requirement that a dependency be `ACTIVE` carries the check
+ * down a chain, since a dependency could only become `ACTIVE` through this same
+ * gate. Disabling a dependency later does not cascade to plugins that are
+ * already `ACTIVE`; that would be a separate policy.
+ *
  * ## Thread-safety boundary
  *
  * [PluginLifecycleStateTracker] does not provide concurrency control over
@@ -138,6 +161,39 @@ public class PluginLifecycleStateTracker(
     }
 
     /**
+     * Returns [PluginLifecycleTransitionResult.DependencyUnsatisfied] when a
+     * declared dependency of [id] blocks entering [target] (`VALIDATED` or
+     * `ACTIVE` only); `null` otherwise. Reads each dependency's state from its
+     * volatile cell, so it is safe alongside a concurrent transition.
+     */
+    private fun unsatisfiedDependencies(
+        id: PluginId,
+        current: PluginLifecycleState,
+        target: PluginLifecycleState,
+    ): PluginLifecycleTransitionResult.DependencyUnsatisfied? {
+        val manifest = requireNotNull(registry.findById(id)) {
+            "PluginLifecycleStateTracker: '$id' is tracked but not found in its registry."
+        }.manifest
+        val issues = dependencyIssues(manifest.dependencies, target, registry, ::stateOf)
+        return if (issues.isEmpty()) {
+            null
+        } else {
+            PluginLifecycleTransitionResult.DependencyUnsatisfied(from = current, to = target, issues = issues)
+        }
+    }
+
+    /**
+     * The refusals that apply to every structurally legal transition, in
+     * order: SDK compatibility, then dependencies. `null` means neither blocks.
+     */
+    private fun refusal(
+        id: PluginId,
+        current: PluginLifecycleState,
+        target: PluginLifecycleState,
+    ): PluginLifecycleTransitionResult? =
+        incompatibility(id, current, target) ?: unsatisfiedDependencies(id, current, target)
+
+    /**
      * Requests a transition of [id]'s tracked state to [target].
      *
      * When [PluginLifecycleTransitions.validate] reports the transition as
@@ -157,7 +213,7 @@ public class PluginLifecycleStateTracker(
         if (result !is PluginLifecycleTransitionResult.Allowed) {
             return result
         }
-        incompatibility(id, current, target)?.let { return it }
+        refusal(id, current, target)?.let { return it }
         cellOf(id).state = target
         return result
     }
@@ -216,7 +272,7 @@ public class PluginLifecycleStateTracker(
         if (structuralResult !is PluginLifecycleTransitionResult.Allowed) {
             return structuralResult
         }
-        incompatibility(id, current, target)?.let { return it }
+        refusal(id, current, target)?.let { return it }
 
         if (target == PluginLifecycleState.ACTIVE) {
             val manifest = requireNotNull(registry.findById(id)) {
@@ -256,12 +312,17 @@ public class PluginLifecycleStateTracker(
      *    incompatible plugin returns
      *    [PluginLifecycleTransitionResult.IncompatibleRuntime] and
      *    [authorizer] is never called.
-     * 3. Only once the transition is structurally legal and compatible is
-     *    [authorizer] consulted. A [PluginLifecycleAdministrationAuthorizationDecision.Denied]
-     *    result leaves tracked state unchanged and returns
+     * 3. For a target of `VALIDATED` or `ACTIVE`, declared dependencies are
+     *    checked next: a blocking dependency returns
+     *    [PluginLifecycleTransitionResult.DependencyUnsatisfied] and
+     *    [authorizer] is never called.
+     * 4. Only once the transition is structurally legal, compatible, and
+     *    dependency-satisfied is [authorizer] consulted. A
+     *    [PluginLifecycleAdministrationAuthorizationDecision.Denied] result
+     *    leaves tracked state unchanged and returns
      *    [PluginLifecycleTransitionResult.AuthorizationDenied] naming the
      *    denial's reason code.
-     * 4. Otherwise tracked state is updated to the requested target and
+     * 5. Otherwise tracked state is updated to the requested target and
      *    [PluginLifecycleTransitionResult.Allowed] is returned.
      *
      * This method never throws for an illegal transition or a denied
@@ -293,7 +354,7 @@ public class PluginLifecycleStateTracker(
         if (structuralResult !is PluginLifecycleTransitionResult.Allowed) {
             return structuralResult
         }
-        incompatibility(request.pluginId, current, request.target)?.let { return it }
+        refusal(request.pluginId, current, request.target)?.let { return it }
 
         return when (val decision = authorizer.authorize(request)) {
             is PluginLifecycleAdministrationAuthorizationDecision.Denied -> {

@@ -235,6 +235,21 @@ public interface DataLoom {
         get() = null
 
     /**
+     * Optional lifecycle-triggered queue drain (ADR-0013, D23).
+     *
+     * `null` unless [DataLoomBuilder.lifecycleDrainConfiguration] was
+     * supplied. Nothing is collected or drained until the host calls
+     * [DataLoomLifecycleDrain.run] in a scope it owns; property access here
+     * performs no I/O and starts nothing. A drain on a real device is
+     * best effort and bounded by what the OS grants the app.
+     *
+     * A default getter preserves source compatibility for custom pre-V1
+     * [DataLoom] implementations.
+     */
+    public val lifecycleDrain: DataLoomLifecycleDrain?
+        get() = null
+
+    /**
      * Initializes all registered providers in registration order.
      *
      * Initializes the internal provider lifecycle coordinator and returns its
