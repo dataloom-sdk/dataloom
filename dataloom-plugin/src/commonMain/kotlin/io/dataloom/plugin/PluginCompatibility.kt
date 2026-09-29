@@ -66,16 +66,33 @@ public object PluginCompatibilityValidator {
         range: PluginCompatibilityRange,
         sdkVersion: RuntimeVersion,
     ): PluginCompatibilityResult {
-        val maximum = range.maximumSdkVersion
-        val reason = when {
-            maximum != null && range.minimumSdkVersion.precedenceCompareTo(maximum) > 0 ->
-                PluginIncompatibilityReason.EMPTY_RANGE
-            sdkVersion.precedenceCompareTo(range.minimumSdkVersion) < 0 ->
-                PluginIncompatibilityReason.BELOW_MINIMUM
-            maximum != null && sdkVersion.precedenceCompareTo(maximum) > 0 ->
-                PluginIncompatibilityReason.ABOVE_MAXIMUM
-            else -> return PluginCompatibilityResult.Compatible
-        }
+        val reason = rangeViolation(range.minimumSdkVersion, range.maximumSdkVersion, sdkVersion) { left, right ->
+            left.precedenceCompareTo(right)
+        } ?: return PluginCompatibilityResult.Compatible
         return PluginCompatibilityResult.Incompatible(sdkVersion = sdkVersion, range = range, reason = reason)
     }
+}
+
+/**
+ * The one implementation of inclusive-range satisfaction, shared by the SDK
+ * compatibility check ([PluginCompatibilityValidator]) and the plugin
+ * dependency version check ([unsatisfiedReason]) so the two can never disagree
+ * about bounds, open maxima, or an empty range.
+ *
+ * Returns why [candidate] is outside `[minimum, maximum]`, or `null` when it is
+ * inside. [maximum] `null` means unbounded. An inverted range is reported as
+ * [PluginIncompatibilityReason.EMPTY_RANGE] before any bound is compared,
+ * because no candidate could satisfy it. [compare] must follow the sign
+ * convention of [Comparable.compareTo].
+ */
+internal fun <V : Any> rangeViolation(
+    minimum: V,
+    maximum: V?,
+    candidate: V,
+    compare: (V, V) -> Int,
+): PluginIncompatibilityReason? = when {
+    maximum != null && compare(minimum, maximum) > 0 -> PluginIncompatibilityReason.EMPTY_RANGE
+    compare(candidate, minimum) < 0 -> PluginIncompatibilityReason.BELOW_MINIMUM
+    maximum != null && compare(candidate, maximum) > 0 -> PluginIncompatibilityReason.ABOVE_MAXIMUM
+    else -> null
 }

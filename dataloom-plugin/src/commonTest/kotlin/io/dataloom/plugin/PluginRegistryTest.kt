@@ -9,6 +9,7 @@ import io.dataloom.api.plugin.PluginId
 import io.dataloom.api.plugin.PluginManifest
 import io.dataloom.api.plugin.PluginVendor
 import io.dataloom.api.plugin.PluginVersion
+import io.dataloom.api.plugin.PluginVersionRange
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -30,6 +31,10 @@ class PluginRegistryTest {
 
     private val compatibilityRange = PluginCompatibilityRange(
         minimumSdkVersion = RuntimeVersion("1.0.0"),
+    )
+
+    private val versionRange = PluginVersionRange(
+        minimum = PluginVersion("1.0.0"),
     )
 
     private val defaultBounds = PluginExecutionBounds(
@@ -54,7 +59,7 @@ class PluginRegistryTest {
             dependencies = dependsOn.map { dependencyId ->
                 PluginDependency(
                     pluginId = PluginId(dependencyId),
-                    compatibilityRange = compatibilityRange,
+                    supportedVersionRange = versionRange,
                 )
             }.toSet(),
         ),
@@ -132,17 +137,23 @@ class PluginRegistryTest {
     }
 
     // -------------------------------------------------------------------------
-    // Unresolved dependency rejection
+    // Unresolved dependency is not a construction error (checked at transition
+    // time by PluginLifecycleStateTracker instead -- see PluginCompatibilityTest).
     // -------------------------------------------------------------------------
 
     @Test
-    fun `dependency on unregistered plugin throws IllegalArgumentException`() {
-        val exception = assertFailsWith<IllegalArgumentException> {
-            PluginRegistry(listOf(plugin("a", dependsOn = setOf("missing"))))
-        }
+    fun `a dependency on an unregistered plugin is registered without throwing`() {
+        val registry = PluginRegistry(listOf(plugin("a", dependsOn = setOf("missing"))))
 
-        assertTrue(exception.message!!.contains("missing"))
-        assertTrue(exception.message!!.contains("a"))
+        assertEquals(1, registry.size)
+        assertEquals(PluginId("a"), registry.findById(PluginId("a"))?.manifest?.id)
+    }
+
+    @Test
+    fun `an unresolved dependency id contributes nothing to resolutionOrder`() {
+        val registry = PluginRegistry(listOf(plugin("a", dependsOn = setOf("missing"))))
+
+        assertEquals(listOf(PluginId("a")), registry.resolutionOrder)
     }
 
     // -------------------------------------------------------------------------

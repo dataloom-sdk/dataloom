@@ -81,6 +81,7 @@ import io.dataloom.runtime.submission.QueueSubmissionProviderTimeoutRuntime
 import io.dataloom.runtime.worker.CircuitBreakerQueueWorkerRuntime
 import io.dataloom.runtime.worker.QueueWorkerCoordinator
 import io.dataloom.runtime.worker.QueueWorkerProviderTimeoutRuntime
+import io.dataloom.runtime.worker.QueueWorkerRunRequest
 import io.dataloom.runtime.worker.assembleQueueWorkerQueueProvider
 
 /**
@@ -177,6 +178,7 @@ public class DataLoomBuilder {
     private var pluginSpec: DataLoomPluginSpec? = null
     private var assetTransferSpec: DataLoomAssetTransferSpec? = null
     private var governanceSpec: DataLoomGovernanceSpec? = null
+    private var lifecycleDrainSpec: DataLoomLifecycleDrainSpec? = null
     private var pluginOperationalEventOutboxSpec: DataLoomPluginOperationalEventOutboxSpec? = null
 
     /**
@@ -925,6 +927,35 @@ public class DataLoomBuilder {
     }
 
     /**
+     * Opts into the lifecycle-triggered queue drain (ADR-0013, D23): the
+     * runtime consumes [spec]'s
+     * [io.dataloom.api.lifecycle.AppLifecycleProvider] and, on transitions the
+     * spec's [LifecycleDrainPolicy] selects, performs one bounded drain
+     * through the queue worker this builder assembles.
+     *
+     * When supplied, [DataLoom.lifecycleDrain] is non-null after [build];
+     * nothing is collected or drained until the host calls
+     * [DataLoomLifecycleDrain.run] in a scope it owns. When never supplied,
+     * [DataLoom.lifecycleDrain] is `null` and [DataLoom] behavior is
+     * unchanged. [build] performs no collection, clock read, identifier
+     * generation or queue operation.
+     *
+     * Requires [queueWorkerConfiguration] or [circuitQueueWorkerConfiguration];
+     * [build] throws [DataLoomBuildException] otherwise. The drain runs through
+     * the same worker instance [DataLoom.queueWorker] returns (or, when only
+     * the circuit worker is configured, [DataLoom.circuitQueueWorker]),
+     * including any health tracking and event bridging configured for it.
+     *
+     * @param spec the lifecycle provider, consumer identity and drain policy.
+     * @return this builder for chaining.
+     */
+    public fun lifecycleDrainConfiguration(
+        spec: DataLoomLifecycleDrainSpec,
+    ): DataLoomBuilder = apply {
+        lifecycleDrainSpec = spec
+    }
+
+    /**
      * Enables the durable operational-event outbox bridge for the plugin engine:
      * every result [DataLoomPluginEngine.transition] and
      * [DataLoomPluginEngine.execute] return is also translated into an
@@ -1092,6 +1123,12 @@ public class DataLoomBuilder {
             throw DataLoomBuildException(
                 "DataLoomBuilder circuitQueueWorkerSchedulerConfiguration requires " +
                     "circuitQueueWorkerConfiguration.",
+            )
+        }
+        if (lifecycleDrainSpec != null && queueWorkerSpec == null && circuitQueueWorkerSpec == null) {
+            throw DataLoomBuildException(
+                "DataLoomBuilder lifecycleDrainConfiguration requires queueWorkerConfiguration " +
+                    "or circuitQueueWorkerConfiguration.",
             )
         }
         val strategyBindings = defaultStrategyProviderBindings
@@ -1548,6 +1585,53 @@ public class DataLoomBuilder {
             )
         }
 
+        // --- 14f. Assemble the final (bridged, health-tracked) queue workers ---
+        val finalQueueWorker = queueWorker?.let { worker ->
+            val bridged = queueWorkerSchedulingOperationalEventOutbox?.let { outbox ->
+                worker.bridgingSchedulingEvents(
+                    outbox,
+                    checkNotNull(queueWorkerSchedulingOperationalEventOutboxSpec).scope,
+                    deps.clock,
+                )
+            } ?: worker
+            queueWorkerHealthTracker?.let { bridged.withHealthTracking(it) } ?: bridged
+        }
+        val finalCircuitQueueWorker = circuitQueueWorker?.let { worker ->
+            val bridged = queueWorkerSchedulingOperationalEventOutbox?.let { outbox ->
+                worker.bridgingSchedulingEvents(
+                    outbox,
+                    checkNotNull(queueWorkerSchedulingOperationalEventOutboxSpec).scope,
+                    deps.clock,
+                )
+            } ?: worker
+            queueWorkerHealthTracker?.let { bridged.withHealthTracking(it) } ?: bridged
+        }
+
+        // --- 14g. Build optional lifecycle-triggered queue drain ---
+        val lifecycleDrain = lifecycleDrainSpec?.let { spec ->
+            val direct = queueWorkerSpec
+            val recoverExpiredLeases: Boolean
+            val runWorker: suspend (QueueWorkerRunRequest) -> Unit
+            if (finalQueueWorker != null && direct != null) {
+                recoverExpiredLeases = direct.configuration.recoverExpiredLeasesBeforeProcessing
+                runWorker = { request -> finalQueueWorker.run(request) }
+            } else {
+                val circuit = checkNotNull(circuitQueueWorkerSpec)
+                val circuitWorker = checkNotNull(finalCircuitQueueWorker)
+                recoverExpiredLeases = circuit.workerSpec.configuration.recoverExpiredLeasesBeforeProcessing
+                runWorker = { request -> circuitWorker.run(request) }
+            }
+            DefaultDataLoomLifecycleDrain(
+                lifecycleProvider = spec.lifecycleProvider,
+                consumerId = spec.consumerId,
+                policy = spec.policy,
+                clock = deps.clock,
+                leaseIds = deps.identifiers.queueLeaseIds,
+                recoverExpiredLeases = recoverExpiredLeases,
+                runWorker = runWorker,
+            )
+        }
+
         return DefaultDataLoom(
             lifecycleCoordinator = lifecycleCoordinator,
             executionCoordinator = executionCoordinator,
@@ -1555,26 +1639,8 @@ public class DataLoomBuilder {
             acceptedStrategyPlanCoordinator = acceptedStrategyPlanCoordinator,
             defaultBindings = bindings,
             defaultStrategyBindings = strategyBindings,
-            queueWorker = queueWorker?.let { worker ->
-                val bridged = queueWorkerSchedulingOperationalEventOutbox?.let { outbox ->
-                    worker.bridgingSchedulingEvents(
-                        outbox,
-                        checkNotNull(queueWorkerSchedulingOperationalEventOutboxSpec).scope,
-                        deps.clock,
-                    )
-                } ?: worker
-                queueWorkerHealthTracker?.let { bridged.withHealthTracking(it) } ?: bridged
-            },
-            circuitQueueWorker = circuitQueueWorker?.let { worker ->
-                val bridged = queueWorkerSchedulingOperationalEventOutbox?.let { outbox ->
-                    worker.bridgingSchedulingEvents(
-                        outbox,
-                        checkNotNull(queueWorkerSchedulingOperationalEventOutboxSpec).scope,
-                        deps.clock,
-                    )
-                } ?: worker
-                queueWorkerHealthTracker?.let { bridged.withHealthTracking(it) } ?: bridged
-            },
+            queueWorker = finalQueueWorker,
+            circuitQueueWorker = finalCircuitQueueWorker,
             protectedSynchronization = protectedSynchronization,
             protectedStrategySynchronization = protectedStrategySynchronization,
             queueSubmission = queueSubmission,
@@ -1584,6 +1650,7 @@ public class DataLoomBuilder {
             pluginEngine = pluginEngine,
             assetTransfer = assetTransfer,
             governance = governance,
+            lifecycleDrain = lifecycleDrain,
         )
     }
 

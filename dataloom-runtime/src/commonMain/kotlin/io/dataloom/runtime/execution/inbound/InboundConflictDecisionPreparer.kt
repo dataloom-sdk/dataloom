@@ -4,6 +4,7 @@ import io.dataloom.api.change.ChangeEvent
 import io.dataloom.api.change.ChangeSet
 import io.dataloom.api.conflict.ConflictDetectionRequest
 import io.dataloom.api.conflict.ConflictQuarantineObservation
+import io.dataloom.api.conflict.ConflictQuarantineOccurrence
 import io.dataloom.api.conflict.ConflictResolutionDecision
 import io.dataloom.api.conflict.DurableResolvedConflictDecisionRecordOutcome
 import io.dataloom.api.conflict.DurableUnresolvedConflictRecordOutcome
@@ -20,6 +21,7 @@ import io.dataloom.api.storage.LocalConflictCandidateReadResult
 import io.dataloom.runtime.conflict.ConflictOrchestrationRequest
 import io.dataloom.runtime.conflict.ConflictOrchestrationResult
 import io.dataloom.runtime.execution.SynchronizationExecutionContext
+import io.dataloom.runtime.retry.protectedRetryStopReason
 
 /**
  * Prepares one inbound batch for application after optional conflict work.
@@ -38,18 +40,57 @@ internal class InboundConflictDecisionPreparer(
     ): InboundConflictPreparation {
         val detection = conflictDetection
             ?: return InboundConflictPreparation.Ready(changeSet, 0L)
-        return if (detection.coordinator.hasResolvedDecisionLog) {
-            prepareForApplication(request, changeSet, context, detection)
+        val occurrences = mutableListOf<ConflictQuarantineOccurrence>()
+        val preparation = if (detection.coordinator.hasResolvedDecisionLog) {
+            prepareForApplication(request, changeSet, context, detection, occurrences)
         } else {
-            observe(request, changeSet, context, detection)
+            observe(request, changeSet, context, detection, occurrences)
+        }
+        return when (preparation) {
+            is InboundConflictPreparation.Ready -> preparation.copy(quarantineOccurrences = occurrences.toList())
+            is InboundConflictPreparation.Blocked -> {
+                creditAfterFailure(occurrences, preparation.error)
+                preparation
+            }
         }
     }
+
+    /**
+     * D21: credits back the quarantine occurrences an attempt counted when that
+     * attempt fails with a retry-eligible infrastructure error, so a flaky store
+     * cannot quarantine a healthy entity. "Retry-eligible" is exactly the
+     * retry machinery's own test ([protectedRetryStopReason] is `null`):
+     * non-recoverable, unknown, and protected categories -- which include every
+     * genuine conflict outcome (`CONFLICT`) -- are not credited and count as
+     * before. Best effort; a credit that cannot be persisted leaves the count
+     * as recorded.
+     */
+    suspend fun creditAfterFailure(
+        occurrences: List<ConflictQuarantineOccurrence>,
+        error: DataLoomError,
+    ) {
+        if (occurrences.isEmpty() || protectedRetryStopReason(error) != null) return
+        conflictDetection?.coordinator?.creditQuarantineOccurrences(occurrences)
+    }
+
+    private fun occurrenceOf(result: ConflictOrchestrationResult): ConflictQuarantineOccurrence? =
+        when (result) {
+            is ConflictOrchestrationResult.Resolved -> result.quarantineOccurrence
+            is ConflictOrchestrationResult.ResolverNotConfigured -> result.quarantineOccurrence
+            is ConflictOrchestrationResult.ResolverNotFound -> result.quarantineOccurrence
+            is ConflictOrchestrationResult.Quarantined,
+            is ConflictOrchestrationResult.QuarantineUnavailable,
+            is ConflictOrchestrationResult.DetectorNotFound,
+            is ConflictOrchestrationResult.NoConflict,
+            -> null
+        }
 
     private suspend fun observe(
         request: SynchronizationRequest,
         changeSet: ChangeSet,
         context: SynchronizationExecutionContext,
         detection: InboundPullConflictDetectionConfiguration,
+        occurrences: MutableList<ConflictQuarantineOccurrence>,
     ): InboundConflictPreparation {
         var conflictCount = 0L
         val storage = context.providers.storageProvider
@@ -68,6 +109,7 @@ internal class InboundConflictDecisionPreparer(
             val result = detection.coordinator.detectAndResolve(
                 request(request, localEvent, remoteEvent, detection),
             ).orchestration
+            occurrenceOf(result)?.let(occurrences::add)
             when (result) {
                 is ConflictOrchestrationResult.ResolverNotConfigured,
                 is ConflictOrchestrationResult.ResolverNotFound,
@@ -88,6 +130,7 @@ internal class InboundConflictDecisionPreparer(
         changeSet: ChangeSet,
         context: SynchronizationExecutionContext,
         detection: InboundPullConflictDetectionConfiguration,
+        occurrences: MutableList<ConflictQuarantineOccurrence>,
     ): InboundConflictPreparation {
         val effectiveEvents = mutableListOf<ChangeEvent>()
         val storage = context.providers.storageProvider
@@ -114,6 +157,7 @@ internal class InboundConflictDecisionPreparer(
             val durable = detection.coordinator.detectAndResolve(
                 request(request, localEvent, remoteEvent, detection),
             )
+            occurrenceOf(durable.orchestration)?.let(occurrences::add)
             when (val orchestration = durable.orchestration) {
                 is ConflictOrchestrationResult.DetectorNotFound ->
                     return blocked(
@@ -357,15 +401,24 @@ internal class InboundConflictDecisionPreparer(
 internal sealed interface InboundConflictPreparation {
     val conflictsDetected: Long
 
+    /**
+     * Quarantine occurrences counted while preparing this batch. Empty on
+     * [Blocked]: the preparer has already settled them (credited back or kept).
+     */
+    val quarantineOccurrences: List<ConflictQuarantineOccurrence>
+
     data class Ready(
         val changeSet: ChangeSet?,
         override val conflictsDetected: Long,
+        override val quarantineOccurrences: List<ConflictQuarantineOccurrence> = emptyList(),
     ) : InboundConflictPreparation
 
     data class Blocked(
         val error: DataLoomError,
         override val conflictsDetected: Long,
-    ) : InboundConflictPreparation
+    ) : InboundConflictPreparation {
+        override val quarantineOccurrences: List<ConflictQuarantineOccurrence> get() = emptyList()
+    }
 }
 
 private data class InboundConflictApplicationError(

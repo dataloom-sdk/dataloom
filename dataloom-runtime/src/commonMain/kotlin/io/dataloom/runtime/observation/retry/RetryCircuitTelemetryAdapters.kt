@@ -123,6 +123,10 @@ private fun RetryCircuitTelemetrySignal.logSeverity(): RetryCircuitLogSeverity =
     RetryCircuitTelemetrySignal.CIRCUIT_EXECUTED,
     RetryCircuitTelemetrySignal.RETRY_ADMINISTRATION_SUCCEEDED,
     RetryCircuitTelemetrySignal.CIRCUIT_ADMINISTRATION_SUCCEEDED,
+    RetryCircuitTelemetrySignal.CONFLICT_DETECTED,
+    RetryCircuitTelemetrySignal.CONFLICT_RESOLVED,
+    RetryCircuitTelemetrySignal.CONFLICT_QUARANTINE_RELEASED,
+    RetryCircuitTelemetrySignal.CONFLICT_RESOLVER_SELECTION_TIER_HIT,
     -> RetryCircuitLogSeverity.INFO
 
     RetryCircuitTelemetrySignal.RETRY_STOPPED,
@@ -140,6 +144,9 @@ private fun RetryCircuitTelemetrySignal.logSeverity(): RetryCircuitLogSeverity =
     RetryCircuitTelemetrySignal.CIRCUIT_ADMINISTRATION_COMMAND_CONFLICT,
     RetryCircuitTelemetrySignal.CIRCUIT_ADMINISTRATION_CLOCK_REGRESSION,
     RetryCircuitTelemetrySignal.CIRCUIT_ADMINISTRATION_CONTENTION,
+    RetryCircuitTelemetrySignal.CONFLICT_UNRESOLVED,
+    RetryCircuitTelemetrySignal.CONFLICT_DEFERRED,
+    RetryCircuitTelemetrySignal.CONFLICT_QUARANTINED,
     -> RetryCircuitLogSeverity.WARNING
 
     RetryCircuitTelemetrySignal.RETRY_SCHEDULER_FAILED,
@@ -151,5 +158,6 @@ private fun RetryCircuitTelemetrySignal.logSeverity(): RetryCircuitLogSeverity =
     RetryCircuitTelemetrySignal.CIRCUIT_ADMINISTRATION_EXECUTION_FAILED,
     RetryCircuitTelemetrySignal.CIRCUIT_ADMINISTRATION_PERSISTENCE_FAILED,
     RetryCircuitTelemetrySignal.CIRCUIT_ADMINISTRATION_RECORDING_UNCONFIRMED,
+    RetryCircuitTelemetrySignal.CONFLICT_FAILED,
     -> RetryCircuitLogSeverity.ERROR
 }

@@ -28,40 +28,39 @@ import io.dataloom.api.plugin.PluginId
  *
  * ## Dependency resolution
  *
- * Every [io.dataloom.api.plugin.PluginDependency] declared in a registered
- * plugin's manifest must reference another [PluginId] present in this same
- * registry. Construction throws [IllegalArgumentException] naming the
- * missing dependency when it does not — an unresolved dependency is
- * rejected outright rather than silently ignored, consistent with this
- * project's deny-by-default discipline.
- *
  * [resolutionOrder] is a deterministic topological ordering of every
  * registered [PluginId] such that each plugin appears after all of the
- * plugins it declares a dependency on. Ties (plugins with no dependency
- * relationship to each other) are broken by registration order, the same
- * determinism rule `ProviderRegistry` applies to its own `providers` list.
+ * *registered* plugins it declares a dependency on. Ties (plugins with no
+ * dependency relationship to each other) are broken by registration order, the
+ * same determinism rule `ProviderRegistry` applies to its own `providers` list.
+ *
+ * A [io.dataloom.api.plugin.PluginDependency] that names a [PluginId] which is
+ * not registered here is **not** a construction error. The plugin is
+ * registered, the missing id contributes nothing to [resolutionOrder], and
+ * [PluginLifecycleStateTracker] refuses to validate or activate the plugin with
+ * [PluginDependencyIssueReason.NOT_REGISTERED]. An incomplete plugin set is a
+ * property of a plugin, like an incompatible SDK range, and is reported as a
+ * non-throwing refusal rather than as a failure of the host's `build()`.
  *
  * ## Dependency cycle rejection
  *
- * A dependency cycle (including a plugin depending on itself, directly or
- * transitively) is rejected at construction with
+ * A dependency cycle among registered plugins (including a plugin depending on
+ * itself, directly or transitively) is rejected at construction with
  * [IllegalArgumentException] naming the full cycle path. No partial
- * [resolutionOrder] is ever exposed for a registry containing a cycle.
+ * [resolutionOrder] is ever exposed for a registry containing a cycle. A cycle
+ * makes an ordering impossible, so it stays a construction error.
  *
  * ## What this does not do
  *
- * - **Compatibility-range comparison.** A [io.dataloom.api.plugin.PluginDependency]'s
- *   declared [io.dataloom.api.plugin.PluginCompatibilityRange] is not
- *   parsed or compared against the depended-upon plugin's actual
- *   [io.dataloom.api.plugin.PluginManifest.version] here.
- *   [io.dataloom.api.plugin.PluginVersion] is still a plain non-blank
- *   string with no canonical parseable format (unlike
- *   `io.dataloom.api.identifier.RuntimeVersion`, which is strict semantic
- *   versioning), so comparing a dependency's declared range against the
- *   depended-upon plugin's version needs that format decision first. This
- *   registry validates the dependency *graph shape* only. A plugin's own
- *   SDK-range compatibility is checked separately, against the running SDK
- *   version, by [PluginLifecycleStateTracker] via [PluginCompatibilityValidator].
+ * - **Version or state checks.** A [io.dataloom.api.plugin.PluginDependency]'s
+ *   declared [io.dataloom.api.plugin.PluginVersionRange] is not compared
+ *   against the depended-upon plugin's
+ *   [io.dataloom.api.plugin.PluginManifest.version] here, and no lifecycle
+ *   state is read: this registry validates the dependency *graph shape* only.
+ *   [PluginLifecycleStateTracker] applies the version and state checks at
+ *   transition time. A plugin's own SDK-range compatibility is checked
+ *   separately, against the running SDK version, by the same tracker via
+ *   [PluginCompatibilityValidator].
  * - **Lifecycle state.** Registering a plugin here does not grant it any
  *   [io.dataloom.api.plugin.PluginLifecycleState]. Use
  *   [PluginLifecycleStateTracker] to track and transition each registered
@@ -79,7 +78,7 @@ import io.dataloom.api.plugin.PluginId
  *
  * @param plugins ordered list of [DataLoomPlugin] instances to register.
  * @throws IllegalArgumentException if [plugins] contains duplicate
- *   [PluginId] values, an unresolved dependency, or a dependency cycle.
+ *   [PluginId] values or a dependency cycle.
  */
 public class PluginRegistry(plugins: List<DataLoomPlugin>) {
 
@@ -105,15 +104,6 @@ public class PluginRegistry(plugins: List<DataLoomPlugin>) {
 
         byId = pluginList.associateBy { it.manifest.id }
 
-        for (plugin in pluginList) {
-            for (dependency in plugin.manifest.dependencies) {
-                require(byId.containsKey(dependency.pluginId)) {
-                    "PluginRegistry: plugin '${plugin.manifest.id}' declares a dependency on " +
-                        "'${dependency.pluginId}', which is not registered in this registry."
-                }
-            }
-        }
-
         resolutionOrder = computeResolutionOrder()
     }
 
@@ -137,8 +127,9 @@ public class PluginRegistry(plugins: List<DataLoomPlugin>) {
     /**
      * Depth-first topological sort over the declared dependency graph,
      * iterating registered plugins in registration order for determinism.
-     * Throws [IllegalArgumentException] naming the full cycle path if a
-     * cycle is found.
+     * Edges to unregistered plugins are skipped: they cannot be ordered and
+     * cannot be part of a cycle. Throws [IllegalArgumentException] naming the
+     * full cycle path if a cycle is found.
      */
     private fun computeResolutionOrder(): List<PluginId> {
         val result = mutableListOf<PluginId>()
@@ -158,7 +149,7 @@ public class PluginRegistry(plugins: List<DataLoomPlugin>) {
             path.add(id)
 
             for (dependency in byId.getValue(id).manifest.dependencies) {
-                visit(dependency.pluginId)
+                if (dependency.pluginId in byId) visit(dependency.pluginId)
             }
 
             path.removeAt(path.lastIndex)
