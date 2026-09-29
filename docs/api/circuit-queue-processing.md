@@ -146,3 +146,11 @@ not retain acquired queue entries.
 - authorized and audited circuit administration; and
 - multi-process, high-contention, process-death, restart, and Book 2
   `AC-FUNC-004` qualification.
+
+**Updated 2026-09-28.** Process-death and cross-process contention evidence
+now exists for the underlying `RoomQueueProvider`/circuit-breaker stores and
+for the circuit's half-open probe (both platforms; see
+[`docs/audits/DL-040-current-acceptance-reconciliation.md`](../audits/DL-040-current-acceptance-reconciliation.md)'s
+2026-09-28 update), but no test drives `CircuitBreakerDurableQueueExecutionProcessor`
+itself through a composed queue-worker/retry-reschedule/circuit loop over real
+stores, so the bullets above remain open for this processor specifically.

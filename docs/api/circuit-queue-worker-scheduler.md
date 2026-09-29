@@ -95,3 +95,11 @@ This slice does not complete DL-040. Transport/storage circuit and timeout
 assembly, protocol connection/request/idle adapters, production KMP iOS
 persistence, authorized operations, complete observability, contention/restart
 qualification, and `AC-FUNC-004` remain open.
+
+**Updated 2026-09-28.** Contention/restart evidence now exists for the
+underlying circuit and queue stores, and for the circuit's half-open probe
+(both platforms; see
+[`docs/audits/DL-040-current-acceptance-reconciliation.md`](../audits/DL-040-current-acceptance-reconciliation.md)'s
+2026-09-28 update), but nothing drives this scheduler-circuit boundary itself
+through a kill, contention, or `AC-FUNC-004` scenario, so this page's own
+claim is unaffected.

@@ -158,3 +158,13 @@ dispatcher, or coroutine-scope type.
 - multi-process, transaction-race, process-death, restart, and half-open probe
   qualification; and
 - complete Book 2 `AC-FUNC-004` evidence.
+
+**Updated 2026-09-28.** Half-open-probe cross-process qualification now exists
+at the `CircuitBreakerCoordinator`/store level, proven on both Android
+(`AndroidCircuitBreakerProbeContentionInstrumentedTest`) and Apple Simulator
+(`apple-process-contention-proof`); process-death evidence exists for the same
+stores (see
+[`docs/audits/DL-040-current-acceptance-reconciliation.md`](../audits/DL-040-current-acceptance-reconciliation.md)'s
+2026-09-28 update). This adapter's own queue-operation permission/recording
+path has not itself been driven through any of those scenarios, and
+transaction-race/`AC-FUNC-004` evidence for it remains open.

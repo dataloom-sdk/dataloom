@@ -167,3 +167,15 @@ This slice does not complete DL-040. Remaining work includes:
   diagnostics; and
 - process-death, multi-process, high-contention, restart, and complete
   `AC-FUNC-004` qualification.
+
+**Updated 2026-09-28.** The underlying `RoomQueueProvider`/`RoomCircuitBreakerStateStore`
+and `AppleFileQueueProvider`/`AppleFileCircuitBreakerStateStore` now have
+genuine process-kill/relaunch evidence, and the circuit's half-open probe has
+genuine cross-process contention evidence, on both Android and Apple Simulator
+(see [`docs/audits/DL-040-current-acceptance-reconciliation.md`](../audits/DL-040-current-acceptance-reconciliation.md)'s
+2026-09-28 update for citations). None of that evidence drives this
+capability's own `CircuitBreakerQueueWorkerCoordinator` path: no test runs the
+composed queue-worker -> retry-reschedule -> circuit loop over a real queue
+store and a real circuit store on any platform, so process-death,
+multi-process, and `AC-FUNC-004` qualification remain open for this specific
+capability.
