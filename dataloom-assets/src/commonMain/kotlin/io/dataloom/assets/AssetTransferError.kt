@@ -76,6 +76,34 @@ public enum class AssetErrorKind(
      * session id; start a new session.
      */
     SESSION_STATE_CORRUPT(ErrorCategory.STORAGE, Recoverability.NON_RECOVERABLE),
+
+    /**
+     * A chunk transform (compression or encryption) is not available: this
+     * platform has no implementation of the algorithm (typed, never silently
+     * degraded to plaintext), the transfer engine was not configured with the
+     * transform a manifest requires, or its configured transforms disagree
+     * with the ones a persisted session was created with. Terminal.
+     */
+    TRANSFORM_UNSUPPORTED(ErrorCategory.CONFIGURATION, Recoverability.NON_RECOVERABLE),
+
+    /** The host could not supply the encryption key right now (for example a locked keystore). Resumable. */
+    ENCRYPTION_KEY_UNAVAILABLE(ErrorCategory.SECURITY, Recoverability.RECOVERABLE),
+
+    /** The host supplied key material of the wrong shape for the cipher. A host bug; terminal. */
+    ENCRYPTION_KEY_INVALID(ErrorCategory.CONFIGURATION, Recoverability.NON_RECOVERABLE),
+
+    /**
+     * A downloaded chunk failed authenticated decryption: it was modified,
+     * belongs to a different asset, version or position, or was sealed under a
+     * different key. Terminal: retrying cannot help and must not loop.
+     */
+    CHUNK_AUTHENTICATION_FAILED(ErrorCategory.SECURITY, Recoverability.NON_RECOVERABLE),
+
+    /**
+     * A downloaded chunk's transform frame is malformed, truncated, of an
+     * unknown version, or inconsistent with the manifest. Terminal.
+     */
+    TRANSFORM_FRAME_INVALID(ErrorCategory.SECURITY, Recoverability.NON_RECOVERABLE),
     ;
 
     /** Stable machine-readable code, `dataloom.assets.<lowercase kind>`. */

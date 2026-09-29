@@ -13,6 +13,7 @@ import io.dataloom.assets.AssetTransferError
 import io.dataloom.assets.AssetTransferSessionId
 import io.dataloom.assets.AssetUploadRequest
 import io.dataloom.assets.AssetUploadStatus
+import io.dataloom.assets.transform.AssetWireFormat
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -83,11 +84,20 @@ public class InMemoryAssetProvider(
             if (upload.completed || upload.chunks[request.index] != null) {
                 return@withLock ok(status(request.sessionId, upload))
             }
-            if (request.bytes.size.toLong() != descriptor.lengthBytes) {
-                return@withLock fail(AssetErrorKind.CHUNK_LENGTH_MISMATCH, "Chunk length differs from the manifest.")
-            }
-            if (!(descriptor.checksum contentEquals digests.digest(descriptor.checksum.algorithm, request.bytes))) {
-                return@withLock fail(AssetErrorKind.CHUNK_DIGEST_MISMATCH, "Chunk digest differs from the manifest.")
+            if (AssetWireFormat.isTransformed(upload.manifest)) {
+                // Opaque transform frame: the manifest's length and digest describe the logical
+                // bytes, which a provider storing sealed bytes cannot check (ADR-0014, D24).
+                val size = request.bytes.size.toLong()
+                if (size < 1 || size > descriptor.lengthBytes + AssetWireFormat.MAX_FRAME_OVERHEAD_BYTES) {
+                    return@withLock fail(AssetErrorKind.CHUNK_LENGTH_MISMATCH, "Chunk frame length is implausible for the manifest.")
+                }
+            } else {
+                if (request.bytes.size.toLong() != descriptor.lengthBytes) {
+                    return@withLock fail(AssetErrorKind.CHUNK_LENGTH_MISMATCH, "Chunk length differs from the manifest.")
+                }
+                if (!(descriptor.checksum contentEquals digests.digest(descriptor.checksum.algorithm, request.bytes))) {
+                    return@withLock fail(AssetErrorKind.CHUNK_DIGEST_MISMATCH, "Chunk digest differs from the manifest.")
+                }
             }
             upload.chunks[request.index] = request.bytes.copyOf()
             ok(status(request.sessionId, upload))
@@ -103,14 +113,18 @@ public class InMemoryAssetProvider(
                 return@withLock fail(AssetErrorKind.INCOMPLETE_UPLOAD, "Not every chunk is committed.")
             }
             val manifest = upload.manifest
-            val wholeDigest = digests.newAccumulator(manifest.checksum.algorithm).use { accumulator ->
-                chunks.forEach { accumulator.update(it!!) }
-                accumulator.finish()
-            }
-            if (!(manifest.checksum contentEquals wholeDigest)) {
-                // Never expose a corrupted asset: drop the session and its reservation.
-                uploads.remove(sessionId)
-                return@withLock fail(AssetErrorKind.OBJECT_DIGEST_MISMATCH, "Assembled object digest differs from the manifest.")
+            // A transformed asset's stored bytes are frames, not the logical bytes the whole-object
+            // digest covers, so only the client can verify it (ADR-0014, D24).
+            if (!AssetWireFormat.isTransformed(manifest)) {
+                val wholeDigest = digests.newAccumulator(manifest.checksum.algorithm).use { accumulator ->
+                    chunks.forEach { accumulator.update(it!!) }
+                    accumulator.finish()
+                }
+                if (!(manifest.checksum contentEquals wholeDigest)) {
+                    // Never expose a corrupted asset: drop the session and its reservation.
+                    uploads.remove(sessionId)
+                    return@withLock fail(AssetErrorKind.OBJECT_DIGEST_MISMATCH, "Assembled object digest differs from the manifest.")
+                }
             }
             val versions = committed.getOrPut(manifest.assetId) { HashMap() }
             if (versions.containsKey(manifest.version)) {

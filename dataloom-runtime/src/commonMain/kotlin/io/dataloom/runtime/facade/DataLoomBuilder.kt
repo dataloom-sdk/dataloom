@@ -1571,6 +1571,7 @@ public class DataLoomBuilder {
                 chunkSizeBytes = spec.chunkSizeBytes,
                 digestAlgorithm = spec.digestAlgorithm,
                 verifyBufferBytes = spec.verifyBufferBytes,
+                transforms = spec.transforms,
             )
         }
 

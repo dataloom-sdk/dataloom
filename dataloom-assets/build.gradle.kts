@@ -4,11 +4,14 @@
 // in-memory reference behaviour: chunk planning, bounded-memory streaming
 // source/sink contracts, the transfer-session state machine, the
 // AssetProvider SPI, a sequential transfer engine, an in-memory reference
-// provider, a provider contract kit, and compression/encryption SPIs (identity
-// implementations only). See docs/adr/ADR-0006-asset-transfer-and-streaming-digest.md.
+// provider, a provider contract kit, and compression/encryption SPIs with
+// zlib/DEFLATE and AES-256-GCM implementations (ADR-0014). See
+// docs/adr/ADR-0006-asset-transfer-and-streaming-digest.md.
 //
 // Rules:
-// - Pure Kotlin multiplatform (jvm + iOS), no platform-specific source sets.
+// - Kotlin multiplatform (jvm + iOS). Platform source sets exist only for the two
+//   transform primitives (java.util.zip / javax.crypto on the JVM, platform.zlib on
+//   Apple; Apple has no AES-GCM, see ADR-0014).
 // - Depends on dataloom-api (asset manifest, provider result/error contracts)
 //   and dataloom-model (digest primitives, including the incremental digest
 //   capability) plus kotlinx.coroutines.core.

@@ -1,5 +1,7 @@
 package io.dataloom.assets.testkit
 
+import io.dataloom.api.asset.AssetCompressionAlgorithm
+import io.dataloom.api.asset.AssetCompressionMetadata
 import io.dataloom.api.asset.AssetManifest
 import io.dataloom.api.asset.AssetMediaType
 import io.dataloom.api.identifier.AssetId
@@ -205,6 +207,28 @@ public class AssetProviderContractKit(
             for (i in 0 until asset.chunkCount) p.uploadChunk(AssetChunkUpload(session, i, asset.chunk(i))).success("chunk $i")
             p.completeUpload(session).expectFailure(AssetErrorKind.OBJECT_DIGEST_MISMATCH, "tampered whole digest")
             p.readManifest(asset.manifest.assetId, null).expectFailure(AssetErrorKind.ASSET_NOT_FOUND, "corrupted asset visible")
+        },
+
+        "a transformed manifest stores opaque frames unverified and returns them unchanged" to { f ->
+            val p = f.provider()
+            val logical = f.asset(p, "transformed")
+            // Marking the manifest compressed means its chunks travel as frames whose length and
+            // digest differ from the descriptors': the provider cannot check them (ADR-0014, D24).
+            val manifest = logical.manifest.copy(
+                compression = AssetCompressionMetadata(AssetCompressionAlgorithm("kit-opaque"), logical.manifest.sizeBytes),
+            )
+            val frames = (0 until logical.chunkCount).map { i -> byteArrayOf(1, 0, 0) + logical.chunk(i).reversedArray() }
+            val session = AssetTransferSessionId("s-transformed")
+            p.openUpload(AssetUploadRequest(session, manifest)).success("open")
+            for (i in frames.indices) p.uploadChunk(AssetChunkUpload(session, i, frames[i])).success("frame $i")
+            require(p.completeUpload(session).success("complete without a whole-object digest check") == manifest) {
+                "completed manifest differs"
+            }
+            for (i in frames.indices) {
+                require(p.readChunk(manifest.assetId, 1, i).success("readChunk $i").contentEquals(frames[i])) {
+                    "frame $i was not returned exactly as uploaded"
+                }
+            }
         },
 
         "completing twice returns the same committed manifest" to { f ->

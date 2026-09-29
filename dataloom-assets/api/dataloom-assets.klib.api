@@ -9,10 +9,13 @@
 final enum class io.dataloom.assets/AssetErrorKind : kotlin/Enum<io.dataloom.assets/AssetErrorKind> { // io.dataloom.assets/AssetErrorKind|null[0]
     enum entry ASSET_NOT_FOUND // io.dataloom.assets/AssetErrorKind.ASSET_NOT_FOUND|null[0]
     enum entry ASSET_VERSION_CONFLICT // io.dataloom.assets/AssetErrorKind.ASSET_VERSION_CONFLICT|null[0]
+    enum entry CHUNK_AUTHENTICATION_FAILED // io.dataloom.assets/AssetErrorKind.CHUNK_AUTHENTICATION_FAILED|null[0]
     enum entry CHUNK_DIGEST_MISMATCH // io.dataloom.assets/AssetErrorKind.CHUNK_DIGEST_MISMATCH|null[0]
     enum entry CHUNK_LENGTH_MISMATCH // io.dataloom.assets/AssetErrorKind.CHUNK_LENGTH_MISMATCH|null[0]
     enum entry CHUNK_OUT_OF_RANGE // io.dataloom.assets/AssetErrorKind.CHUNK_OUT_OF_RANGE|null[0]
     enum entry EMPTY_ASSET // io.dataloom.assets/AssetErrorKind.EMPTY_ASSET|null[0]
+    enum entry ENCRYPTION_KEY_INVALID // io.dataloom.assets/AssetErrorKind.ENCRYPTION_KEY_INVALID|null[0]
+    enum entry ENCRYPTION_KEY_UNAVAILABLE // io.dataloom.assets/AssetErrorKind.ENCRYPTION_KEY_UNAVAILABLE|null[0]
     enum entry INCOMPLETE_UPLOAD // io.dataloom.assets/AssetErrorKind.INCOMPLETE_UPLOAD|null[0]
     enum entry OBJECT_DIGEST_MISMATCH // io.dataloom.assets/AssetErrorKind.OBJECT_DIGEST_MISMATCH|null[0]
     enum entry PROVIDER_REJECTED // io.dataloom.assets/AssetErrorKind.PROVIDER_REJECTED|null[0]
@@ -25,6 +28,8 @@ final enum class io.dataloom.assets/AssetErrorKind : kotlin/Enum<io.dataloom.ass
     enum entry SINK_FAILURE // io.dataloom.assets/AssetErrorKind.SINK_FAILURE|null[0]
     enum entry SOURCE_CONTENT_CHANGED // io.dataloom.assets/AssetErrorKind.SOURCE_CONTENT_CHANGED|null[0]
     enum entry SOURCE_FAILURE // io.dataloom.assets/AssetErrorKind.SOURCE_FAILURE|null[0]
+    enum entry TRANSFORM_FRAME_INVALID // io.dataloom.assets/AssetErrorKind.TRANSFORM_FRAME_INVALID|null[0]
+    enum entry TRANSFORM_UNSUPPORTED // io.dataloom.assets/AssetErrorKind.TRANSFORM_UNSUPPORTED|null[0]
 
     final val category // io.dataloom.assets/AssetErrorKind.category|{}category[0]
         final fun <get-category>(): io.dataloom.api.error/ErrorCategory // io.dataloom.assets/AssetErrorKind.category.<get-category>|<get-category>(){}[0]
@@ -80,9 +85,15 @@ final enum class io.dataloom.assets/AssetTransferRejection : kotlin/Enum<io.data
     final fun values(): kotlin/Array<io.dataloom.assets/AssetTransferRejection> // io.dataloom.assets/AssetTransferRejection.values|values#static(){}[0]
 }
 
+abstract fun interface io.dataloom.assets.transform/AssetKeyResolver { // io.dataloom.assets.transform/AssetKeyResolver|null[0]
+    abstract suspend fun resolve(io.dataloom.api.security/KeyReference): kotlin/ByteArray // io.dataloom.assets.transform/AssetKeyResolver.resolve|resolve(io.dataloom.api.security.KeyReference){}[0]
+}
+
 abstract interface io.dataloom.assets.transform/AssetChunkCipher { // io.dataloom.assets.transform/AssetChunkCipher|null[0]
     abstract val algorithm // io.dataloom.assets.transform/AssetChunkCipher.algorithm|{}algorithm[0]
         abstract fun <get-algorithm>(): io.dataloom.api.asset/AssetEncryptionAlgorithm // io.dataloom.assets.transform/AssetChunkCipher.algorithm.<get-algorithm>|<get-algorithm>(){}[0]
+    open val isSupported // io.dataloom.assets.transform/AssetChunkCipher.isSupported|{}isSupported[0]
+        open fun <get-isSupported>(): kotlin/Boolean // io.dataloom.assets.transform/AssetChunkCipher.isSupported.<get-isSupported>|<get-isSupported>(){}[0]
 
     abstract suspend fun open(io.dataloom.api.security/KeyReference, kotlin/Int, io.dataloom.assets.transform/AssetSealedChunk, kotlin/ByteArray): kotlin/ByteArray // io.dataloom.assets.transform/AssetChunkCipher.open|open(io.dataloom.api.security.KeyReference;kotlin.Int;io.dataloom.assets.transform.AssetSealedChunk;kotlin.ByteArray){}[0]
     abstract suspend fun seal(io.dataloom.api.security/KeyReference, kotlin/Int, kotlin/ByteArray, kotlin/ByteArray): io.dataloom.assets.transform/AssetSealedChunk // io.dataloom.assets.transform/AssetChunkCipher.seal|seal(io.dataloom.api.security.KeyReference;kotlin.Int;kotlin.ByteArray;kotlin.ByteArray){}[0]
@@ -91,6 +102,8 @@ abstract interface io.dataloom.assets.transform/AssetChunkCipher { // io.dataloo
 abstract interface io.dataloom.assets.transform/AssetCompressor { // io.dataloom.assets.transform/AssetCompressor|null[0]
     abstract val algorithm // io.dataloom.assets.transform/AssetCompressor.algorithm|{}algorithm[0]
         abstract fun <get-algorithm>(): io.dataloom.api.asset/AssetCompressionAlgorithm // io.dataloom.assets.transform/AssetCompressor.algorithm.<get-algorithm>|<get-algorithm>(){}[0]
+    open val isSupported // io.dataloom.assets.transform/AssetCompressor.isSupported|{}isSupported[0]
+        open fun <get-isSupported>(): kotlin/Boolean // io.dataloom.assets.transform/AssetCompressor.isSupported.<get-isSupported>|<get-isSupported>(){}[0]
 
     abstract suspend fun compress(kotlin/ByteArray): kotlin/ByteArray // io.dataloom.assets.transform/AssetCompressor.compress|compress(kotlin.ByteArray){}[0]
     abstract suspend fun decompress(kotlin/ByteArray, kotlin/Int): kotlin/ByteArray // io.dataloom.assets.transform/AssetCompressor.decompress|decompress(kotlin.ByteArray;kotlin.Int){}[0]
@@ -435,8 +448,40 @@ final class io.dataloom.assets.testkit/AssetProviderContractReport { // io.datal
     }
 }
 
+final class io.dataloom.assets.transform/AesGcmAssetChunkCipher : io.dataloom.assets.transform/AssetChunkCipher { // io.dataloom.assets.transform/AesGcmAssetChunkCipher|null[0]
+    constructor <init>(io.dataloom.assets.transform/AssetKeyResolver, io.dataloom.api.random/DataLoomSecureRandom) // io.dataloom.assets.transform/AesGcmAssetChunkCipher.<init>|<init>(io.dataloom.assets.transform.AssetKeyResolver;io.dataloom.api.random.DataLoomSecureRandom){}[0]
+
+    final val algorithm // io.dataloom.assets.transform/AesGcmAssetChunkCipher.algorithm|{}algorithm[0]
+        final fun <get-algorithm>(): io.dataloom.api.asset/AssetEncryptionAlgorithm // io.dataloom.assets.transform/AesGcmAssetChunkCipher.algorithm.<get-algorithm>|<get-algorithm>(){}[0]
+    final val isSupported // io.dataloom.assets.transform/AesGcmAssetChunkCipher.isSupported|{}isSupported[0]
+        final fun <get-isSupported>(): kotlin/Boolean // io.dataloom.assets.transform/AesGcmAssetChunkCipher.isSupported.<get-isSupported>|<get-isSupported>(){}[0]
+
+    final suspend fun open(io.dataloom.api.security/KeyReference, kotlin/Int, io.dataloom.assets.transform/AssetSealedChunk, kotlin/ByteArray): kotlin/ByteArray // io.dataloom.assets.transform/AesGcmAssetChunkCipher.open|open(io.dataloom.api.security.KeyReference;kotlin.Int;io.dataloom.assets.transform.AssetSealedChunk;kotlin.ByteArray){}[0]
+    final suspend fun seal(io.dataloom.api.security/KeyReference, kotlin/Int, kotlin/ByteArray, kotlin/ByteArray): io.dataloom.assets.transform/AssetSealedChunk // io.dataloom.assets.transform/AesGcmAssetChunkCipher.seal|seal(io.dataloom.api.security.KeyReference;kotlin.Int;kotlin.ByteArray;kotlin.ByteArray){}[0]
+
+    final object Companion { // io.dataloom.assets.transform/AesGcmAssetChunkCipher.Companion|null[0]
+        final const val KEY_BYTES // io.dataloom.assets.transform/AesGcmAssetChunkCipher.Companion.KEY_BYTES|{}KEY_BYTES[0]
+            final fun <get-KEY_BYTES>(): kotlin/Int // io.dataloom.assets.transform/AesGcmAssetChunkCipher.Companion.KEY_BYTES.<get-KEY_BYTES>|<get-KEY_BYTES>(){}[0]
+        final const val NONCE_BYTES // io.dataloom.assets.transform/AesGcmAssetChunkCipher.Companion.NONCE_BYTES|{}NONCE_BYTES[0]
+            final fun <get-NONCE_BYTES>(): kotlin/Int // io.dataloom.assets.transform/AesGcmAssetChunkCipher.Companion.NONCE_BYTES.<get-NONCE_BYTES>|<get-NONCE_BYTES>(){}[0]
+        final const val TAG_BYTES // io.dataloom.assets.transform/AesGcmAssetChunkCipher.Companion.TAG_BYTES|{}TAG_BYTES[0]
+            final fun <get-TAG_BYTES>(): kotlin/Int // io.dataloom.assets.transform/AesGcmAssetChunkCipher.Companion.TAG_BYTES.<get-TAG_BYTES>|<get-TAG_BYTES>(){}[0]
+
+        final val LABEL // io.dataloom.assets.transform/AesGcmAssetChunkCipher.Companion.LABEL|{}LABEL[0]
+            final fun <get-LABEL>(): io.dataloom.api.asset/AssetEncryptionAlgorithm // io.dataloom.assets.transform/AesGcmAssetChunkCipher.Companion.LABEL.<get-LABEL>|<get-LABEL>(){}[0]
+    }
+}
+
 final class io.dataloom.assets.transform/AssetChunkAuthenticationException : kotlin/RuntimeException { // io.dataloom.assets.transform/AssetChunkAuthenticationException|null[0]
     constructor <init>(kotlin/String) // io.dataloom.assets.transform/AssetChunkAuthenticationException.<init>|<init>(kotlin.String){}[0]
+}
+
+final class io.dataloom.assets.transform/AssetKeyInvalidException : kotlin/RuntimeException { // io.dataloom.assets.transform/AssetKeyInvalidException|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.assets.transform/AssetKeyInvalidException.<init>|<init>(kotlin.String){}[0]
+}
+
+final class io.dataloom.assets.transform/AssetKeyUnavailableException : kotlin/RuntimeException { // io.dataloom.assets.transform/AssetKeyUnavailableException|null[0]
+    constructor <init>(kotlin/String, kotlin/Throwable? = ...) // io.dataloom.assets.transform/AssetKeyUnavailableException.<init>|<init>(kotlin.String;kotlin.Throwable?){}[0]
 }
 
 final class io.dataloom.assets.transform/AssetSealedChunk { // io.dataloom.assets.transform/AssetSealedChunk|null[0]
@@ -447,6 +492,48 @@ final class io.dataloom.assets.transform/AssetSealedChunk { // io.dataloom.asset
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets.transform/AssetSealedChunk.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.assets.transform/AssetSealedChunk.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.assets.transform/AssetSealedChunk.toString|toString(){}[0]
+}
+
+final class io.dataloom.assets.transform/AssetTransferTransforms { // io.dataloom.assets.transform/AssetTransferTransforms|null[0]
+    constructor <init>(io.dataloom.assets.transform/AssetCompressor? = ..., io.dataloom.assets.transform/AssetChunkCipher? = ..., io.dataloom.api.security/KeyReference? = ...) // io.dataloom.assets.transform/AssetTransferTransforms.<init>|<init>(io.dataloom.assets.transform.AssetCompressor?;io.dataloom.assets.transform.AssetChunkCipher?;io.dataloom.api.security.KeyReference?){}[0]
+
+    final val cipher // io.dataloom.assets.transform/AssetTransferTransforms.cipher|{}cipher[0]
+        final fun <get-cipher>(): io.dataloom.assets.transform/AssetChunkCipher? // io.dataloom.assets.transform/AssetTransferTransforms.cipher.<get-cipher>|<get-cipher>(){}[0]
+    final val compressor // io.dataloom.assets.transform/AssetTransferTransforms.compressor|{}compressor[0]
+        final fun <get-compressor>(): io.dataloom.assets.transform/AssetCompressor? // io.dataloom.assets.transform/AssetTransferTransforms.compressor.<get-compressor>|<get-compressor>(){}[0]
+    final val isEmpty // io.dataloom.assets.transform/AssetTransferTransforms.isEmpty|{}isEmpty[0]
+        final fun <get-isEmpty>(): kotlin/Boolean // io.dataloom.assets.transform/AssetTransferTransforms.isEmpty.<get-isEmpty>|<get-isEmpty>(){}[0]
+    final val keyReference // io.dataloom.assets.transform/AssetTransferTransforms.keyReference|{}keyReference[0]
+        final fun <get-keyReference>(): io.dataloom.api.security/KeyReference? // io.dataloom.assets.transform/AssetTransferTransforms.keyReference.<get-keyReference>|<get-keyReference>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.assets.transform/AssetTransferTransforms.toString|toString(){}[0]
+
+    final object Companion { // io.dataloom.assets.transform/AssetTransferTransforms.Companion|null[0]
+        final val NONE // io.dataloom.assets.transform/AssetTransferTransforms.Companion.NONE|{}NONE[0]
+            final fun <get-NONE>(): io.dataloom.assets.transform/AssetTransferTransforms // io.dataloom.assets.transform/AssetTransferTransforms.Companion.NONE.<get-NONE>|<get-NONE>(){}[0]
+    }
+}
+
+final class io.dataloom.assets.transform/AssetTransformUnsupportedException : kotlin/RuntimeException { // io.dataloom.assets.transform/AssetTransformUnsupportedException|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.assets.transform/AssetTransformUnsupportedException.<init>|<init>(kotlin.String){}[0]
+}
+
+final class io.dataloom.assets.transform/DeflateAssetCompressor : io.dataloom.assets.transform/AssetCompressor { // io.dataloom.assets.transform/DeflateAssetCompressor|null[0]
+    constructor <init>(kotlin/Int = ...) // io.dataloom.assets.transform/DeflateAssetCompressor.<init>|<init>(kotlin.Int){}[0]
+
+    final val algorithm // io.dataloom.assets.transform/DeflateAssetCompressor.algorithm|{}algorithm[0]
+        final fun <get-algorithm>(): io.dataloom.api.asset/AssetCompressionAlgorithm // io.dataloom.assets.transform/DeflateAssetCompressor.algorithm.<get-algorithm>|<get-algorithm>(){}[0]
+
+    final suspend fun compress(kotlin/ByteArray): kotlin/ByteArray // io.dataloom.assets.transform/DeflateAssetCompressor.compress|compress(kotlin.ByteArray){}[0]
+    final suspend fun decompress(kotlin/ByteArray, kotlin/Int): kotlin/ByteArray // io.dataloom.assets.transform/DeflateAssetCompressor.decompress|decompress(kotlin.ByteArray;kotlin.Int){}[0]
+
+    final object Companion { // io.dataloom.assets.transform/DeflateAssetCompressor.Companion|null[0]
+        final const val DEFAULT_LEVEL // io.dataloom.assets.transform/DeflateAssetCompressor.Companion.DEFAULT_LEVEL|{}DEFAULT_LEVEL[0]
+            final fun <get-DEFAULT_LEVEL>(): kotlin/Int // io.dataloom.assets.transform/DeflateAssetCompressor.Companion.DEFAULT_LEVEL.<get-DEFAULT_LEVEL>|<get-DEFAULT_LEVEL>(){}[0]
+
+        final val LABEL // io.dataloom.assets.transform/DeflateAssetCompressor.Companion.LABEL|{}LABEL[0]
+            final fun <get-LABEL>(): io.dataloom.api.asset/AssetCompressionAlgorithm // io.dataloom.assets.transform/DeflateAssetCompressor.Companion.LABEL.<get-LABEL>|<get-LABEL>(){}[0]
+    }
 }
 
 final class io.dataloom.assets.transform/IdentityAssetCipher : io.dataloom.assets.transform/AssetChunkCipher { // io.dataloom.assets.transform/IdentityAssetCipher|null[0]
@@ -572,7 +659,7 @@ final class io.dataloom.assets/AssetSourceChangedException : kotlin/RuntimeExcep
 }
 
 final class io.dataloom.assets/AssetTransferEngine { // io.dataloom.assets/AssetTransferEngine|null[0]
-    constructor <init>(io.dataloom.assets/AssetProvider, io.dataloom.assets/AssetTransferSessionStore, io.dataloom.api.security/DataLoomIncrementalDigestCalculator, kotlin/Int = ..., io.dataloom.api.security/DigestAlgorithm = ..., kotlin/Int = ...) // io.dataloom.assets/AssetTransferEngine.<init>|<init>(io.dataloom.assets.AssetProvider;io.dataloom.assets.AssetTransferSessionStore;io.dataloom.api.security.DataLoomIncrementalDigestCalculator;kotlin.Int;io.dataloom.api.security.DigestAlgorithm;kotlin.Int){}[0]
+    constructor <init>(io.dataloom.assets/AssetProvider, io.dataloom.assets/AssetTransferSessionStore, io.dataloom.api.security/DataLoomIncrementalDigestCalculator, kotlin/Int = ..., io.dataloom.api.security/DigestAlgorithm = ..., kotlin/Int = ..., io.dataloom.assets.transform/AssetTransferTransforms = ...) // io.dataloom.assets/AssetTransferEngine.<init>|<init>(io.dataloom.assets.AssetProvider;io.dataloom.assets.AssetTransferSessionStore;io.dataloom.api.security.DataLoomIncrementalDigestCalculator;kotlin.Int;io.dataloom.api.security.DigestAlgorithm;kotlin.Int;io.dataloom.assets.transform.AssetTransferTransforms){}[0]
 
     final suspend fun cancel(io.dataloom.assets/AssetTransferSessionId, io.dataloom.assets/AssetSink? = ...): io.dataloom.assets/AssetTransferOutcome // io.dataloom.assets/AssetTransferEngine.cancel|cancel(io.dataloom.assets.AssetTransferSessionId;io.dataloom.assets.AssetSink?){}[0]
     final suspend fun download(io.dataloom.assets/AssetTransferSessionId, io.dataloom.api.identifier/AssetId, kotlin/Long?, io.dataloom.assets/AssetSink): io.dataloom.assets/AssetTransferOutcome // io.dataloom.assets/AssetTransferEngine.download|download(io.dataloom.assets.AssetTransferSessionId;io.dataloom.api.identifier.AssetId;kotlin.Long?;io.dataloom.assets.AssetSink){}[0]
@@ -708,6 +795,15 @@ final value class io.dataloom.assets/AssetTransferSessionId { // io.dataloom.ass
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets/AssetTransferSessionId.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.assets/AssetTransferSessionId.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.assets/AssetTransferSessionId.toString|toString(){}[0]
+}
+
+final object io.dataloom.assets.transform/AssetWireFormat { // io.dataloom.assets.transform/AssetWireFormat|null[0]
+    final const val FRAME_VERSION // io.dataloom.assets.transform/AssetWireFormat.FRAME_VERSION|{}FRAME_VERSION[0]
+        final fun <get-FRAME_VERSION>(): kotlin/Int // io.dataloom.assets.transform/AssetWireFormat.FRAME_VERSION.<get-FRAME_VERSION>|<get-FRAME_VERSION>(){}[0]
+    final const val MAX_FRAME_OVERHEAD_BYTES // io.dataloom.assets.transform/AssetWireFormat.MAX_FRAME_OVERHEAD_BYTES|{}MAX_FRAME_OVERHEAD_BYTES[0]
+        final fun <get-MAX_FRAME_OVERHEAD_BYTES>(): kotlin/Int // io.dataloom.assets.transform/AssetWireFormat.MAX_FRAME_OVERHEAD_BYTES.<get-MAX_FRAME_OVERHEAD_BYTES>|<get-MAX_FRAME_OVERHEAD_BYTES>(){}[0]
+
+    final fun isTransformed(io.dataloom.api.asset/AssetManifest): kotlin/Boolean // io.dataloom.assets.transform/AssetWireFormat.isTransformed|isTransformed(io.dataloom.api.asset.AssetManifest){}[0]
 }
 
 final suspend fun (io.dataloom.assets/AssetReadable).io.dataloom.assets/readFully(kotlin/Long, kotlin/ByteArray, kotlin/Int, kotlin/Int): kotlin/Int // io.dataloom.assets/readFully|readFully@io.dataloom.assets.AssetReadable(kotlin.Long;kotlin.ByteArray;kotlin.Int;kotlin.Int){}[0]

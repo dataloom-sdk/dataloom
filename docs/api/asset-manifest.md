@@ -219,7 +219,10 @@ DataLoom's perspective; DataLoom never performs encryption or decryption
 on the strength of this metadata.
 
 `nonce` is defensively copied on construction (same pattern as
-`DataLoomDigest`/`DataLoomMac`) and must not be empty. Because `algorithm`
+`DataLoomDigest`/`DataLoomMac`). It may be empty: `dataloom-assets`' AES-256-GCM
+uses a fresh nonce per chunk carried in each chunk's frame, so it records no
+asset-wide nonce ([ADR-0014](../adr/ADR-0014-asset-chunk-transforms-and-digest-domain.md)).
+Because `algorithm`
 is an open token rather than a closed enum, this type cannot validate a
 fixed nonce length the way `DataLoomDigest` validates digest length against
 a closed `DigestAlgorithm` — length validation, if ever needed, is a future

@@ -72,7 +72,8 @@ public class AssetUploadStatus(
  * One chunk of an upload.
  *
  * @param bytes exactly the chunk's bytes: its size must equal the manifest
- *   descriptor's length. The provider must not retain this array after the
+ *   descriptor's length (for an untransformed asset; for a transformed one it
+ *   is an opaque frame, see [AssetProvider]). The provider must not retain this array after the
  *   call returns (the caller reuses buffers to keep memory bounded), so a
  *   provider that stores the chunk copies it.
  */
@@ -119,6 +120,21 @@ public class AssetChunkUpload(
  * after [completeUpload] succeeds; a failed verification discards the
  * session's chunks and releases its reservation, so a corrupted asset is
  * never visible.
+ *
+ * **Transformed assets (compression and/or encryption).** When
+ * [io.dataloom.assets.transform.AssetWireFormat.isTransformed] is true for a
+ * manifest, the chunk bytes a provider receives are opaque transform frames,
+ * while the manifest's chunk lengths and digests describe the *logical*
+ * (plaintext, uncompressed) bytes, which a provider storing ciphertext cannot
+ * check (ADR-0014, D24). For such manifests the provider must store the frame
+ * exactly as received and return it exactly as stored, must not apply the
+ * length-equals-descriptor or digest checks above, and must not verify the
+ * whole-object digest in [completeUpload]; it still verifies that every chunk
+ * is committed, and may reject a frame that is empty or longer than the
+ * descriptor length plus
+ * [io.dataloom.assets.transform.AssetWireFormat.MAX_FRAME_OVERHEAD_BYTES]. The
+ * client verifies the logical digests, and the AEAD tag protects the stored bytes.
+ * The quota reservation still counts the manifest's logical size.
  *
  * **Quota.** The provider enforces the [AssetQuota] it was configured with.
  * [openUpload] is the preflight check against the manifest's declared size
@@ -176,8 +192,9 @@ public interface AssetProvider {
     public suspend fun readManifest(assetId: AssetId, version: Long? = null): ProviderOperationResult<AssetManifest>
 
     /**
-     * Returns the bytes of chunk [index] of a committed asset. The result's
-     * size equals the manifest descriptor's length.
+     * Returns the bytes of chunk [index] of a committed asset, exactly as
+     * uploaded. For an untransformed asset the result's size equals the
+     * manifest descriptor's length; for a transformed one it is the stored frame.
      */
     public suspend fun readChunk(assetId: AssetId, version: Long, index: Int): ProviderOperationResult<ByteArray>
 }
