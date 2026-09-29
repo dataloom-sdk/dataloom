@@ -158,11 +158,37 @@ public class RetryBudgetProcessTerminationContentProvider : ContentProvider() {
      * re-acquires the same entry, an independent production read that must
      * observe exactly what [writeRetryBudget] persisted before this process
      * was killed.
+     *
+     * Before that read-back acquisition, this also drives one real
+     * [RoomQueueProvider.acquire] gate-check call one millisecond *before*
+     * the persisted `availableAt`, asserting the real acquire gate still
+     * reports [QueueAcquireResult.NoEntries] -- proof that the relaunched
+     * process's persisted retry-budget/`availableAt` state is genuinely
+     * honored by production acquisition logic post-relaunch, not merely
+     * present on disk and never re-checked.
      */
     private suspend fun readRetryBudget(context: Context, databaseName: String): Bundle {
         val database = openDatabase(context, databaseName)
         try {
             val queueProvider = RoomQueueProvider(database)
+
+            val gateCheck = queueProvider.acquire(
+                QueueAcquireRequest(
+                    consumerId = QueueConsumerId("retry-budget-proof-consumer-gate-check"),
+                    leaseId = QueueLeaseId("lease-gate-check"),
+                    acquiredAt = DataLoomInstant(RESCHEDULE_AVAILABLE_AT_MS - 1L),
+                    leaseExpiresAt = DataLoomInstant(RESCHEDULE_AVAILABLE_AT_MS - 1L + LEASE_DURATION_MS),
+                    maxEntries = 1,
+                ),
+            )
+            val gateCheckResult = gateCheck as? ProviderOperationResult.Success<QueueAcquireResult>
+                ?: error("Retry-budget gate-check acquire failed unexpectedly: $gateCheck")
+            check(gateCheckResult.value is QueueAcquireResult.NoEntries) {
+                "Expected the relaunched process's real acquire gate to still report the " +
+                    "retry-budget-proof entry as ineligible one millisecond before its " +
+                    "persisted availableAt, but found: ${gateCheckResult.value}"
+            }
+
             val entry = acquireSingle(
                 queueProvider,
                 "lease-after-relaunch",
@@ -218,6 +244,10 @@ public class RetryBudgetProcessTerminationContentProvider : ContentProvider() {
             putLong(
                 RetryBudgetProcessTerminationContract.KEY_RETRY_CUMULATIVE_DELAY_MILLIS,
                 budget.cumulativeDelay.milliseconds,
+            )
+            putLong(
+                RetryBudgetProcessTerminationContract.KEY_AVAILABLE_AT_MILLIS,
+                entry.availableAt.epochMilliseconds,
             )
         }
     }

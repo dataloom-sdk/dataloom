@@ -53,11 +53,16 @@ import org.junit.runner.RunWith
  *    causes Android to relaunch `:retrybudgetproof` from scratch (content
  *    providers start their host process on first access). The returned pid
  *    is asserted to differ from the first -- proof this is a genuinely new
- *    OS process, not a warm one that merely serviced a second request --
- *    and the retry-budget state that fresh process reads back from a brand
- *    new Room connection to the same on-disk database, via a real
- *    `RoomQueueProvider.acquire` call, is asserted to match exactly what
- *    was persisted before the kill.
+ *    OS process, not a warm one that merely serviced a second request.
+ *    Before reading the state back, that relaunched process first drives one
+ *    real `RoomQueueProvider.acquire` gate-check call one millisecond before
+ *    the persisted `availableAt` and asserts it finds no eligible entry --
+ *    proof the real acquisition gate, not just the raw row, still honors the
+ *    persisted availability after relaunch. It then acquires the entry for
+ *    real at its persisted `availableAt`, and every persisted field --
+ *    including `availableAt` itself, previously read back but never asserted
+ *    equal (`docs/status/dl-040-qualification-matrix.md` section 4.2) -- is
+ *    asserted to match exactly what was persisted before the kill.
  *
  * Boundary: this proves process termination/relaunch for the Android Room
  * retry-budget durable structure specifically. It does not exercise
@@ -125,6 +130,12 @@ class AndroidProcessTerminationRetryBudgetInstrumentedTest {
             assertEquals(
                 written.getLong(RetryBudgetProcessTerminationContract.KEY_RETRY_CUMULATIVE_DELAY_MILLIS),
                 reread.getLong(RetryBudgetProcessTerminationContract.KEY_RETRY_CUMULATIVE_DELAY_MILLIS),
+            )
+            assertEquals(
+                written.getLong(RetryBudgetProcessTerminationContract.KEY_AVAILABLE_AT_MILLIS),
+                reread.getLong(RetryBudgetProcessTerminationContract.KEY_AVAILABLE_AT_MILLIS),
+                "The relaunched process's real acquire gate must read back exactly the " +
+                    "availableAt persisted before the kill.",
             )
         } finally {
             context.deleteDatabase(databaseName)
