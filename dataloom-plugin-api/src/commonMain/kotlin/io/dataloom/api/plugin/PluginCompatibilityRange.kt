@@ -13,6 +13,10 @@ import io.dataloom.api.identifier.RuntimeVersion
  * `PluginCompatibilityValidator`) per its "compatibility validation before
  * activation" acceptance criterion, not by this contract module.
  *
+ * This range bounds the *SDK* version only. The versions of another plugin that
+ * a plugin supports are declared with [PluginVersionRange] on a
+ * [PluginDependency].
+ *
  * @param minimumSdkVersion the lowest compatible runtime version, inclusive.
  * @param maximumSdkVersion the highest compatible runtime version, inclusive,
  *   or `null` when the plugin declares no known upper bound.

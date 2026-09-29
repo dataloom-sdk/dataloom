@@ -208,6 +208,41 @@ cross-compilation path; linking and executing the test suite requires the
 macOS `apple-validation.yml` job, matching every other Apple-only runtime
 component in this codebase.
 
+### Apple wiring for the Room-only domains (`AppleFileDurableDomainStores`)
+
+`AppleFileDurableDomainStores` (`dataloom-runtime`, `iosMain`, package
+`io.dataloom.runtime.state`) is the Apple production wiring for the durable
+domains that had only a Room-backed wiring: `DurablePolicyDecisionLog`,
+`DurableUnresolvedConflictLog`, `DurableResolvedConflictDecisionLog`,
+`DurableConflictQuarantineLog` (and `DataLoomConflictQuarantineSpec.store`),
+and `DurableAssetTransferSessionStore`. Each factory returns an
+`AppleFileDurableStateStore` over the domain's own codec and scope key encoder,
+reused unchanged (no new schema), in its own explicit file:
+
+| Domain | Factory | Default file name |
+|---|---|---|
+| Policy decisions | `policyDecisionStore` | `dataloom-policy-decision-state-v1.tsv` |
+| Unresolved conflicts | `unresolvedConflictStore` | `dataloom-unresolved-conflict-state-v1.tsv` |
+| Resolved conflict decisions | `resolvedConflictDecisionStore` | `dataloom-resolved-conflict-decision-state-v1.tsv` |
+| Conflict quarantine | `conflictQuarantineStore` | `dataloom-conflict-quarantine-state-v1.tsv` |
+| Asset transfer sessions | `assetTransferSessionStore` | `dataloom-asset-transfer-session-state-v1.tsv` |
+
+The names are distinct from each other, from
+`AppleFileDurableStateStore.DEFAULT_FILE_NAME`, and from the names the Apple
+contention and termination proofs use, so an application can share one
+application-private directory across all of them.
+
+Store-level iOS proofs (`AppleFileDurableDomainStoresTest`, driven by the shared
+`AppleFileDurableDomainProof` helper) assert, per domain, on a real file: the
+first write is durable; a brand-new store instance recovers the committed
+record; an identical duplicate is absorbed without changing the record
+(`AlreadyCommitted`/`AlreadyRecorded`; `AlreadyReleased` for the quarantine
+domain's command-idempotent release; `StaleRevision` for a duplicate asset
+session create); and two racing writers converge on exactly one write plus one
+absorbed duplicate. Not yet proven: driving these through `DataLoomBuilder` on
+iOS (the quarantine and asset-transfer specs), and these tests have only been
+cross-compiled, not run, outside the macOS `apple-validation.yml` job.
+
 ## Adoption: configuration snapshot history
 
 [`DurableConfigurationHistory`](./configuration-snapshots.md#durableconfigurationhistory)
@@ -493,13 +528,16 @@ not carried over from `DurableConfigurationHistory`.
 - **Events and audit** durable state — real, separately-scoped follow-up
   work; not started. (Assets now have a real adoption — asset manifest
   *history* — but it is still an unwired primitive; see above.)
-- **Any real domain adopting `AppleFileDurableStateStore`.** The
-  implementation exists and is verified (cross-compiled, unit-tested — see
-  [above](#applefiledurablestatestore-dataloom-runtime)), but no domain has
-  wired it up as its Apple-platform `DurableStateStore` yet; all five real
-  adoptions above (configuration history, policy decisions, unresolved
-  conflicts, strategy decision diagnostics, asset manifest history) are
-  still Room-only.
+- **Builder-level and remaining-domain adoption of `AppleFileDurableStateStore`.**
+  Strategy decision diagnostics has end-to-end iOS proof through
+  `strategyDiagnosticsConfiguration`, and policy decisions, both conflict logs,
+  the quarantine log and asset transfer sessions now have Apple wiring plus
+  store-level iOS proofs (see
+  [above](#apple-wiring-for-the-room-only-domains-applefiledurabledomainstores)).
+  Still Room-only: configuration history, asset manifest history, strategy
+  decision outcome history, and the operational event outbox; and no domain
+  other than strategy diagnostics is yet proven through `DataLoomBuilder` on
+  iOS.
 - **SDK-wide adoption.** `DataLoomConfigurationHistory` (in-memory) is not
   superseded or removed by `DurableConfigurationHistory`, plain
   `PolicyDecision` values are not superseded by `PolicyDecisionRecord`,

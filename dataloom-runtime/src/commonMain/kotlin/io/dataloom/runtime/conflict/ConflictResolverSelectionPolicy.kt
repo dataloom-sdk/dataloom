@@ -69,6 +69,21 @@ public sealed interface ConflictResolverSelectionRule {
 }
 
 /**
+ * Closed precedence-tier taxonomy for resolver selection, in strict precedence
+ * order (highest first). Mirrors [ConflictResolverSelectionRule]'s three
+ * subclasses plus the [ConflictOrchestrationBindings.resolverId] global
+ * default, which is not itself a rule. Used only for safe, bounded-cardinality
+ * observability (for example telemetry); it never changes which resolver is
+ * selected.
+ */
+public enum class ConflictResolverSelectionTier {
+    ENTITY_TYPE,
+    WORKFLOW,
+    TENANT,
+    GLOBAL,
+}
+
+/**
  * Immutable, deterministic mapping from a [ConflictResolverSelectionContext]
  * to a [ConflictResolverId], with strict precedence between tiers.
  *
@@ -154,12 +169,37 @@ public class ConflictResolverSelectionPolicy(
      * Returns the resolver ID chosen by the most specific matching tier, or
      * `null` when no rule matches [context].
      *
-     * Pure and total: performs no registry lookup and never throws.
+     * Pure and total: performs no registry lookup and never throws. Derived
+     * from [matchedTier] so the two can never disagree about which tier (if
+     * any) decided the outcome.
      */
     public fun select(context: ConflictResolverSelectionContext): ConflictResolverId? =
-        entityTypeRules[context.entityType]
-            ?: workflowRules[context.workflowId]
-            ?: context.tenantId?.let { tenantRules[it] }
+        when (matchedTier(context)) {
+            ConflictResolverSelectionTier.ENTITY_TYPE -> entityTypeRules.getValue(context.entityType)
+            ConflictResolverSelectionTier.WORKFLOW -> workflowRules.getValue(context.workflowId)
+            ConflictResolverSelectionTier.TENANT ->
+                tenantRules.getValue(checkNotNull(context.tenantId) {
+                    "matchedTier returned TENANT for a context with no tenantId."
+                })
+            ConflictResolverSelectionTier.GLOBAL, null -> null
+        }
+
+    /**
+     * Returns which rule tier would decide [context], or `null` when no rule
+     * in this policy matches it. Never returns [ConflictResolverSelectionTier.GLOBAL]:
+     * the global default lives on [ConflictOrchestrationBindings], not in this
+     * policy, so only [ConflictOrchestrationBindings.selectedTier] can report it.
+     *
+     * Pure and total: performs no registry lookup and never throws. Exposed
+     * for safe, bounded-cardinality observability (for example telemetry
+     * dimensions); it never changes selection behavior.
+     */
+    public fun matchedTier(context: ConflictResolverSelectionContext): ConflictResolverSelectionTier? = when {
+        entityTypeRules.containsKey(context.entityType) -> ConflictResolverSelectionTier.ENTITY_TYPE
+        workflowRules.containsKey(context.workflowId) -> ConflictResolverSelectionTier.WORKFLOW
+        context.tenantId != null && tenantRules.containsKey(context.tenantId) -> ConflictResolverSelectionTier.TENANT
+        else -> null
+    }
 
     override fun equals(other: Any?): Boolean =
         this === other ||

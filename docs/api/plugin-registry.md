@@ -48,6 +48,16 @@ below and
 [`docs/api/plugin-platform-databuilder-wiring-investigation.md`](./plugin-platform-databuilder-wiring-investigation.md)
 for the full analysis. No code changed.
 
+**Update (2026-09-22, [ADR-0009](../adr/ADR-0009-plugin-version-and-dependency-gated-activation.md), D19):**
+dependency version compatibility and dependency-gated activation — the last
+item this page's own "What remains open" section named after 2026-09-20 —
+have shipped. `PluginVersion` is now canonical Semantic Versioning, and every
+`PluginLifecycleStateTracker.transition` overload refuses `VALIDATED`/`ACTIVE`
+while a declared dependency is missing, out of its declared range, or
+retired. See
+[Dependency version compatibility and dependency-gated activation (D19)](#dependency-version-compatibility-and-dependency-gated-activation-d19)
+below.
+
 ## Why this slice, now
 
 [`docs/api/plugin-platform-first-slice-investigation.md`](./plugin-platform-first-slice-investigation.md)
@@ -98,9 +108,9 @@ prior prose summary, per this session's own standing discipline after
 
 | Type | File | Purpose |
 |---|---|---|
-| `PluginRegistry` | `PluginRegistry.kt` | Immutable registry of `DataLoomPlugin` instances. Rejects duplicate `PluginId`s and unresolved dependencies at construction; computes a deterministic, dependency-respecting `resolutionOrder` (dependencies before dependents, ties broken by registration order); rejects dependency cycles (including self-dependency) with the full cycle path in the exception message. |
+| `PluginRegistry` | `PluginRegistry.kt` | Immutable registry of `DataLoomPlugin` instances. Rejects duplicate `PluginId`s at construction; computes a deterministic, dependency-respecting `resolutionOrder` (dependencies before dependents, ties broken by registration order, unresolved dependency ids excluded); rejects dependency cycles among *registered* plugins (including self-dependency) with the full cycle path in the exception message. An unresolved dependency is registered without throwing — see [Dependency version compatibility and dependency-gated activation (D19)](#dependency-version-compatibility-and-dependency-gated-activation-d19). |
 | `PluginLifecycleTransitions` | `PluginLifecycleTransition.kt` | Stateless object enforcing which `PluginLifecycleState` transitions are structurally legal, mirroring `PluginLifecycleState`'s own documented `LOADED → VALIDATED → INITIALIZING → ACTIVE ⇄ DEGRADED → DISABLED → UNLOADED` order plus explicit failure-escape edges to `DISABLED` from every pre-`ACTIVE` state. |
-| `PluginLifecycleStateTracker` | `PluginLifecycleStateTracker.kt` | Tracks each plugin in a `PluginRegistry` through its `PluginLifecycleState`, starting every plugin at `LOADED` (never implicitly `ACTIVE`) and enforcing `PluginLifecycleTransitions` on every `transition` call. Its capability-aware `transition` overload also enforces permission grants — see [Permission-grant enforcement](#permission-grant-enforcement). |
+| `PluginLifecycleStateTracker` | `PluginLifecycleStateTracker.kt` | Tracks each plugin in a `PluginRegistry` through its `PluginLifecycleState`, starting every plugin at `LOADED` (never implicitly `ACTIVE`) and enforcing `PluginLifecycleTransitions`, SDK compatibility, and dependency gating on every `transition` call. Its capability-aware `transition` overload also enforces permission grants — see [Permission-grant enforcement](#permission-grant-enforcement) and [Dependency version compatibility and dependency-gated activation (D19)](#dependency-version-compatibility-and-dependency-gated-activation-d19). |
 | `PluginPermission.asCapability()` | `PluginPermissionEnforcement.kt` | Extension function mapping a `PluginPermission` label onto a `Capability` of the same label, connecting `dataloom-plugin-api`'s permission contract to `dataloom-model`'s least-privilege primitive. |
 | `PluginExecutionBoundsEnforcer` | `PluginExecutionBoundsEnforcement.kt` | Wraps an arbitrary `suspend () -> T` invocation of a registered plugin with coroutine-cancellation timeout enforcement (`maximumExecutionMillis`) and per-plugin concurrency limiting (`maximumConcurrentInvocations`), returning a non-throwing `PluginExecutionBoundsResult`. See [Execution-bounds enforcement](#execution-bounds-enforcement). |
 | `PluginLifecycleAdministrationAuthorizer` / `PluginLifecycleTransitionRequest` | `PluginLifecycleAdministration.kt` | Host-owned, deny-by-default authorization boundary for *who* may request a `PluginLifecycleStateTracker.transition` call, consulted via the tracker's authorizer-aware `transition(request, authorizer)` overload. See [Authorized transitions ("authorized hot disable")](#authorized-transitions-authorized-hot-disable). |
@@ -145,26 +155,108 @@ to update or reject tracked state.
 ## Dependency resolution and cycle rejection
 
 `PluginRegistry` validates the dependency graph declared across every
-registered plugin's `PluginManifest.dependencies`:
+registered plugin's `PluginManifest.dependencies`, at the **graph-shape**
+level only:
 
-- Every `PluginDependency.pluginId` must reference a plugin registered in
-  the same registry. An unresolved reference throws
-  `IllegalArgumentException` naming both the requesting plugin and the
-  missing dependency — deny-by-default, not silently ignored.
-- The graph must be acyclic. A cycle (including a plugin depending on
-  itself) throws `IllegalArgumentException` naming the full cycle path,
-  e.g. `a -> b -> c -> a`.
+- The graph must be acyclic among *registered* plugins. A cycle (including a
+  plugin depending on itself) throws `IllegalArgumentException` naming the
+  full cycle path, e.g. `a -> b -> c -> a`. A cycle makes an ordering
+  impossible, so it stays a construction-time rejection.
 - `resolutionOrder` is a deterministic topological ordering: every plugin
-  appears after every plugin it (directly or transitively) depends on.
-  Plugins with no dependency relationship to each other are ordered by
-  registration order, the same determinism rule `ProviderRegistry` applies
-  to its own `providers` list.
+  appears after every *registered* plugin it (directly or transitively)
+  depends on. Plugins with no dependency relationship to each other are
+  ordered by registration order, the same determinism rule `ProviderRegistry`
+  applies to its own `providers` list.
+- A `PluginDependency.pluginId` that names a plugin **not** registered in
+  this registry is *not* a construction error (changed 2026-09-22,
+  [ADR-0009](../adr/ADR-0009-plugin-version-and-dependency-gated-activation.md)).
+  The dependent plugin is still registered, the missing id contributes
+  nothing to `resolutionOrder`, and it is reported, non-throwing, when a
+  transition is attempted — see the next section. Treating a missing
+  dependency as a property of one plugin rather than a graph defect matches
+  how an incompatible SDK range is already handled.
 
-This validates the dependency **graph shape** only. It does not compare a
-`PluginDependency`'s declared `PluginCompatibilityRange` against the
-depended-upon plugin's actual `PluginManifest.version` — that is
-compatibility validation, and per the section above it is blocked on an
-undecided canonical version-format question.
+This validates the dependency graph's **shape** only: neither a dependency's
+declared version range nor its lifecycle state is inspected here. Both are
+checked by `PluginLifecycleStateTracker` at transition time — see
+[Dependency version compatibility and dependency-gated activation (D19)](#dependency-version-compatibility-and-dependency-gated-activation-d19).
+
+## Dependency version compatibility and dependency-gated activation (D19)
+
+**Added 2026-09-22**, closing the item this page named as blocked since
+2026-09-19: `PluginVersion` had no canonical parseable format, so a
+dependency's declared range could not be compared against anything.
+[ADR-0009](../adr/ADR-0009-plugin-version-and-dependency-gated-activation.md)
+decided both the format and the gating behavior together.
+
+### Canonical `PluginVersion` and `PluginVersionRange`
+
+`PluginVersion` (`dataloom-plugin-api`) is now strict Semantic Versioning
+2.0.0, exactly like `RuntimeVersion`: the constructor throws for a
+non-canonical value, `PluginVersion.parse` is the non-throwing path
+returning a typed `PluginVersionParseResult`/`PluginVersionParseFailure`, and
+`precedenceCompareTo` implements semver precedence. It delegates its
+grammar to `RuntimeVersion` internally (`dataloom-plugin-api` already depends
+on `dataloom-model`) rather than duplicating the parser, but exposes no
+`RuntimeVersion` type in its own API. New `PluginVersionRange` is the
+plugin-to-plugin counterpart of `PluginCompatibilityRange` (inclusive
+`minimum`/optional `maximum`, kept as a distinct type since the two bound
+different axes with different depended-upon types).
+`PluginDependency.compatibilityRange: PluginCompatibilityRange` is renamed
+and retyped to `supportedVersionRange: PluginVersionRange`.
+
+### The gate
+
+Every `PluginLifecycleStateTracker.transition` overload additionally refuses
+to move a plugin into `VALIDATED` or `ACTIVE` (including the
+`DEGRADED -> ACTIVE` recovery edge) while one of its declared
+`PluginDependency` entries is unsatisfied, returning the new
+`PluginLifecycleTransitionResult.DependencyUnsatisfied` and leaving state
+unchanged. A dependency blocks the transition when:
+
+| Reason (`PluginDependencyIssueReason`) | Meaning |
+|---|---|
+| `NOT_REGISTERED` | The depended-upon plugin is not registered in this registry. |
+| `EMPTY_VERSION_RANGE` | The declared range's minimum is above its maximum: no version could ever satisfy it. |
+| `VERSION_BELOW_MINIMUM` / `VERSION_ABOVE_MAXIMUM` | The depended-upon plugin's actual `PluginManifest.version` falls outside the declared `PluginVersionRange`, compared by the same inclusive, semver-precedence logic `PluginCompatibilityValidator` already applies to the SDK check (one shared internal helper, so the two checks cannot disagree). |
+| `DISABLED` / `UNLOADED` | The depended-upon plugin is retired. |
+| `NOT_ACTIVE` | (Only checked when entering `ACTIVE`.) The depended-upon plugin is registered, in range, and not retired, but is not itself `ACTIVE` yet. |
+
+`DependencyUnsatisfied.issues` lists every blocking dependency (not only the
+first), ordered by dependency id then reason name for determinism, and
+carries only stable `PluginId`s and closed `PluginDependencyIssueReason`
+values — never free text.
+
+**`VALIDATED` is more permissive than `ACTIVE`:** entering `VALIDATED` only
+needs a dependency to be present, in range, and not retired — it may itself
+still be `LOADED`. This lets a host validate an entire plugin set before
+activating any of it. Entering `ACTIVE` additionally requires the dependency
+to itself be `ACTIVE`. Entering `DISABLED` (or any other target) is never
+gated on dependencies, so a plugin can always be stopped.
+
+**Check order** is structural legality, then SDK compatibility
+(see [Compatibility validation against the running SDK version](#compatibility-validation-against-the-running-sdk-version)
+below), then dependencies, then — for the overloads that have one — the
+permission or authorizer check. Each earlier check short-circuits the ones
+after it, so an incompatible or structurally illegal plugin never has its
+dependencies inspected at all.
+
+**Transitive chains are covered without a separate walk.** Only a plugin's
+own declared dependencies are read, at the moment of the transition. A
+dependency can only itself be `ACTIVE` if its own gate already passed, so
+requiring "the dependency is `ACTIVE`" carries the check down a chain of any
+length automatically.
+
+**No cascading.** A dependency that becomes `DISABLED` after its dependent
+is already `ACTIVE` is not retroactively degraded or disabled — the same
+conservative default D13 already chose for in-flight invocations on a
+state change. This is a deliberate deferral, not a silent gap.
+
+The lifecycle audit bridge (see
+[Audit records (operational-event bridge)](#audit-records-operational-event-bridge))
+bridges `DependencyUnsatisfied` like every other outcome: the count of
+unsatisfied dependencies and the distinct closed reason names are `PUBLIC`;
+the specific `(dependency id, reason)` pairs are one `INTERNAL` attribute.
 
 ## Permission-grant enforcement
 
@@ -471,14 +563,10 @@ declarations now live in `dataloom-plugin/build.gradle.kts`.
 Everything this slice does not cover remains as
 `plugin-platform-first-slice-investigation.md` described it, except
 permission enforcement, execution-bounds enforcement, compatibility
-validation against the running SDK, and tracker/enforcer lifecycle gating
-(all now shipped, see above):
+validation against the running SDK, tracker/enforcer lifecycle gating, and
+dependency version compatibility/dependency-gated activation (all now
+shipped, see above):
 
-- **Dependency version compatibility.** A `PluginDependency`'s declared
-  range is still not compared against the depended-upon plugin's
-  `PluginManifest.version`: `PluginVersion` has no canonical parseable
-  format. Nor is a plugin's activation gated on its dependencies' own
-  state or compatibility.
 - **Hook-point callback signatures and dispatch** — a repository-wide search
   for `PluginHookPoint` still finds it referenced only inside
   `dataloom-plugin-api` itself and its own documentation, with zero adoption
@@ -621,7 +709,8 @@ opt-in and inert when absent: with no spec, or with the spec but no
 With both configured, `DataLoom.pluginEngine` appends after each result exists:
 
 - every `transition` result (`Allowed`, `Rejected`, `PermissionDenied`,
-  `AuthorizationDenied`, `IncompatibleRuntime`), keyed by its command id;
+  `AuthorizationDenied`, `IncompatibleRuntime`, `DependencyUnsatisfied`),
+  keyed by its command id;
 - every `execute` result, keyed by an id the engine mints from the plugin id,
   the runtime clock's millisecond reading, and an in-process counter (guarded
   by a mutex, since `execute` is concurrent).
@@ -687,6 +776,36 @@ What the wiring deliberately does not do:
 
 ## Verification
 
+### Canonical `PluginVersion` and dependency-gated activation (2026-09-22)
+
+Run on a Windows host with `-Pdataloom.appleKlibCrossCompile=true`:
+
+- `dataloom-plugin-api:jvmTest`: 33 tests, 0 failures (16 existing plus 17 new
+  `PluginVersionTest` tests: parsing, every rejection failure, semver
+  precedence ordering).
+- `dataloom-plugin:jvmTest`: 156 tests, 0 failures (137 existing, with two
+  `PluginRegistryTest` cases updated for the unresolved-dependency behavior
+  change, plus 19 new `PluginDependencyGatingTest` tests).
+- `dataloom-runtime:jvmTest`: 2016 tests, 0 failures, including the new
+  `DataLoomBuilderPluginDependencyGatingTest` (end to end through the real
+  builder and the production `DataLoomRuntimeVersion.CURRENT`, including
+  outbox wiring) and updated fixtures in `DataLoomBuilderPluginEngineTest`.
+- `compileKotlinIos*`/`compileTestKotlinIos*` for all three iOS targets in
+  `dataloom-plugin-api`, `dataloom-plugin`, and `dataloom-runtime`: clean.
+- `checkKotlinAbi -Pdataloom.appleKlibCrossCompile=true`, module and
+  whole-build scope, in both the normal and `DATALOOM_ANDROID_BUILD=true`
+  baseline layouts: passes against regenerated baselines. `updateKotlinAbi`
+  diff reviewed: `dataloom-plugin-api` gains `PluginVersion`,
+  `PluginVersionParseResult`, `PluginVersionParseFailure`,
+  `PluginVersionRange` and loses the old non-blank-only `PluginVersion`;
+  `PluginDependency`'s field is renamed/retyped; `dataloom-plugin` gains
+  `PluginDependencyIssueReason`, `PluginDependencyIssue`, and
+  `PluginLifecycleTransitionResult.DependencyUnsatisfied`, and the
+  audit-bridge event-type list gains `dependency_unsatisfied`;
+  `dataloom-runtime`'s public surface is unchanged (no baseline diff).
+- Not verified here: XCFramework assembly and Simulator execution (both need
+  macOS CI).
+
 ### Relocation and wiring (2026-09-19)
 
 Run on a Windows host with `-Pdataloom.appleKlibCrossCompile=true`:
@@ -746,6 +865,9 @@ Run on a Windows host with `-Pdataloom.appleKlibCrossCompile=true`:
 
 - [Plugin SPI (`dataloom-plugin-api`)](./plugin-api.md) — the contract
   types this engine is built on top of.
+- [ADR-0009](../adr/ADR-0009-plugin-version-and-dependency-gated-activation.md) —
+  canonical `PluginVersion` and dependency-gated activation (D19), decided
+  and implemented in the same change.
 - [Plugin platform first-slice investigation](./plugin-platform-first-slice-investigation.md) —
   the prior round's investigation this page re-examines and partially
   supersedes.
