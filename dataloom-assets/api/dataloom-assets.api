@@ -532,6 +532,37 @@ public final class io/dataloom/assets/InMemoryAssetTransferSessionStore : io/dat
 	public fun save (Lio/dataloom/assets/AssetTransferSession;Ljava/lang/Long;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
+public final class io/dataloom/assets/file/FileAssetProvider : io/dataloom/assets/AssetProvider {
+	public fun <init> (Ljava/nio/file/Path;Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;Lio/dataloom/assets/AssetQuota;Lio/dataloom/assets/AssetChunkSizeBounds;I)V
+	public synthetic fun <init> (Ljava/nio/file/Path;Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;Lio/dataloom/assets/AssetQuota;Lio/dataloom/assets/AssetChunkSizeBounds;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun abortUpload-fnV884s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun completeUpload-fnV884s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getChunkSizeBounds ()Lio/dataloom/assets/AssetChunkSizeBounds;
+	public fun openUpload (Lio/dataloom/assets/AssetUploadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun readChunk-jJr0HPI (Ljava/lang/String;JILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun readManifest-NNrJYCg (Ljava/lang/String;Ljava/lang/Long;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun sweepAbandonedUploads-VtjQ1oo (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun uploadChunk (Lio/dataloom/assets/AssetChunkUpload;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/assets/file/FileAssetSink : io/dataloom/assets/AssetSink {
+	public fun <init> (Ljava/nio/file/Path;Ljava/nio/file/Path;Ljava/lang/Long;)V
+	public synthetic fun <init> (Ljava/nio/file/Path;Ljava/nio/file/Path;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun discard (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun isPromoted ()Z
+	public final fun promote (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun read (J[BIILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun reserve (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun write (J[BIILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/assets/file/FileAssetSource : io/dataloom/assets/AssetSource, java/lang/AutoCloseable {
+	public fun <init> (Ljava/nio/file/Path;)V
+	public fun close ()V
+	public fun read (J[BIILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun sizeBytes (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
 public final class io/dataloom/assets/memory/InMemoryAssetProvider : io/dataloom/assets/AssetProvider {
 	public fun <init> (Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;Lio/dataloom/assets/AssetQuota;Lio/dataloom/assets/AssetChunkSizeBounds;)V
 	public synthetic fun <init> (Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;Lio/dataloom/assets/AssetQuota;Lio/dataloom/assets/AssetChunkSizeBounds;ILkotlin/jvm/internal/DefaultConstructorMarker;)V

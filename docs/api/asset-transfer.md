@@ -1,17 +1,21 @@
 # Asset transfer (`dataloom-assets`)
 
-> **Status:** Slices 1 to 3 of `#97` (DL-043). Contracts, in-memory reference
+> **Status:** Slices 1 to 4 of `#97` (DL-043). Contracts, in-memory reference
 > behaviour, (slice 2) durable session persistence on `DurableStateStore` plus
-> opt-in `DataLoomBuilder.assetTransferConfiguration` wiring, and (slice 3)
+> opt-in `DataLoomBuilder.assetTransferConfiguration` wiring, (slice 3)
 > per-chunk zlib compression and AES-256-GCM encryption wired into the engine
-> (encryption is JVM/Android only; Apple returns a typed `Unsupported`). Still
-> no file-backed source/sink, no parallelism, no content-policy hooks, and no
-> transport-backed provider. The decisions behind it are in
-> [ADR-0006](../adr/ADR-0006-asset-transfer-and-streaming-digest.md) (transfer
-> design), [ADR-0008](../adr/ADR-0008-durable-asset-transfer-sessions.md)
-> (durable sessions and wiring) and
+> (encryption is JVM/Android only; Apple returns a typed `Unsupported`), and
+> (slice 4) a real file-backed `AssetSource`/`AssetSink`/`AssetProvider` for
+> JVM/Android with secure temp files, atomic promotion and cleanup of
+> abandoned sessions (no Apple implementation yet). Still no parallelism, no
+> content-policy hooks, and no transport-backed provider. The decisions behind
+> it are in [ADR-0006](../adr/ADR-0006-asset-transfer-and-streaming-digest.md)
+> (transfer design), [ADR-0008](../adr/ADR-0008-durable-asset-transfer-sessions.md)
+> (durable sessions and wiring),
 > [ADR-0014](../adr/ADR-0014-asset-chunk-transforms-and-digest-domain.md)
-> (transforms and the digest domain), which list the ordered next slices.
+> (transforms and the digest domain) and
+> [ADR-0016](../adr/ADR-0016-file-backed-asset-transfer-storage.md)
+> (file-backed storage), which list the ordered next slices.
 > `AssetManifest` itself is documented in [asset-manifest.md](./asset-manifest.md).
 
 **Module:** `dataloom-assets` (`io.dataloom.assets`, plus `.memory`,
@@ -38,6 +42,8 @@ targets. The incremental digest lives in `dataloom-model`
 | `AssetTransferTransforms`, `AssetWireFormat` | Transforms an engine applies; frame constants and `isTransformed(manifest)` for providers |
 | `InMemoryAssetProvider`, `InMemoryAssetSource`, `InMemoryAssetSink` | Reference implementations for tests and samples (not bounded-memory stores) |
 | `AssetProviderContractKit` | Provider test kit (framework-neutral) |
+| `FileAssetSource`, `FileAssetSink` (JVM/Android) | Real file-backed source and sink: random-access reads of an existing file; a download staged in a secure temp file, atomically `promote()`d to its final path once verified |
+| `FileAssetProvider` (JVM/Android) | Real filesystem-backed `AssetProvider`: bounded-memory chunk assembly, atomic promotion to a committed path, eager and host-driven-sweep cleanup of abandoned sessions; passes `AssetProviderContractKit` |
 
 ## Using the engine
 
@@ -197,10 +203,49 @@ val engine = AssetTransferEngine(provider, sessions, digests, transforms = trans
   asset size. The provider's quota reservation counts the logical size; frames
   can exceed it by up to 31 bytes per chunk.
 
+## File-backed storage (JVM/Android)
+
+`io.dataloom.assets.file` (ADR-0016) has a real filesystem implementation of
+the streaming contracts, so a caller no longer has to hold assets in memory
+to try the engine end to end:
+
+```kotlin
+// Upload: read straight from a real local file.
+val source = FileAssetSource(Paths.get("/path/to/local/file"))
+engine.upload(sessionId, assetId, version = 1, mediaType, source)
+source.close()
+
+// Download: stage into a secure temp file next to the destination, then
+// promote it atomically once (and only once) the engine reports Completed.
+val sink = FileAssetSink(finalPath = Paths.get("/path/to/destination"))
+when (val outcome = engine.download(sessionId, assetId, version = null, sink)) {
+    is AssetTransferOutcome.Completed -> sink.promote()   // atomic rename onto finalPath
+    else -> Unit                                          // leave the temp file for a resumed attempt, or sink.discard()
+}
+```
+
+- **Atomic promotion.** `finalPath` never exists in a partially-written state:
+  it is created by exactly one filesystem rename, performed by `promote()`,
+  which the caller invokes only after `Completed`. `AssetSink` itself has no
+  promotion hook (it predates a concrete file-backed implementation), so this
+  is additional API on the concrete class.
+- **A real file-backed provider**, `FileAssetProvider(baseDirectory, digests, quota)`,
+  is a drop-in filesystem-backed sibling of `InMemoryAssetProvider` — it
+  passes the same `AssetProviderContractKit` — that assembles a completed
+  upload's chunks in bounded memory and promotes them atomically onto a
+  committed path, for development, testing, or a local-storage provider.
+- **Cleanup.** A session's temp files are deleted eagerly when it aborts or
+  completes; `FileAssetProvider.sweepAbandonedUploads(olderThan)` is a
+  bounded, host-driven sweep for sessions abandoned outright (the client
+  crashed and never called abort) — call it periodically or at startup, it
+  runs no timer of its own.
+- **No Apple implementation yet.** These three types live in `dataloom-assets`'
+  JVM/Android source set only. See ADR-0016 for why and for the ordering.
+
 ## Not yet implemented
 
-AES-GCM on Apple, secure temp files and atomic
-promotion (and cleanup of abandoned persisted sessions), parallel transfer and
-fairness, content-policy hooks, `ProviderType`/lifecycle for asset providers, a
-transport-backed provider, and `AC-FUNC-005`. See
-[ADR-0008](../adr/ADR-0008-durable-asset-transfer-sessions.md) for the order.
+An Apple file-backed `AssetSource`/`AssetSink`/`AssetProvider`, AES-GCM on
+Apple, parallel transfer and fairness, content-policy hooks,
+`ProviderType`/lifecycle for asset providers, a transport-backed provider, and
+`AC-FUNC-005`. See [ADR-0016](../adr/ADR-0016-file-backed-asset-transfer-storage.md)
+for the order.
