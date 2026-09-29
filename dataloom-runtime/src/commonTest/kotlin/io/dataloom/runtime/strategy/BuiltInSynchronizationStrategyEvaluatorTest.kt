@@ -66,6 +66,39 @@ class BuiltInSynchronizationStrategyEvaluatorTest {
     }
 
     @Test
+    fun offlineFirstDefersLimitedAndUnknownConnectivityWithDistinctReasons() {
+        // docs/strategies/offline-first.md: "Connectivity unavailable,
+        // constrained, or unknown" is a non-retry deferral. LIMITED is the
+        // "constrained" case and is reported as CONNECTIVITY_UNAVAILABLE;
+        // UNKNOWN and NOT_EVALUATED are never guessed and are reported as
+        // CONNECTIVITY_UNKNOWN. Only UNAVAILABLE was previously exercised.
+        val expectedReasons = mapOf(
+            StrategyConnectivity.LIMITED to StrategyDeferralReason.CONNECTIVITY_UNAVAILABLE,
+            StrategyConnectivity.UNKNOWN to StrategyDeferralReason.CONNECTIVITY_UNKNOWN,
+            StrategyConnectivity.NOT_EVALUATED to StrategyDeferralReason.CONNECTIVITY_UNKNOWN,
+        )
+
+        expectedReasons.forEach { (connectivity, reason) ->
+            val result = evaluate(
+                profile = offline(),
+                direction = SynchronizationDirection.PUSH,
+                evidence = evidence(connectivity = connectivity),
+            )
+
+            assertEquals(StrategyDisposition.DEFER, result.plan.disposition, "$connectivity")
+            assertEquals(
+                listOf(
+                    StrategyOperation.ACCEPT_LOCAL,
+                    StrategyOperation.ENQUEUE_DURABLE_WORK,
+                ),
+                result.plan.operations,
+                "$connectivity",
+            )
+            assertEquals(reason, result.plan.deferralReason, "$connectivity")
+        }
+    }
+
+    @Test
     fun offlineFirstOnlinePlanReconcilesAfterDurableAdmission() {
         val result = evaluate(
             profile = offline(),
