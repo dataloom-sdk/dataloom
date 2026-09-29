@@ -3,8 +3,14 @@
 > [!WARNING]
 > Adaptive is a mandatory built-in V1 strategy. Bounded deterministic selection
 > from unique concrete profile IDs is implemented with an explicit safe
-> default and no nested adaptive policy. Admission still needs to persist and
-> replay the selected decision end to end.
+> default and no nested adaptive policy; the selected concrete strategy (not
+> `ADAPTIVE`) is what gets persisted, and an adaptive-admitted plan round-trips
+> through Android (emulator) and iOS durable storage unchanged. Still open:
+> replaying an adaptive-admitted queue entry through its resolved concrete
+> executor on a real platform, and the selection factors adaptive does not yet
+> read (operation type, tenant/workflow configuration, configuration version,
+> circuit state — see the
+> [adaptive selection-factor gap audit](../audits/DL-039B-adaptive-selection-factor-gap.md)).
 
 [Strategy index](./README.md) · [Offline-first](./offline-first.md) ·
 [Remote-first](./remote-first.md) · [Cache-first](./cache-first.md) ·
@@ -31,25 +37,28 @@ Direction, transfer mode, and trigger remain separate policy inputs:
 
 ## Current repository
 
-The current connectivity preflight:
+`BuiltInSynchronizationStrategyEvaluator`'s adaptive selection:
 
-- evaluates one builder-wide requirement;
-- reads at most one connectivity snapshot per execution;
-- classifies it as satisfied, unmet, provider missing, or provider failure;
-- rejects direct execution when unmet; and
-- fixed-delay reschedules an already queued entry when explicitly unmet.
+- selects deterministically from an allowlist of concrete profile IDs using a
+  fixed preference order per connectivity classification;
+- reads `hasPendingLocalChanges`, `cacheState`, `connectivity`, and
+  `transportHealth` (not yet operation type, tenant/workflow configuration,
+  configuration version, or circuit state — the
+  [selection-factor gap audit](../audits/DL-039B-adaptive-selection-factor-gap.md)
+  tracks closing that);
+- falls back to a `safeDefaultProfileId` or rejects with
+  `NO_ELIGIBLE_ADAPTIVE_PROFILE` when nothing is eligible;
+- records both the requested (`ADAPTIVE`) and effective (concrete) strategy,
+  and persists only the concrete one; and
+- derives provider requirements from the concrete profile's own evaluated
+  plan, then executes it through that strategy's own executor — adaptive adds
+  no execution behavior of its own.
 
-See [Connectivity-Aware Execution](../api/connectivity-aware-execution.md) and
-[Connectivity Preflight and Offline Deferral](../architecture/connectivity-preflight-offline-deferral.md).
-
-The repository has no policy that:
-
-- selects from an allowlist of complete strategy profiles;
-- combines freshness, provider health, durable state, tenant/workflow policy,
-  operation cost, or trigger inputs;
-- records a bounded explainable decision;
-- derives provider requirements from the selected plan; or
-- replays the same effective strategy after queued delay or restart.
+An adaptive-admitted plan's persisted identity round-trips unchanged through
+real Android (emulator) and iOS durable storage. Replaying an adaptive-
+admitted queue entry through its resolved concrete executor on a real platform
+has no proof yet. See [Adaptive Strategy Execution](../api/adaptive-strategy-execution.md)
+and the [six-strategy decision matrix](../status/dl-039b-strategy-decision-matrix.md).
 
 Custom pipeline lookup by direction is not adaptive behavior.
 

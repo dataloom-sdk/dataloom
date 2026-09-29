@@ -1,10 +1,13 @@
 # Offline-First Strategy
 
 > [!WARNING]
-> Offline-first is a mandatory built-in V1 strategy. Its versioned profile and
-> deterministic local-admission/deferral/reconciliation plan are implemented.
-> The runtime still needs atomic execution of local intent plus durable work
-> before the offline-first acceptance guarantee is complete.
+> Offline-first is a mandatory built-in V1 strategy. `OfflineFirstStrategyExecutor`
+> implements local-accept, durable admission, `DEFER` under unavailable/limited/
+> unknown connectivity, and bounded `RECONCILE`; admit-then-replay is proven on
+> real Android (Robolectric) and iOS providers with `reconcileWhenOnline = false`.
+> Still open: the default profile's online reconcile-then-replay path on real
+> providers, atomic execution of local intent plus durable work as one boundary
+> (the acceptance guarantee below), and process-death recovery proof.
 
 [Strategy index](./README.md) · [Remote-first](./remote-first.md) ·
 [Cache-first](./cache-first.md) · [Hybrid](./hybrid.md)
@@ -33,33 +36,41 @@ Direction, transfer mode, and trigger remain independent:
 
 ## Current repository
 
-The repository already has:
+`OfflineFirstStrategyProfile`, `BuiltInSynchronizationStrategyEvaluator`, and
+`OfflineFirstStrategyExecutor` implement:
 
-- storage and transport provider contracts;
-- outbound, inbound, and bidirectional pipelines;
-- durable queue models and Room/in-memory queue providers;
-- queue processing, worker wake-up planning, and Android WorkManager
-  integration;
-- connectivity preflight and retry-history-safe queued offline deferral; and
-- retry, conflict, and event extension foundations.
+- local acceptance followed by durable admission when connectivity is
+  available (`requireDurableQueue`, the default) or a synchronous attempt plus
+  reconciliation otherwise;
+- `DEFER` with a distinct reason for `UNAVAILABLE`/`LIMITED` versus
+  `UNKNOWN`/`NOT_EVALUATED` connectivity, durably admitted when a
+  `QueuedSynchronizationWorkEncoder` is configured;
+- `SERVE_LOCAL` when cache state makes local data available for PULL/
+  BIDIRECTIONAL; and
+- bounded `RECONCILE` through a configured `StrategyReconciliationProvider`
+  after a successful synchronization.
 
+Admit-then-replay by a queue worker is proven on real Android (Robolectric)
+and iOS providers, but only with `reconcileWhenOnline = false` — the default
+profile's online reconcile-then-replay path has no real-provider proof yet.
 See [Storage Provider](../api/storage-provider.md),
 [Queue Provider](../api/queue-provider.md),
 [Queue Submission](../api/queue-submission.md), and
 [Connectivity-Aware Execution](../api/connectivity-aware-execution.md).
 
-It does **not** yet provide the complete strategy because:
+It does **not** yet provide the complete V1 acceptance guarantee because:
 
 - local domain mutation and durable synchronization intent do not share one
-  standard atomic transaction;
-- queue submission and worker triggering are explicit host actions;
-- direct connectivity rejection does not automatically become durable work;
-- the request and queued entry do not carry an effective strategy/configuration
-  decision;
-- the standard built-in retry/circuit engine and its durable policy state are
-  not complete; and
-- complete conflict persistence, durable event delivery, and restart
-  qualification remain release work.
+  standard atomic transaction — `ACCEPT_LOCAL` has no executor action of its
+  own, so the local write remains the application's, not DataLoom's;
+- durable admission is not idempotent per decision (a caller retry can enqueue
+  a duplicate `QueueEntryId`);
+- retry-then-succeed, retry-exhaustion, and circuit-open-during-replay have no
+  proof with real providers; and
+- process death between admission and replay has no proof on either platform.
+
+See the [six-strategy decision matrix](../status/dl-039b-strategy-decision-matrix.md)
+for the exact, per-cell evidence.
 
 ## V1 required behavior
 
