@@ -100,4 +100,20 @@ public data class ConflictOrchestrationBindings(
      */
     public fun selectResolverId(context: ConflictResolverSelectionContext): ConflictResolverId? =
         resolverSelectionPolicy?.select(context) ?: resolverId
+
+    /**
+     * Returns which tier decided [selectResolverId] for [context]: the
+     * matching policy rule's tier, [ConflictResolverSelectionTier.GLOBAL] when
+     * no rule matched but [resolverId] is present, or `null` when nothing was
+     * selected at all (the [io.dataloom.runtime.conflict.ConflictOrchestrationResult.ResolverNotConfigured]
+     * case).
+     *
+     * Pure: performs no registry lookup and never throws. Exposed for safe,
+     * bounded-cardinality observability (for example telemetry dimensions); it
+     * never changes selection behavior and always agrees with [selectResolverId]
+     * about whether anything was selected.
+     */
+    public fun selectedTier(context: ConflictResolverSelectionContext): ConflictResolverSelectionTier? =
+        resolverSelectionPolicy?.matchedTier(context)
+            ?: (if (resolverId != null) ConflictResolverSelectionTier.GLOBAL else null)
 }

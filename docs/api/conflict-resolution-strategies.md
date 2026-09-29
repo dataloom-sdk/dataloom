@@ -10,17 +10,17 @@ of DL-041, but it is not the completion claim for issue
 [#95](https://github.com/dataloom-sdk/dataloom/issues/95).
 
 Still required for the full gate are decision application and convergence,
-standard detector utilities, complete metrics/retry integration
-(entity/workflow/tenant/global resolver-selection precedence and
-loop/non-convergence quarantine now ship as bounded first slices — see
-"Resolver selection policy" and "Loop/non-convergence quarantine" below),
-AC-FUNC-002, and mandatory-platform qualification. Authorized manual
+standard detector utilities, AC-FUNC-002, and mandatory-platform qualification
+(entity/workflow/tenant/global resolver-selection precedence,
+loop/non-convergence quarantine, conflict metrics, and retry/circuit
+integration now ship — see "Resolver selection policy",
+"Loop/non-convergence quarantine", "Conflict metrics", and "Retry and
+circuit-breaker integration" below). Authorized manual
 conflict-resolution operations now ship as a bounded first slice — see
 "Authorized manual conflict-resolution operations" below — and administration
 commands are now also bridged into the durable operational-event outbox
 (see "Operational-event bridging" below), closing the audit/event half of the
-"complete audit/metrics/retry integration" gap for this one command surface;
-metrics and retry integration remain open.
+"complete audit/metrics/retry integration" gap for this one command surface.
 
 ## Built-in policy catalog
 
@@ -194,7 +194,9 @@ resolved and applied still counts, and a replayed delivery of the same
 `ConflictId` counts too (that replay *is* the loop). Hosts whose entities
 legitimately conflict often should set a window or a higher threshold. A crash
 between counting and finishing the batch replays the occurrence, so counts
-are conservative, never lower than the true number.
+are conservative, never lower than the true number. Replays caused by a
+retry-eligible infrastructure failure are credited back (see Amendment D21
+below); a crash cannot credit, so it stays conservative.
 
 ### Fail-closed behaviour
 
@@ -245,6 +247,47 @@ entry, because that store's state type is bound to decision-carrying requests.
 Operational-event outbox bridging of quarantine and release events is not
 implemented in this slice.
 
+### Amendment D21 (2026-09-28): infrastructure failures are credited back
+
+D18 counted every replay, including a replay that follows a *transient
+infrastructure failure* (a storage or provider error while preparing, applying,
+or checkpointing the batch, which the existing retry policy and circuit breaker
+retry). A flaky store could therefore quarantine a healthy entity that was never
+in a conflict loop. D21 fixes this; the decision is recorded in
+[ADR-0012](../adr/ADR-0012-quarantine-credit-back-for-infrastructure-failures.md).
+
+Only occurrences caused by a genuine repeat of the same conflict count. When an
+inbound batch fails with a retry-eligible error, every occurrence that batch's
+attempt counted is credited back, so the count is unchanged by infrastructure
+noise:
+
+- *Retry-eligible* is the retry machinery's own test
+  (`protectedRetryStopReason(error) == null`): recoverable, not `UNKNOWN`, and
+  not in a category protected from automatic retry (`CONFLICT`, `CONFIGURATION`,
+  `POLICY`, and so on). A non-retryable failure, `Defer`, `Fail`, an unresolved
+  outcome and a quarantine block therefore still count exactly as before.
+- Each counted occurrence carries a `ConflictQuarantineOccurrence` (entity scope
+  plus a per-entity sequence number, on `Resolved`, `ResolverNotConfigured` and
+  `ResolverNotFound` results as `quarantineOccurrence`).
+  `DurableConflictQuarantineLog.creditOccurrence` un-counts one occurrence with a
+  bounded compare-and-set: it is idempotent per occurrence, never takes the count
+  below zero, never lifts a quarantine, and ignores an occurrence from a window
+  that already ended or was released. The record's codec moved to format
+  version 2 for the sequence bookkeeping.
+- Only the failing batch is credited. A batch that was applied and
+  checkpointed keeps its occurrences even if a later batch of the same
+  execution fails.
+- Crediting is best effort and never replaces the real error. If a credit cannot
+  be persisted the count stays as recorded, the conservative direction.
+
+Two consequences are deliberate. The occurrence that reaches the threshold
+quarantines immediately, before the attempt's later outcome is known, so
+`threshold - 1` genuine repeats plus one more conflicting attempt quarantine even
+if that attempt would have failed transiently afterwards. And a batch that fails
+transiently while writing its checkpoint, after a successful apply, is credited
+even though the applied conflict is unlikely to re-conflict on replay; the count
+is then one lower than "resolved occurrences", never higher.
+
 ### Interaction with the resolved-decision log
 
 The resolved-decision log is commit-once per `ConflictId`. If a loop repeats
@@ -252,6 +295,88 @@ the *same* `ConflictId` with a different decision after release, that log's
 existing non-convergence guard (`DL-CONFLICT-DECISION-NON-CONVERGENT`)
 applies, exactly as it did before quarantine. Detectors that mint a fresh ID
 per detection are unaffected.
+
+## Conflict metrics
+
+**Design decision D20 (2026-09-21).** Conflict facts are exposed through the
+existing retry/circuit telemetry mechanism (`BoundedRetryCircuitTelemetry`,
+its exporters, snapshot, and fixed-dimension `RetryCircuitMetricKey`), not a
+second pipeline. Two opt-in decorators mirror the existing `Observed*`
+wrappers: `ObservedSynchronizationConflictOrchestrator` (detected, resolved by
+resolver ID, unresolved by reason, deferred, failed, quarantined, and the
+resolver-selection tier that was hit) and `ObservedConflictAdministrationCoordinator`
+(quarantine released). They preserve the delegate's exact result, record only
+after it exists, and swallow telemetry failures. With no wrapper nothing is
+emitted and no code path changes. The complete signal table, the cardinality
+argument, and the deliberate omissions (no gauges, no latency, no builder
+wiring, matching the retry/circuit wrappers) are in
+[Retry and circuit telemetry](./retry-circuit-telemetry.md#conflict-telemetry).
+
+To make the tier observable without duplicating selection logic,
+`ConflictResolverSelectionPolicy.matchedTier` and
+`ConflictOrchestrationBindings.selectedTier` were added; `select` and
+`selectResolverId` are now derived from the same code, and selection behavior
+is unchanged.
+
+## Retry and circuit-breaker integration
+
+**Finding (2026-09-21): no conflict-specific retry or circuit code is needed;
+the path is already covered, and this is now proven.** Applying a resolved
+decision is not a separate storage operation. `InboundConflictDecisionPreparer`
+reshapes the batch in memory (`UseRemote` keeps the remote event, `UseLocal`
+omits it, `Merge` substitutes the merged event) and `InboundPullSynchronizationPipeline`
+then applies that batch with the same `StorageProvider.applyInboundChanges`
+call it uses for every batch. Nothing in the pipeline retries an operation
+inline; retry has always been a whole-request decision made on the terminal
+`SynchronizationResult`.
+
+- **Circuit protection.** `ProviderProtectionStorageBridge` (used by
+  `DataLoomBuilder.providerProtectionConfiguration` and
+  `DataLoom.protectedSynchronization`) wraps `applyInboundChanges`,
+  `readLocalConflictCandidate`, `readCheckpoint`, and `writeCheckpoint`, each
+  under its own scope, so an open circuit rejects the apply before the
+  provider is invoked (`PROVIDER_CIRCUIT_OPEN`, recoverable) while detection
+  and decision recording, which use a different scope and the durable logs,
+  still run.
+- **Retry.** A failed apply returns `SynchronizationResult.Failed` carrying the
+  provider's own error, checkpoint unadvanced. `SynchronizationRetryEvaluator`
+  (used by both queued handlers) then treats it like any storage failure:
+  recoverable errors are retried under the host `RetryPolicy` and budgets, and
+  the replay is deterministic because the decision was durably recorded first
+  and re-detection returns `AlreadyRecorded`. The engine's own blocks
+  (`Defer`, unresolved, quarantined, non-convergent) use
+  `ErrorCategory.CONFLICT`, which the evaluator protects from automatic retry,
+  and the circuit classifier records them as dependency success, so they
+  neither loop nor trip a circuit. A resolver `Fail` surfaces the error the
+  resolver supplied, classified like any other error. Store contention on the durable logs is
+  `STATE`/recoverable and is retried; `UNKNOWN` outcomes (for example a
+  successful apply whose circuit recording was unconfirmed) stop retry as for
+  any operation.
+- **Proof.** `InboundPullConflictDecisionRetryCircuitProofTest` (real pipeline,
+  real circuit bridge, real evaluator: retry then success, exhausted attempts
+  with no checkpoint write, open circuit never invoking the provider) and
+  `DataLoomBuilderConflictRetryCircuitTest` (the same through
+  `DataLoomBuilder` and the production protected queued handler, including
+  recovery after the open duration and an immediate stop on a non-recoverable
+  failure).
+
+Stated limits: the durable conflict logs (`DurableStateStore`, not a
+`StorageProvider`) are not circuit-wrapped, as no durable-state store in the
+runtime is. The direct `DataLoom.synchronize` path and the queue worker built by
+`queueWorkerConfiguration` evaluate retry but do not run providers through
+circuit bridges; that is the existing, separately tracked protected-queued
+adoption gap for every storage operation, not a conflict gap.
+
+**Known interaction with quarantine (unchanged decision D18).** Quarantine
+counts every detection, including a replay after a transient failure, so a
+streak of transient apply failures on a conflicting entity consumes its
+quarantine budget even though the conflict resolved correctly, and can
+quarantine it when the streak reaches `occurrenceThreshold` (default 5). The
+counter is conservative by design; hosts should set `occurrenceThreshold`
+above their retry policy's `maximumAttempts` or use `windowMillis`. Crediting
+back occurrences of executions that failed with a retry-eligible
+infrastructure error is a possible follow-up; it would change D18 and add
+public API, so it is not done here.
 
 ## Timestamp-evidence policy
 
@@ -503,10 +628,13 @@ The following are not claimed by this page:
 - conflict fingerprints and convergence limits beyond the per-entity
   occurrence counter (which ships — see "Loop/non-convergence quarantine");
   quarantine/release events in the operational-event outbox;
-- complete metrics and retry integration (immutable audit/event bridging is
-  now shipped for both automatic conflict-detection outcomes and authorized
-  manual conflict-administration commands — see "Operational-event bridging"
-  above);
+- conflict-metric extras: builder-assembled telemetry wrappers, gauges, and a
+  latency metric (audit/event bridging ships for detection outcomes and manual
+  administration — see "Operational-event bridging" above — and counters ship
+  — see "Conflict metrics");
+- crediting quarantine occurrences back for executions that fail with a
+  retry-eligible infrastructure error (see "Retry and circuit-breaker
+  integration");
 - restart, duplicate, concurrent-resolution, and migration qualification;
 - AC-FUNC-002 and equivalent native Android, KMP Android, and KMP iOS evidence.
 

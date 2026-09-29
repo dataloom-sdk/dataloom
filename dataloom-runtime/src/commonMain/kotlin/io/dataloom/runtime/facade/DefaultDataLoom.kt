@@ -66,6 +66,8 @@ import io.dataloom.runtime.submission.DataLoomQueueSubmission
  *   configured.
  * @param governance the optional governance capability; `null` when not
  *   configured.
+ * @param lifecycleDrain the optional lifecycle-triggered queue drain; `null`
+ *   when not configured.
  */
 internal class DefaultDataLoom(
     private val lifecycleCoordinator: ProviderLifecycleCoordinator,
@@ -85,6 +87,7 @@ internal class DefaultDataLoom(
     override val pluginEngine: DataLoomPluginEngine?,
     override val assetTransfer: AssetTransferEngine?,
     override val governance: DataLoomGovernance?,
+    override val lifecycleDrain: DataLoomLifecycleDrain?,
 ) : DataLoom {
 
     override val providerLifecycleState: ProviderLifecycleCoordinatorState
