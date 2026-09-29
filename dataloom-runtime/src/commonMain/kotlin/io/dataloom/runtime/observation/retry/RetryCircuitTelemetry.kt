@@ -2,7 +2,9 @@ package io.dataloom.runtime.observation.retry
 
 import io.dataloom.api.circuit.CircuitBreakerPhase
 import io.dataloom.api.circuit.CircuitBreakerScopeKind
+import io.dataloom.api.conflict.UnresolvedConflictReason
 import io.dataloom.api.error.ErrorCode
+import io.dataloom.api.identifier.ConflictResolverId
 import io.dataloom.api.identifier.CorrelationId
 import io.dataloom.api.identifier.TenantId
 import io.dataloom.api.identifier.TraceId
@@ -10,6 +12,7 @@ import io.dataloom.api.identifier.WorkflowId
 import io.dataloom.api.retry.RetryAttempt
 import io.dataloom.api.scheduling.SchedulingDelay
 import io.dataloom.api.time.DataLoomInstant
+import io.dataloom.runtime.conflict.ConflictResolverSelectionTier
 import kotlin.coroutines.CoroutineContext
 import kotlin.jvm.JvmInline
 import kotlinx.coroutines.CompletableJob
@@ -72,6 +75,14 @@ public enum class RetryCircuitTelemetrySignal {
     CIRCUIT_ADMINISTRATION_RECORDING_UNCONFIRMED,
     CIRCUIT_ADMINISTRATION_CLOCK_REGRESSION,
     CIRCUIT_ADMINISTRATION_CONTENTION,
+    CONFLICT_DETECTED,
+    CONFLICT_RESOLVED,
+    CONFLICT_UNRESOLVED,
+    CONFLICT_DEFERRED,
+    CONFLICT_FAILED,
+    CONFLICT_QUARANTINED,
+    CONFLICT_QUARANTINE_RELEASED,
+    CONFLICT_RESOLVER_SELECTION_TIER_HIT,
 }
 
 /** Stable, bounded circuit detail taxonomy. */
@@ -110,6 +121,13 @@ public class RetryCircuitTelemetryContext(
  *
  * The model contains no payload, exception, credential, free-form metadata, or
  * reason text. [errorCode] is the already-sanitized canonical DataLoom code.
+ *
+ * [conflictResolverId], [conflictUnresolvedReason], and [conflictSelectionTier]
+ * are the conflict-engine's own bounded-cardinality dimensions: a
+ * [ConflictResolverId] is bounded by the application's own
+ * `ConflictResolverRegistry` for the lifetime of one running instance (never
+ * an entity ID, change ID, or tenant ID), and the other two are closed enums.
+ * All three are `null` for non-conflict signals.
  */
 public class RetryCircuitTelemetryEvent(
     public val signal: RetryCircuitTelemetrySignal,
@@ -122,6 +140,9 @@ public class RetryCircuitTelemetryEvent(
     public val retryAttempt: RetryAttempt? = null,
     public val selectedDelay: SchedulingDelay? = null,
     public val errorCode: ErrorCode? = null,
+    public val conflictResolverId: ConflictResolverId? = null,
+    public val conflictUnresolvedReason: UnresolvedConflictReason? = null,
+    public val conflictSelectionTier: ConflictResolverSelectionTier? = null,
 ) {
     /** Stable schema version for exporter compatibility. */
     public val schemaVersion: Int
@@ -142,7 +163,10 @@ public class RetryCircuitTelemetryEvent(
             "circuitDetail=$circuitDetail, " +
             "retryAttempt=${retryAttempt?.number}, " +
             "selectedDelayMillis=${selectedDelay?.milliseconds}, " +
-            "errorCode=${errorCode?.value}" +
+            "errorCode=${errorCode?.value}, " +
+            "conflictResolverId=${conflictResolverId?.value}, " +
+            "conflictUnresolvedReason=$conflictUnresolvedReason, " +
+            "conflictSelectionTier=$conflictSelectionTier" +
             ")"
 
 }
@@ -191,12 +215,20 @@ public class RetryCircuitTelemetryRecordResult(
     }
 }
 
-/** Fixed-dimension metric key. Dynamic IDs and error codes cannot become labels. */
+/**
+ * Fixed-dimension metric key. Dynamic IDs and error codes cannot become
+ * labels, with one bounded exception: [conflictResolverId] is scoped to the
+ * application's own `ConflictResolverRegistry`, a closed set fixed for the
+ * lifetime of one running instance, never an entity, change, or tenant ID.
+ */
 public data class RetryCircuitMetricKey(
     public val signal: RetryCircuitTelemetrySignal,
     public val scopeKind: CircuitBreakerScopeKind?,
     public val circuitOperationOutcome: RetryCircuitTelemetryOperationOutcome?,
     public val circuitDetail: RetryCircuitTelemetryCircuitDetail?,
+    public val conflictResolverId: ConflictResolverId? = null,
+    public val conflictUnresolvedReason: UnresolvedConflictReason? = null,
+    public val conflictSelectionTier: ConflictResolverSelectionTier? = null,
 )
 
 /** Exporter health visible through the SDK-owned operational read model. */
@@ -269,6 +301,9 @@ public class BoundedRetryCircuitTelemetry(
             scopeKind = event.scopeKind,
             circuitOperationOutcome = event.circuitOperationOutcome,
             circuitDetail = event.circuitDetail,
+            conflictResolverId = event.conflictResolverId,
+            conflictUnresolvedReason = event.conflictUnresolvedReason,
+            conflictSelectionTier = event.conflictSelectionTier,
         )
         metricState.update { counts ->
             val current = counts[key] ?: 0L

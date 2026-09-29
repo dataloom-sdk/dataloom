@@ -1429,11 +1429,11 @@ jobs:
   apple-retry-budget-lease-contention-proof:
     name: Apple Simulator cross-process contention proof (retry-budget lease)
     runs-on: macos-15
-    # 45, not 30: this job now boots two Simulator devices sequentially
-    # (one per racing app) instead of one; the prior run hit the 30-minute
-    # timeout at 35 elapsed minutes without reaching a race-outcome error,
-    # so the failure was the timeout itself, not the race under test.
-    timeout-minutes: 45
+    # 60, not 30: this job boots two Simulator devices (one per racing app)
+    # and the first launch on the second one has taken up to 26 minutes on
+    # these runners; a 30-minute limit cancelled an earlier run at 35 elapsed
+    # minutes before it reached a race outcome.
+    timeout-minutes: 60
     continue-on-error: true
 
     steps:
@@ -1575,45 +1575,18 @@ jobs:
           RESULT_B="$SHARED_DIR/result-b.tsv"
           echo "Shared host directory: $SHARED_DIR"
 
-          echo "=== Launching app A (seeds the RETRY_WAITING entry, then waits for the go signal) ==="
-          export SIMCTL_CHILD_DATALOOM_ROLE="A"
+          # App B lives on the second Simulator, whose first launch is slow and
+          # erratic on these runners (observed: 2 minutes and 26 minutes). Launch
+          # it FIRST, while nothing is waiting on it, so a slow launch cannot make
+          # the seeding app give up before its racer exists. The seed still
+          # happens before the go signal, so the race itself is unchanged.
+          echo "=== Launching app B first (the non-seeding racer, on the cold second Simulator) ==="
+          export SIMCTL_CHILD_DATALOOM_ROLE="B"
           export SIMCTL_CHILD_DATALOOM_DOMAIN="RETRY_BUDGET_LEASE"
           export SIMCTL_CHILD_DATALOOM_SHARED_DIR="$SHARED_DIR"
-          export SIMCTL_CHILD_DATALOOM_READY_MARKER="$READY_A"
-          export SIMCTL_CHILD_DATALOOM_GO_SIGNAL="$GO_SIGNAL"
-          export SIMCTL_CHILD_DATALOOM_RESULT_FILE="$RESULT_A"
-          LAUNCH_A=$(xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID_A")
-          echo "$LAUNCH_A"
-          PID_A=$(echo "$LAUNCH_A" | sed -n 's/^.*: *\([0-9][0-9]*\)$/\1/p')
-          if [ -z "$PID_A" ]; then
-            echo "ERROR: could not parse a pid from app A's 'simctl launch' output: $LAUNCH_A" >&2
-            exit 1
-          fi
-          echo "App A pid: $PID_A"
-
-          echo "=== Waiting for app A to finish seeding the retry-budget entry ==="
-          READY_A_SEEN=0
-          for _ in $(seq 1 30); do
-            if [ -f "$READY_A" ]; then
-              READY_A_SEEN=1
-              break
-            fi
-            sleep 1
-          done
-          if [ "$READY_A_SEEN" != "1" ]; then
-            echo "ERROR: app A's ready marker never appeared within 30s: $READY_A" >&2
-            exit 1
-          fi
-
-          echo "=== Launching app B (the non-seeding racer) ==="
-          unset SIMCTL_CHILD_DATALOOM_ROLE
-          export SIMCTL_CHILD_DATALOOM_ROLE="B"
           export SIMCTL_CHILD_DATALOOM_READY_MARKER="$READY_B"
+          export SIMCTL_CHILD_DATALOOM_GO_SIGNAL="$GO_SIGNAL"
           export SIMCTL_CHILD_DATALOOM_RESULT_FILE="$RESULT_B"
-          # SIMCTL_CHILD_DATALOOM_DOMAIN, SIMCTL_CHILD_DATALOOM_SHARED_DIR and
-          # SIMCTL_CHILD_DATALOOM_GO_SIGNAL are unchanged from app A's launch
-          # above -- both apps must race in the exact same domain against the
-          # exact same shared directory and go signal.
           LAUNCH_B=$(xcrun simctl launch "$DEVICE_ID_2" "$BUNDLE_ID_B")
           echo "$LAUNCH_B"
           PID_B=$(echo "$LAUNCH_B" | sed -n 's/^.*: *\([0-9][0-9]*\)$/\1/p')
@@ -1622,11 +1595,6 @@ jobs:
             exit 1
           fi
           echo "App B pid: $PID_B"
-
-          if [ "$PID_A" = "$PID_B" ]; then
-            echo "ERROR: app A and app B were launched with the identical pid ($PID_A) -- they are not genuinely separate OS processes." >&2
-            exit 1
-          fi
 
           echo "=== Waiting for app B to be alive and polling ==="
           READY_B_SEEN=0
@@ -1639,6 +1607,38 @@ jobs:
           done
           if [ "$READY_B_SEEN" != "1" ]; then
             echo "ERROR: app B's ready marker never appeared within 30s: $READY_B" >&2
+            exit 1
+          fi
+
+          echo "=== Launching app A (seeds the RETRY_WAITING entry, then waits for the go signal) ==="
+          export SIMCTL_CHILD_DATALOOM_ROLE="A"
+          export SIMCTL_CHILD_DATALOOM_READY_MARKER="$READY_A"
+          export SIMCTL_CHILD_DATALOOM_RESULT_FILE="$RESULT_A"
+          LAUNCH_A=$(xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID_A")
+          echo "$LAUNCH_A"
+          PID_A=$(echo "$LAUNCH_A" | sed -n 's/^.*: *\([0-9][0-9]*\)$/\1/p')
+          if [ -z "$PID_A" ]; then
+            echo "ERROR: could not parse a pid from app A's 'simctl launch' output: $LAUNCH_A" >&2
+            exit 1
+          fi
+          echo "App A pid: $PID_A"
+
+          if [ "$PID_A" = "$PID_B" ]; then
+            echo "ERROR: app A and app B were launched with the identical pid ($PID_A) -- they are not genuinely separate OS processes." >&2
+            exit 1
+          fi
+
+          echo "=== Waiting for app A to finish seeding the retry-budget entry ==="
+          READY_A_SEEN=0
+          for _ in $(seq 1 30); do
+            if [ -f "$READY_A" ]; then
+              READY_A_SEEN=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$READY_A_SEEN" != "1" ]; then
+            echo "ERROR: app A's ready marker never appeared within 30s: $READY_A" >&2
             exit 1
           fi
 

@@ -32,9 +32,11 @@ remain unbuilt.
 
 | Type | Purpose |
 |---|---|
-| `PluginId`, `PluginVersion`, `PluginVendor`, `PluginCapability`, `PluginPermission` | Validated (non-blank) identifier value classes, mirroring `dataloom-provider-api`'s `ProviderId`/`ProviderCapability` pattern. |
-| `PluginCompatibilityRange` | Declared inclusive min/max SDK version bounds. A data shape only — it does not parse or compare versions. |
-| `PluginDependency` | One declared edge from a plugin to another plugin it depends on, with that dependency's required compatibility range. |
+| `PluginId`, `PluginVendor`, `PluginCapability`, `PluginPermission` | Validated (non-blank) identifier value classes, mirroring `dataloom-provider-api`'s `ProviderId`/`ProviderCapability` pattern. |
+| `PluginVersion` | A plugin's own canonical Semantic Versioning 2.0.0 value — strict grammar, non-throwing `parse`, semver-precedence `precedenceCompareTo` ([ADR-0009](../adr/ADR-0009-plugin-version-and-dependency-gated-activation.md), D19). Delegates its grammar to `dataloom-model`'s `RuntimeVersion` internally so the two cannot drift, but exposes no `RuntimeVersion` type in its own API. |
+| `PluginCompatibilityRange` | Declared inclusive min/max SDK (`RuntimeVersion`) bounds. A data shape only — it does not compare versions itself. |
+| `PluginVersionRange` | Declared inclusive min/max *plugin* (`PluginVersion`) bounds — the plugin-to-plugin counterpart of `PluginCompatibilityRange`, kept as a distinct type since the two bound different axes. A data shape only. |
+| `PluginDependency` | One declared edge from a plugin to another plugin it depends on, with that dependency's required `PluginVersionRange`. |
 | `PluginManifest` | Identity, version, vendor, compatibility range, and bounded (max 64 each) capability/permission/dependency sets. |
 | `PluginLifecycleState` | Closed enum: `LOADED`, `VALIDATED`, `INITIALIZING`, `ACTIVE`, `DEGRADED`, `DISABLED`, `UNLOADED` — documents states only, does not enforce transitions, mirroring `ProviderLifecycleState`'s own documented rule. |
 | `PluginHookPoint` | Closed enum naming the six extension-point families `#98` requires (`POLICY`, `CONFLICT`, `DIAGNOSTICS`, `EVENTS`, `METRICS`, `WORKFLOW_INTERCEPTOR`) — identifies *where* a plugin may extend DataLoom, not the callback signature for that extension point. |

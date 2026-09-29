@@ -464,6 +464,295 @@ class DurableConflictQuarantineLogTest {
     }
 
     // -------------------------------------------------------------------------
+    // Credit back (D21): infrastructure failures must not consume the budget
+    // -------------------------------------------------------------------------
+
+    private suspend fun DurableConflictQuarantineLog.occurCounted(
+        atMillis: Long,
+        policy: ConflictQuarantinePolicy,
+        target: ConflictQuarantineScope = scope,
+    ): ConflictQuarantineObservation.Counted =
+        assertIs<ConflictQuarantineObservation.Counted>(occur(atMillis, policy, target = target))
+
+    @Test
+    fun countedObservationIdentifiesItsOccurrenceBySequence() = runTest {
+        val log = DurableConflictQuarantineLog(InMemoryStore())
+        val policy = ConflictQuarantinePolicy(occurrenceThreshold = 10)
+        val first = log.occurCounted(1L, policy)
+        val second = log.occurCounted(2L, policy)
+        assertEquals(ConflictQuarantineOccurrence(scope, 1L), first.occurrence)
+        assertEquals(ConflictQuarantineOccurrence(scope, 2L), second.occurrence)
+        assertFailsWith<IllegalArgumentException> { ConflictQuarantineOccurrence(scope, 0L) }
+    }
+
+    @Test
+    fun creditingAnOccurrenceDropsTheCountOnceAndIsIdempotent() = runTest {
+        val store = InMemoryStore()
+        val log = DurableConflictQuarantineLog(store)
+        val policy = ConflictQuarantinePolicy(occurrenceThreshold = 10)
+        log.occurCounted(1L, policy)
+        val second = log.occurCounted(2L, policy)
+
+        val credited = assertIs<ConflictQuarantineCreditOutcome.Credited>(log.creditOccurrence(second.occurrence))
+        assertEquals(1, credited.record.occurrenceCount)
+        val writes = store.compareAndSetCalls
+
+        val replay = assertIs<ConflictQuarantineCreditOutcome.AlreadyCredited>(log.creditOccurrence(second.occurrence))
+        assertEquals(1, replay.record.occurrenceCount)
+        assertEquals(writes, store.compareAndSetCalls)
+        assertEquals(1, currentCount(store))
+    }
+
+    private class StreakCase(
+        val name: String,
+        val threshold: Int,
+        /** true = a genuine occurrence that is kept; false = an occurrence credited back (transient failure). */
+        val attempts: List<Boolean>,
+        val expectedCount: Int,
+        val expectQuarantined: Boolean,
+    )
+
+    @Test
+    fun onlyGenuineOccurrencesCountTowardTheThreshold() = runTest {
+        val cases = listOf(
+            StreakCase("transient streak far above threshold", 3, List(20) { false }, 0, false),
+            StreakCase("genuine streak quarantines at threshold", 3, List(3) { true }, 3, true),
+            StreakCase("mixed: transient noise between genuine", 4, listOf(true, false, false, true, false, false, false), 2, false),
+            StreakCase("mixed: genuine after noise stays below the threshold", 4, listOf(false, true, false, true, false, true), 3, false),
+            StreakCase("mixed reaching the threshold after noise", 3, listOf(false, false, true, true, true), 3, true),
+            StreakCase("one genuine among many transient", 5, listOf(false, false, false, false, false, false, true, false), 1, false),
+        )
+        for (case in cases) {
+            val log = DurableConflictQuarantineLog(InMemoryStore())
+            val policy = ConflictQuarantinePolicy(occurrenceThreshold = case.threshold)
+            var last: ConflictQuarantineObservation? = null
+            case.attempts.forEachIndexed { index, genuine ->
+                val observation = log.occur(index * 10L, policy)
+                last = observation
+                if (!genuine) {
+                    val counted = assertIs<ConflictQuarantineObservation.Counted>(observation, case.name)
+                    assertIs<ConflictQuarantineCreditOutcome.Credited>(log.creditOccurrence(counted.occurrence), case.name)
+                }
+            }
+            val record = assertIs<ProviderOperationResult.Success<ConflictQuarantineRecord?>>(log.current(scope)).value
+            assertEquals(case.expectedCount, record?.occurrenceCount, case.name)
+            assertEquals(case.expectQuarantined, record?.isQuarantined, case.name)
+            assertEquals(case.expectQuarantined, last is ConflictQuarantineObservation.Quarantined, case.name)
+        }
+    }
+
+    @Test
+    fun aCreditNeverGoesBelowZeroAndIgnoresUnknownOccurrences() = runTest {
+        val store = InMemoryStore()
+        val log = DurableConflictQuarantineLog(store)
+        val policy = ConflictQuarantinePolicy(occurrenceThreshold = 10)
+
+        // No record at all.
+        assertIs<ConflictQuarantineCreditOutcome.NotApplicable>(
+            log.creditOccurrence(ConflictQuarantineOccurrence(scope, 1L)),
+        )
+
+        val only = log.occurCounted(1L, policy)
+        assertIs<ConflictQuarantineCreditOutcome.Credited>(log.creditOccurrence(only.occurrence))
+        assertEquals(0, currentCount(store))
+        // Future and never-issued sequences do not apply either.
+        assertIs<ConflictQuarantineCreditOutcome.NotApplicable>(
+            log.creditOccurrence(ConflictQuarantineOccurrence(scope, 2L)),
+        )
+        assertIs<ConflictQuarantineCreditOutcome.AlreadyCredited>(log.creditOccurrence(only.occurrence))
+        assertEquals(0, currentCount(store))
+    }
+
+    @Test
+    fun aCreditNeverLiftsAQuarantine() = runTest {
+        val store = InMemoryStore()
+        val log = DurableConflictQuarantineLog(store)
+        val policy = ConflictQuarantinePolicy(occurrenceThreshold = 3)
+        val first = log.occurCounted(1L, policy)
+        log.occurCounted(2L, policy)
+        assertIs<ConflictQuarantineObservation.Quarantined>(log.occur(3L, policy))
+        val writes = store.compareAndSetCalls
+
+        assertIs<ConflictQuarantineCreditOutcome.NotApplicable>(log.creditOccurrence(first.occurrence))
+        assertEquals(writes, store.compareAndSetCalls)
+        assertEquals(3, currentCount(store))
+        assertTrue(store.peek(scope)!!.state.isQuarantined)
+    }
+
+    @Test
+    fun aLateCreditCannotEraseANewerWindow() = runTest {
+        val store = InMemoryStore()
+        val log = DurableConflictQuarantineLog(store)
+        val policy = ConflictQuarantinePolicy(occurrenceThreshold = 10, windowMillis = 1_000L)
+        val old = log.occurCounted(0L, policy)
+        // Window expires; this occurrence starts a new window at count 1.
+        val fresh = log.occurCounted(5_000L, policy)
+        assertEquals(1, fresh.record.occurrenceCount)
+
+        assertIs<ConflictQuarantineCreditOutcome.NotApplicable>(log.creditOccurrence(old.occurrence))
+        assertEquals(1, currentCount(store))
+        assertIs<ConflictQuarantineCreditOutcome.Credited>(log.creditOccurrence(fresh.occurrence))
+        assertEquals(0, currentCount(store))
+    }
+
+    @Test
+    fun aCreditForAnOccurrenceBeforeAReleaseIsIgnored() = runTest {
+        val store = InMemoryStore()
+        val log = DurableConflictQuarantineLog(store)
+        val policy = ConflictQuarantinePolicy(occurrenceThreshold = 2)
+        val first = log.occurCounted(1L, policy)
+        log.occur(2L, policy)
+        log.release(scope, release())
+        val afterRelease = log.occurCounted(3L, policy)
+        assertEquals(1, afterRelease.record.occurrenceCount)
+
+        assertIs<ConflictQuarantineCreditOutcome.NotApplicable>(log.creditOccurrence(first.occurrence))
+        assertEquals(1, currentCount(store))
+    }
+
+    @Test
+    fun aCountThatReturnedToZeroStartsAFreshWindow() = runTest {
+        val store = InMemoryStore()
+        val log = DurableConflictQuarantineLog(store)
+        val policy = ConflictQuarantinePolicy(occurrenceThreshold = 2)
+        repeat(6) {
+            val counted = log.occurCounted(it.toLong(), policy)
+            assertEquals(1, counted.record.occurrenceCount)
+            assertIs<ConflictQuarantineCreditOutcome.Credited>(log.creditOccurrence(counted.occurrence))
+        }
+        assertEquals(0, currentCount(store))
+        assertEquals(6L, store.peek(scope)!!.state.occurrenceSequence)
+    }
+
+    @Test
+    fun creditsBeyondTheTrackedLimitAreForgottenWithoutEverDoubleCrediting() = runTest {
+        val store = InMemoryStore()
+        val log = DurableConflictQuarantineLog(store)
+        val policy = ConflictQuarantinePolicy(occurrenceThreshold = 1_000)
+        val limit = ConflictQuarantineRecord.MAX_TRACKED_CREDITS
+        // One genuine occurrence stays counted so a double credit would be visible.
+        log.occurCounted(0L, policy)
+        val occurrences = List(limit + 5) { log.occurCounted(it + 1L, policy).occurrence }
+        occurrences.forEach { assertIs<ConflictQuarantineCreditOutcome.Credited>(log.creditOccurrence(it)) }
+
+        val record = store.peek(scope)!!.state
+        assertEquals(1, record.occurrenceCount)
+        assertEquals(limit, record.creditedSequences.size)
+        // Replaying every credit, including the forgotten ones, changes nothing.
+        val writes = store.compareAndSetCalls
+        occurrences.forEach {
+            val replay = log.creditOccurrence(it)
+            assertTrue(
+                replay is ConflictQuarantineCreditOutcome.AlreadyCredited ||
+                    replay is ConflictQuarantineCreditOutcome.NotApplicable,
+                "replay of $it was $replay",
+            )
+        }
+        assertEquals(writes, store.compareAndSetCalls)
+        assertEquals(1, currentCount(store))
+    }
+
+    @Test
+    fun concurrentOccurrencesAndCreditsConvergeWithNoLostUpdateAndNeverGoNegative() = runTest {
+        val store = InMemoryStore(yieldAfterLoad = true)
+        val log = DurableConflictQuarantineLog(store, maximumStateUpdateAttempts = 256)
+        val policy = ConflictQuarantinePolicy(occurrenceThreshold = 1_000)
+        val racers = 24
+
+        // Even racers keep their occurrence; odd racers credit theirs back (twice, to race duplicates).
+        val kept = List(racers) { index ->
+            async {
+                val counted = assertIs<ConflictQuarantineObservation.Counted>(log.occur(index.toLong(), policy))
+                if (index % 2 == 1) {
+                    val duplicate = async { log.creditOccurrence(counted.occurrence) }
+                    val original = log.creditOccurrence(counted.occurrence)
+                    val outcomes = listOf(original, duplicate.await())
+                    assertEquals(1, outcomes.count { it is ConflictQuarantineCreditOutcome.Credited })
+                    assertEquals(1, outcomes.count { it is ConflictQuarantineCreditOutcome.AlreadyCredited })
+                }
+                index % 2 == 0
+            }
+        }.awaitAll()
+
+        val record = store.peek(scope)!!.state
+        assertEquals(kept.count { it }, record.occurrenceCount)
+        assertEquals(racers.toLong(), record.occurrenceSequence)
+        assertEquals(racers / 2, record.creditedSequences.size)
+        assertTrue(record.occurrenceCount >= 0)
+    }
+
+    @Test
+    fun aLostCompareAndSetDuringACreditReloadsAndStillCreditsExactlyOnce() = runTest {
+        val store = InMemoryStore()
+        val log = DurableConflictQuarantineLog(store)
+        val policy = ConflictQuarantinePolicy(occurrenceThreshold = 100)
+        val mine = log.occurCounted(1L, policy)
+        store.beforeNextCompareAndSet = { store.forceIncrement(scope, at(2L)) }
+
+        assertIs<ConflictQuarantineCreditOutcome.Credited>(log.creditOccurrence(mine.occurrence))
+        // The concurrent increment survived and only this occurrence was credited.
+        assertEquals(1, currentCount(store))
+    }
+
+    @Test
+    fun creditFailuresAreReportedAndLeaveTheCountUntouched() = runTest {
+        val store = InMemoryStore()
+        val log = DurableConflictQuarantineLog(store, maximumStateUpdateAttempts = 3)
+        val policy = ConflictQuarantinePolicy(occurrenceThreshold = 100)
+        val counted = log.occurCounted(1L, policy)
+
+        store.failLoads = true
+        assertIs<ConflictQuarantineCreditOutcome.PersistenceFailure>(log.creditOccurrence(counted.occurrence))
+        store.failLoads = false
+        store.failCompareAndSet = true
+        assertIs<ConflictQuarantineCreditOutcome.PersistenceFailure>(log.creditOccurrence(counted.occurrence))
+        store.failCompareAndSet = false
+        store.alwaysLoseCompareAndSet = true
+        assertEquals(ConflictQuarantineCreditOutcome.ContentionLimitReached, log.creditOccurrence(counted.occurrence))
+        store.alwaysLoseCompareAndSet = false
+
+        assertEquals(1, currentCount(store))
+        // The credit is still available once the store recovers.
+        assertIs<ConflictQuarantineCreditOutcome.Credited>(log.creditOccurrence(counted.occurrence))
+    }
+
+    @Test
+    fun creditStateSurvivesARestartThroughAFreshStore() = runTest {
+        val persisted = mutableMapOf<String, Pair<Long, String>>()
+        val policy = ConflictQuarantinePolicy(occurrenceThreshold = 3)
+
+        val first = DurableConflictQuarantineLog(EncodedStore(persisted))
+        first.occurCounted(1L, policy)
+        val second = first.occurCounted(2L, policy)
+        assertIs<ConflictQuarantineCreditOutcome.Credited>(first.creditOccurrence(second.occurrence))
+
+        // Fresh log and store over the same persisted bytes: the credit and its idempotency survive.
+        val restarted = DurableConflictQuarantineLog(EncodedStore(persisted))
+        val record = assertIs<ProviderOperationResult.Success<ConflictQuarantineRecord?>>(restarted.current(scope)).value
+        assertEquals(1, record?.occurrenceCount)
+        assertEquals(listOf(2L), record?.creditedSequences)
+        assertIs<ConflictQuarantineCreditOutcome.AlreadyCredited>(restarted.creditOccurrence(second.occurrence))
+        // Threshold arithmetic continues from the credited count: 1 + 1 = 2 < 3, then quarantine at 3.
+        assertIs<ConflictQuarantineObservation.Counted>(restarted.occur(3L, policy))
+        assertIs<ConflictQuarantineObservation.Quarantined>(restarted.occur(4L, policy))
+    }
+
+    @Test
+    fun creditBookkeepingInvariantsAreEnforced() {
+        val base = ConflictQuarantineRecord(
+            ConflictQuarantineStatus.COUNTING, 3, at(1), at(1), ConflictId("c"), null, null,
+            occurrenceSequence = 5L, creditableFromSequence = 2L, creditedSequences = listOf(3L),
+        )
+        assertFailsWith<IllegalArgumentException> { base.copy(occurrenceSequence = 2L) }
+        assertFailsWith<IllegalArgumentException> { base.copy(creditableFromSequence = 0L) }
+        assertFailsWith<IllegalArgumentException> { base.copy(creditableFromSequence = 7L) }
+        assertFailsWith<IllegalArgumentException> { base.copy(creditedSequences = listOf(1L)) }
+        assertFailsWith<IllegalArgumentException> { base.copy(creditedSequences = listOf(6L)) }
+        assertFailsWith<IllegalArgumentException> { base.copy(creditedSequences = listOf(4L, 3L)) }
+        assertFailsWith<IllegalArgumentException> { base.copy(creditedSequences = listOf(3L, 3L)) }
+    }
+
+    // -------------------------------------------------------------------------
     // Fixtures
     // -------------------------------------------------------------------------
 
@@ -489,6 +778,7 @@ class DurableConflictQuarantineLogTest {
                 scope,
                 current.state.copy(
                     occurrenceCount = current.state.occurrenceCount + 1,
+                    occurrenceSequence = current.state.occurrenceSequence + 1L,
                     lastSeenAt = observedAt,
                 ),
             )
