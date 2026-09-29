@@ -3,11 +3,21 @@
 > [!IMPORTANT]
 > This documentation defines the mandatory V1 product contract. The repository
 > now contains versioned profile, evidence, decision, execution-plan, and
-> durable-decision contracts and queue persistence plus a deterministic planner for all six
-> strategies. Plan-aware direct network-only execution and direct
-> provider-backed remote-first execution are implemented. The remaining
-> strategy runtimes, durable recovery, events, and full platform qualification
-> are still required before the engine is complete.
+> durable-decision contracts and queue persistence plus a deterministic planner
+> for all six strategies, and all six have a built-in executor reached through
+> `DataLoom.synchronize(StrategySynchronizationRequest)`: network-only,
+> remote-first, cache-first, offline-first, and hybrid execute end to end
+> (proven in `commonTest` for every strategy, and on real Android and/or iOS
+> providers for most of their branches); adaptive resolves deterministically
+> to one of the five concrete executors. Durable admission/replay (`DEFER`,
+> queued refresh, reconciliation), conflict detection during inbound pull, and
+> process-death recovery each have real proof for some but not all
+> strategy/branch/platform combinations — see the
+> [six-strategy decision matrix](../status/dl-039b-strategy-decision-matrix.md)
+> for the exact, per-cell state. `LIMITED` connectivity semantics, DataLoom-
+> owned cache freshness, adaptive's full selection-factor set, and offline-
+> first's atomic local-intent-plus-outbox admission remain open product
+> decisions, not implementation gaps closed by more tests.
 
 DataLoom's primary product purpose is to provide one deterministic,
 policy-driven synchronization engine with six complete built-in strategies.
@@ -15,12 +25,12 @@ All six are required for V1:
 
 | Strategy | Choose it when | Current repository |
 |---|---|---|
-| [Offline-first](./offline-first.md) | Eligible local work must be durable before remote availability is required. | Contract and plan evaluation implemented; atomic execution pending |
-| [Remote-first](./remote-first.md) | The remote path is authoritative and must be attempted before an explicit local fallback. | Direct provider-backed execution and typed pull fallback implemented; durable replay, retry/circuit, conflict persistence, and complete strategy events remain |
-| [Cache-first](./cache-first.md) | Local synchronized state may be used under explicit freshness and refresh rules. | Contract and freshness decision matrix implemented; execution pending |
-| [Network-only](./network-only.md) | Remote execution must succeed without local storage or queue access. | Direct transport-only PUSH, PULL, and BIDIRECTIONAL execution implemented; full event/result qualification pending |
-| [Hybrid](./hybrid.md) | A declared primary source, fallback, return rule, persistence rule, and coherence rule must be composed. | Contract and finite source plan evaluation implemented; execution pending |
-| [Adaptive](./adaptive.md) | A bounded policy must select deterministically from approved concrete strategies. | Deterministic allowlisted selection and durable decision identity implemented; immutable plan replay pending |
+| [Offline-first](./offline-first.md) | Eligible local work must be durable before remote availability is required. | Local-accept, durable admission, and durable replay implemented (Android + iOS, with `reconcileWhenOnline = false`); atomic local-intent-plus-outbox admission and process-death recovery remain |
+| [Remote-first](./remote-first.md) | The remote path is authoritative and must be attempted before an explicit local fallback. | Direct provider-backed execution, typed pull fallback, and durable `DEFER`/fallback replay implemented (Android + iOS); retry-exhaustion/circuit-open-during-replay proofs, iOS fallback-replay parity, and complete strategy events remain |
+| [Cache-first](./cache-first.md) | Local synchronized state may be used under explicit freshness and refresh rules. | Fresh/stale/missing decisions, all three stale-cache policies, synchronous refresh (including preserving a served result on refresh failure), and durable-refresh admit-then-replay implemented (Android + iOS for the stale+durable-refresh path); DataLoom-owned freshness evidence remains application-supplied |
+| [Network-only](./network-only.md) | Remote execution must succeed without local storage or queue access. | Direct transport-only PUSH, PULL, and BIDIRECTIONAL execution implemented and proven on iOS; full event/result qualification and an Android real-provider run pending |
+| [Hybrid](./hybrid.md) | A declared primary source, fallback, return rule, persistence rule, and coherence rule must be composed. | Local/remote primary execution, declared local fallback, and durable `DEFER`/reconcile replay implemented (Android + iOS); protected-facade coverage and PUSH-fallback platform proof remain |
+| [Adaptive](./adaptive.md) | A bounded policy must select deterministically from approved concrete strategies. | Deterministic allowlisted selection, durable decision identity, and plan-persistence round-trip implemented (Android + iOS); platform replay of an adaptive-admitted queue entry through its resolved concrete strategy remains |
 
 None of these strategies may be deferred to V2, reduced to application-owned
 replacement code, or considered complete merely because a custom pipeline can
@@ -104,12 +114,38 @@ to its execution foundations:
 - `DataLoom.synchronize(StrategySynchronizationRequest)` executes direct
   network-only PUSH, PULL, and BIDIRECTIONAL plans through transport alone and
   preserves completed push evidence when a later pull fails.
-- The same strategy facade executes direct provider-backed remote-first plans,
-  including configured pull persistence and finite typed local fallback.
+- The same strategy facade executes direct provider-backed remote-first,
+  cache-first, offline-first, and hybrid plans through a dedicated executor
+  each (`RemoteFirstStrategyExecutor`, `CacheFirstStrategyExecutor`,
+  `OfflineFirstStrategyExecutor`, `HybridStrategyExecutor`); adaptive resolves
+  to one of these five and the concrete executor then owns execution.
+- Conflict detection configured through
+  `DataLoomBuilder.conflictDetectionConfiguration` reaches every strategy's
+  inbound-pull path uniformly, the same as the legacy facade's inbound pull.
+- Durable admission (`DEFER`, queued refresh, `RECONCILE`) is admitted and
+  replayed by a queue worker for remote-first, cache-first, offline-first, and
+  hybrid, proven on real Android (Robolectric) and iOS providers for at least
+  one branch of each strategy — the
+  [six-strategy decision matrix](../status/dl-039b-strategy-decision-matrix.md)
+  lists exactly which branches and platforms still lack that proof.
 
-Offline-first, cache-first, hybrid, and adaptive do not yet execute their plans
-end to end. Remote-first still needs its durable-trigger and recovery gates:
+What remains open is proof depth and a handful of product decisions, not
+missing executors:
 
+- Process death between durable admission and replay is unproven on every
+  strategy and platform; the emulator/managed-device and full
+  cross-platform-contract-kit matrix (this page's "V1 acceptance matrix") is
+  not yet run to completion for any strategy.
+- Retry-exhaustion and circuit-open-during-replay proofs with real providers
+  are still open for every strategy.
+- `LIMITED` connectivity is handled inconsistently across the five concrete
+  strategies and is untested for any of them — a product decision, not a bug,
+  per the audit's D3 finding.
+- Cache freshness, adaptive's full selection-factor set (tenant/workflow
+  config, configuration version, circuit state), and offline-first's atomic
+  local-intent-plus-outbox admission are still application-owned or
+  unimplemented; each needs a product decision before it can be pinned by
+  tests.
 - The legacy facade still uses direction-keyed pipelines and universal
   storage-plus-transport bindings. It remains separate from strategy
   execution. See [Execution Coordinator](../architecture/execution-coordinator.md),
@@ -131,10 +167,13 @@ end to end. Remote-first still needs its durable-trigger and recovery gates:
   automatically enqueue work. See
   [Connectivity-Aware Execution](../api/connectivity-aware-execution.md).
 
-These foundations now provide both the original storage-to-transport flow and
-a strict transport-only path. They still do not provide the atomic admission
-guarantee required for complete offline-first behavior or the local-fallback
-semantics required by remote-first and hybrid.
+These foundations now provide the original storage-to-transport flow, a strict
+transport-only path, and each concrete strategy's own provider-backed
+executor with its declared local-fallback/reconciliation semantics. They still
+do not provide the atomic local-intent-plus-outbox admission guarantee
+complete offline-first behavior requires (finding 7 of the
+[six-strategy decision matrix](../status/dl-039b-strategy-decision-matrix.md)),
+or DataLoom-derived connectivity/cache-freshness evidence for any strategy.
 
 ## V1 common orchestration contract
 

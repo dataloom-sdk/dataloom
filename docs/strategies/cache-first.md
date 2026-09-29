@@ -1,10 +1,16 @@
 # Cache-First Strategy
 
 > [!WARNING]
-> Cache-first is a mandatory built-in V1 strategy. Fresh, stale, missing, and
-> unknown cache decisions plus durable refresh planning are implemented.
-> Storage freshness evidence, plan execution, and refresh persistence remain
-> open.
+> Cache-first is a mandatory built-in V1 strategy. `CacheFirstStrategyExecutor`
+> implements fresh/stale/missing/unknown cache decisions, all three stale-cache
+> policies, a synchronous non-durable refresh alongside a served cache (a
+> failed refresh preserves the served result — see "Failure and fallback
+> semantics" below), and durable refresh admission that still serves local
+> state synchronously. Durable-refresh admit-then-replay is proven on real
+> Android and iOS providers for the stale-cache branch. Still open: a
+> DataLoom-owned freshness window (freshness evidence remains caller-supplied),
+> `FRESH`-hit and miss-fetch proof on real providers, and refresh
+> deduplication.
 
 [Strategy index](./README.md) · [Remote-first](./remote-first.md) ·
 [Offline-first](./offline-first.md) · [Hybrid](./hybrid.md)
@@ -33,26 +39,34 @@ Direction, transfer mode, and trigger are independent:
 
 ## Current repository
 
-The repository supplies storage contracts, checkpoints, inbound pull/apply,
-queueing, connectivity preflight, and lifecycle events. See
-[Storage Provider](../api/storage-provider.md),
-[Checkpoint Contracts](../api/checkpoint-contracts.md), and
+`BuiltInSynchronizationStrategyEvaluator.evaluateCacheFirst` decides fresh/
+stale/missing/unknown from caller-supplied `StrategyRuntimeEvidence.cacheState`
+and the profile's `StaleCachePolicy` (`REJECT`, `SERVE_STALE`, or
+`SERVE_STALE_AND_REFRESH`), and `CacheFirstStrategyExecutor` executes the
+result: serve local state, optionally alongside a synchronous refresh through
+the canonical inbound pipeline, a pure remote fetch on a cache miss, or durable
+refresh admission (`ENQUEUE_DURABLE_WORK`) that still serves local state
+synchronously. See
+[Cache-First Strategy Execution](../api/cache-first-strategy-execution.md),
+[Storage Provider](../api/storage-provider.md), and
 [Inbound Pull Pipeline](../api/inbound-pull-pipeline.md).
 
-It currently has no canonical contract for:
+DataLoom still has no canonical contract for:
 
-- cache entry presence, observation time, expiry, or age;
-- freshness requirements and maximum acceptable staleness;
-- cache-hit, cache-miss, or stale-use decisions;
-- stale-while-revalidate;
-- a durable background refresh handle;
-- data-origin and freshness result metadata;
-- refresh deduplication and single-flight behavior; or
+- cache entry presence, observation time, expiry, or age computed by DataLoom
+  itself — `cacheState` is supplied by the caller, and the real
+  `RoomStorageProvider`/`SqlDelightStorageProvider` `evaluateLocalFallback`
+  implementations only confirm a checkpoint or inbound change set exists, not
+  a freshness window;
+- stale-while-revalidate's deduplication/single-flight behavior across
+  concurrent callers;
 - invalidation/coherence after push, conflict, tenant change, logout, or
   configuration update.
 
-Persisting pulled changes and a checkpoint is therefore not proof of a
-cache-first strategy.
+Persisting pulled changes and a checkpoint is therefore not, by itself, proof
+of the freshness half of this strategy — but the decision and execution logic
+above are implemented and tested; see the
+[six-strategy decision matrix](../status/dl-039b-strategy-decision-matrix.md).
 
 ## V1 required behavior
 
