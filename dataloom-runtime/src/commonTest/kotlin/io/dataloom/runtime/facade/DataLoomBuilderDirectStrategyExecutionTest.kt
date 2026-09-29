@@ -306,6 +306,94 @@ class DataLoomBuilderDirectStrategyExecutionTest {
         assertEquals(providerError, failed.error)
     }
 
+    // -------------------------------------------------------------------------
+    // ADR-0015 (D26): remote-first PUSH with unavailable connectivity and a
+    // fallbackOn allowlist used to plan a storage-only [READ_LOCAL] plan and
+    // throw IllegalArgumentException from the executor.
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun remoteFirstPushWithUnavailableConnectivityAndFallbackAllowlistIsRejectedWithoutThrowing() = runTest {
+        val transport = RecordingTransportProvider()
+        val storage = RecordingStorageProvider()
+        val bindings = StrategyProviderBindings(
+            storageProviderId = storage.descriptor.id,
+            transportProviderId = transport.descriptor.id,
+        )
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(runtimeDependencies())
+            .provider(transport)
+            .provider(storage)
+            .defaultStrategyProviderBindings(bindings)
+            .build()
+        assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
+
+        val result = dataLoom.synchronize(remoteFirstUnavailablePushRequest(deferUnavailable = false), bindings)
+
+        val rejected = assertIs<StrategySynchronizationExecutionResult.Rejected>(result)
+        assertEquals(StrategyExecutionRejectionReason.STRATEGY_REJECTED, rejected.reason)
+        assertEquals(
+            io.dataloom.api.strategy.StrategyRejectionReason.CONNECTIVITY_UNAVAILABLE,
+            rejected.evaluation.plan.rejectionReason,
+        )
+    }
+
+    @Test
+    fun remoteFirstPushWithUnavailableConnectivityIsDurablyDeferredWhenTheProfileOptsIntoDeferral() = runTest {
+        val transport = RecordingTransportProvider()
+        val storage = RecordingStorageProvider()
+        val queue = RecordingQueueProvider()
+        val bindings = StrategyProviderBindings(
+            storageProviderId = storage.descriptor.id,
+            transportProviderId = transport.descriptor.id,
+            queueProviderId = queue.descriptor.id,
+        )
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(runtimeDependencies())
+            .provider(transport)
+            .provider(storage)
+            .provider(queue)
+            .defaultStrategyProviderBindings(bindings)
+            .defaultProviderBindings(
+                io.dataloom.api.provider.SynchronizationProviderBindings(
+                    storageProviderId = storage.descriptor.id,
+                    transportProviderId = transport.descriptor.id,
+                    queueProviderId = queue.descriptor.id,
+                ),
+            )
+            .queueSubmissionEncoder(RecordingEncoder())
+            .build()
+        assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
+
+        val result = dataLoom.synchronize(remoteFirstUnavailablePushRequest(deferUnavailable = true), bindings)
+
+        val deferred = assertIs<StrategySynchronizationExecutionResult.Deferred>(result)
+        assertEquals(QueueEntryId("direct-strategy-queue-entry"), deferred.queueEntryId)
+        assertEquals(1, queue.enqueueCalls)
+    }
+
+    private fun remoteFirstUnavailablePushRequest(deferUnavailable: Boolean): StrategySynchronizationRequest =
+        StrategySynchronizationRequest(
+            request = synchronizationRequest("remote-first-unavailable-push", SynchronizationDirection.PUSH),
+            decisionId = StrategyDecisionId("direct-remote-first-unavailable-push-decision"),
+            planId = StrategyPlanId("direct-remote-first-unavailable-push-plan"),
+            profile = RemoteFirstStrategyProfile(
+                id = StrategyProfileId("direct-remote-first-unavailable-push-profile"),
+                configurationVersion = StrategyConfigurationVersion(1L),
+                fallbackOn = setOf(io.dataloom.api.strategy.StrategyRemoteOutcome.UNAVAILABLE),
+                unknownConnectivityPolicy = if (deferUnavailable) {
+                    io.dataloom.api.strategy.UnknownConnectivityPolicy.DEFER
+                } else {
+                    io.dataloom.api.strategy.UnknownConnectivityPolicy.ATTEMPT_REMOTE
+                },
+            ),
+            evidence = StrategyRuntimeEvidence(
+                connectivity = StrategyConnectivity.UNAVAILABLE,
+                cacheState = StrategyCacheState.FRESH,
+            ),
+            input = StrategyOperationInput.ProviderBacked,
+        )
+
     private fun offlineFirstDeferredPushRequest(): StrategySynchronizationRequest =
         StrategySynchronizationRequest(
             request = synchronizationRequest("offline-first-defer", SynchronizationDirection.PUSH),

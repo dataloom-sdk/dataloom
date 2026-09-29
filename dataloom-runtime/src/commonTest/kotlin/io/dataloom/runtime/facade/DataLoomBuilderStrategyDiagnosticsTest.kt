@@ -31,12 +31,22 @@ import io.dataloom.api.state.DurableStateCompareAndSetResult
 import io.dataloom.api.state.DurableStateLoadResult
 import io.dataloom.api.state.DurableStateRecord
 import io.dataloom.api.state.DurableStateStore
+import io.dataloom.api.storage.InboundChangeApplyRequest
+import io.dataloom.api.storage.OutboundChangeReadRequest
+import io.dataloom.api.storage.OutboundChangeReadResult
+import io.dataloom.api.storage.StorageProvider
+import io.dataloom.api.strategy.CacheFirstStrategyProfile
 import io.dataloom.api.strategy.NetworkOnlyStrategyProfile
+import io.dataloom.api.strategy.StaleCachePolicy
+import io.dataloom.api.strategy.StrategyCacheState
 import io.dataloom.api.strategy.StrategyConfigurationVersion
 import io.dataloom.api.strategy.StrategyConnectivity
 import io.dataloom.api.strategy.StrategyDecisionEvent
 import io.dataloom.api.strategy.StrategyDecisionId
 import io.dataloom.api.strategy.StrategyDecisionOutcomeKind
+import io.dataloom.api.strategy.StrategyLocalFallbackProvider
+import io.dataloom.api.strategy.StrategyLocalFallbackRequest
+import io.dataloom.api.strategy.StrategyLocalFallbackResult
 import io.dataloom.api.strategy.StrategyOperationInput
 import io.dataloom.api.strategy.StrategyPlanId
 import io.dataloom.api.strategy.StrategyProfileId
@@ -44,6 +54,10 @@ import io.dataloom.api.strategy.StrategyProviderHealth
 import io.dataloom.api.strategy.StrategyRuntimeEvidence
 import io.dataloom.api.strategy.StrategySynchronizationRequest
 import io.dataloom.api.synchronization.ChangeSetAcknowledgement
+import io.dataloom.api.synchronization.CheckpointReadRequest
+import io.dataloom.api.synchronization.CheckpointWriteRequest
+import io.dataloom.api.synchronization.OutboundChangeAcknowledgementRequest
+import io.dataloom.api.synchronization.SynchronizationCheckpoint
 import io.dataloom.api.time.DataLoomClock
 import io.dataloom.api.time.DataLoomInstant
 import io.dataloom.api.transport.PullChangesRequest
@@ -123,9 +137,104 @@ class DataLoomBuilderStrategyDiagnosticsTest {
         assertNull(store.recordedFor(request.decisionId))
     }
 
+    @Test
+    fun cacheFirstServedWithAFailedSynchronousRefreshIsRecordedAsServedWithTheRefreshFailure() = runTest {
+        // ADR-0015 (D27): serving the cache is the outcome, but the failed refresh stays visible.
+        val transport = RecordingTransportProvider(
+            pullResult = ProviderOperationResult.Failure(
+                object : io.dataloom.api.error.DataLoomError {
+                    override val code = io.dataloom.api.error.ErrorCode("REFRESH_UNAVAILABLE")
+                    override val category = io.dataloom.api.error.ErrorCategory.NETWORK
+                    override val severity = io.dataloom.api.error.ErrorSeverity.ERROR
+                    override val recoverability = io.dataloom.api.error.Recoverability.RECOVERABLE
+                    override val message = "test refresh failure"
+                    override val cause: Throwable? = null
+                },
+            ),
+        )
+        val storage = FallbackCapableStorageProvider()
+        val bindings = StrategyProviderBindings(
+            storageProviderId = storage.descriptor.id,
+            transportProviderId = transport.descriptor.id,
+        )
+        val store = InMemoryStrategyDecisionEventStore()
+        val dataLoom = builder(transport, bindings)
+            .provider(storage)
+            .strategyDiagnosticsConfiguration(DataLoomStrategyDiagnosticsSpec(store))
+            .build()
+        assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
+        val request = StrategySynchronizationRequest(
+            request = synchronizationRequest("cache-first-refresh-failed", SynchronizationDirection.PULL),
+            decisionId = StrategyDecisionId("diagnostics-cache-first-decision"),
+            planId = StrategyPlanId("diagnostics-cache-first-plan"),
+            profile = CacheFirstStrategyProfile(
+                id = StrategyProfileId("diagnostics-cache-first-profile"),
+                configurationVersion = StrategyConfigurationVersion(1L),
+                staleCachePolicy = StaleCachePolicy.SERVE_STALE_AND_REFRESH,
+                requireDurableRefresh = false,
+            ),
+            evidence = StrategyRuntimeEvidence(
+                connectivity = StrategyConnectivity.AVAILABLE,
+                cacheState = StrategyCacheState.STALE,
+            ),
+            input = StrategyOperationInput.ProviderBacked,
+        )
+
+        val result = dataLoom.synchronize(request, bindings)
+
+        assertIs<StrategySynchronizationExecutionResult.ServedFromCache>(result)
+        val recorded = store.recordedFor(request.decisionId)
+        assertEquals(StrategyDecisionOutcomeKind.SERVED_FROM_CACHE, recorded?.outcomeKind)
+        assertEquals("STALE:REFRESH_FAILED:REFRESH_UNAVAILABLE", recorded?.outcomeDetail)
+    }
+
     // -------------------------------------------------------------------------
     // Fixtures
     // -------------------------------------------------------------------------
+
+    private class FallbackCapableStorageProvider : StorageProvider, StrategyLocalFallbackProvider {
+        override val descriptor: ProviderDescriptor = ProviderDescriptor(
+            id = ProviderId("diagnostics-strategy-storage"),
+            name = ProviderName("Diagnostics Strategy Storage"),
+            type = ProviderType.STORAGE,
+            version = ProviderVersion("1.0.0"),
+        )
+
+        override suspend fun initialize(
+            context: ProviderInitializationContext,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun health(): ProviderOperationResult<ProviderHealth> =
+            ProviderOperationResult.Success(ProviderHealth(ProviderHealthStatus.HEALTHY))
+
+        override suspend fun close(): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun readOutboundChanges(
+            request: OutboundChangeReadRequest,
+        ): ProviderOperationResult<OutboundChangeReadResult> =
+            ProviderOperationResult.Success(OutboundChangeReadResult.NoChanges)
+
+        override suspend fun applyInboundChanges(
+            request: InboundChangeApplyRequest,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun acknowledgeOutboundChanges(
+            request: OutboundChangeAcknowledgementRequest,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun readCheckpoint(
+            request: CheckpointReadRequest,
+        ): ProviderOperationResult<SynchronizationCheckpoint?> = ProviderOperationResult.Success(null)
+
+        override suspend fun writeCheckpoint(
+            request: CheckpointWriteRequest,
+        ): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
+        override suspend fun evaluateLocalFallback(
+            request: StrategyLocalFallbackRequest,
+        ): ProviderOperationResult<StrategyLocalFallbackResult> =
+            ProviderOperationResult.Success(StrategyLocalFallbackResult.Available(StrategyCacheState.STALE))
+    }
 
     private fun builder(
         transport: RecordingTransportProvider,

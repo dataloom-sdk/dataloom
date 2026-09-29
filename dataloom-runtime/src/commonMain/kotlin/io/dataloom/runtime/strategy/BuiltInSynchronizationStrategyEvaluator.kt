@@ -236,6 +236,16 @@ public class BuiltInSynchronizationStrategyEvaluator : SynchronizationStrategyEv
         val unavailable = request.evidence.connectivity == StrategyConnectivity.UNAVAILABLE ||
             request.evidence.transportHealth == StrategyProviderHealth.UNAVAILABLE
         if (unavailable) {
+            if (request.direction == SynchronizationDirection.PUSH) {
+                // A local read is never a valid substitute for a write (ADR-0015),
+                // so fallbackOn and cache state are deliberately not consulted.
+                return remoteFirstUnavailablePush(
+                    request,
+                    requestedStrategy,
+                    profile,
+                    leadingReasons,
+                )
+            }
             val hasLocalFallback = StrategyRemoteOutcome.UNAVAILABLE in profile.fallbackOn &&
                 isLocalDataAvailable(request.evidence.cacheState)
             if (hasLocalFallback) {
@@ -293,6 +303,44 @@ public class BuiltInSynchronizationStrategyEvaluator : SynchronizationStrategyEv
             reasons = leadingReasons + "remote-first.remote-selected",
         )
     }
+
+    /**
+     * A remote-first `PUSH` whose remote is known to be unavailable is either
+     * durably deferred, when the profile opted into durable deferral through
+     * [UnknownConnectivityPolicy.DEFER], or rejected. It never plans a local
+     * fallback: the plan must be one the executor can carry out.
+     */
+    private fun remoteFirstUnavailablePush(
+        request: StrategyEvaluationRequest,
+        requestedStrategy: BuiltInSynchronizationStrategy,
+        profile: RemoteFirstStrategyProfile,
+        leadingReasons: List<String>,
+    ): StrategyEvaluationResult =
+        if (profile.unknownConnectivityPolicy == UnknownConnectivityPolicy.DEFER) {
+            result(
+                request,
+                requestedStrategy,
+                profile,
+                StrategyDisposition.DEFER,
+                listOf(StrategyOperation.ENQUEUE_DURABLE_WORK),
+                StrategyDataOrigin.NONE,
+                StrategyConsistency.REMOTE_AUTHORITATIVE,
+                deferralReason = StrategyDeferralReason.CONNECTIVITY_UNAVAILABLE,
+                reasons = leadingReasons + "remote-first.push-deferred-remote-unavailable",
+            )
+        } else {
+            result(
+                request,
+                requestedStrategy,
+                profile,
+                StrategyDisposition.REJECT,
+                emptyList(),
+                StrategyDataOrigin.NONE,
+                StrategyConsistency.REMOTE_AUTHORITATIVE,
+                rejectionReason = StrategyRejectionReason.CONNECTIVITY_UNAVAILABLE,
+                reasons = leadingReasons + "remote-first.push-remote-unavailable",
+            )
+        }
 
     private fun evaluateCacheFirst(
         request: StrategyEvaluationRequest,

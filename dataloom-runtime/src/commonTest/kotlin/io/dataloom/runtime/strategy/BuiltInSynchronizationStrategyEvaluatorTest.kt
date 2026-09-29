@@ -330,6 +330,137 @@ class BuiltInSynchronizationStrategyEvaluatorTest {
     }
 
     @Test
+    fun remoteFirstUnavailableRemoteMatrixNeverPlansALocalReadForAWrite() {
+        // ADR-0015 (D26): the planner must never emit a plan the executor cannot run.
+        // Before the fix, PUSH + unavailable remote + fallbackOn {UNAVAILABLE} + local data
+        // planned EXECUTE [READ_LOCAL] needing only STORAGE, which the executor could not run.
+        val remoteUnavailable = listOf(
+            evidence(connectivity = StrategyConnectivity.UNAVAILABLE),
+            evidence(
+                connectivity = StrategyConnectivity.AVAILABLE,
+                transportHealth = StrategyProviderHealth.UNAVAILABLE,
+            ),
+        )
+        val fallbackSets = listOf(emptySet(), setOf(StrategyRemoteOutcome.UNAVAILABLE))
+        val cacheStates = listOf(
+            StrategyCacheState.FRESH,
+            StrategyCacheState.STALE,
+            StrategyCacheState.MISSING,
+            StrategyCacheState.UNKNOWN,
+            StrategyCacheState.NOT_EVALUATED,
+        )
+        val unknownPolicies = listOf(
+            UnknownConnectivityPolicy.ATTEMPT_REMOTE,
+            UnknownConnectivityPolicy.DEFER,
+        )
+        var combinations = 0
+        for (direction in SynchronizationDirection.entries) {
+            for (base in remoteUnavailable) {
+                for (fallbackOn in fallbackSets) {
+                    for (cacheState in cacheStates) {
+                        for (policy in unknownPolicies) {
+                            combinations++
+                            val label = "$direction/${base.connectivity}/${base.transportHealth}/" +
+                                "fallbackOn=${fallbackOn.size}/$cacheState/$policy"
+                            val plan = evaluate(
+                                profile = remote(fallbackOn = fallbackOn, unknown = policy),
+                                direction = direction,
+                                evidence = base.copy(cacheState = cacheState),
+                            ).plan
+
+                            val localData = cacheState == StrategyCacheState.FRESH ||
+                                cacheState == StrategyCacheState.STALE
+                            val servesLocal = direction != SynchronizationDirection.PUSH &&
+                                StrategyRemoteOutcome.UNAVAILABLE in fallbackOn &&
+                                localData
+                            when {
+                                direction == SynchronizationDirection.PUSH &&
+                                    policy == UnknownConnectivityPolicy.DEFER -> {
+                                    assertEquals(StrategyDisposition.DEFER, plan.disposition, label)
+                                    assertEquals(
+                                        listOf(StrategyOperation.ENQUEUE_DURABLE_WORK),
+                                        plan.operations,
+                                        label,
+                                    )
+                                    assertEquals(
+                                        StrategyDeferralReason.CONNECTIVITY_UNAVAILABLE,
+                                        plan.deferralReason,
+                                        label,
+                                    )
+                                    assertEquals(
+                                        listOf(
+                                            StrategyOperation.READ_LOCAL,
+                                            StrategyOperation.PUSH_REMOTE,
+                                        ),
+                                        plan.durableContinuation?.operations,
+                                        label,
+                                    )
+                                }
+                                servesLocal -> {
+                                    assertEquals(StrategyDisposition.EXECUTE, plan.disposition, label)
+                                    assertTrue(StrategyOperation.SERVE_LOCAL in plan.operations, label)
+                                    assertEquals(
+                                        setOf(StrategyProviderCapability.STORAGE),
+                                        plan.requiredCapabilities,
+                                        label,
+                                    )
+                                }
+                                else -> {
+                                    assertEquals(StrategyDisposition.REJECT, plan.disposition, label)
+                                    assertEquals(
+                                        StrategyRejectionReason.CONNECTIVITY_UNAVAILABLE,
+                                        plan.rejectionReason,
+                                        label,
+                                    )
+                                    assertTrue(plan.operations.isEmpty(), label)
+                                }
+                            }
+
+                            // Executability invariant: an executing plan either serves local
+                            // state or performs a remote operation (which needs TRANSPORT).
+                            if (plan.disposition == StrategyDisposition.EXECUTE) {
+                                val remote = StrategyOperation.PUSH_REMOTE in plan.operations ||
+                                    StrategyOperation.PULL_REMOTE in plan.operations
+                                assertTrue(
+                                    remote || StrategyOperation.SERVE_LOCAL in plan.operations,
+                                    label,
+                                )
+                                if (remote) {
+                                    assertTrue(
+                                        StrategyProviderCapability.TRANSPORT in plan.requiredCapabilities,
+                                        label,
+                                    )
+                                }
+                            }
+                            if (direction == SynchronizationDirection.PUSH) {
+                                assertFalse(StrategyOperation.SERVE_LOCAL in plan.operations, label)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        assertEquals(3 * 2 * 2 * 5 * 2, combinations)
+    }
+
+    @Test
+    fun remoteFirstPushUnavailableWithFallbackAllowlistIsRejectedNotAReadOnlyPlan() {
+        val plan = evaluate(
+            profile = remote(fallbackOn = setOf(StrategyRemoteOutcome.UNAVAILABLE)),
+            direction = SynchronizationDirection.PUSH,
+            evidence = evidence(
+                connectivity = StrategyConnectivity.UNAVAILABLE,
+                cacheState = StrategyCacheState.FRESH,
+            ),
+        ).plan
+
+        assertEquals(StrategyDisposition.REJECT, plan.disposition)
+        assertEquals(StrategyRejectionReason.CONNECTIVITY_UNAVAILABLE, plan.rejectionReason)
+        assertTrue(plan.operations.isEmpty())
+        assertTrue(plan.requiredCapabilities.isEmpty())
+    }
+
+    @Test
     fun networkOnlyUnknownConnectivityPolicyIsExplicit() {
         // Network-only shares the same unknownConnectivityResult() dispatch
         // mechanism as remote-first and hybrid (both already covered above),

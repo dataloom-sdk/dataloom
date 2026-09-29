@@ -182,7 +182,20 @@ internal class CacheFirstStrategyExecutor(
         durableQueueEntryId: QueueEntryId?,
         result: SynchronizationResult,
     ): StrategySynchronizationExecutionResult = when (result) {
-        is SynchronizationResult.Failed -> failed(evaluation, result.error)
+        // Once local state was served, a failed synchronous refresh must not turn the
+        // served outcome into a failure (docs/strategies/cache-first.md, ADR-0015). The
+        // failure stays visible, unswallowed, as the refresh's own terminal output.
+        is SynchronizationResult.Failed -> if (cacheState != null) {
+            StrategySynchronizationExecutionResult.ServedFromCache(
+                evaluation = evaluation,
+                completedAt = clock.now(),
+                cacheState = cacheState,
+                refreshOutput = StrategyTransportOutput.ProviderBacked(result),
+                durableQueueEntryId = durableQueueEntryId,
+            )
+        } else {
+            failed(evaluation, result.error)
+        }
         is SynchronizationResult.Cancelled -> StrategySynchronizationExecutionResult.Cancelled(
             evaluation = evaluation,
             completedAt = clock.now(),
