@@ -24,6 +24,32 @@ public final class io/dataloom/governance/audit/AuditAppendRejection : java/lang
 	public static fun values ()[Lio/dataloom/governance/audit/AuditAppendRejection;
 }
 
+public final class io/dataloom/governance/audit/AuditChainState {
+	public static final field Companion Lio/dataloom/governance/audit/AuditChainState$Companion;
+	public static final field MAX_RECORD_COUNT I
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lio/dataloom/governance/audit/AuditChainState;
+	public static synthetic fun copy$default (Lio/dataloom/governance/audit/AuditChainState;Ljava/util/List;ILjava/lang/Object;)Lio/dataloom/governance/audit/AuditChainState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHead ()Lio/dataloom/governance/audit/AuditRecord;
+	public final fun getRecords ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/audit/AuditChainState$Companion {
+	public final fun getEmpty ()Lio/dataloom/governance/audit/AuditChainState;
+}
+
+public final class io/dataloom/governance/audit/AuditChainStateCodec : io/dataloom/api/state/DurableStateCodec {
+	public fun <init> ()V
+	public fun decode (Ljava/lang/String;)Lio/dataloom/governance/audit/AuditChainState;
+	public synthetic fun decode (Ljava/lang/String;)Ljava/lang/Object;
+	public fun encode (Lio/dataloom/governance/audit/AuditChainState;)Ljava/lang/String;
+	public synthetic fun encode (Ljava/lang/Object;)Ljava/lang/String;
+}
+
 public final class io/dataloom/governance/audit/AuditChainVerifier {
 	public fun <init> (Lio/dataloom/api/security/DataLoomHmacCalculator;)V
 	public final fun verify (Ljava/util/List;[BLio/dataloom/governance/audit/AuditAnchor;)Lio/dataloom/governance/audit/AuditVerificationResult;
@@ -108,6 +134,30 @@ public abstract interface class io/dataloom/governance/audit/AuditStore {
 	public abstract fun readAll (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
+public final class io/dataloom/governance/audit/AuditStorePersistenceException : java/lang/RuntimeException {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+}
+
+public final class io/dataloom/governance/audit/AuditStoreScope {
+	public static final field Companion Lio/dataloom/governance/audit/AuditStoreScope$Companion;
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lio/dataloom/governance/audit/AuditStoreScope;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/audit/AuditStoreScope$Companion {
+	public final fun getKeyEncoder ()Lio/dataloom/api/state/DurableStateScopeKeyEncoder;
+}
+
 public final class io/dataloom/governance/audit/AuditVerificationFailure : java/lang/Enum {
 	public static final field ANCHOR_MISMATCH Lio/dataloom/governance/audit/AuditVerificationFailure;
 	public static final field ANCHOR_TRUNCATED Lio/dataloom/governance/audit/AuditVerificationFailure;
@@ -148,6 +198,18 @@ public final class io/dataloom/governance/audit/AuditVerificationResult$Valid : 
 	public final fun getRecordCount ()I
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/governance/audit/DurableAuditStore : io/dataloom/governance/audit/AuditStore {
+	public static final field Companion Lio/dataloom/governance/audit/DurableAuditStore$Companion;
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;Ljava/lang/String;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun append (Lio/dataloom/governance/audit/AuditRecord;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun head (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun readAll (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/governance/audit/DurableAuditStore$Companion {
 }
 
 public final class io/dataloom/governance/audit/InMemoryAuditStore : io/dataloom/governance/audit/AuditStore {
