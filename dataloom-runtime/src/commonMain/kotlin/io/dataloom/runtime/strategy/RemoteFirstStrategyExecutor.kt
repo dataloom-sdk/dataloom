@@ -59,10 +59,18 @@ internal class RemoteFirstStrategyExecutor(
             )
         }
 
-        if (
-            request.request.direction == SynchronizationDirection.PULL &&
+        // Defence in depth: the evaluator never plans a remote execution without
+        // TRANSPORT, but a plan that reaches here unresolved must fail typed, not throw.
+        val transportOnlyPull = request.request.direction == SynchronizationDirection.PULL &&
             !profile.persistRemoteResult
+        if (
+            providers.transportProvider == null ||
+            (!transportOnlyPull && providers.storageProvider == null)
         ) {
+            return rejected(evaluation, StrategyExecutionRejectionReason.UNSUPPORTED_PLAN)
+        }
+
+        if (transportOnlyPull) {
             return executeTransportOnlyPull(
                 request,
                 evaluation,

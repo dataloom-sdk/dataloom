@@ -116,7 +116,12 @@ public sealed interface StrategySynchronizationExecutionResult {
      * or `refreshOnFreshHit = true`, with `requireDurableRefresh = false`).
      * When present, it carries the refresh's own terminal output; the refresh
      * having run does not change [cacheState], which always describes what
-     * was actually served to evidence at admission time.
+     * was actually served to evidence at admission time. A failed refresh is
+     * carried here as a [StrategyTransportOutput.ProviderBacked] wrapping a
+     * [io.dataloom.api.synchronization.SynchronizationResult.Failed]: the
+     * caller still receives this served outcome (ADR-0015), and must inspect
+     * [refreshOutput] to learn the refresh failed. Queue replay still routes
+     * such a failure through the retry policy.
      *
      * [durableQueueEntryId] is non-null only when the plan also admitted a
      * *durable* refresh/reconciliation alongside serving local state

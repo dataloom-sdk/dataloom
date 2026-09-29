@@ -45,11 +45,17 @@ import io.dataloom.api.storage.InboundChangeApplyRequest
 import io.dataloom.api.storage.OutboundChangeReadRequest
 import io.dataloom.api.storage.OutboundChangeReadResult
 import io.dataloom.api.storage.StorageProvider
+import io.dataloom.api.strategy.BuiltInSynchronizationStrategy
 import io.dataloom.api.strategy.ClassifiedStrategyRemoteError
 import io.dataloom.api.strategy.RemoteFirstStrategyProfile
 import io.dataloom.api.strategy.StrategyCacheState
 import io.dataloom.api.strategy.StrategyConnectivity
+import io.dataloom.api.strategy.StrategyConsistency
+import io.dataloom.api.strategy.StrategyDataOrigin
 import io.dataloom.api.strategy.StrategyDecisionId
+import io.dataloom.api.strategy.StrategyDisposition
+import io.dataloom.api.strategy.StrategyEvaluationResult
+import io.dataloom.api.strategy.StrategyExecutionPlan
 import io.dataloom.api.strategy.StrategyLocalFallbackProvider
 import io.dataloom.api.strategy.StrategyLocalFallbackRequest
 import io.dataloom.api.strategy.StrategyLocalFallbackResult
@@ -57,6 +63,7 @@ import io.dataloom.api.strategy.StrategyOperation
 import io.dataloom.api.strategy.StrategyOperationInput
 import io.dataloom.api.strategy.StrategyPlanId
 import io.dataloom.api.strategy.StrategyProfileId
+import io.dataloom.api.strategy.StrategyProviderCapability
 import io.dataloom.api.strategy.StrategyProviderHealth
 import io.dataloom.api.strategy.StrategyRemoteOutcome
 import io.dataloom.api.strategy.StrategyRuntimeEvidence
@@ -198,6 +205,68 @@ class RemoteFirstStrategyExecutorTest {
             StrategyExecutionRejectionReason.LOCAL_FALLBACK_PROVIDER_NOT_CONFIGURED,
             rejected.reason,
         )
+    }
+
+    // -------------------------------------------------------------------------
+    // Defence in depth: a plan whose transport cannot be resolved (ADR-0015, D26)
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun unresolvedTransportForARemoteExecutionReturnsATypedRejectionInsteadOfThrowing() = runTest {
+        // The exact shape the evaluator used to produce for PUSH + UNAVAILABLE + fallbackOn:
+        // EXECUTE [READ_LOCAL] needing only STORAGE, so provider resolution never supplies transport.
+        val request = remoteFirstRequest(
+            direction = SynchronizationDirection.PUSH,
+            profile = remoteFirstProfile(fallbackOn = setOf(StrategyRemoteOutcome.UNAVAILABLE)),
+            connectivity = StrategyConnectivity.UNAVAILABLE,
+            cacheState = StrategyCacheState.FRESH,
+        )
+        val staleShapedEvaluation = StrategyEvaluationResult(
+            decisionId = request.decisionId,
+            plan = StrategyExecutionPlan(
+                id = request.planId,
+                requestedStrategy = BuiltInSynchronizationStrategy.REMOTE_FIRST,
+                effectiveProfileId = request.profile.id,
+                effectiveStrategy = BuiltInSynchronizationStrategy.REMOTE_FIRST,
+                configurationVersion = request.profile.configurationVersion,
+                direction = SynchronizationDirection.PUSH,
+                mode = SynchronizationMode.DELTA,
+                disposition = StrategyDisposition.EXECUTE,
+                operations = listOf(StrategyOperation.READ_LOCAL),
+                requiredCapabilities = setOf(StrategyProviderCapability.STORAGE),
+                dataOrigin = StrategyDataOrigin.NONE,
+                consistency = StrategyConsistency.EVENTUAL,
+            ),
+            reasonCodes = listOf("test.unresolvable-transport"),
+        )
+
+        val result = executor(SynchronizationPipelineRegistry(listOf(pushPipelineDelegatingToTransport())))
+            .execute(
+                request = request,
+                evaluation = staleShapedEvaluation,
+                providers = providerSet(transport = null, storage = FakeFallbackStorageProvider()),
+            )
+
+        val rejected = assertIs<StrategySynchronizationExecutionResult.Rejected>(result)
+        assertEquals(StrategyExecutionRejectionReason.UNSUPPORTED_PLAN, rejected.reason)
+    }
+
+    @Test
+    fun unresolvedStorageForAProviderBackedPipelineReturnsATypedRejectionInsteadOfThrowing() = runTest {
+        val request = remoteFirstRequest(
+            direction = SynchronizationDirection.PUSH,
+            profile = remoteFirstProfile(),
+            connectivity = StrategyConnectivity.AVAILABLE,
+        )
+        val result = executor(SynchronizationPipelineRegistry(listOf(pushPipelineDelegatingToTransport())))
+            .execute(
+                request = request,
+                evaluation = evaluationFor(request),
+                providers = providerSet(transport = FakeTransportProvider(), storage = null),
+            )
+
+        val rejected = assertIs<StrategySynchronizationExecutionResult.Rejected>(result)
+        assertEquals(StrategyExecutionRejectionReason.UNSUPPORTED_PLAN, rejected.reason)
     }
 
     // -------------------------------------------------------------------------
@@ -611,11 +680,11 @@ class RemoteFirstStrategyExecutorTest {
         evaluator.evaluate(request.evaluationRequest())
 
     private fun providerSet(
-        transport: TransportProvider,
+        transport: TransportProvider?,
         storage: StorageProvider?,
     ): StrategyProviderSet = object : StrategyProviderSet {
         override val storageProvider: StorageProvider? = storage
-        override val transportProvider: TransportProvider = transport
+        override val transportProvider: TransportProvider? = transport
         override val schedulerProvider: SchedulerProvider? = null
         override val connectivityProvider: ConnectivityProvider? = null
         override val queueProvider: QueueProvider? = null

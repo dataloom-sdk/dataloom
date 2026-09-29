@@ -252,40 +252,57 @@ class CacheFirstStrategyExecutorTest {
     }
 
     @Test
-    fun staleCacheWithSynchronousRefreshFailurePropagatesTheFailure() = runTest {
-        val storage = FakeFallbackStorageProvider(
-            fallbackResult = ProviderOperationResult.Success(
-                StrategyLocalFallbackResult.Available(StrategyCacheState.STALE),
-            ),
+    fun synchronousRefreshFailureAfterServingCacheStillServesAndSurfacesTheFailureAsRefreshOutput() = runTest {
+        // ADR-0015 (D27) / docs/strategies/cache-first.md: "Remote transient failure after
+        // stale state was served: Preserve the served result and report refresh
+        // failure/retry state separately." Table: every served-cache shape with a sync refresh.
+        data class Case(
+            val label: String,
+            val cacheState: StrategyCacheState,
+            val staleCachePolicy: StaleCachePolicy,
+            val refreshOnFreshHit: Boolean,
         )
-        val refreshError = testError("REFRESH_UNAVAILABLE")
-        val pipeline = FakePipeline(SynchronizationDirection.PULL) { context ->
-            SynchronizationResult.Failed(
-                request = context.request,
-                completedAt = now,
-                summary = SynchronizationSummary(),
-                error = refreshError,
+        val cases = listOf(
+            Case("stale-refresh", StrategyCacheState.STALE, StaleCachePolicy.SERVE_STALE_AND_REFRESH, false),
+            Case("fresh-refresh-on-hit", StrategyCacheState.FRESH, StaleCachePolicy.SERVE_STALE, true),
+        )
+        for (case in cases) {
+            val storage = FakeFallbackStorageProvider(
+                fallbackResult = ProviderOperationResult.Success(
+                    StrategyLocalFallbackResult.Available(case.cacheState),
+                ),
             )
+            val refreshError = testError("REFRESH_UNAVAILABLE")
+            val pipeline = FakePipeline(SynchronizationDirection.PULL) { context ->
+                SynchronizationResult.Failed(
+                    request = context.request,
+                    completedAt = now,
+                    summary = SynchronizationSummary(),
+                    error = refreshError,
+                )
+            }
+            val request = cacheFirstRequest(
+                direction = SynchronizationDirection.PULL,
+                profile = cacheFirstProfile(
+                    staleCachePolicy = case.staleCachePolicy,
+                    refreshOnFreshHit = case.refreshOnFreshHit,
+                    requireDurableRefresh = false,
+                ),
+                cacheState = case.cacheState,
+            )
+            val result = executor(SynchronizationPipelineRegistry(listOf(pipeline))).execute(
+                request = request,
+                evaluation = evaluationFor(request),
+                providers = providerSet(FakeTransportProvider(), storage),
+            )
+
+            val served = assertIs<StrategySynchronizationExecutionResult.ServedFromCache>(result, case.label)
+            assertEquals(case.cacheState, served.cacheState, case.label)
+            val refresh = assertIs<StrategyTransportOutput.ProviderBacked>(served.refreshOutput, case.label)
+            val refreshFailure = assertIs<SynchronizationResult.Failed>(refresh.result, case.label)
+            assertEquals(refreshError, refreshFailure.error, case.label)
+            assertEquals(1, pipeline.executeCalls, case.label)
         }
-        val request = cacheFirstRequest(
-            direction = SynchronizationDirection.PULL,
-            profile = cacheFirstProfile(
-                staleCachePolicy = StaleCachePolicy.SERVE_STALE_AND_REFRESH,
-                requireDurableRefresh = false,
-            ),
-            cacheState = StrategyCacheState.STALE,
-        )
-        val result = executor(SynchronizationPipelineRegistry(listOf(pipeline))).execute(
-            request = request,
-            evaluation = evaluationFor(request),
-            providers = providerSet(FakeTransportProvider(), storage),
-        )
-        // The refresh failing means the whole operation fails -- cache-first
-        // has no fallback-on-refresh-failure semantics of its own (unlike
-        // remote-first's typed fallback allowlist); local state was already
-        // evaluated as available, but the plan's remote leg still failed.
-        val failed = assertIs<StrategySynchronizationExecutionResult.Failed>(result)
-        assertEquals(refreshError, failed.error)
     }
 
     @Test

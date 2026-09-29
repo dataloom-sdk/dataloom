@@ -21,6 +21,8 @@ import io.dataloom.api.strategy.StrategyExecutionTrigger
 import io.dataloom.api.strategy.StrategyOperation
 import io.dataloom.api.strategy.StrategyOperationInput
 import io.dataloom.api.strategy.StrategySynchronizationRequest
+import io.dataloom.api.strategy.StrategyTransportOutput
+import io.dataloom.api.synchronization.SynchronizationResult
 import io.dataloom.api.runtime.RuntimeDependencies
 import io.dataloom.api.time.DataLoomClock
 import io.dataloom.core.provider.ProviderLifecycleCoordinator
@@ -238,8 +240,17 @@ internal class StrategySynchronizationExecutionCoordinator(
         when (this) {
             is StrategySynchronizationExecutionResult.Executed ->
                 StrategyDecisionOutcomeKind.EXECUTED to null
-            is StrategySynchronizationExecutionResult.ServedFromCache ->
-                StrategyDecisionOutcomeKind.SERVED_FROM_CACHE to cacheState.name
+            is StrategySynchronizationExecutionResult.ServedFromCache -> {
+                // A failed synchronous refresh does not change the served outcome (ADR-0015),
+                // but it must stay visible in the durable decision record.
+                val refreshFailure = ((refreshOutput as? StrategyTransportOutput.ProviderBacked)
+                    ?.result as? SynchronizationResult.Failed)?.error
+                StrategyDecisionOutcomeKind.SERVED_FROM_CACHE to if (refreshFailure == null) {
+                    cacheState.name
+                } else {
+                    "${cacheState.name}:REFRESH_FAILED:${refreshFailure.code.value}"
+                }
+            }
             is StrategySynchronizationExecutionResult.Failed ->
                 StrategyDecisionOutcomeKind.FAILED to error.code.value
             is StrategySynchronizationExecutionResult.FallbackActivated ->

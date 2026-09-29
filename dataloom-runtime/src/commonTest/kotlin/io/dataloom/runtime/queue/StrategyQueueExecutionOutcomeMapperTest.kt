@@ -176,6 +176,31 @@ class StrategyQueueExecutionOutcomeMapperTest {
         assertEquals(request().context, cancelled.context)
     }
 
+    @Test
+    fun servedFromCacheWithAFailedRefreshStillGoesThroughTheRetryPolicy() {
+        // ADR-0015 (D27): the caller-facing outcome is "served", but a queued entry must not
+        // complete just because the cache was served when its refresh failed.
+        val refreshError = TestError(code = ErrorCode("CACHE_REFRESH_FAILED"))
+        val result = StrategySynchronizationExecutionResult.ServedFromCache(
+            evaluation = evaluation(),
+            completedAt = DataLoomInstant(3_000L),
+            cacheState = StrategyCacheState.STALE,
+            refreshOutput = StrategyTransportOutput.ProviderBacked(
+                SynchronizationResult.Failed(
+                    request = request(),
+                    completedAt = DataLoomInstant(2_000L),
+                    summary = SynchronizationSummary(),
+                    error = refreshError,
+                ),
+            ),
+        )
+
+        val outcome = mapper().map(result, entry())
+
+        val failed = assertIs<QueueEntryExecutionOutcome.Failed>(outcome)
+        assertEquals(refreshError.code, failed.error.code)
+    }
+
     private fun assertProtectedFailure(
         outcome: QueueEntryExecutionOutcome,
         expected: DataLoomError,
