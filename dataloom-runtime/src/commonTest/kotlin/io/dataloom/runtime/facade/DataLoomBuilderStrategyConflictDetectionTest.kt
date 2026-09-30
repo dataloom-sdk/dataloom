@@ -51,6 +51,9 @@ import io.dataloom.api.storage.OutboundChangeReadRequest
 import io.dataloom.api.storage.OutboundChangeReadResult
 import io.dataloom.api.storage.StorageProvider
 import io.dataloom.api.strategy.CacheFirstStrategyProfile
+import io.dataloom.api.strategy.HybridSource
+import io.dataloom.api.strategy.HybridStrategyProfile
+import io.dataloom.api.strategy.OfflineFirstStrategyProfile
 import io.dataloom.api.strategy.RemoteFirstStrategyProfile
 import io.dataloom.api.strategy.StrategyCacheState
 import io.dataloom.api.strategy.StrategyConfigurationVersion
@@ -246,6 +249,180 @@ class DataLoomBuilderStrategyConflictDetectionTest {
         assertEquals(1, storage.readLocalConflictCandidateCallCount)
 
         val recorded = DurableUnresolvedConflictLog(unresolvedStore).current(ConflictId("cache-first-conflict-1"))
+        val record = assertIs<ProviderOperationResult.Success<UnresolvedConflictRecord?>>(recorded).value
+        assertEquals(UnresolvedConflictReason.RESOLVER_NOT_CONFIGURED, record?.reason)
+    }
+
+    /**
+     * Offline-first's own remote-available PULL branch
+     * (`evaluateOfflineFirst`'s `connectivity == AVAILABLE` arm) always adds
+     * `remoteOperations(direction, persistRemote = true)` to the plan
+     * regardless of cache state, so `OfflineFirstStrategyExecutor.execute`
+     * runs the exact same canonical `InboundPullSynchronizationPipeline`
+     * remote-first/cache-first already proved wired to conflict detection --
+     * once `requireDurableQueue = false` keeps the executor from diverting
+     * into `StrategyDurablyEnqueued` before it ever reaches the pipeline (the
+     * default `requireDurableQueue = true` durable-admission branch is a
+     * distinct code path with no pipeline call at all, so it is deliberately
+     * not exercised here), and `reconcileWhenOnline = false` keeps the
+     * post-pipeline `RECONCILE` step (which needs a
+     * `StrategyReconciliationProvider` this test's storage fake does not
+     * implement) out of the way. `MISSING` cache state keeps `SERVE_LOCAL`
+     * out of the plan too, mirroring cache-first's own missing-cache setup
+     * above.
+     */
+    @Test
+    fun offlineFirstRemoteAvailablePullConflictDuringInboundIsDetectedAndRecordedUnresolved() = runTest {
+        val conflictDetectorId = ConflictDetectorId("offline-first-strategy-detector")
+        val localChange = ChangeEvent(
+            id = ChangeEventId("offline-first-local-change"),
+            entity = entity,
+            operation = ChangeOperation.UPDATE,
+        )
+        val storage = ConflictCapableStrategyStorageProvider(
+            id = ProviderId("offline-first-strategy-storage"),
+            localCandidate = localChange,
+        )
+        val transport = FakeStrategyTransportProvider(
+            id = ProviderId("offline-first-strategy-transport"),
+            pullResult = ProviderOperationResult.Success(inboundChanges("offline-first-remote-change")),
+        )
+        val detector = FakeConflictDetector(
+            conflictDetectorId,
+            conflictDetected(ConflictId("offline-first-conflict-1"), localChange, "offline-first-remote-change"),
+        )
+        val unresolvedStore = InMemoryUnresolvedConflictStore()
+        val bindings = StrategyProviderBindings(
+            storageProviderId = storage.descriptor.id,
+            transportProviderId = transport.descriptor.id,
+        )
+
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(runtimeDependencies())
+            .providers(storage, transport)
+            .defaultStrategyProviderBindings(bindings)
+            .conflictDetectionConfiguration(
+                DataLoomConflictDetectionSpec(
+                    detectors = listOf(detector),
+                    resolvers = emptyList(),
+                    bindings = ConflictOrchestrationBindings(conflictDetectorId, resolverId = null),
+                    unresolvedConflictStore = unresolvedStore,
+                ),
+            )
+            .build()
+        assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
+
+        val request = StrategySynchronizationRequest(
+            request = synchronizationRequest("offline-first-conflict"),
+            decisionId = StrategyDecisionId("offline-first-conflict-decision"),
+            planId = StrategyPlanId("offline-first-conflict-plan"),
+            profile = OfflineFirstStrategyProfile(
+                id = StrategyProfileId("offline-first-conflict-profile"),
+                configurationVersion = StrategyConfigurationVersion(1L),
+                requireDurableQueue = false,
+                reconcileWhenOnline = false,
+            ),
+            evidence = StrategyRuntimeEvidence(
+                connectivity = StrategyConnectivity.AVAILABLE,
+                cacheState = StrategyCacheState.MISSING,
+            ),
+            input = StrategyOperationInput.ProviderBacked,
+        )
+
+        val result = dataLoom.synchronize(request, bindings)
+
+        val executed = assertIs<StrategySynchronizationExecutionResult.Executed>(result)
+        val providerBacked = assertIs<StrategyTransportOutput.ProviderBacked>(executed.output)
+        val succeeded = assertIs<SynchronizationResult.Succeeded>(providerBacked.result)
+        assertEquals(1, detector.invokeCount)
+        assertEquals(1, succeeded.summary.conflictsDetected)
+        assertEquals(1, storage.readLocalConflictCandidateCallCount)
+
+        val recorded = DurableUnresolvedConflictLog(unresolvedStore).current(ConflictId("offline-first-conflict-1"))
+        val record = assertIs<ProviderOperationResult.Success<UnresolvedConflictRecord?>>(recorded).value
+        assertEquals(UnresolvedConflictReason.RESOLVER_NOT_CONFIGURED, record?.reason)
+    }
+
+    /**
+     * Hybrid's own primary-source-REMOTE PULL branch (`evaluateHybrid`'s
+     * `selectedSource == REMOTE` arm, taken with no fallback involved since
+     * `primarySource == REMOTE` and remote is eligible) produces
+     * `remoteOperations(direction, persistRemote = true)`, so
+     * `HybridStrategyExecutor.execute`'s `persistRemoteResult` branch calls
+     * `executeViaPipeline`, which runs the exact same canonical
+     * `InboundPullSynchronizationPipeline` remote-first/cache-first/
+     * offline-first already proved wired to conflict detection. `MISSING`
+     * cache state keeps `localAvailable` false, so there is no ambiguity
+     * about which source the evaluator could have picked.
+     */
+    @Test
+    fun hybridPrimaryRemotePullConflictDuringInboundIsDetectedAndRecordedUnresolved() = runTest {
+        val conflictDetectorId = ConflictDetectorId("hybrid-strategy-detector")
+        val localChange = ChangeEvent(
+            id = ChangeEventId("hybrid-local-change"),
+            entity = entity,
+            operation = ChangeOperation.UPDATE,
+        )
+        val storage = ConflictCapableStrategyStorageProvider(
+            id = ProviderId("hybrid-strategy-storage"),
+            localCandidate = localChange,
+        )
+        val transport = FakeStrategyTransportProvider(
+            id = ProviderId("hybrid-strategy-transport"),
+            pullResult = ProviderOperationResult.Success(inboundChanges("hybrid-remote-change")),
+        )
+        val detector = FakeConflictDetector(
+            conflictDetectorId,
+            conflictDetected(ConflictId("hybrid-conflict-1"), localChange, "hybrid-remote-change"),
+        )
+        val unresolvedStore = InMemoryUnresolvedConflictStore()
+        val bindings = StrategyProviderBindings(
+            storageProviderId = storage.descriptor.id,
+            transportProviderId = transport.descriptor.id,
+        )
+
+        val dataLoom = DataLoomBuilder()
+            .runtimeDependencies(runtimeDependencies())
+            .providers(storage, transport)
+            .defaultStrategyProviderBindings(bindings)
+            .conflictDetectionConfiguration(
+                DataLoomConflictDetectionSpec(
+                    detectors = listOf(detector),
+                    resolvers = emptyList(),
+                    bindings = ConflictOrchestrationBindings(conflictDetectorId, resolverId = null),
+                    unresolvedConflictStore = unresolvedStore,
+                ),
+            )
+            .build()
+        assertIs<ProviderLifecycleResult.InitializeSuccess>(dataLoom.initialize())
+
+        val request = StrategySynchronizationRequest(
+            request = synchronizationRequest("hybrid-conflict"),
+            decisionId = StrategyDecisionId("hybrid-conflict-decision"),
+            planId = StrategyPlanId("hybrid-conflict-plan"),
+            profile = HybridStrategyProfile(
+                id = StrategyProfileId("hybrid-conflict-profile"),
+                configurationVersion = StrategyConfigurationVersion(1L),
+                primarySource = HybridSource.REMOTE,
+                fallbackSource = HybridSource.LOCAL,
+            ),
+            evidence = StrategyRuntimeEvidence(
+                connectivity = StrategyConnectivity.AVAILABLE,
+                cacheState = StrategyCacheState.MISSING,
+            ),
+            input = StrategyOperationInput.ProviderBacked,
+        )
+
+        val result = dataLoom.synchronize(request, bindings)
+
+        val executed = assertIs<StrategySynchronizationExecutionResult.Executed>(result)
+        val providerBacked = assertIs<StrategyTransportOutput.ProviderBacked>(executed.output)
+        val succeeded = assertIs<SynchronizationResult.Succeeded>(providerBacked.result)
+        assertEquals(1, detector.invokeCount)
+        assertEquals(1, succeeded.summary.conflictsDetected)
+        assertEquals(1, storage.readLocalConflictCandidateCallCount)
+
+        val recorded = DurableUnresolvedConflictLog(unresolvedStore).current(ConflictId("hybrid-conflict-1"))
         val record = assertIs<ProviderOperationResult.Success<UnresolvedConflictRecord?>>(recorded).value
         assertEquals(UnresolvedConflictReason.RESOLVER_NOT_CONFIGURED, record?.reason)
     }
