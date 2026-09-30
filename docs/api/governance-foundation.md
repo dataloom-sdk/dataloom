@@ -12,7 +12,7 @@
 > [What is not included](#what-is-not-included). Decisions are recorded in
 > [ADR-0005](../adr/ADR-0005-enterprise-governance-foundation.md),
 > [ADR-0010](../adr/ADR-0010-governance-signed-policy-packs-and-runtime-wiring.md),
-> and [ADR-0016](../adr/ADR-0016-durable-audit-persistence.md).
+> and [ADR-0017](../adr/ADR-0017-durable-audit-persistence.md).
 
 **Audience:** engineers integrating or extending governance.
 **Packages:** `io.dataloom.governance.rbac`, `io.dataloom.governance.audit`,
@@ -107,7 +107,7 @@ it is not durable.
 ### Durable audit persistence
 
 `DurableAuditStore` persists the same `AuditStore` contract through
-`DurableStateStore` (ADR-0016), so it plugs into `AuditLog` exactly like
+`DurableStateStore` (ADR-0017), so it plugs into `AuditLog` exactly like
 `InMemoryAuditStore`:
 
 ```kotlin
@@ -120,7 +120,7 @@ One `AuditStoreScope` holds the entire chain as a single `AuditChainState`, so
 compare-and-set against the current tail: a lost race is `HEAD_CONFLICT`
 (mirroring `InMemoryAuditStore`), never silently retried with stale content,
 and there is no idempotent "already appended" outcome for a replayed record --
-see ADR-0016 for why. The chain is **never pruned**; growth is bounded instead
+see ADR-0017 for why. The chain is **never pruned**; growth is bounded instead
 by `AuditChainState.MAX_RECORD_COUNT` (10,000 records per scope) and
 `AuditChainStateCodec`'s encoded-length limit (4 MiB), past which further
 appends fail with `CAPACITY_EXCEEDED`. A durable-store failure (not a
@@ -206,7 +206,7 @@ worthwhile once `LOCAL_OVERRIDE` has a producer); (3) residency; (4) support/fle
 diagnostics; (5) LTS/catalog governance; (6) `AC-FUNC-010` cross-subsystem
 tenant-isolation acceptance.
 
-Durable audit persistence itself (ADR-0016) is implemented, but operational-event
+Durable audit persistence itself (ADR-0017) is implemented, but operational-event
 bridging for audit delivery/export and cross-scope enumeration remain unbuilt --
 a caller must already know which `AuditStoreScope` to read, the same posture
 `DurableOperationalEventOutbox` already documents for its own scopes.
@@ -232,6 +232,6 @@ a caller must already know which `AuditStoreScope` to read, the same posture
 
 - [ADR-0005](../adr/ADR-0005-enterprise-governance-foundation.md)
 - [ADR-0010](../adr/ADR-0010-governance-signed-policy-packs-and-runtime-wiring.md)
-- [ADR-0016](../adr/ADR-0016-durable-audit-persistence.md)
+- [ADR-0017](../adr/ADR-0017-durable-audit-persistence.md)
 - [Policy foundation](./policy-foundation.md)
 - [DL-045 gap analysis](../status/dl-045-enterprise-governance-gap-analysis.md)

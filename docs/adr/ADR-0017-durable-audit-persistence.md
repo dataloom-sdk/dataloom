@@ -1,4 +1,4 @@
-# ADR-0016: Durable audit persistence
+# ADR-0017: Durable audit persistence
 
 ## Status
 

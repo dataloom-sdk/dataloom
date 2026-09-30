@@ -1,11 +1,16 @@
 # Remote-First Strategy
 
 > [!IMPORTANT]
-> Direct provider-backed remote-first execution is implemented in common
-> Kotlin for `PUSH`, `PULL`, and `BIDIRECTIONAL`. Typed local fallback is
-> implemented for the pull path. This is not yet the complete V1 gate:
-> durable replay, retry/circuit orchestration, conflict persistence, complete
-> strategy events, and platform contract-kit qualification remain open.
+> Direct provider-backed remote-first execution is implemented for `PUSH`,
+> `PULL`, and `BIDIRECTIONAL`. Typed local fallback is implemented for the pull
+> path, and PUSH under unavailable connectivity with a fallback allowlist now
+> rejects or durably defers rather than throwing (ADR-0015, D26). Durable
+> `DEFER` replay and fallback-queue replay are proven on real Android
+> providers, and `DEFER` replay on iOS; conflict detection during inbound pull
+> rides the same shared pipeline remote-first uses. This is not yet the
+> complete V1 gate: retry-exhaustion/circuit-open-during-replay proofs, an iOS
+> fallback-replay counterpart, complete strategy events, and full
+> cross-platform contract-kit qualification remain open.
 
 [Strategy index](./README.md) · [Network-only](./network-only.md) ·
 [Cache-first](./cache-first.md) · [Hybrid](./hybrid.md)
@@ -61,11 +66,11 @@ The following boundaries remain:
 | Area | Current status | Remaining V1 gate |
 |---|---|---|
 | Direct `PUSH`, `PULL`, `BIDIRECTIONAL` | Implemented | Full cross-platform contract matrix |
-| Persisted pull | Uses the canonical inbound pipeline | Crash-safe strategy decision and outstanding-effect replay |
-| Typed pull fallback | Implemented for pre-call unavailability and allowlisted provider outcomes | Durable fallback transition/event record |
-| Push failure | Always remains a failure; it cannot become local-read success | Retry/circuit and durable rescheduling policy |
-| Durable/platform triggers | Rejected by the strategy coordinator | Persisted-plan reacquisition and restart orchestration |
-| Conflict | Protected from fallback | Built-in persistence/orchestration around application domain resolvers |
+| Persisted pull | Uses the canonical inbound pipeline; conflict detection configured through `DataLoomBuilder.conflictDetectionConfiguration` reaches it uniformly | Crash-safe (process-death) replay proof |
+| Typed pull fallback | Implemented for pre-call unavailability and allowlisted provider outcomes; replayed by a queue worker on real Android providers (`AndroidReferenceConsumerRemoteFirstFallbackQueue...`) | iOS fallback-replay counterpart; retry/circuit evaluation during fallback-bearing replay |
+| Push failure | Always remains a failure; unavailable connectivity with a fallback allowlist now rejects or durably defers (never a local-read substitute, ADR-0015 D26) | Retry/circuit and durable rescheduling policy |
+| Durable/platform triggers | `DEFER` is durably admitted and replayed by a queue worker on real Android and iOS providers; the persisted plan (not re-evaluated evidence) drives replay | Real process-kill proof; retry-exhaustion/circuit-open during replay |
+| Conflict | Protected from fallback; detection/resolution rides the same shared inbound pipeline as the legacy facade, proven end to end through a strategy request (`DataLoomBuilderStrategyConflictDetectionTest`) | Built-in persistence/orchestration around application domain resolvers beyond detection |
 | Events | Existing pipeline lifecycle/phase events run on provider-backed paths | Strategy decision, classification, fallback, and recovery events |
 
 `INBOUND_THEN_OUTBOUND` remains an ordering option in the legacy bidirectional

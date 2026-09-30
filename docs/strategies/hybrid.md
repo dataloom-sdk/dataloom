@@ -1,9 +1,15 @@
 # Hybrid Strategy
 
 > [!WARNING]
-> Hybrid is a mandatory built-in V1 strategy. Its primary/fallback source,
-> persistence, coherence, and reconciliation plan is finite and deterministic.
-> Plan-aware execution and durable reconciliation remain open.
+> Hybrid is a mandatory built-in V1 strategy. `HybridStrategyProfile` declares
+> a primary source, `persistRemoteResult`, and `reconcileWhenOnline`;
+> `HybridStrategyExecutor` implements remote-primary and local-primary
+> execution, a declared local fallback (gated by cache state and storage
+> health), `DEFER` under unknown connectivity, and bounded `RECONCILE`.
+> Durable fallback/reconcile-replay and `DEFER` replay are proven on real
+> Android and iOS providers for PULL. Still open: the protected (circuit-
+> breaker) facade for hybrid, PUSH-fallback platform proof, and process-death
+> recovery.
 
 [Strategy index](./README.md) · [Offline-first](./offline-first.md) ·
 [Remote-first](./remote-first.md) · [Cache-first](./cache-first.md) ·
@@ -31,26 +37,28 @@ was direct, queued, scheduled, or platform-triggered.
 
 ## Current repository
 
-The repository has separate storage, transport, queue, connectivity, retry,
-conflict, and pipeline foundations. It can also choose outbound-first or
-inbound-first bidirectional order.
+`HybridStrategyProfile` is a versioned profile declaring the primary source,
+`persistRemoteResult`, and `reconcileWhenOnline`. `BuiltInSynchronizationStrategyEvaluator.evaluateHybrid`
+and `HybridStrategyExecutor` implement:
 
-It does not currently have a versioned profile that declares:
+- remote-primary execution honoring `persistRemoteResult`, with a declared
+  local fallback (gated on cache state being `FRESH`/`STALE` and storage
+  health) plus `ENQUEUE_DURABLE_WORK`/`RECONCILE` when remote is unavailable;
+- local-primary execution serving local state directly (transport-free for
+  PUSH);
+- `DEFER` under unknown connectivity, with no reactive local fallback (a
+  remote failure is a plain `Failed`, unlike remote-first); and
+- bounded `RECONCILE` through a configured `StrategyReconciliationProvider`.
 
-- primary and fallback branches;
-- fallback classifications;
-- return-source and partial-result rules;
-- branch-specific provider requirements;
-- freshness and consistency constraints;
-- write-through, write-back, refresh, or reconciliation behavior;
-- branch transition persistence; or
-- plan/result/event identity.
+Durable fallback-and-reconcile replay and `DEFER` replay are proven on real
+Android (Robolectric) and iOS providers for PULL; the PUSH-fallback durable
+path and the protected (circuit-breaker) facade for hybrid have no platform or
+protected-facade coverage yet. See
+[Hybrid Strategy Execution](../api/hybrid-strategy-execution.md) and the
+[six-strategy decision matrix](../status/dl-039b-strategy-decision-matrix.md).
 
-See [Execution Coordinator](../architecture/execution-coordinator.md),
-[Bidirectional Flow](../architecture/bidirectional-flow.md), and
-[Connectivity-Aware Execution](../api/connectivity-aware-execution.md).
-
-Current custom pipelines are an extension mechanism, not a standard hybrid
+Legacy custom pipelines (outbound-first/inbound-first bidirectional ordering)
+remain an extension mechanism for the direction-keyed facade, not a hybrid
 implementation or qualification substitute.
 
 ## V1 required behavior

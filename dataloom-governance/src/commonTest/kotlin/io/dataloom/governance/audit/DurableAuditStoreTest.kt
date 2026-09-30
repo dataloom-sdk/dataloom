@@ -123,7 +123,11 @@ class DurableAuditStoreTest {
     @Test
     fun reachingTheBoundedCapacityRefusesFurtherAppends() = runTest {
         val store = FakeAuditChainStore()
-        repeat(AuditChainState.MAX_RECORD_COUNT) { store.seed(scope, record(it.toLong())) }
+        // Seeded in one shot (single validation pass) rather than via MAX_RECORD_COUNT
+        // individual seed() calls: each seed() rebuilds and revalidates the whole list,
+        // so a per-record loop here is O(n^2) and was slow enough on iOS simulator CI
+        // to trip runTest's dispatch timeout (UncompletedCoroutinesError).
+        store.seedAll(scope, (0 until AuditChainState.MAX_RECORD_COUNT).map { record(it.toLong()) })
         val durable = DurableAuditStore(store, scope)
         val rejected = assertFailsWith<AuditAppendRejectedException> {
             durable.append(record(AuditChainState.MAX_RECORD_COUNT.toLong()))
@@ -210,6 +214,15 @@ class DurableAuditStoreTest {
             val current = states[scope]
             val nextState = AuditChainState((current?.state?.records ?: emptyList()) + record)
             states[scope] = DurableStateRecord(nextState, version = (current?.version ?: -1L) + 1L, schemaVersion = 1)
+        }
+
+        /**
+         * Seeds [scope] with [records] in one shot: a single [AuditChainState] construction
+         * (one validation pass) instead of one per record, bypassing any store contract. Used
+         * where a test needs many pre-existing records and per-record [seed] would be O(n^2).
+         */
+        fun seedAll(scope: AuditStoreScope, records: List<AuditRecord>) {
+            states[scope] = DurableStateRecord(AuditChainState(records), version = records.size.toLong() - 1L, schemaVersion = 1)
         }
 
         override suspend fun load(scope: AuditStoreScope): ProviderOperationResult<DurableStateLoadResult<AuditChainState>> {

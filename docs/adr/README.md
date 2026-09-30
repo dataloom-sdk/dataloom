@@ -22,7 +22,8 @@ direction; they do not prove that every part of the decision is implemented.
 | [ADR-0012](./ADR-0012-quarantine-credit-back-for-infrastructure-failures.md) | Accepted | Quarantine occurrences are credited back when a batch fails with a retry-eligible infrastructure error, so infrastructure noise cannot quarantine a healthy entity |
 | [ADR-0013](./ADR-0013-lifecycle-triggered-queue-drain.md) | Accepted | Opt-in lifecycle-triggered queue drain: a bounded, non-overlapping drain through the existing queue worker on configured lifecycle transitions |
 | [ADR-0015](./ADR-0015-remote-first-push-unavailable-planning-and-cache-first-refresh-failure-contract.md) | Accepted; implemented | Remote-first `PUSH` under unavailable connectivity is deferred or rejected, never planned as a local read; cache-first serves cached data as success even when its synchronous refresh fails, surfacing the failure as a typed diagnostic |
-| [ADR-0016](./ADR-0016-durable-audit-persistence.md) | Accepted; implemented | Durable audit persistence on `DurableStateStore`: one scope holds the whole hash-chained record list (no per-record probing), single-attempt compare-and-set append with no idempotent replay, and a bounded safety limit in place of retention |
+| [ADR-0016](./ADR-0016-file-backed-asset-transfer-storage.md) | Accepted; implemented for JVM/Android | File-backed `AssetSource`/`AssetSink`/`AssetProvider` with secure temp files, atomic promotion, and eager plus host-driven-sweep cleanup of abandoned upload sessions; no Apple implementation yet |
+| [ADR-0017](./ADR-0017-durable-audit-persistence.md) | Accepted; implemented | Durable audit persistence on `DurableStateStore`: one scope holds the whole hash-chained record list (no per-record probing), single-attempt compare-and-set append with no idempotent replay, and a bounded safety limit in place of retention |
 
 ## Decision lifecycle
 

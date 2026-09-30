@@ -214,7 +214,7 @@ result instead of selecting remote-first or offline-first.
 | Complete lifecycle/progress/retry/terminal event dispatch | Pending |
 | Enriched origin/durable/queued/local-persisted/fallback metadata | Pending |
 | Bounded in-call retry contract and tests | Pending |
-| Native Android and Apple runtime qualification in repository CI | Pending publication of this slice |
+| Native Android and Apple runtime qualification in repository CI | iOS: proven by a real `synchronize` network-only run (`IosReferenceConsumerStrategyDiagnosticsAppleFileTest`). Android: no real-provider (Robolectric/emulator) network-only run yet — pending |
 
 ## Related documentation
 
