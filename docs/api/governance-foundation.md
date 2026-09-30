@@ -2,15 +2,17 @@
 
 [API reference index](./README.md)
 
-> **Status:** Available foundation (slices 1 and 2 of `#99`). Pure common Kotlin
+> **Status:** Available foundation (slices 1-3 of `#99`). Pure common Kotlin
 > in the `dataloom-governance` module; JVM tests run, Apple targets
 > cross-compile (Apple test execution needs macOS CI). Slice 2 added signed
-> policy packs and an opt-in `DataLoom.governance` capability. Nothing in the
-> runtime *enforces* governance at a boundary yet, and this is not enterprise
-> governance as a whole: see [What is not included](#what-is-not-included).
-> Decisions are recorded in
-> [ADR-0005](../adr/ADR-0005-enterprise-governance-foundation.md) and
-> [ADR-0010](../adr/ADR-0010-governance-signed-policy-packs-and-runtime-wiring.md).
+> policy packs and an opt-in `DataLoom.governance` capability. Slice 3 added
+> durable audit persistence (`DurableAuditStore`) with no change to the
+> runtime wiring surface. Nothing in the runtime *enforces* governance at a
+> boundary yet, and this is not enterprise governance as a whole: see
+> [What is not included](#what-is-not-included). Decisions are recorded in
+> [ADR-0005](../adr/ADR-0005-enterprise-governance-foundation.md),
+> [ADR-0010](../adr/ADR-0010-governance-signed-policy-packs-and-runtime-wiring.md),
+> and [ADR-0017](../adr/ADR-0017-durable-audit-persistence.md).
 
 **Audience:** engineers integrating or extending governance.
 **Packages:** `io.dataloom.governance.rbac`, `io.dataloom.governance.audit`,
@@ -23,7 +25,7 @@
 | RBAC model | `Principal`, `PrincipalId`, `Action`, `ResourceType`, `Permission`, `Role`, `RoleId`, `RoleBinding`, `RbacPolicy` |
 | Evaluation | `RbacEvaluator`, `AccessRequest`, `ResourceRef`, `AccessDecisionReason` |
 | Tenant isolation | `TenantGuard` |
-| Audit | `AuditEvent`, `AuditRecord`, `AuditAnchor`, `AuditLog`, `AuditChainVerifier`, `AuditStore`, `InMemoryAuditStore` |
+| Audit | `AuditEvent`, `AuditRecord`, `AuditAnchor`, `AuditLog`, `AuditChainVerifier`, `AuditStore`, `InMemoryAuditStore`, `DurableAuditStore`, `AuditStoreScope`, `AuditChainState`, `AuditStorePersistenceException` |
 | Signed policy packs | `PolicyPackManifest`, `SignedPolicyPack`, `PolicyPackVerifier`, `PolicyPackVerificationResult`, `PolicyPackKeyResolver` |
 | Runtime wiring (`dataloom-runtime`) | `DataLoomGovernanceSpec`, `DataLoomGovernance`, `DataLoomBuilder.governanceConfiguration`, `DataLoom.governance` |
 
@@ -102,6 +104,29 @@ from sequence 0; `AuditEvent.details` must not contain secrets or personal data.
 `InMemoryAuditStore` is bounded and refuses (never drops) appends past capacity;
 it is not durable.
 
+### Durable audit persistence
+
+`DurableAuditStore` persists the same `AuditStore` contract through
+`DurableStateStore` (ADR-0017), so it plugs into `AuditLog` exactly like
+`InMemoryAuditStore`:
+
+```kotlin
+val durableStore = DurableAuditStore(store = myDurableStateStore, scope = AuditStoreScope("tenant-acme"))
+val log = AuditLog(durableStore, hmacCalculator, clock, hostSuppliedKey)
+```
+
+One `AuditStoreScope` holds the entire chain as a single `AuditChainState`, so
+`head()`/`readAll()` need no per-record probing. `append` makes exactly one
+compare-and-set against the current tail: a lost race is `HEAD_CONFLICT`
+(mirroring `InMemoryAuditStore`), never silently retried with stale content,
+and there is no idempotent "already appended" outcome for a replayed record --
+see ADR-0017 for why. The chain is **never pruned**; growth is bounded instead
+by `AuditChainState.MAX_RECORD_COUNT` (10,000 records per scope) and
+`AuditChainStateCodec`'s encoded-length limit (4 MiB), past which further
+appends fail with `CAPACITY_EXCEEDED`. A durable-store failure (not a
+chain-integrity problem) throws `AuditStorePersistenceException` rather than
+`AuditAppendRejectedException`.
+
 ## Signed policy packs
 
 A policy pack is a `PolicyPackManifest` (a `PolicySetId`, a positive version, the
@@ -153,7 +178,7 @@ val dataLoom = DataLoomBuilder()
     .governanceConfiguration(
         DataLoomGovernanceSpec(
             rbacPolicy = policy,                       // optional
-            auditStore = InMemoryAuditStore(),         // optional, with auditKey
+            auditStore = InMemoryAuditStore(),         // optional, with auditKey; or DurableAuditStore
             auditKey = auditKeyBytes,
             hmacCalculator = hmacCalculator,           // audit and/or policy-pack verification
         ),
@@ -174,24 +199,31 @@ runtime consults these at a boundary; hosts call them.
 
 ## What is not included
 
-Ordered next slices: (1) durable audit persistence through `DurableStateStore`
-with retention, overflow and delivery semantics (FR-ENT-008), and operational-event
-bridging; (2) a `PolicyCheck` adapter so RBAC decisions flow through
+Ordered next slices: (1) a `PolicyCheck` adapter so RBAC decisions flow through
 `PolicyEvaluator` into `DurablePolicyDecisionLog`, plus pack admission into a
-`PolicySet`, rollout/rollback and a version floor; (3) configuration locks (only
-worthwhile once `LOCAL_OVERRIDE` has a producer); (4) residency; (5) support/fleet
-diagnostics; (6) LTS/catalog governance; (7) `AC-FUNC-010` cross-subsystem
+`PolicySet`, rollout/rollback and a version floor; (2) configuration locks (only
+worthwhile once `LOCAL_OVERRIDE` has a producer); (3) residency; (4) support/fleet
+diagnostics; (5) LTS/catalog governance; (6) `AC-FUNC-010` cross-subsystem
 tenant-isolation acceptance.
+
+Durable audit persistence itself (ADR-0017) is implemented, but operational-event
+bridging for audit delivery/export and cross-scope enumeration remain unbuilt --
+a caller must already know which `AuditStoreScope` to read, the same posture
+`DurableOperationalEventOutbox` already documents for its own scopes.
 
 ## Verification
 
 - `./gradlew :dataloom-governance:jvmTest`: table-driven and exhaustive
-  cross-product RBAC tests, tenant-guard tests, audit tamper tests, and signed
+  cross-product RBAC tests, tenant-guard tests, audit tamper tests, signed
   policy pack tests (modified byte at every offset, wrong key, truncation, empty
-  input, downgraded format version, unknown key id) against the real
-  `SystemDataLoomHmacCalculator`.
-- `:dataloom-runtime:jvmTest --tests '*DataLoomBuilderGovernanceTest*'`: wiring
-  tests with a fake HMAC calculator.
+  input, downgraded format version, unknown key id), and durable audit tests
+  (compare-and-set append including concurrent appenders, tamper detection
+  against durably-sourced records, restart survival, codec round-trips) against
+  the real `SystemDataLoomHmacCalculator`.
+- `:dataloom-runtime:jvmTest --tests '*DataLoomBuilderGovernanceTest*'` and
+  `--tests '*DataLoomBuilderGovernanceDurableAuditTest*'`: wiring tests with a
+  fake HMAC calculator, the latter proving `DurableAuditStore` plugs into
+  `governanceConfiguration` with no wiring change.
 - `:dataloom-governance:compileTestKotlinIosSimulatorArm64` with
   `-Pdataloom.appleKlibCrossCompile=true`: shared tests compile against the real
   `AppleDataLoomHmacCalculator`; running them requires macOS.
@@ -199,5 +231,7 @@ tenant-isolation acceptance.
 ## Related documentation
 
 - [ADR-0005](../adr/ADR-0005-enterprise-governance-foundation.md)
+- [ADR-0010](../adr/ADR-0010-governance-signed-policy-packs-and-runtime-wiring.md)
+- [ADR-0017](../adr/ADR-0017-durable-audit-persistence.md)
 - [Policy foundation](./policy-foundation.md)
 - [DL-045 gap analysis](../status/dl-045-enterprise-governance-gap-analysis.md)

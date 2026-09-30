@@ -27,8 +27,9 @@ public class AuditAppendRejectedException(
  * each appended record extends the current head, so two racing writers cannot
  * both succeed. Authenticity is [AuditChainVerifier]'s job.
  *
- * Only an in-memory implementation ([InMemoryAuditStore]) ships in this slice.
- * Durable persistence through the durable-state contract is a later slice.
+ * [InMemoryAuditStore] is the reference in-memory implementation; [DurableAuditStore]
+ * persists the same contract through [io.dataloom.api.state.DurableStateStore]
+ * (ADR-0016).
  */
 public interface AuditStore {
 

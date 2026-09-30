@@ -188,6 +188,36 @@ final class io.dataloom.governance.audit/AuditAppendRejectedException : kotlin/I
         final fun <get-rejection>(): io.dataloom.governance.audit/AuditAppendRejection // io.dataloom.governance.audit/AuditAppendRejectedException.rejection.<get-rejection>|<get-rejection>(){}[0]
 }
 
+final class io.dataloom.governance.audit/AuditChainState { // io.dataloom.governance.audit/AuditChainState|null[0]
+    constructor <init>(kotlin.collections/List<io.dataloom.governance.audit/AuditRecord>) // io.dataloom.governance.audit/AuditChainState.<init>|<init>(kotlin.collections.List<io.dataloom.governance.audit.AuditRecord>){}[0]
+
+    final val head // io.dataloom.governance.audit/AuditChainState.head|{}head[0]
+        final fun <get-head>(): io.dataloom.governance.audit/AuditRecord? // io.dataloom.governance.audit/AuditChainState.head.<get-head>|<get-head>(){}[0]
+    final val records // io.dataloom.governance.audit/AuditChainState.records|{}records[0]
+        final fun <get-records>(): kotlin.collections/List<io.dataloom.governance.audit/AuditRecord> // io.dataloom.governance.audit/AuditChainState.records.<get-records>|<get-records>(){}[0]
+
+    final fun component1(): kotlin.collections/List<io.dataloom.governance.audit/AuditRecord> // io.dataloom.governance.audit/AuditChainState.component1|component1(){}[0]
+    final fun copy(kotlin.collections/List<io.dataloom.governance.audit/AuditRecord> = ...): io.dataloom.governance.audit/AuditChainState // io.dataloom.governance.audit/AuditChainState.copy|copy(kotlin.collections.List<io.dataloom.governance.audit.AuditRecord>){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.audit/AuditChainState.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.governance.audit/AuditChainState.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.governance.audit/AuditChainState.toString|toString(){}[0]
+
+    final object Companion { // io.dataloom.governance.audit/AuditChainState.Companion|null[0]
+        final const val MAX_RECORD_COUNT // io.dataloom.governance.audit/AuditChainState.Companion.MAX_RECORD_COUNT|{}MAX_RECORD_COUNT[0]
+            final fun <get-MAX_RECORD_COUNT>(): kotlin/Int // io.dataloom.governance.audit/AuditChainState.Companion.MAX_RECORD_COUNT.<get-MAX_RECORD_COUNT>|<get-MAX_RECORD_COUNT>(){}[0]
+
+        final val Empty // io.dataloom.governance.audit/AuditChainState.Companion.Empty|{}Empty[0]
+            final fun <get-Empty>(): io.dataloom.governance.audit/AuditChainState // io.dataloom.governance.audit/AuditChainState.Companion.Empty.<get-Empty>|<get-Empty>(){}[0]
+    }
+}
+
+final class io.dataloom.governance.audit/AuditChainStateCodec : io.dataloom.api.state/DurableStateCodec<io.dataloom.governance.audit/AuditChainState> { // io.dataloom.governance.audit/AuditChainStateCodec|null[0]
+    constructor <init>() // io.dataloom.governance.audit/AuditChainStateCodec.<init>|<init>(){}[0]
+
+    final fun decode(kotlin/String): io.dataloom.governance.audit/AuditChainState // io.dataloom.governance.audit/AuditChainStateCodec.decode|decode(kotlin.String){}[0]
+    final fun encode(io.dataloom.governance.audit/AuditChainState): kotlin/String // io.dataloom.governance.audit/AuditChainStateCodec.encode|encode(io.dataloom.governance.audit.AuditChainState){}[0]
+}
+
 final class io.dataloom.governance.audit/AuditChainVerifier { // io.dataloom.governance.audit/AuditChainVerifier|null[0]
     constructor <init>(io.dataloom.api.security/DataLoomHmacCalculator) // io.dataloom.governance.audit/AuditChainVerifier.<init>|<init>(io.dataloom.api.security.DataLoomHmacCalculator){}[0]
 
@@ -261,6 +291,23 @@ final class io.dataloom.governance.audit/AuditRecord { // io.dataloom.governance
     final fun hashCode(): kotlin/Int // io.dataloom.governance.audit/AuditRecord.hashCode|hashCode(){}[0]
     final fun toAnchor(): io.dataloom.governance.audit/AuditAnchor // io.dataloom.governance.audit/AuditRecord.toAnchor|toAnchor(){}[0]
     final fun toString(): kotlin/String // io.dataloom.governance.audit/AuditRecord.toString|toString(){}[0]
+}
+
+final class io.dataloom.governance.audit/AuditStorePersistenceException : kotlin/RuntimeException { // io.dataloom.governance.audit/AuditStorePersistenceException|null[0]
+    constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.governance.audit/AuditStorePersistenceException.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+    final val error // io.dataloom.governance.audit/AuditStorePersistenceException.error|{}error[0]
+        final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.governance.audit/AuditStorePersistenceException.error.<get-error>|<get-error>(){}[0]
+}
+
+final class io.dataloom.governance.audit/DurableAuditStore : io.dataloom.governance.audit/AuditStore { // io.dataloom.governance.audit/DurableAuditStore|null[0]
+    constructor <init>(io.dataloom.api.state/DurableStateStore<io.dataloom.governance.audit/AuditStoreScope, io.dataloom.governance.audit/AuditChainState>, io.dataloom.governance.audit/AuditStoreScope, kotlin/Int = ...) // io.dataloom.governance.audit/DurableAuditStore.<init>|<init>(io.dataloom.api.state.DurableStateStore<io.dataloom.governance.audit.AuditStoreScope,io.dataloom.governance.audit.AuditChainState>;io.dataloom.governance.audit.AuditStoreScope;kotlin.Int){}[0]
+
+    final suspend fun append(io.dataloom.governance.audit/AuditRecord) // io.dataloom.governance.audit/DurableAuditStore.append|append(io.dataloom.governance.audit.AuditRecord){}[0]
+    final suspend fun head(): io.dataloom.governance.audit/AuditRecord? // io.dataloom.governance.audit/DurableAuditStore.head|head(){}[0]
+    final suspend fun readAll(): kotlin.collections/List<io.dataloom.governance.audit/AuditRecord> // io.dataloom.governance.audit/DurableAuditStore.readAll|readAll(){}[0]
+
+    final object Companion // io.dataloom.governance.audit/DurableAuditStore.Companion|null[0]
 }
 
 final class io.dataloom.governance.audit/InMemoryAuditStore : io.dataloom.governance.audit/AuditStore { // io.dataloom.governance.audit/InMemoryAuditStore|null[0]
@@ -473,6 +520,22 @@ final value class io.dataloom.governance.audit/AuditEventType { // io.dataloom.g
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.audit/AuditEventType.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.governance.audit/AuditEventType.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.governance.audit/AuditEventType.toString|toString(){}[0]
+}
+
+final value class io.dataloom.governance.audit/AuditStoreScope { // io.dataloom.governance.audit/AuditStoreScope|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.governance.audit/AuditStoreScope.<init>|<init>(kotlin.String){}[0]
+
+    final val value // io.dataloom.governance.audit/AuditStoreScope.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.dataloom.governance.audit/AuditStoreScope.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.governance.audit/AuditStoreScope.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.governance.audit/AuditStoreScope.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.governance.audit/AuditStoreScope.toString|toString(){}[0]
+
+    final object Companion { // io.dataloom.governance.audit/AuditStoreScope.Companion|null[0]
+        final val KeyEncoder // io.dataloom.governance.audit/AuditStoreScope.Companion.KeyEncoder|{}KeyEncoder[0]
+            final fun <get-KeyEncoder>(): io.dataloom.api.state/DurableStateScopeKeyEncoder<io.dataloom.governance.audit/AuditStoreScope> // io.dataloom.governance.audit/AuditStoreScope.Companion.KeyEncoder.<get-KeyEncoder>|<get-KeyEncoder>(){}[0]
+    }
 }
 
 final value class io.dataloom.governance.rbac/PrincipalId { // io.dataloom.governance.rbac/PrincipalId|null[0]
