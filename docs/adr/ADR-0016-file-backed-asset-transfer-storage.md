@@ -1,19 +1,20 @@
 # ADR-0016: File-backed asset transfer storage (secure temp files, atomic promotion, cleanup)
 
-- **Status:** Accepted; implemented for JVM/Android
-- **Date:** 2026-09-29
-- **Gate:** [`#97` / DL-043 asset synchronization](https://github.com/dataloom-sdk/dataloom/issues/97), slice 4
+- **Status:** Accepted; implemented for JVM/Android and Apple (iOS)
+- **Date:** 2026-09-29 (JVM/Android); Apple added 2026-09-30
+- **Gate:** [`#97` / DL-043 asset synchronization](https://github.com/dataloom-sdk/dataloom/issues/97), slices 4-5
 - **Builds on:** [ADR-0006](./ADR-0006-asset-transfer-and-streaming-digest.md)
   (`AssetSource`/`AssetSink`/`AssetProvider` contracts, resolves its open
   decision 3), [ADR-0008](./ADR-0008-durable-asset-transfer-sessions.md) and
   [ADR-0014](./ADR-0014-asset-chunk-transforms-and-digest-domain.md), whose
   "next slice" item ("secure temp files, atomic promotion of a verified sink,
   and crash/abandoned-session cleanup ... with real file-backed
-  `AssetSource`/`AssetSink`") this record delivers for JVM/Android
+  `AssetSource`/`AssetSink`") this record delivers for JVM/Android and, as of
+  the Apple addendum below, for Apple too
 
 > This ADR records what slice 4 shipped and why, including what it does not
-> cover. It does not claim `FR-ASSET-009` is met on every platform: see
-> [What is still open](#what-is-still-open).
+> cover, plus a 2026-09-30 addendum recording the Apple (POSIX) equivalent.
+> See [What is still open](#what-is-still-open) for what remains.
 
 ## Context
 
@@ -69,14 +70,15 @@ file at a final path" is proven once, not three times.
 
 These three types live in `dataloom-assets`' `jvmMain` source set, which is
 also the source set Android consumes (the module has no separate Android
-target; see ADR-0014). There is **no Apple implementation** in this slice:
+target; see ADR-0014). There was **no Apple implementation** in this slice:
 building the POSIX-based equivalent (mirroring `AppleQueueFileIo`) for three
 new types together with the file-assembly and sweep logic below was judged
 too large to fold into one reviewable PR alongside the JVM/Android
-implementation, and nothing in the V1 gate ordering requires it before the
+implementation, and nothing in the V1 gate ordering required it before the
 other pending slices (parallel transfer, content-policy hooks, provider
-lifecycle). It is listed under [What is still open](#what-is-still-open) as
-its own slice, not silently dropped.
+lifecycle). It was listed under [What is still open](#what-is-still-open) as
+its own slice, not silently dropped — delivered by the
+[2026-09-30 Apple addendum](#addendum-2026-09-30-apple-ios-equivalent) below.
 
 ### D30: cleanup is eager on a terminal transition, plus a bounded, host-driven sweep for genuinely abandoned sessions
 
@@ -132,11 +134,14 @@ wording, not a safety-critical one.
 ## What is still open
 
 Ordered remaining slices for `#97` (unchanged from ADR-0008/ADR-0014 except
-item 1, delivered here for JVM/Android):
+item 1, delivered here for JVM/Android and, as of the 2026-09-30 addendum,
+Apple):
 
 1. ~~Secure temp files, atomic promotion, cleanup, file-backed
    `AssetSource`/`AssetSink` for JVM/Android~~ **JVM/Android done by this ADR.**
-   The equivalent Apple (POSIX-based) implementation is still open.
+   ~~The equivalent Apple (POSIX-based) implementation is still open.~~ **Apple
+   done by the 2026-09-30 addendum**, with the caveat noted there: compile-
+   verified only, no macOS/Xcode execution was available.
 2. Parallel chunk transfer with concurrency limits and fairness
    (`FR-ASSET-006`).
 3. Content allow/deny/scan/quarantine hooks (`FR-ASSET-012`).
@@ -147,17 +152,20 @@ item 1, delivered here for JVM/Android):
 
 ## Consequences
 
-- `FR-ASSET-009` is implemented for JVM and Android; a real file-backed
-  provider now exists to develop and test against without holding whole
-  assets in memory.
-- Public surface added to `dataloom-assets`' JVM/Android target only (no
-  common or Apple API changed): `io.dataloom.assets.file.FileAssetSource`,
+- `FR-ASSET-009` is implemented for JVM, Android and (as of the 2026-09-30
+  addendum) Apple; a real file-backed provider now exists on every platform
+  DataLoom targets to develop and test against without holding whole assets
+  in memory.
+- Public surface added to `dataloom-assets`' JVM/Android target by this ADR
+  (no common API changed): `io.dataloom.assets.file.FileAssetSource`,
   `FileAssetSink` and `FileAssetProvider`. `dataloom-assets`' JVM ABI baseline
-  (`api/dataloom-assets.api`) was regenerated; its Kotlin/Native ABI baseline
-  (`api/dataloom-assets.klib.api`) is unchanged (byte-identical), confirming
-  no common or Apple surface moved. The module still has only one `api/`
-  layout (no Android-specific baseline file exists for it, matching its
-  "consumes the JVM target directly" status from ADR-0014).
+  (`api/dataloom-assets.api`) was regenerated at the time; its Kotlin/Native
+  ABI baseline (`api/dataloom-assets.klib.api`) was unchanged (byte-identical)
+  by this original slice, confirming no common or Apple surface moved then.
+  The module still has only one `api/` layout (no Android-specific baseline
+  file exists for it, matching its "consumes the JVM target directly" status
+  from ADR-0014). The 2026-09-30 addendum's Apple types are additive to the
+  Kotlin/Native baseline only; see that section.
 - Two committed asset versions of the same asset id never share files (each
   version gets its own `committed/<asset>/<version>/asset.bin`), so quota
   accounting and version-conflict semantics from ADR-0006 carry over
@@ -178,11 +186,11 @@ item 1, delivered here for JVM/Android):
   (queue drain, retry administration) is host-triggered, not
   self-scheduling; a provider silently spawning a timer thread is a surprise
   a host cannot easily disable, test, or account for.
-- **Implementing the Apple equivalent in this same PR.** Three new
+- **Implementing the Apple equivalent in the original slice's PR.** Three new
   POSIX-based types plus the file-assembly and sweep logic, all unrunnable
   locally and only compile-verified until macOS CI, was judged too large to
-  review alongside the JVM/Android implementation in one PR; see
-  [What is still open](#what-is-still-open).
+  review alongside the JVM/Android implementation in one PR; done instead as
+  its own PR, see the [2026-09-30 addendum](#addendum-2026-09-30-apple-ios-equivalent).
 
 ## Validation
 
@@ -210,8 +218,102 @@ baseline was regenerated and the Kotlin/Native one is unchanged.
 
 **Not verified locally:** any Android instrumentation or emulator run (the
 module has no Android-specific source set to run one against; the JVM test
-run is the applicable verification per ADR-0014); any Apple execution
-(no Apple implementation exists in this slice).
+run is the applicable verification per ADR-0014); any Apple execution (no
+Apple implementation existed in this slice — see the addendum below for what
+changed).
+
+## Addendum (2026-09-30): Apple (iOS) equivalent
+
+Gate `#97` slice 5. Delivers the Apple implementation [D29](#d29-three-new-types-jvmandroid-only-no-apple-implementation-this-slice)
+and [What is still open](#what-is-still-open) item 1 left open.
+
+### D32: `AppleFileAssetSource`, `AppleFileAssetSink` and `AppleFileAssetProvider`, built directly on POSIX (`platform.posix`), mirroring `AppleQueueFileIo`
+
+Three new types in `dataloom-assets`' `iosMain` source set (shared by
+`iosArm64`, `iosSimulatorArm64` and `iosX64`), behaviourally identical to
+their JVM counterparts — same public API shape (`promote()` as additional API
+on the concrete sink class, the same range-tracked `read` for unwritten
+regions, the same eager-plus-swept cleanup on the provider) and the same
+error semantics, verified by reusing the *exact same* `AssetProviderContractKit`
+the JVM provider passes (no parallel contract test was written). Internally
+they are built from scratch on `platform.posix` (`open`/`read`/`write`/`lseek`/
+`rename`/`unlink`/`mkstemps`/`stat`/`opendir`+`readdir`), not on
+`NSFileManager`/`NSData` — mirroring `dataloom-runtime`'s `AppleQueueFileIo`
+(`open`/`write`/`fsync`/`rename`, `errno`-based error handling, `EINTR` retry
+loops), which is this repository's established idiom for "stage in a
+same-directory temp file, then promote with one atomic rename" on Apple, for
+a different durable domain (the queue). A new internal `AppleFileAssetIo`
+object (`dataloom-assets/src/iosMain/kotlin/io/dataloom/assets/file/AppleFileAssetIo.kt`)
+plays the same centralising role the JVM's `FileAssetIo` plays: secure temp
+file creation (`mkstemps`, mode `0600` by its own POSIX guarantee), atomic
+promotion, best-effort recursive delete, and a standard unpadded-base64url
+`safeName` that is byte-for-byte identical to the JVM helper's output for the
+same input (both use the plain RFC 4648 section 5 alphabet), even though
+JVM and Apple storage are never shared.
+
+One deliberate, disclosed strengthening beyond the JVM implementation:
+`AppleFileAssetIo.promoteAtomically` `fsync`s the temp file before the
+`rename(2)` and `fsync`s the destination directory afterward, exactly as
+`AppleQueueFileIo.appleQueueWriteUtf8FileAtomically` does. `java.nio.file.Files.move`
+has no portable `fsync` hook, so the JVM `FileAssetIo.promoteAtomically` does
+not do this. This does not change the observable atomic-visibility contract
+(a caller never sees a partially-written file at the destination either way)
+— it only makes the promotion more durable against a crash immediately after
+the OS reports the rename as complete. It was judged in scope because the
+task explicitly asked for the POSIX call shape to be mirrored, not invented
+anew, and `AppleQueueFileIo` already establishes `fsync`-before-rename as this
+codebase's Apple durability idiom.
+
+One necessary substitution, not a compatibility gap: the JVM sink's
+`java.util.TreeMap`-based written-range tracking (`floorEntry`/`tailMap`) has
+no equivalent in the Kotlin/Native standard library, so `AppleFileAssetSink`
+keeps the same merged, non-overlapping ranges in a small sorted
+`MutableList<LongArray>` and re-merges with one linear pass per `write` —
+still bounded by the number of non-contiguous writes (in practice the chunk
+count), not by asset size, matching the memory bound the JVM class documents;
+only the underlying data structure differs, not the observable contract.
+
+### Contract kit compatibility
+
+The shared `io.dataloom.assets.testkit.AssetProviderContractKit` (`dataloom-assets/src/commonMain/kotlin/io/dataloom/assets/testkit/AssetProviderContractKit.kt`)
+required **no changes** to run against `AppleFileAssetProvider`: it is already
+platform-neutral (`commonMain`, no JVM-specific assumption was found in it),
+and the module's existing `platformDigests()`/`testAsset()`/`sessionId()`
+test helpers (`dataloom-assets/src/commonTest/kotlin/io/dataloom/assets/TestSupport.kt`,
+`TestDigests.kt`) already have Apple `actual` implementations from earlier
+slices (`AppleDataLoomDigestCalculator`). No incompatibility to flag.
+
+### Validation
+
+**Verified locally (Windows host, Kotlin/Native cross-compilation):**
+- `:dataloom-assets:compileKotlinIosArm64`, `compileKotlinIosSimulatorArm64`,
+  `compileKotlinIosX64` — main sources compile for all three Apple targets.
+- `:dataloom-assets:compileTestKotlinIosArm64`, `compileTestKotlinIosSimulatorArm64`,
+  `compileTestKotlinIosX64` — the new `iosTest` sources (the reused contract
+  kit run, the cleanup suite, the source/sink suite) compile for all three
+  Apple targets.
+- `:dataloom-assets:jvmTest` — the pre-existing JVM suite still passes
+  unchanged, confirming this addendum touched no JVM/common code.
+- `:dataloom-assets:updateKotlinAbi` then `:dataloom-assets:checkKotlinAbi`,
+  both with `-Pdataloom.appleKlibCrossCompile=true` — the Kotlin/Native ABI
+  baseline (`api/dataloom-assets.klib.api`) now lists exactly the three new
+  public Apple types and nothing else; the JVM baseline
+  (`api/dataloom-assets.api`) is untouched.
+- Whole-build `checkKotlinAbi` (repository root) — passes for every module,
+  confirming no downstream module (`dataloom-runtime`, which depends on
+  `dataloom-assets`) is affected.
+
+**Not verified, and not verifiable from this host:** actually *running* any
+of the new `iosTest` scenarios. Kotlin/Native cross-compilation on Windows
+produces linked test binaries for `iosArm64`/`iosSimulatorArm64`/`iosX64`, but
+executing them needs a macOS host (a Simulator for the two simulator-capable
+targets, real hardware or a signed run for `iosArm64`), which was not
+available in this session. This means the POSIX call sequences in
+`AppleFileAssetIo` (`mkstemps`, `opendir`/`readdir` recursion, `utimes`,
+`lseek`-based random access) are type-checked and linked but have never
+actually executed; a macOS CI run is the first time they will. This mirrors
+exactly the boundary the original JVM/Android slice's validation section
+already draws for that side.
 
 ## References
 

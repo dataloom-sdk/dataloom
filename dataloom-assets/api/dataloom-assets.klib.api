@@ -391,6 +391,40 @@ sealed interface io.dataloom.assets/DurableAssetTransferSessionSaveOutcome { // 
     }
 }
 
+final class io.dataloom.assets.file/AppleFileAssetProvider : io.dataloom.assets/AssetProvider { // io.dataloom.assets.file/AppleFileAssetProvider|null[0]
+    constructor <init>(kotlin/String, io.dataloom.api.security/DataLoomIncrementalDigestCalculator, io.dataloom.assets/AssetQuota = ..., io.dataloom.assets/AssetChunkSizeBounds = ..., kotlin/Int = ...) // io.dataloom.assets.file/AppleFileAssetProvider.<init>|<init>(kotlin.String;io.dataloom.api.security.DataLoomIncrementalDigestCalculator;io.dataloom.assets.AssetQuota;io.dataloom.assets.AssetChunkSizeBounds;kotlin.Int){}[0]
+
+    final val chunkSizeBounds // io.dataloom.assets.file/AppleFileAssetProvider.chunkSizeBounds|{}chunkSizeBounds[0]
+        final fun <get-chunkSizeBounds>(): io.dataloom.assets/AssetChunkSizeBounds // io.dataloom.assets.file/AppleFileAssetProvider.chunkSizeBounds.<get-chunkSizeBounds>|<get-chunkSizeBounds>(){}[0]
+
+    final suspend fun abortUpload(io.dataloom.assets/AssetTransferSessionId): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.assets.file/AppleFileAssetProvider.abortUpload|abortUpload(io.dataloom.assets.AssetTransferSessionId){}[0]
+    final suspend fun completeUpload(io.dataloom.assets/AssetTransferSessionId): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.asset/AssetManifest> // io.dataloom.assets.file/AppleFileAssetProvider.completeUpload|completeUpload(io.dataloom.assets.AssetTransferSessionId){}[0]
+    final suspend fun openUpload(io.dataloom.assets/AssetUploadRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.assets/AssetUploadStatus> // io.dataloom.assets.file/AppleFileAssetProvider.openUpload|openUpload(io.dataloom.assets.AssetUploadRequest){}[0]
+    final suspend fun readChunk(io.dataloom.api.identifier/AssetId, kotlin/Long, kotlin/Int): io.dataloom.api.provider/ProviderOperationResult<kotlin/ByteArray> // io.dataloom.assets.file/AppleFileAssetProvider.readChunk|readChunk(io.dataloom.api.identifier.AssetId;kotlin.Long;kotlin.Int){}[0]
+    final suspend fun readManifest(io.dataloom.api.identifier/AssetId, kotlin/Long?): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.asset/AssetManifest> // io.dataloom.assets.file/AppleFileAssetProvider.readManifest|readManifest(io.dataloom.api.identifier.AssetId;kotlin.Long?){}[0]
+    final suspend fun sweepAbandonedUploads(kotlin.time/Duration): kotlin/Int // io.dataloom.assets.file/AppleFileAssetProvider.sweepAbandonedUploads|sweepAbandonedUploads(kotlin.time.Duration){}[0]
+    final suspend fun uploadChunk(io.dataloom.assets/AssetChunkUpload): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.assets/AssetUploadStatus> // io.dataloom.assets.file/AppleFileAssetProvider.uploadChunk|uploadChunk(io.dataloom.assets.AssetChunkUpload){}[0]
+}
+
+final class io.dataloom.assets.file/AppleFileAssetSink : io.dataloom.assets/AssetSink { // io.dataloom.assets.file/AppleFileAssetSink|null[0]
+    constructor <init>(kotlin/String, kotlin/String = ..., kotlin/Long? = ...) // io.dataloom.assets.file/AppleFileAssetSink.<init>|<init>(kotlin.String;kotlin.String;kotlin.Long?){}[0]
+
+    final fun isPromoted(): kotlin/Boolean // io.dataloom.assets.file/AppleFileAssetSink.isPromoted|isPromoted(){}[0]
+    final suspend fun discard() // io.dataloom.assets.file/AppleFileAssetSink.discard|discard(){}[0]
+    final suspend fun promote() // io.dataloom.assets.file/AppleFileAssetSink.promote|promote(){}[0]
+    final suspend fun read(kotlin/Long, kotlin/ByteArray, kotlin/Int, kotlin/Int): kotlin/Int // io.dataloom.assets.file/AppleFileAssetSink.read|read(kotlin.Long;kotlin.ByteArray;kotlin.Int;kotlin.Int){}[0]
+    final suspend fun reserve(kotlin/Long) // io.dataloom.assets.file/AppleFileAssetSink.reserve|reserve(kotlin.Long){}[0]
+    final suspend fun write(kotlin/Long, kotlin/ByteArray, kotlin/Int, kotlin/Int) // io.dataloom.assets.file/AppleFileAssetSink.write|write(kotlin.Long;kotlin.ByteArray;kotlin.Int;kotlin.Int){}[0]
+}
+
+final class io.dataloom.assets.file/AppleFileAssetSource : io.dataloom.assets/AssetSource, kotlin/AutoCloseable { // io.dataloom.assets.file/AppleFileAssetSource|null[0]
+    constructor <init>(kotlin/String) // io.dataloom.assets.file/AppleFileAssetSource.<init>|<init>(kotlin.String){}[0]
+
+    final fun close() // io.dataloom.assets.file/AppleFileAssetSource.close|close(){}[0]
+    final suspend fun read(kotlin/Long, kotlin/ByteArray, kotlin/Int, kotlin/Int): kotlin/Int // io.dataloom.assets.file/AppleFileAssetSource.read|read(kotlin.Long;kotlin.ByteArray;kotlin.Int;kotlin.Int){}[0]
+    final suspend fun sizeBytes(): kotlin/Long // io.dataloom.assets.file/AppleFileAssetSource.sizeBytes|sizeBytes(){}[0]
+}
+
 final class io.dataloom.assets.memory/InMemoryAssetProvider : io.dataloom.assets/AssetProvider { // io.dataloom.assets.memory/InMemoryAssetProvider|null[0]
     constructor <init>(io.dataloom.api.security/DataLoomIncrementalDigestCalculator, io.dataloom.assets/AssetQuota = ..., io.dataloom.assets/AssetChunkSizeBounds = ...) // io.dataloom.assets.memory/InMemoryAssetProvider.<init>|<init>(io.dataloom.api.security.DataLoomIncrementalDigestCalculator;io.dataloom.assets.AssetQuota;io.dataloom.assets.AssetChunkSizeBounds){}[0]
 
