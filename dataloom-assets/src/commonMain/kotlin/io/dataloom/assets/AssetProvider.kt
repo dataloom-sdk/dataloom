@@ -2,6 +2,7 @@ package io.dataloom.assets
 
 import io.dataloom.api.asset.AssetManifest
 import io.dataloom.api.identifier.AssetId
+import io.dataloom.api.provider.DataLoomProvider
 import io.dataloom.api.provider.ProviderOperationResult
 
 /**
@@ -147,20 +148,25 @@ public class AssetChunkUpload(
  * provider must not require more than one chunk of a caller's memory per
  * call.
  *
- * ## Not a `DataLoomProvider` yet
+ * ## `DataLoomProvider` conformance
  *
- * `AssetProvider` deliberately does not extend
- * [io.dataloom.api.provider.DataLoomProvider] in this slice.
- * `ProviderType` has no asset category, and giving asset providers a
- * lifecycle (`initialize`/`health`/`close`) plus a registry/binding slot is
- * part of the later `DataLoomBuilder` wiring slice
- * (`docs/adr/ADR-0006-asset-transfer-and-streaming-digest.md`).
+ * `AssetProvider` extends [DataLoomProvider] with
+ * [io.dataloom.api.provider.ProviderType.ASSET] as its descriptor's
+ * [io.dataloom.api.provider.ProviderDescriptor.type] (`#97`,
+ * `docs/adr/ADR-0006-asset-transfer-and-streaming-digest.md`). Registering an
+ * `AssetProvider` instance with `DataLoomBuilder` via its normal
+ * `providers(...)`/`provider(...)` registration -- the exact same path every
+ * other provider type uses -- makes it participate in the same
+ * `ProviderLifecycleCoordinator.initialize()`/`shutdown()` sequencing as
+ * every other registered provider. An `AssetProvider` supplied only to
+ * `DataLoomAssetTransferSpec` and never also registered is not
+ * lifecycle-managed, exactly as before this conformance existed.
  *
  * Failures are reported as [ProviderOperationResult.Failure] carrying an
  * [AssetTransferError]; providers must not throw for expected failures.
  * Implementations must be thread-safe.
  */
-public interface AssetProvider {
+public interface AssetProvider : DataLoomProvider {
 
     /** Chunk sizes this provider accepts. */
     public val chunkSizeBounds: AssetChunkSizeBounds
