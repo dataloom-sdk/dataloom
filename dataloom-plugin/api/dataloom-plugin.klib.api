@@ -149,6 +149,28 @@ sealed interface io.dataloom.plugin/PluginLifecycleAdministrationAuthorizationDe
     }
 }
 
+final class io.dataloom.plugin.reference/DiagnosticsCounterPlugin : io.dataloom.api.plugin/DataLoomPlugin { // io.dataloom.plugin.reference/DiagnosticsCounterPlugin|null[0]
+    constructor <init>(io.dataloom.api.plugin/PluginManifest, io.dataloom.api.plugin/PluginExecutionBounds) // io.dataloom.plugin.reference/DiagnosticsCounterPlugin.<init>|<init>(io.dataloom.api.plugin.PluginManifest;io.dataloom.api.plugin.PluginExecutionBounds){}[0]
+
+    final val executionBounds // io.dataloom.plugin.reference/DiagnosticsCounterPlugin.executionBounds|{}executionBounds[0]
+        final fun <get-executionBounds>(): io.dataloom.api.plugin/PluginExecutionBounds // io.dataloom.plugin.reference/DiagnosticsCounterPlugin.executionBounds.<get-executionBounds>|<get-executionBounds>(){}[0]
+    final val manifest // io.dataloom.plugin.reference/DiagnosticsCounterPlugin.manifest|{}manifest[0]
+        final fun <get-manifest>(): io.dataloom.api.plugin/PluginManifest // io.dataloom.plugin.reference/DiagnosticsCounterPlugin.manifest.<get-manifest>|<get-manifest>(){}[0]
+
+    final suspend fun recordEvent(kotlin/String) // io.dataloom.plugin.reference/DiagnosticsCounterPlugin.recordEvent|recordEvent(kotlin.String){}[0]
+    final suspend fun reset() // io.dataloom.plugin.reference/DiagnosticsCounterPlugin.reset|reset(){}[0]
+    final suspend fun snapshot(): kotlin.collections/Map<kotlin/String, kotlin/Long> // io.dataloom.plugin.reference/DiagnosticsCounterPlugin.snapshot|snapshot(){}[0]
+
+    final object Companion { // io.dataloom.plugin.reference/DiagnosticsCounterPlugin.Companion|null[0]
+        final const val DIAGNOSTICS_CAPABILITY // io.dataloom.plugin.reference/DiagnosticsCounterPlugin.Companion.DIAGNOSTICS_CAPABILITY|{}DIAGNOSTICS_CAPABILITY[0]
+            final fun <get-DIAGNOSTICS_CAPABILITY>(): kotlin/String // io.dataloom.plugin.reference/DiagnosticsCounterPlugin.Companion.DIAGNOSTICS_CAPABILITY.<get-DIAGNOSTICS_CAPABILITY>|<get-DIAGNOSTICS_CAPABILITY>(){}[0]
+        final const val RECORD_PERMISSION // io.dataloom.plugin.reference/DiagnosticsCounterPlugin.Companion.RECORD_PERMISSION|{}RECORD_PERMISSION[0]
+            final fun <get-RECORD_PERMISSION>(): kotlin/String // io.dataloom.plugin.reference/DiagnosticsCounterPlugin.Companion.RECORD_PERMISSION.<get-RECORD_PERMISSION>|<get-RECORD_PERMISSION>(){}[0]
+
+        final fun manifestFor(io.dataloom.api.plugin/PluginId, io.dataloom.api.plugin/PluginVersion, io.dataloom.api.plugin/PluginVendor, io.dataloom.api.plugin/PluginCompatibilityRange): io.dataloom.api.plugin/PluginManifest // io.dataloom.plugin.reference/DiagnosticsCounterPlugin.Companion.manifestFor|manifestFor(io.dataloom.api.plugin.PluginId;io.dataloom.api.plugin.PluginVersion;io.dataloom.api.plugin.PluginVendor;io.dataloom.api.plugin.PluginCompatibilityRange){}[0]
+    }
+}
+
 final class io.dataloom.plugin.testkit/PluginCertificationKit { // io.dataloom.plugin.testkit/PluginCertificationKit|null[0]
     constructor <init>(io.dataloom.api.identifier/RuntimeVersion = ..., kotlin/Function2<io.dataloom.api.plugin/PluginManifest, io.dataloom.api.plugin/PluginExecutionBounds, io.dataloom.api.plugin/DataLoomPlugin>, kotlin/Function0<io.dataloom.plugin/PluginLifecycleAdministrationAuthorizer> = ..., kotlin/Function1<kotlin/String, io.dataloom.plugin/PluginLifecycleAdministrationAuthorizer> = ...) // io.dataloom.plugin.testkit/PluginCertificationKit.<init>|<init>(io.dataloom.api.identifier.RuntimeVersion;kotlin.Function2<io.dataloom.api.plugin.PluginManifest,io.dataloom.api.plugin.PluginExecutionBounds,io.dataloom.api.plugin.DataLoomPlugin>;kotlin.Function0<io.dataloom.plugin.PluginLifecycleAdministrationAuthorizer>;kotlin.Function1<kotlin.String,io.dataloom.plugin.PluginLifecycleAdministrationAuthorizer>){}[0]
 
