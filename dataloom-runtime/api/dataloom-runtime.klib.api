@@ -3484,6 +3484,19 @@ final class io.dataloom.runtime.execution/SynchronizationPipelineRegistry { // i
     final fun toString(): kotlin/String // io.dataloom.runtime.execution/SynchronizationPipelineRegistry.toString|toString(){}[0]
 }
 
+final class io.dataloom.runtime.facade/DataLoomAssetTransferOperationalEventOutboxSpec { // io.dataloom.runtime.facade/DataLoomAssetTransferOperationalEventOutboxSpec|null[0]
+    constructor <init>(io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState>, io.dataloom.api.operational/OperationalEventOutboxScope = ..., kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.runtime.facade/DataLoomAssetTransferOperationalEventOutboxSpec.<init>|<init>(io.dataloom.api.state.DurableStateStore<io.dataloom.api.operational.OperationalEventOutboxScope,io.dataloom.api.operational.OperationalEventOutboxState>;io.dataloom.api.operational.OperationalEventOutboxScope;kotlin.Int;kotlin.Int){}[0]
+
+    final val maximumStateUpdateAttempts // io.dataloom.runtime.facade/DataLoomAssetTransferOperationalEventOutboxSpec.maximumStateUpdateAttempts|{}maximumStateUpdateAttempts[0]
+        final fun <get-maximumStateUpdateAttempts>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomAssetTransferOperationalEventOutboxSpec.maximumStateUpdateAttempts.<get-maximumStateUpdateAttempts>|<get-maximumStateUpdateAttempts>(){}[0]
+    final val schemaVersion // io.dataloom.runtime.facade/DataLoomAssetTransferOperationalEventOutboxSpec.schemaVersion|{}schemaVersion[0]
+        final fun <get-schemaVersion>(): kotlin/Int // io.dataloom.runtime.facade/DataLoomAssetTransferOperationalEventOutboxSpec.schemaVersion.<get-schemaVersion>|<get-schemaVersion>(){}[0]
+    final val scope // io.dataloom.runtime.facade/DataLoomAssetTransferOperationalEventOutboxSpec.scope|{}scope[0]
+        final fun <get-scope>(): io.dataloom.api.operational/OperationalEventOutboxScope // io.dataloom.runtime.facade/DataLoomAssetTransferOperationalEventOutboxSpec.scope.<get-scope>|<get-scope>(){}[0]
+    final val store // io.dataloom.runtime.facade/DataLoomAssetTransferOperationalEventOutboxSpec.store|{}store[0]
+        final fun <get-store>(): io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState> // io.dataloom.runtime.facade/DataLoomAssetTransferOperationalEventOutboxSpec.store.<get-store>|<get-store>(){}[0]
+}
+
 final class io.dataloom.runtime.facade/DataLoomAssetTransferSpec { // io.dataloom.runtime.facade/DataLoomAssetTransferSpec|null[0]
     constructor <init>(io.dataloom.assets/AssetProvider, io.dataloom.assets/AssetTransferSessionStore, io.dataloom.api.security/DataLoomIncrementalDigestCalculator, kotlin/Int = ..., io.dataloom.api.security/DigestAlgorithm = ..., kotlin/Int = ..., io.dataloom.assets.transform/AssetTransferTransforms = ...) // io.dataloom.runtime.facade/DataLoomAssetTransferSpec.<init>|<init>(io.dataloom.assets.AssetProvider;io.dataloom.assets.AssetTransferSessionStore;io.dataloom.api.security.DataLoomIncrementalDigestCalculator;kotlin.Int;io.dataloom.api.security.DigestAlgorithm;kotlin.Int;io.dataloom.assets.transform.AssetTransferTransforms){}[0]
 
@@ -3513,6 +3526,7 @@ final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.
     constructor <init>() // io.dataloom.runtime.facade/DataLoomBuilder.<init>|<init>(){}[0]
 
     final fun assetTransferConfiguration(io.dataloom.runtime.facade/DataLoomAssetTransferSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.assetTransferConfiguration|assetTransferConfiguration(io.dataloom.runtime.facade.DataLoomAssetTransferSpec){}[0]
+    final fun assetTransferOperationalEventOutboxConfiguration(io.dataloom.runtime.facade/DataLoomAssetTransferOperationalEventOutboxSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.assetTransferOperationalEventOutboxConfiguration|assetTransferOperationalEventOutboxConfiguration(io.dataloom.runtime.facade.DataLoomAssetTransferOperationalEventOutboxSpec){}[0]
     final fun bidirectionalConfiguration(io.dataloom.runtime.execution.bidirectional/BidirectionalPipelineConfiguration): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.bidirectionalConfiguration|bidirectionalConfiguration(io.dataloom.runtime.execution.bidirectional.BidirectionalPipelineConfiguration){}[0]
     final fun build(): io.dataloom.runtime.facade/DataLoom // io.dataloom.runtime.facade/DataLoomBuilder.build|build(){}[0]
     final fun circuitAdministrationConfiguration(io.dataloom.runtime.facade/DataLoomCircuitAdministrationSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.circuitAdministrationConfiguration|circuitAdministrationConfiguration(io.dataloom.runtime.facade.DataLoomCircuitAdministrationSpec){}[0]
@@ -4338,6 +4352,13 @@ final class io.dataloom.runtime.observation.health/RedactedProviderHealth { // i
     final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.observation.health/RedactedProviderHealth.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.dataloom.runtime.observation.health/RedactedProviderHealth.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.dataloom.runtime.observation.health/RedactedProviderHealth.toString|toString(){}[0]
+}
+
+final class io.dataloom.runtime.observation.operational/AssetTransferOperationalEventRecorder : io.dataloom.assets/AssetTransferObserver { // io.dataloom.runtime.observation.operational/AssetTransferOperationalEventRecorder|null[0]
+    constructor <init>(io.dataloom.api.operational/DurableOperationalEventOutbox, io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.time/DataLoomClock) // io.dataloom.runtime.observation.operational/AssetTransferOperationalEventRecorder.<init>|<init>(io.dataloom.api.operational.DurableOperationalEventOutbox;io.dataloom.api.operational.OperationalEventOutboxScope;io.dataloom.api.time.DataLoomClock){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.runtime.observation.operational/AssetTransferOperationalEventRecorder.toString|toString(){}[0]
+    final suspend fun onOutcome(io.dataloom.assets/AssetTransferSessionId, io.dataloom.assets/AssetTransferOperation, io.dataloom.assets/AssetTransferOutcome) // io.dataloom.runtime.observation.operational/AssetTransferOperationalEventRecorder.onOutcome|onOutcome(io.dataloom.assets.AssetTransferSessionId;io.dataloom.assets.AssetTransferOperation;io.dataloom.assets.AssetTransferOutcome){}[0]
 }
 
 final class io.dataloom.runtime.observation.operational/QueueLifecycleOperationalEventRecorder : io.dataloom.runtime.queue/QueueEntryTransitionObserver { // io.dataloom.runtime.observation.operational/QueueLifecycleOperationalEventRecorder|null[0]
@@ -5602,6 +5623,10 @@ final object io.dataloom.runtime.execution.protection/ProviderProtectedSynchroni
 final object io.dataloom.runtime.facade/DataLoomRuntimeVersion { // io.dataloom.runtime.facade/DataLoomRuntimeVersion|null[0]
     final val CURRENT // io.dataloom.runtime.facade/DataLoomRuntimeVersion.CURRENT|{}CURRENT[0]
         final fun <get-CURRENT>(): io.dataloom.api.identifier/RuntimeVersion // io.dataloom.runtime.facade/DataLoomRuntimeVersion.CURRENT.<get-CURRENT>|<get-CURRENT>(){}[0]
+}
+
+final object io.dataloom.runtime.observation.operational/AssetTransferOperationalEventBridge { // io.dataloom.runtime.observation.operational/AssetTransferOperationalEventBridge|null[0]
+    final fun toEnvelope(io.dataloom.assets/AssetTransferSessionId, io.dataloom.assets/AssetTransferOperation, io.dataloom.assets/AssetTransferOutcome, io.dataloom.api.time/DataLoomInstant): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.runtime.observation.operational/AssetTransferOperationalEventBridge.toEnvelope|toEnvelope(io.dataloom.assets.AssetTransferSessionId;io.dataloom.assets.AssetTransferOperation;io.dataloom.assets.AssetTransferOutcome;io.dataloom.api.time.DataLoomInstant){}[0]
 }
 
 final object io.dataloom.runtime.observation.operational/ConflictResolutionOperationalEventBridge { // io.dataloom.runtime.observation.operational/ConflictResolutionOperationalEventBridge|null[0]

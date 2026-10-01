@@ -799,6 +799,15 @@ public final class io/dataloom/runtime/facade/DataLoom$DefaultImpls {
 	public static fun getRetryAdministration (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomRetryAdministration;
 }
 
+public final class io/dataloom/runtime/facade/DataLoomAssetTransferOperationalEventOutboxSpec {
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;Ljava/lang/String;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;Ljava/lang/String;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getMaximumStateUpdateAttempts ()I
+	public final fun getSchemaVersion ()I
+	public final fun getScope--IyNcac ()Ljava/lang/String;
+	public final fun getStore ()Lio/dataloom/api/state/DurableStateStore;
+}
+
 public final class io/dataloom/runtime/facade/DataLoomAssetTransferSpec {
 	public fun <init> (Lio/dataloom/assets/AssetProvider;Lio/dataloom/assets/AssetTransferSessionStore;Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;ILio/dataloom/api/security/DigestAlgorithm;ILio/dataloom/assets/transform/AssetTransferTransforms;)V
 	public synthetic fun <init> (Lio/dataloom/assets/AssetProvider;Lio/dataloom/assets/AssetTransferSessionStore;Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;ILio/dataloom/api/security/DigestAlgorithm;ILio/dataloom/assets/transform/AssetTransferTransforms;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -819,6 +828,7 @@ public final class io/dataloom/runtime/facade/DataLoomBuildException : java/lang
 public final class io/dataloom/runtime/facade/DataLoomBuilder {
 	public fun <init> ()V
 	public final fun assetTransferConfiguration (Lio/dataloom/runtime/facade/DataLoomAssetTransferSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
+	public final fun assetTransferOperationalEventOutboxConfiguration (Lio/dataloom/runtime/facade/DataLoomAssetTransferOperationalEventOutboxSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun bidirectionalConfiguration (Lio/dataloom/runtime/execution/bidirectional/BidirectionalPipelineConfiguration;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun build ()Lio/dataloom/runtime/facade/DataLoom;
 	public final fun circuitAdministrationConfiguration (Lio/dataloom/runtime/facade/DataLoomCircuitAdministrationSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
@@ -1706,6 +1716,17 @@ public final class io/dataloom/runtime/observation/health/RedactedProviderHealth
 	public final fun getErrorAttributes ()Lio/dataloom/api/security/RedactedAttributes;
 	public final fun getStatus ()Lio/dataloom/api/provider/ProviderHealthStatus;
 	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/observation/operational/AssetTransferOperationalEventBridge {
+	public static final field INSTANCE Lio/dataloom/runtime/observation/operational/AssetTransferOperationalEventBridge;
+	public final fun toEnvelope-HZOjg58 (Ljava/lang/String;Lio/dataloom/assets/AssetTransferOperation;Lio/dataloom/assets/AssetTransferOutcome;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/api/operational/OperationalEventEnvelope;
+}
+
+public final class io/dataloom/runtime/observation/operational/AssetTransferOperationalEventRecorder : io/dataloom/assets/AssetTransferObserver {
+	public synthetic fun <init> (Lio/dataloom/api/operational/DurableOperationalEventOutbox;Ljava/lang/String;Lio/dataloom/api/time/DataLoomClock;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun onOutcome-HZOjg58 (Ljava/lang/String;Lio/dataloom/assets/AssetTransferOperation;Lio/dataloom/assets/AssetTransferOutcome;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun toString ()Ljava/lang/String;
 }
 
