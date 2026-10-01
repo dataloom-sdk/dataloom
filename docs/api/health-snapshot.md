@@ -7,8 +7,10 @@
 > (slice 1), and now the durable operational-event outbox and the queue worker
 > through two purpose-built synchronous read paths, and rolls everything up
 > into a `HEALTHY`/`DEGRADED`/`UNHEALTHY` severity with closed-vocabulary
-> findings. It does not complete SDK-wide health aggregation, and it is not
-> the deployable operations dashboard/adaptor DL-042 still requires.
+> findings. It does not complete SDK-wide health aggregation. A bounded
+> pull-export core of the deployable operations dashboard/adaptor DL-042
+> also requires now exists -- `dataLoomPrometheusMetrics`, below -- but this
+> SDK still ships no HTTP server, OTLP/push exporter, or dashboard service.
 
 `dataLoomHealthSnapshot(...)`, in `io.dataloom.runtime.observation.health`,
 is a pure function that builds a `DataLoomHealthSnapshot` from whichever
@@ -181,12 +183,34 @@ if (snapshot.severity != DataLoomHealthSeverity.HEALTHY) {
 Not configuring the trackers leaves every outbox and worker exactly as before:
 no observer, no summary computation, no wrapper.
 
+## Prometheus text export
+
+`dataLoomPrometheusMetrics(snapshot)`, in the same package, renders an
+already-built `DataLoomHealthSnapshot` as
+[Prometheus text exposition format](https://github.com/prometheus/docs/blob/main/content/docs/instrumenting/exposition_formats.md):
+overall severity, a per-`DataLoomHealthComponent` roll-up, per-scope outbox
+depth/severity (a never-observed scope is omitted, not reported as zero),
+queue-worker gauges, and per-provider status. It is a pure formatting
+function -- no I/O, no suspension, no clock read, no new instrumentation --
+over exactly the fields already documented above; it adds no subsystem
+coverage `DataLoomHealthSnapshot` itself does not already have.
+
+```kotlin
+val text = dataLoomPrometheusMetrics(snapshot)
+// host application serves `text` from its own /metrics HTTP handler
+```
+
+This SDK still does not run an HTTP server or any scrape/push transport --
+exporting the text is this function's entire job; serving it is the host
+application's.
+
 ## Scope -- what this deliberately is not
 
 - **Not a live dashboard.** No continuous feed, subscription or polling loop; a
   caller decides when to call the function and receives exactly one instant.
-- **Not a deployable service or reference adaptor.** No HTTP endpoint, process
-  or exporter ships with this slice.
+- **Not a deployable service or reference adaptor.** No HTTP endpoint or
+  process ships with this slice; `dataLoomPrometheusMetrics` only renders
+  text, it does not serve it.
 - **Not historical.** No trend, time series or retained-snapshot history.
 - **Not cross-process or cross-node aggregation.** One snapshot describes one
   process's in-memory state (and, for the outbox, what that process last saw of
@@ -201,5 +225,9 @@ no observer, no summary computation, no wrapper.
 
 ## Remaining DL-042 boundary
 
-SDK-wide health aggregation across the subsystems above, and the deployable
-operations dashboard/adaptor, remain open, mandatory V1 work.
+SDK-wide health aggregation across the subsystems above remains open. The
+deployable operations dashboard/adaptor's bounded pull-export core now
+exists (`dataLoomPrometheusMetrics`, above); an HTTP server, OTLP/push
+export, and a dashboard service remain open, mandatory V1 work, as does
+extending the exported surface to subsystems `DataLoomHealthSnapshot` itself
+does not yet cover.

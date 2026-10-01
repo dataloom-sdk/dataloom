@@ -1507,6 +1507,10 @@ public final class io/dataloom/runtime/observation/health/DataLoomHealthThreshol
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/runtime/observation/health/DataLoomPrometheusHealthExporterKt {
+	public static final fun dataLoomPrometheusMetrics (Lio/dataloom/runtime/observation/health/DataLoomHealthSnapshot;)Ljava/lang/String;
+}
+
 public final class io/dataloom/runtime/observation/health/OperationalEventOutboxHealth {
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/Integer;Lkotlin/time/Duration;Lio/dataloom/api/time/DataLoomInstant;Lkotlin/time/Duration;ZLio/dataloom/runtime/observation/health/OperationalEventOutboxProcessingCycleHealth;ZLio/dataloom/runtime/observation/health/DataLoomHealthSeverity;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1--IyNcac ()Ljava/lang/String;
