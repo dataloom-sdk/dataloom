@@ -664,6 +664,219 @@ public final class io/dataloom/assets/memory/InMemoryAssetSource : io/dataloom/a
 	public fun sizeBytes (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
+public final class io/dataloom/assets/policy/AssetContentDenyListEntry {
+	public fun <init> (Ljava/lang/String;Lio/dataloom/assets/policy/AssetContentMatchAction;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/assets/policy/AssetContentMatchAction;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Lio/dataloom/assets/policy/AssetContentMatchAction;Ljava/lang/String;)Lio/dataloom/assets/policy/AssetContentDenyListEntry;
+	public static synthetic fun copy$default (Lio/dataloom/assets/policy/AssetContentDenyListEntry;Ljava/lang/String;Lio/dataloom/assets/policy/AssetContentMatchAction;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/assets/policy/AssetContentDenyListEntry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAction ()Lio/dataloom/assets/policy/AssetContentMatchAction;
+	public final fun getDigestHex ()Ljava/lang/String;
+	public final fun getReasonCode ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/policy/AssetContentMatchAction : java/lang/Enum {
+	public static final field DENY Lio/dataloom/assets/policy/AssetContentMatchAction;
+	public static final field QUARANTINE Lio/dataloom/assets/policy/AssetContentMatchAction;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/assets/policy/AssetContentMatchAction;
+	public static fun values ()[Lio/dataloom/assets/policy/AssetContentMatchAction;
+}
+
+public final class io/dataloom/assets/policy/AssetContentQuarantineRecord {
+	public static final field Companion Lio/dataloom/assets/policy/AssetContentQuarantineRecord$Companion;
+	public static final field MAX_TEXT_FIELD_LENGTH I
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Lio/dataloom/assets/AssetTransferDirection;ILjava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/assets/policy/AssetContentQuarantineStatus;Lio/dataloom/assets/policy/AssetContentQuarantineRelease;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Lio/dataloom/assets/AssetTransferDirection;ILjava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/assets/policy/AssetContentQuarantineStatus;Lio/dataloom/assets/policy/AssetContentQuarantineRelease;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-FHqHbzU ()Ljava/lang/String;
+	public final fun component10 ()Lio/dataloom/assets/policy/AssetContentQuarantineStatus;
+	public final fun component11 ()Lio/dataloom/assets/policy/AssetContentQuarantineRelease;
+	public final fun component2-T4MOV2g ()Ljava/lang/String;
+	public final fun component3 ()J
+	public final fun component4-jD4WxIU ()Ljava/lang/String;
+	public final fun component5 ()Lio/dataloom/assets/AssetTransferDirection;
+	public final fun component6 ()I
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Ljava/lang/String;
+	public final fun component9 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy-0cm_pK0 (Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Lio/dataloom/assets/AssetTransferDirection;ILjava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/assets/policy/AssetContentQuarantineStatus;Lio/dataloom/assets/policy/AssetContentQuarantineRelease;)Lio/dataloom/assets/policy/AssetContentQuarantineRecord;
+	public static synthetic fun copy-0cm_pK0$default (Lio/dataloom/assets/policy/AssetContentQuarantineRecord;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Lio/dataloom/assets/AssetTransferDirection;ILjava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/assets/policy/AssetContentQuarantineStatus;Lio/dataloom/assets/policy/AssetContentQuarantineRelease;ILjava/lang/Object;)Lio/dataloom/assets/policy/AssetContentQuarantineRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAssetId-T4MOV2g ()Ljava/lang/String;
+	public final fun getChunkIndex ()I
+	public final fun getDirection ()Lio/dataloom/assets/AssetTransferDirection;
+	public final fun getMatchedDigestHex ()Ljava/lang/String;
+	public final fun getMediaType-jD4WxIU ()Ljava/lang/String;
+	public final fun getQuarantinedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getReasonCode ()Ljava/lang/String;
+	public final fun getRelease ()Lio/dataloom/assets/policy/AssetContentQuarantineRelease;
+	public final fun getSessionId-FHqHbzU ()Ljava/lang/String;
+	public final fun getStatus ()Lio/dataloom/assets/policy/AssetContentQuarantineStatus;
+	public final fun getVersion ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/policy/AssetContentQuarantineRecord$Companion {
+}
+
+public final class io/dataloom/assets/policy/AssetContentQuarantineRecordCodec : io/dataloom/api/state/DurableStateCodec {
+	public static final field Companion Lio/dataloom/assets/policy/AssetContentQuarantineRecordCodec$Companion;
+	public static final field MAX_ENCODED_LENGTH I
+	public fun <init> ()V
+	public fun decode (Ljava/lang/String;)Lio/dataloom/assets/policy/AssetContentQuarantineRecord;
+	public synthetic fun decode (Ljava/lang/String;)Ljava/lang/Object;
+	public fun encode (Lio/dataloom/assets/policy/AssetContentQuarantineRecord;)Ljava/lang/String;
+	public synthetic fun encode (Ljava/lang/Object;)Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/policy/AssetContentQuarantineRecordCodec$Companion {
+}
+
+public abstract interface class io/dataloom/assets/policy/AssetContentQuarantineRecordOutcome {
+}
+
+public final class io/dataloom/assets/policy/AssetContentQuarantineRecordOutcome$AlreadyRecorded : io/dataloom/assets/policy/AssetContentQuarantineRecordOutcome {
+	public fun <init> (Lio/dataloom/assets/policy/AssetContentQuarantineRecord;)V
+	public final fun component1 ()Lio/dataloom/assets/policy/AssetContentQuarantineRecord;
+	public final fun copy (Lio/dataloom/assets/policy/AssetContentQuarantineRecord;)Lio/dataloom/assets/policy/AssetContentQuarantineRecordOutcome$AlreadyRecorded;
+	public static synthetic fun copy$default (Lio/dataloom/assets/policy/AssetContentQuarantineRecordOutcome$AlreadyRecorded;Lio/dataloom/assets/policy/AssetContentQuarantineRecord;ILjava/lang/Object;)Lio/dataloom/assets/policy/AssetContentQuarantineRecordOutcome$AlreadyRecorded;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/assets/policy/AssetContentQuarantineRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/policy/AssetContentQuarantineRecordOutcome$ContentionLimitReached : io/dataloom/assets/policy/AssetContentQuarantineRecordOutcome {
+	public static final field INSTANCE Lio/dataloom/assets/policy/AssetContentQuarantineRecordOutcome$ContentionLimitReached;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/policy/AssetContentQuarantineRecordOutcome$PersistenceFailure : io/dataloom/assets/policy/AssetContentQuarantineRecordOutcome {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/assets/policy/AssetContentQuarantineRecordOutcome$PersistenceFailure;
+	public static synthetic fun copy$default (Lio/dataloom/assets/policy/AssetContentQuarantineRecordOutcome$PersistenceFailure;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/assets/policy/AssetContentQuarantineRecordOutcome$PersistenceFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/policy/AssetContentQuarantineRecordOutcome$Recorded : io/dataloom/assets/policy/AssetContentQuarantineRecordOutcome {
+	public fun <init> (Lio/dataloom/assets/policy/AssetContentQuarantineRecord;)V
+	public final fun component1 ()Lio/dataloom/assets/policy/AssetContentQuarantineRecord;
+	public final fun copy (Lio/dataloom/assets/policy/AssetContentQuarantineRecord;)Lio/dataloom/assets/policy/AssetContentQuarantineRecordOutcome$Recorded;
+	public static synthetic fun copy$default (Lio/dataloom/assets/policy/AssetContentQuarantineRecordOutcome$Recorded;Lio/dataloom/assets/policy/AssetContentQuarantineRecord;ILjava/lang/Object;)Lio/dataloom/assets/policy/AssetContentQuarantineRecordOutcome$Recorded;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/assets/policy/AssetContentQuarantineRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/policy/AssetContentQuarantineRelease {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/assets/policy/AssetContentQuarantineRelease;
+	public static synthetic fun copy$default (Lio/dataloom/assets/policy/AssetContentQuarantineRelease;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/assets/policy/AssetContentQuarantineRelease;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPrincipal ()Ljava/lang/String;
+	public final fun getReason ()Ljava/lang/String;
+	public final fun getReleasedAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome {
+}
+
+public final class io/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome$AlreadyReleased : io/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome {
+	public fun <init> (Lio/dataloom/assets/policy/AssetContentQuarantineRecord;)V
+	public final fun component1 ()Lio/dataloom/assets/policy/AssetContentQuarantineRecord;
+	public final fun copy (Lio/dataloom/assets/policy/AssetContentQuarantineRecord;)Lio/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome$AlreadyReleased;
+	public static synthetic fun copy$default (Lio/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome$AlreadyReleased;Lio/dataloom/assets/policy/AssetContentQuarantineRecord;ILjava/lang/Object;)Lio/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome$AlreadyReleased;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/assets/policy/AssetContentQuarantineRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome$ContentionLimitReached : io/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome {
+	public static final field INSTANCE Lio/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome$ContentionLimitReached;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome$NotHeld : io/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome {
+	public fun <init> (Lio/dataloom/assets/policy/AssetContentQuarantineRecord;)V
+	public final fun component1 ()Lio/dataloom/assets/policy/AssetContentQuarantineRecord;
+	public final fun copy (Lio/dataloom/assets/policy/AssetContentQuarantineRecord;)Lio/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome$NotHeld;
+	public static synthetic fun copy$default (Lio/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome$NotHeld;Lio/dataloom/assets/policy/AssetContentQuarantineRecord;ILjava/lang/Object;)Lio/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome$NotHeld;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/assets/policy/AssetContentQuarantineRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome$PersistenceFailure : io/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome {
+	public fun <init> (Lio/dataloom/api/error/DataLoomError;)V
+	public final fun component1 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome$PersistenceFailure;
+	public static synthetic fun copy$default (Lio/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome$PersistenceFailure;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome$PersistenceFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome$Released : io/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome {
+	public fun <init> (Lio/dataloom/assets/policy/AssetContentQuarantineRecord;)V
+	public final fun component1 ()Lio/dataloom/assets/policy/AssetContentQuarantineRecord;
+	public final fun copy (Lio/dataloom/assets/policy/AssetContentQuarantineRecord;)Lio/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome$Released;
+	public static synthetic fun copy$default (Lio/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome$Released;Lio/dataloom/assets/policy/AssetContentQuarantineRecord;ILjava/lang/Object;)Lio/dataloom/assets/policy/AssetContentQuarantineReleaseOutcome$Released;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecord ()Lio/dataloom/assets/policy/AssetContentQuarantineRecord;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/assets/policy/AssetContentQuarantineStatus : java/lang/Enum {
+	public static final field HELD Lio/dataloom/assets/policy/AssetContentQuarantineStatus;
+	public static final field RELEASED Lio/dataloom/assets/policy/AssetContentQuarantineStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/assets/policy/AssetContentQuarantineStatus;
+	public static fun values ()[Lio/dataloom/assets/policy/AssetContentQuarantineStatus;
+}
+
+public final class io/dataloom/assets/policy/DurableAssetContentQuarantineLog {
+	public static final field Companion Lio/dataloom/assets/policy/DurableAssetContentQuarantineLog$Companion;
+	public fun <init> (Lio/dataloom/api/state/DurableStateStore;II)V
+	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun current-fnV884s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun record (Lio/dataloom/assets/policy/AssetContentQuarantineRecord;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun release-6lL3Q7Q (Ljava/lang/String;Lio/dataloom/assets/policy/AssetContentQuarantineRelease;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/assets/policy/DurableAssetContentQuarantineLog$Companion {
+	public final fun getKeyEncoder ()Lio/dataloom/api/state/DurableStateScopeKeyEncoder;
+}
+
+public final class io/dataloom/assets/policy/HashDenyListAssetContentPolicy : io/dataloom/assets/AssetContentPolicy {
+	public fun <init> (Lio/dataloom/api/security/DataLoomDigestCalculator;Lio/dataloom/api/security/DigestAlgorithm;Ljava/util/Collection;Lio/dataloom/assets/policy/DurableAssetContentQuarantineLog;Lio/dataloom/api/time/DataLoomClock;)V
+	public synthetic fun <init> (Lio/dataloom/api/security/DataLoomDigestCalculator;Lio/dataloom/api/security/DigestAlgorithm;Ljava/util/Collection;Lio/dataloom/assets/policy/DurableAssetContentQuarantineLog;Lio/dataloom/api/time/DataLoomClock;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun evaluate (Lio/dataloom/assets/AssetContentPolicyContext;[BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getLastQuarantineRecordOutcome ()Lio/dataloom/assets/policy/AssetContentQuarantineRecordOutcome;
+}
+
 public final class io/dataloom/assets/testkit/AssetProviderContractKit {
 	public fun <init> (Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;Lkotlin/jvm/functions/Function2;)V
 	public final fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

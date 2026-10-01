@@ -6,6 +6,28 @@
 // - Show declarations: true
 
 // Library unique name: <dataloom:dataloom-assets>
+final enum class io.dataloom.assets.policy/AssetContentMatchAction : kotlin/Enum<io.dataloom.assets.policy/AssetContentMatchAction> { // io.dataloom.assets.policy/AssetContentMatchAction|null[0]
+    enum entry DENY // io.dataloom.assets.policy/AssetContentMatchAction.DENY|null[0]
+    enum entry QUARANTINE // io.dataloom.assets.policy/AssetContentMatchAction.QUARANTINE|null[0]
+
+    final val entries // io.dataloom.assets.policy/AssetContentMatchAction.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.assets.policy/AssetContentMatchAction> // io.dataloom.assets.policy/AssetContentMatchAction.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.assets.policy/AssetContentMatchAction // io.dataloom.assets.policy/AssetContentMatchAction.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.assets.policy/AssetContentMatchAction> // io.dataloom.assets.policy/AssetContentMatchAction.values|values#static(){}[0]
+}
+
+final enum class io.dataloom.assets.policy/AssetContentQuarantineStatus : kotlin/Enum<io.dataloom.assets.policy/AssetContentQuarantineStatus> { // io.dataloom.assets.policy/AssetContentQuarantineStatus|null[0]
+    enum entry HELD // io.dataloom.assets.policy/AssetContentQuarantineStatus.HELD|null[0]
+    enum entry RELEASED // io.dataloom.assets.policy/AssetContentQuarantineStatus.RELEASED|null[0]
+
+    final val entries // io.dataloom.assets.policy/AssetContentQuarantineStatus.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.assets.policy/AssetContentQuarantineStatus> // io.dataloom.assets.policy/AssetContentQuarantineStatus.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.assets.policy/AssetContentQuarantineStatus // io.dataloom.assets.policy/AssetContentQuarantineStatus.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.assets.policy/AssetContentQuarantineStatus> // io.dataloom.assets.policy/AssetContentQuarantineStatus.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.assets/AssetErrorKind : kotlin/Enum<io.dataloom.assets/AssetErrorKind> { // io.dataloom.assets/AssetErrorKind|null[0]
     enum entry ASSET_NOT_FOUND // io.dataloom.assets/AssetErrorKind.ASSET_NOT_FOUND|null[0]
     enum entry ASSET_VERSION_CONFLICT // io.dataloom.assets/AssetErrorKind.ASSET_VERSION_CONFLICT|null[0]
@@ -160,6 +182,113 @@ abstract interface io.dataloom.assets/AssetTransferObserver { // io.dataloom.ass
 abstract interface io.dataloom.assets/AssetTransferSessionStore { // io.dataloom.assets/AssetTransferSessionStore|null[0]
     abstract suspend fun load(io.dataloom.assets/AssetTransferSessionId): io.dataloom.assets/AssetTransferSession? // io.dataloom.assets/AssetTransferSessionStore.load|load(io.dataloom.assets.AssetTransferSessionId){}[0]
     abstract suspend fun save(io.dataloom.assets/AssetTransferSession, kotlin/Long?): kotlin/Boolean // io.dataloom.assets/AssetTransferSessionStore.save|save(io.dataloom.assets.AssetTransferSession;kotlin.Long?){}[0]
+}
+
+sealed interface io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome { // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome|null[0]
+    final class AlreadyRecorded : io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome { // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.AlreadyRecorded|null[0]
+        constructor <init>(io.dataloom.assets.policy/AssetContentQuarantineRecord) // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.AlreadyRecorded.<init>|<init>(io.dataloom.assets.policy.AssetContentQuarantineRecord){}[0]
+
+        final val record // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.AlreadyRecorded.record|{}record[0]
+            final fun <get-record>(): io.dataloom.assets.policy/AssetContentQuarantineRecord // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.AlreadyRecorded.record.<get-record>|<get-record>(){}[0]
+
+        final fun component1(): io.dataloom.assets.policy/AssetContentQuarantineRecord // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.AlreadyRecorded.component1|component1(){}[0]
+        final fun copy(io.dataloom.assets.policy/AssetContentQuarantineRecord = ...): io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.AlreadyRecorded // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.AlreadyRecorded.copy|copy(io.dataloom.assets.policy.AssetContentQuarantineRecord){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.AlreadyRecorded.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.AlreadyRecorded.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.AlreadyRecorded.toString|toString(){}[0]
+    }
+
+    final class PersistenceFailure : io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome { // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.PersistenceFailure|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.PersistenceFailure.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.PersistenceFailure.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.PersistenceFailure.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.PersistenceFailure.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.PersistenceFailure // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.PersistenceFailure.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.PersistenceFailure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.PersistenceFailure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.PersistenceFailure.toString|toString(){}[0]
+    }
+
+    final class Recorded : io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome { // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.Recorded|null[0]
+        constructor <init>(io.dataloom.assets.policy/AssetContentQuarantineRecord) // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.Recorded.<init>|<init>(io.dataloom.assets.policy.AssetContentQuarantineRecord){}[0]
+
+        final val record // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.Recorded.record|{}record[0]
+            final fun <get-record>(): io.dataloom.assets.policy/AssetContentQuarantineRecord // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.Recorded.record.<get-record>|<get-record>(){}[0]
+
+        final fun component1(): io.dataloom.assets.policy/AssetContentQuarantineRecord // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.Recorded.component1|component1(){}[0]
+        final fun copy(io.dataloom.assets.policy/AssetContentQuarantineRecord = ...): io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.Recorded // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.Recorded.copy|copy(io.dataloom.assets.policy.AssetContentQuarantineRecord){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.Recorded.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.Recorded.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.Recorded.toString|toString(){}[0]
+    }
+
+    final object ContentionLimitReached : io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome { // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.ContentionLimitReached|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.ContentionLimitReached.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.ContentionLimitReached.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome.ContentionLimitReached.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome { // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome|null[0]
+    final class AlreadyReleased : io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome { // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.AlreadyReleased|null[0]
+        constructor <init>(io.dataloom.assets.policy/AssetContentQuarantineRecord) // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.AlreadyReleased.<init>|<init>(io.dataloom.assets.policy.AssetContentQuarantineRecord){}[0]
+
+        final val record // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.AlreadyReleased.record|{}record[0]
+            final fun <get-record>(): io.dataloom.assets.policy/AssetContentQuarantineRecord // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.AlreadyReleased.record.<get-record>|<get-record>(){}[0]
+
+        final fun component1(): io.dataloom.assets.policy/AssetContentQuarantineRecord // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.AlreadyReleased.component1|component1(){}[0]
+        final fun copy(io.dataloom.assets.policy/AssetContentQuarantineRecord = ...): io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.AlreadyReleased // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.AlreadyReleased.copy|copy(io.dataloom.assets.policy.AssetContentQuarantineRecord){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.AlreadyReleased.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.AlreadyReleased.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.AlreadyReleased.toString|toString(){}[0]
+    }
+
+    final class NotHeld : io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome { // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.NotHeld|null[0]
+        constructor <init>(io.dataloom.assets.policy/AssetContentQuarantineRecord?) // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.NotHeld.<init>|<init>(io.dataloom.assets.policy.AssetContentQuarantineRecord?){}[0]
+
+        final val record // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.NotHeld.record|{}record[0]
+            final fun <get-record>(): io.dataloom.assets.policy/AssetContentQuarantineRecord? // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.NotHeld.record.<get-record>|<get-record>(){}[0]
+
+        final fun component1(): io.dataloom.assets.policy/AssetContentQuarantineRecord? // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.NotHeld.component1|component1(){}[0]
+        final fun copy(io.dataloom.assets.policy/AssetContentQuarantineRecord? = ...): io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.NotHeld // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.NotHeld.copy|copy(io.dataloom.assets.policy.AssetContentQuarantineRecord?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.NotHeld.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.NotHeld.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.NotHeld.toString|toString(){}[0]
+    }
+
+    final class PersistenceFailure : io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome { // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.PersistenceFailure|null[0]
+        constructor <init>(io.dataloom.api.error/DataLoomError) // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.PersistenceFailure.<init>|<init>(io.dataloom.api.error.DataLoomError){}[0]
+
+        final val error // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.PersistenceFailure.error|{}error[0]
+            final fun <get-error>(): io.dataloom.api.error/DataLoomError // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.PersistenceFailure.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): io.dataloom.api.error/DataLoomError // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.PersistenceFailure.component1|component1(){}[0]
+        final fun copy(io.dataloom.api.error/DataLoomError = ...): io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.PersistenceFailure // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.PersistenceFailure.copy|copy(io.dataloom.api.error.DataLoomError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.PersistenceFailure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.PersistenceFailure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.PersistenceFailure.toString|toString(){}[0]
+    }
+
+    final class Released : io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome { // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.Released|null[0]
+        constructor <init>(io.dataloom.assets.policy/AssetContentQuarantineRecord) // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.Released.<init>|<init>(io.dataloom.assets.policy.AssetContentQuarantineRecord){}[0]
+
+        final val record // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.Released.record|{}record[0]
+            final fun <get-record>(): io.dataloom.assets.policy/AssetContentQuarantineRecord // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.Released.record.<get-record>|<get-record>(){}[0]
+
+        final fun component1(): io.dataloom.assets.policy/AssetContentQuarantineRecord // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.Released.component1|component1(){}[0]
+        final fun copy(io.dataloom.assets.policy/AssetContentQuarantineRecord = ...): io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.Released // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.Released.copy|copy(io.dataloom.assets.policy.AssetContentQuarantineRecord){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.Released.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.Released.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.Released.toString|toString(){}[0]
+    }
+
+    final object ContentionLimitReached : io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome { // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.ContentionLimitReached|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.ContentionLimitReached.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.ContentionLimitReached.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome.ContentionLimitReached.toString|toString(){}[0]
+    }
 }
 
 sealed interface io.dataloom.assets/AssetContentPolicyDecision { // io.dataloom.assets/AssetContentPolicyDecision|null[0]
@@ -510,6 +639,126 @@ final class io.dataloom.assets.memory/InMemoryAssetSource : io.dataloom.assets/A
 
     final suspend fun read(kotlin/Long, kotlin/ByteArray, kotlin/Int, kotlin/Int): kotlin/Int // io.dataloom.assets.memory/InMemoryAssetSource.read|read(kotlin.Long;kotlin.ByteArray;kotlin.Int;kotlin.Int){}[0]
     final suspend fun sizeBytes(): kotlin/Long // io.dataloom.assets.memory/InMemoryAssetSource.sizeBytes|sizeBytes(){}[0]
+}
+
+final class io.dataloom.assets.policy/AssetContentDenyListEntry { // io.dataloom.assets.policy/AssetContentDenyListEntry|null[0]
+    constructor <init>(kotlin/String, io.dataloom.assets.policy/AssetContentMatchAction, kotlin/String) // io.dataloom.assets.policy/AssetContentDenyListEntry.<init>|<init>(kotlin.String;io.dataloom.assets.policy.AssetContentMatchAction;kotlin.String){}[0]
+
+    final val action // io.dataloom.assets.policy/AssetContentDenyListEntry.action|{}action[0]
+        final fun <get-action>(): io.dataloom.assets.policy/AssetContentMatchAction // io.dataloom.assets.policy/AssetContentDenyListEntry.action.<get-action>|<get-action>(){}[0]
+    final val digestHex // io.dataloom.assets.policy/AssetContentDenyListEntry.digestHex|{}digestHex[0]
+        final fun <get-digestHex>(): kotlin/String // io.dataloom.assets.policy/AssetContentDenyListEntry.digestHex.<get-digestHex>|<get-digestHex>(){}[0]
+    final val reasonCode // io.dataloom.assets.policy/AssetContentDenyListEntry.reasonCode|{}reasonCode[0]
+        final fun <get-reasonCode>(): kotlin/String // io.dataloom.assets.policy/AssetContentDenyListEntry.reasonCode.<get-reasonCode>|<get-reasonCode>(){}[0]
+
+    final fun component1(): kotlin/String // io.dataloom.assets.policy/AssetContentDenyListEntry.component1|component1(){}[0]
+    final fun component2(): io.dataloom.assets.policy/AssetContentMatchAction // io.dataloom.assets.policy/AssetContentDenyListEntry.component2|component2(){}[0]
+    final fun component3(): kotlin/String // io.dataloom.assets.policy/AssetContentDenyListEntry.component3|component3(){}[0]
+    final fun copy(kotlin/String = ..., io.dataloom.assets.policy/AssetContentMatchAction = ..., kotlin/String = ...): io.dataloom.assets.policy/AssetContentDenyListEntry // io.dataloom.assets.policy/AssetContentDenyListEntry.copy|copy(kotlin.String;io.dataloom.assets.policy.AssetContentMatchAction;kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets.policy/AssetContentDenyListEntry.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.assets.policy/AssetContentDenyListEntry.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.assets.policy/AssetContentDenyListEntry.toString|toString(){}[0]
+}
+
+final class io.dataloom.assets.policy/AssetContentQuarantineRecord { // io.dataloom.assets.policy/AssetContentQuarantineRecord|null[0]
+    constructor <init>(io.dataloom.assets/AssetTransferSessionId, io.dataloom.api.identifier/AssetId, kotlin/Long, io.dataloom.api.asset/AssetMediaType, io.dataloom.assets/AssetTransferDirection, kotlin/Int, kotlin/String, kotlin/String, io.dataloom.api.time/DataLoomInstant, io.dataloom.assets.policy/AssetContentQuarantineStatus = ..., io.dataloom.assets.policy/AssetContentQuarantineRelease? = ...) // io.dataloom.assets.policy/AssetContentQuarantineRecord.<init>|<init>(io.dataloom.assets.AssetTransferSessionId;io.dataloom.api.identifier.AssetId;kotlin.Long;io.dataloom.api.asset.AssetMediaType;io.dataloom.assets.AssetTransferDirection;kotlin.Int;kotlin.String;kotlin.String;io.dataloom.api.time.DataLoomInstant;io.dataloom.assets.policy.AssetContentQuarantineStatus;io.dataloom.assets.policy.AssetContentQuarantineRelease?){}[0]
+
+    final val assetId // io.dataloom.assets.policy/AssetContentQuarantineRecord.assetId|{}assetId[0]
+        final fun <get-assetId>(): io.dataloom.api.identifier/AssetId // io.dataloom.assets.policy/AssetContentQuarantineRecord.assetId.<get-assetId>|<get-assetId>(){}[0]
+    final val chunkIndex // io.dataloom.assets.policy/AssetContentQuarantineRecord.chunkIndex|{}chunkIndex[0]
+        final fun <get-chunkIndex>(): kotlin/Int // io.dataloom.assets.policy/AssetContentQuarantineRecord.chunkIndex.<get-chunkIndex>|<get-chunkIndex>(){}[0]
+    final val direction // io.dataloom.assets.policy/AssetContentQuarantineRecord.direction|{}direction[0]
+        final fun <get-direction>(): io.dataloom.assets/AssetTransferDirection // io.dataloom.assets.policy/AssetContentQuarantineRecord.direction.<get-direction>|<get-direction>(){}[0]
+    final val matchedDigestHex // io.dataloom.assets.policy/AssetContentQuarantineRecord.matchedDigestHex|{}matchedDigestHex[0]
+        final fun <get-matchedDigestHex>(): kotlin/String // io.dataloom.assets.policy/AssetContentQuarantineRecord.matchedDigestHex.<get-matchedDigestHex>|<get-matchedDigestHex>(){}[0]
+    final val mediaType // io.dataloom.assets.policy/AssetContentQuarantineRecord.mediaType|{}mediaType[0]
+        final fun <get-mediaType>(): io.dataloom.api.asset/AssetMediaType // io.dataloom.assets.policy/AssetContentQuarantineRecord.mediaType.<get-mediaType>|<get-mediaType>(){}[0]
+    final val quarantinedAt // io.dataloom.assets.policy/AssetContentQuarantineRecord.quarantinedAt|{}quarantinedAt[0]
+        final fun <get-quarantinedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.assets.policy/AssetContentQuarantineRecord.quarantinedAt.<get-quarantinedAt>|<get-quarantinedAt>(){}[0]
+    final val reasonCode // io.dataloom.assets.policy/AssetContentQuarantineRecord.reasonCode|{}reasonCode[0]
+        final fun <get-reasonCode>(): kotlin/String // io.dataloom.assets.policy/AssetContentQuarantineRecord.reasonCode.<get-reasonCode>|<get-reasonCode>(){}[0]
+    final val release // io.dataloom.assets.policy/AssetContentQuarantineRecord.release|{}release[0]
+        final fun <get-release>(): io.dataloom.assets.policy/AssetContentQuarantineRelease? // io.dataloom.assets.policy/AssetContentQuarantineRecord.release.<get-release>|<get-release>(){}[0]
+    final val sessionId // io.dataloom.assets.policy/AssetContentQuarantineRecord.sessionId|{}sessionId[0]
+        final fun <get-sessionId>(): io.dataloom.assets/AssetTransferSessionId // io.dataloom.assets.policy/AssetContentQuarantineRecord.sessionId.<get-sessionId>|<get-sessionId>(){}[0]
+    final val status // io.dataloom.assets.policy/AssetContentQuarantineRecord.status|{}status[0]
+        final fun <get-status>(): io.dataloom.assets.policy/AssetContentQuarantineStatus // io.dataloom.assets.policy/AssetContentQuarantineRecord.status.<get-status>|<get-status>(){}[0]
+    final val version // io.dataloom.assets.policy/AssetContentQuarantineRecord.version|{}version[0]
+        final fun <get-version>(): kotlin/Long // io.dataloom.assets.policy/AssetContentQuarantineRecord.version.<get-version>|<get-version>(){}[0]
+
+    final fun component1(): io.dataloom.assets/AssetTransferSessionId // io.dataloom.assets.policy/AssetContentQuarantineRecord.component1|component1(){}[0]
+    final fun component10(): io.dataloom.assets.policy/AssetContentQuarantineStatus // io.dataloom.assets.policy/AssetContentQuarantineRecord.component10|component10(){}[0]
+    final fun component11(): io.dataloom.assets.policy/AssetContentQuarantineRelease? // io.dataloom.assets.policy/AssetContentQuarantineRecord.component11|component11(){}[0]
+    final fun component2(): io.dataloom.api.identifier/AssetId // io.dataloom.assets.policy/AssetContentQuarantineRecord.component2|component2(){}[0]
+    final fun component3(): kotlin/Long // io.dataloom.assets.policy/AssetContentQuarantineRecord.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.asset/AssetMediaType // io.dataloom.assets.policy/AssetContentQuarantineRecord.component4|component4(){}[0]
+    final fun component5(): io.dataloom.assets/AssetTransferDirection // io.dataloom.assets.policy/AssetContentQuarantineRecord.component5|component5(){}[0]
+    final fun component6(): kotlin/Int // io.dataloom.assets.policy/AssetContentQuarantineRecord.component6|component6(){}[0]
+    final fun component7(): kotlin/String // io.dataloom.assets.policy/AssetContentQuarantineRecord.component7|component7(){}[0]
+    final fun component8(): kotlin/String // io.dataloom.assets.policy/AssetContentQuarantineRecord.component8|component8(){}[0]
+    final fun component9(): io.dataloom.api.time/DataLoomInstant // io.dataloom.assets.policy/AssetContentQuarantineRecord.component9|component9(){}[0]
+    final fun copy(io.dataloom.assets/AssetTransferSessionId = ..., io.dataloom.api.identifier/AssetId = ..., kotlin/Long = ..., io.dataloom.api.asset/AssetMediaType = ..., io.dataloom.assets/AssetTransferDirection = ..., kotlin/Int = ..., kotlin/String = ..., kotlin/String = ..., io.dataloom.api.time/DataLoomInstant = ..., io.dataloom.assets.policy/AssetContentQuarantineStatus = ..., io.dataloom.assets.policy/AssetContentQuarantineRelease? = ...): io.dataloom.assets.policy/AssetContentQuarantineRecord // io.dataloom.assets.policy/AssetContentQuarantineRecord.copy|copy(io.dataloom.assets.AssetTransferSessionId;io.dataloom.api.identifier.AssetId;kotlin.Long;io.dataloom.api.asset.AssetMediaType;io.dataloom.assets.AssetTransferDirection;kotlin.Int;kotlin.String;kotlin.String;io.dataloom.api.time.DataLoomInstant;io.dataloom.assets.policy.AssetContentQuarantineStatus;io.dataloom.assets.policy.AssetContentQuarantineRelease?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets.policy/AssetContentQuarantineRecord.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.assets.policy/AssetContentQuarantineRecord.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.assets.policy/AssetContentQuarantineRecord.toString|toString(){}[0]
+
+    final object Companion { // io.dataloom.assets.policy/AssetContentQuarantineRecord.Companion|null[0]
+        final const val MAX_TEXT_FIELD_LENGTH // io.dataloom.assets.policy/AssetContentQuarantineRecord.Companion.MAX_TEXT_FIELD_LENGTH|{}MAX_TEXT_FIELD_LENGTH[0]
+            final fun <get-MAX_TEXT_FIELD_LENGTH>(): kotlin/Int // io.dataloom.assets.policy/AssetContentQuarantineRecord.Companion.MAX_TEXT_FIELD_LENGTH.<get-MAX_TEXT_FIELD_LENGTH>|<get-MAX_TEXT_FIELD_LENGTH>(){}[0]
+    }
+}
+
+final class io.dataloom.assets.policy/AssetContentQuarantineRecordCodec : io.dataloom.api.state/DurableStateCodec<io.dataloom.assets.policy/AssetContentQuarantineRecord> { // io.dataloom.assets.policy/AssetContentQuarantineRecordCodec|null[0]
+    constructor <init>() // io.dataloom.assets.policy/AssetContentQuarantineRecordCodec.<init>|<init>(){}[0]
+
+    final fun decode(kotlin/String): io.dataloom.assets.policy/AssetContentQuarantineRecord // io.dataloom.assets.policy/AssetContentQuarantineRecordCodec.decode|decode(kotlin.String){}[0]
+    final fun encode(io.dataloom.assets.policy/AssetContentQuarantineRecord): kotlin/String // io.dataloom.assets.policy/AssetContentQuarantineRecordCodec.encode|encode(io.dataloom.assets.policy.AssetContentQuarantineRecord){}[0]
+
+    final object Companion { // io.dataloom.assets.policy/AssetContentQuarantineRecordCodec.Companion|null[0]
+        final const val MAX_ENCODED_LENGTH // io.dataloom.assets.policy/AssetContentQuarantineRecordCodec.Companion.MAX_ENCODED_LENGTH|{}MAX_ENCODED_LENGTH[0]
+            final fun <get-MAX_ENCODED_LENGTH>(): kotlin/Int // io.dataloom.assets.policy/AssetContentQuarantineRecordCodec.Companion.MAX_ENCODED_LENGTH.<get-MAX_ENCODED_LENGTH>|<get-MAX_ENCODED_LENGTH>(){}[0]
+    }
+}
+
+final class io.dataloom.assets.policy/AssetContentQuarantineRelease { // io.dataloom.assets.policy/AssetContentQuarantineRelease|null[0]
+    constructor <init>(kotlin/String, kotlin/String, io.dataloom.api.time/DataLoomInstant) // io.dataloom.assets.policy/AssetContentQuarantineRelease.<init>|<init>(kotlin.String;kotlin.String;io.dataloom.api.time.DataLoomInstant){}[0]
+
+    final val principal // io.dataloom.assets.policy/AssetContentQuarantineRelease.principal|{}principal[0]
+        final fun <get-principal>(): kotlin/String // io.dataloom.assets.policy/AssetContentQuarantineRelease.principal.<get-principal>|<get-principal>(){}[0]
+    final val reason // io.dataloom.assets.policy/AssetContentQuarantineRelease.reason|{}reason[0]
+        final fun <get-reason>(): kotlin/String // io.dataloom.assets.policy/AssetContentQuarantineRelease.reason.<get-reason>|<get-reason>(){}[0]
+    final val releasedAt // io.dataloom.assets.policy/AssetContentQuarantineRelease.releasedAt|{}releasedAt[0]
+        final fun <get-releasedAt>(): io.dataloom.api.time/DataLoomInstant // io.dataloom.assets.policy/AssetContentQuarantineRelease.releasedAt.<get-releasedAt>|<get-releasedAt>(){}[0]
+
+    final fun component1(): kotlin/String // io.dataloom.assets.policy/AssetContentQuarantineRelease.component1|component1(){}[0]
+    final fun component2(): kotlin/String // io.dataloom.assets.policy/AssetContentQuarantineRelease.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.time/DataLoomInstant // io.dataloom.assets.policy/AssetContentQuarantineRelease.component3|component3(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/String = ..., io.dataloom.api.time/DataLoomInstant = ...): io.dataloom.assets.policy/AssetContentQuarantineRelease // io.dataloom.assets.policy/AssetContentQuarantineRelease.copy|copy(kotlin.String;kotlin.String;io.dataloom.api.time.DataLoomInstant){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets.policy/AssetContentQuarantineRelease.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.assets.policy/AssetContentQuarantineRelease.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.assets.policy/AssetContentQuarantineRelease.toString|toString(){}[0]
+}
+
+final class io.dataloom.assets.policy/DurableAssetContentQuarantineLog { // io.dataloom.assets.policy/DurableAssetContentQuarantineLog|null[0]
+    constructor <init>(io.dataloom.api.state/DurableStateStore<io.dataloom.assets/AssetTransferSessionId, io.dataloom.assets.policy/AssetContentQuarantineRecord>, kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.assets.policy/DurableAssetContentQuarantineLog.<init>|<init>(io.dataloom.api.state.DurableStateStore<io.dataloom.assets.AssetTransferSessionId,io.dataloom.assets.policy.AssetContentQuarantineRecord>;kotlin.Int;kotlin.Int){}[0]
+
+    final suspend fun current(io.dataloom.assets/AssetTransferSessionId): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.assets.policy/AssetContentQuarantineRecord?> // io.dataloom.assets.policy/DurableAssetContentQuarantineLog.current|current(io.dataloom.assets.AssetTransferSessionId){}[0]
+    final suspend fun record(io.dataloom.assets.policy/AssetContentQuarantineRecord): io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome // io.dataloom.assets.policy/DurableAssetContentQuarantineLog.record|record(io.dataloom.assets.policy.AssetContentQuarantineRecord){}[0]
+    final suspend fun release(io.dataloom.assets/AssetTransferSessionId, io.dataloom.assets.policy/AssetContentQuarantineRelease): io.dataloom.assets.policy/AssetContentQuarantineReleaseOutcome // io.dataloom.assets.policy/DurableAssetContentQuarantineLog.release|release(io.dataloom.assets.AssetTransferSessionId;io.dataloom.assets.policy.AssetContentQuarantineRelease){}[0]
+
+    final object Companion { // io.dataloom.assets.policy/DurableAssetContentQuarantineLog.Companion|null[0]
+        final val KeyEncoder // io.dataloom.assets.policy/DurableAssetContentQuarantineLog.Companion.KeyEncoder|{}KeyEncoder[0]
+            final fun <get-KeyEncoder>(): io.dataloom.api.state/DurableStateScopeKeyEncoder<io.dataloom.assets/AssetTransferSessionId> // io.dataloom.assets.policy/DurableAssetContentQuarantineLog.Companion.KeyEncoder.<get-KeyEncoder>|<get-KeyEncoder>(){}[0]
+    }
+}
+
+final class io.dataloom.assets.policy/HashDenyListAssetContentPolicy : io.dataloom.assets/AssetContentPolicy { // io.dataloom.assets.policy/HashDenyListAssetContentPolicy|null[0]
+    constructor <init>(io.dataloom.api.security/DataLoomDigestCalculator, io.dataloom.api.security/DigestAlgorithm = ..., kotlin.collections/Collection<io.dataloom.assets.policy/AssetContentDenyListEntry>, io.dataloom.assets.policy/DurableAssetContentQuarantineLog? = ..., io.dataloom.api.time/DataLoomClock? = ...) // io.dataloom.assets.policy/HashDenyListAssetContentPolicy.<init>|<init>(io.dataloom.api.security.DataLoomDigestCalculator;io.dataloom.api.security.DigestAlgorithm;kotlin.collections.Collection<io.dataloom.assets.policy.AssetContentDenyListEntry>;io.dataloom.assets.policy.DurableAssetContentQuarantineLog?;io.dataloom.api.time.DataLoomClock?){}[0]
+
+    final var lastQuarantineRecordOutcome // io.dataloom.assets.policy/HashDenyListAssetContentPolicy.lastQuarantineRecordOutcome|{}lastQuarantineRecordOutcome[0]
+        final fun <get-lastQuarantineRecordOutcome>(): io.dataloom.assets.policy/AssetContentQuarantineRecordOutcome? // io.dataloom.assets.policy/HashDenyListAssetContentPolicy.lastQuarantineRecordOutcome.<get-lastQuarantineRecordOutcome>|<get-lastQuarantineRecordOutcome>(){}[0]
+
+    final suspend fun evaluate(io.dataloom.assets/AssetContentPolicyContext, kotlin/ByteArray): io.dataloom.assets/AssetContentPolicyDecision // io.dataloom.assets.policy/HashDenyListAssetContentPolicy.evaluate|evaluate(io.dataloom.assets.AssetContentPolicyContext;kotlin.ByteArray){}[0]
 }
 
 final class io.dataloom.assets.testkit/AssetProviderContractKit { // io.dataloom.assets.testkit/AssetProviderContractKit|null[0]
