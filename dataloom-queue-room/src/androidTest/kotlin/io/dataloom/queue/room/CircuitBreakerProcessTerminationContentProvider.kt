@@ -24,6 +24,8 @@ import io.dataloom.runtime.retry.CircuitBreakerConfiguration
 import io.dataloom.runtime.retry.CircuitBreakerCoordinator
 import io.dataloom.runtime.retry.CircuitBreakerExecutionGate
 import io.dataloom.runtime.retry.CircuitBreakerExecutionResult
+import io.dataloom.runtime.retry.CircuitBreakerPermission
+import io.dataloom.runtime.retry.CircuitBreakerProbePermit
 import io.dataloom.runtime.retry.CircuitBreakerRecordResult
 import io.dataloom.runtime.retry.CircuitProtectedOperationResult
 import io.dataloom.api.scheduling.SchedulingDelay
@@ -64,6 +66,15 @@ public class CircuitBreakerProcessTerminationContentProvider : ContentProvider()
             CircuitBreakerProcessTerminationContract.METHOD_READ_CIRCUIT_STATE -> {
                 runBlocking { readCircuitState(appContext, databaseName) }
             }
+            CircuitBreakerProcessTerminationContract.METHOD_ATTEMPT_ACCESS_BEFORE_DEADLINE -> {
+                runBlocking { attemptAccessBeforeDeadline(appContext, databaseName) }
+            }
+            CircuitBreakerProcessTerminationContract.METHOD_ATTEMPT_PROBE_AT_DEADLINE -> {
+                runBlocking { attemptProbeAtDeadline(appContext, databaseName) }
+            }
+            CircuitBreakerProcessTerminationContract.METHOD_RECORD_PROBE_SUCCESS_AND_REVERIFY_RECOVERY -> {
+                runBlocking { recordProbeSuccessAndReverifyRecovery(appContext, databaseName) }
+            }
             else -> error("Unknown CircuitBreakerProcessTerminationContentProvider method: $method")
         }
     }
@@ -71,13 +82,13 @@ public class CircuitBreakerProcessTerminationContentProvider : ContentProvider()
     private suspend fun openCircuit(context: Context, databaseName: String): Bundle {
         val database = openDatabase(context, databaseName)
         try {
-            val clock = MutableClock(1_000L)
+            val clock = MutableClock(FIRST_FAILURE_AT_MS)
             val gate = gate(clock, RoomCircuitBreakerStateStore(database))
             val failure = InjectedTransportFailure()
 
             gate.execute<Unit>(SCOPE) { CircuitProtectedOperationResult.Failure(failure) }
 
-            clock.nowMillis = 1_040L
+            clock.nowMillis = SECOND_FAILURE_AT_MS
             val second = gate.execute<Unit>(SCOPE) { CircuitProtectedOperationResult.Failure(failure) }
             val executed = second as CircuitBreakerExecutionResult.Executed<*>
             val recorded = executed.recordResult as CircuitBreakerRecordResult.Recorded
@@ -108,6 +119,108 @@ public class CircuitBreakerProcessTerminationContentProvider : ContentProvider()
         }
     }
 
+    /**
+     * Re-drives the real gate exactly one millisecond *before* the circuit's
+     * deterministic open-deadline ([OPEN_UNTIL_MS]), from a fresh connection
+     * to the same on-disk database -- proof the relaunched process's real
+     * [CircuitBreakerCoordinator.acquire] genuinely still rejects access
+     * while open, not just that the persisted phase reads back as OPEN.
+     */
+    private suspend fun attemptAccessBeforeDeadline(context: Context, databaseName: String): Bundle {
+        val database = openDatabase(context, databaseName)
+        try {
+            val coordinator = coordinator(MutableClock(OPEN_UNTIL_MS - 1L), RoomCircuitBreakerStateStore(database))
+            return permissionBundle(coordinator.acquire(SCOPE))
+        } finally {
+            database.close()
+        }
+    }
+
+    /**
+     * Re-drives the real gate exactly *at* the circuit's deterministic
+     * open-deadline ([OPEN_UNTIL_MS]), from a fresh connection to the same
+     * on-disk database -- proof the relaunched process's real
+     * [CircuitBreakerCoordinator.acquire] genuinely grants exactly one
+     * half-open probe permission (generation [EXPECTED_PROBE_GENERATION]),
+     * mirroring the single-probe-permit semantics
+     * [AndroidCircuitBreakerProbeContentionInstrumentedTest] already proves
+     * for the non-relaunch case.
+     */
+    private suspend fun attemptProbeAtDeadline(context: Context, databaseName: String): Bundle {
+        val database = openDatabase(context, databaseName)
+        try {
+            val coordinator = coordinator(MutableClock(OPEN_UNTIL_MS), RoomCircuitBreakerStateStore(database))
+            return permissionBundle(coordinator.acquire(SCOPE))
+        } finally {
+            database.close()
+        }
+    }
+
+    /**
+     * Records a real success for the probe permit granted by
+     * [attemptProbeAtDeadline] through the real
+     * [CircuitBreakerCoordinator.recordSuccess], then re-drives
+     * [CircuitBreakerCoordinator.acquire] once more from a fresh connection
+     * -- proof the relaunched process's real gate genuinely returns to normal
+     * ALLOWED state after a successful half-open probe, not just that the
+     * persisted phase reads back as CLOSED.
+     */
+    private suspend fun recordProbeSuccessAndReverifyRecovery(context: Context, databaseName: String): Bundle {
+        val database = openDatabase(context, databaseName)
+        try {
+            val store = RoomCircuitBreakerStateStore(database)
+            val recordingCoordinator = coordinator(MutableClock(PROBE_SUCCESS_AT_MS), store)
+            val permit = CircuitBreakerProbePermit(SCOPE, EXPECTED_PROBE_GENERATION)
+            val recordResult = recordingCoordinator.recordSuccess(SCOPE, permit)
+            check(recordResult is CircuitBreakerRecordResult.Recorded) {
+                "Expected the relaunched process's real recordSuccess to succeed for the " +
+                    "probe granted at the deadline, but got: $recordResult"
+            }
+
+            val reverifyCoordinator = coordinator(MutableClock(RECOVERY_REVERIFY_AT_MS), store)
+            return permissionBundle(reverifyCoordinator.acquire(SCOPE))
+        } finally {
+            database.close()
+        }
+    }
+
+    private fun permissionBundle(permission: CircuitBreakerPermission): Bundle {
+        val bundle = Bundle().apply {
+            putInt(CircuitBreakerProcessTerminationContract.KEY_PID, android.os.Process.myPid())
+        }
+        when (permission) {
+            CircuitBreakerPermission.Allowed -> {
+                bundle.putString(CircuitBreakerProcessTerminationContract.KEY_OUTCOME, "ALLOWED")
+                bundle.putLong(CircuitBreakerProcessTerminationContract.KEY_GENERATION, -1L)
+                bundle.putString(CircuitBreakerProcessTerminationContract.KEY_REJECTION_REASON, "")
+            }
+            is CircuitBreakerPermission.ProbeAllowed -> {
+                bundle.putString(CircuitBreakerProcessTerminationContract.KEY_OUTCOME, "PROBE_ALLOWED")
+                bundle.putLong(CircuitBreakerProcessTerminationContract.KEY_GENERATION, permission.permit.generation)
+                bundle.putString(CircuitBreakerProcessTerminationContract.KEY_REJECTION_REASON, "")
+            }
+            is CircuitBreakerPermission.Rejected -> {
+                bundle.putString(CircuitBreakerProcessTerminationContract.KEY_OUTCOME, "REJECTED")
+                bundle.putLong(CircuitBreakerProcessTerminationContract.KEY_GENERATION, -1L)
+                bundle.putString(
+                    CircuitBreakerProcessTerminationContract.KEY_REJECTION_REASON,
+                    permission.reason.name,
+                )
+            }
+            is CircuitBreakerPermission.PersistenceFailure -> {
+                bundle.putString(CircuitBreakerProcessTerminationContract.KEY_OUTCOME, "PERSISTENCE_FAILURE")
+                bundle.putLong(CircuitBreakerProcessTerminationContract.KEY_GENERATION, -1L)
+                bundle.putString(CircuitBreakerProcessTerminationContract.KEY_REJECTION_REASON, "")
+            }
+            CircuitBreakerPermission.ContentionLimitReached -> {
+                bundle.putString(CircuitBreakerProcessTerminationContract.KEY_OUTCOME, "CONTENTION_LIMIT")
+                bundle.putLong(CircuitBreakerProcessTerminationContract.KEY_GENERATION, -1L)
+                bundle.putString(CircuitBreakerProcessTerminationContract.KEY_REJECTION_REASON, "")
+            }
+        }
+        return bundle
+    }
+
     private fun stateBundle(state: CircuitBreakerState): Bundle = Bundle().apply {
         putInt(CircuitBreakerProcessTerminationContract.KEY_PID, android.os.Process.myPid())
         putString(CircuitBreakerProcessTerminationContract.KEY_PHASE, state.phase.name)
@@ -129,17 +242,20 @@ public class CircuitBreakerProcessTerminationContentProvider : ContentProvider()
     private fun gate(
         clock: DataLoomClock,
         store: RoomCircuitBreakerStateStore,
-    ): CircuitBreakerExecutionGate = CircuitBreakerExecutionGate(
-        CircuitBreakerCoordinator(
-            configuration = CircuitBreakerConfiguration(
-                failureThreshold = 2,
-                failureWindow = SchedulingDelay(5_000L),
-                openDuration = SchedulingDelay(1_000L),
-                halfOpenProbeLeaseDuration = SchedulingDelay(500L),
-            ),
-            clock = clock,
-            stateStore = store,
+    ): CircuitBreakerExecutionGate = CircuitBreakerExecutionGate(coordinator(clock, store))
+
+    private fun coordinator(
+        clock: DataLoomClock,
+        store: RoomCircuitBreakerStateStore,
+    ): CircuitBreakerCoordinator = CircuitBreakerCoordinator(
+        configuration = CircuitBreakerConfiguration(
+            failureThreshold = 2,
+            failureWindow = SchedulingDelay(5_000L),
+            openDuration = SchedulingDelay(OPEN_DURATION_MS),
+            halfOpenProbeLeaseDuration = SchedulingDelay(HALF_OPEN_PROBE_LEASE_MS),
         ),
+        clock = clock,
+        stateStore = store,
     )
 
     // ContentProvider query/insert/update/delete/getType are unused by this
@@ -180,5 +296,31 @@ public class CircuitBreakerProcessTerminationContentProvider : ContentProvider()
 
     private companion object {
         val SCOPE = CircuitBreakerScope.provider(ProviderId("circuit-proof-process-kill"))
+
+        // Deterministic timeline for openCircuit's fixed-clock two-failure
+        // sequence and configuration -- shared with the deadline/probe/
+        // recovery re-drive methods below so their fixed clock readings line
+        // up exactly with what openCircuit actually persists, without needing
+        // to pass the deadline across the process boundary as an argument.
+        const val FIRST_FAILURE_AT_MS: Long = 1_000L
+        const val SECOND_FAILURE_AT_MS: Long = 1_040L
+        const val OPEN_DURATION_MS: Long = 1_000L
+        const val HALF_OPEN_PROBE_LEASE_MS: Long = 500L
+
+        // openState() sets openUntil = observedAt(SECOND_FAILURE_AT_MS) + openDuration.
+        const val OPEN_UNTIL_MS: Long = SECOND_FAILURE_AT_MS + OPEN_DURATION_MS
+
+        // startProbe() grants current.probeGeneration(0, unchanged by opening
+        // the circuit) + 1 for the first probe after the circuit opens.
+        const val EXPECTED_PROBE_GENERATION: Long = 1L
+
+        // Any instant after OPEN_UNTIL_MS and within the half-open probe
+        // lease (OPEN_UNTIL_MS + HALF_OPEN_PROBE_LEASE_MS = 2_540L).
+        const val PROBE_SUCCESS_AT_MS: Long = OPEN_UNTIL_MS + 10L
+
+        // Any instant at or after PROBE_SUCCESS_AT_MS; CLOSED phase grants
+        // access regardless of elapsed time, this just avoids a clock
+        // regression against the just-recorded success's updatedAt.
+        const val RECOVERY_REVERIFY_AT_MS: Long = PROBE_SUCCESS_AT_MS + 10L
     }
 }
