@@ -71,7 +71,7 @@ the strategy engine is complete.
 
 ## Market-readiness dashboard
 
-- **Last reconciled:** 2026-10-01 (round 4)
+- **Last reconciled:** 2026-10-01 (round 5)
 - **Recorded V1 target:** 2026-08-27
 - **Current verdict:** **NO-GO — not production-ready or market-ready**
 - **Accepted engineering/release gates:** **0 of 10** (`#93`–`#102` all open)
@@ -88,9 +88,9 @@ time before it flips.
 | 2 | [DL-039A Android/KMP/iOS parity](https://github.com/dataloom-sdk/dataloom/issues/101) | IN PROGRESS | 80% |
 | 3 | [DL-040 retry and circuit breaker](https://github.com/dataloom-sdk/dataloom/issues/94) | IN PROGRESS | 79% |
 | 4 | [DL-041 conflict engine](https://github.com/dataloom-sdk/dataloom/issues/95) | IN PROGRESS | 85% |
-| 5 | [DL-042 events, observability, health, dashboard](https://github.com/dataloom-sdk/dataloom/issues/96) | IN PROGRESS | 55% |
-| 6 | [DL-043 asset synchronization](https://github.com/dataloom-sdk/dataloom/issues/97) | PARTIAL | 45% |
-| 7 | [DL-044 plugin platform](https://github.com/dataloom-sdk/dataloom/issues/98) | PARTIAL | 65% |
+| 5 | [DL-042 events, observability, health, dashboard](https://github.com/dataloom-sdk/dataloom/issues/96) | IN PROGRESS | 60% |
+| 6 | [DL-043 asset synchronization](https://github.com/dataloom-sdk/dataloom/issues/97) | PARTIAL | 50% |
+| 7 | [DL-044 plugin platform](https://github.com/dataloom-sdk/dataloom/issues/98) | PARTIAL | 70% |
 | 8 | [DL-045 enterprise governance](https://github.com/dataloom-sdk/dataloom/issues/99) | IN PROGRESS | 20% |
 | 9 | [DL-046 immutable V1 release](https://github.com/dataloom-sdk/dataloom/issues/100) | BLOCKED / NO-GO | 10% |
 
