@@ -163,8 +163,8 @@ public final class io/dataloom/assets/AssetTransferDirection : java/lang/Enum {
 }
 
 public final class io/dataloom/assets/AssetTransferEngine {
-	public fun <init> (Lio/dataloom/assets/AssetProvider;Lio/dataloom/assets/AssetTransferSessionStore;Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;ILio/dataloom/api/security/DigestAlgorithm;ILio/dataloom/assets/transform/AssetTransferTransforms;)V
-	public synthetic fun <init> (Lio/dataloom/assets/AssetProvider;Lio/dataloom/assets/AssetTransferSessionStore;Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;ILio/dataloom/api/security/DigestAlgorithm;ILio/dataloom/assets/transform/AssetTransferTransforms;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/dataloom/assets/AssetProvider;Lio/dataloom/assets/AssetTransferSessionStore;Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;ILio/dataloom/api/security/DigestAlgorithm;ILio/dataloom/assets/transform/AssetTransferTransforms;I)V
+	public synthetic fun <init> (Lio/dataloom/assets/AssetProvider;Lio/dataloom/assets/AssetTransferSessionStore;Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;ILio/dataloom/api/security/DigestAlgorithm;ILio/dataloom/assets/transform/AssetTransferTransforms;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun cancel-6lL3Q7Q (Ljava/lang/String;Lio/dataloom/assets/AssetSink;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun cancel-6lL3Q7Q$default (Lio/dataloom/assets/AssetTransferEngine;Ljava/lang/String;Lio/dataloom/assets/AssetSink;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public final fun download-q0nRlsc (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Lio/dataloom/assets/AssetSink;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
