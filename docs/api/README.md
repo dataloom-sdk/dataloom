@@ -107,6 +107,7 @@ complete V1 strategy, asset, plugin, governance, or observability engine.
 | [SQLDelight storage provider](./sqldelight-storage-provider.md) | Available reference implementation | Optional KMP SQLDelight-backed `StorageProvider` for Android/JVM and host-gated iOS. |
 | [Transport provider](./transport-provider.md) | Available contract | Remote push and pull adapter. |
 | [Ktor transport provider](./ktor-transport-provider.md) | Available reference module | Optional KMP `TransportProvider` backed by Ktor HTTP client. |
+| [Ktor asset provider](./ktor-asset-provider.md) | Available reference module (new) | Optional JVM/Android `AssetProvider` backed by the Ktor HTTP client -- the first `AssetProvider` that actually transfers bytes over a network, against a documented REST-ish protocol and tested against a local `MockEngine` server (no real backend exists yet). |
 | [Scheduler provider](./scheduler-provider.md) | Available contract | Platform scheduling adapter. |
 | [Connectivity provider](./connectivity-provider.md) | Available contract | Platform connectivity snapshot adapter. |
 
