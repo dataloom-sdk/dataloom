@@ -1,5 +1,7 @@
 package io.dataloom.assets
 
+import io.dataloom.api.asset.AssetChunkDescriptor
+import io.dataloom.api.asset.AssetManifest
 import io.dataloom.api.asset.AssetMediaType
 import io.dataloom.api.error.DataLoomError
 import io.dataloom.api.error.Recoverability
@@ -10,8 +12,12 @@ import io.dataloom.api.security.DigestAlgorithm
 import io.dataloom.assets.transform.AssetTransferTransforms
 import io.dataloom.assets.transform.AssetWireFormat
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 
 /** How one call into [AssetTransferEngine] ended. */
 public sealed interface AssetTransferOutcome {
@@ -57,8 +63,11 @@ public sealed interface AssetTransferOutcome {
 }
 
 /**
- * Sequential, bounded-memory upload/download engine over an [AssetProvider],
+ * Resumable, bounded-memory upload/download engine over an [AssetProvider],
  * an [AssetTransferSessionStore] and the [AssetTransferSession] state machine.
+ * With [maxConcurrency] `1` (the default) chunks transfer one at a time, in
+ * order; with a larger value, up to that many transfer concurrently (see
+ * "Parallel transfer" below).
  *
  * ## Resumability
  *
@@ -71,9 +80,9 @@ public sealed interface AssetTransferOutcome {
  *
  * ## Bounded memory
  *
- * At most one chunk buffer (the chunk size) is live at a time on the transfer
- * path, and verification streams through a fixed-size buffer; memory does not
- * grow with the asset size.
+ * At most [maxConcurrency] chunk buffers (each the chunk size) are live at a
+ * time on the transfer path — one, by default — and verification streams
+ * through a fixed-size buffer; memory does not grow with the asset size.
  *
  * ## Cancellation
  *
@@ -104,12 +113,44 @@ public sealed interface AssetTransferOutcome {
  * platform cannot run fails with [AssetErrorKind.TRANSFORM_UNSUPPORTED]
  * before anything is transferred; it is never skipped.
  *
- * ## Out of scope for this slice
+ * ## Parallel transfer (FR-ASSET-006)
  *
- * Parallel chunk transfer, fairness controls and content-policy hooks are later
- * slices. Session persistence is the caller's choice of
- * [AssetTransferSessionStore]: with [DurableAssetTransferSessionStore] a
- * restart resumes where the last durably recorded chunk left off.
+ * With [maxConcurrency] greater than `1`, up to that many chunks transfer at
+ * once: one coroutine is launched per missing chunk index, and a shared
+ * [kotlinx.coroutines.sync.Semaphore] sized to [maxConcurrency] admits only
+ * that many of them to actually run at a time — a bounded worker pool
+ * draining the session's missing-chunk list. `Semaphore` is documented as
+ * fair, servicing waiters in strict FIFO order, so **fairness strategy**: no
+ * queued chunk can be starved behind others cutting in ahead of it, no
+ * matter how long any one in-flight chunk's I/O takes — the longest-waiting
+ * chunk is always the next one admitted once a slot frees up.
+ *
+ * **Failure semantics**, chosen to match this engine's existing sequential
+ * behaviour exactly rather than introduce a second policy: this engine has
+ * always stopped at the *first* chunk-level error (recoverable or not)
+ * without attempting further chunks, trivially "fail-fast" when sequential
+ * since nothing else is ever in flight. Parallel mode preserves that: the
+ * first chunk to report a terminal outcome cancels every other in-flight or
+ * still-queued chunk coroutine (ordinary structured-concurrency cancellation
+ * — `coroutineScope` cancels its remaining children as soon as one throws)
+ * and that outcome is returned. A chunk whose provider call is already past
+ * its last suspension point when the cancellation arrives runs to completion
+ * (the same cooperative-cancellation granularity the sequential engine's
+ * "notices a concurrent cancel between chunks" always had), but can never
+ * corrupt the session's recorded outcome: [AssetTransferSessionStore.save]
+ * is compare-and-set, so concurrent `ChunkCommitted`/`Fail` events from
+ * racing workers converge safely (see that store's KDoc) instead of one
+ * silently clobbering another.
+ *
+ * **Bounded memory** scales with concurrency: each concurrently in-flight
+ * chunk allocates its own chunk-sized buffer, so peak memory is
+ * `maxConcurrency` chunk buffers (still a small constant, independent of
+ * asset size), not the single buffer sequential mode uses.
+ *
+ * Content-policy hooks (FR-ASSET-012) remain a later slice. Session
+ * persistence is the caller's choice of [AssetTransferSessionStore]: with
+ * [DurableAssetTransferSessionStore] a restart resumes where the last
+ * durably recorded chunk left off.
  *
  * @param chunkSizeBytes requested chunk size for new uploads; clamped into the
  *   provider's [AssetProvider.chunkSizeBounds].
@@ -118,6 +159,9 @@ public sealed interface AssetTransferOutcome {
  * @param verifyBufferBytes streaming buffer size for whole-object verification.
  * @param transforms compression and encryption applied to uploads and reversed
  *   on download; [AssetTransferTransforms.NONE] transfers chunks as-is.
+ * @param maxConcurrency largest number of chunks transferred at once. `1`
+ *   (the default) is the original sequential behaviour: chunks run strictly
+ *   one at a time, in order. Must be at least `1`.
  * @param observer optional hook notified once per [upload]/[download]/[cancel]
  *   call with the outcome it is about to return (see [AssetTransferObserver]'s
  *   own class doc). `null` (the default) leaves behavior exactly as before
@@ -131,8 +175,13 @@ public class AssetTransferEngine(
     private val digestAlgorithm: DigestAlgorithm = DigestAlgorithm.SHA_256,
     verifyBufferBytes: Int = AssetIntegrityVerifier.DEFAULT_READ_BUFFER_BYTES,
     private val transforms: AssetTransferTransforms = AssetTransferTransforms.NONE,
+    private val maxConcurrency: Int = 1,
     private val observer: AssetTransferObserver? = null,
 ) {
+    init {
+        require(maxConcurrency >= 1) { "AssetTransferEngine.maxConcurrency must be at least 1, but was $maxConcurrency." }
+    }
+
     private val verifier = AssetIntegrityVerifier(digests, verifyBufferBytes)
 
     /**
@@ -325,45 +374,9 @@ public class AssetTransferEngine(
 
         if (session.phase == AssetTransferPhase.TRANSFERRING) {
             val chunks = session.manifest.chunkLayout.chunks
-            val buffer = ByteArray(chunks.maxOf { it.lengthBytes }.toInt())
-            for (index in session.missingChunks) {
-                currentCoroutineContext().ensureActive()
-                session = reload(sessionId)
-                terminalOutcome(session)?.let { return it }
-                if (index in session.committedChunks) continue
-
-                val descriptor = chunks[index]
-                val length = descriptor.lengthBytes.toInt()
-                val read = when (
-                    val result = attempt(AssetErrorKind.SOURCE_FAILURE) {
-                        source.readFully(descriptor.offsetBytes, buffer, 0, length)
-                    }
-                ) {
-                    is Attempt.Err -> return onError(sessionId, result.error, abortProvider)
-                    is Attempt.Ok -> result.value
-                }
-                val chunk = if (length == buffer.size) buffer else buffer.copyOf(length)
-                if (read != length || !verifier.verifyChunk(descriptor, chunk)) {
-                    return onError(
-                        sessionId,
-                        AssetTransferError(AssetErrorKind.SOURCE_CONTENT_CHANGED, "Source content no longer matches the manifest."),
-                        abortProvider,
-                    )
-                }
-                val wire = if (pipeline == null) {
-                    chunk
-                } else {
-                    when (val framed = attempt(AssetErrorKind.TRANSFORM_UNSUPPORTED) { pipeline.toWire(index, chunk) }) {
-                        is Attempt.Err -> return onError(sessionId, framed.error, abortProvider)
-                        is Attempt.Ok -> framed.value
-                    }
-                }
-                when (val uploaded = provider.uploadChunk(AssetChunkUpload(sessionId, index, wire))) {
-                    is ProviderOperationResult.Failure -> return onError(sessionId, uploaded.error, abortProvider)
-                    is ProviderOperationResult.Success ->
-                        session = advance(sessionId, AssetTransferEvent.ChunkCommitted(index))
-                }
-            }
+            transferChunks(session.missingChunks) { index ->
+                uploadOneChunk(sessionId, chunks, index, pipeline, source, abortProvider)
+            }?.let { return it }
             session = advance(sessionId, AssetTransferEvent.BeginVerification)
         }
 
@@ -375,6 +388,63 @@ public class AssetTransferEngine(
             }
         }
         return terminalOutcome(session) ?: interrupted(session)
+    }
+
+    /**
+     * Transfers (reads, verifies, transforms and uploads) chunk [index] of
+     * [chunks], or skips it if some other caller already committed it.
+     * Allocates its own chunk-sized buffer on every call rather than reusing
+     * one across calls, so it is safe to run concurrently with other calls
+     * for different indices — see [transferChunks].
+     *
+     * @return `null` on success (including "already committed"); the
+     *   terminal outcome if the transfer must stop.
+     */
+    private suspend fun uploadOneChunk(
+        sessionId: AssetTransferSessionId,
+        chunks: List<AssetChunkDescriptor>,
+        index: Int,
+        pipeline: AssetChunkPipeline?,
+        source: AssetSource,
+        abortProvider: suspend () -> Unit,
+    ): AssetTransferOutcome? {
+        val current = reload(sessionId)
+        terminalOutcome(current)?.let { return it }
+        if (index in current.committedChunks) return null
+
+        val descriptor = chunks[index]
+        val length = descriptor.lengthBytes.toInt()
+        val buffer = ByteArray(length)
+        val read = when (
+            val result = attempt(AssetErrorKind.SOURCE_FAILURE) {
+                source.readFully(descriptor.offsetBytes, buffer, 0, length)
+            }
+        ) {
+            is Attempt.Err -> return onError(sessionId, result.error, abortProvider)
+            is Attempt.Ok -> result.value
+        }
+        if (read != length || !verifier.verifyChunk(descriptor, buffer)) {
+            return onError(
+                sessionId,
+                AssetTransferError(AssetErrorKind.SOURCE_CONTENT_CHANGED, "Source content no longer matches the manifest."),
+                abortProvider,
+            )
+        }
+        val wire = if (pipeline == null) {
+            buffer
+        } else {
+            when (val framed = attempt(AssetErrorKind.TRANSFORM_UNSUPPORTED) { pipeline.toWire(index, buffer) }) {
+                is Attempt.Err -> return onError(sessionId, framed.error, abortProvider)
+                is Attempt.Ok -> framed.value
+            }
+        }
+        return when (val uploaded = provider.uploadChunk(AssetChunkUpload(sessionId, index, wire))) {
+            is ProviderOperationResult.Failure -> onError(sessionId, uploaded.error, abortProvider)
+            is ProviderOperationResult.Success -> {
+                advance(sessionId, AssetTransferEvent.ChunkCommitted(index))
+                null
+            }
+        }
     }
 
     // -------------------------------------------------------------- download
@@ -395,37 +465,9 @@ public class AssetTransferEngine(
         session = advance(sessionId, AssetTransferEvent.Start)
 
         if (session.phase == AssetTransferPhase.TRANSFERRING) {
-            for (index in session.missingChunks) {
-                currentCoroutineContext().ensureActive()
-                session = reload(sessionId)
-                terminalOutcome(session)?.let { return it }
-                if (index in session.committedChunks) continue
-
-                val descriptor = manifest.chunkLayout.chunks[index]
-                val stored = when (val read = provider.readChunk(manifest.assetId, manifest.version, index)) {
-                    is ProviderOperationResult.Failure -> return onError(sessionId, read.error, discardSink)
-                    is ProviderOperationResult.Success -> read.value
-                }
-                val bytes = if (pipeline == null) {
-                    stored
-                } else {
-                    val expected = descriptor.lengthBytes.toInt()
-                    when (val decoded = attempt(AssetErrorKind.TRANSFORM_FRAME_INVALID) { pipeline.fromWire(index, stored, expected) }) {
-                        is Attempt.Err -> return onError(sessionId, decoded.error, discardSink)
-                        is Attempt.Ok -> decoded.value
-                    }
-                }
-                if (!verifier.verifyChunk(descriptor, bytes)) {
-                    return onError(
-                        sessionId,
-                        AssetTransferError(AssetErrorKind.CHUNK_DIGEST_MISMATCH, "Downloaded chunk does not match the manifest."),
-                        discardSink,
-                    )
-                }
-                (attempt(AssetErrorKind.SINK_FAILURE) { sink.write(descriptor.offsetBytes, bytes, 0, bytes.size) } as? Attempt.Err)
-                    ?.let { return onError(sessionId, it.error, discardSink) }
-                session = advance(sessionId, AssetTransferEvent.ChunkCommitted(index))
-            }
+            transferChunks(session.missingChunks) { index ->
+                downloadOneChunk(sessionId, manifest, index, pipeline, sink, discardSink)
+            }?.let { return it }
             session = advance(sessionId, AssetTransferEvent.BeginVerification)
         }
 
@@ -449,7 +491,127 @@ public class AssetTransferEngine(
         return terminalOutcome(session) ?: interrupted(session)
     }
 
+    /**
+     * Downloads, verifies and writes chunk [index] of [manifest], or skips it
+     * if some other caller already committed it. See [uploadOneChunk]'s
+     * concurrency note — this is its download-side mirror.
+     *
+     * @return `null` on success (including "already committed"); the
+     *   terminal outcome if the transfer must stop.
+     */
+    private suspend fun downloadOneChunk(
+        sessionId: AssetTransferSessionId,
+        manifest: AssetManifest,
+        index: Int,
+        pipeline: AssetChunkPipeline?,
+        sink: AssetSink,
+        discardSink: suspend () -> Unit,
+    ): AssetTransferOutcome? {
+        val current = reload(sessionId)
+        terminalOutcome(current)?.let { return it }
+        if (index in current.committedChunks) return null
+
+        val descriptor = manifest.chunkLayout.chunks[index]
+        val stored = when (val read = provider.readChunk(manifest.assetId, manifest.version, index)) {
+            is ProviderOperationResult.Failure -> return onError(sessionId, read.error, discardSink)
+            is ProviderOperationResult.Success -> read.value
+        }
+        val bytes = if (pipeline == null) {
+            stored
+        } else {
+            val expected = descriptor.lengthBytes.toInt()
+            when (val decoded = attempt(AssetErrorKind.TRANSFORM_FRAME_INVALID) { pipeline.fromWire(index, stored, expected) }) {
+                is Attempt.Err -> return onError(sessionId, decoded.error, discardSink)
+                is Attempt.Ok -> decoded.value
+            }
+        }
+        if (!verifier.verifyChunk(descriptor, bytes)) {
+            return onError(
+                sessionId,
+                AssetTransferError(AssetErrorKind.CHUNK_DIGEST_MISMATCH, "Downloaded chunk does not match the manifest."),
+                discardSink,
+            )
+        }
+        (attempt(AssetErrorKind.SINK_FAILURE) { sink.write(descriptor.offsetBytes, bytes, 0, bytes.size) } as? Attempt.Err)
+            ?.let { return onError(sessionId, it.error, discardSink) }
+        advance(sessionId, AssetTransferEvent.ChunkCommitted(index))
+        return null
+    }
+
     // --------------------------------------------------------------- helpers
+
+    /**
+     * Runs [transfer] once per entry of [indices], returning the first
+     * non-null (terminal) outcome it produces, or `null` once every chunk has
+     * succeeded. Dispatches to [transferSequential] or [transferParallel]
+     * depending on [maxConcurrency]; see the class KDoc's "Parallel transfer"
+     * section for the concurrency, fairness and failure-semantics design.
+     */
+    private suspend fun transferChunks(
+        indices: List<Int>,
+        transfer: suspend (Int) -> AssetTransferOutcome?,
+    ): AssetTransferOutcome? = if (maxConcurrency <= 1) {
+        transferSequential(indices, transfer)
+    } else {
+        transferParallel(indices, transfer)
+    }
+
+    /** [maxConcurrency] `1`: the original, unchanged behaviour — one chunk at a time, in order. */
+    private suspend fun transferSequential(
+        indices: List<Int>,
+        transfer: suspend (Int) -> AssetTransferOutcome?,
+    ): AssetTransferOutcome? {
+        for (index in indices) {
+            currentCoroutineContext().ensureActive()
+            transfer(index)?.let { return it }
+        }
+        return null
+    }
+
+    /**
+     * [maxConcurrency] greater than `1`: up to [maxConcurrency] chunks run at
+     * once, each a coroutine launched for one index and gated by a shared
+     * [Semaphore] of that size — a bounded worker pool draining the same
+     * [indices] list. The first chunk whose [transfer] returns a non-null
+     * outcome throws [ChunkTransferAborted] carrying it; `coroutineScope`
+     * reacts to an uncaught exception from any child by cancelling the rest
+     * (ordinary structured concurrency, not a bespoke mechanism), so every
+     * other in-flight or still-queued chunk stops as soon as it next reaches
+     * a cancellation point, and that first outcome is what this function
+     * returns. [ChunkTransferAborted] deliberately is not a
+     * [kotlinx.coroutines.CancellationException]: that keeps it from being
+     * treated as ordinary cooperative cancellation (which `coroutineScope`
+     * would swallow instead of propagating), so it reliably surfaces here.
+     */
+    private suspend fun transferParallel(
+        indices: List<Int>,
+        transfer: suspend (Int) -> AssetTransferOutcome?,
+    ): AssetTransferOutcome? {
+        if (indices.isEmpty()) return null
+        return try {
+            coroutineScope {
+                val gate = Semaphore(maxConcurrency)
+                for (index in indices) {
+                    launch {
+                        gate.withPermit {
+                            currentCoroutineContext().ensureActive()
+                            transfer(index)?.let { throw ChunkTransferAborted(it) }
+                        }
+                    }
+                }
+            }
+            null
+        } catch (e: ChunkTransferAborted) {
+            e.outcome
+        }
+    }
+
+    /**
+     * Internal signal thrown by a [transferParallel] worker to report a
+     * terminal outcome and have `coroutineScope` cancel its siblings. Caught
+     * inside [transferParallel]; never escapes this class.
+     */
+    private class ChunkTransferAborted(val outcome: AssetTransferOutcome) : RuntimeException()
 
     /**
      * Converts a durable-store failure into an outcome. The store keeps the
