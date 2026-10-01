@@ -149,6 +149,32 @@ sealed interface io.dataloom.plugin/PluginLifecycleAdministrationAuthorizationDe
     }
 }
 
+final class io.dataloom.plugin.testkit/PluginCertificationKit { // io.dataloom.plugin.testkit/PluginCertificationKit|null[0]
+    constructor <init>(io.dataloom.api.identifier/RuntimeVersion = ..., kotlin/Function2<io.dataloom.api.plugin/PluginManifest, io.dataloom.api.plugin/PluginExecutionBounds, io.dataloom.api.plugin/DataLoomPlugin>, kotlin/Function0<io.dataloom.plugin/PluginLifecycleAdministrationAuthorizer> = ..., kotlin/Function1<kotlin/String, io.dataloom.plugin/PluginLifecycleAdministrationAuthorizer> = ...) // io.dataloom.plugin.testkit/PluginCertificationKit.<init>|<init>(io.dataloom.api.identifier.RuntimeVersion;kotlin.Function2<io.dataloom.api.plugin.PluginManifest,io.dataloom.api.plugin.PluginExecutionBounds,io.dataloom.api.plugin.DataLoomPlugin>;kotlin.Function0<io.dataloom.plugin.PluginLifecycleAdministrationAuthorizer>;kotlin.Function1<kotlin.String,io.dataloom.plugin.PluginLifecycleAdministrationAuthorizer>){}[0]
+
+    final suspend fun run(): io.dataloom.plugin.testkit/PluginCertificationReport // io.dataloom.plugin.testkit/PluginCertificationKit.run|run(){}[0]
+}
+
+final class io.dataloom.plugin.testkit/PluginCertificationReport { // io.dataloom.plugin.testkit/PluginCertificationReport|null[0]
+    final val failures // io.dataloom.plugin.testkit/PluginCertificationReport.failures|{}failures[0]
+        final fun <get-failures>(): kotlin.collections/List<io.dataloom.plugin.testkit/PluginCertificationReport.Result> // io.dataloom.plugin.testkit/PluginCertificationReport.failures.<get-failures>|<get-failures>(){}[0]
+    final val results // io.dataloom.plugin.testkit/PluginCertificationReport.results|{}results[0]
+        final fun <get-results>(): kotlin.collections/List<io.dataloom.plugin.testkit/PluginCertificationReport.Result> // io.dataloom.plugin.testkit/PluginCertificationReport.results.<get-results>|<get-results>(){}[0]
+
+    final fun assertAllPassed() // io.dataloom.plugin.testkit/PluginCertificationReport.assertAllPassed|assertAllPassed(){}[0]
+
+    final class Result { // io.dataloom.plugin.testkit/PluginCertificationReport.Result|null[0]
+        constructor <init>(kotlin/String, kotlin/Throwable?) // io.dataloom.plugin.testkit/PluginCertificationReport.Result.<init>|<init>(kotlin.String;kotlin.Throwable?){}[0]
+
+        final val failure // io.dataloom.plugin.testkit/PluginCertificationReport.Result.failure|{}failure[0]
+            final fun <get-failure>(): kotlin/Throwable? // io.dataloom.plugin.testkit/PluginCertificationReport.Result.failure.<get-failure>|<get-failure>(){}[0]
+        final val name // io.dataloom.plugin.testkit/PluginCertificationReport.Result.name|{}name[0]
+            final fun <get-name>(): kotlin/String // io.dataloom.plugin.testkit/PluginCertificationReport.Result.name.<get-name>|<get-name>(){}[0]
+        final val passed // io.dataloom.plugin.testkit/PluginCertificationReport.Result.passed|{}passed[0]
+            final fun <get-passed>(): kotlin/Boolean // io.dataloom.plugin.testkit/PluginCertificationReport.Result.passed.<get-passed>|<get-passed>(){}[0]
+    }
+}
+
 final class io.dataloom.plugin/PluginDependencyIssue { // io.dataloom.plugin/PluginDependencyIssue|null[0]
     constructor <init>(io.dataloom.api.plugin/PluginId, io.dataloom.plugin/PluginDependencyIssueReason) // io.dataloom.plugin/PluginDependencyIssue.<init>|<init>(io.dataloom.api.plugin.PluginId;io.dataloom.plugin.PluginDependencyIssueReason){}[0]
 

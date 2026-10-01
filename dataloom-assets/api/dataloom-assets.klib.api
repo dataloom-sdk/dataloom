@@ -55,6 +55,18 @@ final enum class io.dataloom.assets/AssetTransferDirection : kotlin/Enum<io.data
     final fun values(): kotlin/Array<io.dataloom.assets/AssetTransferDirection> // io.dataloom.assets/AssetTransferDirection.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.assets/AssetTransferOperation : kotlin/Enum<io.dataloom.assets/AssetTransferOperation> { // io.dataloom.assets/AssetTransferOperation|null[0]
+    enum entry CANCEL // io.dataloom.assets/AssetTransferOperation.CANCEL|null[0]
+    enum entry DOWNLOAD // io.dataloom.assets/AssetTransferOperation.DOWNLOAD|null[0]
+    enum entry UPLOAD // io.dataloom.assets/AssetTransferOperation.UPLOAD|null[0]
+
+    final val entries // io.dataloom.assets/AssetTransferOperation.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.assets/AssetTransferOperation> // io.dataloom.assets/AssetTransferOperation.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.assets/AssetTransferOperation // io.dataloom.assets/AssetTransferOperation.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.assets/AssetTransferOperation> // io.dataloom.assets/AssetTransferOperation.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.assets/AssetTransferPhase : kotlin/Enum<io.dataloom.assets/AssetTransferPhase> { // io.dataloom.assets/AssetTransferPhase|null[0]
     enum entry CANCELLED // io.dataloom.assets/AssetTransferPhase.CANCELLED|null[0]
     enum entry COMPLETED // io.dataloom.assets/AssetTransferPhase.COMPLETED|null[0]
@@ -133,6 +145,10 @@ abstract interface io.dataloom.assets/AssetSink : io.dataloom.assets/AssetReadab
 
 abstract interface io.dataloom.assets/AssetSource : io.dataloom.assets/AssetReadable { // io.dataloom.assets/AssetSource|null[0]
     abstract suspend fun sizeBytes(): kotlin/Long // io.dataloom.assets/AssetSource.sizeBytes|sizeBytes(){}[0]
+}
+
+abstract interface io.dataloom.assets/AssetTransferObserver { // io.dataloom.assets/AssetTransferObserver|null[0]
+    abstract suspend fun onOutcome(io.dataloom.assets/AssetTransferSessionId, io.dataloom.assets/AssetTransferOperation, io.dataloom.assets/AssetTransferOutcome) // io.dataloom.assets/AssetTransferObserver.onOutcome|onOutcome(io.dataloom.assets.AssetTransferSessionId;io.dataloom.assets.AssetTransferOperation;io.dataloom.assets.AssetTransferOutcome){}[0]
 }
 
 abstract interface io.dataloom.assets/AssetTransferSessionStore { // io.dataloom.assets/AssetTransferSessionStore|null[0]
@@ -693,7 +709,7 @@ final class io.dataloom.assets/AssetSourceChangedException : kotlin/RuntimeExcep
 }
 
 final class io.dataloom.assets/AssetTransferEngine { // io.dataloom.assets/AssetTransferEngine|null[0]
-    constructor <init>(io.dataloom.assets/AssetProvider, io.dataloom.assets/AssetTransferSessionStore, io.dataloom.api.security/DataLoomIncrementalDigestCalculator, kotlin/Int = ..., io.dataloom.api.security/DigestAlgorithm = ..., kotlin/Int = ..., io.dataloom.assets.transform/AssetTransferTransforms = ..., kotlin/Int = ...) // io.dataloom.assets/AssetTransferEngine.<init>|<init>(io.dataloom.assets.AssetProvider;io.dataloom.assets.AssetTransferSessionStore;io.dataloom.api.security.DataLoomIncrementalDigestCalculator;kotlin.Int;io.dataloom.api.security.DigestAlgorithm;kotlin.Int;io.dataloom.assets.transform.AssetTransferTransforms;kotlin.Int){}[0]
+    constructor <init>(io.dataloom.assets/AssetProvider, io.dataloom.assets/AssetTransferSessionStore, io.dataloom.api.security/DataLoomIncrementalDigestCalculator, kotlin/Int = ..., io.dataloom.api.security/DigestAlgorithm = ..., kotlin/Int = ..., io.dataloom.assets.transform/AssetTransferTransforms = ..., io.dataloom.assets/AssetTransferObserver? = ...) // io.dataloom.assets/AssetTransferEngine.<init>|<init>(io.dataloom.assets.AssetProvider;io.dataloom.assets.AssetTransferSessionStore;io.dataloom.api.security.DataLoomIncrementalDigestCalculator;kotlin.Int;io.dataloom.api.security.DigestAlgorithm;kotlin.Int;io.dataloom.assets.transform.AssetTransferTransforms;io.dataloom.assets.AssetTransferObserver?){}[0]
 
     final suspend fun cancel(io.dataloom.assets/AssetTransferSessionId, io.dataloom.assets/AssetSink? = ...): io.dataloom.assets/AssetTransferOutcome // io.dataloom.assets/AssetTransferEngine.cancel|cancel(io.dataloom.assets.AssetTransferSessionId;io.dataloom.assets.AssetSink?){}[0]
     final suspend fun download(io.dataloom.assets/AssetTransferSessionId, io.dataloom.api.identifier/AssetId, kotlin/Long?, io.dataloom.assets/AssetSink): io.dataloom.assets/AssetTransferOutcome // io.dataloom.assets/AssetTransferEngine.download|download(io.dataloom.assets.AssetTransferSessionId;io.dataloom.api.identifier.AssetId;kotlin.Long?;io.dataloom.assets.AssetSink){}[0]

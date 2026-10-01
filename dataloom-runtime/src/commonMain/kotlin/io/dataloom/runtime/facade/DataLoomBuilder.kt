@@ -56,6 +56,7 @@ import io.dataloom.runtime.observation.SynchronizationEventDispatcher
 import io.dataloom.runtime.observation.SynchronizationObserverRegistry
 import io.dataloom.runtime.observation.health.OperationalEventOutboxHealthTracker
 import io.dataloom.runtime.observation.health.QueueWorkerHealthTracker
+import io.dataloom.runtime.observation.operational.AssetTransferOperationalEventRecorder
 import io.dataloom.runtime.observation.operational.QueueLifecycleOperationalEventRecorder
 import io.dataloom.runtime.queue.DurableQueueExecutionProcessor
 import io.dataloom.runtime.queue.QueueEntryTransitionObserver
@@ -203,6 +204,7 @@ public class DataLoomBuilder {
     private var queueLifecycleOperationalEventOutboxSpec: DataLoomQueueLifecycleOperationalEventOutboxSpec? = null
     private var conflictResolutionOperationalEventOutboxSpec:
         DataLoomConflictResolutionOperationalEventOutboxSpec? = null
+    private var assetTransferOperationalEventOutboxSpec: DataLoomAssetTransferOperationalEventOutboxSpec? = null
     private var operationalEventOutboxHealthTracker: OperationalEventOutboxHealthTracker? = null
     private var queueWorkerHealthTracker: QueueWorkerHealthTracker? = null
     private var built: Boolean = false
@@ -905,6 +907,39 @@ public class DataLoomBuilder {
     }
 
     /**
+     * Opts the asset-transfer capability into the durable operational-event
+     * outbox (DL-042, `#96`): every outcome
+     * [io.dataloom.assets.AssetTransferEngine.upload]/`.download`/`.cancel`
+     * already computes is also translated into an
+     * [io.dataloom.api.operational.OperationalEventEnvelope] by
+     * [io.dataloom.runtime.observation.operational.AssetTransferOperationalEventBridge]
+     * and durably appended to [io.dataloom.api.operational.DurableOperationalEventOutbox].
+     * See [DataLoomAssetTransferOperationalEventOutboxSpec] for the full
+     * contract, including why this is its own, separate opt-in point rather
+     * than an extension of an existing operational-event-outbox spec, and
+     * why it has no effect unless [assetTransferConfiguration] is also
+     * configured.
+     *
+     * Configuring this spec alone does not enable asset transfer --
+     * [assetTransferConfiguration] must still be called separately for an
+     * [io.dataloom.assets.AssetTransferOutcome] to ever exist at all.
+     *
+     * When this method is not called, behavior is unchanged from before it
+     * existed: no operational event envelope is ever constructed or appended
+     * for an asset transfer.
+     *
+     * @param spec the durable store (and optional scope/schema/retry tuning)
+     *   to use. See [DataLoomAssetTransferOperationalEventOutboxSpec] for the
+     *   full contract.
+     * @return this builder for chaining.
+     */
+    public fun assetTransferOperationalEventOutboxConfiguration(
+        spec: DataLoomAssetTransferOperationalEventOutboxSpec,
+    ): DataLoomBuilder = apply {
+        assetTransferOperationalEventOutboxSpec = spec
+    }
+
+    /**
      * Configures the optional governance capability (`dataloom-governance`,
      * ADR-0005): RBAC evaluation, tamper-evident audit logging, and
      * signed-policy-pack verification.
@@ -1563,6 +1598,24 @@ public class DataLoomBuilder {
         }
 
         // --- 14d. Build optional asset-transfer capability ---
+        // --- 14d-i. Build its optional operational-event outbox bridge ---
+        val assetTransferOperationalEventOutbox = assetTransferOperationalEventOutboxSpec?.let { spec ->
+            DurableOperationalEventOutbox(
+                store = spec.store,
+                clock = deps.clock,
+                schemaVersion = spec.schemaVersion,
+                maximumStateUpdateAttempts = spec.maximumStateUpdateAttempts,
+                stateObserver = operationalEventOutboxHealthTracker,
+            )
+        }
+        val assetTransferObserver = assetTransferOperationalEventOutbox?.let { outbox ->
+            val spec = checkNotNull(assetTransferOperationalEventOutboxSpec)
+            AssetTransferOperationalEventRecorder(
+                outbox = outbox,
+                scope = spec.scope,
+                clock = deps.clock,
+            )
+        }
         val assetTransfer = assetTransferSpec?.let { spec ->
             AssetTransferEngine(
                 provider = spec.provider,
@@ -1572,6 +1625,7 @@ public class DataLoomBuilder {
                 digestAlgorithm = spec.digestAlgorithm,
                 verifyBufferBytes = spec.verifyBufferBytes,
                 transforms = spec.transforms,
+                observer = assetTransferObserver,
             )
         }
 
