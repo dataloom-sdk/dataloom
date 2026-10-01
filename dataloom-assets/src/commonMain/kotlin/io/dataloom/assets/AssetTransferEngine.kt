@@ -118,6 +118,10 @@ public sealed interface AssetTransferOutcome {
  * @param verifyBufferBytes streaming buffer size for whole-object verification.
  * @param transforms compression and encryption applied to uploads and reversed
  *   on download; [AssetTransferTransforms.NONE] transfers chunks as-is.
+ * @param observer optional hook notified once per [upload]/[download]/[cancel]
+ *   call with the outcome it is about to return (see [AssetTransferObserver]'s
+ *   own class doc). `null` (the default) leaves behavior exactly as before
+ *   this parameter existed -- no notification, no extra work.
  */
 public class AssetTransferEngine(
     private val provider: AssetProvider,
@@ -127,6 +131,7 @@ public class AssetTransferEngine(
     private val digestAlgorithm: DigestAlgorithm = DigestAlgorithm.SHA_256,
     verifyBufferBytes: Int = AssetIntegrityVerifier.DEFAULT_READ_BUFFER_BYTES,
     private val transforms: AssetTransferTransforms = AssetTransferTransforms.NONE,
+    private val observer: AssetTransferObserver? = null,
 ) {
     private val verifier = AssetIntegrityVerifier(digests, verifyBufferBytes)
 
@@ -147,8 +152,11 @@ public class AssetTransferEngine(
         version: Long,
         mediaType: AssetMediaType,
         source: AssetSource,
-    ): AssetTransferOutcome =
-        guardStore { uploadUnguarded(sessionId, assetId, version, mediaType, source) }
+    ): AssetTransferOutcome {
+        val outcome = guardStore { uploadUnguarded(sessionId, assetId, version, mediaType, source) }
+        notifyObserver(sessionId, AssetTransferOperation.UPLOAD, outcome)
+        return outcome
+    }
 
     private suspend fun uploadUnguarded(
         sessionId: AssetTransferSessionId,
@@ -188,8 +196,11 @@ public class AssetTransferEngine(
         assetId: AssetId,
         version: Long?,
         sink: AssetSink,
-    ): AssetTransferOutcome =
-        guardStore { downloadUnguarded(sessionId, assetId, version, sink) }
+    ): AssetTransferOutcome {
+        val outcome = guardStore { downloadUnguarded(sessionId, assetId, version, sink) }
+        notifyObserver(sessionId, AssetTransferOperation.DOWNLOAD, outcome)
+        return outcome
+    }
 
     private suspend fun downloadUnguarded(
         sessionId: AssetTransferSessionId,
@@ -233,8 +244,11 @@ public class AssetTransferEngine(
      * is already `COMPLETED` or `FAILED` changes nothing and reports that
      * terminal outcome — a completed transfer is never falsely cancelled.
      */
-    public suspend fun cancel(sessionId: AssetTransferSessionId, sink: AssetSink? = null): AssetTransferOutcome =
-        guardStore { cancelUnguarded(sessionId, sink) }
+    public suspend fun cancel(sessionId: AssetTransferSessionId, sink: AssetSink? = null): AssetTransferOutcome {
+        val outcome = guardStore { cancelUnguarded(sessionId, sink) }
+        notifyObserver(sessionId, AssetTransferOperation.CANCEL, outcome)
+        return outcome
+    }
 
     private suspend fun cancelUnguarded(sessionId: AssetTransferSessionId, sink: AssetSink?): AssetTransferOutcome {
         if (sessions.load(sessionId) == null) {
@@ -448,6 +462,23 @@ public class AssetTransferEngine(
         } catch (e: AssetTransferSessionStoreException) {
             AssetTransferOutcome.SessionStoreFailure(e.error)
         }
+
+    /**
+     * Notifies [observer], when configured, with the already-decided
+     * [outcome] a public operation is about to return. [observer] itself is
+     * solely responsible for isolating its own failures (see
+     * [AssetTransferObserver]'s own class doc) -- this engine neither catches
+     * nor expects any exception here, exactly as
+     * `io.dataloom.runtime.queue.DurableQueueExecutionProcessor` calls its own
+     * transition observer directly.
+     */
+    private suspend fun notifyObserver(
+        sessionId: AssetTransferSessionId,
+        operation: AssetTransferOperation,
+        outcome: AssetTransferOutcome,
+    ) {
+        observer?.onOutcome(sessionId, operation, outcome)
+    }
 
     /** Stores a brand-new session, or returns the one a concurrent caller stored first. */
     private suspend fun createSession(session: AssetTransferSession): AssetTransferSession =
