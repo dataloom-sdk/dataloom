@@ -1,20 +1,18 @@
 # Fragment: gate #97, content-policy reference scanner/quarantine-store implementation (2026-10-01)
 
-## Dependency on two not-yet-folded fragments
+## Dependency on one not-yet-folded fragment
 
-This fragment's percentage recommendation is **relative to**
-`docs/status/fragments/2026-10-01-97-content-policy-hooks.md` (the
-`AssetContentPolicy` SPI itself, proposing `#97` 50% -> 55%), which at the
-time of this PR is an open, unmerged PR (`#463`,
-`feature/97-content-policy-hooks`), itself stacked on
-`docs/status/fragments/2026-10-01-97-parallel-transfer.md` (45% -> 50%,
-already merged to `main` as commit `2183efbf`). This branch merges `#463`'s
-commit in (fast-forward) so the SPI this reference implementation depends on
-actually compiles; `git diff origin/main` for this PR therefore includes
-`#463`'s own diff until that PR lands first. The lead should fold all three
-fragments in dependency order (parallel-transfer, then content-policy-hooks,
-then this one) rather than apply this one's delta to `main`'s current 45%
-directly.
+By the time this PR merged `origin/main`, PR #463 (the `AssetContentPolicy`
+SPI itself) and an Apple AES-256-GCM investigation (#466) had already landed
+on `main` as real commits, and the dashboard (`docs/status/market-readiness.md`)
+had been updated to show `#97` at **50%** (the parallel-transfer fragment's
+proposed value), but `#463`'s own fragment
+(`docs/status/fragments/2026-10-01-97-content-policy-hooks.md`, proposing
+50% -> 55%) and the AES-GCM investigation's fragment (proposing no change,
+still 50%) are both **not yet folded into the dashboard text** as of this PR.
+This fragment's percentage recommendation is relative to the 55% `#463`'s
+fragment proposes, not to the dashboard's current literal 50% text. The lead
+should fold `#463`'s fragment first, then this one.
 
 ## (a) Proposed "Recently shipped" row
 
@@ -22,7 +20,7 @@ directly.
 
 ## (b) Gate row percentage
 
-`#97`: **55% -> 60%** (banded to 5%, relative to the not-yet-folded 55% from `#463`'s own fragment -- see the dependency note above; relative to `main`'s current committed 45% this is three bands stacked: 45 -> 50 -> 55 -> 60). The specific deferred item `#463`'s fragment named first -- "a concrete scanner/quarantine-store implementation of `AssetContentPolicy`" -- now exists, is real (not a toy: a genuine exact-hash-blocklist technique), is proven against both the in-memory and real file-backed providers, and the quarantine store's persistence is checked directly against real storage (an encoded row and, separately, a real file on disk), not only in-memory assertions. Held to a single band, not more, because: this is still *a* reference implementation, not the only one a V1 host might need (no ML-classifier or virus-scanner-backed policy was built, deliberately -- the task's own scope); `AC-FUNC-005` end to end on Android and iOS is **untouched** by this slice (see "Still pending" below -- this is the larger, structurally blocked remaining item, not something this slice chipped away at); `ProviderType`/lifecycle wiring, a transport-backed provider, and Apple AES-256-GCM are all completely untouched; and the Apple side of this slice is compile-verified only (unexecuted), the same unresolved caveat every other Apple-side slice of this gate carries.
+`#97`: **55% -> 60%** (banded to 5%, relative to the not-yet-folded 55% from `#463`'s own fragment -- see the dependency note above; the dashboard's current literal text still reads 50%, one band behind, pending that fold). The specific deferred item `#463`'s fragment named first -- "a concrete scanner/quarantine-store implementation of `AssetContentPolicy`" -- now exists, is real (not a toy: a genuine exact-hash-blocklist technique), is proven against both the in-memory and real file-backed providers, and the quarantine store's persistence is checked directly against real storage (an encoded row and, separately, a real file on disk), not only in-memory assertions. Held to a single band, not more, because: this is still *a* reference implementation, not the only one a V1 host might need (no ML-classifier or virus-scanner-backed policy was built, deliberately -- the task's own scope); `AC-FUNC-005` end to end on Android and iOS is **untouched** by this slice (see "Still pending" below -- this is the larger, structurally blocked remaining item, not something this slice chipped away at); `ProviderType`/lifecycle wiring, a transport-backed provider, and Apple AES-256-GCM are all completely untouched; and the Apple side of this slice is compile-verified only (unexecuted), the same unresolved caveat every other Apple-side slice of this gate carries.
 
 ## (c) "Still pending" text
 
