@@ -104,6 +104,25 @@ public enum class AssetErrorKind(
      * unknown version, or inconsistent with the manifest. Terminal.
      */
     TRANSFORM_FRAME_INVALID(ErrorCategory.SECURITY, Recoverability.NON_RECOVERABLE),
+
+    /**
+     * A configured [io.dataloom.assets.AssetContentPolicy] denied a chunk's
+     * content (FR-ASSET-012). Terminal: the session is failed and its
+     * provider-side upload or download sink is cleaned up the same way any
+     * other terminal failure's is; start a new session to retry only after
+     * the underlying content issue is resolved.
+     */
+    CONTENT_POLICY_DENIED(ErrorCategory.POLICY, Recoverability.NON_RECOVERABLE),
+
+    /**
+     * A configured [io.dataloom.assets.AssetContentPolicy] quarantined a
+     * chunk's content pending review (FR-ASSET-012). Terminal for this
+     * session exactly like [CONTENT_POLICY_DENIED] -- this engine holds no
+     * "pending" state -- but recorded as its own kind so a host can route a
+     * quarantine differently (for example to a manual-review workflow) from
+     * an outright denial.
+     */
+    CONTENT_POLICY_QUARANTINED(ErrorCategory.POLICY, Recoverability.NON_RECOVERABLE),
     ;
 
     /** Stable machine-readable code, `dataloom.assets.<lowercase kind>`. */

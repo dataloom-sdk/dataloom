@@ -147,9 +147,29 @@ public sealed interface AssetTransferOutcome {
  * `maxConcurrency` chunk buffers (still a small constant, independent of
  * asset size), not the single buffer sequential mode uses.
  *
- * Content-policy hooks (FR-ASSET-012) remain a later slice. Session
- * persistence is the caller's choice of [AssetTransferSessionStore]: with
- * [DurableAssetTransferSessionStore] a restart resumes where the last
+ * ## Content-policy hooks (FR-ASSET-012)
+ *
+ * With [contentPolicy] configured, every chunk's verified logical bytes --
+ * read from [AssetSource] and digest-verified (upload) or decoded from the
+ * provider and digest-verified (download), the same bytes the compression
+ * and encryption transforms above operate on -- are evaluated before that
+ * chunk is uploaded to the provider or written to the download [AssetSink].
+ * [AssetContentPolicyDecision.Allow] lets the chunk proceed; [AssetContentPolicyDecision.Deny]
+ * or [AssetContentPolicyDecision.Quarantine] fails the session terminally
+ * ([AssetErrorKind.CONTENT_POLICY_DENIED] / [AssetErrorKind.CONTENT_POLICY_QUARANTINED])
+ * and runs the same cleanup every other terminal failure already runs --
+ * the provider-side upload session is aborted (every chunk committed so far
+ * is removed, not only the refused one) or the download sink is discarded --
+ * so a denied or quarantined transfer never completes and never leaves
+ * committed or written bytes behind. See [AssetContentPolicy]'s own class doc
+ * for why this is evaluated per chunk rather than once for the whole object,
+ * and for what is explicitly out of scope (a scanner implementation, a
+ * durable quarantine store, or an async scanning pipeline). `null` (the
+ * default) allows every chunk, identical to behaviour before this parameter
+ * existed.
+ *
+ * Session persistence is the caller's choice of [AssetTransferSessionStore]:
+ * with [DurableAssetTransferSessionStore] a restart resumes where the last
  * durably recorded chunk left off.
  *
  * @param chunkSizeBytes requested chunk size for new uploads; clamped into the
@@ -166,6 +186,9 @@ public sealed interface AssetTransferOutcome {
  *   call with the outcome it is about to return (see [AssetTransferObserver]'s
  *   own class doc). `null` (the default) leaves behavior exactly as before
  *   this parameter existed -- no notification, no extra work.
+ * @param contentPolicy optional per-chunk allow/deny/quarantine hook (see
+ *   "Content-policy hooks" above and [AssetContentPolicy]'s own class doc).
+ *   `null` (the default) allows every chunk -- no evaluation, no extra work.
  */
 public class AssetTransferEngine(
     private val provider: AssetProvider,
@@ -177,6 +200,7 @@ public class AssetTransferEngine(
     private val transforms: AssetTransferTransforms = AssetTransferTransforms.NONE,
     private val maxConcurrency: Int = 1,
     private val observer: AssetTransferObserver? = null,
+    private val contentPolicy: AssetContentPolicy? = null,
 ) {
     init {
         require(maxConcurrency >= 1) { "AssetTransferEngine.maxConcurrency must be at least 1, but was $maxConcurrency." }
@@ -430,6 +454,7 @@ public class AssetTransferEngine(
                 abortProvider,
             )
         }
+        enforceContentPolicy(sessionId, current, AssetTransferDirection.UPLOAD, index, buffer, abortProvider)?.let { return it }
         val wire = if (pipeline == null) {
             buffer
         } else {
@@ -532,6 +557,7 @@ public class AssetTransferEngine(
                 discardSink,
             )
         }
+        enforceContentPolicy(sessionId, current, AssetTransferDirection.DOWNLOAD, index, bytes, discardSink)?.let { return it }
         (attempt(AssetErrorKind.SINK_FAILURE) { sink.write(descriptor.offsetBytes, bytes, 0, bytes.size) } as? Attempt.Err)
             ?.let { return onError(sessionId, it.error, discardSink) }
         advance(sessionId, AssetTransferEvent.ChunkCommitted(index))
@@ -671,6 +697,50 @@ public class AssetTransferEngine(
         val session = advance(sessionId, AssetTransferEvent.Fail(kind))
         if (session.phase == AssetTransferPhase.FAILED) quietly(cleanup)
         return terminalOutcome(session) ?: interrupted(session, error)
+    }
+
+    /**
+     * Evaluates [chunk] against [contentPolicy], when configured, and turns a
+     * refusal into the same kind of terminal failure (and cleanup) [onError]
+     * already produces for any other non-recoverable error. Returns `null`
+     * when there is no policy or it allows the chunk.
+     */
+    private suspend fun enforceContentPolicy(
+        sessionId: AssetTransferSessionId,
+        session: AssetTransferSession,
+        direction: AssetTransferDirection,
+        index: Int,
+        chunk: ByteArray,
+        cleanup: suspend () -> Unit,
+    ): AssetTransferOutcome? {
+        val policy = contentPolicy ?: return null
+        val context = AssetContentPolicyContext(
+            sessionId = sessionId,
+            assetId = session.manifest.assetId,
+            version = session.manifest.version,
+            mediaType = session.manifest.mediaType,
+            direction = direction,
+            chunkIndex = index,
+        )
+        return when (val decision = policy.evaluate(context, chunk)) {
+            is AssetContentPolicyDecision.Allow -> null
+            is AssetContentPolicyDecision.Deny -> onError(
+                sessionId,
+                AssetTransferError(
+                    AssetErrorKind.CONTENT_POLICY_DENIED,
+                    "Content policy denied this asset's content (${decision.reasonCode}).",
+                ),
+                cleanup,
+            )
+            is AssetContentPolicyDecision.Quarantine -> onError(
+                sessionId,
+                AssetTransferError(
+                    AssetErrorKind.CONTENT_POLICY_QUARANTINED,
+                    "Content policy quarantined this asset's content (${decision.reasonCode}).",
+                ),
+                cleanup,
+            )
+        }
     }
 
     private fun terminalOutcome(session: AssetTransferSession): AssetTransferOutcome? = when (session.phase) {

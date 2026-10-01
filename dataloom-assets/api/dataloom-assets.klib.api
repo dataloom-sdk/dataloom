@@ -13,6 +13,8 @@ final enum class io.dataloom.assets/AssetErrorKind : kotlin/Enum<io.dataloom.ass
     enum entry CHUNK_DIGEST_MISMATCH // io.dataloom.assets/AssetErrorKind.CHUNK_DIGEST_MISMATCH|null[0]
     enum entry CHUNK_LENGTH_MISMATCH // io.dataloom.assets/AssetErrorKind.CHUNK_LENGTH_MISMATCH|null[0]
     enum entry CHUNK_OUT_OF_RANGE // io.dataloom.assets/AssetErrorKind.CHUNK_OUT_OF_RANGE|null[0]
+    enum entry CONTENT_POLICY_DENIED // io.dataloom.assets/AssetErrorKind.CONTENT_POLICY_DENIED|null[0]
+    enum entry CONTENT_POLICY_QUARANTINED // io.dataloom.assets/AssetErrorKind.CONTENT_POLICY_QUARANTINED|null[0]
     enum entry EMPTY_ASSET // io.dataloom.assets/AssetErrorKind.EMPTY_ASSET|null[0]
     enum entry ENCRYPTION_KEY_INVALID // io.dataloom.assets/AssetErrorKind.ENCRYPTION_KEY_INVALID|null[0]
     enum entry ENCRYPTION_KEY_UNAVAILABLE // io.dataloom.assets/AssetErrorKind.ENCRYPTION_KEY_UNAVAILABLE|null[0]
@@ -121,6 +123,10 @@ abstract interface io.dataloom.assets.transform/AssetCompressor { // io.dataloom
     abstract suspend fun decompress(kotlin/ByteArray, kotlin/Int): kotlin/ByteArray // io.dataloom.assets.transform/AssetCompressor.decompress|decompress(kotlin.ByteArray;kotlin.Int){}[0]
 }
 
+abstract interface io.dataloom.assets/AssetContentPolicy { // io.dataloom.assets/AssetContentPolicy|null[0]
+    abstract suspend fun evaluate(io.dataloom.assets/AssetContentPolicyContext, kotlin/ByteArray): io.dataloom.assets/AssetContentPolicyDecision // io.dataloom.assets/AssetContentPolicy.evaluate|evaluate(io.dataloom.assets.AssetContentPolicyContext;kotlin.ByteArray){}[0]
+}
+
 abstract interface io.dataloom.assets/AssetProvider { // io.dataloom.assets/AssetProvider|null[0]
     abstract val chunkSizeBounds // io.dataloom.assets/AssetProvider.chunkSizeBounds|{}chunkSizeBounds[0]
         abstract fun <get-chunkSizeBounds>(): io.dataloom.assets/AssetChunkSizeBounds // io.dataloom.assets/AssetProvider.chunkSizeBounds.<get-chunkSizeBounds>|<get-chunkSizeBounds>(){}[0]
@@ -154,6 +160,40 @@ abstract interface io.dataloom.assets/AssetTransferObserver { // io.dataloom.ass
 abstract interface io.dataloom.assets/AssetTransferSessionStore { // io.dataloom.assets/AssetTransferSessionStore|null[0]
     abstract suspend fun load(io.dataloom.assets/AssetTransferSessionId): io.dataloom.assets/AssetTransferSession? // io.dataloom.assets/AssetTransferSessionStore.load|load(io.dataloom.assets.AssetTransferSessionId){}[0]
     abstract suspend fun save(io.dataloom.assets/AssetTransferSession, kotlin/Long?): kotlin/Boolean // io.dataloom.assets/AssetTransferSessionStore.save|save(io.dataloom.assets.AssetTransferSession;kotlin.Long?){}[0]
+}
+
+sealed interface io.dataloom.assets/AssetContentPolicyDecision { // io.dataloom.assets/AssetContentPolicyDecision|null[0]
+    final class Deny : io.dataloom.assets/AssetContentPolicyDecision { // io.dataloom.assets/AssetContentPolicyDecision.Deny|null[0]
+        constructor <init>(kotlin/String) // io.dataloom.assets/AssetContentPolicyDecision.Deny.<init>|<init>(kotlin.String){}[0]
+
+        final val reasonCode // io.dataloom.assets/AssetContentPolicyDecision.Deny.reasonCode|{}reasonCode[0]
+            final fun <get-reasonCode>(): kotlin/String // io.dataloom.assets/AssetContentPolicyDecision.Deny.reasonCode.<get-reasonCode>|<get-reasonCode>(){}[0]
+
+        final fun component1(): kotlin/String // io.dataloom.assets/AssetContentPolicyDecision.Deny.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): io.dataloom.assets/AssetContentPolicyDecision.Deny // io.dataloom.assets/AssetContentPolicyDecision.Deny.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets/AssetContentPolicyDecision.Deny.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.assets/AssetContentPolicyDecision.Deny.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.assets/AssetContentPolicyDecision.Deny.toString|toString(){}[0]
+    }
+
+    final class Quarantine : io.dataloom.assets/AssetContentPolicyDecision { // io.dataloom.assets/AssetContentPolicyDecision.Quarantine|null[0]
+        constructor <init>(kotlin/String) // io.dataloom.assets/AssetContentPolicyDecision.Quarantine.<init>|<init>(kotlin.String){}[0]
+
+        final val reasonCode // io.dataloom.assets/AssetContentPolicyDecision.Quarantine.reasonCode|{}reasonCode[0]
+            final fun <get-reasonCode>(): kotlin/String // io.dataloom.assets/AssetContentPolicyDecision.Quarantine.reasonCode.<get-reasonCode>|<get-reasonCode>(){}[0]
+
+        final fun component1(): kotlin/String // io.dataloom.assets/AssetContentPolicyDecision.Quarantine.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): io.dataloom.assets/AssetContentPolicyDecision.Quarantine // io.dataloom.assets/AssetContentPolicyDecision.Quarantine.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets/AssetContentPolicyDecision.Quarantine.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.assets/AssetContentPolicyDecision.Quarantine.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.assets/AssetContentPolicyDecision.Quarantine.toString|toString(){}[0]
+    }
+
+    final object Allow : io.dataloom.assets/AssetContentPolicyDecision { // io.dataloom.assets/AssetContentPolicyDecision.Allow|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets/AssetContentPolicyDecision.Allow.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.assets/AssetContentPolicyDecision.Allow.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.assets/AssetContentPolicyDecision.Allow.toString|toString(){}[0]
+    }
 }
 
 sealed interface io.dataloom.assets/AssetTransferEvent { // io.dataloom.assets/AssetTransferEvent|null[0]
@@ -666,6 +706,34 @@ final class io.dataloom.assets/AssetChunkUpload { // io.dataloom.assets/AssetChu
     final fun toString(): kotlin/String // io.dataloom.assets/AssetChunkUpload.toString|toString(){}[0]
 }
 
+final class io.dataloom.assets/AssetContentPolicyContext { // io.dataloom.assets/AssetContentPolicyContext|null[0]
+    constructor <init>(io.dataloom.assets/AssetTransferSessionId, io.dataloom.api.identifier/AssetId, kotlin/Long, io.dataloom.api.asset/AssetMediaType, io.dataloom.assets/AssetTransferDirection, kotlin/Int) // io.dataloom.assets/AssetContentPolicyContext.<init>|<init>(io.dataloom.assets.AssetTransferSessionId;io.dataloom.api.identifier.AssetId;kotlin.Long;io.dataloom.api.asset.AssetMediaType;io.dataloom.assets.AssetTransferDirection;kotlin.Int){}[0]
+
+    final val assetId // io.dataloom.assets/AssetContentPolicyContext.assetId|{}assetId[0]
+        final fun <get-assetId>(): io.dataloom.api.identifier/AssetId // io.dataloom.assets/AssetContentPolicyContext.assetId.<get-assetId>|<get-assetId>(){}[0]
+    final val chunkIndex // io.dataloom.assets/AssetContentPolicyContext.chunkIndex|{}chunkIndex[0]
+        final fun <get-chunkIndex>(): kotlin/Int // io.dataloom.assets/AssetContentPolicyContext.chunkIndex.<get-chunkIndex>|<get-chunkIndex>(){}[0]
+    final val direction // io.dataloom.assets/AssetContentPolicyContext.direction|{}direction[0]
+        final fun <get-direction>(): io.dataloom.assets/AssetTransferDirection // io.dataloom.assets/AssetContentPolicyContext.direction.<get-direction>|<get-direction>(){}[0]
+    final val mediaType // io.dataloom.assets/AssetContentPolicyContext.mediaType|{}mediaType[0]
+        final fun <get-mediaType>(): io.dataloom.api.asset/AssetMediaType // io.dataloom.assets/AssetContentPolicyContext.mediaType.<get-mediaType>|<get-mediaType>(){}[0]
+    final val sessionId // io.dataloom.assets/AssetContentPolicyContext.sessionId|{}sessionId[0]
+        final fun <get-sessionId>(): io.dataloom.assets/AssetTransferSessionId // io.dataloom.assets/AssetContentPolicyContext.sessionId.<get-sessionId>|<get-sessionId>(){}[0]
+    final val version // io.dataloom.assets/AssetContentPolicyContext.version|{}version[0]
+        final fun <get-version>(): kotlin/Long // io.dataloom.assets/AssetContentPolicyContext.version.<get-version>|<get-version>(){}[0]
+
+    final fun component1(): io.dataloom.assets/AssetTransferSessionId // io.dataloom.assets/AssetContentPolicyContext.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.identifier/AssetId // io.dataloom.assets/AssetContentPolicyContext.component2|component2(){}[0]
+    final fun component3(): kotlin/Long // io.dataloom.assets/AssetContentPolicyContext.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.asset/AssetMediaType // io.dataloom.assets/AssetContentPolicyContext.component4|component4(){}[0]
+    final fun component5(): io.dataloom.assets/AssetTransferDirection // io.dataloom.assets/AssetContentPolicyContext.component5|component5(){}[0]
+    final fun component6(): kotlin/Int // io.dataloom.assets/AssetContentPolicyContext.component6|component6(){}[0]
+    final fun copy(io.dataloom.assets/AssetTransferSessionId = ..., io.dataloom.api.identifier/AssetId = ..., kotlin/Long = ..., io.dataloom.api.asset/AssetMediaType = ..., io.dataloom.assets/AssetTransferDirection = ..., kotlin/Int = ...): io.dataloom.assets/AssetContentPolicyContext // io.dataloom.assets/AssetContentPolicyContext.copy|copy(io.dataloom.assets.AssetTransferSessionId;io.dataloom.api.identifier.AssetId;kotlin.Long;io.dataloom.api.asset.AssetMediaType;io.dataloom.assets.AssetTransferDirection;kotlin.Int){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.assets/AssetContentPolicyContext.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.assets/AssetContentPolicyContext.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.assets/AssetContentPolicyContext.toString|toString(){}[0]
+}
+
 final class io.dataloom.assets/AssetIntegrityVerifier { // io.dataloom.assets/AssetIntegrityVerifier|null[0]
     constructor <init>(io.dataloom.api.security/DataLoomIncrementalDigestCalculator, kotlin/Int = ...) // io.dataloom.assets/AssetIntegrityVerifier.<init>|<init>(io.dataloom.api.security.DataLoomIncrementalDigestCalculator;kotlin.Int){}[0]
 
@@ -709,7 +777,7 @@ final class io.dataloom.assets/AssetSourceChangedException : kotlin/RuntimeExcep
 }
 
 final class io.dataloom.assets/AssetTransferEngine { // io.dataloom.assets/AssetTransferEngine|null[0]
-    constructor <init>(io.dataloom.assets/AssetProvider, io.dataloom.assets/AssetTransferSessionStore, io.dataloom.api.security/DataLoomIncrementalDigestCalculator, kotlin/Int = ..., io.dataloom.api.security/DigestAlgorithm = ..., kotlin/Int = ..., io.dataloom.assets.transform/AssetTransferTransforms = ..., kotlin/Int = ..., io.dataloom.assets/AssetTransferObserver? = ...) // io.dataloom.assets/AssetTransferEngine.<init>|<init>(io.dataloom.assets.AssetProvider;io.dataloom.assets.AssetTransferSessionStore;io.dataloom.api.security.DataLoomIncrementalDigestCalculator;kotlin.Int;io.dataloom.api.security.DigestAlgorithm;kotlin.Int;io.dataloom.assets.transform.AssetTransferTransforms;kotlin.Int;io.dataloom.assets.AssetTransferObserver?){}[0]
+    constructor <init>(io.dataloom.assets/AssetProvider, io.dataloom.assets/AssetTransferSessionStore, io.dataloom.api.security/DataLoomIncrementalDigestCalculator, kotlin/Int = ..., io.dataloom.api.security/DigestAlgorithm = ..., kotlin/Int = ..., io.dataloom.assets.transform/AssetTransferTransforms = ..., kotlin/Int = ..., io.dataloom.assets/AssetTransferObserver? = ..., io.dataloom.assets/AssetContentPolicy? = ...) // io.dataloom.assets/AssetTransferEngine.<init>|<init>(io.dataloom.assets.AssetProvider;io.dataloom.assets.AssetTransferSessionStore;io.dataloom.api.security.DataLoomIncrementalDigestCalculator;kotlin.Int;io.dataloom.api.security.DigestAlgorithm;kotlin.Int;io.dataloom.assets.transform.AssetTransferTransforms;kotlin.Int;io.dataloom.assets.AssetTransferObserver?;io.dataloom.assets.AssetContentPolicy?){}[0]
 
     final suspend fun cancel(io.dataloom.assets/AssetTransferSessionId, io.dataloom.assets/AssetSink? = ...): io.dataloom.assets/AssetTransferOutcome // io.dataloom.assets/AssetTransferEngine.cancel|cancel(io.dataloom.assets.AssetTransferSessionId;io.dataloom.assets.AssetSink?){}[0]
     final suspend fun download(io.dataloom.assets/AssetTransferSessionId, io.dataloom.api.identifier/AssetId, kotlin/Long?, io.dataloom.assets/AssetSink): io.dataloom.assets/AssetTransferOutcome // io.dataloom.assets/AssetTransferEngine.download|download(io.dataloom.assets.AssetTransferSessionId;io.dataloom.api.identifier.AssetId;kotlin.Long?;io.dataloom.assets.AssetSink){}[0]
