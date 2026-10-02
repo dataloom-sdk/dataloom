@@ -148,7 +148,7 @@ public final class io/dataloom/assets/AssetIntegrityVerifier {
 public final class io/dataloom/assets/AssetIntegrityVerifier$Companion {
 }
 
-public abstract interface class io/dataloom/assets/AssetProvider {
+public abstract interface class io/dataloom/assets/AssetProvider : io/dataloom/api/provider/DataLoomProvider {
 	public abstract fun abortUpload-fnV884s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun completeUpload-fnV884s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getChunkSizeBounds ()Lio/dataloom/assets/AssetChunkSizeBounds;
@@ -608,8 +608,12 @@ public final class io/dataloom/assets/file/FileAssetProvider : io/dataloom/asset
 	public fun <init> (Ljava/nio/file/Path;Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;Lio/dataloom/assets/AssetQuota;Lio/dataloom/assets/AssetChunkSizeBounds;I)V
 	public synthetic fun <init> (Ljava/nio/file/Path;Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;Lio/dataloom/assets/AssetQuota;Lio/dataloom/assets/AssetChunkSizeBounds;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun abortUpload-fnV884s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun completeUpload-fnV884s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getChunkSizeBounds ()Lio/dataloom/assets/AssetChunkSizeBounds;
+	public fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun openUpload (Lio/dataloom/assets/AssetUploadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun readChunk-jJr0HPI (Ljava/lang/String;JILkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun readManifest-NNrJYCg (Ljava/lang/String;Ljava/lang/Long;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -639,8 +643,12 @@ public final class io/dataloom/assets/memory/InMemoryAssetProvider : io/dataloom
 	public fun <init> (Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;Lio/dataloom/assets/AssetQuota;Lio/dataloom/assets/AssetChunkSizeBounds;)V
 	public synthetic fun <init> (Lio/dataloom/api/security/DataLoomIncrementalDigestCalculator;Lio/dataloom/assets/AssetQuota;Lio/dataloom/assets/AssetChunkSizeBounds;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun abortUpload-fnV884s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun completeUpload-fnV884s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getChunkSizeBounds ()Lio/dataloom/assets/AssetChunkSizeBounds;
+	public fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun openUpload (Lio/dataloom/assets/AssetUploadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun readChunk-jJr0HPI (Ljava/lang/String;JILkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun readManifest-NNrJYCg (Ljava/lang/String;Ljava/lang/Long;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

@@ -166,6 +166,21 @@ class DataLoomBuilderAssetTransferTest {
     private class CountingAssetProvider : AssetProvider {
         var calls = 0
         override val chunkSizeBounds = io.dataloom.assets.AssetChunkSizeBounds(1, 1_024 * 1_024)
+        override val descriptor: ProviderDescriptor = ProviderDescriptor(
+            id = ProviderId("counting-asset-provider"),
+            name = ProviderName("Counting Asset Provider"),
+            type = ProviderType.ASSET,
+            version = ProviderVersion("1.0.0"),
+        )
+
+        override suspend fun initialize(context: ProviderInitializationContext): ProviderOperationResult<Unit> =
+            ProviderOperationResult.Success(Unit)
+
+        override suspend fun health(): ProviderOperationResult<ProviderHealth> =
+            ProviderOperationResult.Success(ProviderHealth(ProviderHealthStatus.HEALTHY))
+
+        override suspend fun close(): ProviderOperationResult<Unit> = ProviderOperationResult.Success(Unit)
+
         override suspend fun openUpload(request: io.dataloom.assets.AssetUploadRequest) = fail<io.dataloom.assets.AssetUploadStatus>()
         override suspend fun uploadChunk(request: io.dataloom.assets.AssetChunkUpload) = fail<io.dataloom.assets.AssetUploadStatus>()
         override suspend fun completeUpload(sessionId: AssetTransferSessionId) = fail<io.dataloom.api.asset.AssetManifest>()

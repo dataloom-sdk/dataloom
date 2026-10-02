@@ -4,7 +4,15 @@ package io.dataloom.assets.file
 
 import io.dataloom.api.asset.AssetManifest
 import io.dataloom.api.identifier.AssetId
+import io.dataloom.api.provider.ProviderDescriptor
+import io.dataloom.api.provider.ProviderHealth
+import io.dataloom.api.provider.ProviderHealthStatus
+import io.dataloom.api.provider.ProviderId
+import io.dataloom.api.provider.ProviderInitializationContext
+import io.dataloom.api.provider.ProviderName
 import io.dataloom.api.provider.ProviderOperationResult
+import io.dataloom.api.provider.ProviderType
+import io.dataloom.api.provider.ProviderVersion
 import io.dataloom.api.security.DataLoomIncrementalDigestCalculator
 import io.dataloom.assets.AssetChunkSizeBounds
 import io.dataloom.assets.AssetChunkUpload
@@ -59,6 +67,22 @@ public class AppleFileAssetProvider(
     override val chunkSizeBounds: AssetChunkSizeBounds = AssetChunkSizeBounds(1, 64 * 1024 * 1024),
     private val readBufferBytes: Int = 64 * 1024,
 ) : AssetProvider {
+
+    override val descriptor: ProviderDescriptor = ProviderDescriptor(
+        id = ProviderId("io.dataloom.assets.file.apple-file-asset-provider"),
+        name = ProviderName("AppleFileAssetProvider"),
+        type = ProviderType.ASSET,
+        version = ProviderVersion("1.0.0"),
+    )
+
+    override suspend fun initialize(context: ProviderInitializationContext): ProviderOperationResult<Unit> =
+        ProviderOperationResult.Success(Unit)
+
+    override suspend fun health(): ProviderOperationResult<ProviderHealth> =
+        ProviderOperationResult.Success(ProviderHealth(status = ProviderHealthStatus.HEALTHY))
+
+    override suspend fun close(): ProviderOperationResult<Unit> =
+        ProviderOperationResult.Success(Unit)
 
     private class Upload(val manifest: AssetManifest, val directory: String) {
         var completed: Boolean = false
