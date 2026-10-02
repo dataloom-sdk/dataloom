@@ -50,6 +50,20 @@ class AppleCircuitBreakerProcessTerminationProofTest {
         assertEquals(written.version, reread?.version)
     }
 
+    @Test
+    fun `redrive gate after relaunch re-drives the real coordinator against the persisted record`() = runTest {
+        val directory = uniqueDirectory()
+        AppleCircuitBreakerProcessTerminationProof.openCircuitAndPersist(directory)
+
+        val redriven = AppleCircuitBreakerProcessTerminationProof.redriveGateAfterRelaunch(directory)
+
+        assertEquals("REJECTED", redriven.beforeDeadlineOutcome)
+        assertEquals("OPEN", redriven.beforeDeadlineRejectionReason)
+        assertEquals("PROBE_ALLOWED", redriven.probeAtDeadlineOutcome)
+        assertEquals(1L, redriven.probeGeneration)
+        assertEquals("ALLOWED", redriven.recoveryOutcome)
+    }
+
     private fun uniqueDirectory(): String =
         NSTemporaryDirectory() + "dataloom-process-termination-proof-" + NSUUID().UUIDString()
 }
