@@ -19,7 +19,7 @@
 > `AssetManifest` itself is documented in [asset-manifest.md](./asset-manifest.md).
 
 **Module:** `dataloom-assets` (`io.dataloom.assets`, plus `.memory`,
-`.transform`, `.testkit`). Targets: JVM (also serves Android) and the three iOS
+`.transform`, `.testkit`, `.policy`). Targets: JVM (also serves Android) and the three iOS
 targets. The incremental digest lives in `dataloom-model`
 (`io.dataloom.api.security`).
 
@@ -44,6 +44,10 @@ targets. The incremental digest lives in `dataloom-model`
 | `AssetProviderContractKit` | Provider test kit (framework-neutral) |
 | `FileAssetSource`, `FileAssetSink` (JVM/Android) | Real file-backed source and sink: random-access reads of an existing file; a download staged in a secure temp file, atomically `promote()`d to its final path once verified |
 | `FileAssetProvider` (JVM/Android) | Real filesystem-backed `AssetProvider`: bounded-memory chunk assembly, atomic promotion to a committed path, eager and host-driven-sweep cleanup of abandoned sessions; passes `AssetProviderContractKit` |
+| `AssetContentPolicy`, `AssetContentPolicyDecision` (FR-ASSET-012) | Optional per-chunk allow/deny/quarantine hook, evaluated at `AssetTransferEngine`'s post-verify point |
+| `HashDenyListAssetContentPolicy`, `AssetContentDenyListEntry` (`.policy`) | Reference `AssetContentPolicy`: exact-match known-bad-digest deny list |
+| `DurableAssetContentQuarantineLog`, `AssetContentQuarantineRecord` (`.policy`) | Reference durable quarantine store a `Quarantine` decision is recorded to; backed by `DurableStateStore`, with operator `release` |
+| `AssetContentQuarantineRecordCodec` (`.policy`) | Versioned, fail-closed text codec for `AssetContentQuarantineRecord`, for a generic string-payload `DurableStateStore` such as `RoomDurableStateStore` |
 
 ## Using the engine
 
@@ -242,10 +246,87 @@ when (val outcome = engine.download(sessionId, assetId, version = null, sink)) {
 - **No Apple implementation yet.** These three types live in `dataloom-assets`'
   JVM/Android source set only. See ADR-0016 for why and for the ordering.
 
+## Content-policy hooks and a reference implementation (FR-ASSET-012)
+
+`AssetContentPolicy` (`io.dataloom.assets`) is an optional per-chunk
+allow/deny/quarantine hook evaluated at the exact point `AssetTransferEngine`
+already holds a chunk's verified logical bytes (the same point its digest
+check and compression/encryption transforms operate), for upload and
+download alike:
+
+```kotlin
+val engine = AssetTransferEngine(
+    provider, sessions, digests,
+    contentPolicy = myPolicy,   // null (the default) allows every chunk
+)
+```
+
+`Deny` and `Quarantine` both fail the session terminally
+(`AssetErrorKind.CONTENT_POLICY_DENIED` / `CONTENT_POLICY_QUARANTINED`) and run
+the same cleanup every other terminal failure does -- the provider-side
+upload is aborted or the download sink is discarded -- so a denied or
+quarantined transfer never completes and never leaves committed or written
+bytes behind. The bare SPI implements no scanner and no quarantine store;
+building one is a host or application concern.
+
+`io.dataloom.assets.policy` is a reference answer to that deferred scope,
+real and usable as-is, and a template for a production backend (a virus
+scanner, an ML classifier) that swaps the detection strategy without
+changing the wiring:
+
+```kotlin
+val quarantineLog = DurableAssetContentQuarantineLog(
+    RoomDurableStateStore(database, "asset-content-quarantine", DurableAssetContentQuarantineLog.KeyEncoder, AssetContentQuarantineRecordCodec()),
+)
+val policy = HashDenyListAssetContentPolicy(
+    digests,
+    denyList = listOf(
+        AssetContentDenyListEntry(knownBadDigestHex, AssetContentMatchAction.DENY, "known-malware-sample"),
+        AssetContentDenyListEntry(suspiciousDigestHex, AssetContentMatchAction.QUARANTINE, "needs-review"),
+    ),
+    quarantineLog = quarantineLog,   // optional: durably records a QUARANTINE match
+    clock = clock,                   // required when quarantineLog is set
+)
+val engine = AssetTransferEngine(provider, sessions, digests, contentPolicy = policy)
+```
+
+- **Exact-match, known-bad-hash matching.** `HashDenyListAssetContentPolicy`
+  hashes each chunk it is given and looks the digest up in a configured deny
+  list -- the same technique production malware-signature and known-content
+  hash blocklists use for bytes that are already known bad. It checks only
+  the chunk it was actually given: `AssetContentPolicyContext` carries no
+  "last chunk" signal, so a whole-object exact-hash decision cannot honestly
+  be made inside one `evaluate` call. For a single-chunk asset (small files:
+  avatars, documents, thumbnails) that chunk *is* the whole object; for a
+  larger asset it catches a deny-listed chunk, a real technique in its own
+  right, not a simplification invented for this reference.
+- **Quarantine is recorded, not just decided.** A `QUARANTINE`-action match
+  writes an `AssetContentQuarantineRecord` through `quarantineLog` (session
+  id, asset id/version, chunk index, reason code, matched digest, timestamp
+  -- never chunk bytes) before returning the decision, so the transfer's
+  resulting terminal failure is never the only trace the match happened. The
+  log is `DurableStateStore`-backed -- the same durable CAS-log pattern this
+  codebase already uses for `DurableConflictQuarantineLog` -- so it works
+  with any backend a host already has, including `RoomDurableStateStore`
+  with `AssetContentQuarantineRecordCodec`. A `DENY`-action match never
+  touches the log, matching `AssetContentPolicyDecision.Deny`'s own "refused
+  outright" semantics.
+- **Release.** `DurableAssetContentQuarantineLog.release(sessionId, evidence)`
+  durably records an operator's decision to clear a held record (idempotent;
+  a session quarantines at most once, since the engine fails it terminally on
+  the first `Quarantine`). Release does not resume or retry the original
+  transfer -- that is a new session under a new session id, the caller's
+  choice entirely.
+- **Building your own policy.** Implement `AssetContentPolicy.evaluate` with
+  a call to a real scanner or classifier instead of a digest lookup, and, on
+  a decision to quarantine, write to a `DurableAssetContentQuarantineLog` (or
+  your own store) the same way `HashDenyListAssetContentPolicy` does. The
+  deny-list and the quarantine store are independently swappable pieces.
+
 ## Not yet implemented
 
-An Apple file-backed `AssetSource`/`AssetSink`/`AssetProvider`, AES-GCM on
-Apple, parallel transfer and fairness, content-policy hooks,
-`ProviderType`/lifecycle for asset providers, a transport-backed provider, and
-`AC-FUNC-005`. See [ADR-0016](../adr/ADR-0016-file-backed-asset-transfer-storage.md)
+AES-GCM on Apple, a concrete scanner/ML-classifier-backed `AssetContentPolicy`
+(only the reference hash deny list ships), `ProviderType`/lifecycle for asset
+providers, a transport-backed provider, and `AC-FUNC-005` end to end on
+Android and iOS. See [ADR-0016](../adr/ADR-0016-file-backed-asset-transfer-storage.md)
 for the order.
