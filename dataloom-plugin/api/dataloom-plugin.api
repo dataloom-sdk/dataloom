@@ -354,6 +354,22 @@ public final class io/dataloom/plugin/PluginRegistry {
 	public final fun isEmpty ()Z
 }
 
+public final class io/dataloom/plugin/reference/DiagnosticsCounterPlugin : io/dataloom/api/plugin/DataLoomPlugin {
+	public static final field Companion Lio/dataloom/plugin/reference/DiagnosticsCounterPlugin$Companion;
+	public static final field DIAGNOSTICS_CAPABILITY Ljava/lang/String;
+	public static final field RECORD_PERMISSION Ljava/lang/String;
+	public fun <init> (Lio/dataloom/api/plugin/PluginManifest;Lio/dataloom/api/plugin/PluginExecutionBounds;)V
+	public fun getExecutionBounds ()Lio/dataloom/api/plugin/PluginExecutionBounds;
+	public fun getManifest ()Lio/dataloom/api/plugin/PluginManifest;
+	public final fun recordEvent (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun reset (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun snapshot (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/dataloom/plugin/reference/DiagnosticsCounterPlugin$Companion {
+	public final fun manifestFor-coTTZOM (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/plugin/PluginCompatibilityRange;)Lio/dataloom/api/plugin/PluginManifest;
+}
+
 public final class io/dataloom/plugin/testkit/PluginCertificationKit {
 	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/internal/DefaultConstructorMarker;)V

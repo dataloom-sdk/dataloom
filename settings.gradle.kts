@@ -66,6 +66,7 @@ include(
     ":runtime-external-consumer",
     ":dataloom-storage-file",
     ":dataloom-assets",
+    ":dataloom-assets-transport-ktor",
 )
 
 // Android implementation modules.
