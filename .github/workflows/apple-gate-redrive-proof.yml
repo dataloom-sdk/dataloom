@@ -1,0 +1,523 @@
+name: Apple Gate Re-Drive Proof
+
+# Closes the gap docs/status/market-readiness.md's `#94` row named: "Apple's
+# circuit-breaker and retry-budget kill/relaunch proofs still only check raw
+# persisted state and never re-drive the real gate." apple-validation.yml's
+# own apple-process-termination-proof / apple-retry-budget-process-termination-proof
+# jobs already prove a genuine `xcrun simctl terminate` + relaunch survives
+# with the persisted state file byte-identical; this workflow proves the
+# distinct, stronger claim that the real
+# CircuitBreakerCoordinator/AppleFileQueueProvider *gate* -- not just the raw
+# row -- is genuinely re-driven from the relaunched process, mirroring
+# AndroidProcessTerminationCircuitBreakerInstrumentedTest's/
+# AndroidProcessTerminationRetryBudgetInstrumentedTest's own post-relaunch
+# gate re-drive assertions.
+#
+# Deliberately a NEW workflow file rather than appended steps inside
+# apple-validation.yml's own two jobs: both this and that workflow's jobs
+# install/launch/kill/relaunch the exact same proof apps, but on their own,
+# independently-booted Simulator device, so a failure in this never-run-
+# before verification cannot fail the already-proven raw-state-survival
+# check those jobs perform, and vice versa. See AGENT_PLAYBOOK's conflict-
+# avoidance rule for new CI jobs and docs/apple/process-termination-proof.md.
+#
+# Both proof apps now run their relaunch-detection branch differently from
+# before: on the *second* launch (after the real kill), each app re-drives
+# its real production gate (CircuitBreakerCoordinator.acquire/recordSuccess
+# for circuit-breaker; AppleFileQueueProvider.acquire for retry-budget)
+# against the already-persisted record instead of doing nothing, and writes
+# the outcome to a second, separate result file alongside the original
+# state file -- see each AppDelegate.swift and
+# AppleCircuitBreakerProcessTerminationProof.redriveGateAfterRelaunch /
+# AppleRetryBudgetProcessTerminationProof.redriveAcquireGateAfterRelaunch
+# for the real production code this drives.
+#
+# Honesty note: this is new, never-run-before infrastructure. It compiles
+# and klib-verifies cleanly from a Windows host
+# (-Pdataloom.appleKlibCrossCompile=true) and was read through line-by-line
+# against the Android precedent it mirrors, but has never executed on a real
+# macOS runner before this PR -- both jobs below carry continue-on-error
+# until a first genuine green run is observed, matching this repository's
+# own convention for brand-new jobs (see apple-process-termination-proof's
+# own history in apple-validation.yml).
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apple-gate-redrive-proof-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apple-circuit-breaker-gate-redrive-proof:
+    name: Apple Simulator gate re-drive proof (circuit breaker)
+    runs-on: macos-15
+    timeout-minutes: 30
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Assemble the process-termination-proof XCFramework
+        run: >-
+          ./gradlew
+          :apple-process-termination-proof:assembleDataLoomProcessTerminationProofReleaseXCFramework
+          --configuration-cache
+          --stacktrace
+          --console=plain
+
+      - name: Copy XCFramework into the proof app's project directory
+        run: |
+          set -euo pipefail
+          SRC="apple-process-termination-proof/build/XCFrameworks/release/DataLoomProcessTerminationProof.xcframework"
+          DEST="apple-process-termination-proof-app/DataLoomProcessTerminationProof.xcframework"
+          echo "=== Copying $SRC -> $DEST ==="
+          ls -la "$SRC"
+          rm -rf "$DEST"
+          cp -R "$SRC" "$DEST"
+
+      - name: Build the proof app for the iOS Simulator
+        run: |
+          set -euo pipefail
+          cd apple-process-termination-proof-app
+          xcodebuild build \
+            -project ProcessTerminationProofApp.xcodeproj \
+            -scheme ProcessTerminationProofApp \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Create and boot a dedicated Simulator device
+        id: boot_simulator
+        run: |
+          set -euo pipefail
+          RUNTIMES_JSON=$(xcrun simctl list runtimes --json)
+          RUNTIME_ID=$(echo "$RUNTIMES_JSON" \
+            | jq -r '[.runtimes[] | select(.isAvailable and (.identifier | startswith("com.apple.CoreSimulator.SimRuntime.iOS")))] | sort_by(.version) | last | .identifier')
+          if [ -z "$RUNTIME_ID" ] || [ "$RUNTIME_ID" = "null" ]; then
+            echo "ERROR: no available iOS simulator runtime found." >&2
+            xcrun simctl list runtimes
+            exit 1
+          fi
+          echo "Selected runtime: $RUNTIME_ID"
+
+          # Pick a device type from the *selected runtime's own*
+          # supportedDeviceTypes list, not the global device-type list --
+          # see apple-process-termination-proof's own identical step in
+          # apple-validation.yml for the lexicographic-sort trap this avoids.
+          DEVICETYPE_ID=$(echo "$RUNTIMES_JSON" \
+            | jq -r --arg rid "$RUNTIME_ID" '
+                [.runtimes[] | select(.identifier == $rid) | .supportedDeviceTypes[]
+                  | select(.name | contains("iPhone"))]
+                | last | .identifier')
+          if [ -z "$DEVICETYPE_ID" ] || [ "$DEVICETYPE_ID" = "null" ]; then
+            echo "ERROR: no iPhone simulator device type supported by runtime $RUNTIME_ID." >&2
+            echo "$RUNTIMES_JSON" | jq --arg rid "$RUNTIME_ID" '.runtimes[] | select(.identifier == $rid)'
+            exit 1
+          fi
+          echo "Selected device type: $DEVICETYPE_ID"
+
+          DEVICE_ID=$(xcrun simctl create CircuitGateRedriveProofDevice "$DEVICETYPE_ID" "$RUNTIME_ID")
+          echo "Created device: $DEVICE_ID"
+          echo "device_id=$DEVICE_ID" >> "$GITHUB_OUTPUT"
+
+          xcrun simctl boot "$DEVICE_ID" || true
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+
+      - name: Install, launch, kill, relaunch, and verify the real gate re-drive
+        env:
+          DEVICE_ID: ${{ steps.boot_simulator.outputs.device_id }}
+          BUNDLE_ID: io.dataloom.processterminationproof.app
+        run: |
+          set -euo pipefail
+          APP_PATH="apple-process-termination-proof-app/build/Build/Products/Debug-iphonesimulator/ProcessTerminationProofApp.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "ERROR: built app not found at $APP_PATH" >&2
+            find apple-process-termination-proof-app/build/Build/Products -maxdepth 3 || true
+            exit 1
+          fi
+
+          xcrun simctl install "$DEVICE_ID" "$APP_PATH"
+
+          echo "=== First launch (persists the OPEN circuit-breaker record) ==="
+          LAUNCH_1=$(xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID")
+          echo "$LAUNCH_1"
+          PID_1=$(echo "$LAUNCH_1" | sed -n 's/^.*: *\([0-9][0-9]*\)$/\1/p')
+          if [ -z "$PID_1" ]; then
+            echo "ERROR: could not parse a pid from 'simctl launch' output: $LAUNCH_1" >&2
+            exit 1
+          fi
+          echo "First launch pid: $PID_1"
+
+          CONTAINER_DATA=$(xcrun simctl get_app_container "$DEVICE_ID" "$BUNDLE_ID" data)
+          STATE_FILE="$CONTAINER_DATA/Documents/CircuitProof/dataloom-circuit-state-v1.tsv"
+          REDRIVE_FILE="$CONTAINER_DATA/Documents/CircuitProof/dataloom-circuit-gate-redrive-v1.tsv"
+          echo "Resolved on-disk state file: $STATE_FILE"
+          echo "Resolved on-disk gate-redrive result file: $REDRIVE_FILE"
+
+          echo "=== Waiting for the app's real production write to land on disk ==="
+          WROTE_STATE=0
+          for _ in $(seq 1 30); do
+            if [ -f "$STATE_FILE" ]; then
+              WROTE_STATE=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$WROTE_STATE" != "1" ]; then
+            echo "ERROR: circuit-breaker state file never appeared within 30s: $STATE_FILE" >&2
+            exit 1
+          fi
+
+          if [ -f "$REDRIVE_FILE" ]; then
+            echo "ERROR: gate-redrive result file already exists after the first launch -- it must only be written on relaunch: $REDRIVE_FILE" >&2
+            exit 1
+          fi
+
+          echo "=== Killing the app with a genuine OS-level 'xcrun simctl terminate' ==="
+          xcrun simctl terminate "$DEVICE_ID" "$BUNDLE_ID" || true
+
+          echo "=== Polling until the OS confirms the process is actually gone ==="
+          TERMINATED=0
+          for _ in $(seq 1 30); do
+            if ! xcrun simctl spawn "$DEVICE_ID" launchctl list 2>/dev/null | grep -q "$BUNDLE_ID"; then
+              TERMINATED=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$TERMINATED" != "1" ]; then
+            echo "ERROR: process for $BUNDLE_ID did not disappear from launchctl list within 30s." >&2
+            xcrun simctl spawn "$DEVICE_ID" launchctl list || true
+            exit 1
+          fi
+
+          echo "=== Relaunching (must be a genuinely new OS process; this run re-drives the real gate) ==="
+          LAUNCH_2=$(xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID")
+          echo "$LAUNCH_2"
+          PID_2=$(echo "$LAUNCH_2" | sed -n 's/^.*: *\([0-9][0-9]*\)$/\1/p')
+          if [ -z "$PID_2" ]; then
+            echo "ERROR: could not parse a pid from the relaunch 'simctl launch' output: $LAUNCH_2" >&2
+            exit 1
+          fi
+          echo "Relaunch pid: $PID_2"
+
+          if [ "$PID_1" = "$PID_2" ]; then
+            echo "ERROR: relaunch pid ($PID_2) is identical to the pre-kill pid ($PID_1)." >&2
+            echo "This would mean simctl terminate/launch did not produce a genuinely new OS process." >&2
+            exit 1
+          fi
+
+          echo "=== Reading the real gate re-drive's result from the relaunched process's container ==="
+          REDRIVE_WRITTEN=0
+          for _ in $(seq 1 30); do
+            if [ -f "$REDRIVE_FILE" ]; then
+              REDRIVE_WRITTEN=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$REDRIVE_WRITTEN" != "1" ]; then
+            echo "ERROR: gate-redrive result file never appeared within 30s after relaunch: $REDRIVE_FILE" >&2
+            exit 1
+          fi
+
+          REDRIVE_CONTENT=$(cat "$REDRIVE_FILE")
+          echo "--- Gate re-drive result ---"
+          echo "$REDRIVE_CONTENT"
+
+          BEFORE_OUTCOME=$(echo "$REDRIVE_CONTENT" | cut -d$'\t' -f1)
+          BEFORE_REASON=$(echo "$REDRIVE_CONTENT" | cut -d$'\t' -f2)
+          PROBE_OUTCOME=$(echo "$REDRIVE_CONTENT" | cut -d$'\t' -f3)
+          PROBE_GENERATION=$(echo "$REDRIVE_CONTENT" | cut -d$'\t' -f4)
+          RECOVERY_OUTCOME=$(echo "$REDRIVE_CONTENT" | cut -d$'\t' -f5)
+
+          if [ "$BEFORE_OUTCOME" != "REJECTED" ] || [ "$BEFORE_REASON" != "OPEN" ]; then
+            echo "ERROR: expected the real gate to reject access one millisecond before the deadline with reason OPEN, got outcome=$BEFORE_OUTCOME reason=$BEFORE_REASON" >&2
+            exit 1
+          fi
+          if [ "$PROBE_OUTCOME" != "PROBE_ALLOWED" ] || [ "$PROBE_GENERATION" -le 0 ]; then
+            echo "ERROR: expected the real gate to grant a half-open probe exactly at the deadline, got outcome=$PROBE_OUTCOME generation=$PROBE_GENERATION" >&2
+            exit 1
+          fi
+          if [ "$RECOVERY_OUTCOME" != "ALLOWED" ]; then
+            echo "ERROR: expected the real gate to return to ALLOWED after the probe's recorded success, got outcome=$RECOVERY_OUTCOME" >&2
+            exit 1
+          fi
+
+          echo "OK: the real CircuitBreakerCoordinator gate was genuinely re-driven after a real"
+          echo "    'xcrun simctl terminate' + relaunch: reject-before-deadline, probe-granted-at-"
+          echo "    deadline (generation $PROBE_GENERATION), and recovery-after-success all held."
+          echo "    pid before kill: $PID_1"
+          echo "    pid after relaunch: $PID_2"
+
+      - name: Clean up the Simulator device
+        if: always()
+        env:
+          DEVICE_ID: ${{ steps.boot_simulator.outputs.device_id }}
+          BUNDLE_ID: io.dataloom.processterminationproof.app
+        run: |
+          if [ -n "${DEVICE_ID:-}" ]; then
+            xcrun simctl terminate "$DEVICE_ID" "$BUNDLE_ID" || true
+            xcrun simctl shutdown "$DEVICE_ID" || true
+            xcrun simctl delete "$DEVICE_ID" || true
+          fi
+
+  apple-retry-budget-gate-redrive-proof:
+    name: Apple Simulator gate re-drive proof (retry budget)
+    runs-on: macos-15
+    timeout-minutes: 30
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Assemble the process-termination-proof XCFramework
+        run: >-
+          ./gradlew
+          :apple-process-termination-proof:assembleDataLoomProcessTerminationProofReleaseXCFramework
+          --configuration-cache
+          --stacktrace
+          --console=plain
+
+      - name: Copy XCFramework into the retry-budget proof app's project directory
+        run: |
+          set -euo pipefail
+          SRC="apple-process-termination-proof/build/XCFrameworks/release/DataLoomProcessTerminationProof.xcframework"
+          DEST="apple-process-termination-proof-retry-budget-app/DataLoomProcessTerminationProof.xcframework"
+          echo "=== Copying $SRC -> $DEST ==="
+          ls -la "$SRC"
+          rm -rf "$DEST"
+          cp -R "$SRC" "$DEST"
+
+      - name: Build the retry-budget proof app for the iOS Simulator
+        run: |
+          set -euo pipefail
+          cd apple-process-termination-proof-retry-budget-app
+          xcodebuild build \
+            -project RetryBudgetProcessTerminationProofApp.xcodeproj \
+            -scheme RetryBudgetProcessTerminationProofApp \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Create and boot a dedicated Simulator device
+        id: boot_simulator
+        run: |
+          set -euo pipefail
+          RUNTIMES_JSON=$(xcrun simctl list runtimes --json)
+          RUNTIME_ID=$(echo "$RUNTIMES_JSON" \
+            | jq -r '[.runtimes[] | select(.isAvailable and (.identifier | startswith("com.apple.CoreSimulator.SimRuntime.iOS")))] | sort_by(.version) | last | .identifier')
+          if [ -z "$RUNTIME_ID" ] || [ "$RUNTIME_ID" = "null" ]; then
+            echo "ERROR: no available iOS simulator runtime found." >&2
+            xcrun simctl list runtimes
+            exit 1
+          fi
+          echo "Selected runtime: $RUNTIME_ID"
+
+          DEVICETYPE_ID=$(echo "$RUNTIMES_JSON" \
+            | jq -r --arg rid "$RUNTIME_ID" '
+                [.runtimes[] | select(.identifier == $rid) | .supportedDeviceTypes[]
+                  | select(.name | contains("iPhone"))]
+                | last | .identifier')
+          if [ -z "$DEVICETYPE_ID" ] || [ "$DEVICETYPE_ID" = "null" ]; then
+            echo "ERROR: no iPhone simulator device type supported by runtime $RUNTIME_ID." >&2
+            echo "$RUNTIMES_JSON" | jq --arg rid "$RUNTIME_ID" '.runtimes[] | select(.identifier == $rid)'
+            exit 1
+          fi
+          echo "Selected device type: $DEVICETYPE_ID"
+
+          DEVICE_ID=$(xcrun simctl create RetryBudgetGateRedriveProofDevice "$DEVICETYPE_ID" "$RUNTIME_ID")
+          echo "Created device: $DEVICE_ID"
+          echo "device_id=$DEVICE_ID" >> "$GITHUB_OUTPUT"
+
+          xcrun simctl boot "$DEVICE_ID" || true
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+
+      - name: Install, launch, kill, relaunch, and verify the real acquire-gate re-drive
+        env:
+          DEVICE_ID: ${{ steps.boot_simulator.outputs.device_id }}
+          BUNDLE_ID: io.dataloom.processterminationproof.retrybudget.app
+        run: |
+          set -euo pipefail
+          APP_PATH="apple-process-termination-proof-retry-budget-app/build/Build/Products/Debug-iphonesimulator/RetryBudgetProcessTerminationProofApp.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "ERROR: built app not found at $APP_PATH" >&2
+            find apple-process-termination-proof-retry-budget-app/build/Build/Products -maxdepth 3 || true
+            exit 1
+          fi
+
+          xcrun simctl install "$DEVICE_ID" "$APP_PATH"
+
+          echo "=== First launch (persists the retry-budget entry) ==="
+          LAUNCH_1=$(xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID")
+          echo "$LAUNCH_1"
+          PID_1=$(echo "$LAUNCH_1" | sed -n 's/^.*: *\([0-9][0-9]*\)$/\1/p')
+          if [ -z "$PID_1" ]; then
+            echo "ERROR: could not parse a pid from 'simctl launch' output: $LAUNCH_1" >&2
+            exit 1
+          fi
+          echo "First launch pid: $PID_1"
+
+          CONTAINER_DATA=$(xcrun simctl get_app_container "$DEVICE_ID" "$BUNDLE_ID" data)
+          STATE_FILE="$CONTAINER_DATA/Documents/RetryBudgetProof/dataloom-queue-state-v1.tsv"
+          REDRIVE_FILE="$CONTAINER_DATA/Documents/RetryBudgetProof/dataloom-retry-budget-gate-redrive-v1.tsv"
+          echo "Resolved on-disk state file: $STATE_FILE"
+          echo "Resolved on-disk gate-redrive result file: $REDRIVE_FILE"
+
+          echo "=== Waiting for the app's real production write to land on disk ==="
+          WROTE_STATE=0
+          for _ in $(seq 1 30); do
+            if [ -f "$STATE_FILE" ]; then
+              WROTE_STATE=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$WROTE_STATE" != "1" ]; then
+            echo "ERROR: retry-budget queue state file never appeared within 30s: $STATE_FILE" >&2
+            exit 1
+          fi
+
+          if [ -f "$REDRIVE_FILE" ]; then
+            echo "ERROR: gate-redrive result file already exists after the first launch -- it must only be written on relaunch: $REDRIVE_FILE" >&2
+            exit 1
+          fi
+
+          # The persisted availableAt this proof always writes --
+          # AppleRetryBudgetProcessTerminationProof's own RESCHEDULE_AVAILABLE_AT_MS
+          # constant, verified against that source file directly.
+          EXPECTED_AVAILABLE_AT_MS=1300
+
+          echo "=== Killing the app with a genuine OS-level 'xcrun simctl terminate' ==="
+          xcrun simctl terminate "$DEVICE_ID" "$BUNDLE_ID" || true
+
+          echo "=== Polling until the OS confirms the process is actually gone ==="
+          TERMINATED=0
+          for _ in $(seq 1 30); do
+            if ! xcrun simctl spawn "$DEVICE_ID" launchctl list 2>/dev/null | grep -q "$BUNDLE_ID"; then
+              TERMINATED=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$TERMINATED" != "1" ]; then
+            echo "ERROR: process for $BUNDLE_ID did not disappear from launchctl list within 30s." >&2
+            xcrun simctl spawn "$DEVICE_ID" launchctl list || true
+            exit 1
+          fi
+
+          echo "=== Relaunching (must be a genuinely new OS process; this run re-drives the real gate) ==="
+          LAUNCH_2=$(xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID")
+          echo "$LAUNCH_2"
+          PID_2=$(echo "$LAUNCH_2" | sed -n 's/^.*: *\([0-9][0-9]*\)$/\1/p')
+          if [ -z "$PID_2" ]; then
+            echo "ERROR: could not parse a pid from the relaunch 'simctl launch' output: $LAUNCH_2" >&2
+            exit 1
+          fi
+          echo "Relaunch pid: $PID_2"
+
+          if [ "$PID_1" = "$PID_2" ]; then
+            echo "ERROR: relaunch pid ($PID_2) is identical to the pre-kill pid ($PID_1)." >&2
+            echo "This would mean simctl terminate/launch did not produce a genuinely new OS process." >&2
+            exit 1
+          fi
+
+          echo "=== Reading the real acquire-gate re-drive's result from the relaunched process's container ==="
+          REDRIVE_WRITTEN=0
+          for _ in $(seq 1 30); do
+            if [ -f "$REDRIVE_FILE" ]; then
+              REDRIVE_WRITTEN=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$REDRIVE_WRITTEN" != "1" ]; then
+            echo "ERROR: gate-redrive result file never appeared within 30s after relaunch: $REDRIVE_FILE" >&2
+            exit 1
+          fi
+
+          REDRIVE_CONTENT=$(cat "$REDRIVE_FILE")
+          echo "--- Gate re-drive result ---"
+          echo "$REDRIVE_CONTENT"
+
+          REDRIVEN_ATTEMPT=$(echo "$REDRIVE_CONTENT" | cut -d$'\t' -f1)
+          REDRIVEN_AVAILABLE_AT=$(echo "$REDRIVE_CONTENT" | cut -d$'\t' -f5)
+
+          if [ "$REDRIVEN_ATTEMPT" != "3" ]; then
+            echo "ERROR: expected the re-driven acquire to read back retryAttemptNumber=3, got: $REDRIVEN_ATTEMPT" >&2
+            exit 1
+          fi
+          if [ "$REDRIVEN_AVAILABLE_AT" != "$EXPECTED_AVAILABLE_AT_MS" ]; then
+            echo "ERROR: expected the real acquire gate to read back availableAt=$EXPECTED_AVAILABLE_AT_MS, got: $REDRIVEN_AVAILABLE_AT" >&2
+            exit 1
+          fi
+
+          echo "OK: the real AppleFileQueueProvider.acquire gate was genuinely re-driven after a"
+          echo "    real 'xcrun simctl terminate' + relaunch, honoring availableAt=$REDRIVEN_AVAILABLE_AT."
+          echo "    (A gate-check one millisecond before availableAt finding no eligible entry is"
+          echo "    asserted inside the proof app itself -- redriveAcquireGateAfterRelaunch throws"
+          echo "    and this result file never appears if that check does not hold.)"
+          echo "    pid before kill: $PID_1"
+          echo "    pid after relaunch: $PID_2"
+
+      - name: Clean up the Simulator device
+        if: always()
+        env:
+          DEVICE_ID: ${{ steps.boot_simulator.outputs.device_id }}
+          BUNDLE_ID: io.dataloom.processterminationproof.retrybudget.app
+        run: |
+          if [ -n "${DEVICE_ID:-}" ]; then
+            xcrun simctl terminate "$DEVICE_ID" "$BUNDLE_ID" || true
+            xcrun simctl shutdown "$DEVICE_ID" || true
+            xcrun simctl delete "$DEVICE_ID" || true
+          fi

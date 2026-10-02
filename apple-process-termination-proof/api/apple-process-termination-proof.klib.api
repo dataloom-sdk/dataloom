@@ -6,6 +6,25 @@
 // - Show declarations: true
 
 // Library unique name: <dataloom:apple-process-termination-proof>
+final class io.dataloom.processterminationproof/CircuitBreakerGateRedriveProofState { // io.dataloom.processterminationproof/CircuitBreakerGateRedriveProofState|null[0]
+    constructor <init>(kotlin/String, kotlin/String, kotlin/String, kotlin/Long, kotlin/String) // io.dataloom.processterminationproof/CircuitBreakerGateRedriveProofState.<init>|<init>(kotlin.String;kotlin.String;kotlin.String;kotlin.Long;kotlin.String){}[0]
+
+    final val beforeDeadlineOutcome // io.dataloom.processterminationproof/CircuitBreakerGateRedriveProofState.beforeDeadlineOutcome|{}beforeDeadlineOutcome[0]
+        final fun <get-beforeDeadlineOutcome>(): kotlin/String // io.dataloom.processterminationproof/CircuitBreakerGateRedriveProofState.beforeDeadlineOutcome.<get-beforeDeadlineOutcome>|<get-beforeDeadlineOutcome>(){}[0]
+    final val beforeDeadlineRejectionReason // io.dataloom.processterminationproof/CircuitBreakerGateRedriveProofState.beforeDeadlineRejectionReason|{}beforeDeadlineRejectionReason[0]
+        final fun <get-beforeDeadlineRejectionReason>(): kotlin/String // io.dataloom.processterminationproof/CircuitBreakerGateRedriveProofState.beforeDeadlineRejectionReason.<get-beforeDeadlineRejectionReason>|<get-beforeDeadlineRejectionReason>(){}[0]
+    final val probeAtDeadlineOutcome // io.dataloom.processterminationproof/CircuitBreakerGateRedriveProofState.probeAtDeadlineOutcome|{}probeAtDeadlineOutcome[0]
+        final fun <get-probeAtDeadlineOutcome>(): kotlin/String // io.dataloom.processterminationproof/CircuitBreakerGateRedriveProofState.probeAtDeadlineOutcome.<get-probeAtDeadlineOutcome>|<get-probeAtDeadlineOutcome>(){}[0]
+    final val probeGeneration // io.dataloom.processterminationproof/CircuitBreakerGateRedriveProofState.probeGeneration|{}probeGeneration[0]
+        final fun <get-probeGeneration>(): kotlin/Long // io.dataloom.processterminationproof/CircuitBreakerGateRedriveProofState.probeGeneration.<get-probeGeneration>|<get-probeGeneration>(){}[0]
+    final val recoveryOutcome // io.dataloom.processterminationproof/CircuitBreakerGateRedriveProofState.recoveryOutcome|{}recoveryOutcome[0]
+        final fun <get-recoveryOutcome>(): kotlin/String // io.dataloom.processterminationproof/CircuitBreakerGateRedriveProofState.recoveryOutcome.<get-recoveryOutcome>|<get-recoveryOutcome>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.processterminationproof/CircuitBreakerGateRedriveProofState.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.processterminationproof/CircuitBreakerGateRedriveProofState.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.processterminationproof/CircuitBreakerGateRedriveProofState.toString|toString(){}[0]
+}
+
 final class io.dataloom.processterminationproof/ProcessTerminationProofState { // io.dataloom.processterminationproof/ProcessTerminationProofState|null[0]
     constructor <init>(kotlin/String, kotlin/Int, kotlin/Long, kotlin/Long, kotlin/Long) // io.dataloom.processterminationproof/ProcessTerminationProofState.<init>|<init>(kotlin.String;kotlin.Int;kotlin.Long;kotlin.Long;kotlin.Long){}[0]
 
@@ -49,8 +68,10 @@ final class io.dataloom.processterminationproof/ResolvedConflictDecisionLogProce
 }
 
 final class io.dataloom.processterminationproof/RetryBudgetProcessTerminationProofState { // io.dataloom.processterminationproof/RetryBudgetProcessTerminationProofState|null[0]
-    constructor <init>(kotlin/Int, kotlin/Long, kotlin/Long, kotlin/Long) // io.dataloom.processterminationproof/RetryBudgetProcessTerminationProofState.<init>|<init>(kotlin.Int;kotlin.Long;kotlin.Long;kotlin.Long){}[0]
+    constructor <init>(kotlin/Int, kotlin/Long, kotlin/Long, kotlin/Long, kotlin/Long) // io.dataloom.processterminationproof/RetryBudgetProcessTerminationProofState.<init>|<init>(kotlin.Int;kotlin.Long;kotlin.Long;kotlin.Long;kotlin.Long){}[0]
 
+    final val availableAtEpochMillis // io.dataloom.processterminationproof/RetryBudgetProcessTerminationProofState.availableAtEpochMillis|{}availableAtEpochMillis[0]
+        final fun <get-availableAtEpochMillis>(): kotlin/Long // io.dataloom.processterminationproof/RetryBudgetProcessTerminationProofState.availableAtEpochMillis.<get-availableAtEpochMillis>|<get-availableAtEpochMillis>(){}[0]
     final val retryAttemptNumber // io.dataloom.processterminationproof/RetryBudgetProcessTerminationProofState.retryAttemptNumber|{}retryAttemptNumber[0]
         final fun <get-retryAttemptNumber>(): kotlin/Int // io.dataloom.processterminationproof/RetryBudgetProcessTerminationProofState.retryAttemptNumber.<get-retryAttemptNumber>|<get-retryAttemptNumber>(){}[0]
     final val retryCumulativeDelayMillis // io.dataloom.processterminationproof/RetryBudgetProcessTerminationProofState.retryCumulativeDelayMillis|{}retryCumulativeDelayMillis[0]
@@ -89,6 +110,7 @@ final class io.dataloom.processterminationproof/UnresolvedConflictLogProcessTerm
 final object io.dataloom.processterminationproof/AppleCircuitBreakerProcessTerminationProof { // io.dataloom.processterminationproof/AppleCircuitBreakerProcessTerminationProof|null[0]
     final fun openCircuitAndPersist(kotlin/String): io.dataloom.processterminationproof/ProcessTerminationProofState // io.dataloom.processterminationproof/AppleCircuitBreakerProcessTerminationProof.openCircuitAndPersist|openCircuitAndPersist(kotlin.String){}[0]
     final fun readPersistedState(kotlin/String): io.dataloom.processterminationproof/ProcessTerminationProofState? // io.dataloom.processterminationproof/AppleCircuitBreakerProcessTerminationProof.readPersistedState|readPersistedState(kotlin.String){}[0]
+    final fun redriveGateAfterRelaunch(kotlin/String): io.dataloom.processterminationproof/CircuitBreakerGateRedriveProofState // io.dataloom.processterminationproof/AppleCircuitBreakerProcessTerminationProof.redriveGateAfterRelaunch|redriveGateAfterRelaunch(kotlin.String){}[0]
 }
 
 final object io.dataloom.processterminationproof/AppleResolvedConflictDecisionLogProcessTerminationProof { // io.dataloom.processterminationproof/AppleResolvedConflictDecisionLogProcessTerminationProof|null[0]
@@ -101,6 +123,7 @@ final object io.dataloom.processterminationproof/AppleResolvedConflictDecisionLo
 
 final object io.dataloom.processterminationproof/AppleRetryBudgetProcessTerminationProof { // io.dataloom.processterminationproof/AppleRetryBudgetProcessTerminationProof|null[0]
     final fun hasPersistedRetryBudgetState(kotlin/String): kotlin/Boolean // io.dataloom.processterminationproof/AppleRetryBudgetProcessTerminationProof.hasPersistedRetryBudgetState|hasPersistedRetryBudgetState(kotlin.String){}[0]
+    final fun redriveAcquireGateAfterRelaunch(kotlin/String): io.dataloom.processterminationproof/RetryBudgetProcessTerminationProofState // io.dataloom.processterminationproof/AppleRetryBudgetProcessTerminationProof.redriveAcquireGateAfterRelaunch|redriveAcquireGateAfterRelaunch(kotlin.String){}[0]
     final fun writeRetryBudgetAndPersist(kotlin/String): io.dataloom.processterminationproof/RetryBudgetProcessTerminationProofState // io.dataloom.processterminationproof/AppleRetryBudgetProcessTerminationProof.writeRetryBudgetAndPersist|writeRetryBudgetAndPersist(kotlin.String){}[0]
 }
 
