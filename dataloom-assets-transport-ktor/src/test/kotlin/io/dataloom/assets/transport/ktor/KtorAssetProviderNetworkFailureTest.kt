@@ -155,5 +155,6 @@ class KtorAssetProviderNetworkFailureTest {
 
         assertEquals(AssetErrorKind.PROVIDER_UNAVAILABLE, kindOf(result))
         provider.close()
+        Unit
     }
 }
