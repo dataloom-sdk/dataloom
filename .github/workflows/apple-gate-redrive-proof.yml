@@ -222,7 +222,7 @@ jobs:
           fi
 
           echo "=== Relaunching (must be a genuinely new OS process; this run re-drives the real gate) ==="
-          LAUNCH_2=$(xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID")
+          LAUNCH_2=$(xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID" --dataloom-gate-redrive)
           echo "$LAUNCH_2"
           PID_2=$(echo "$LAUNCH_2" | sed -n 's/^.*: *\([0-9][0-9]*\)$/\1/p')
           if [ -z "$PID_2" ]; then
@@ -457,7 +457,7 @@ jobs:
           fi
 
           echo "=== Relaunching (must be a genuinely new OS process; this run re-drives the real gate) ==="
-          LAUNCH_2=$(xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID")
+          LAUNCH_2=$(xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID" --dataloom-gate-redrive)
           echo "$LAUNCH_2"
           PID_2=$(echo "$LAUNCH_2" | sed -n 's/^.*: *\([0-9][0-9]*\)$/\1/p')
           if [ -z "$PID_2" ]; then

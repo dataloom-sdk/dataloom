@@ -55,16 +55,27 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         //   make this same check observe a spurious change on its own next
         //   call. See AppleRetryBudgetProcessTerminationProof's own KDoc.
         // - The *second* launch (the genuine relaunch, after a real
-        //   `xcrun simctl terminate`) instead re-drives the real
+        //   `xcrun simctl terminate`) re-drives the real
         //   `AppleFileQueueProvider.acquire` gate against that
         //   already-persisted entry via `redriveAcquireGateAfterRelaunch`
         //   -- not just a raw-row read -- and writes its outcome, including
         //   the acquired entry's `availableAt`, to a second, separate
         //   result file the apple-gate-redrive-proof.yml CI job reads and
-        //   asserts on.
+        //   asserts on, but ONLY when launched with the
+        //   `--dataloom-gate-redrive` argument. `apple-validation.yml`'s
+        //   own `apple-process-termination-proof-retry-budget` job
+        //   launches this same app binary WITHOUT that argument, and its
+        //   byte-diff requires the persisted queue-state file to be
+        //   unchanged across the kill/relaunch -- `acquire` can itself
+        //   mutate the persisted snapshot (assigning a lease), which would
+        //   silently break that already-required check if run
+        //   unconditionally on every second launch. Gating on the launch
+        //   argument keeps that job's relaunch exactly as inert as before
+        //   this change.
+        let shouldRedriveGate = CommandLine.arguments.contains("--dataloom-gate-redrive")
         if !AppleRetryBudgetProcessTerminationProof.shared.hasPersistedRetryBudgetState(directoryPath: proofDirectory) {
             _ = AppleRetryBudgetProcessTerminationProof.shared.writeRetryBudgetAndPersist(directoryPath: proofDirectory)
-        } else {
+        } else if shouldRedriveGate {
             let redrive = AppleRetryBudgetProcessTerminationProof.shared.redriveAcquireGateAfterRelaunch(directoryPath: proofDirectory)
             Self.writeGateRedriveResult(redrive, proofDirectory: proofDirectory)
         }

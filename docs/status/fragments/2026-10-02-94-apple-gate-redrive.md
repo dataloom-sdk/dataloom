@@ -65,8 +65,12 @@ result file (`dataloom-circuit-gate-redrive-v1.tsv` /
 file. This follows the agent playbook's conflict-avoidance rule (new CI jobs
 go in a new workflow file, reusing `apple-validation.yml`'s patterns by
 reading, never editing it) and means a failure in this brand-new,
-never-run-before check cannot regress the already-proven, required raw-state
-check, and vice versa.
+never-run-before workflow does not itself fail the already-proven, required
+raw-state jobs. NOTE (corrected after first macOS CI run): the two proof apps are
+shared binaries, and the first revision ran the re-drive on EVERY second launch,
+which mutated persisted state and broke the existing required byte-diff jobs. The
+re-drive is now gated on a `--dataloom-gate-redrive` launch argument that only
+the new workflow passes, so the existing jobs' relaunch is inert again.
 
 The retry-budget side needed no such split: `AppleFileQueueProvider.acquire`
 is read via caller-supplied `acquiredAt`/`leaseExpiresAt` instants (never an

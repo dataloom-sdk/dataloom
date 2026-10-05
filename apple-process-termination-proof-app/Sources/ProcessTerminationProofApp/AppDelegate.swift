@@ -35,18 +35,26 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         //   scratch (expectedVersion == null) and would otherwise report a
         //   conflict on a second call.
         // - The *second* launch (the genuine relaunch, after a real
-        //   `xcrun simctl terminate`) instead re-drives the real
+        //   `xcrun simctl terminate`) re-drives the real
         //   `CircuitBreakerCoordinator` gate against that already-persisted
         //   record via `redriveGateAfterRelaunch` -- not just a raw-row
         //   read -- and writes its outcome to a second, separate result
         //   file the apple-gate-redrive-proof.yml CI job reads and asserts
-        //   on. This never touches the original circuit-breaker state file
-        //   apple-validation.yml's own `apple-process-termination-proof`
-        //   job byte-diffs, so it cannot regress that already-proven check
-        //   -- see `docs/apple/process-termination-proof.md`.
+        //   on, but ONLY when launched with the `--dataloom-gate-redrive`
+        //   argument. `apple-validation.yml`'s own `apple-process-termination-proof`
+        //   job launches this same app binary WITHOUT that argument, and
+        //   its byte-diff requires the persisted state file to be
+        //   unchanged across the kill/relaunch -- calling `recordSuccess`/
+        //   `acquire` on the real gate can itself mutate persisted state
+        //   (e.g. granting a probe bumps the generation), which would
+        //   silently break that already-required check if run
+        //   unconditionally on every second launch. Gating on the launch
+        //   argument keeps that job's relaunch exactly as inert as before
+        //   this change -- see `docs/apple/process-termination-proof.md`.
+        let shouldRedriveGate = CommandLine.arguments.contains("--dataloom-gate-redrive")
         if AppleCircuitBreakerProcessTerminationProof.shared.readPersistedState(directoryPath: proofDirectory) == nil {
             _ = AppleCircuitBreakerProcessTerminationProof.shared.openCircuitAndPersist(directoryPath: proofDirectory)
-        } else {
+        } else if shouldRedriveGate {
             let redrive = AppleCircuitBreakerProcessTerminationProof.shared.redriveGateAfterRelaunch(directoryPath: proofDirectory)
             Self.writeGateRedriveResult(redrive, proofDirectory: proofDirectory)
         }
