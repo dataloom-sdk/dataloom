@@ -82,7 +82,9 @@ import kotlinx.coroutines.launch
  *   refused without running the operation; a call beyond the declared
  *   concurrency ceiling is rejected as a fail-fast bulkhead without running
  *   the operation; an operation that overruns its declared timeout is
- *   cancelled and reported, not left to hang.
+ *   cancelled and reported, not left to hang; an operation that throws is
+ *   contained as [PluginExecutionBoundsResult.Failed], frees its slot, and
+ *   does not affect another plugin.
  * - Authorized-transition gating: an authorized request applies a
  *   structurally legal transition; a denied request leaves tracked state
  *   unchanged and reports the authorizer's own reason code; a structurally
@@ -415,6 +417,41 @@ public class PluginCertificationKit(
                 "an operation overrunning its declared timeout was not cancelled and reported: $result"
             }
             require(result.maximumExecutionMillis == 50L) { "wrong reported timeout: ${result.maximumExecutionMillis}" }
+        },
+
+        "execute contains an exception thrown by the operation as Failed, frees its slot, and leaves other plugins unaffected" to { f ->
+            val failingId = PluginId("bounds-failing")
+            val healthyId = PluginId("bounds-healthy")
+            val tracker = f.trackerOver(
+                f.plugin(f.manifest(failingId.value), f.bounds(maximumConcurrentInvocations = 1)),
+                f.plugin(f.manifest(healthyId.value), f.bounds(maximumConcurrentInvocations = 1)),
+            )
+            f.driveTo(tracker, failingId, PluginLifecycleState.ACTIVE)
+            f.driveTo(tracker, healthyId, PluginLifecycleState.ACTIVE)
+            val enforcer = PluginExecutionBoundsEnforcer(tracker)
+
+            val failed = enforcer.execute<Unit>(failingId) { throw IllegalStateException("plugin failure") }
+
+            require(failed is PluginExecutionBoundsResult.Failed) {
+                "an exception thrown by the operation was not contained: $failed"
+            }
+            require(failed.pluginId == failingId) { "wrong plugin reported: ${failed.pluginId}" }
+            // Message, not identity: JVM coroutine stack-trace recovery may substitute a copy.
+            require(failed.cause.message == "plugin failure") {
+                "the thrown exception was not reported as the cause: ${failed.cause}"
+            }
+
+            val retried = enforcer.execute(failingId) { "again" }
+            require(retried is PluginExecutionBoundsResult.Completed && retried.value == "again") {
+                "a failed invocation leaked its concurrency slot: $retried"
+            }
+            val other = enforcer.execute(healthyId) { "unaffected" }
+            require(other is PluginExecutionBoundsResult.Completed && other.value == "unaffected") {
+                "another plugin was affected by the failing plugin: $other"
+            }
+            require(tracker.stateOf(failingId) == PluginLifecycleState.ACTIVE) {
+                "a contained failure changed the failing plugin's lifecycle state"
+            }
         },
 
         // ---------------------------------------------------------------

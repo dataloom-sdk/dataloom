@@ -295,6 +295,19 @@ class DataLoomBuilderPluginEngineTest {
     }
 
     @Test
+    fun executeContainsAnExceptionThrownByTheOperationAsFailed() = runTest {
+        val engine = activeEngineWith(plugin("plugin-a"))
+
+        val result = engine.execute<Unit>(PluginId("plugin-a")) { throw IllegalStateException("plugin bug") }
+
+        // Not compared by equality: JVM coroutine stack-trace recovery may substitute a copy of the cause.
+        assertIs<PluginExecutionBoundsResult.Failed>(result)
+        assertEquals(PluginId("plugin-a"), result.pluginId)
+        assertEquals("plugin bug", result.cause.message)
+        assertEquals(PluginExecutionBoundsResult.Completed("next"), engine.execute(PluginId("plugin-a")) { "next" })
+    }
+
+    @Test
     fun executeReturnsTimedOutWhenTheDeclaredBoundIsExceeded() = runTest {
         val engine = activeEngineWith(plugin("plugin-a", maximumExecutionMillis = 100L))
 

@@ -68,6 +68,22 @@ sealed interface <#A: out kotlin/Any?> io.dataloom.plugin/PluginExecutionBoundsR
         final fun toString(): kotlin/String // io.dataloom.plugin/PluginExecutionBoundsResult.ConcurrencyLimitExceeded.toString|toString(){}[0]
     }
 
+    final class Failed : io.dataloom.plugin/PluginExecutionBoundsResult<kotlin/Nothing> { // io.dataloom.plugin/PluginExecutionBoundsResult.Failed|null[0]
+        constructor <init>(io.dataloom.api.plugin/PluginId, kotlin/Exception) // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.<init>|<init>(io.dataloom.api.plugin.PluginId;kotlin.Exception){}[0]
+
+        final val cause // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.cause|{}cause[0]
+            final fun <get-cause>(): kotlin/Exception // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.cause.<get-cause>|<get-cause>(){}[0]
+        final val pluginId // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.pluginId|{}pluginId[0]
+            final fun <get-pluginId>(): io.dataloom.api.plugin/PluginId // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.pluginId.<get-pluginId>|<get-pluginId>(){}[0]
+
+        final fun component1(): io.dataloom.api.plugin/PluginId // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.component1|component1(){}[0]
+        final fun component2(): kotlin/Exception // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.component2|component2(){}[0]
+        final fun copy(io.dataloom.api.plugin/PluginId = ..., kotlin/Exception = ...): io.dataloom.plugin/PluginExecutionBoundsResult.Failed // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.copy|copy(io.dataloom.api.plugin.PluginId;kotlin.Exception){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.toString|toString(){}[0]
+    }
+
     final class NotActive : io.dataloom.plugin/PluginExecutionBoundsResult<kotlin/Nothing> { // io.dataloom.plugin/PluginExecutionBoundsResult.NotActive|null[0]
         constructor <init>(io.dataloom.api.plugin/PluginId, io.dataloom.api.plugin/PluginLifecycleState) // io.dataloom.plugin/PluginExecutionBoundsResult.NotActive.<init>|<init>(io.dataloom.api.plugin.PluginId;io.dataloom.api.plugin.PluginLifecycleState){}[0]
 

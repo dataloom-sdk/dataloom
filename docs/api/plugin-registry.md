@@ -112,7 +112,7 @@ prior prose summary, per this session's own standing discipline after
 | `PluginLifecycleTransitions` | `PluginLifecycleTransition.kt` | Stateless object enforcing which `PluginLifecycleState` transitions are structurally legal, mirroring `PluginLifecycleState`'s own documented `LOADED → VALIDATED → INITIALIZING → ACTIVE ⇄ DEGRADED → DISABLED → UNLOADED` order plus explicit failure-escape edges to `DISABLED` from every pre-`ACTIVE` state. |
 | `PluginLifecycleStateTracker` | `PluginLifecycleStateTracker.kt` | Tracks each plugin in a `PluginRegistry` through its `PluginLifecycleState`, starting every plugin at `LOADED` (never implicitly `ACTIVE`) and enforcing `PluginLifecycleTransitions`, SDK compatibility, and dependency gating on every `transition` call. Its capability-aware `transition` overload also enforces permission grants — see [Permission-grant enforcement](#permission-grant-enforcement) and [Dependency version compatibility and dependency-gated activation (D19)](#dependency-version-compatibility-and-dependency-gated-activation-d19). |
 | `PluginPermission.asCapability()` | `PluginPermissionEnforcement.kt` | Extension function mapping a `PluginPermission` label onto a `Capability` of the same label, connecting `dataloom-plugin-api`'s permission contract to `dataloom-model`'s least-privilege primitive. |
-| `PluginExecutionBoundsEnforcer` | `PluginExecutionBoundsEnforcement.kt` | Wraps an arbitrary `suspend () -> T` invocation of a registered plugin with coroutine-cancellation timeout enforcement (`maximumExecutionMillis`) and per-plugin concurrency limiting (`maximumConcurrentInvocations`), returning a non-throwing `PluginExecutionBoundsResult`. See [Execution-bounds enforcement](#execution-bounds-enforcement). |
+| `PluginExecutionBoundsEnforcer` | `PluginExecutionBoundsEnforcement.kt` | Wraps an arbitrary `suspend () -> T` invocation of a registered plugin with coroutine-cancellation timeout enforcement (`maximumExecutionMillis`) and per-plugin concurrency limiting (`maximumConcurrentInvocations`), returning a non-throwing `PluginExecutionBoundsResult` (`Completed`/`TimedOut`/`ConcurrencyLimitExceeded`/`NotActive`/`Failed`; an ordinary exception thrown by the operation is contained as `Failed`). See [Execution-bounds enforcement](#execution-bounds-enforcement). |
 | `PluginLifecycleAdministrationAuthorizer` / `PluginLifecycleTransitionRequest` | `PluginLifecycleAdministration.kt` | Host-owned, deny-by-default authorization boundary for *who* may request a `PluginLifecycleStateTracker.transition` call, consulted via the tracker's authorizer-aware `transition(request, authorizer)` overload. See [Authorized transitions ("authorized hot disable")](#authorized-transitions-authorized-hot-disable). |
 | `PluginLifecycleAdministrationOperationalEventBridge` | `PluginLifecycleAdministrationOperationalEventBridge.kt` | Stateless mapping from a `PluginLifecycleTransitionRequest`/`PluginLifecycleTransitionResult` pair to a redacted `OperationalEventEnvelope`, for a caller to append into `DurableOperationalEventOutbox`. See [Audit records (operational-event bridge)](#audit-records-operational-event-bridge). |
 | `PluginExecutionBoundsOperationalEventBridge` | `PluginExecutionBoundsOperationalEventBridge.kt` | The execution-bounds counterpart: maps each `PluginExecutionBoundsResult` (plus a caller-minted `PluginExecutionInvocationId`) to a redacted `OperationalEventEnvelope`, never reading the plugin's output. See [Execution outcome audit records and outbox wiring](#execution-outcome-audit-records-and-outbox-wiring). |
@@ -518,6 +518,33 @@ plugin at capacity never affects another plugin's own invocations.
 The acquired concurrency slot is always released before `execute` returns,
 including when `operation` throws, times out, or is cancelled.
 
+### Failure isolation
+
+An ordinary `Exception` thrown by the operation is caught and returned as
+`PluginExecutionBoundsResult.Failed(pluginId, cause)` instead of unwinding
+through the caller (previously it propagated uncaught). The concurrency slot
+is released as for every other outcome, so a plugin that always throws cannot
+leak slots, and no failure reaches the host's call stack or another plugin's
+invocation. A hung operation is already bounded by the timeout, so hung and
+throwing plugins are both contained, per plugin.
+
+Deliberate limits:
+
+- A `kotlin.Error` (out of memory, stack overflow, assertion failure) still
+  propagates: it signals a broken process, not a recoverable plugin failure.
+- A `CancellationException` is contained as `Failed` only while the caller's
+  coroutine is still active (a plugin that leaks an inner `withTimeout`, or
+  throws one explicitly, is plugin behaviour). When the caller itself has been
+  cancelled, it propagates unchanged so structured cancellation keeps working.
+- `Failed.cause` is returned to the caller but never read by the audit bridge:
+  a failure is recorded as event type `dataloom.plugin.execution.bounds.failed`
+  next to the redacted plugin id, with no message and no exception type.
+- On the JVM, coroutine stack-trace recovery may return a copy of the thrown
+  exception (same type and message), so compare `cause` by type and message,
+  not identity.
+- Failures are not counted and never change lifecycle state; see the open item
+  below.
+
 ### What this does not do
 
 - **Does not check `PluginLifecycleState` (superseded 2026-09-19).** This
@@ -527,11 +554,11 @@ including when `operation` throws, times out, or is cancelled.
   Decision D13 resolved it: the enforcer is now bound to the tracker, refuses
   new invocations unless the plugin is `ACTIVE`, and lets in-flight invocations
   drain. See [Lifecycle gating of execution (D13)](#lifecycle-gating-of-execution-d13).
-- **Does not perform failure isolation/bulkheading beyond concurrency
-  limiting.** A plugin operation throwing an ordinary exception propagates
-  normally, uncaught — exactly as `TimeoutEnforcingSchedulerProvider` leaves
-  "unexpected programming exceptions" to propagate rather than converting
-  them into a bounded result.
+- **Does not count failures or move a plugin to `DEGRADED`** (superseded in
+  part 2026-10-05: ordinary exceptions are now contained, see
+  [Failure isolation](#failure-isolation)). Each failure is reported once, to
+  its own caller; there is no failure-count circuit, automatic lifecycle
+  transition, or recovery policy.
 - **Does not audit timeout or concurrency-rejection events (superseded
   2026-09-20).** `PluginExecutionBoundsOperationalEventBridge` now bridges
   every `PluginExecutionBoundsResult`; see
@@ -574,7 +601,14 @@ shipped, see above):
   pipeline). Still genuinely blocked, unchanged.
 - **The certification kit** — its own unstarted design surface (what a
   repeatable certification kit emits as evidence).
-- **Failure isolation/bulkheading** beyond concurrency limiting.
+- **Failure-count circuit to `DEGRADED` and a recovery policy.** Concurrency
+  bulkhead, timeout, and containment of thrown exceptions have shipped (see
+  [Failure isolation](#failure-isolation)); what remains is counting failures
+  per plugin, automatically moving a repeatedly failing plugin to `DEGRADED`
+  (which already refuses new invocations), and a policy for returning it to
+  `ACTIVE`. Open design questions: the tracker's `transition` is
+  caller-serialized while `execute` is concurrent; whether `TimedOut` counts;
+  and whether recovery is manual (an authorized transition) or time-based.
 - **A reference non-provider plugin** — demonstrating the full lifecycle
   end to end needs a real invocation call site (hook-point dispatch) to
   exist first.
@@ -717,7 +751,9 @@ With both configured, `DataLoom.pluginEngine` appends after each result exists:
 
 Append failures and envelope-construction failures are swallowed and never
 change or break the returned result; only cancellation propagates. A call that
-throws records nothing. Both kinds of event share one scope, so the outbox
+throws (an unregistered plugin id, a `kotlin.Error`, or caller cancellation)
+records nothing; an ordinary exception from the operation is a `Failed` result
+and is recorded as `dataloom.plugin.execution.bounds.failed`. Both kinds of event share one scope, so the outbox
 assigns them consecutive per-key sequence numbers in append order (envelopes
 carry no workflow id, so they use the global ordering key).
 
