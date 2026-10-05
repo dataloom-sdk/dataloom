@@ -1,6 +1,7 @@
 package io.dataloom.consumer.android
 
 import android.content.Context
+import androidx.annotation.RequiresApi
 import io.dataloom.android.androidDataLoomProviders
 import io.dataloom.android.installAndroidProviders
 import io.dataloom.api.identifier.ConflictId
@@ -189,7 +190,15 @@ public fun buildReferenceAssetTransfer(
     )
 }
 
-/** A real filesystem [FileAssetProvider] rooted at [assetDirectory]. */
+/**
+ * A real filesystem [FileAssetProvider] rooted at [assetDirectory].
+ *
+ * Requires API 26: [FileAssetProvider] is built on `java.nio.file`, which
+ * Android only provides from API 26, while the SDK's `minSdk` is 21. On API
+ * 21-25 there is currently no file-backed asset provider (a product gap, see
+ * `docs/android/reference-consumer.md`).
+ */
+@RequiresApi(26)
 public fun buildReferenceFileAssetProvider(
     assetDirectory: File,
     digests: DataLoomIncrementalDigestCalculator = SystemDataLoomDigestCalculator(),

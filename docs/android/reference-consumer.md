@@ -151,8 +151,15 @@ byte-identical. Not proven here: a real network transport (the provider is
 in-process and plays the remote side; `KtorAssetProvider` against a real
 server on Android is a separate slice), an *interrupted* transfer resuming
 after restart on the emulator, quota/cancellation/cleanup on the emulator,
-and API levels below 26 (`FileAssetProvider` uses `java.nio.file` while this
-module's `minSdk` is 21). Observed while writing the test:
+and Android API 21-25. **API 21-25 is an unresolved product gap, not just a
+test limitation:** `FileAssetProvider` is built on `java.nio.file`, which
+Android provides only from API 26, while the SDK's `minSdk` is 21, so there is
+currently no file-backed asset provider for API 21-25 (lint flagged
+`File#toPath` as `NewApi` in CI). The helper `buildReferenceFileAssetProvider`
+is therefore annotated `@RequiresApi(26)` and the instrumented test
+`@SdkSuppress(minSdkVersion = 26)`, with no lint baseline or `NewApi`
+suppression; a fix needs either a non-`java.nio` file provider or a decision
+to raise the asset module's effective floor. Observed while writing the test:
 `FileAssetProvider` keeps its committed-asset index in memory, so a fresh
 provider instance over the same directory reports the asset as
 `ASSET_NOT_FOUND`; the test therefore restarts the *client* (session store,

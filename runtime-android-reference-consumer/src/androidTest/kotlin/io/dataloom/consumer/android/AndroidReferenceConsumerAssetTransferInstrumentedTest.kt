@@ -3,6 +3,7 @@ package io.dataloom.consumer.android
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import androidx.work.testing.WorkManagerTestInitHelper
 import io.dataloom.api.asset.AssetMediaType
 import io.dataloom.api.identifier.AssetId
@@ -72,6 +73,7 @@ import kotlin.test.assertTrue
  * `Pixel_8_Pro` AVD; see this PR's `docs/status/fragments/` entry for the
  * observed counts.
  */
+@SdkSuppress(minSdkVersion = 26)
 @RunWith(AndroidJUnit4::class)
 class AndroidReferenceConsumerAssetTransferInstrumentedTest {
 
