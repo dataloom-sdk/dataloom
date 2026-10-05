@@ -8,7 +8,12 @@ name: Apple Platform Validation
 # require the Apple SDK and Xcode, which are only available on macOS.
 
 on:
+  # macOS runner minutes are budget-limited (about $8 per full PR run). The
+  # macOS jobs below run only on manual dispatch or on a PR carrying the
+  # `run-apple-ci` label; the extra `labeled` type lets adding the label start
+  # them. See docs/ci/apple-ci-budget.md.
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
     branches:
       - main
   push:
@@ -27,6 +32,7 @@ jobs:
   apple-validate:
     name: Validate Apple targets, XCFramework, and Swift smoke test
     runs-on: macos-15
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-apple-ci')) }}
     timeout-minutes: 60
 
     steps:
@@ -175,6 +181,7 @@ jobs:
   apple-process-termination-proof:
     name: Apple Simulator process-termination/relaunch proof (circuit breaker)
     runs-on: macos-15
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-apple-ci')) }}
     timeout-minutes: 30
     # A genuine, fully green end-to-end run of this exact job was observed
     # on run 34730220519 (2026-09-13), after the device-type-selection fix:
@@ -453,6 +460,7 @@ jobs:
   apple-retry-budget-process-termination-proof:
     name: Apple Simulator process-termination/relaunch proof (retry budget)
     runs-on: macos-15
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-apple-ci')) }}
     timeout-minutes: 30
 
     steps:
@@ -701,6 +709,7 @@ jobs:
   apple-process-contention-proof:
     name: Apple Simulator cross-process probe-contention proof (circuit breaker)
     runs-on: macos-15
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-apple-ci')) }}
     timeout-minutes: 30
 
     steps:
@@ -1077,6 +1086,7 @@ jobs:
   apple-conflict-log-contention-proof:
     name: Apple Simulator cross-process contention proof (${{ matrix.domain_label }})
     runs-on: macos-15
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-apple-ci')) }}
     timeout-minutes: 30
     continue-on-error: true
     strategy:
@@ -1429,6 +1439,7 @@ jobs:
   apple-retry-budget-lease-contention-proof:
     name: Apple Simulator cross-process contention proof (retry-budget lease)
     runs-on: macos-15
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-apple-ci')) }}
     # 60, not 30: this job boots two Simulator devices (one per racing app)
     # and the first launch on the second one has taken up to 26 minutes on
     # these runners; a 30-minute limit cancelled an earlier run at 35 elapsed
@@ -1823,6 +1834,7 @@ jobs:
   apple-conflict-log-process-termination-proof:
     name: Apple Simulator process-termination/relaunch proof (${{ matrix.domain_label }})
     runs-on: macos-15
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-apple-ci')) }}
     timeout-minutes: 30
     continue-on-error: true
     strategy:

@@ -42,7 +42,12 @@ name: Apple Gate Re-Drive Proof
 # own history in apple-validation.yml).
 
 on:
+  # macOS runner minutes are budget-limited (about $8 per full PR run). The
+  # macOS jobs below run only on manual dispatch or on a PR carrying the
+  # `run-apple-ci` label; the extra `labeled` type lets adding the label start
+  # them. See docs/ci/apple-ci-budget.md.
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
     branches:
       - main
   push:
@@ -61,6 +66,7 @@ jobs:
   apple-circuit-breaker-gate-redrive-proof:
     name: Apple Simulator gate re-drive proof (circuit breaker)
     runs-on: macos-15
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-apple-ci')) }}
     timeout-minutes: 30
     continue-on-error: true
 
@@ -295,6 +301,7 @@ jobs:
   apple-retry-budget-gate-redrive-proof:
     name: Apple Simulator gate re-drive proof (retry budget)
     runs-on: macos-15
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-apple-ci')) }}
     timeout-minutes: 30
     continue-on-error: true
 
