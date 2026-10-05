@@ -81,3 +81,20 @@ metadata.
 The next slice must integrate this handler into circuit-aware bounded queue
 processing and worker/facade assembly while preserving per-entry provider
 execution evidence alongside queue acquisition and transition evidence.
+
+### Builder adoption (2026-10-05)
+
+`DataLoomBuilder` now selects this handler for both queue-worker assemblies
+(`queueWorkerConfiguration` and `circuitQueueWorkerConfiguration`) whenever
+`providerProtectionConfiguration` is also configured. The worker adapts the
+handler to the processor's `QueueEntryExecutionHandler` with
+`protectedHandler.execute(entry).outcome`; the per-entry provider evidence in
+`ProviderProtectedQueueEntryExecutionResult` is not yet surfaced through the
+builder's worker result types, so the "preserve per-entry evidence alongside
+queue transition evidence" part above remains open. Without
+`providerProtectionConfiguration` the historical unprotected handler is used
+unchanged. Durably admitted strategy plans replayed by a protected worker
+additionally need `strategyProviderProtectionConfiguration`; otherwise those
+entries fail non-recoverably with `DL-PROTECTED-QUEUE-ACCEPTED-PLAN-NOT-CONFIGURED`.
+Proof: `DataLoomBuilderProtectedQueueReplayTest` (runtime) and
+`ProtectedQueueRobolectricTest` (Android reference consumer).
