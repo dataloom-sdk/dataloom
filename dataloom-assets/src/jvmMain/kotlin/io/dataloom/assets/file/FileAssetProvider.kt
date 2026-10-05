@@ -48,6 +48,7 @@ import kotlin.time.Duration
  * ```
  * baseDirectory/uploads/<safe sessionId>/chunk-<index>            in-flight; never exposed
  * baseDirectory/committed/<safe assetId>/<version>/asset.bin      exposed only after completeUpload
+ * baseDirectory/committed/<safe assetId>/<version>/manifest.dlc   the commit marker; see Restart recovery
  * ```
  *
  * `<safe ...>` is [FileAssetIo.safeName]: session and asset ids are
@@ -66,6 +67,33 @@ import kotlin.time.Duration
  * (nothing at the committed path yet, or a previous version's committed
  * file, untouched) or the rename has completed and the whole verified object
  * is there.
+ *
+ * ## Restart recovery
+ *
+ * The committed index is in memory, but it is rebuilt from disk, so a fresh
+ * instance over the same [baseDirectory] serves everything an earlier
+ * instance committed. At commit, after the asset file is promoted,
+ * [completeUpload] atomically writes `manifest.dlc` beside it (a
+ * [CommittedAssetRecord]: the manifest plus each chunk's stored length). That
+ * file is the commit marker; the first operation on a new instance scans
+ * `committed/` once, under the same mutex as everything else, and indexes
+ * only entries that pass every check: the record decodes under the real
+ * manifest invariants, the directory names match the manifest's asset id and
+ * version, and `asset.bin`'s size equals the recorded stored lengths. Anything
+ * else (no manifest because a crash hit between the two steps, a corrupt or
+ * foreign manifest, a truncated asset file) is skipped, never served; a later
+ * upload of that id and version simply replaces it. Because the scan is lazy,
+ * constructing a provider does no I/O. Whole-object bytes are not re-hashed at
+ * scan time (cost would grow with total stored data); instead [readChunk]
+ * re-verifies each untransformed chunk against its manifest digest before
+ * returning it. A transformed asset's frames are opaque to the provider, so
+ * their integrity remains the client's authenticated-decryption / digest
+ * check, exactly as at upload time.
+ *
+ * In-flight uploads are not recovered: `uploads/` entries are never indexed
+ * after a restart (a client resumes by opening a new session), so an
+ * uncommitted upload is never exposed; [sweepAbandonedUploads] reclaims its
+ * bytes.
  *
  * ## Cleanup
  *
@@ -151,6 +179,15 @@ public class FileAssetProvider(
     private val mutex = Mutex()
     private val uploads = HashMap<AssetTransferSessionId, Upload>()
     private val committed = HashMap<AssetId, MutableMap<Long, StoredAsset>>()
+    private var committedLoaded = false
+
+    /**
+     * How many on-disk committed entries the restart scan refused to serve
+     * (missing or corrupt manifest, or an `asset.bin` whose size disagrees with
+     * it). Meaningful once any operation has run; for tests and diagnostics.
+     */
+    internal var skippedCommittedEntryCount: Int = 0
+        private set
 
     private val uploadsRoot: Path = baseDirectory.resolve("uploads")
     private val committedRoot: Path = baseDirectory.resolve("committed")
@@ -159,6 +196,7 @@ public class FileAssetProvider(
         withContext(Dispatchers.IO) {
             mutex.withLock {
                 try {
+                    ensureCommittedLoaded()
                     val manifest = request.manifest
                     val existing = uploads[request.sessionId]
                     if (existing != null) {
@@ -225,6 +263,7 @@ public class FileAssetProvider(
         withContext(Dispatchers.IO) {
             mutex.withLock {
                 try {
+                    ensureCommittedLoaded()
                     val upload = uploads[sessionId]
                         ?: return@withLock fail(AssetErrorKind.SESSION_NOT_FOUND, "Upload session not found.")
                     if (upload.completed) return@withLock ok(upload.manifest)
@@ -286,7 +325,19 @@ public class FileAssetProvider(
                         return@withLock fail(AssetErrorKind.ASSET_VERSION_CONFLICT, "Asset version is already committed.")
                     }
                     val finalAsset = assetFile(manifest.assetId, manifest.version)
+                    val finalManifest = manifestFile(manifest.assetId, manifest.version)
+                    // Commit order: the manifest file is the commit marker, written after asset.bin.
+                    // Dropping any stale manifest first means a crash between the two steps leaves an
+                    // asset.bin with no manifest (skipped on restart), never a new asset.bin paired
+                    // with an old manifest.
+                    FileAssetIo.deleteQuietly(finalManifest)
                     FileAssetIo.promoteAtomically(tempAssembled, finalAsset)
+                    try {
+                        writeManifestFileAtomically(finalManifest, CommittedAssetRecord(manifest, lengths))
+                    } catch (e: Exception) {
+                        FileAssetIo.deleteQuietly(finalAsset)
+                        throw e
+                    }
                     versions[manifest.version] = StoredAsset(manifest, finalAsset, offsets, lengths)
                     upload.completed = true
                     // The chunk files' bytes now live in the committed asset file; the staging
@@ -313,16 +364,24 @@ public class FileAssetProvider(
         }
 
     override suspend fun readManifest(assetId: AssetId, version: Long?): ProviderOperationResult<AssetManifest> =
-        mutex.withLock {
-            val versions = committed[assetId]
-            val stored = if (version == null) versions?.maxByOrNull { it.key }?.value else versions?.get(version)
-            stored?.let { ok(it.manifest) } ?: fail(AssetErrorKind.ASSET_NOT_FOUND, "Asset is not committed.")
+        withContext(Dispatchers.IO) {
+            mutex.withLock {
+                try {
+                    ensureCommittedLoaded()
+                    val versions = committed[assetId]
+                    val stored = if (version == null) versions?.maxByOrNull { it.key }?.value else versions?.get(version)
+                    stored?.let { ok(it.manifest) } ?: fail(AssetErrorKind.ASSET_NOT_FOUND, "Asset is not committed.")
+                } catch (_: IOException) {
+                    fail(AssetErrorKind.PROVIDER_REJECTED, "Local asset storage I/O failed.")
+                }
+            }
         }
 
     override suspend fun readChunk(assetId: AssetId, version: Long, index: Int): ProviderOperationResult<ByteArray> =
         withContext(Dispatchers.IO) {
             mutex.withLock {
                 try {
+                    ensureCommittedLoaded()
                     val stored = committed[assetId]?.get(version)
                         ?: return@withLock fail(AssetErrorKind.ASSET_NOT_FOUND, "Asset is not committed.")
                     if (index !in stored.chunkOffsets.indices) {
@@ -332,6 +391,16 @@ public class FileAssetProvider(
                     RandomAccessFile(stored.assetFile.toFile(), "r").use { file ->
                         file.seek(stored.chunkOffsets[index])
                         file.readFully(bytes)
+                    }
+                    // An untransformed chunk's stored bytes are the logical bytes its descriptor digests,
+                    // so never serve bytes that no longer match (bit-rot or tampering after commit,
+                    // possibly across a restart). A transformed frame is opaque to the provider; the
+                    // client's authenticated decryption / digest check covers it (ADR-0014, D24).
+                    if (!AssetWireFormat.isTransformed(stored.manifest)) {
+                        val descriptor = stored.manifest.chunkLayout.chunks[index]
+                        if (!(descriptor.checksum contentEquals digests.digest(descriptor.checksum.algorithm, bytes))) {
+                            return@withLock fail(AssetErrorKind.OBJECT_DIGEST_MISMATCH, "Stored chunk digest differs from the manifest.")
+                        }
                     }
                     ok(bytes)
                 } catch (_: IOException) {
@@ -388,6 +457,76 @@ public class FileAssetProvider(
     private fun assetFile(assetId: AssetId, version: Long): Path =
         committedRoot.resolve(FileAssetIo.safeName(assetId.value)).resolve(version.toString()).resolve("asset.bin")
 
+    private fun manifestFile(assetId: AssetId, version: Long): Path =
+        assetFile(assetId, version).resolveSibling(MANIFEST_FILE_NAME)
+
+    private fun writeManifestFileAtomically(path: Path, record: CommittedAssetRecord) {
+        val directory = checkNotNull(path.parent) { "Manifest path must have a parent directory." }
+        val temp = FileAssetIo.createSecureTempFile(directory, "${path.fileName}-", ".part")
+        try {
+            Files.write(temp, CommittedAssetRecordCodec.encode(record).encodeToByteArray())
+            FileAssetIo.promoteAtomically(temp, path)
+        } catch (e: Exception) {
+            FileAssetIo.deleteQuietly(temp)
+            throw e
+        }
+    }
+
+    /**
+     * Rebuilds [committed] from disk the first time any operation needs it
+     * (call with [mutex] held). Lazy rather than in the constructor so
+     * construction stays free of I/O and a failing directory listing surfaces
+     * as a typed `PROVIDER_REJECTED` result instead of a constructor
+     * exception; [committedLoaded] stays `false` on such a failure, so the
+     * next call retries. Every entry is validated before it is indexed; one
+     * that fails is skipped (counted in [skippedCommittedEntryCount]), never
+     * served, and never aborts the scan of the others.
+     */
+    private fun ensureCommittedLoaded() {
+        if (committedLoaded) return
+        if (Files.isDirectory(committedRoot)) {
+            Files.newDirectoryStream(committedRoot).use { assetDirectories ->
+                for (assetDirectory in assetDirectories) {
+                    if (!Files.isDirectory(assetDirectory)) continue
+                    try {
+                        Files.newDirectoryStream(assetDirectory).use { versionDirectories ->
+                            for (versionDirectory in versionDirectories) loadCommittedEntry(assetDirectory, versionDirectory)
+                        }
+                    } catch (_: IOException) {
+                        skippedCommittedEntryCount++
+                    }
+                }
+            }
+        }
+        committedLoaded = true
+    }
+
+    private fun loadCommittedEntry(assetDirectory: Path, versionDirectory: Path) {
+        try {
+            val version = versionDirectory.fileName.toString().toLong()
+            val manifestPath = versionDirectory.resolve(MANIFEST_FILE_NAME)
+            val assetPath = versionDirectory.resolve("asset.bin")
+            require(Files.isRegularFile(manifestPath) && Files.isRegularFile(assetPath))
+            require(Files.size(manifestPath) <= CommittedAssetRecordCodec.MAX_ENCODED_LENGTH)
+            val record = CommittedAssetRecordCodec.decode(Files.readAllBytes(manifestPath).decodeToString(throwOnInvalidSequence = true))
+            val manifest = record.manifest
+            // The path is the identity: a manifest copied or swapped under another asset id / version is not trusted.
+            require(manifest.version == version && FileAssetIo.safeName(manifest.assetId.value) == assetDirectory.fileName.toString())
+            // Truncation or growth since commit: the bytes are not the ones the manifest describes.
+            require(Files.size(assetPath) == record.storedSizeBytes)
+            val offsets = LongArray(record.storedChunkLengths.size)
+            var offset = 0L
+            for (index in offsets.indices) {
+                offsets[index] = offset
+                offset += record.storedChunkLengths[index]
+            }
+            committed.getOrPut(manifest.assetId) { HashMap() }[version] =
+                StoredAsset(manifest, assetPath, offsets, record.storedChunkLengths)
+        } catch (_: Exception) {
+            skippedCommittedEntryCount++
+        }
+    }
+
     private fun writeChunkFileAtomically(path: Path, bytes: ByteArray) {
         val directory = checkNotNull(path.parent) { "Chunk path must have a parent directory." }
         val temp = FileAssetIo.createSecureTempFile(directory, "${path.fileName}-", ".part")
@@ -437,3 +576,5 @@ public class FileAssetProvider(
 }
 
 private fun chunkFile(directory: Path, index: Int): Path = directory.resolve("chunk-$index")
+
+private const val MANIFEST_FILE_NAME: String = "manifest.dlc"
