@@ -1,0 +1,18 @@
+# Fragment: gate #97, Android asset transfer on a real emulator (2026-10-05)
+
+## (a) Proposed "Recently shipped" row
+
+| 2026-10-05 | `#97` Android asset-transfer wiring plus a real instrumented test. `runtime-android-reference-consumer` gains `buildReferenceDataLoom(assetTransfer = ...)` (wires `DataLoomBuilder.assetTransferConfiguration`), `buildReferenceAssetTransfer` (a `DurableAssetTransferSessionStore` over the real Room-backed `RoomDurableStateStore`) and `buildReferenceFileAssetProvider` (`FileAssetProvider`, the JVM reference provider Android already consumes). New `AndroidReferenceConsumerAssetTransferInstrumentedTest` uploads a 5,000-byte file as five 1,024-byte chunks through a real `DataLoomBuilder`-assembled engine, shuts that DataLoom and its Room database down, reopens a fresh Room database over the same file and reads the session back (`COMPLETED`, same revision, same whole-object digest), then downloads through a second DataLoom into a `FileAssetSink` and asserts the promoted file is byte-identical. **Verified by execution:** `DATALOOM_ANDROID_BUILD=true ./gradlew :runtime-android-reference-consumer:connectedDebugAndroidTest` on a locally booted `Pixel_8_Pro` AVD (Android 16): JUnit XML `tests="4" failures="0" errors="0" skipped="0"` (the new test plus the three existing instrumented tests). Revert-and-observe: with the `assetTransferConfiguration` call commented out the new test failed (`tests="4" failures="1"`, "assetTransferConfiguration must expose an engine"); restored, back to `failures="0"`. **Not verified:** a real network transport (the provider is in-process; `KtorAssetProvider` on Android against a real server is not run), an interrupted transfer resuming after restart on the emulator, quota/cancellation/cleanup on the emulator, API levels below 26 (`FileAssetProvider` uses `java.nio.file`; module `minSdk` is 21), a physical device, iOS execution (macOS CI only). Finding: `FileAssetProvider` keeps its committed-asset index in memory, so a fresh instance over the same directory returns `ASSET_NOT_FOUND` for an already-committed asset (the first run of this test hit it); the test restarts the client and reuses the provider instance. No public ABI of a baselined module changed (consumer fixture only), so `checkKotlinAbi` was not needed. | `#97` |
+
+## (b) Gate row percentage
+
+`#97`: unchanged. This is real emulator execution for one Android leg, but the dashboard's "AC-FUNC-005 end to end on Android and iOS" cannot yet be credited as met.
+
+## (c) "Still pending" text
+
+AC-FUNC-005 can be **partially credited**: Android now has real on-emulator execution of upload, download, streaming (file-backed source/sink), integrity (engine-verified digests) and durable-session restart-read through a real `DataLoomBuilder`, with a real Room session store. Replace "AC-FUNC-005 end to end on Android and iOS" with the remaining half, exactly:
+
+1. iOS execution: `IosReferenceConsumerAssetTransferAppleFileTest` and the Apple file provider tests are compile-verified only; they need a macOS CI run.
+2. Android through a real transport: the Android proof uses the in-process `FileAssetProvider`; `KtorAssetProvider` (`dataloom-assets-transport-ktor`) against a real HTTP server from the emulator is not run.
+3. Android on-device interrupted-transfer resume, quota, cancellation and abandoned-session cleanup (proven only in JVM tests of the same engine and provider code).
+4. `FileAssetProvider` committed-index recovery after a provider restart (design gap or documented non-goal, a decision for the lead), and the API 21-25 `java.nio.file` question.

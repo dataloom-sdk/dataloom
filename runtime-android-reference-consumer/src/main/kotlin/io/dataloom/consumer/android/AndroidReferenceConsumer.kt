@@ -19,20 +19,32 @@ import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.provider.ProviderVersion
 import io.dataloom.api.runtime.RuntimeDependencies
 import io.dataloom.api.runtime.RuntimeIdentifierGenerators
+import io.dataloom.api.security.DataLoomIncrementalDigestCalculator
+import io.dataloom.api.security.SystemDataLoomDigestCalculator
 import io.dataloom.api.synchronization.ChangeSetAcknowledgement
 import io.dataloom.api.time.SystemDataLoomClock
 import io.dataloom.api.transport.PullChangesRequest
 import io.dataloom.api.transport.PullChangesResult
 import io.dataloom.api.transport.PushChangesRequest
 import io.dataloom.api.transport.TransportProvider
+import io.dataloom.assets.AssetProvider
+import io.dataloom.assets.AssetTransferSession
+import io.dataloom.assets.AssetTransferSessionCodec
+import io.dataloom.assets.AssetTransferSessionId
+import io.dataloom.assets.DurableAssetTransferSessionStore
+import io.dataloom.assets.file.FileAssetProvider
 import io.dataloom.connectivity.android.AndroidConnectivityProvider
 import io.dataloom.queue.room.DataLoomDatabaseBuilder
+import io.dataloom.queue.room.RoomDurableStateStore
 import io.dataloom.queue.room.RoomQueueProvider
+import io.dataloom.queue.room.internal.DataLoomRoomDatabase
 import io.dataloom.runtime.facade.DataLoom
+import io.dataloom.runtime.facade.DataLoomAssetTransferSpec
 import io.dataloom.runtime.facade.DataLoomBuilder
 import io.dataloom.scheduler.workmanager.WorkManagerSchedulerProvider
 import io.dataloom.storage.room.DataLoomStorageDatabaseBuilder
 import io.dataloom.storage.room.RoomStorageProvider
+import java.io.File
 import java.util.UUID
 
 /**
@@ -85,12 +97,18 @@ import java.util.UUID
  * @param queueDatabaseName passed straight through to
  *   [androidDataLoomProviders]. Same override rationale as
  *   [storageDatabaseName].
+ * @param assetTransfer opt-in asset-transfer wiring from
+ *   [buildReferenceAssetTransfer]. When non-null it is passed to
+ *   [DataLoomBuilder.assetTransferConfiguration] and
+ *   [DataLoom.assetTransfer] is non-null; when null the capability is
+ *   absent, exactly as before.
  */
 public fun buildReferenceDataLoom(
     context: Context,
     transportProvider: TransportProvider = ReferenceTransportProvider(),
     storageDatabaseName: String = DataLoomStorageDatabaseBuilder.DEFAULT_NAME,
     queueDatabaseName: String = DataLoomDatabaseBuilder.DEFAULT_NAME,
+    assetTransfer: ReferenceAssetTransfer? = null,
 ): DataLoom {
     val providers = androidDataLoomProviders(
         context = context,
@@ -98,11 +116,86 @@ public fun buildReferenceDataLoom(
         queueDatabaseName = queueDatabaseName,
     )
 
-    return DataLoomBuilder()
+    val builder = DataLoomBuilder()
         .runtimeDependencies(referenceRuntimeDependencies())
         .installAndroidProviders(providers, transportProvider)
-        .build()
+    if (assetTransfer != null) {
+        builder.assetTransferConfiguration(assetTransfer.spec)
+    }
+    return builder.build()
 }
+
+/**
+ * Android reference wiring for the opt-in asset-transfer capability
+ * (`#97`, FR-ASSET-005 on Android): a real filesystem [FileAssetProvider]
+ * as the asset side, and a [DurableAssetTransferSessionStore] over a real
+ * Room-backed [RoomDurableStateStore] as the session store, so an
+ * interrupted or completed transfer's session survives a process restart.
+ *
+ * [FileAssetProvider] is the same JVM reference provider
+ * `dataloom-assets` ships (it has no Android source set; Android consumes
+ * its JVM variant), and plays the *remote* side here: this is an
+ * in-process reference, not a transport to a server. See
+ * `docs/android/reference-consumer.md` for the exact boundary.
+ *
+ * The caller owns [close], which closes the session database.
+ */
+public class ReferenceAssetTransfer internal constructor(
+    public val spec: DataLoomAssetTransferSpec,
+    private val database: DataLoomRoomDatabase,
+) {
+    /** Closes the Room database backing the session store. */
+    public fun close() {
+        database.close()
+    }
+}
+
+/**
+ * Builds a [ReferenceAssetTransfer] over [provider] with sessions persisted
+ * in the Room database named [sessionDatabaseName]. Calling it again with
+ * the same database name reopens the same durable session state, which is
+ * how a client restart is simulated.
+ *
+ * [provider] is passed in rather than built here because it plays the
+ * *remote* side and must outlive a client restart: [FileAssetProvider]
+ * keeps its committed-asset index in memory (the files persist, the index
+ * is not rebuilt from them), so a restarted client must talk to the same
+ * provider instance, as a real client would talk to the same server.
+ */
+public fun buildReferenceAssetTransfer(
+    context: Context,
+    provider: AssetProvider,
+    digests: DataLoomIncrementalDigestCalculator,
+    sessionDatabaseName: String,
+    chunkSizeBytes: Int,
+): ReferenceAssetTransfer {
+    val database = DataLoomDatabaseBuilder.build(context, sessionDatabaseName)
+    val sessionStore = DurableAssetTransferSessionStore(
+        RoomDurableStateStore<AssetTransferSessionId, AssetTransferSession>(
+            database = database,
+            namespace = ASSET_TRANSFER_SESSION_NAMESPACE,
+            scopeKeyEncoder = DurableAssetTransferSessionStore.KeyEncoder,
+            codec = AssetTransferSessionCodec(),
+        ),
+    )
+    return ReferenceAssetTransfer(
+        spec = DataLoomAssetTransferSpec(
+            provider = provider,
+            sessionStore = sessionStore,
+            digestCalculator = digests,
+            chunkSizeBytes = chunkSizeBytes,
+        ),
+        database = database,
+    )
+}
+
+/** A real filesystem [FileAssetProvider] rooted at [assetDirectory]. */
+public fun buildReferenceFileAssetProvider(
+    assetDirectory: File,
+    digests: DataLoomIncrementalDigestCalculator = SystemDataLoomDigestCalculator(),
+): FileAssetProvider = FileAssetProvider(assetDirectory.toPath(), digests)
+
+private const val ASSET_TRANSFER_SESSION_NAMESPACE = "asset-transfer-session"
 
 /**
  * Reference [RuntimeDependencies] using [SystemDataLoomClock] (real wall
