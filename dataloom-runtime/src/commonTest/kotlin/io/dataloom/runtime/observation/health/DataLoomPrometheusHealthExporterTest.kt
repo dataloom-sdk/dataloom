@@ -169,12 +169,14 @@ class DataLoomPrometheusHealthExporterTest {
             "dataloom_health_severity 1",
             "# HELP dataloom_health_component_severity Maximum finding severity per DataLoomHealthComponent " +
                 "(0=HEALTHY,1=DEGRADED,2=UNHEALTHY); 0 when the component raised no finding (component is one of " +
-                "PROVIDER, TELEMETRY_EXPORTER, OPERATIONAL_EVENT_OUTBOX, QUEUE_WORKER).",
+                "PROVIDER, TELEMETRY_EXPORTER, OPERATIONAL_EVENT_OUTBOX, QUEUE_WORKER, ASSET_TRANSFER, PLUGIN).",
             "# TYPE dataloom_health_component_severity gauge",
             "dataloom_health_component_severity{component=\"PROVIDER\"} 1",
             "dataloom_health_component_severity{component=\"TELEMETRY_EXPORTER\"} 0",
             "dataloom_health_component_severity{component=\"OPERATIONAL_EVENT_OUTBOX\"} 0",
             "dataloom_health_component_severity{component=\"QUEUE_WORKER\"} 0",
+            "dataloom_health_component_severity{component=\"ASSET_TRANSFER\"} 0",
+            "dataloom_health_component_severity{component=\"PLUGIN\"} 0",
             "# HELP dataloom_outbox_pending_entries Pending entries in a durable operational-event outbox scope, " +
                 "as of the last observation this process made. A scope never observed by this process is omitted.",
             "# TYPE dataloom_outbox_pending_entries gauge",
@@ -215,12 +217,14 @@ class DataLoomPrometheusHealthExporterTest {
             "dataloom_health_severity 0",
             "# HELP dataloom_health_component_severity Maximum finding severity per DataLoomHealthComponent " +
                 "(0=HEALTHY,1=DEGRADED,2=UNHEALTHY); 0 when the component raised no finding (component is one of " +
-                "PROVIDER, TELEMETRY_EXPORTER, OPERATIONAL_EVENT_OUTBOX, QUEUE_WORKER).",
+                "PROVIDER, TELEMETRY_EXPORTER, OPERATIONAL_EVENT_OUTBOX, QUEUE_WORKER, ASSET_TRANSFER, PLUGIN).",
             "# TYPE dataloom_health_component_severity gauge",
             "dataloom_health_component_severity{component=\"PROVIDER\"} 0",
             "dataloom_health_component_severity{component=\"TELEMETRY_EXPORTER\"} 0",
             "dataloom_health_component_severity{component=\"OPERATIONAL_EVENT_OUTBOX\"} 0",
             "dataloom_health_component_severity{component=\"QUEUE_WORKER\"} 0",
+            "dataloom_health_component_severity{component=\"ASSET_TRANSFER\"} 0",
+            "dataloom_health_component_severity{component=\"PLUGIN\"} 0",
         ).joinToString("\n") + "\n"
 
         assertEquals(expected, dataLoomPrometheusMetrics(snapshot))
@@ -251,6 +255,8 @@ class DataLoomPrometheusHealthExporterTest {
             providerHealth = emptyMap(),
             outboxHealth = listOf(outboxHealth),
             queueWorkerHealth = null,
+            assetTransferHealth = null,
+            pluginHealth = emptyMap(),
             severity = DataLoomHealthSeverity.HEALTHY,
             findings = emptyList(),
         )
@@ -282,6 +288,8 @@ class DataLoomPrometheusHealthExporterTest {
             providerHealth = emptyMap(),
             outboxHealth = listOf(outboxHealth),
             queueWorkerHealth = null,
+            assetTransferHealth = null,
+            pluginHealth = emptyMap(),
             severity = DataLoomHealthSeverity.HEALTHY,
             findings = emptyList(),
         )

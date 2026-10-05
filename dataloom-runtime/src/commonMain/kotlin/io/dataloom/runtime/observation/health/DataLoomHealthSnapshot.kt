@@ -2,6 +2,9 @@ package io.dataloom.runtime.observation.health
 
 import io.dataloom.api.error.DataLoomError
 import io.dataloom.api.operational.OperationalEventOutboxScope
+import io.dataloom.api.plugin.PluginId
+import io.dataloom.api.plugin.PluginLifecycleState
+import io.dataloom.assets.AssetTransferOperation
 import io.dataloom.api.provider.ProviderHealth
 import io.dataloom.api.provider.ProviderHealthStatus
 import io.dataloom.api.provider.ProviderId
@@ -128,6 +131,30 @@ public data class QueueWorkerHealth(
 )
 
 /**
+ * Health of [io.dataloom.assets.AssetTransferEngine], derived from an
+ * [AssetTransferHealthTracker].
+ *
+ * @param lastOutcome how the most recent observed call ended; `null` if the
+ *   tracker has never observed a call.
+ * @param lastOperation which call produced [lastOutcome].
+ * @param consecutiveSessionStoreFailures consecutive
+ *   [io.dataloom.assets.AssetTransferOutcome.SessionStoreFailure] outcomes --
+ *   the only outcome kind this section's [severity] is derived from; see
+ *   [AssetTransferHealthTracker] for why.
+ * @param lastEventAt when the most recent outcome was recorded, `null` if never.
+ * @param trackedSince when the tracker was created.
+ * @param severity roll-up of this section's findings.
+ */
+public data class AssetTransferHealth(
+    public val lastOutcome: AssetTransferOutcomeKind?,
+    public val lastOperation: AssetTransferOperation?,
+    public val consecutiveSessionStoreFailures: Int,
+    public val lastEventAt: DataLoomInstant?,
+    public val trackedSince: DataLoomInstant,
+    public val severity: DataLoomHealthSeverity,
+)
+
+/**
  * Point-in-time, redacted snapshot of already-queryable in-process
  * subsystem state, with a severity roll-up.
  *
@@ -145,16 +172,30 @@ public data class QueueWorkerHealth(
  *   class: they are as-of facts with their own age and staleness, never the
  *   store's current state).
  * - [queueWorkerHealth] -- the queue worker, from a [QueueWorkerHealthTracker].
+ * - [assetTransferHealth] -- `io.dataloom.assets.AssetTransferEngine`, from
+ *   an [AssetTransferHealthTracker].
+ * - [pluginHealth] -- each registered plugin's already-redacted-by-being-a-
+ *   closed-enum `PluginLifecycleState`, read by the caller itself from
+ *   `DataLoom.pluginEngine.stateOf(id)` for every id in
+ *   `DataLoom.pluginEngine.resolutionOrder`, keyed by `PluginId`.
+ *
+ * `providerHealth` is likewise not limited to synchronization providers --
+ * any `io.dataloom.api.provider.DataLoomProvider` the caller already holds a
+ * reference to (including a `SchedulerProvider`, which extends
+ * `DataLoomProvider`) can have its awaited `.health()` result included in
+ * the same map under its own `ProviderId`.
  *
  * ## The roll-up
  * [findings] lists every reason the snapshot is not clean, each as closed
  * codes (never free text), and [severity] is the maximum of their severities
  * (`HEALTHY` when there are none). Findings come from: provider health
- * status, telemetry exporter health, outbox depth/age/last cycle/staleness,
- * and worker failures/stuck runs, with thresholds from
- * [DataLoomHealthThresholds]. [providerLifecycleState] is reported but does
- * **not** influence [severity]: it is a lifecycle phase (for example
- * `NOT_INITIALIZED` before startup), not a health verdict.
+ * status (of any kind of provider, scheduler included), telemetry exporter
+ * health, outbox depth/age/last cycle/staleness, worker failures/stuck runs,
+ * asset-transfer session-store failures, and a plugin's `DEGRADED` lifecycle
+ * state, with thresholds from [DataLoomHealthThresholds].
+ * [providerLifecycleState] is reported but does **not** influence [severity]:
+ * it is a lifecycle phase (for example `NOT_INITIALIZED` before startup), not
+ * a health verdict.
  *
  * **[severity] speaks only for the evidence supplied.** A snapshot built with
  * nothing is `HEALTHY` with no findings; that means "nothing reported a
@@ -179,6 +220,8 @@ public data class DataLoomHealthSnapshot(
     public val providerHealth: Map<ProviderId, RedactedProviderHealth>,
     public val outboxHealth: List<OperationalEventOutboxHealth>,
     public val queueWorkerHealth: QueueWorkerHealth?,
+    public val assetTransferHealth: AssetTransferHealth?,
+    public val pluginHealth: Map<PluginId, PluginLifecycleState>,
     public val severity: DataLoomHealthSeverity,
     public val findings: List<DataLoomHealthFinding>,
 )
@@ -200,10 +243,17 @@ public data class DataLoomHealthSnapshot(
  *
  * @param outboxObservations `OperationalEventOutboxHealthTracker.snapshot()`.
  * @param queueWorkerObservation `QueueWorkerHealthTracker.snapshot()`.
+ * @param assetTransferObservation `AssetTransferHealthTracker.snapshot()`.
+ * @param pluginHealth each registered plugin's current `PluginLifecycleState`,
+ *   read by the caller itself (`DataLoom.pluginEngine.stateOf(id)`), keyed by
+ *   `PluginId`. Only `DEGRADED` ever contributes a finding; every other state
+ *   is a lifecycle phase, not a health verdict, exactly like
+ *   [providerLifecycleState].
  * @param now the instant ages and staleness are measured against. Required
  *   whenever [outboxObservations] is non-empty or [queueWorkerObservation] is
  *   supplied -- this function never reads a clock itself, so the caller states
- *   what "now" is.
+ *   what "now" is. Not required for [assetTransferObservation] or
+ *   [pluginHealth], neither of which is age-based.
  * @param thresholds roll-up thresholds; defaults are safe (see
  *   [DataLoomHealthThresholds]).
  */
@@ -214,6 +264,8 @@ public fun dataLoomHealthSnapshot(
     redactor: DataLoomRedactor = StrictDataLoomRedactor(),
     outboxObservations: List<OperationalEventOutboxObservedState> = emptyList(),
     queueWorkerObservation: QueueWorkerObservedState? = null,
+    assetTransferObservation: AssetTransferObservedState? = null,
+    pluginHealth: Map<PluginId, PluginLifecycleState> = emptyMap(),
     now: DataLoomInstant? = null,
     thresholds: DataLoomHealthThresholds = DataLoomHealthThresholds(),
 ): DataLoomHealthSnapshot {
@@ -249,11 +301,20 @@ public fun dataLoomHealthSnapshot(
             RetryCircuitExporterHealth.HEALTHY -> Unit
         }
     }
+    pluginHealth.entries.sortedBy { it.key.value }.forEach { (pluginId, state) ->
+        if (state == PluginLifecycleState.DEGRADED) {
+            findings += DataLoomHealthFinding(
+                DataLoomHealthComponent.PLUGIN, DataLoomHealthFindingCode.PLUGIN_DEGRADED,
+                DataLoomHealthSeverity.DEGRADED, pluginId.value,
+            )
+        }
+    }
 
     val outboxHealth = outboxObservations.map { observed ->
         outboxHealthOf(observed, checkNotNull(now), thresholds, findings)
     }
     val queueWorkerHealth = queueWorkerObservation?.let { queueWorkerHealthOf(it, checkNotNull(now), thresholds, redactor, findings) }
+    val assetTransferHealth = assetTransferObservation?.let { assetTransferHealthOf(it, thresholds, findings) }
 
     return DataLoomHealthSnapshot(
         providerLifecycleState = providerLifecycleState,
@@ -261,6 +322,8 @@ public fun dataLoomHealthSnapshot(
         providerHealth = redactedProviderHealth,
         outboxHealth = outboxHealth,
         queueWorkerHealth = queueWorkerHealth,
+        assetTransferHealth = assetTransferHealth,
+        pluginHealth = pluginHealth,
         severity = findings.maxOfOrNull { it.severity } ?: DataLoomHealthSeverity.HEALTHY,
         findings = findings.toList(),
     )
@@ -329,6 +392,34 @@ private fun outboxHealthOf(
             OperationalEventOutboxProcessingCycleHealth(it.outcome, it.entriesLeftPending, it.observedAt)
         },
         hasSkippedOrFailedEntries = hasSkippedOrFailed,
+        severity = own.maxOfOrNull { it.severity } ?: DataLoomHealthSeverity.HEALTHY,
+    )
+}
+
+private fun assetTransferHealthOf(
+    observed: AssetTransferObservedState,
+    thresholds: DataLoomHealthThresholds,
+    findings: MutableList<DataLoomHealthFinding>,
+): AssetTransferHealth {
+    val own = mutableListOf<DataLoomHealthFinding>()
+    fun add(code: DataLoomHealthFindingCode, severity: DataLoomHealthSeverity) {
+        own += DataLoomHealthFinding(DataLoomHealthComponent.ASSET_TRANSFER, code, severity)
+    }
+
+    when {
+        observed.consecutiveSessionStoreFailures >= thresholds.assetTransferSessionStoreFailuresUnhealthyAt ->
+            add(DataLoomHealthFindingCode.ASSET_TRANSFER_SESSION_STORE_FAILING_REPEATEDLY, DataLoomHealthSeverity.UNHEALTHY)
+        observed.consecutiveSessionStoreFailures >= thresholds.assetTransferSessionStoreFailuresDegradedAt ->
+            add(DataLoomHealthFindingCode.ASSET_TRANSFER_SESSION_STORE_FAILING, DataLoomHealthSeverity.DEGRADED)
+    }
+
+    findings += own
+    return AssetTransferHealth(
+        lastOutcome = observed.lastOutcome,
+        lastOperation = observed.lastOperation,
+        consecutiveSessionStoreFailures = observed.consecutiveSessionStoreFailures,
+        lastEventAt = observed.lastEventAt,
+        trackedSince = observed.trackedSince,
         severity = own.maxOfOrNull { it.severity } ?: DataLoomHealthSeverity.HEALTHY,
     )
 }

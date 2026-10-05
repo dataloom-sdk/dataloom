@@ -55,6 +55,7 @@ import io.dataloom.runtime.execution.outbound.OutboundPushPipelineConfiguration
 import io.dataloom.runtime.execution.outbound.OutboundPushSynchronizationPipeline
 import io.dataloom.runtime.observation.SynchronizationEventDispatcher
 import io.dataloom.runtime.observation.SynchronizationObserverRegistry
+import io.dataloom.runtime.observation.health.AssetTransferHealthTracker
 import io.dataloom.runtime.observation.health.OperationalEventOutboxHealthTracker
 import io.dataloom.runtime.observation.health.QueueWorkerHealthTracker
 import io.dataloom.runtime.observation.operational.AssetTransferOperationalEventRecorder
@@ -210,6 +211,7 @@ public class DataLoomBuilder {
     private var assetTransferOperationalEventOutboxSpec: DataLoomAssetTransferOperationalEventOutboxSpec? = null
     private var operationalEventOutboxHealthTracker: OperationalEventOutboxHealthTracker? = null
     private var queueWorkerHealthTracker: QueueWorkerHealthTracker? = null
+    private var assetTransferHealthTracker: AssetTransferHealthTracker? = null
     private var built: Boolean = false
 
     // =========================================================================
@@ -680,6 +682,25 @@ public class DataLoomBuilder {
      */
     public fun queueWorkerHealthTracker(tracker: QueueWorkerHealthTracker): DataLoomBuilder = apply {
         queueWorkerHealthTracker = tracker
+    }
+
+    /**
+     * Opts the configured asset-transfer capability into health tracking
+     * (DL-042, `#96`): every outcome
+     * [io.dataloom.assets.AssetTransferEngine.upload]/`.download`/`.cancel`
+     * already computes is also reported to [tracker], so
+     * `tracker.snapshot()` can feed `dataLoomHealthSnapshot`'s
+     * `assetTransferObservation` parameter. Composed with, never replacing,
+     * any observer [assetTransferOperationalEventOutboxConfiguration] already
+     * installed -- see
+     * [io.dataloom.runtime.facade.withAssetTransferHealthTracking]. Not
+     * calling this leaves the engine's observer exactly as before. Has no
+     * effect when no asset-transfer capability is configured.
+     *
+     * @return this builder for chaining.
+     */
+    public fun assetTransferHealthTracker(tracker: AssetTransferHealthTracker): DataLoomBuilder = apply {
+        assetTransferHealthTracker = tracker
     }
 
     /**
@@ -1653,7 +1674,7 @@ public class DataLoomBuilder {
                 stateObserver = operationalEventOutboxHealthTracker,
             )
         }
-        val assetTransferObserver = assetTransferOperationalEventOutbox?.let { outbox ->
+        val assetTransferEventRecorderObserver = assetTransferOperationalEventOutbox?.let { outbox ->
             val spec = checkNotNull(assetTransferOperationalEventOutboxSpec)
             AssetTransferOperationalEventRecorder(
                 outbox = outbox,
@@ -1661,6 +1682,9 @@ public class DataLoomBuilder {
                 clock = deps.clock,
             )
         }
+        val assetTransferObserver = assetTransferHealthTracker?.let {
+            assetTransferEventRecorderObserver.withAssetTransferHealthTracking(it)
+        } ?: assetTransferEventRecorderObserver
         // --- 14d-ii. Optionally wrap the asset provider in circuit-breaker protection ---
         val assetProviderProtection = assetProviderProtectionSpec?.let { protectionSpec ->
             val transferSpec = checkNotNull(assetTransferSpec)
@@ -1684,7 +1708,7 @@ public class DataLoomBuilder {
                 chunkSizeBounds = transferSpec.provider.chunkSizeBounds,
             )
         }
-        val assetTransfer = assetTransferSpec?.let { spec ->
+        val assetTransfer =assetTransferSpec?.let { spec ->
             AssetTransferEngine(
                 provider = assetProviderProtection ?: spec.provider,
                 sessions = spec.sessionStore,

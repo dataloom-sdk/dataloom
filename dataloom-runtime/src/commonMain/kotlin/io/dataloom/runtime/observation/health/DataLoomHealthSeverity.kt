@@ -26,6 +26,12 @@ public enum class DataLoomHealthComponent {
     TELEMETRY_EXPORTER,
     OPERATIONAL_EVENT_OUTBOX,
     QUEUE_WORKER,
+
+    /** [io.dataloom.assets.AssetTransferEngine], via [AssetTransferHealthTracker]. */
+    ASSET_TRANSFER,
+
+    /** A registered plugin, via its [io.dataloom.api.plugin.PluginLifecycleState]. */
+    PLUGIN,
 }
 
 /**
@@ -75,6 +81,32 @@ public enum class DataLoomHealthFindingCode {
 
     /** A queue worker run has been in flight for at least [DataLoomHealthThresholds.queueWorkerRunStuckAfter]. */
     QUEUE_WORKER_RUN_STUCK,
+
+    /**
+     * [io.dataloom.assets.AssetTransferEngine]'s consecutive
+     * [io.dataloom.assets.AssetTransferOutcome.SessionStoreFailure] outcomes
+     * reached [DataLoomHealthThresholds.assetTransferSessionStoreFailuresDegradedAt].
+     * Only this outcome counts -- see [AssetTransferHealthTracker] for why
+     * every other outcome (including
+     * [io.dataloom.assets.AssetTransferOutcome.Failed], which routinely
+     * reflects caller input such as a quota or content-policy rejection, not
+     * engine health) is tracked but never drives severity.
+     */
+    ASSET_TRANSFER_SESSION_STORE_FAILING,
+
+    /** As [ASSET_TRANSFER_SESSION_STORE_FAILING], at [DataLoomHealthThresholds.assetTransferSessionStoreFailuresUnhealthyAt]. */
+    ASSET_TRANSFER_SESSION_STORE_FAILING_REPEATEDLY,
+
+    /**
+     * A plugin's tracked [io.dataloom.api.plugin.PluginLifecycleState] is
+     * [io.dataloom.api.plugin.PluginLifecycleState.DEGRADED] -- "partially
+     * usable with reduced capability or reliability" per that enum's own
+     * KDoc, the one plugin lifecycle label that is itself a health verdict
+     * rather than a lifecycle phase (compare `providerLifecycleState`, which
+     * is reported but never drives severity for the same reason the other
+     * phases are not health verdicts).
+     */
+    PLUGIN_DEGRADED,
 }
 
 /**
@@ -126,6 +158,12 @@ public data class DataLoomHealthFinding(
  *   recorded event before its `stale` flag is set. Informational only: a
  *   worker that is scheduled on demand is legitimately quiet for long
  *   periods, so staleness never changes the worker's severity.
+ * @param assetTransferSessionStoreFailuresDegradedAt consecutive
+ *   [io.dataloom.assets.AssetTransferOutcome.SessionStoreFailure] outcomes at
+ *   which [AssetTransferHealthTracker]'s observation is `DEGRADED`. At least `1`.
+ * @param assetTransferSessionStoreFailuresUnhealthyAt consecutive
+ *   `SessionStoreFailure` outcomes at which it is `UNHEALTHY`. Must be at
+ *   least [assetTransferSessionStoreFailuresDegradedAt].
  */
 public data class DataLoomHealthThresholds(
     public val outboxPendingDegradedAt: Int = 1_000,
@@ -137,6 +175,8 @@ public data class DataLoomHealthThresholds(
     public val queueWorkerFailedRunsUnhealthyAt: Int = 3,
     public val queueWorkerRunStuckAfter: Duration = 30.minutes,
     public val queueWorkerObservationStaleAfter: Duration = 6.hours,
+    public val assetTransferSessionStoreFailuresDegradedAt: Int = 1,
+    public val assetTransferSessionStoreFailuresUnhealthyAt: Int = 3,
 ) {
     init {
         require(outboxPendingDegradedAt >= 1) { "outboxPendingDegradedAt must be at least 1." }
@@ -157,6 +197,12 @@ public data class DataLoomHealthThresholds(
         require(queueWorkerRunStuckAfter > Duration.ZERO) { "queueWorkerRunStuckAfter must be greater than zero." }
         require(queueWorkerObservationStaleAfter > Duration.ZERO) {
             "queueWorkerObservationStaleAfter must be greater than zero."
+        }
+        require(assetTransferSessionStoreFailuresDegradedAt >= 1) {
+            "assetTransferSessionStoreFailuresDegradedAt must be at least 1."
+        }
+        require(assetTransferSessionStoreFailuresUnhealthyAt >= assetTransferSessionStoreFailuresDegradedAt) {
+            "assetTransferSessionStoreFailuresUnhealthyAt must not be below assetTransferSessionStoreFailuresDegradedAt."
         }
     }
 }

@@ -88,7 +88,8 @@ public fun dataLoomPrometheusMetrics(snapshot: DataLoomHealthSnapshot): String {
         out, "dataloom_health_component_severity",
         "Maximum finding severity per DataLoomHealthComponent " +
             "(0=HEALTHY,1=DEGRADED,2=UNHEALTHY); 0 when the component raised no finding " +
-            "(component is one of PROVIDER, TELEMETRY_EXPORTER, OPERATIONAL_EVENT_OUTBOX, QUEUE_WORKER).",
+            "(component is one of PROVIDER, TELEMETRY_EXPORTER, OPERATIONAL_EVENT_OUTBOX, QUEUE_WORKER, " +
+            "ASSET_TRANSFER, PLUGIN).",
     ) {
         DataLoomHealthComponent.entries.forEach { component ->
             val severity = snapshot.findings
