@@ -46,14 +46,13 @@ import kotlin.test.assertTrue
  *    [buildReferenceAssetTransfer] (a new Room database instance over the
  *    same on-disk file, sharing no in-memory client state) reads back the
  *    same session, `COMPLETED`, at the same revision with the same
- *    whole-object digest. The *client* restarts; the remote provider
- *    instance is deliberately reused, because [FileAssetProvider] keeps its
- *    committed index in memory (a fresh instance over the same directory
- *    reports the asset as not committed -- the first version of this test
- *    observed exactly that), so it models a server that outlives the client.
- * 3. The restarted DataLoom downloads the asset, again chunk by chunk, into
- *    a [FileAssetSink], and the promoted file is byte-identical to the
- *    original.
+ *    whole-object digest. The *provider* restarts too: the second side
+ *    gets a FRESH [FileAssetProvider] over the same directory, sharing no
+ *    in-memory state with the first, so its committed index must be
+ *    rebuilt from the files on disk.
+ * 3. The restarted DataLoom, through that fresh provider, downloads the
+ *    asset, again chunk by chunk, into a [FileAssetSink], and the promoted
+ *    file is byte-identical to the original.
  *
  * ## What this does not prove
  *
@@ -119,7 +118,8 @@ class AndroidReferenceConsumerAssetTransferInstrumentedTest {
         firstTransfer.close()
 
         // --- Second "process": nothing in memory is shared -----------------
-        val secondTransfer = buildReferenceAssetTransfer(context, remote, digests, sessionDatabaseName, chunkSizeBytes = 1_024)
+        val restartedRemote = buildReferenceFileAssetProvider(assetDir, digests)
+        val secondTransfer = buildReferenceAssetTransfer(context, restartedRemote, digests, sessionDatabaseName, chunkSizeBytes = 1_024)
         try {
             val restored = assertNotNull(secondTransfer.spec.sessionStore.load(sessionId), "session must survive the restart")
             assertEquals(AssetTransferPhase.COMPLETED, restored.phase)

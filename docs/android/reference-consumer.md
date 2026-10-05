@@ -159,12 +159,10 @@ currently no file-backed asset provider for API 21-25 (lint flagged
 is therefore annotated `@RequiresApi(26)` and the instrumented test
 `@SdkSuppress(minSdkVersion = 26)`, with no lint baseline or `NewApi`
 suppression; a fix needs either a non-`java.nio` file provider or a decision
-to raise the asset module's effective floor. Observed while writing the test:
-`FileAssetProvider` keeps its committed-asset index in memory, so a fresh
-provider instance over the same directory reports the asset as
-`ASSET_NOT_FOUND`; the test therefore restarts the *client* (session store,
-engine) and keeps one provider instance, which models a server that outlives
-the client.
+to raise the asset module's effective floor. The restart is a full one: the second
+DataLoom is given a *fresh* `FileAssetProvider` over the same directory
+(sharing no in-memory state with the first), which rebuilds its committed
+index from disk, and the download through it is byte-identical.
 
 ## Transport is intentionally illustrative
 
