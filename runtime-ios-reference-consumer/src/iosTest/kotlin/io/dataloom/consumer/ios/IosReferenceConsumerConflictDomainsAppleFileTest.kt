@@ -136,16 +136,21 @@ class IosReferenceConsumerConflictDomainsAppleFileTest {
         val directoryPath = conflictDirectoryPath(runId)
         val unresolvedFile = "dataloom-unresolved-conflict-$runId.tsv"
 
+        // The unresolved log is only written when no resolver is configured
+        // (RESOLVER_NOT_CONFIGURED) or the bound id is not registered
+        // (RESOLVER_NOT_FOUND). A resolver that returns Defer never reaches it,
+        // so this test configures no resolver, matching the JVM
+        // DataLoomBuilderConflictDetectionTest's unresolved case.
         val dataLoom = conflictDataLoom(
-            resolverDecision = ConflictResolutionDecision.Defer(),
+            resolverDecision = null,
             unresolvedStore = AppleFileDurableDomainStores.unresolvedConflictStore(directoryPath, unresolvedFile),
             resolvedStore = null,
             quarantineSpec = null,
         )
         dataLoom.initialize()
         val executed = assertIs<SynchronizationExecutionResult.Executed>(dataLoom.synchronize(pullRequest(runId)))
-        val failed = assertIs<io.dataloom.api.synchronization.SynchronizationResult.Failed>(executed.result)
-        assertEquals("DL-CONFLICT-DECISION-DEFERRED", failed.error.code.value)
+        val succeeded = assertIs<io.dataloom.api.synchronization.SynchronizationResult.Succeeded>(executed.result)
+        assertEquals(1, succeeded.summary.conflictsDetected)
 
         val conflictId = ConflictId("conflict-${invoice.id.value}-1")
         val restarted = DurableUnresolvedConflictLog(
@@ -156,6 +161,7 @@ class IosReferenceConsumerConflictDomainsAppleFileTest {
         )
         val record = assertNotNull(recorded.value)
         assertEquals(ConflictType.CONCURRENT_CHANGE, record.conflictType)
+        assertEquals(io.dataloom.api.conflict.UnresolvedConflictReason.RESOLVER_NOT_CONFIGURED, record.reason)
     }
 
     @Test
@@ -235,7 +241,7 @@ class IosReferenceConsumerConflictDomainsAppleFileTest {
     }
 
     private fun conflictDataLoom(
-        resolverDecision: ConflictResolutionDecision,
+        resolverDecision: ConflictResolutionDecision?,
         unresolvedStore: io.dataloom.api.state.DurableStateStore<ConflictId, io.dataloom.api.conflict.UnresolvedConflictRecord>,
         resolvedStore: io.dataloom.api.state.DurableStateStore<ConflictId, io.dataloom.api.conflict.ResolvedConflictDecisionRecord>?,
         quarantineSpec: DataLoomConflictQuarantineSpec?,
@@ -265,8 +271,12 @@ class IosReferenceConsumerConflictDomainsAppleFileTest {
             .conflictDetectionConfiguration(
                 DataLoomConflictDetectionSpec(
                     detectors = listOf(ConflictOnEveryPairDetector(detectorId)),
-                    resolvers = listOf(FixedDecisionResolver(resolverId, resolverDecision)),
-                    bindings = ConflictOrchestrationBindings(detectorId, resolverId),
+                    resolvers = if (resolverDecision == null) {
+                        emptyList()
+                    } else {
+                        listOf(FixedDecisionResolver(resolverId, resolverDecision))
+                    },
+                    bindings = ConflictOrchestrationBindings(detectorId, if (resolverDecision == null) null else resolverId),
                     unresolvedConflictStore = unresolvedStore,
                     resolvedConflictDecisionStore = resolvedStore,
                     quarantine = quarantineSpec,
