@@ -45,6 +45,7 @@ import io.dataloom.plugin.PluginCompatibilityResult
 import io.dataloom.plugin.PluginDependencyIssue
 import io.dataloom.plugin.PluginDependencyIssueReason
 import io.dataloom.plugin.PluginExecutionBoundsResult
+import io.dataloom.plugin.PluginFailureCircuitPolicy
 import io.dataloom.plugin.PluginIncompatibilityReason
 import io.dataloom.plugin.PluginLifecycleAdministrationAuthorizationDecision
 import io.dataloom.plugin.PluginLifecycleAdministrationAuthorizer
@@ -308,6 +309,39 @@ class DataLoomBuilderPluginEngineTest {
     }
 
     @Test
+    fun withoutAFailureCircuitRepeatedFailuresNeverChangeLifecycleState() = runTest {
+        val engine = activeEngineWith(plugin("plugin-a"))
+
+        repeat(20) { engine.execute<Unit>(PluginId("plugin-a")) { error("boom") } }
+
+        assertEquals(PluginLifecycleState.ACTIVE, engine.stateOf(PluginId("plugin-a")))
+    }
+
+    @Test
+    fun aFailureCircuitDegradesARepeatedlyFailingPluginAndRecoveryIsAnAuthorizedManualTransition() = runTest {
+        val id = PluginId("plugin-a")
+        val engine = activeEngineWith(plugin("plugin-a"), failureCircuit = PluginFailureCircuitPolicy(2))
+
+        val first = engine.execute<Unit>(id) { error("boom") }
+        val second = engine.execute<Unit>(id) { error("boom") }
+
+        assertIs<PluginExecutionBoundsResult.Failed>(first)
+        assertFalse(first.degradedPlugin)
+        assertIs<PluginExecutionBoundsResult.Failed>(second)
+        assertTrue(second.degradedPlugin)
+        assertEquals(PluginLifecycleState.DEGRADED, engine.stateOf(id))
+        assertEquals(
+            PluginExecutionBoundsResult.NotActive(id, PluginLifecycleState.DEGRADED),
+            engine.execute(id) { "refused" },
+        )
+
+        assertIs<PluginLifecycleTransitionResult.Allowed>(
+            engine.transition(transitionRequest("plugin-a", PluginLifecycleState.ACTIVE)),
+        )
+        assertEquals(PluginExecutionBoundsResult.Completed("back"), engine.execute(id) { "back" })
+    }
+
+    @Test
     fun executeReturnsTimedOutWhenTheDeclaredBoundIsExceeded() = runTest {
         val engine = activeEngineWith(plugin("plugin-a", maximumExecutionMillis = 100L))
 
@@ -481,16 +515,20 @@ class DataLoomBuilderPluginEngineTest {
     private fun engineWith(
         authorizer: PluginLifecycleAdministrationAuthorizer,
         vararg plugins: DataLoomPlugin,
+        failureCircuit: PluginFailureCircuitPolicy? = null,
     ): DataLoomPluginEngine = assertNotNull(
         builder()
-            .pluginConfiguration(DataLoomPluginSpec(plugins.toList(), authorizer))
+            .pluginConfiguration(DataLoomPluginSpec(plugins.toList(), authorizer, failureCircuit))
             .build()
             .pluginEngine,
     )
 
     /** Builds with every plugin already `ACTIVE`, walking the real authorized transitions. */
-    private suspend fun activeEngineWith(vararg plugins: DataLoomPlugin): DataLoomPluginEngine {
-        val engine = engineWith(RecordingAuthorizer(), *plugins)
+    private suspend fun activeEngineWith(
+        vararg plugins: DataLoomPlugin,
+        failureCircuit: PluginFailureCircuitPolicy? = null,
+    ): DataLoomPluginEngine {
+        val engine = engineWith(RecordingAuthorizer(), *plugins, failureCircuit = failureCircuit)
         for (plugin in plugins) {
             for (state in listOf(
                 PluginLifecycleState.VALIDATED,

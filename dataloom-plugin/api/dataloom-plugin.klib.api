@@ -69,16 +69,19 @@ sealed interface <#A: out kotlin/Any?> io.dataloom.plugin/PluginExecutionBoundsR
     }
 
     final class Failed : io.dataloom.plugin/PluginExecutionBoundsResult<kotlin/Nothing> { // io.dataloom.plugin/PluginExecutionBoundsResult.Failed|null[0]
-        constructor <init>(io.dataloom.api.plugin/PluginId, kotlin/Exception) // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.<init>|<init>(io.dataloom.api.plugin.PluginId;kotlin.Exception){}[0]
+        constructor <init>(io.dataloom.api.plugin/PluginId, kotlin/Exception, kotlin/Boolean = ...) // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.<init>|<init>(io.dataloom.api.plugin.PluginId;kotlin.Exception;kotlin.Boolean){}[0]
 
         final val cause // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.cause|{}cause[0]
             final fun <get-cause>(): kotlin/Exception // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.cause.<get-cause>|<get-cause>(){}[0]
+        final val degradedPlugin // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.degradedPlugin|{}degradedPlugin[0]
+            final fun <get-degradedPlugin>(): kotlin/Boolean // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.degradedPlugin.<get-degradedPlugin>|<get-degradedPlugin>(){}[0]
         final val pluginId // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.pluginId|{}pluginId[0]
             final fun <get-pluginId>(): io.dataloom.api.plugin/PluginId // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.pluginId.<get-pluginId>|<get-pluginId>(){}[0]
 
         final fun component1(): io.dataloom.api.plugin/PluginId // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.component1|component1(){}[0]
         final fun component2(): kotlin/Exception // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.component2|component2(){}[0]
-        final fun copy(io.dataloom.api.plugin/PluginId = ..., kotlin/Exception = ...): io.dataloom.plugin/PluginExecutionBoundsResult.Failed // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.copy|copy(io.dataloom.api.plugin.PluginId;kotlin.Exception){}[0]
+        final fun component3(): kotlin/Boolean // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.component3|component3(){}[0]
+        final fun copy(io.dataloom.api.plugin/PluginId = ..., kotlin/Exception = ..., kotlin/Boolean = ...): io.dataloom.plugin/PluginExecutionBoundsResult.Failed // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.copy|copy(io.dataloom.api.plugin.PluginId;kotlin.Exception;kotlin.Boolean){}[0]
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.plugin/PluginExecutionBoundsResult.Failed.toString|toString(){}[0]
@@ -101,8 +104,10 @@ sealed interface <#A: out kotlin/Any?> io.dataloom.plugin/PluginExecutionBoundsR
     }
 
     final class TimedOut : io.dataloom.plugin/PluginExecutionBoundsResult<kotlin/Nothing> { // io.dataloom.plugin/PluginExecutionBoundsResult.TimedOut|null[0]
-        constructor <init>(io.dataloom.api.plugin/PluginId, kotlin/Long) // io.dataloom.plugin/PluginExecutionBoundsResult.TimedOut.<init>|<init>(io.dataloom.api.plugin.PluginId;kotlin.Long){}[0]
+        constructor <init>(io.dataloom.api.plugin/PluginId, kotlin/Long, kotlin/Boolean = ...) // io.dataloom.plugin/PluginExecutionBoundsResult.TimedOut.<init>|<init>(io.dataloom.api.plugin.PluginId;kotlin.Long;kotlin.Boolean){}[0]
 
+        final val degradedPlugin // io.dataloom.plugin/PluginExecutionBoundsResult.TimedOut.degradedPlugin|{}degradedPlugin[0]
+            final fun <get-degradedPlugin>(): kotlin/Boolean // io.dataloom.plugin/PluginExecutionBoundsResult.TimedOut.degradedPlugin.<get-degradedPlugin>|<get-degradedPlugin>(){}[0]
         final val maximumExecutionMillis // io.dataloom.plugin/PluginExecutionBoundsResult.TimedOut.maximumExecutionMillis|{}maximumExecutionMillis[0]
             final fun <get-maximumExecutionMillis>(): kotlin/Long // io.dataloom.plugin/PluginExecutionBoundsResult.TimedOut.maximumExecutionMillis.<get-maximumExecutionMillis>|<get-maximumExecutionMillis>(){}[0]
         final val pluginId // io.dataloom.plugin/PluginExecutionBoundsResult.TimedOut.pluginId|{}pluginId[0]
@@ -110,7 +115,8 @@ sealed interface <#A: out kotlin/Any?> io.dataloom.plugin/PluginExecutionBoundsR
 
         final fun component1(): io.dataloom.api.plugin/PluginId // io.dataloom.plugin/PluginExecutionBoundsResult.TimedOut.component1|component1(){}[0]
         final fun component2(): kotlin/Long // io.dataloom.plugin/PluginExecutionBoundsResult.TimedOut.component2|component2(){}[0]
-        final fun copy(io.dataloom.api.plugin/PluginId = ..., kotlin/Long = ...): io.dataloom.plugin/PluginExecutionBoundsResult.TimedOut // io.dataloom.plugin/PluginExecutionBoundsResult.TimedOut.copy|copy(io.dataloom.api.plugin.PluginId;kotlin.Long){}[0]
+        final fun component3(): kotlin/Boolean // io.dataloom.plugin/PluginExecutionBoundsResult.TimedOut.component3|component3(){}[0]
+        final fun copy(io.dataloom.api.plugin/PluginId = ..., kotlin/Long = ..., kotlin/Boolean = ...): io.dataloom.plugin/PluginExecutionBoundsResult.TimedOut // io.dataloom.plugin/PluginExecutionBoundsResult.TimedOut.copy|copy(io.dataloom.api.plugin.PluginId;kotlin.Long;kotlin.Boolean){}[0]
         final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.plugin/PluginExecutionBoundsResult.TimedOut.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.dataloom.plugin/PluginExecutionBoundsResult.TimedOut.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.dataloom.plugin/PluginExecutionBoundsResult.TimedOut.toString|toString(){}[0]
@@ -230,9 +236,27 @@ final class io.dataloom.plugin/PluginDependencyIssue { // io.dataloom.plugin/Plu
 }
 
 final class io.dataloom.plugin/PluginExecutionBoundsEnforcer { // io.dataloom.plugin/PluginExecutionBoundsEnforcer|null[0]
-    constructor <init>(io.dataloom.plugin/PluginLifecycleStateTracker) // io.dataloom.plugin/PluginExecutionBoundsEnforcer.<init>|<init>(io.dataloom.plugin.PluginLifecycleStateTracker){}[0]
+    constructor <init>(io.dataloom.plugin/PluginLifecycleStateTracker, io.dataloom.plugin/PluginFailureCircuitPolicy? = ...) // io.dataloom.plugin/PluginExecutionBoundsEnforcer.<init>|<init>(io.dataloom.plugin.PluginLifecycleStateTracker;io.dataloom.plugin.PluginFailureCircuitPolicy?){}[0]
 
     final suspend fun <#A1: kotlin/Any?> execute(io.dataloom.api.plugin/PluginId, kotlin.coroutines/SuspendFunction0<#A1>): io.dataloom.plugin/PluginExecutionBoundsResult<#A1> // io.dataloom.plugin/PluginExecutionBoundsEnforcer.execute|execute(io.dataloom.api.plugin.PluginId;kotlin.coroutines.SuspendFunction0<0:0>){0§<kotlin.Any?>}[0]
+}
+
+final class io.dataloom.plugin/PluginFailureCircuitPolicy { // io.dataloom.plugin/PluginFailureCircuitPolicy|null[0]
+    constructor <init>(kotlin/Int = ...) // io.dataloom.plugin/PluginFailureCircuitPolicy.<init>|<init>(kotlin.Int){}[0]
+
+    final val consecutiveFailureThreshold // io.dataloom.plugin/PluginFailureCircuitPolicy.consecutiveFailureThreshold|{}consecutiveFailureThreshold[0]
+        final fun <get-consecutiveFailureThreshold>(): kotlin/Int // io.dataloom.plugin/PluginFailureCircuitPolicy.consecutiveFailureThreshold.<get-consecutiveFailureThreshold>|<get-consecutiveFailureThreshold>(){}[0]
+
+    final fun component1(): kotlin/Int // io.dataloom.plugin/PluginFailureCircuitPolicy.component1|component1(){}[0]
+    final fun copy(kotlin/Int = ...): io.dataloom.plugin/PluginFailureCircuitPolicy // io.dataloom.plugin/PluginFailureCircuitPolicy.copy|copy(kotlin.Int){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.plugin/PluginFailureCircuitPolicy.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.plugin/PluginFailureCircuitPolicy.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.plugin/PluginFailureCircuitPolicy.toString|toString(){}[0]
+
+    final object Companion { // io.dataloom.plugin/PluginFailureCircuitPolicy.Companion|null[0]
+        final const val DEFAULT_CONSECUTIVE_FAILURE_THRESHOLD // io.dataloom.plugin/PluginFailureCircuitPolicy.Companion.DEFAULT_CONSECUTIVE_FAILURE_THRESHOLD|{}DEFAULT_CONSECUTIVE_FAILURE_THRESHOLD[0]
+            final fun <get-DEFAULT_CONSECUTIVE_FAILURE_THRESHOLD>(): kotlin/Int // io.dataloom.plugin/PluginFailureCircuitPolicy.Companion.DEFAULT_CONSECUTIVE_FAILURE_THRESHOLD.<get-DEFAULT_CONSECUTIVE_FAILURE_THRESHOLD>|<get-DEFAULT_CONSECUTIVE_FAILURE_THRESHOLD>(){}[0]
+    }
 }
 
 final class io.dataloom.plugin/PluginLifecycleStateTracker { // io.dataloom.plugin/PluginLifecycleStateTracker|null[0]
@@ -244,6 +268,7 @@ final class io.dataloom.plugin/PluginLifecycleStateTracker { // io.dataloom.plug
         final fun <get-sdkVersion>(): io.dataloom.api.identifier/RuntimeVersion // io.dataloom.plugin/PluginLifecycleStateTracker.sdkVersion.<get-sdkVersion>|<get-sdkVersion>(){}[0]
 
     final fun compatibilityOf(io.dataloom.api.plugin/PluginId): io.dataloom.plugin/PluginCompatibilityResult // io.dataloom.plugin/PluginLifecycleStateTracker.compatibilityOf|compatibilityOf(io.dataloom.api.plugin.PluginId){}[0]
+    final fun degradeIfActive(io.dataloom.api.plugin/PluginId): kotlin/Boolean // io.dataloom.plugin/PluginLifecycleStateTracker.degradeIfActive|degradeIfActive(io.dataloom.api.plugin.PluginId){}[0]
     final fun stateOf(io.dataloom.api.plugin/PluginId): io.dataloom.api.plugin/PluginLifecycleState // io.dataloom.plugin/PluginLifecycleStateTracker.stateOf|stateOf(io.dataloom.api.plugin.PluginId){}[0]
     final fun transition(io.dataloom.api.plugin/PluginId, io.dataloom.api.plugin/PluginLifecycleState): io.dataloom.plugin/PluginLifecycleTransitionResult // io.dataloom.plugin/PluginLifecycleStateTracker.transition|transition(io.dataloom.api.plugin.PluginId;io.dataloom.api.plugin.PluginLifecycleState){}[0]
     final fun transition(io.dataloom.api.plugin/PluginId, io.dataloom.api.plugin/PluginLifecycleState, io.dataloom.api.security/GrantedCapabilities): io.dataloom.plugin/PluginLifecycleTransitionResult // io.dataloom.plugin/PluginLifecycleStateTracker.transition|transition(io.dataloom.api.plugin.PluginId;io.dataloom.api.plugin.PluginLifecycleState;io.dataloom.api.security.GrantedCapabilities){}[0]
@@ -454,6 +479,7 @@ final object io.dataloom.plugin/PluginCompatibilityValidator { // io.dataloom.pl
 }
 
 final object io.dataloom.plugin/PluginExecutionBoundsOperationalEventBridge { // io.dataloom.plugin/PluginExecutionBoundsOperationalEventBridge|null[0]
+    final fun toDegradedEnvelope(io.dataloom.api.plugin/PluginId, io.dataloom.plugin/PluginExecutionInvocationId, io.dataloom.api.time/DataLoomInstant): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.plugin/PluginExecutionBoundsOperationalEventBridge.toDegradedEnvelope|toDegradedEnvelope(io.dataloom.api.plugin.PluginId;io.dataloom.plugin.PluginExecutionInvocationId;io.dataloom.api.time.DataLoomInstant){}[0]
     final fun toEnvelope(io.dataloom.api.plugin/PluginId, io.dataloom.plugin/PluginExecutionInvocationId, io.dataloom.plugin/PluginExecutionBoundsResult<*>, io.dataloom.api.time/DataLoomInstant): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.plugin/PluginExecutionBoundsOperationalEventBridge.toEnvelope|toEnvelope(io.dataloom.api.plugin.PluginId;io.dataloom.plugin.PluginExecutionInvocationId;io.dataloom.plugin.PluginExecutionBoundsResult<*>;io.dataloom.api.time.DataLoomInstant){}[0]
 }
 

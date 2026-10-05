@@ -5,7 +5,8 @@ import io.dataloom.api.plugin.PluginId
 import io.dataloom.api.plugin.PluginLifecycleState
 import io.dataloom.api.security.GrantedCapabilities
 import io.dataloom.api.security.isAuthorized
-import kotlin.concurrent.Volatile
+import kotlin.concurrent.atomics.AtomicReference
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
 /**
  * Tracks each plugin registered in a [PluginRegistry] through its
@@ -91,9 +92,11 @@ import kotlin.concurrent.Volatile
  * `io.dataloom.core.provider.ProviderLifecycleCoordinator` documents for
  * itself. [stateOf] and [compatibilityOf] are safe to call from any thread
  * concurrently with a transition and observe the latest completed
- * transition: each plugin's state lives in a volatile cell, and the set of
+ * transition: each plugin's state lives in an atomic cell, and the set of
  * tracked plugins never changes after construction. This is what lets
  * [PluginExecutionBoundsEnforcer] consult state from invocation threads.
+ * [degradeIfActive] is the one concurrent-safe mutator: a compare-and-set that
+ * never overwrites a state a manual transition has already written.
  *
  * @param registry the plugin registry whose registered plugins this tracker
  *   tracks lifecycle state for.
@@ -105,9 +108,16 @@ public class PluginLifecycleStateTracker(
     public val sdkVersion: RuntimeVersion,
 ) {
 
+    @OptIn(ExperimentalAtomicApi::class)
     private class StateCell(initial: PluginLifecycleState) {
-        @Volatile
-        var state: PluginLifecycleState = initial
+        private val ref = AtomicReference(initial)
+
+        var state: PluginLifecycleState
+            get() = ref.load()
+            set(value) = ref.store(value)
+
+        fun compareAndSet(expected: PluginLifecycleState, target: PluginLifecycleState): Boolean =
+            ref.compareAndSet(expected, target)
     }
 
     private val cells: Map<PluginId, StateCell> =
@@ -120,6 +130,28 @@ public class PluginLifecycleStateTracker(
      *   [registry].
      */
     public fun stateOf(id: PluginId): PluginLifecycleState = cellOf(id).state
+
+    /**
+     * Moves [id] from [PluginLifecycleState.ACTIVE] to
+     * [PluginLifecycleState.DEGRADED] as an automatic, system-initiated fault
+     * response, and returns `true` only if this call performed that change.
+     *
+     * This is a compare-and-set on the plugin's state cell, so it is safe to
+     * call from invocation threads concurrently with a caller-serialized
+     * [transition]: if the state is anything other than `ACTIVE` at the
+     * moment of the swap (a manual transition already ran, or another caller
+     * already degraded the plugin), it is a no-op returning `false` and never
+     * overwrites the newer state. No authorizer is consulted, no permission or
+     * dependency check applies (none applies to a `DEGRADED` target), and no
+     * audit record is produced here; the caller that observes `true` owns
+     * recording the change. Returning to `ACTIVE` stays a manual, authorized
+     * [transition].
+     *
+     * @throws IllegalArgumentException if [id] is not registered in
+     *   [registry].
+     */
+    public fun degradeIfActive(id: PluginId): Boolean =
+        cellOf(id).compareAndSet(PluginLifecycleState.ACTIVE, PluginLifecycleState.DEGRADED)
 
     /**
      * Checks [id]'s declared SDK range against [sdkVersion] without changing

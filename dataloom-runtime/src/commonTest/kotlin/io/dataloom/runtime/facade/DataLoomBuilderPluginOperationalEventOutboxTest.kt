@@ -48,6 +48,7 @@ import io.dataloom.api.transport.PullChangesResult
 import io.dataloom.api.transport.PushChangesRequest
 import io.dataloom.api.transport.TransportProvider
 import io.dataloom.plugin.PluginExecutionBoundsResult
+import io.dataloom.plugin.PluginFailureCircuitPolicy
 import io.dataloom.plugin.PluginLifecycleAdministrationAuthorizationDecision
 import io.dataloom.plugin.PluginLifecycleAdministrationAuthorizer
 import io.dataloom.plugin.PluginLifecycleAdministrationCommandId
@@ -271,6 +272,47 @@ class DataLoomBuilderPluginOperationalEventOutboxTest {
     }
 
     @Test
+    fun theAutomaticDegradationIsRecordedAfterTheFailureThatCausedItWithThePluginIdOnly() = runTest {
+        val store = InMemoryOutboxStore()
+        val engine = engine(outboxStore = store, failureCircuit = PluginFailureCircuitPolicy(2))
+        activate(engine)
+        val before = pending(store).size
+
+        engine.execute<Unit>(pluginId) { error("boom-secret") }
+        engine.execute<Unit>(pluginId) { error("boom-secret") }
+        engine.execute(pluginId) { "refused" }
+
+        val recorded = pending(store).drop(before)
+        assertEquals(
+            listOf(
+                "dataloom.plugin.execution.bounds.failed",
+                "dataloom.plugin.execution.bounds.failed",
+                "dataloom.plugin.failure.circuit.degraded",
+                "dataloom.plugin.execution.bounds.not_active",
+            ),
+            recorded.map { it.envelope.type.value },
+        )
+        val tripping = recorded[1].envelope
+        val degraded = recorded[2].envelope
+        assertEquals(tripping.correlationId, degraded.correlationId)
+        assertEquals(setOf("request.pluginId"), degraded.attributes.entries.keys)
+        assertFalse(degraded.toString().contains("boom-secret"))
+    }
+
+    @Test
+    fun noDegradationEventIsRecordedWithoutAFailureCircuit() = runTest {
+        val store = InMemoryOutboxStore()
+        val engine = engine(outboxStore = store)
+        activate(engine)
+
+        repeat(10) { engine.execute<Unit>(pluginId) { error("boom") } }
+
+        assertFalse(
+            pending(store).any { it.envelope.type.value == "dataloom.plugin.failure.circuit.degraded" },
+        )
+    }
+
+    @Test
     fun pluginOutputNeverReachesTheStoredEnvelope() = runTest {
         val store = InMemoryOutboxStore()
         val engine = engine(outboxStore = store)
@@ -315,9 +357,10 @@ class DataLoomBuilderPluginOperationalEventOutboxTest {
         authorizer: PluginLifecycleAdministrationAuthorizer = RecordingAuthorizer(),
         plugin: DataLoomPlugin = plugin(),
         plugins: List<DataLoomPlugin> = listOf(plugin),
+        failureCircuit: PluginFailureCircuitPolicy? = null,
     ): DataLoomPluginEngine {
         val builder = builder(clock)
-            .pluginConfiguration(DataLoomPluginSpec(plugins, authorizer))
+            .pluginConfiguration(DataLoomPluginSpec(plugins, authorizer, failureCircuit))
         if (outboxStore != null) {
             builder.pluginOperationalEventOutboxConfiguration(
                 if (scope == null) {

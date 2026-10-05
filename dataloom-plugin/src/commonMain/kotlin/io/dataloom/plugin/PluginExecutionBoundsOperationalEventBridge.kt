@@ -91,6 +91,7 @@ public object PluginExecutionBoundsOperationalEventBridge {
     private const val PAYLOAD_TYPE_VALUE: String = "dataloom.plugin.execution.bounds.event"
     private const val PAYLOAD_ENCODING_VALUE: String = "none"
     private const val MAX_OPERATIONAL_TOKEN_LENGTH: Int = 128
+    private const val DEGRADED_EVENT_TYPE_VALUE: String = "dataloom.plugin.failure.circuit.degraded"
 
     private val SOURCE: OperationalEventSource = OperationalEventSource(SOURCE_VALUE)
     private val ENVELOPE_SCHEMA_VERSION: OperationalSchemaVersion = OperationalSchemaVersion(1)
@@ -114,11 +115,52 @@ public object PluginExecutionBoundsOperationalEventBridge {
         result: PluginExecutionBoundsResult<*>,
         occurredAt: DataLoomInstant,
     ): OperationalEventEnvelope {
-        val attributes: RedactedAttributes =
-            redactor.redact(ClassifiedData.of(classifiedAttributesFor(pluginId, result))).attributes
+        return envelope(
+            id = operationalEventId("plugin.execution.", invocationId.value),
+            type = eventTypeValue(result),
+            invocationId = invocationId,
+            occurredAt = occurredAt,
+            attributes = classifiedAttributesFor(pluginId, result),
+        )
+    }
+
+    /**
+     * Maps the automatic `ACTIVE` -> `DEGRADED` transition a
+     * [PluginFailureCircuitPolicy] performed for [pluginId] to an
+     * [OperationalEventEnvelope] of type `dataloom.plugin.failure.circuit.degraded`.
+     *
+     * It is correlated with the invocation whose failure tripped the circuit
+     * ([invocationId], the same id its own [toEnvelope] event uses) but has a
+     * distinct event id, so both are appended. Only the plugin id is recorded:
+     * no failure count, threshold, cause or output.
+     *
+     * Throws like [toEnvelope] and must be swallowed the same way.
+     */
+    public fun toDegradedEnvelope(
+        pluginId: PluginId,
+        invocationId: PluginExecutionInvocationId,
+        occurredAt: DataLoomInstant,
+    ): OperationalEventEnvelope = envelope(
+        id = operationalEventId("plugin.circuit.", invocationId.value),
+        type = DEGRADED_EVENT_TYPE_VALUE,
+        invocationId = invocationId,
+        occurredAt = occurredAt,
+        attributes = linkedMapOf(
+            "request.pluginId" to ClassifiedDataValue(pluginId.value, DataClassification.INTERNAL),
+        ),
+    )
+
+    private fun envelope(
+        id: OperationalEventId,
+        type: String,
+        invocationId: PluginExecutionInvocationId,
+        occurredAt: DataLoomInstant,
+        attributes: Map<String, ClassifiedDataValue>,
+    ): OperationalEventEnvelope {
+        val redacted: RedactedAttributes = redactor.redact(ClassifiedData.of(attributes)).attributes
         return OperationalEventEnvelope(
-            id = operationalEventId(invocationId.value),
-            type = OperationalEventType(eventTypeValue(result)),
+            id = id,
+            type = OperationalEventType(type),
             source = SOURCE,
             category = OperationalEventCategory.AUDIT,
             schemaVersion = ENVELOPE_SCHEMA_VERSION,
@@ -131,15 +173,15 @@ public object PluginExecutionBoundsOperationalEventBridge {
                 classification = DataClassification.INTERNAL,
                 encodedSizeBytes = null,
             ),
-            attributes = attributes,
+            attributes = redacted,
         )
     }
 
-    private fun operationalEventId(rawInvocationId: String): OperationalEventId {
+    private fun operationalEventId(prefix: String, rawInvocationId: String): OperationalEventId {
         val sanitized = rawInvocationId
             .map { character -> if (isAllowedOperationalTokenCharacter(character)) character else '_' }
             .joinToString(separator = "")
-        val combined = "plugin.execution.$sanitized".take(MAX_OPERATIONAL_TOKEN_LENGTH)
+        val combined = "$prefix$sanitized".take(MAX_OPERATIONAL_TOKEN_LENGTH)
         return OperationalEventId(combined.ifEmpty { "unknown" })
     }
 

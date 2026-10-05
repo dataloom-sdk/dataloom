@@ -3825,8 +3825,10 @@ final class io.dataloom.runtime.facade/DataLoomPluginOperationalEventOutboxSpec 
 }
 
 final class io.dataloom.runtime.facade/DataLoomPluginSpec { // io.dataloom.runtime.facade/DataLoomPluginSpec|null[0]
-    constructor <init>(kotlin.collections/List<io.dataloom.api.plugin/DataLoomPlugin>, io.dataloom.plugin/PluginLifecycleAdministrationAuthorizer) // io.dataloom.runtime.facade/DataLoomPluginSpec.<init>|<init>(kotlin.collections.List<io.dataloom.api.plugin.DataLoomPlugin>;io.dataloom.plugin.PluginLifecycleAdministrationAuthorizer){}[0]
+    constructor <init>(kotlin.collections/List<io.dataloom.api.plugin/DataLoomPlugin>, io.dataloom.plugin/PluginLifecycleAdministrationAuthorizer, io.dataloom.plugin/PluginFailureCircuitPolicy? = ...) // io.dataloom.runtime.facade/DataLoomPluginSpec.<init>|<init>(kotlin.collections.List<io.dataloom.api.plugin.DataLoomPlugin>;io.dataloom.plugin.PluginLifecycleAdministrationAuthorizer;io.dataloom.plugin.PluginFailureCircuitPolicy?){}[0]
 
+    final val failureCircuit // io.dataloom.runtime.facade/DataLoomPluginSpec.failureCircuit|{}failureCircuit[0]
+        final fun <get-failureCircuit>(): io.dataloom.plugin/PluginFailureCircuitPolicy? // io.dataloom.runtime.facade/DataLoomPluginSpec.failureCircuit.<get-failureCircuit>|<get-failureCircuit>(){}[0]
     final val lifecycleAuthorizer // io.dataloom.runtime.facade/DataLoomPluginSpec.lifecycleAuthorizer|{}lifecycleAuthorizer[0]
         final fun <get-lifecycleAuthorizer>(): io.dataloom.plugin/PluginLifecycleAdministrationAuthorizer // io.dataloom.runtime.facade/DataLoomPluginSpec.lifecycleAuthorizer.<get-lifecycleAuthorizer>|<get-lifecycleAuthorizer>(){}[0]
     final val plugins // io.dataloom.runtime.facade/DataLoomPluginSpec.plugins|{}plugins[0]

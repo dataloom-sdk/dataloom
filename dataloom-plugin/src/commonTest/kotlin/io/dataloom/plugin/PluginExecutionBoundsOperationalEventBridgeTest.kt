@@ -174,6 +174,28 @@ class PluginExecutionBoundsOperationalEventBridgeTest {
     }
 
     @Test
+    fun `the degraded envelope records only the redacted plugin id under its own event type`() {
+        val envelope = PluginExecutionBoundsOperationalEventBridge.toDegradedEnvelope(pluginId, invocationId, occurredAt)
+
+        assertEquals("dataloom.plugin.failure.circuit.degraded", envelope.type.value)
+        assertEquals(OperationalEventCategory.AUDIT, envelope.category)
+        assertEquals("dataloom.plugin.execution.bounds", envelope.source.value)
+        assertEquals(setOf("request.pluginId"), envelope.attributes.entries.keys)
+        assertEquals("[REDACTED]", envelope.attributes["request.pluginId"])
+        assertEquals(5_000L, envelope.occurredAt.epochMilliseconds)
+    }
+
+    @Test
+    fun `the degraded envelope correlates with its invocation but has a distinct event id`() {
+        val degraded = PluginExecutionBoundsOperationalEventBridge.toDegradedEnvelope(pluginId, invocationId, occurredAt)
+        val outcome = bridge(failed)
+
+        assertEquals(outcome.correlationId, degraded.correlationId)
+        assertEquals("plugin.circuit.acme.sync.5000.1", degraded.id.value)
+        assertTrue(outcome.id != degraded.id)
+    }
+
+    @Test
     fun `a Failed cause message and type never reach the envelope`() {
         class SecretLeakException(message: String) : Exception(message)
 

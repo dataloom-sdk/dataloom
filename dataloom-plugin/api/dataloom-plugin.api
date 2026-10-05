@@ -55,12 +55,14 @@ public final class io/dataloom/plugin/PluginDependencyIssueReason : java/lang/En
 }
 
 public final class io/dataloom/plugin/PluginExecutionBoundsEnforcer {
-	public fun <init> (Lio/dataloom/plugin/PluginLifecycleStateTracker;)V
+	public fun <init> (Lio/dataloom/plugin/PluginLifecycleStateTracker;Lio/dataloom/plugin/PluginFailureCircuitPolicy;)V
+	public synthetic fun <init> (Lio/dataloom/plugin/PluginLifecycleStateTracker;Lio/dataloom/plugin/PluginFailureCircuitPolicy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun execute-dkBeV0E (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/dataloom/plugin/PluginExecutionBoundsOperationalEventBridge {
 	public static final field INSTANCE Lio/dataloom/plugin/PluginExecutionBoundsOperationalEventBridge;
+	public final fun toDegradedEnvelope-PpsgAxs (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/api/operational/OperationalEventEnvelope;
 	public final fun toEnvelope-dKqjmPQ (Ljava/lang/String;Ljava/lang/String;Lio/dataloom/plugin/PluginExecutionBoundsResult;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/api/operational/OperationalEventEnvelope;
 }
 
@@ -92,13 +94,16 @@ public final class io/dataloom/plugin/PluginExecutionBoundsResult$ConcurrencyLim
 }
 
 public final class io/dataloom/plugin/PluginExecutionBoundsResult$Failed : io/dataloom/plugin/PluginExecutionBoundsResult {
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Exception;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Exception;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Exception;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-zTuMttM ()Ljava/lang/String;
 	public final fun component2 ()Ljava/lang/Exception;
-	public final fun copy-fMNmWBQ (Ljava/lang/String;Ljava/lang/Exception;)Lio/dataloom/plugin/PluginExecutionBoundsResult$Failed;
-	public static synthetic fun copy-fMNmWBQ$default (Lio/dataloom/plugin/PluginExecutionBoundsResult$Failed;Ljava/lang/String;Ljava/lang/Exception;ILjava/lang/Object;)Lio/dataloom/plugin/PluginExecutionBoundsResult$Failed;
+	public final fun component3 ()Z
+	public final fun copy-dkBeV0E (Ljava/lang/String;Ljava/lang/Exception;Z)Lio/dataloom/plugin/PluginExecutionBoundsResult$Failed;
+	public static synthetic fun copy-dkBeV0E$default (Lio/dataloom/plugin/PluginExecutionBoundsResult$Failed;Ljava/lang/String;Ljava/lang/Exception;ZILjava/lang/Object;)Lio/dataloom/plugin/PluginExecutionBoundsResult$Failed;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCause ()Ljava/lang/Exception;
+	public final fun getDegradedPlugin ()Z
 	public final fun getPluginId-zTuMttM ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
@@ -118,12 +123,15 @@ public final class io/dataloom/plugin/PluginExecutionBoundsResult$NotActive : io
 }
 
 public final class io/dataloom/plugin/PluginExecutionBoundsResult$TimedOut : io/dataloom/plugin/PluginExecutionBoundsResult {
-	public synthetic fun <init> (Ljava/lang/String;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;JZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;JZLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-zTuMttM ()Ljava/lang/String;
 	public final fun component2 ()J
-	public final fun copy-fMNmWBQ (Ljava/lang/String;J)Lio/dataloom/plugin/PluginExecutionBoundsResult$TimedOut;
-	public static synthetic fun copy-fMNmWBQ$default (Lio/dataloom/plugin/PluginExecutionBoundsResult$TimedOut;Ljava/lang/String;JILjava/lang/Object;)Lio/dataloom/plugin/PluginExecutionBoundsResult$TimedOut;
+	public final fun component3 ()Z
+	public final fun copy-dkBeV0E (Ljava/lang/String;JZ)Lio/dataloom/plugin/PluginExecutionBoundsResult$TimedOut;
+	public static synthetic fun copy-dkBeV0E$default (Lio/dataloom/plugin/PluginExecutionBoundsResult$TimedOut;Ljava/lang/String;JZILjava/lang/Object;)Lio/dataloom/plugin/PluginExecutionBoundsResult$TimedOut;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDegradedPlugin ()Z
 	public final fun getMaximumExecutionMillis ()J
 	public final fun getPluginId-zTuMttM ()Ljava/lang/String;
 	public fun hashCode ()I
@@ -142,6 +150,24 @@ public final class io/dataloom/plugin/PluginExecutionInvocationId {
 	public fun toString ()Ljava/lang/String;
 	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
 	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class io/dataloom/plugin/PluginFailureCircuitPolicy {
+	public static final field Companion Lio/dataloom/plugin/PluginFailureCircuitPolicy$Companion;
+	public static final field DEFAULT_CONSECUTIVE_FAILURE_THRESHOLD I
+	public fun <init> ()V
+	public fun <init> (I)V
+	public synthetic fun <init> (IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun copy (I)Lio/dataloom/plugin/PluginFailureCircuitPolicy;
+	public static synthetic fun copy$default (Lio/dataloom/plugin/PluginFailureCircuitPolicy;IILjava/lang/Object;)Lio/dataloom/plugin/PluginFailureCircuitPolicy;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConsecutiveFailureThreshold ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/plugin/PluginFailureCircuitPolicy$Companion {
 }
 
 public final class io/dataloom/plugin/PluginIncompatibilityReason : java/lang/Enum {
@@ -228,6 +254,7 @@ public final class io/dataloom/plugin/PluginLifecycleAdministrationReason {
 public final class io/dataloom/plugin/PluginLifecycleStateTracker {
 	public synthetic fun <init> (Lio/dataloom/plugin/PluginRegistry;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun compatibilityOf-WWrLh4Q (Ljava/lang/String;)Lio/dataloom/plugin/PluginCompatibilityResult;
+	public final fun degradeIfActive-WWrLh4Q (Ljava/lang/String;)Z
 	public final fun getRegistry ()Lio/dataloom/plugin/PluginRegistry;
 	public final fun getSdkVersion-bVFqHQY ()Ljava/lang/String;
 	public final fun stateOf-WWrLh4Q (Ljava/lang/String;)Lio/dataloom/api/plugin/PluginLifecycleState;

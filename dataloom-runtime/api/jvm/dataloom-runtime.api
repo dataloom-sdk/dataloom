@@ -1048,7 +1048,9 @@ public final class io/dataloom/runtime/facade/DataLoomPluginOperationalEventOutb
 }
 
 public final class io/dataloom/runtime/facade/DataLoomPluginSpec {
-	public fun <init> (Ljava/util/List;Lio/dataloom/plugin/PluginLifecycleAdministrationAuthorizer;)V
+	public fun <init> (Ljava/util/List;Lio/dataloom/plugin/PluginLifecycleAdministrationAuthorizer;Lio/dataloom/plugin/PluginFailureCircuitPolicy;)V
+	public synthetic fun <init> (Ljava/util/List;Lio/dataloom/plugin/PluginLifecycleAdministrationAuthorizer;Lio/dataloom/plugin/PluginFailureCircuitPolicy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getFailureCircuit ()Lio/dataloom/plugin/PluginFailureCircuitPolicy;
 	public final fun getLifecycleAuthorizer ()Lio/dataloom/plugin/PluginLifecycleAdministrationAuthorizer;
 	public final fun getPlugins ()Ljava/util/List;
 	public fun toString ()Ljava/lang/String;

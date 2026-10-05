@@ -542,8 +542,48 @@ Deliberate limits:
 - On the JVM, coroutine stack-trace recovery may return a copy of the thrown
   exception (same type and message), so compare `cause` by type and message,
   not identity.
-- Failures are not counted and never change lifecycle state; see the open item
-  below.
+- On its own a failure never changes lifecycle state; repeated failures do only
+  under the opt-in circuit below.
+
+### Failure circuit (opt-in automatic degradation)
+
+`PluginExecutionBoundsEnforcer(lifecycle, failureCircuit)` takes an optional
+`PluginFailureCircuitPolicy(consecutiveFailureThreshold)` (default threshold
+`DEFAULT_CONSECUTIVE_FAILURE_THRESHOLD` = 5; must be positive). With no policy,
+which is the default, nothing below runs and behavior is unchanged. In the
+facade it is `DataLoomPluginSpec.failureCircuit`.
+
+| Result | Effect on the per-plugin consecutive-failure counter |
+| --- | --- |
+| `Failed`, `TimedOut` | +1 (a plugin fault) |
+| `Completed` | reset to 0 |
+| `ConcurrencyLimitExceeded`, `NotActive` | none: back-pressure and gating, the operation never ran |
+| caller cancellation | none: it unwinds, no result |
+
+When the count reaches the threshold the counter is reset and the plugin moves
+`ACTIVE` -> `DEGRADED`, which already refuses new invocations. The result that
+tripped it carries `degradedPlugin = true` (exactly one per trip).
+
+- **Concurrency.** The counter is an atomic per plugin. The transition is
+  `PluginLifecycleStateTracker.degradeIfActive(id)`, a compare-and-set on the
+  tracker's (now atomic) state cell: if a manual transition, or another
+  invocation's failure, already changed the state it is a no-op and never
+  overwrites the newer state. This is what lets the concurrent `execute` path
+  coexist with the caller-serialized `transition`. A failure that finishes
+  while the plugin is no longer `ACTIVE` (in-flight work draining) is not
+  counted. Being lock-free, the count can be off by at most the number of
+  invocations in flight at the moment of a trip.
+- **Recovery is manual only.** Return to `ACTIVE` is the existing authorized
+  `transition` (its permission and dependency checks re-run). There is no
+  time-based or probing auto-recovery; the counter is reset at trip time so a
+  recovered plugin starts afresh.
+- **No authorizer for the automatic step.** It is a system fault response that
+  only removes capability; every path that adds capability stays authorized.
+- **Audit.** The facade records an extra event of type
+  `dataloom.plugin.failure.circuit.degraded` (via
+  `PluginExecutionBoundsOperationalEventBridge.toDegradedEnvelope`) after the
+  invocation's own `failed`/`timed_out` event, correlated to it by invocation
+  id, with only the redacted plugin id: no count, threshold or cause.
 
 ### What this does not do
 
@@ -554,11 +594,12 @@ Deliberate limits:
   Decision D13 resolved it: the enforcer is now bound to the tracker, refuses
   new invocations unless the plugin is `ACTIVE`, and lets in-flight invocations
   drain. See [Lifecycle gating of execution (D13)](#lifecycle-gating-of-execution-d13).
-- **Does not count failures or move a plugin to `DEGRADED`** (superseded in
-  part 2026-10-05: ordinary exceptions are now contained, see
-  [Failure isolation](#failure-isolation)). Each failure is reported once, to
-  its own caller; there is no failure-count circuit, automatic lifecycle
-  transition, or recovery policy.
+- **Does not count failures or move a plugin to `DEGRADED` unless a
+  `PluginFailureCircuitPolicy` is supplied** (ordinary exceptions are contained,
+  see [Failure isolation](#failure-isolation); the opt-in circuit is described
+  in [Failure circuit](#failure-circuit-opt-in-automatic-degradation)). With no
+  policy each failure is reported once, to its own caller. There is no
+  time-based auto-recovery.
 - **Does not audit timeout or concurrency-rejection events (superseded
   2026-09-20).** `PluginExecutionBoundsOperationalEventBridge` now bridges
   every `PluginExecutionBoundsResult`; see
@@ -601,14 +642,13 @@ shipped, see above):
   pipeline). Still genuinely blocked, unchanged.
 - **The certification kit** — its own unstarted design surface (what a
   repeatable certification kit emits as evidence).
-- **Failure-count circuit to `DEGRADED` and a recovery policy.** Concurrency
-  bulkhead, timeout, and containment of thrown exceptions have shipped (see
-  [Failure isolation](#failure-isolation)); what remains is counting failures
-  per plugin, automatically moving a repeatedly failing plugin to `DEGRADED`
-  (which already refuses new invocations), and a policy for returning it to
-  `ACTIVE`. Open design questions: the tracker's `transition` is
-  caller-serialized while `execute` is concurrent; whether `TimedOut` counts;
-  and whether recovery is manual (an authorized transition) or time-based.
+- **Failure isolation/bulkheading** is now complete apart from automatic
+  recovery: concurrency bulkhead, timeout, containment of thrown exceptions,
+  and the opt-in failure circuit have shipped (see
+  [Failure isolation](#failure-isolation) and
+  [Failure circuit](#failure-circuit-opt-in-automatic-degradation)). Only
+  time-based or probing recovery of a degraded plugin (today it is a manual,
+  authorized transition) and a facade/health view of circuit state remain.
 - **A reference non-provider plugin** — demonstrating the full lifecycle
   end to end needs a real invocation call site (hook-point dispatch) to
   exist first.
