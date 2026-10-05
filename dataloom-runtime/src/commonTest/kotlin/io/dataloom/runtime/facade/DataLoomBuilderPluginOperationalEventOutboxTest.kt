@@ -254,16 +254,20 @@ class DataLoomBuilderPluginOperationalEventOutboxTest {
     }
 
     @Test
-    fun anOperationThatThrowsProducesNoResultAndNoEvent() = runTest {
+    fun anOperationThatThrowsIsRecordedAsFailedWithoutItsMessageAndAnUnregisteredPluginRecordsNothing() = runTest {
         val store = InMemoryOutboxStore()
         val engine = engine(outboxStore = store)
         activate(engine)
         val before = pending(store).size
 
-        assertFailsWith<IllegalStateException> { engine.execute(pluginId) { error("boom-secret") } }
+        val failed = engine.execute<Unit>(pluginId) { error("boom-secret") }
         assertFailsWith<IllegalArgumentException> { engine.execute(PluginId("missing")) { "x" } }
 
-        assertEquals(before, pending(store).size)
+        assertIs<PluginExecutionBoundsResult.Failed>(failed)
+        val recorded = pending(store)
+        assertEquals(before + 1, recorded.size)
+        assertEquals("dataloom.plugin.execution.bounds.failed", recorded.last().envelope.type.value)
+        assertFalse(recorded.last().envelope.toString().contains("boom-secret"))
     }
 
     @Test

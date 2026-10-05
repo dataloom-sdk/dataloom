@@ -77,8 +77,11 @@ public interface DataLoomPluginEngine {
     /**
      * Runs [operation] under [id]'s declared execution bounds: cancelled after
      * its maximum execution time, and rejected without running when the plugin
-     * is already at its concurrency ceiling. Neither outcome throws; see
-     * [PluginExecutionBoundsResult].
+     * is already at its concurrency ceiling. An ordinary exception thrown by
+     * [operation] is contained as [PluginExecutionBoundsResult.Failed] and its
+     * concurrency slot is freed. None of these outcomes throws; see
+     * [PluginExecutionBoundsResult]. A `kotlin.Error` and cancellation of the
+     * caller still propagate.
      *
      * A plugin that is not [PluginLifecycleState.ACTIVE] when this call starts
      * is refused with [PluginExecutionBoundsResult.NotActive] and

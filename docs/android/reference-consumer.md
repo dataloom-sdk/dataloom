@@ -131,6 +131,41 @@ of the fourth test's Android + offline-first coverage, and now matches the
 iOS counterpart's (`IosReferenceConsumerCacheFirstQueueTest`, `#338`) same
 `Succeeded` bar; see "What remains open" below for what remains.
 
+### Asset transfer (`#97`, `AndroidReferenceConsumerAssetTransferInstrumentedTest`)
+
+`buildReferenceDataLoom(assetTransfer = ...)` wires
+`DataLoomBuilder.assetTransferConfiguration` with
+`buildReferenceAssetTransfer`: the session store is a
+`DurableAssetTransferSessionStore` over a real Room-backed
+`RoomDurableStateStore`, and the provider is `FileAssetProvider` (the JVM
+reference provider `dataloom-assets` ships; Android consumes its `jvmMain`
+variant because `dataloom-assets` has no Android source set). The
+instrumented test (`src/androidTest`, executed on a real `Pixel_8_Pro` AVD
+via `connectedDebugAndroidTest`) uploads a 5,000-byte file as five
+1,024-byte chunks through a real `DataLoomBuilder`-assembled engine
+(file-backed `FileAssetSource`), shuts that DataLoom and its Room database
+down, opens a fresh Room database over the same file, reads the session back
+(`COMPLETED`, same revision and whole-object digest), then downloads through
+a second DataLoom into a `FileAssetSink` and asserts the promoted file is
+byte-identical. Not proven here: a real network transport (the provider is
+in-process and plays the remote side; `KtorAssetProvider` against a real
+server on Android is a separate slice), an *interrupted* transfer resuming
+after restart on the emulator, quota/cancellation/cleanup on the emulator,
+and Android API 21-25. **API 21-25 is an unresolved product gap, not just a
+test limitation:** `FileAssetProvider` is built on `java.nio.file`, which
+Android provides only from API 26, while the SDK's `minSdk` is 21, so there is
+currently no file-backed asset provider for API 21-25 (lint flagged
+`File#toPath` as `NewApi` in CI). The helper `buildReferenceFileAssetProvider`
+is therefore annotated `@RequiresApi(26)` and the instrumented test
+`@SdkSuppress(minSdkVersion = 26)`, with no lint baseline or `NewApi`
+suppression; a fix needs either a non-`java.nio` file provider or a decision
+to raise the asset module's effective floor. Observed while writing the test:
+`FileAssetProvider` keeps its committed-asset index in memory, so a fresh
+provider instance over the same directory reports the asset as
+`ASSET_NOT_FOUND`; the test therefore restarts the *client* (session store,
+engine) and keeps one provider instance, which models a server that outlives
+the client.
+
 ## Transport is intentionally illustrative
 
 DataLoom does not ship a default transport — endpoint selection,
@@ -210,8 +245,19 @@ managed-device tests.
   strategies eligible for durable admission (remote-first, hybrid) remain
   unexercised at this layer on either platform; and retry, circuit-breaker,
   and conflict-detection behavior during queue replay itself remain
-  unproven even for the two slices covered — each proven entry always
-  succeeds on its first attempt.
+  unproven for the slices above — each of those proven entries always
+  succeeds on its first attempt. Retry is now proven separately, through a
+  real `DataLoomBuilder`-assembled queue worker over real Room, by
+  `RetryQueueRobolectricTest` (offline-first durable admission; first replay
+  attempt fails with a recoverable transport error, is rescheduled with the
+  retry attempt persisted and the `availableAt` honored by the next `acquire`
+  under real wall-clock time, then completes on a later attempt; a second
+  scenario ends `FAILED` once the policy's attempt limit is exceeded). The
+  builder-assembled queue worker still replays through the unprotected
+  execution coordinator, so a transport circuit breaker is not exercised
+  through it; that composition is proven only by the hand-assembled
+  `ComposedQueueCircuitRobolectricTest`. Conflict detection during replay
+  remains unproven.
 - Native Android and KMP Android+iOS consumers resolving staged/published
   artifacts rather than project includes — the same bar
   `runtime-external-consumer` also does not yet meet for the JVM path.

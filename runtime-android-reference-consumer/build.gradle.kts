@@ -82,6 +82,7 @@ dependencies {
     implementation(project(":dataloom-provider-api"))
     implementation(project(":dataloom-api"))
     implementation(project(":dataloom-android"))
+    implementation(project(":dataloom-assets"))
     implementation(libs.kotlinx.coroutines.core)
 
     testImplementation(kotlin("test-junit"))

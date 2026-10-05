@@ -53,19 +53,19 @@ public value class PluginExecutionInvocationId(
  * ## Every outcome is bridged
  *
  * [PluginExecutionBoundsResult.Completed], [PluginExecutionBoundsResult.TimedOut],
- * [PluginExecutionBoundsResult.ConcurrencyLimitExceeded], and
- * [PluginExecutionBoundsResult.NotActive] each map to their own event type, all
- * in category [OperationalEventCategory.AUDIT]. Refusals and timeouts are the
+ * [PluginExecutionBoundsResult.ConcurrencyLimitExceeded],
+ * [PluginExecutionBoundsResult.NotActive], and [PluginExecutionBoundsResult.Failed]
+ * each map to their own event type, all in category [OperationalEventCategory.AUDIT]. Refusals and timeouts are the
  * outcomes an operator most needs, but "which plugin ran and when" is
  * equally auditable, so completions are not dropped.
  *
  * ## Never the plugin's output or failures
  *
  * The invocation's returned value (`Completed.value`) is never read: it is
- * plugin-produced content of unknown type and sensitivity. An exception thrown
- * by the operation is not a [PluginExecutionBoundsResult] at all, so it is
- * never bridged either, and no exception message can reach an envelope. Only
- * stable identifiers and closed values are recorded:
+ * plugin-produced content of unknown type and sensitivity. Likewise
+ * `Failed.cause` is never read, so neither an exception message nor its type
+ * can reach an envelope: a failure is recorded as the event type alone, next
+ * to the plugin id. Only stable identifiers and closed values are recorded:
  *
  * - `request.pluginId`: `INTERNAL`, the same treatment as the lifecycle bridge.
  * - `result.state` (the observed [io.dataloom.api.plugin.PluginLifecycleState]
@@ -159,6 +159,7 @@ public object PluginExecutionBoundsOperationalEventBridge {
         is PluginExecutionBoundsResult.ConcurrencyLimitExceeded ->
             "dataloom.plugin.execution.bounds.concurrency_limit_exceeded"
         is PluginExecutionBoundsResult.NotActive -> "dataloom.plugin.execution.bounds.not_active"
+        is PluginExecutionBoundsResult.Failed -> "dataloom.plugin.execution.bounds.failed"
     }
 
     private fun classifiedAttributesFor(
@@ -178,6 +179,8 @@ public object PluginExecutionBoundsOperationalEventBridge {
                 attributes["result.maximumConcurrentInvocations"] =
                     ClassifiedDataValue(result.maximumConcurrentInvocations.toString(), DataClassification.PUBLIC)
             }
+            // Failed.cause is deliberately never read: its message may carry plugin-produced content.
+            is PluginExecutionBoundsResult.Failed -> Unit
             is PluginExecutionBoundsResult.NotActive -> {
                 attributes["result.state"] = ClassifiedDataValue(result.state.name, DataClassification.PUBLIC)
             }

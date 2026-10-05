@@ -192,6 +192,23 @@ internal object AppleFileAssetIo {
         info.st_size.convert()
     }
 
+    /**
+     * The whole content of the file at [path]. Intended for small, bounded
+     * files (the caller checks [sizeOfPath] against its own limit first); it
+     * allocates the file's full size.
+     */
+    fun readAllBytes(path: String): ByteArray {
+        val size = sizeOfPath(path)
+        val bytes = ByteArray(size.toInt())
+        val descriptor = openReadOnly(path)
+        try {
+            readFully(descriptor, 0L, bytes, 0, bytes.size)
+        } finally {
+            closeDescriptorQuietly(descriptor)
+        }
+        return bytes
+    }
+
     /** Size in bytes of the already-open file [descriptor]. */
     fun sizeOfDescriptor(descriptor: Int): Long = memScoped {
         val info = alloc<stat>()
