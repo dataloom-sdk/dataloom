@@ -315,6 +315,59 @@ actually executed; a macOS CI run is the first time they will. This mirrors
 exactly the boundary the original JVM/Android slice's validation section
 already draws for that side.
 
+## Addendum (2026-10-05): the committed index survives a restart
+
+### D33: a per-version `manifest.dlc` commit marker; lazy, fail-closed index rebuild
+
+**The defect this closes.** `FileAssetProvider` and `AppleFileAssetProvider`
+kept their committed-asset index only in memory. The bytes were durable under
+`committed/<safe assetId>/<version>/asset.bin`, but nothing persisted the
+manifest or each chunk's stored offset and length, so a fresh instance over the
+same directory answered `ASSET_NOT_FOUND` for every previously committed asset:
+the "file-backed restart-recovery" claim held for bytes but not for service.
+
+**Decision.**
+- `completeUpload` writes `manifest.dlc` beside `asset.bin` with the same
+  temp-then-rename discipline, *after* the asset file is promoted; the manifest
+  file is the commit marker. Any stale manifest is removed first, so a crash
+  between the two steps leaves an `asset.bin` with no manifest (skipped on
+  restart), never a new `asset.bin` under an old manifest. A manifest-write
+  failure deletes the just-promoted `asset.bin` and reports `PROVIDER_REJECTED`.
+- The file is a small versioned text record
+  (`DATALOOM_FILE_ASSET_COMMIT<TAB>1`, the per-chunk **stored** lengths, then
+  one manifest in the existing `AssetManifestHistoryStateCodec` form), in
+  `commonMain` as the `internal` `CommittedAssetRecordCodec`. The stored lengths
+  are needed because a compressed or encrypted manifest's stored frames differ
+  in size from its logical chunk lengths (ADR-0014); offsets are their running
+  sum. No public API or ABI changes.
+- **Lazy rebuild, not at construction**, on the first operation of an instance,
+  under the provider's existing mutex. Construction therefore stays I/O-free,
+  and a failing directory listing becomes a typed `PROVIDER_REJECTED` result
+  (the scan is retried on the next call) instead of a constructor exception.
+- **Fail closed.** An entry is indexed only if the manifest decodes under the
+  real `AssetManifest` invariants, the stored lengths agree with the manifest,
+  the directory names equal the manifest's asset id and version, and
+  `asset.bin`'s size equals the recorded stored lengths. Anything else is
+  skipped (counted in an `internal` `skippedCommittedEntryCount`), never
+  served, and does not stop the scan. A later upload of the same id and version
+  replaces a skipped entry.
+- **No whole-object re-hash at scan time** (cost would grow with total stored
+  data). Instead `readChunk` re-verifies every *untransformed* chunk against its
+  manifest digest before returning it, so same-size bit rot is refused with
+  `OBJECT_DIGEST_MISMATCH`. A transformed asset's frames are opaque to the
+  provider; their integrity remains the client's authenticated-decryption /
+  digest check, as at upload time.
+- In-flight uploads are still not recovered: `uploads/` is never indexed, so an
+  uncommitted upload is not exposed after a restart (a client opens a new
+  session; `sweepAbandonedUploads` reclaims the bytes).
+
+**Residual limits.** The Apple copy cannot tell an unreadable `committed/`
+directory from an empty one (it reads as empty, which fails closed).
+Neither implementation fsyncs the manifest on the JVM (`Files.move` has no
+portable hook; the Apple helper already fsyncs). The Apple changes and the
+`iosTest` restart suite are compile-verified only; see Validation above for the
+standing boundary.
+
 ## References
 
 - [ADR-0006](./ADR-0006-asset-transfer-and-streaming-digest.md),
