@@ -25,6 +25,8 @@ class PluginExecutionBoundsOperationalEventBridgeTest {
     private val timedOut: PluginExecutionBoundsResult<*> = PluginExecutionBoundsResult.TimedOut(pluginId, 750L)
     private val concurrencyLimit: PluginExecutionBoundsResult<*> =
         PluginExecutionBoundsResult.ConcurrencyLimitExceeded(pluginId, 3)
+    private val failed: PluginExecutionBoundsResult<*> =
+        PluginExecutionBoundsResult.Failed(pluginId, IllegalStateException("secret plugin detail"))
     private val notActive: PluginExecutionBoundsResult<*> =
         PluginExecutionBoundsResult.NotActive(pluginId, PluginLifecycleState.DISABLED)
 
@@ -42,6 +44,7 @@ class PluginExecutionBoundsOperationalEventBridgeTest {
             timedOut to "dataloom.plugin.execution.bounds.timed_out",
             concurrencyLimit to "dataloom.plugin.execution.bounds.concurrency_limit_exceeded",
             notActive to "dataloom.plugin.execution.bounds.not_active",
+            failed to "dataloom.plugin.execution.bounds.failed",
         )
 
         for ((result, type) in expected) {
@@ -52,7 +55,7 @@ class PluginExecutionBoundsOperationalEventBridgeTest {
 
     @Test
     fun `every result variant is an AUDIT event with the same source and content-free payload`() {
-        for (result in listOf(completed, timedOut, concurrencyLimit, notActive)) {
+        for (result in listOf(completed, timedOut, concurrencyLimit, notActive, failed)) {
             val envelope = bridge(result)
 
             assertEquals(OperationalEventCategory.AUDIT, envelope.category)
@@ -74,6 +77,7 @@ class PluginExecutionBoundsOperationalEventBridgeTest {
             bridge(concurrencyLimit).attributes.entries.keys,
         )
         assertEquals(setOf("request.pluginId", "result.state"), bridge(notActive).attributes.entries.keys)
+        assertEquals(setOf("request.pluginId"), bridge(failed).attributes.entries.keys)
     }
 
     @Test
@@ -81,7 +85,7 @@ class PluginExecutionBoundsOperationalEventBridgeTest {
         assertEquals("750", bridge(timedOut).attributes["result.maximumExecutionMillis"])
         assertEquals("3", bridge(concurrencyLimit).attributes["result.maximumConcurrentInvocations"])
         assertEquals("DISABLED", bridge(notActive).attributes["result.state"])
-        for (result in listOf(completed, timedOut, concurrencyLimit, notActive)) {
+        for (result in listOf(completed, timedOut, concurrencyLimit, notActive, failed)) {
             assertEquals("[REDACTED]", bridge(result).attributes["request.pluginId"])
         }
     }
@@ -167,5 +171,18 @@ class PluginExecutionBoundsOperationalEventBridgeTest {
         val envelope = bridge(PluginExecutionBoundsResult.Completed(Hostile()))
 
         assertEquals("dataloom.plugin.execution.bounds.completed", envelope.type.value)
+    }
+
+    @Test
+    fun `a Failed cause message and type never reach the envelope`() {
+        class SecretLeakException(message: String) : Exception(message)
+
+        val secret = "super-secret-failure-detail-3d9a"
+        val envelope = bridge(PluginExecutionBoundsResult.Failed(pluginId, SecretLeakException(secret)))
+
+        assertEquals("dataloom.plugin.execution.bounds.failed", envelope.type.value)
+        assertFalse(envelope.toString().contains(secret))
+        assertFalse(envelope.toString().contains("SecretLeakException"))
+        assertFalse(envelope.attributes.entries.values.any { it.contains(secret) })
     }
 }

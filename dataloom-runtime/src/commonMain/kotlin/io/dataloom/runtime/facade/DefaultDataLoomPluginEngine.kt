@@ -36,9 +36,10 @@ import kotlinx.coroutines.sync.withLock
  * is also bridged into an [OperationalEventEnvelope] and durably appended,
  * after the real result already exists and never altering it. An append or
  * envelope-construction failure is swallowed; only [CancellationException]
- * propagates. A call that throws (an unregistered plugin id, or an exception
- * from the caller's operation) produces no result and therefore records
- * nothing. When any collaborator is `null`, this class behaves exactly as it
+ * propagates. A call that throws (an unregistered plugin id, or a `kotlin.Error`
+ * or caller cancellation from the operation) produces no result and therefore
+ * records nothing; an ordinary exception from the operation is a
+ * [PluginExecutionBoundsResult.Failed] result and is recorded. When any collaborator is `null`, this class behaves exactly as it
  * did before the bridge existed and reads no clock.
  */
 internal class DefaultDataLoomPluginEngine(

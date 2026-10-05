@@ -2,6 +2,9 @@ package io.dataloom.plugin
 
 import io.dataloom.api.plugin.PluginId
 import io.dataloom.api.plugin.PluginLifecycleState
+import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -43,6 +46,21 @@ public sealed interface PluginExecutionBoundsResult<out T> {
     public data class NotActive(
         public val pluginId: PluginId,
         public val state: PluginLifecycleState,
+    ) : PluginExecutionBoundsResult<Nothing>
+
+    /**
+     * `operation` was invoked and threw [cause], an ordinary [Exception]
+     * (including a `CancellationException` raised by the plugin while the
+     * caller was still active). The exception is contained here rather
+     * than propagated, so a failing plugin cannot unwind the caller (the host
+     * or another plugin's invocation); its concurrency slot has been released.
+     *
+     * [cause] may carry plugin-produced content in its message, so the audit
+     * bridge records the event type only and never reads [cause].
+     */
+    public data class Failed(
+        public val pluginId: PluginId,
+        public val cause: Exception,
     ) : PluginExecutionBoundsResult<Nothing>
 }
 
@@ -132,20 +150,37 @@ public sealed interface PluginExecutionBoundsResult<out T> {
  * [PluginLifecycleStateTracker.stateOf] is safe to call concurrently with a
  * transition, so this check may run on any invocation thread.
  *
+ * ## Failure isolation
+ *
+ * An ordinary [Exception] thrown by the operation (a plugin bug or a plugin's
+ * own downstream failure) is caught and returned as
+ * [PluginExecutionBoundsResult.Failed] instead of unwinding through the
+ * caller. The concurrency slot is released as for every other outcome, so a
+ * plugin that always throws cannot leak slots and starve itself, and its
+ * failure cannot reach the host's call stack or any other plugin's
+ * invocation, which share nothing but this enforcer's immutable semaphore map.
+ * A throwing plugin is therefore bounded exactly like a timed-out one:
+ * reported, never fatal.
+ *
  * ## What this does not do
  *
  * - **Does not cancel in-flight work on a state change.** See "Lifecycle
  *   gating" above: draining is the specified behavior, not an omission.
  *   Actively cancelling in-flight invocations on `DISABLED` would be a new,
  *   separate policy.
- * - **Does not perform failure isolation/bulkheading beyond concurrency
- *   limiting.** A plugin operation throwing an ordinary exception
- *   propagates normally, uncaught — exactly as
- *   `TimeoutEnforcingSchedulerProvider` leaves "unexpected programming
- *   exceptions" to propagate rather than converting them into a bounded
- *   result.
- * - **Does not audit timeout or concurrency-rejection events.** Audit
- *   records remain an open `#98` item.
+ * - **Does not contain `Error`s or the caller's own cancellation.** An
+ *   ordinary [Exception] thrown by the operation is contained as
+ *   [PluginExecutionBoundsResult.Failed] (see "Failure isolation" above), but
+ *   a `kotlin.Error` (out of memory, stack overflow, assertion failure)
+ *   propagates unchanged: those signal a broken process, not a plugin
+ *   failure the host can meaningfully continue past. A `CancellationException`
+ *   is contained only while the caller's coroutine is still active (it is then
+ *   plugin behaviour, e.g. a leaked inner `withTimeout`); when the caller
+ *   itself has been cancelled it propagates so structured cancellation keeps
+ *   working.
+ * - **Does not count failures or move a plugin to `DEGRADED`.** Each failure
+ *   is reported once, to its own caller; there is no failure-count circuit,
+ *   automatic lifecycle transition, or recovery policy yet.
  *
  * ## Thread-safety
  *
@@ -190,13 +225,19 @@ public class PluginExecutionBoundsEnforcer(private val lifecycle: PluginLifecycl
      * `io.dataloom.runtime.retry.CoroutineRetryTimeoutExecutor`'s own
      * null-safe handling of `withTimeoutOrNull`).
      *
+     * If [operation] throws an ordinary [Exception], it is contained and
+     * returned as [PluginExecutionBoundsResult.Failed].
+     *
      * The concurrency slot acquired for this call is always released before
      * returning, including when [operation] throws or is cancelled.
      *
-     * This method never throws for a timeout or a concurrency-limit
-     * rejection. A `CancellationException` from caller cancellation, or from
-     * [operation] itself, propagates normally and is not reclassified as
-     * [PluginExecutionBoundsResult.TimedOut].
+     * This method never throws for a timeout, a concurrency-limit rejection,
+     * or an ordinary [Exception] from [operation] (a `kotlin.Error` still
+     * propagates). A `CancellationException` from caller cancellation
+     * propagates normally and is not reclassified as
+     * [PluginExecutionBoundsResult.TimedOut]; one raised by [operation] while
+     * the caller is still active is contained as
+     * [PluginExecutionBoundsResult.Failed].
      *
      * @throws IllegalArgumentException if [id] is not registered in
      *   [registry].
@@ -235,6 +276,14 @@ public class PluginExecutionBoundsEnforcer(private val lifecycle: PluginLifecycl
             } else {
                 PluginExecutionBoundsResult.Completed(completed.value)
             }
+        } catch (cancellation: CancellationException) {
+            // Only the caller's own cancellation unwinds; a CancellationException the plugin
+            // raised while the caller is still live (a leaked inner withTimeout, an explicit
+            // throw) is plugin behaviour and is contained like any other failure.
+            if (!currentCoroutineContext().isActive) throw cancellation
+            return PluginExecutionBoundsResult.Failed(pluginId = id, cause = cancellation)
+        } catch (failure: Exception) {
+            return PluginExecutionBoundsResult.Failed(pluginId = id, cause = failure)
         } finally {
             semaphore.release()
         }
