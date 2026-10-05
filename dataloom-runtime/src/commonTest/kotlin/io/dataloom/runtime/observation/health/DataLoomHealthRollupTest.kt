@@ -7,6 +7,8 @@ import io.dataloom.api.error.Recoverability
 import io.dataloom.api.operational.OperationalEventOutboxScope
 import io.dataloom.api.operational.OperationalEventOutboxStateObservation
 import io.dataloom.api.operational.OperationalEventOutboxSummary
+import io.dataloom.api.plugin.PluginId
+import io.dataloom.api.plugin.PluginLifecycleState
 import io.dataloom.api.provider.ProviderHealth
 import io.dataloom.api.provider.ProviderHealthStatus
 import io.dataloom.api.provider.ProviderId
@@ -56,6 +58,8 @@ class DataLoomHealthRollupTest {
         assertNull(snapshot.providerLifecycleState)
         assertNull(snapshot.retryCircuitTelemetry)
         assertTrue(snapshot.providerHealth.isEmpty())
+        assertNull(snapshot.assetTransferHealth)
+        assertTrue(snapshot.pluginHealth.isEmpty())
     }
 
     @Test
@@ -426,6 +430,119 @@ class DataLoomHealthRollupTest {
         }
     }
 
+    // ---- asset-transfer roll-up (#96 health aggregation) --------------------------------------
+
+    @Test
+    fun assetTransferSessionStoreFailuresMapToSeveritiesAtTheDocumentedThresholds() {
+        fun observation(consecutiveSessionStoreFailures: Int) = AssetTransferObservedState(
+            lastOutcome = if (consecutiveSessionStoreFailures > 0) AssetTransferOutcomeKind.SESSION_STORE_FAILURE else null,
+            lastOperation = null,
+            consecutiveSessionStoreFailures = consecutiveSessionStoreFailures,
+            lastEventAt = now,
+            trackedSince = ago(1.hours),
+        )
+
+        assertEquals(DataLoomHealthSeverity.HEALTHY, dataLoomHealthSnapshot(assetTransferObservation = observation(0)).severity)
+        val degraded = dataLoomHealthSnapshot(assetTransferObservation = observation(1))
+        assertEquals(DataLoomHealthSeverity.DEGRADED, degraded.severity)
+        assertEquals(
+            listOf(DataLoomHealthComponent.ASSET_TRANSFER to DataLoomHealthFindingCode.ASSET_TRANSFER_SESSION_STORE_FAILING),
+            degraded.findings.map { it.component to it.code },
+        )
+        assertEquals(DataLoomHealthSeverity.DEGRADED, dataLoomHealthSnapshot(assetTransferObservation = observation(2)).severity)
+        val unhealthy = dataLoomHealthSnapshot(assetTransferObservation = observation(3))
+        assertEquals(DataLoomHealthSeverity.UNHEALTHY, unhealthy.severity)
+        assertEquals(
+            listOf(DataLoomHealthFindingCode.ASSET_TRANSFER_SESSION_STORE_FAILING_REPEATEDLY),
+            unhealthy.findings.map { it.code },
+        )
+    }
+
+    @Test
+    fun assetTransferOutcomesOtherThanSessionStoreFailureNeverDriveSeverity() {
+        // Failed/Interrupted/NotStarted/Cancelled routinely reflect caller input
+        // (quota, content policy, a cancelled call) rather than engine health --
+        // see AssetTransferHealthTracker's own KDoc for why only
+        // SessionStoreFailure is counted.
+        AssetTransferOutcomeKind.entries
+            .filterNot { it == AssetTransferOutcomeKind.SESSION_STORE_FAILURE }
+            .forEach { kind ->
+                val observed = AssetTransferObservedState(
+                    lastOutcome = kind,
+                    lastOperation = null,
+                    consecutiveSessionStoreFailures = 0,
+                    lastEventAt = now,
+                    trackedSince = ago(1.hours),
+                )
+                val snapshot = dataLoomHealthSnapshot(assetTransferObservation = observed)
+                assertEquals(DataLoomHealthSeverity.HEALTHY, snapshot.severity, "outcome kind $kind")
+                assertEquals(kind, snapshot.assetTransferHealth?.lastOutcome)
+            }
+    }
+
+    @Test
+    fun anAbsentAssetTransferObservationLeavesTheSectionNull() {
+        assertNull(dataLoomHealthSnapshot().assetTransferHealth)
+    }
+
+    // ---- plugin roll-up (#96 health aggregation) -----------------------------------------------
+
+    @Test
+    fun pluginDegradedStateMapsToADegradedFinding_everyOtherStateIsInert() {
+        PluginLifecycleState.entries.forEach { state ->
+            val snapshot = dataLoomHealthSnapshot(
+                pluginHealth = mapOf(PluginId("p") to state),
+            )
+            if (state == PluginLifecycleState.DEGRADED) {
+                assertEquals(DataLoomHealthSeverity.DEGRADED, snapshot.severity, "plugin state $state")
+                assertEquals(
+                    listOf(DataLoomHealthComponent.PLUGIN to DataLoomHealthFindingCode.PLUGIN_DEGRADED),
+                    snapshot.findings.map { it.component to it.code },
+                )
+                assertEquals(listOf("p"), snapshot.findings.map { it.subject })
+            } else {
+                assertEquals(DataLoomHealthSeverity.HEALTHY, snapshot.severity, "plugin state $state")
+                assertEquals(emptyList(), snapshot.findings)
+            }
+        }
+    }
+
+    @Test
+    fun pluginHealthDefaultsToEmptyAndIsReportedBackUnchanged() {
+        val snapshot = dataLoomHealthSnapshot()
+        assertTrue(snapshot.pluginHealth.isEmpty())
+
+        val map = mapOf(PluginId("a") to PluginLifecycleState.ACTIVE)
+        assertEquals(map, dataLoomHealthSnapshot(pluginHealth = map).pluginHealth)
+    }
+
+    // ---- scheduler health, via the pre-existing generic providerHealth map --------------------
+
+    @Test
+    fun aSchedulerProvidersHealthFlowsThroughTheSameGenericProviderHealthMapAsAnyOtherProvider() {
+        // SchedulerProvider extends DataLoomProvider and already has a real
+        // health(); dataLoomHealthSnapshot's providerHealth map is keyed
+        // generically by ProviderId with no restriction on provider kind, so
+        // this requires no new parameter or rollup logic -- only this proof
+        // that the existing mechanism really does cover a scheduler-typed
+        // provider, not just the synchronization providers every other test
+        // in this file happens to use.
+        val schedulerId = ProviderId("scheduler-under-test")
+        val degraded = dataLoomHealthSnapshot(providerHealth = mapOf(schedulerId to ProviderHealth(ProviderHealthStatus.DEGRADED)))
+        assertEquals(DataLoomHealthSeverity.DEGRADED, degraded.severity)
+        assertEquals(
+            listOf(DataLoomHealthComponent.PROVIDER to DataLoomHealthFindingCode.PROVIDER_DEGRADED),
+            degraded.findings.map { it.component to it.code },
+        )
+        assertEquals(listOf(schedulerId.value), degraded.findings.map { it.subject })
+
+        val unhealthy = dataLoomHealthSnapshot(providerHealth = mapOf(schedulerId to ProviderHealth(ProviderHealthStatus.UNHEALTHY)))
+        assertEquals(DataLoomHealthSeverity.UNHEALTHY, unhealthy.severity)
+
+        val healthy = dataLoomHealthSnapshot(providerHealth = mapOf(schedulerId to ProviderHealth(ProviderHealthStatus.HEALTHY)))
+        assertEquals(DataLoomHealthSeverity.HEALTHY, healthy.severity)
+    }
+
     // ---- configurable thresholds --------------------------------------------------------------
 
     @Test
@@ -440,6 +557,8 @@ class DataLoomHealthRollupTest {
             queueWorkerFailedRunsUnhealthyAt = 4,
             queueWorkerRunStuckAfter = 1.minutes,
             queueWorkerObservationStaleAfter = 1.hours,
+            assetTransferSessionStoreFailuresDegradedAt = 2,
+            assetTransferSessionStoreFailuresUnhealthyAt = 5,
         )
 
         fun outbox(pending: Int, oldestAge: Duration? = null, observationAge: Duration = 1.seconds) = dataLoomHealthSnapshot(
@@ -470,6 +589,21 @@ class DataLoomHealthRollupTest {
         assertEquals(DataLoomHealthSeverity.HEALTHY, worker(1))
         assertEquals(DataLoomHealthSeverity.DEGRADED, worker(2))
         assertEquals(DataLoomHealthSeverity.UNHEALTHY, worker(4))
+
+        fun assetTransfer(consecutiveSessionStoreFailures: Int) = dataLoomHealthSnapshot(
+            assetTransferObservation = AssetTransferObservedState(
+                lastOutcome = AssetTransferOutcomeKind.SESSION_STORE_FAILURE,
+                lastOperation = null,
+                consecutiveSessionStoreFailures = consecutiveSessionStoreFailures,
+                lastEventAt = now,
+                trackedSince = ago(1.hours),
+            ),
+            thresholds = strict,
+        ).severity
+
+        assertEquals(DataLoomHealthSeverity.HEALTHY, assetTransfer(1))
+        assertEquals(DataLoomHealthSeverity.DEGRADED, assetTransfer(2))
+        assertEquals(DataLoomHealthSeverity.UNHEALTHY, assetTransfer(5))
     }
 
     @Test
@@ -488,6 +622,10 @@ class DataLoomHealthRollupTest {
         }
         assertFailsWith<IllegalArgumentException> { DataLoomHealthThresholds(queueWorkerRunStuckAfter = Duration.ZERO) }
         assertFailsWith<IllegalArgumentException> { DataLoomHealthThresholds(queueWorkerObservationStaleAfter = Duration.ZERO) }
+        assertFailsWith<IllegalArgumentException> { DataLoomHealthThresholds(assetTransferSessionStoreFailuresDegradedAt = 0) }
+        assertFailsWith<IllegalArgumentException> {
+            DataLoomHealthThresholds(assetTransferSessionStoreFailuresDegradedAt = 3, assetTransferSessionStoreFailuresUnhealthyAt = 2)
+        }
         // The defaults themselves must be valid.
         DataLoomHealthThresholds()
     }

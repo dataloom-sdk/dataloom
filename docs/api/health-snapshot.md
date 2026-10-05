@@ -2,12 +2,15 @@
 
 [API reference index](./README.md)
 
-> **Status:** Bounded slice 2. `dataLoomHealthSnapshot` aggregates provider
+> **Status:** Bounded slice 3. `dataLoomHealthSnapshot` aggregates provider
 > lifecycle state, retry/circuit telemetry and caller-supplied provider health
-> (slice 1), and now the durable operational-event outbox and the queue worker
-> through two purpose-built synchronous read paths, and rolls everything up
-> into a `HEALTHY`/`DEGRADED`/`UNHEALTHY` severity with closed-vocabulary
-> findings. It does not complete SDK-wide health aggregation. A bounded
+> (slice 1, any `DataLoomProvider` including a `SchedulerProvider`), the
+> durable operational-event outbox and the queue worker through two
+> purpose-built synchronous read paths (slice 2), and now asset-transfer
+> session-store failures and a plugin's `DEGRADED` lifecycle state (slice 3),
+> rolling everything up into a `HEALTHY`/`DEGRADED`/`UNHEALTHY` severity with
+> closed-vocabulary findings. Configuration/policy history still contributes
+> nothing -- see "Remaining DL-042 boundary" below for why. A bounded
 > pull-export core of the deployable operations dashboard/adaptor DL-042
 > also requires now exists -- `dataLoomPrometheusMetrics`, below -- but this
 > SDK still ships no HTTP server, OTLP/push exporter, or dashboard service.
@@ -24,9 +27,11 @@ collaborator itself.
 |---|---|---|
 | `providerLifecycleState` | `ProviderLifecycleCoordinator.state` | Synchronous property read |
 | `retryCircuitTelemetry` | `BoundedRetryCircuitTelemetry.snapshot()` | Synchronous, already-redacted read model (`docs/api/retry-circuit-telemetry.md`) |
-| `providerHealth` | Caller-awaited `DataLoomProvider.health()` results, keyed by `ProviderId` | Caller-supplied, redacted on the way in |
+| `providerHealth` | Caller-awaited `DataLoomProvider.health()` results, keyed by `ProviderId` | Caller-supplied, redacted on the way in -- covers *any* `DataLoomProvider`, including a `SchedulerProvider` (`SchedulerProvider` already extends `DataLoomProvider`), not only synchronization providers |
 | `outboxHealth` | `OperationalEventOutboxHealthTracker.snapshot()` | **Cached observation** pushed by the outbox -- see "Outbox: the guarantee" |
 | `queueWorkerHealth` | `QueueWorkerHealthTracker.snapshot()` | Exact bookkeeping of runs made through a wrapper -- see "Queue worker: the guarantee" |
+| `assetTransferHealth` | `AssetTransferHealthTracker.snapshot()` | Exact bookkeeping of outcomes reported through the engine's observer seam -- see "Asset transfer: the guarantee" |
+| `pluginHealth` | Caller-read `DataLoomPluginEngine.stateOf(id)` for every id in `.resolutionOrder`, keyed by `PluginId` | Caller-supplied; already a closed enum, needs no redaction |
 
 Each parameter defaults to an empty/absent value. Calling
 `dataLoomHealthSnapshot()` with no arguments is well-defined -- `severity` is
@@ -100,6 +105,40 @@ made on an unwrapped coordinator. A worker that has never run reports
 is informational only -- a worker scheduled on demand is legitimately quiet, so
 staleness never changes its severity.
 
+## Asset transfer: the guarantee
+
+`io.dataloom.assets.AssetTransferEngine` has one optional constructor seam, its
+`AssetTransferObserver`, notified once per `upload`/`download`/`cancel` call
+with the already-decided `AssetTransferOutcome`. `AssetTransferHealthTracker`
+is fed through that seam -- `DataLoomBuilder.assetTransferHealthTracker(tracker)`,
+which composes the tracker with any already-configured
+`AssetTransferOperationalEventRecorder` via
+`io.dataloom.runtime.facade.withAssetTransferHealthTracking` rather than
+replacing it, since the engine has only one observer slot.
+
+Only consecutive `AssetTransferOutcome.SessionStoreFailure` outcomes drive
+severity. Every other outcome -- `Completed`, `Cancelled`, `NotStarted`, and
+critically `Failed` and `Interrupted` -- is recorded in
+`AssetTransferObservedState` for diagnostics but never counted, because those
+routinely reflect caller input the engine correctly rejected (a quota
+exceeded, a content-policy denial, a chunk that does not match its manifest)
+rather than engine health; counting them would flag the SDK as degraded
+because an application tried to upload something too large. A
+`SessionStoreFailure` has no such ambiguity: it means the engine's own durable
+session store threw before any business decision could even be evaluated --
+this gate's outbox already has the same-shaped finding
+(`OUTBOX_LAST_CYCLE_READ_FAILED`, "the outbox could not even read").
+
+## Plugin: the guarantee
+
+Each registered plugin's lifecycle state is already synchronously queryable
+(`DataLoomPluginEngine.stateOf(id)`, backed by a volatile cell per plugin), so
+`pluginHealth` needs no new tracker -- the caller reads it directly, exactly
+like `providerHealth`. Only `PluginLifecycleState.DEGRADED` ("partially usable
+with reduced capability or reliability") is a health verdict; every other
+state (`LOADED`, `VALIDATED`, `INITIALIZING`, `ACTIVE`, `DISABLED`, `UNLOADED`)
+is a lifecycle phase, the same posture `providerLifecycleState` already has.
+
 ## The roll-up
 
 `DataLoomHealthSnapshot.findings` lists every reason the snapshot is not clean
@@ -117,6 +156,8 @@ free text -- and `severity` is their maximum (`HEALTHY` when there are none).
 | Outbox staleness | stale observation that had pending entries | `DEGRADED` |
 | Worker failures | consecutive failed runs >= `queueWorkerFailedRunsDegradedAt` (1) / `...UnhealthyAt` (3) | `DEGRADED` / `UNHEALTHY` |
 | Worker run | a run in flight >= `queueWorkerRunStuckAfter` (30 min) | `DEGRADED` |
+| Asset transfer | consecutive `SessionStoreFailure` >= `assetTransferSessionStoreFailuresDegradedAt` (1) / `...UnhealthyAt` (3) | `DEGRADED` / `UNHEALTHY` |
+| Plugin | tracked lifecycle state is `DEGRADED` | `DEGRADED` |
 
 `providerLifecycleState` is reported but does **not** influence `severity`: it
 is a lifecycle phase (for example `NOT_INITIALIZED` before startup), not a
@@ -217,15 +258,19 @@ application's.
   a possibly shared store).
 - **Not new durable storage.** The trackers hold in-memory values only; nothing
   is persisted, and they start empty after a restart.
-- **Not full subsystem coverage.** Subsystems that are not bridged to the
-  outbox or the trackers (assets, configuration/policy history, scheduler, the
-  plugin engine) contribute nothing to `severity`.
+- **Not full subsystem coverage.** Configuration/policy history contributes
+  nothing to `severity`: `DataLoomConfigurationResolver`/`DurableConfigurationHistory`
+  have no runtime producer in `dataloom-runtime` (see
+  `configuration-resolver-caller-investigation.md`), so there is nothing to
+  observe. Asset-transfer health counts only session-store failures (see above).
+  A caller who wants an asset provider's own health feeds `AssetProvider.health()`
+  into `providerHealth` like any other `DataLoomProvider`.
 - **Not tuned by production data.** The default thresholds are reasoned
   defaults, not measured ones.
 
 ## Remaining DL-042 boundary
 
-SDK-wide health aggregation across the subsystems above remains open. The
+Health aggregation now covers every subsystem with a real runtime signal; configuration/policy history remains unaggregated until a runtime producer exists. The
 deployable operations dashboard/adaptor's bounded pull-export core now
 exists (`dataLoomPrometheusMetrics`, above); an HTTP server, OTLP/push
 export, and a dashboard service remain open, mandatory V1 work, as does

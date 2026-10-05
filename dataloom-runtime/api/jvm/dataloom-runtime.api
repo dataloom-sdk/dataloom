@@ -828,6 +828,7 @@ public final class io/dataloom/runtime/facade/DataLoomBuildException : java/lang
 public final class io/dataloom/runtime/facade/DataLoomBuilder {
 	public fun <init> ()V
 	public final fun assetTransferConfiguration (Lio/dataloom/runtime/facade/DataLoomAssetTransferSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
+	public final fun assetTransferHealthTracker (Lio/dataloom/runtime/observation/health/AssetTransferHealthTracker;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun assetTransferOperationalEventOutboxConfiguration (Lio/dataloom/runtime/facade/DataLoomAssetTransferOperationalEventOutboxSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun bidirectionalConfiguration (Lio/dataloom/runtime/execution/bidirectional/BidirectionalPipelineConfiguration;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun build ()Lio/dataloom/runtime/facade/DataLoom;
@@ -1216,6 +1217,10 @@ public final class io/dataloom/runtime/facade/DataLoomTransportProtectionSpec {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/runtime/facade/HealthTrackingAssetTransferObserversKt {
+	public static final fun withAssetTransferHealthTracking (Lio/dataloom/assets/AssetTransferObserver;Lio/dataloom/runtime/observation/health/AssetTransferHealthTracker;)Lio/dataloom/assets/AssetTransferObserver;
+}
+
 public final class io/dataloom/runtime/facade/HealthTrackingQueueWorkersKt {
 	public static final fun withHealthTracking (Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorker;Lio/dataloom/runtime/observation/health/QueueWorkerHealthTracker;)Lio/dataloom/runtime/facade/DataLoomCircuitQueueWorker;
 	public static final fun withHealthTracking (Lio/dataloom/runtime/facade/DataLoomQueueWorker;Lio/dataloom/runtime/observation/health/QueueWorkerHealthTracker;)Lio/dataloom/runtime/facade/DataLoomQueueWorker;
@@ -1394,8 +1399,67 @@ public final class io/dataloom/runtime/observation/SynchronizationObserverRegist
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/dataloom/runtime/observation/health/AssetTransferHealth {
+	public fun <init> (Lio/dataloom/runtime/observation/health/AssetTransferOutcomeKind;Lio/dataloom/assets/AssetTransferOperation;ILio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/runtime/observation/health/DataLoomHealthSeverity;)V
+	public final fun component1 ()Lio/dataloom/runtime/observation/health/AssetTransferOutcomeKind;
+	public final fun component2 ()Lio/dataloom/assets/AssetTransferOperation;
+	public final fun component3 ()I
+	public final fun component4 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component5 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component6 ()Lio/dataloom/runtime/observation/health/DataLoomHealthSeverity;
+	public final fun copy (Lio/dataloom/runtime/observation/health/AssetTransferOutcomeKind;Lio/dataloom/assets/AssetTransferOperation;ILio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/runtime/observation/health/DataLoomHealthSeverity;)Lio/dataloom/runtime/observation/health/AssetTransferHealth;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/observation/health/AssetTransferHealth;Lio/dataloom/runtime/observation/health/AssetTransferOutcomeKind;Lio/dataloom/assets/AssetTransferOperation;ILio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/runtime/observation/health/DataLoomHealthSeverity;ILjava/lang/Object;)Lio/dataloom/runtime/observation/health/AssetTransferHealth;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConsecutiveSessionStoreFailures ()I
+	public final fun getLastEventAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getLastOperation ()Lio/dataloom/assets/AssetTransferOperation;
+	public final fun getLastOutcome ()Lio/dataloom/runtime/observation/health/AssetTransferOutcomeKind;
+	public final fun getSeverity ()Lio/dataloom/runtime/observation/health/DataLoomHealthSeverity;
+	public final fun getTrackedSince ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/observation/health/AssetTransferHealthTracker {
+	public fun <init> (Lio/dataloom/api/time/DataLoomClock;)V
+	public final fun snapshot ()Lio/dataloom/runtime/observation/health/AssetTransferObservedState;
+}
+
+public final class io/dataloom/runtime/observation/health/AssetTransferObservedState {
+	public fun <init> (Lio/dataloom/runtime/observation/health/AssetTransferOutcomeKind;Lio/dataloom/assets/AssetTransferOperation;ILio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;)V
+	public final fun component1 ()Lio/dataloom/runtime/observation/health/AssetTransferOutcomeKind;
+	public final fun component2 ()Lio/dataloom/assets/AssetTransferOperation;
+	public final fun component3 ()I
+	public final fun component4 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun component5 ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun copy (Lio/dataloom/runtime/observation/health/AssetTransferOutcomeKind;Lio/dataloom/assets/AssetTransferOperation;ILio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;)Lio/dataloom/runtime/observation/health/AssetTransferObservedState;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/observation/health/AssetTransferObservedState;Lio/dataloom/runtime/observation/health/AssetTransferOutcomeKind;Lio/dataloom/assets/AssetTransferOperation;ILio/dataloom/api/time/DataLoomInstant;Lio/dataloom/api/time/DataLoomInstant;ILjava/lang/Object;)Lio/dataloom/runtime/observation/health/AssetTransferObservedState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConsecutiveSessionStoreFailures ()I
+	public final fun getLastEventAt ()Lio/dataloom/api/time/DataLoomInstant;
+	public final fun getLastOperation ()Lio/dataloom/assets/AssetTransferOperation;
+	public final fun getLastOutcome ()Lio/dataloom/runtime/observation/health/AssetTransferOutcomeKind;
+	public final fun getTrackedSince ()Lio/dataloom/api/time/DataLoomInstant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/observation/health/AssetTransferOutcomeKind : java/lang/Enum {
+	public static final field CANCELLED Lio/dataloom/runtime/observation/health/AssetTransferOutcomeKind;
+	public static final field COMPLETED Lio/dataloom/runtime/observation/health/AssetTransferOutcomeKind;
+	public static final field FAILED Lio/dataloom/runtime/observation/health/AssetTransferOutcomeKind;
+	public static final field INTERRUPTED Lio/dataloom/runtime/observation/health/AssetTransferOutcomeKind;
+	public static final field NOT_STARTED Lio/dataloom/runtime/observation/health/AssetTransferOutcomeKind;
+	public static final field SESSION_STORE_FAILURE Lio/dataloom/runtime/observation/health/AssetTransferOutcomeKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/observation/health/AssetTransferOutcomeKind;
+	public static fun values ()[Lio/dataloom/runtime/observation/health/AssetTransferOutcomeKind;
+}
+
 public final class io/dataloom/runtime/observation/health/DataLoomHealthComponent : java/lang/Enum {
+	public static final field ASSET_TRANSFER Lio/dataloom/runtime/observation/health/DataLoomHealthComponent;
 	public static final field OPERATIONAL_EVENT_OUTBOX Lio/dataloom/runtime/observation/health/DataLoomHealthComponent;
+	public static final field PLUGIN Lio/dataloom/runtime/observation/health/DataLoomHealthComponent;
 	public static final field PROVIDER Lio/dataloom/runtime/observation/health/DataLoomHealthComponent;
 	public static final field QUEUE_WORKER Lio/dataloom/runtime/observation/health/DataLoomHealthComponent;
 	public static final field TELEMETRY_EXPORTER Lio/dataloom/runtime/observation/health/DataLoomHealthComponent;
@@ -1423,6 +1487,8 @@ public final class io/dataloom/runtime/observation/health/DataLoomHealthFinding 
 }
 
 public final class io/dataloom/runtime/observation/health/DataLoomHealthFindingCode : java/lang/Enum {
+	public static final field ASSET_TRANSFER_SESSION_STORE_FAILING Lio/dataloom/runtime/observation/health/DataLoomHealthFindingCode;
+	public static final field ASSET_TRANSFER_SESSION_STORE_FAILING_REPEATEDLY Lio/dataloom/runtime/observation/health/DataLoomHealthFindingCode;
 	public static final field EXPORTER_DEGRADED Lio/dataloom/runtime/observation/health/DataLoomHealthFindingCode;
 	public static final field EXPORTER_STOPPED Lio/dataloom/runtime/observation/health/DataLoomHealthFindingCode;
 	public static final field OUTBOX_LAST_CYCLE_LEFT_ENTRIES_PENDING Lio/dataloom/runtime/observation/health/DataLoomHealthFindingCode;
@@ -1432,6 +1498,7 @@ public final class io/dataloom/runtime/observation/health/DataLoomHealthFindingC
 	public static final field OUTBOX_OLDEST_PENDING_VERY_OLD Lio/dataloom/runtime/observation/health/DataLoomHealthFindingCode;
 	public static final field OUTBOX_PENDING_CRITICAL Lio/dataloom/runtime/observation/health/DataLoomHealthFindingCode;
 	public static final field OUTBOX_PENDING_HIGH Lio/dataloom/runtime/observation/health/DataLoomHealthFindingCode;
+	public static final field PLUGIN_DEGRADED Lio/dataloom/runtime/observation/health/DataLoomHealthFindingCode;
 	public static final field PROVIDER_DEGRADED Lio/dataloom/runtime/observation/health/DataLoomHealthFindingCode;
 	public static final field PROVIDER_UNHEALTHY Lio/dataloom/runtime/observation/health/DataLoomHealthFindingCode;
 	public static final field QUEUE_WORKER_RUNS_FAILING Lio/dataloom/runtime/observation/health/DataLoomHealthFindingCode;
@@ -1452,19 +1519,23 @@ public final class io/dataloom/runtime/observation/health/DataLoomHealthSeverity
 }
 
 public final class io/dataloom/runtime/observation/health/DataLoomHealthSnapshot {
-	public fun <init> (Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySnapshot;Ljava/util/Map;Ljava/util/List;Lio/dataloom/runtime/observation/health/QueueWorkerHealth;Lio/dataloom/runtime/observation/health/DataLoomHealthSeverity;Ljava/util/List;)V
+	public fun <init> (Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySnapshot;Ljava/util/Map;Ljava/util/List;Lio/dataloom/runtime/observation/health/QueueWorkerHealth;Lio/dataloom/runtime/observation/health/AssetTransferHealth;Ljava/util/Map;Lio/dataloom/runtime/observation/health/DataLoomHealthSeverity;Ljava/util/List;)V
 	public final fun component1 ()Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;
 	public final fun component2 ()Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySnapshot;
 	public final fun component3 ()Ljava/util/Map;
 	public final fun component4 ()Ljava/util/List;
 	public final fun component5 ()Lio/dataloom/runtime/observation/health/QueueWorkerHealth;
-	public final fun component6 ()Lio/dataloom/runtime/observation/health/DataLoomHealthSeverity;
-	public final fun component7 ()Ljava/util/List;
-	public final fun copy (Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySnapshot;Ljava/util/Map;Ljava/util/List;Lio/dataloom/runtime/observation/health/QueueWorkerHealth;Lio/dataloom/runtime/observation/health/DataLoomHealthSeverity;Ljava/util/List;)Lio/dataloom/runtime/observation/health/DataLoomHealthSnapshot;
-	public static synthetic fun copy$default (Lio/dataloom/runtime/observation/health/DataLoomHealthSnapshot;Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySnapshot;Ljava/util/Map;Ljava/util/List;Lio/dataloom/runtime/observation/health/QueueWorkerHealth;Lio/dataloom/runtime/observation/health/DataLoomHealthSeverity;Ljava/util/List;ILjava/lang/Object;)Lio/dataloom/runtime/observation/health/DataLoomHealthSnapshot;
+	public final fun component6 ()Lio/dataloom/runtime/observation/health/AssetTransferHealth;
+	public final fun component7 ()Ljava/util/Map;
+	public final fun component8 ()Lio/dataloom/runtime/observation/health/DataLoomHealthSeverity;
+	public final fun component9 ()Ljava/util/List;
+	public final fun copy (Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySnapshot;Ljava/util/Map;Ljava/util/List;Lio/dataloom/runtime/observation/health/QueueWorkerHealth;Lio/dataloom/runtime/observation/health/AssetTransferHealth;Ljava/util/Map;Lio/dataloom/runtime/observation/health/DataLoomHealthSeverity;Ljava/util/List;)Lio/dataloom/runtime/observation/health/DataLoomHealthSnapshot;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/observation/health/DataLoomHealthSnapshot;Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySnapshot;Ljava/util/Map;Ljava/util/List;Lio/dataloom/runtime/observation/health/QueueWorkerHealth;Lio/dataloom/runtime/observation/health/AssetTransferHealth;Ljava/util/Map;Lio/dataloom/runtime/observation/health/DataLoomHealthSeverity;Ljava/util/List;ILjava/lang/Object;)Lio/dataloom/runtime/observation/health/DataLoomHealthSnapshot;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAssetTransferHealth ()Lio/dataloom/runtime/observation/health/AssetTransferHealth;
 	public final fun getFindings ()Ljava/util/List;
 	public final fun getOutboxHealth ()Ljava/util/List;
+	public final fun getPluginHealth ()Ljava/util/Map;
 	public final fun getProviderHealth ()Ljava/util/Map;
 	public final fun getProviderLifecycleState ()Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;
 	public final fun getQueueWorkerHealth ()Lio/dataloom/runtime/observation/health/QueueWorkerHealth;
@@ -1475,14 +1546,16 @@ public final class io/dataloom/runtime/observation/health/DataLoomHealthSnapshot
 }
 
 public final class io/dataloom/runtime/observation/health/DataLoomHealthSnapshotKt {
-	public static final fun dataLoomHealthSnapshot (Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySnapshot;Ljava/util/Map;Lio/dataloom/api/security/DataLoomRedactor;Ljava/util/List;Lio/dataloom/runtime/observation/health/QueueWorkerObservedState;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/runtime/observation/health/DataLoomHealthThresholds;)Lio/dataloom/runtime/observation/health/DataLoomHealthSnapshot;
-	public static synthetic fun dataLoomHealthSnapshot$default (Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySnapshot;Ljava/util/Map;Lio/dataloom/api/security/DataLoomRedactor;Ljava/util/List;Lio/dataloom/runtime/observation/health/QueueWorkerObservedState;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/runtime/observation/health/DataLoomHealthThresholds;ILjava/lang/Object;)Lio/dataloom/runtime/observation/health/DataLoomHealthSnapshot;
+	public static final fun dataLoomHealthSnapshot (Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySnapshot;Ljava/util/Map;Lio/dataloom/api/security/DataLoomRedactor;Ljava/util/List;Lio/dataloom/runtime/observation/health/QueueWorkerObservedState;Lio/dataloom/runtime/observation/health/AssetTransferObservedState;Ljava/util/Map;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/runtime/observation/health/DataLoomHealthThresholds;)Lio/dataloom/runtime/observation/health/DataLoomHealthSnapshot;
+	public static synthetic fun dataLoomHealthSnapshot$default (Lio/dataloom/api/provider/ProviderLifecycleCoordinatorState;Lio/dataloom/runtime/observation/retry/RetryCircuitTelemetrySnapshot;Ljava/util/Map;Lio/dataloom/api/security/DataLoomRedactor;Ljava/util/List;Lio/dataloom/runtime/observation/health/QueueWorkerObservedState;Lio/dataloom/runtime/observation/health/AssetTransferObservedState;Ljava/util/Map;Lio/dataloom/api/time/DataLoomInstant;Lio/dataloom/runtime/observation/health/DataLoomHealthThresholds;ILjava/lang/Object;)Lio/dataloom/runtime/observation/health/DataLoomHealthSnapshot;
 }
 
 public final class io/dataloom/runtime/observation/health/DataLoomHealthThresholds {
-	public synthetic fun <init> (IIJJJIIJJILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (IIJJJIIJJLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (IIJJJIIJJIIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (IIJJJIIJJIILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()I
+	public final fun component10 ()I
+	public final fun component11 ()I
 	public final fun component2 ()I
 	public final fun component3-UwyO8pc ()J
 	public final fun component4-UwyO8pc ()J
@@ -1491,9 +1564,11 @@ public final class io/dataloom/runtime/observation/health/DataLoomHealthThreshol
 	public final fun component7 ()I
 	public final fun component8-UwyO8pc ()J
 	public final fun component9-UwyO8pc ()J
-	public final fun copy-ERhCReQ (IIJJJIIJJ)Lio/dataloom/runtime/observation/health/DataLoomHealthThresholds;
-	public static synthetic fun copy-ERhCReQ$default (Lio/dataloom/runtime/observation/health/DataLoomHealthThresholds;IIJJJIIJJILjava/lang/Object;)Lio/dataloom/runtime/observation/health/DataLoomHealthThresholds;
+	public final fun copy-_er0TWk (IIJJJIIJJII)Lio/dataloom/runtime/observation/health/DataLoomHealthThresholds;
+	public static synthetic fun copy-_er0TWk$default (Lio/dataloom/runtime/observation/health/DataLoomHealthThresholds;IIJJJIIJJIIILjava/lang/Object;)Lio/dataloom/runtime/observation/health/DataLoomHealthThresholds;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAssetTransferSessionStoreFailuresDegradedAt ()I
+	public final fun getAssetTransferSessionStoreFailuresUnhealthyAt ()I
 	public final fun getOutboxObservationStaleAfter-UwyO8pc ()J
 	public final fun getOutboxOldestPendingDegradedAfter-UwyO8pc ()J
 	public final fun getOutboxOldestPendingUnhealthyAfter-UwyO8pc ()J
