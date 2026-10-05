@@ -586,11 +586,14 @@ design are in [`outbox-replay-investigation.md`](outbox-replay-investigation.md)
   loop -- filtering (above) narrows what one `process` cycle acts on, it does
   not add a live subscription that calls a caller back as matching entries
   are appended.
-- **No enumeration across scopes.** A caller must already know which
-  `OperationalEventOutboxScope` to read.
-- **Replay is bounded by acknowledged-history retention, single-entry, and
-  ungated.** An entry whose tombstone was pruned cannot be replayed; there is
-  no batch/by-workflow replay call; and `replay` performs no authorization.
+- **No discovery of scopes.** `enumerate` and `replayBatch` (see
+  [Durable outbox ordering, retention and replay](./outbox-replay-investigation.md),
+  "Cross-scope enumeration and batch replay") fan out over scopes the caller
+  names; the `DurableStateStore` contract cannot list which scopes exist, so
+  an unknown scope cannot be found.
+- **Replay is bounded by acknowledged-history retention.** An entry whose
+  tombstone was pruned cannot be replayed. Single-entry `replay` remains
+  ungated; `replayBatch` requires a host-supplied authorizer.
 - **Head-of-line blocking is opt-in and per processor call.** It is not a
   distributed lock: two concurrent `process` calls on one scope can each hand
   the same head entry to their handler (see "Concurrency"), and a consumer that
@@ -756,7 +759,8 @@ design are in [`outbox-replay-investigation.md`](outbox-replay-investigation.md)
 This foundation does not yet provide:
 
 - payload classification, minimization, encoding, encryption, or integrity;
-- cross-scope outbox enumeration (durable per-workflow sequencing, single-scope
+- discovery of outbox scopes the caller does not already know (bounded
+  fan-out `enumerate`/`replayBatch` over named scopes exists; durable per-workflow sequencing, single-scope
   read-back, opt-in count-based and age-based retention of pending entries,
   acknowledgement tombstones with bounded pruned history and an explicit
   `replay`, an opt-in read-then-consume processing loop, and bounded opt-in

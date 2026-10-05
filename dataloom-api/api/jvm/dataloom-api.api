@@ -2082,8 +2082,11 @@ public final class io/dataloom/api/operational/DurableOperationalEventOutbox {
 	public final fun acknowledgedEntries-7ZrZbUU (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun append-aDAAC7I (Ljava/lang/String;Lio/dataloom/api/operational/OperationalEventEnvelope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun entries-7ZrZbUU (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun enumerate (Lio/dataloom/api/operational/OperationalEventOutboxEntryQuery;Lio/dataloom/api/operational/OperationalEventOutboxCursor;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun enumerate$default (Lio/dataloom/api/operational/DurableOperationalEventOutbox;Lio/dataloom/api/operational/OperationalEventOutboxEntryQuery;Lio/dataloom/api/operational/OperationalEventOutboxCursor;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public final fun pendingEntries-7ZrZbUU (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun replay-bv5EIFA (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun replayBatch (Lio/dataloom/api/operational/OperationalEventOutboxBatchReplayRequest;Lio/dataloom/api/operational/OperationalEventOutboxReplayAuthorizer;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/dataloom/api/operational/DurableOperationalEventOutbox$Companion {
@@ -2380,6 +2383,91 @@ public final class io/dataloom/api/operational/OperationalEventOrderingKey$Compa
 	public final fun getGlobal-bmiWjQI ()Ljava/lang/String;
 }
 
+public abstract interface class io/dataloom/api/operational/OperationalEventOutboxBatchReplayFailure {
+	public abstract fun getScope--IyNcac ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalEventOutboxBatchReplayFailure$ContentionLimitReached : io/dataloom/api/operational/OperationalEventOutboxBatchReplayFailure {
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1--IyNcac ()Ljava/lang/String;
+	public final fun copy-tJqHD0w (Ljava/lang/String;)Lio/dataloom/api/operational/OperationalEventOutboxBatchReplayFailure$ContentionLimitReached;
+	public static synthetic fun copy-tJqHD0w$default (Lio/dataloom/api/operational/OperationalEventOutboxBatchReplayFailure$ContentionLimitReached;Ljava/lang/String;ILjava/lang/Object;)Lio/dataloom/api/operational/OperationalEventOutboxBatchReplayFailure$ContentionLimitReached;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getScope--IyNcac ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalEventOutboxBatchReplayFailure$PersistenceFailure : io/dataloom/api/operational/OperationalEventOutboxBatchReplayFailure {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1--IyNcac ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/error/DataLoomError;
+	public final fun copy-7ZrZbUU (Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/api/operational/OperationalEventOutboxBatchReplayFailure$PersistenceFailure;
+	public static synthetic fun copy-7ZrZbUU$default (Lio/dataloom/api/operational/OperationalEventOutboxBatchReplayFailure$PersistenceFailure;Ljava/lang/String;Lio/dataloom/api/error/DataLoomError;ILjava/lang/Object;)Lio/dataloom/api/operational/OperationalEventOutboxBatchReplayFailure$PersistenceFailure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lio/dataloom/api/error/DataLoomError;
+	public fun getScope--IyNcac ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalEventOutboxBatchReplayRequest {
+	public static final field Companion Lio/dataloom/api/operational/OperationalEventOutboxBatchReplayRequest$Companion;
+	public static final field DEFAULT_MAXIMUM_ENTRIES I
+	public static final field MAXIMUM_ENTRIES I
+	public static final field MAXIMUM_SCOPES I
+	public synthetic fun <init> (Ljava/util/List;Ljava/lang/String;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2-RNYfoJA ()Ljava/lang/String;
+	public final fun component3 ()I
+	public final fun copy-h803abw (Ljava/util/List;Ljava/lang/String;I)Lio/dataloom/api/operational/OperationalEventOutboxBatchReplayRequest;
+	public static synthetic fun copy-h803abw$default (Lio/dataloom/api/operational/OperationalEventOutboxBatchReplayRequest;Ljava/util/List;Ljava/lang/String;IILjava/lang/Object;)Lio/dataloom/api/operational/OperationalEventOutboxBatchReplayRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaximumEntries ()I
+	public final fun getScopes ()Ljava/util/List;
+	public final fun getWorkflowId-RNYfoJA ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalEventOutboxBatchReplayRequest$Companion {
+}
+
+public final class io/dataloom/api/operational/OperationalEventOutboxBatchReplayResult {
+	public fun <init> (Ljava/util/List;IILjava/util/List;Z)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()Z
+	public final fun copy (Ljava/util/List;IILjava/util/List;Z)Lio/dataloom/api/operational/OperationalEventOutboxBatchReplayResult;
+	public static synthetic fun copy$default (Lio/dataloom/api/operational/OperationalEventOutboxBatchReplayResult;Ljava/util/List;IILjava/util/List;ZILjava/lang/Object;)Lio/dataloom/api/operational/OperationalEventOutboxBatchReplayResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBudgetExhausted ()Z
+	public final fun getDenied ()I
+	public final fun getFailures ()Ljava/util/List;
+	public final fun getNotReplayable ()I
+	public final fun getReplayed ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalEventOutboxCursor {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1--IyNcac ()Ljava/lang/String;
+	public final fun component2-bmiWjQI ()Ljava/lang/String;
+	public final fun component3 ()J
+	public final fun copy-tzHWvP4 (Ljava/lang/String;Ljava/lang/String;J)Lio/dataloom/api/operational/OperationalEventOutboxCursor;
+	public static synthetic fun copy-tzHWvP4$default (Lio/dataloom/api/operational/OperationalEventOutboxCursor;Ljava/lang/String;Ljava/lang/String;JILjava/lang/Object;)Lio/dataloom/api/operational/OperationalEventOutboxCursor;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getOrderingKey-bmiWjQI ()Ljava/lang/String;
+	public final fun getScope--IyNcac ()Ljava/lang/String;
+	public final fun getSequence ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/api/operational/OperationalEventOutboxEntry {
 	public fun <init> (JLio/dataloom/api/operational/OperationalEventEnvelope;Lio/dataloom/api/time/DataLoomInstant;)V
 	public synthetic fun <init> (JLio/dataloom/api/operational/OperationalEventEnvelope;Lio/dataloom/api/time/DataLoomInstant;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -2396,6 +2484,56 @@ public final class io/dataloom/api/operational/OperationalEventOutboxEntry {
 	public fun hashCode ()I
 	public final fun isAcknowledged ()Z
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalEventOutboxEntryPage {
+	public fun <init> (Ljava/util/List;Lio/dataloom/api/operational/OperationalEventOutboxCursor;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Lio/dataloom/api/operational/OperationalEventOutboxCursor;
+	public final fun copy (Ljava/util/List;Lio/dataloom/api/operational/OperationalEventOutboxCursor;)Lio/dataloom/api/operational/OperationalEventOutboxEntryPage;
+	public static synthetic fun copy$default (Lio/dataloom/api/operational/OperationalEventOutboxEntryPage;Ljava/util/List;Lio/dataloom/api/operational/OperationalEventOutboxCursor;ILjava/lang/Object;)Lio/dataloom/api/operational/OperationalEventOutboxEntryPage;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntries ()Ljava/util/List;
+	public final fun getNextCursor ()Lio/dataloom/api/operational/OperationalEventOutboxCursor;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalEventOutboxEntryQuery {
+	public static final field Companion Lio/dataloom/api/operational/OperationalEventOutboxEntryQuery$Companion;
+	public static final field DEFAULT_PAGE_SIZE I
+	public static final field MAXIMUM_PAGE_SIZE I
+	public static final field MAXIMUM_SCOPES I
+	public synthetic fun <init> (Ljava/util/List;Ljava/lang/String;Lio/dataloom/api/operational/OperationalEventOutboxEntryStatus;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/lang/String;Lio/dataloom/api/operational/OperationalEventOutboxEntryStatus;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2-RNYfoJA ()Ljava/lang/String;
+	public final fun component3 ()Lio/dataloom/api/operational/OperationalEventOutboxEntryStatus;
+	public final fun component4 ()I
+	public final fun copy-ItRFP6A (Ljava/util/List;Ljava/lang/String;Lio/dataloom/api/operational/OperationalEventOutboxEntryStatus;I)Lio/dataloom/api/operational/OperationalEventOutboxEntryQuery;
+	public static synthetic fun copy-ItRFP6A$default (Lio/dataloom/api/operational/OperationalEventOutboxEntryQuery;Ljava/util/List;Ljava/lang/String;Lio/dataloom/api/operational/OperationalEventOutboxEntryStatus;IILjava/lang/Object;)Lio/dataloom/api/operational/OperationalEventOutboxEntryQuery;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPageSize ()I
+	public final fun getScopes ()Ljava/util/List;
+	public final fun getStatus ()Lio/dataloom/api/operational/OperationalEventOutboxEntryStatus;
+	public final fun getWorkflowId-RNYfoJA ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/api/operational/OperationalEventOutboxEntryQuery$Companion {
+}
+
+public final class io/dataloom/api/operational/OperationalEventOutboxEntryStatus : java/lang/Enum {
+	public static final field ACKNOWLEDGED Lio/dataloom/api/operational/OperationalEventOutboxEntryStatus;
+	public static final field PENDING Lio/dataloom/api/operational/OperationalEventOutboxEntryStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/api/operational/OperationalEventOutboxEntryStatus;
+	public static fun values ()[Lio/dataloom/api/operational/OperationalEventOutboxEntryStatus;
+}
+
+public abstract interface class io/dataloom/api/operational/OperationalEventOutboxReplayAuthorizer {
+	public abstract fun authorize-aDAAC7I (Ljava/lang/String;Lio/dataloom/api/operational/OperationalEventOutboxEntry;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/dataloom/api/operational/OperationalEventOutboxScope {
@@ -2415,6 +2553,19 @@ public final class io/dataloom/api/operational/OperationalEventOutboxScope {
 
 public final class io/dataloom/api/operational/OperationalEventOutboxScope$Companion {
 	public final fun getKeyEncoder ()Lio/dataloom/api/state/DurableStateScopeKeyEncoder;
+}
+
+public final class io/dataloom/api/operational/OperationalEventOutboxScopedEntry {
+	public synthetic fun <init> (Ljava/lang/String;Lio/dataloom/api/operational/OperationalEventOutboxEntry;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1--IyNcac ()Ljava/lang/String;
+	public final fun component2 ()Lio/dataloom/api/operational/OperationalEventOutboxEntry;
+	public final fun copy-7ZrZbUU (Ljava/lang/String;Lio/dataloom/api/operational/OperationalEventOutboxEntry;)Lio/dataloom/api/operational/OperationalEventOutboxScopedEntry;
+	public static synthetic fun copy-7ZrZbUU$default (Lio/dataloom/api/operational/OperationalEventOutboxScopedEntry;Ljava/lang/String;Lio/dataloom/api/operational/OperationalEventOutboxEntry;ILjava/lang/Object;)Lio/dataloom/api/operational/OperationalEventOutboxScopedEntry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntry ()Lio/dataloom/api/operational/OperationalEventOutboxEntry;
+	public final fun getScope--IyNcac ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/dataloom/api/operational/OperationalEventOutboxState {

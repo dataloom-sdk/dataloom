@@ -150,9 +150,87 @@ its acknowledgement deleted. Nothing else is migrated.
   (`DurableOperationalEventOutbox.stateObserver` + `OperationalEventOutboxHealthTracker`)
   with an explicit as-of time and staleness marker, not a store read; see
   [Health snapshot](./health-snapshot.md).
-- ~~Head-of-line blocking~~ -- done (opt-in processor policy). Still open:
-  batch/by-workflow replay and replay authorization, if a real consumer needs them.
-- Subscription delivery and cross-scope enumeration (unchanged from before).
+- ~~Head-of-line blocking~~ -- done (opt-in processor policy).
+- ~~Batch/by-workflow replay and replay authorization; cross-scope enumeration~~ --
+  done as bounded fan-out over caller-named scopes (next section).
+- Still open: subscription delivery; **discovery** of scopes the caller does not
+  already name (needs a scope-listing capability on `DurableStateStore` and its
+  Room and Apple file implementations); a replay audit trail.
+
+## Cross-scope enumeration and batch replay
+
+Added after the decisions above. Both are additive methods on
+`DurableOperationalEventOutbox`; nothing existing changed.
+
+### What the store contract allows
+
+`DurableStateStore` offers only `load(scope)` and `compareAndSet`. It cannot
+list the scopes it holds, and a `DurableStateScopeKeyEncoder` is one-way. So
+"enumerate across scopes" is **bounded fan-out over scopes the caller names**,
+not discovery. Real discovery would need a new scope-listing operation
+implemented in `RoomDurableStateStore` (a DAO query) and
+`AppleFileDurableStateStore`, which can only be verified on an Android
+emulator and macOS CI; it was kept out of this slice.
+
+There is also no "failed" or "dead-letter" status in the outbox: an entry is
+pending or acknowledged. A consumer-failed entry is simply still pending and
+the next `process` pass presents it again. So the only replayable population
+is acknowledged tombstones, and the batch replay request has no status filter.
+
+### `enumerate(query, after)`
+
+Read-only. `OperationalEventOutboxEntryQuery(scopes, workflowId?, status?, pageSize)`
+names 1 to 100 distinct scopes and filters by workflow and by
+`PENDING`/`ACKNOWLEDGED`. A page is at most `pageSize` entries, capped at 500
+(default 100); the constructor rejects anything outside the caps. Entries come
+back as `OperationalEventOutboxScopedEntry(scope, entry)` ordered by
+`(scope value, ordering key value, sequence)`, and the call loads scopes in
+that order and stops as soon as the page (plus one entry to detect a next page)
+is full.
+
+The cursor, `OperationalEventOutboxCursor(scope, orderingKey, sequence)`, is the
+last returned entry's intrinsic identity. Sequences are never reused, so it
+needs no list index or store version and stays valid while the outbox changes:
+appends, acknowledgements, replays, and retention evicting the very entry the
+cursor names neither skip nor repeat an entry. Per key, the order equals append
+and sequence order; across keys it is **not** the scope's append order (the
+trade for a resumable cursor). A scope that fails to load fails the whole call,
+so a page never silently lacks a scope. Each loaded scope is also reported to
+the `stateObserver`, like the single-scope reads.
+
+### `replayBatch(request, authorizer)`
+
+`OperationalEventOutboxBatchReplayRequest(scopes, workflowId?, maximumEntries)`
+selects acknowledged entries (cap 500, default 100) in the same scope, key,
+sequence order. Every candidate goes to the host-supplied
+`OperationalEventOutboxReplayAuthorizer.authorize(scope, entry)` before any
+write and outside the compare-and-set retry loop; approved entries of a scope
+are reopened in **one** compare-and-set (atomic per scope), at their original
+position and sequence. The result reports `replayed`, `denied`, `notReplayable`
+(authorized but no longer acknowledged at write time), per-scope `failures`
+(persistence or contention; other scopes still proceed) and `budgetExhausted`.
+Denied entries do not consume the budget, so they cannot starve approved ones;
+a retry after a lost race re-applies only the ids that were authorized, never
+sweeping in an entry that arrived since.
+
+**Authorization decision: required, no default.** `authorizer` is a mandatory
+parameter, so batch replay cannot run unauthorized by omission, and a host that
+has already authorized the operator upstream says so explicitly with
+`OperationalEventOutboxReplayAuthorizer { _, _ -> true }`. An authorizer that
+throws denies (fail closed); cancellation still propagates. Single-entry
+`replay` is unchanged and still has no authorization of its own.
+
+### Verification
+
+`DurableOperationalEventOutboxEnumerationAndBatchReplayTest` (24 tests, JVM,
+version-checked in-memory store) covers ordering, filters, caps, cursor
+stability across eviction/ack/replay/append, early stop, observer reporting,
+atomic per-scope replay, authorizer deny / partial / throwing, budget and
+continuation, the authorize-to-write race, CAS contention and persistence
+failures. `AppleFileDurableOperationalEventOutboxEnumerationTest` runs the same
+paths over the real `AppleFileDurableStateStore` with a fresh store instance
+(restart shape); it is cross-compiled but only executes on macOS CI. The Room
+store has no real-database JVM test in this repo, so no Room claim is made.
 
 ## The original investigation (2026-08-26), kept for the record
 
