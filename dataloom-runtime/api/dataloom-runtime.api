@@ -714,6 +714,21 @@ public final class io/dataloom/runtime/execution/protection/ProviderProtectedSyn
 	public final fun execute (Lio/dataloom/runtime/execution/SynchronizationExecutionContext;Lio/dataloom/runtime/execution/SynchronizationPipeline;Lio/dataloom/runtime/retry/ProtectedStorageOperations;Lio/dataloom/runtime/retry/ProtectedTransportOperations;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
+public final class io/dataloom/runtime/execution/protection/ProviderProtectionAssetBridge : io/dataloom/assets/AssetProvider {
+	public fun <init> (Lio/dataloom/runtime/retry/ProtectedAssetOperations;Lio/dataloom/assets/AssetChunkSizeBounds;)V
+	public fun abortUpload-fnV884s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun completeUpload-fnV884s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getChunkSizeBounds ()Lio/dataloom/assets/AssetChunkSizeBounds;
+	public fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun openUpload (Lio/dataloom/assets/AssetUploadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun readChunk-jJr0HPI (Ljava/lang/String;JILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun readManifest-NNrJYCg (Ljava/lang/String;Ljava/lang/Long;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun uploadChunk (Lio/dataloom/assets/AssetChunkUpload;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
 public final class io/dataloom/runtime/execution/protection/ProviderProtectionInvocation : java/lang/Enum {
 	public static final field CIRCUIT_FAILURE Lio/dataloom/runtime/execution/protection/ProviderProtectionInvocation;
 	public static final field NON_CIRCUIT_FAILURE Lio/dataloom/runtime/execution/protection/ProviderProtectionInvocation;
@@ -799,6 +814,16 @@ public final class io/dataloom/runtime/facade/DataLoom$DefaultImpls {
 	public static fun getRetryAdministration (Lio/dataloom/runtime/facade/DataLoom;)Lio/dataloom/runtime/facade/DataLoomRetryAdministration;
 }
 
+public final class io/dataloom/runtime/facade/DataLoomAssetProviderProtectionSpec {
+	public fun <init> (Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;Lio/dataloom/api/circuit/CircuitBreakerStateStore;Lio/dataloom/runtime/retry/AssetCircuitScopes;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;)V
+	public synthetic fun <init> (Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;Lio/dataloom/api/circuit/CircuitBreakerStateStore;Lio/dataloom/runtime/retry/AssetCircuitScopes;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCircuitBreakerConfiguration ()Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;
+	public final fun getCircuitBreakerStateStore ()Lio/dataloom/api/circuit/CircuitBreakerStateStore;
+	public final fun getFailureClassifier ()Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;
+	public final fun getScopes ()Lio/dataloom/runtime/retry/AssetCircuitScopes;
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/runtime/facade/DataLoomAssetTransferOperationalEventOutboxSpec {
 	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;Ljava/lang/String;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Lio/dataloom/api/state/DurableStateStore;Ljava/lang/String;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -827,6 +852,7 @@ public final class io/dataloom/runtime/facade/DataLoomBuildException : java/lang
 
 public final class io/dataloom/runtime/facade/DataLoomBuilder {
 	public fun <init> ()V
+	public final fun assetProviderProtectionConfiguration (Lio/dataloom/runtime/facade/DataLoomAssetProviderProtectionSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun assetTransferConfiguration (Lio/dataloom/runtime/facade/DataLoomAssetTransferSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun assetTransferOperationalEventOutboxConfiguration (Lio/dataloom/runtime/facade/DataLoomAssetTransferOperationalEventOutboxSpec;)Lio/dataloom/runtime/facade/DataLoomBuilder;
 	public final fun bidirectionalConfiguration (Lio/dataloom/runtime/execution/bidirectional/BidirectionalPipelineConfiguration;)Lio/dataloom/runtime/facade/DataLoomBuilder;
@@ -2718,6 +2744,55 @@ public abstract interface class io/dataloom/runtime/queue/QueuedSynchronizationW
 	public abstract fun resolve (Lio/dataloom/api/queue/QueueEntry;)Lio/dataloom/runtime/queue/QueuedSynchronizationWorkResolution;
 }
 
+public final class io/dataloom/runtime/retry/AssetCircuitOperation : java/lang/Enum {
+	public static final field ABORT_UPLOAD Lio/dataloom/runtime/retry/AssetCircuitOperation;
+	public static final field CLOSE Lio/dataloom/runtime/retry/AssetCircuitOperation;
+	public static final field COMPLETE_UPLOAD Lio/dataloom/runtime/retry/AssetCircuitOperation;
+	public static final field HEALTH Lio/dataloom/runtime/retry/AssetCircuitOperation;
+	public static final field INITIALIZE Lio/dataloom/runtime/retry/AssetCircuitOperation;
+	public static final field OPEN_UPLOAD Lio/dataloom/runtime/retry/AssetCircuitOperation;
+	public static final field READ_CHUNK Lio/dataloom/runtime/retry/AssetCircuitOperation;
+	public static final field READ_MANIFEST Lio/dataloom/runtime/retry/AssetCircuitOperation;
+	public static final field UPLOAD_CHUNK Lio/dataloom/runtime/retry/AssetCircuitOperation;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getRetryOperation-TGFxZV8 ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lio/dataloom/runtime/retry/AssetCircuitOperation;
+	public static fun values ()[Lio/dataloom/runtime/retry/AssetCircuitOperation;
+}
+
+public final class io/dataloom/runtime/retry/AssetCircuitProtectionRuntime {
+	public static final field INSTANCE Lio/dataloom/runtime/retry/AssetCircuitProtectionRuntime;
+	public final fun create (Lio/dataloom/assets/AssetProvider;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;Lio/dataloom/api/circuit/CircuitBreakerStateStore;Lio/dataloom/runtime/retry/AssetCircuitScopes;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;)Lio/dataloom/runtime/retry/ProtectedAssetOperations;
+	public static synthetic fun create$default (Lio/dataloom/runtime/retry/AssetCircuitProtectionRuntime;Lio/dataloom/assets/AssetProvider;Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/runtime/retry/CircuitBreakerConfiguration;Lio/dataloom/api/circuit/CircuitBreakerStateStore;Lio/dataloom/runtime/retry/AssetCircuitScopes;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;ILjava/lang/Object;)Lio/dataloom/runtime/retry/ProtectedAssetOperations;
+}
+
+public final class io/dataloom/runtime/retry/AssetCircuitScopes {
+	public fun <init> (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;)V
+	public final fun component1 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component2 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component3 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component4 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component5 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component6 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component7 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component8 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun component9 ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun copy (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;)Lio/dataloom/runtime/retry/AssetCircuitScopes;
+	public static synthetic fun copy$default (Lio/dataloom/runtime/retry/AssetCircuitScopes;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/circuit/CircuitBreakerScope;ILjava/lang/Object;)Lio/dataloom/runtime/retry/AssetCircuitScopes;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAbortUpload ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getClose ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getCompleteUpload ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getHealth ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getInitialization ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getOpenUpload ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getReadChunk ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getReadManifest ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public final fun getUploadChunk ()Lio/dataloom/api/circuit/CircuitBreakerScope;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/dataloom/runtime/retry/CircuitAdministrationCoordinator {
 	public fun <init> (Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/circuit/CircuitAdministrationAuthorizer;Lio/dataloom/api/circuit/CircuitAdministrationStateStore;Lio/dataloom/api/circuit/CircuitAdministrationExecutor;I)V
 	public synthetic fun <init> (Lio/dataloom/api/time/DataLoomClock;Lio/dataloom/api/circuit/CircuitAdministrationAuthorizer;Lio/dataloom/api/circuit/CircuitAdministrationStateStore;Lio/dataloom/api/circuit/CircuitAdministrationExecutor;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -2837,6 +2912,21 @@ public final class io/dataloom/runtime/retry/CircuitAdministrationResult$Succeed
 	public final fun getRecord ()Lio/dataloom/api/circuit/CircuitAdministrationStateRecord;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/dataloom/runtime/retry/CircuitBreakerAssetOperationAdapter {
+	public fun <init> (Lio/dataloom/assets/AssetProvider;Lio/dataloom/runtime/retry/CircuitBreakerExecutionGate;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;)V
+	public synthetic fun <init> (Lio/dataloom/assets/AssetProvider;Lio/dataloom/runtime/retry/CircuitBreakerExecutionGate;Lio/dataloom/runtime/retry/CircuitBreakerFailureClassifier;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun abortUpload-zUUeaqo (Lio/dataloom/api/circuit/CircuitBreakerScope;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun close (Lio/dataloom/api/circuit/CircuitBreakerScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun completeUpload-zUUeaqo (Lio/dataloom/api/circuit/CircuitBreakerScope;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public final fun health (Lio/dataloom/api/circuit/CircuitBreakerScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun initialize (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun openUpload (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/assets/AssetUploadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun readChunk-2kroNPE (Lio/dataloom/api/circuit/CircuitBreakerScope;Ljava/lang/String;JILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun readManifest-EH7lO4k (Lio/dataloom/api/circuit/CircuitBreakerScope;Ljava/lang/String;Ljava/lang/Long;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun uploadChunk (Lio/dataloom/api/circuit/CircuitBreakerScope;Lio/dataloom/assets/AssetChunkUpload;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/dataloom/runtime/retry/CircuitBreakerConfiguration {
@@ -3181,6 +3271,20 @@ public final class io/dataloom/runtime/retry/CoroutineRetryTimeoutExecutor : io/
 public final class io/dataloom/runtime/retry/DefaultCircuitBreakerFailureClassifier : io/dataloom/runtime/retry/CircuitBreakerFailureClassifier {
 	public static final field INSTANCE Lio/dataloom/runtime/retry/DefaultCircuitBreakerFailureClassifier;
 	public fun classify (Lio/dataloom/api/error/DataLoomError;)Lio/dataloom/runtime/retry/CircuitBreakerFailureDisposition;
+}
+
+public final class io/dataloom/runtime/retry/ProtectedAssetOperations {
+	public final fun abortUpload-fnV884s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun completeUpload-fnV884s (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lio/dataloom/api/provider/ProviderDescriptor;
+	public final fun getScopes ()Lio/dataloom/runtime/retry/AssetCircuitScopes;
+	public final fun health (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun initialize (Lio/dataloom/api/provider/ProviderInitializationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun openUpload (Lio/dataloom/assets/AssetUploadRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun readChunk-jJr0HPI (Ljava/lang/String;JILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun readManifest-NNrJYCg (Ljava/lang/String;Ljava/lang/Long;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun uploadChunk (Lio/dataloom/assets/AssetChunkUpload;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/dataloom/runtime/retry/ProtectedStorageOperations {

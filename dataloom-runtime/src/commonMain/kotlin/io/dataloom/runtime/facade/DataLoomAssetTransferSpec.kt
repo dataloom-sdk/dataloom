@@ -18,12 +18,27 @@ import io.dataloom.assets.transform.AssetTransferTransforms
  * ## Ownership
  *
  * Every collaborator is an explicit host or platform dependency. The builder
- * only constructs the engine over them: it performs no provider I/O, reads no
- * session, and does not initialize, health-check, or close [provider].
- * [io.dataloom.assets.AssetProvider] is not yet a
- * [io.dataloom.api.provider.DataLoomProvider] (there is no asset
- * `ProviderType` or lifecycle slot), so the host owns its lifecycle; that
- * follows in a later slice.
+ * only constructs the engine over [provider]: it performs no provider I/O and
+ * reads no session during [DataLoomBuilder.build]. [provider] is itself a
+ * [io.dataloom.api.provider.DataLoomProvider] of type
+ * [io.dataloom.api.provider.ProviderType.ASSET] (`#97`); it is
+ * lifecycle-managed (`initialize`/`health`/`close`) exactly like every other
+ * provider type when the same instance is also registered with the builder
+ * via `providers(...)`/`provider(...)`. Supplying it only here and never also
+ * registering it leaves it un-managed, exactly as before this conformance
+ * existed -- the builder never infers registration from this spec.
+ *
+ * ## Circuit/retry protection
+ *
+ * [io.dataloom.runtime.facade.DataLoomAssetProviderProtectionSpec] (set via
+ * `DataLoomBuilder.assetProviderProtectionConfiguration`) wraps every call
+ * [AssetTransferEngine] makes into [provider] with the same
+ * [io.dataloom.runtime.retry.CircuitBreakerCoordinator]/
+ * [io.dataloom.runtime.retry.CircuitBreakerExecutionGate] machinery already
+ * used to protect [io.dataloom.api.storage.StorageProvider] and
+ * [io.dataloom.api.transport.TransportProvider] calls (`#94`). Protection is
+ * opt-in: without it, a provider failure propagates to the engine unchanged,
+ * exactly as before this conformance existed.
  *
  * ## Durability
  *

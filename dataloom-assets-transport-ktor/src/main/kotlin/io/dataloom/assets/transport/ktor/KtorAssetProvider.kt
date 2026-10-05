@@ -4,7 +4,15 @@ import io.dataloom.api.asset.AssetManifest
 import io.dataloom.api.asset.AssetManifestHistoryState
 import io.dataloom.api.asset.AssetManifestHistoryStateCodec
 import io.dataloom.api.identifier.AssetId
+import io.dataloom.api.provider.ProviderDescriptor
+import io.dataloom.api.provider.ProviderHealth
+import io.dataloom.api.provider.ProviderHealthStatus
+import io.dataloom.api.provider.ProviderId
+import io.dataloom.api.provider.ProviderInitializationContext
+import io.dataloom.api.provider.ProviderName
 import io.dataloom.api.provider.ProviderOperationResult
+import io.dataloom.api.provider.ProviderType
+import io.dataloom.api.provider.ProviderVersion
 import io.dataloom.assets.AssetChunkSizeBounds
 import io.dataloom.assets.AssetChunkUpload
 import io.dataloom.assets.AssetErrorKind
@@ -156,6 +164,19 @@ public class KtorAssetProvider private constructor(
         require(baseUrl.isNotBlank()) { "KtorAssetProvider baseUrl must not be blank." }
     }
 
+    override val descriptor: ProviderDescriptor = ProviderDescriptor(
+        id = ProviderId("io.dataloom.assets.transport.ktor-asset-provider"),
+        name = ProviderName("KtorAssetProvider"),
+        type = ProviderType.ASSET,
+        version = ProviderVersion("1.0.0"),
+    )
+
+    override suspend fun initialize(context: ProviderInitializationContext): ProviderOperationResult<Unit> =
+        ProviderOperationResult.Success(Unit)
+
+    override suspend fun health(): ProviderOperationResult<ProviderHealth> =
+        ProviderOperationResult.Success(ProviderHealth(status = ProviderHealthStatus.HEALTHY))
+
     /**
      * Creates a provider backed by an internally managed Ktor client (the CIO
      * engine).
@@ -187,10 +208,11 @@ public class KtorAssetProvider private constructor(
     }
 
     /** Releases the underlying HTTP client, if this instance owns it. */
-    public suspend fun close() {
+    override suspend fun close(): ProviderOperationResult<Unit> {
         if (closeHttpClientOnClose) {
             httpClient.close()
         }
+        return ProviderOperationResult.Success(Unit)
     }
 
     override suspend fun openUpload(request: AssetUploadRequest): ProviderOperationResult<AssetUploadStatus> {
