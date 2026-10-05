@@ -51,4 +51,13 @@ public enum class ProviderType {
      * This is a pre-release public API addition introduced with ADR-0007.
      */
     APP_LIFECYCLE,
+
+    /**
+     * Provider category for chunked, resumable, integrity-verified asset
+     * upload and download (`io.dataloom.assets.AssetProvider`).
+     *
+     * This is a pre-release public API addition introduced with ADR-0006's
+     * `DataLoomBuilder` lifecycle-wiring slice (`#97`).
+     */
+    ASSET,
 }

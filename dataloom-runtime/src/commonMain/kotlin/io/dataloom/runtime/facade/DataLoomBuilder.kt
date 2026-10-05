@@ -50,6 +50,7 @@ import io.dataloom.runtime.execution.lifecycle.DispatchingSynchronizationLifecyc
 import io.dataloom.runtime.execution.lifecycle.SynchronizationRuntimeEventEmitter
 import io.dataloom.runtime.execution.protection.ProviderProtectedStrategySynchronizationCoordinator
 import io.dataloom.runtime.execution.protection.ProviderProtectedSynchronizationCoordinator
+import io.dataloom.runtime.execution.protection.ProviderProtectionAssetBridge
 import io.dataloom.runtime.execution.outbound.OutboundPushPipelineConfiguration
 import io.dataloom.runtime.execution.outbound.OutboundPushSynchronizationPipeline
 import io.dataloom.runtime.observation.SynchronizationEventDispatcher
@@ -62,6 +63,7 @@ import io.dataloom.runtime.observation.operational.QueueLifecycleOperationalEven
 import io.dataloom.runtime.queue.DurableQueueExecutionProcessor
 import io.dataloom.runtime.queue.QueueEntryTransitionObserver
 import io.dataloom.runtime.queue.QueuedSynchronizationExecutionHandler
+import io.dataloom.runtime.retry.AssetCircuitProtectionRuntime
 import io.dataloom.runtime.retry.CircuitAdministrationCoordinator
 import io.dataloom.runtime.retry.CircuitBreakerCoordinator
 import io.dataloom.runtime.retry.CircuitBreakerExecutionGate
@@ -179,6 +181,7 @@ public class DataLoomBuilder {
     private var circuitAdministrationSpec: DataLoomCircuitAdministrationSpec? = null
     private var pluginSpec: DataLoomPluginSpec? = null
     private var assetTransferSpec: DataLoomAssetTransferSpec? = null
+    private var assetProviderProtectionSpec: DataLoomAssetProviderProtectionSpec? = null
     private var governanceSpec: DataLoomGovernanceSpec? = null
     private var lifecycleDrainSpec: DataLoomLifecycleDrainSpec? = null
     private var pluginOperationalEventOutboxSpec: DataLoomPluginOperationalEventOutboxSpec? = null
@@ -915,8 +918,12 @@ public class DataLoomBuilder {
      * [io.dataloom.assets.AssetTransferEngine] over the spec's provider,
      * session store, and digest calculator after [build]. When never supplied,
      * [DataLoom.assetTransfer] is `null` and [DataLoom] behavior is unchanged.
-     * [build] performs no provider or store I/O and never initializes the
-     * asset provider. See [DataLoomAssetTransferSpec].
+     * [build] performs no provider or store I/O itself. The spec's provider is
+     * lifecycle-managed (`initialize`/`health`/`close`) only when the same
+     * instance is also registered via `providers(...)`/`provider(...)`, the
+     * same opt-in every other provider type already requires -- see
+     * [DataLoomAssetTransferSpec]'s own KDoc. See
+     * [assetProviderProtectionConfiguration] for circuit/retry protection.
      *
      * @param spec the asset provider, session store, and transfer settings.
      * @return this builder for chaining.
@@ -958,6 +965,38 @@ public class DataLoomBuilder {
         spec: DataLoomAssetTransferOperationalEventOutboxSpec,
     ): DataLoomBuilder = apply {
         assetTransferOperationalEventOutboxSpec = spec
+    }
+
+    /**
+     * Opts the asset-transfer capability into circuit-breaker/retry
+     * protection (`#94`, `#97`): every call
+     * [io.dataloom.assets.AssetTransferEngine] makes into
+     * [DataLoomAssetTransferSpec.provider] is routed through the same
+     * [io.dataloom.runtime.retry.CircuitBreakerCoordinator]/
+     * [io.dataloom.runtime.retry.CircuitBreakerExecutionGate] machinery
+     * already protecting storage and transport provider calls, via
+     * [io.dataloom.runtime.execution.protection.ProviderProtectionAssetBridge].
+     * A provider failure classified as circuit-eligible trips the circuit per
+     * [spec]'s configuration and configured scopes; a rejected permission is
+     * reported to the engine as a recoverable failure (see
+     * [io.dataloom.runtime.execution.protection.ProviderProtectionAssetBridge]'s
+     * own KDoc for why it is never treated as terminal).
+     *
+     * Requires [assetTransferConfiguration] to also be configured --
+     * [DataLoomBuildException] is thrown at [build] otherwise. When this
+     * method is not called, [DataLoomAssetTransferSpec.provider] is used
+     * unwrapped and a provider failure propagates to the engine unchanged,
+     * exactly as before this method existed.
+     *
+     * @param spec the circuit-breaker configuration, state store, and exact
+     *   scope for every asset-provider operation. See
+     *   [DataLoomAssetProviderProtectionSpec].
+     * @return this builder for chaining.
+     */
+    public fun assetProviderProtectionConfiguration(
+        spec: DataLoomAssetProviderProtectionSpec,
+    ): DataLoomBuilder = apply {
+        assetProviderProtectionSpec = spec
     }
 
     /**
@@ -1185,6 +1224,12 @@ public class DataLoomBuilder {
             throw DataLoomBuildException(
                 "DataLoomBuilder lifecycleDrainConfiguration requires queueWorkerConfiguration " +
                     "or circuitQueueWorkerConfiguration.",
+            )
+        }
+        if (assetProviderProtectionSpec != null && assetTransferSpec == null) {
+            throw DataLoomBuildException(
+                "DataLoomBuilder assetProviderProtectionConfiguration requires " +
+                    "assetTransferConfiguration.",
             )
         }
         val strategyBindings = defaultStrategyProviderBindings
@@ -1640,9 +1685,32 @@ public class DataLoomBuilder {
         val assetTransferObserver = assetTransferHealthTracker?.let {
             assetTransferEventRecorderObserver.withAssetTransferHealthTracking(it)
         } ?: assetTransferEventRecorderObserver
-        val assetTransfer = assetTransferSpec?.let { spec ->
+        // --- 14d-ii. Optionally wrap the asset provider in circuit-breaker protection ---
+        val assetProviderProtection = assetProviderProtectionSpec?.let { protectionSpec ->
+            val transferSpec = checkNotNull(assetTransferSpec)
+            val protectedOperations = try {
+                AssetCircuitProtectionRuntime.create(
+                    assetProvider = transferSpec.provider,
+                    clock = deps.clock,
+                    circuitBreakerConfiguration = protectionSpec.circuitBreakerConfiguration,
+                    circuitBreakerStateStore = protectionSpec.circuitBreakerStateStore,
+                    scopes = protectionSpec.scopes,
+                    failureClassifier = protectionSpec.failureClassifier,
+                )
+            } catch (_: IllegalArgumentException) {
+                throw DataLoomBuildException(
+                    "DataLoomBuilder assetProviderProtectionConfiguration scopes must match " +
+                        "the asset-transfer spec's provider and exact asset operations.",
+                )
+            }
+            ProviderProtectionAssetBridge(
+                protectedOperations = protectedOperations,
+                chunkSizeBounds = transferSpec.provider.chunkSizeBounds,
+            )
+        }
+        val assetTransfer =assetTransferSpec?.let { spec ->
             AssetTransferEngine(
-                provider = spec.provider,
+                provider = assetProviderProtection ?: spec.provider,
                 sessions = spec.sessionStore,
                 digests = spec.digestCalculator,
                 chunkSizeBytes = spec.chunkSizeBytes,

@@ -379,6 +379,26 @@ final enum class io.dataloom.runtime.queue/QueueProcessingFailureStage : kotlin/
     final fun values(): kotlin/Array<io.dataloom.runtime.queue/QueueProcessingFailureStage> // io.dataloom.runtime.queue/QueueProcessingFailureStage.values|values#static(){}[0]
 }
 
+final enum class io.dataloom.runtime.retry/AssetCircuitOperation : kotlin/Enum<io.dataloom.runtime.retry/AssetCircuitOperation> { // io.dataloom.runtime.retry/AssetCircuitOperation|null[0]
+    enum entry ABORT_UPLOAD // io.dataloom.runtime.retry/AssetCircuitOperation.ABORT_UPLOAD|null[0]
+    enum entry CLOSE // io.dataloom.runtime.retry/AssetCircuitOperation.CLOSE|null[0]
+    enum entry COMPLETE_UPLOAD // io.dataloom.runtime.retry/AssetCircuitOperation.COMPLETE_UPLOAD|null[0]
+    enum entry HEALTH // io.dataloom.runtime.retry/AssetCircuitOperation.HEALTH|null[0]
+    enum entry INITIALIZE // io.dataloom.runtime.retry/AssetCircuitOperation.INITIALIZE|null[0]
+    enum entry OPEN_UPLOAD // io.dataloom.runtime.retry/AssetCircuitOperation.OPEN_UPLOAD|null[0]
+    enum entry READ_CHUNK // io.dataloom.runtime.retry/AssetCircuitOperation.READ_CHUNK|null[0]
+    enum entry READ_MANIFEST // io.dataloom.runtime.retry/AssetCircuitOperation.READ_MANIFEST|null[0]
+    enum entry UPLOAD_CHUNK // io.dataloom.runtime.retry/AssetCircuitOperation.UPLOAD_CHUNK|null[0]
+
+    final val entries // io.dataloom.runtime.retry/AssetCircuitOperation.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.dataloom.runtime.retry/AssetCircuitOperation> // io.dataloom.runtime.retry/AssetCircuitOperation.entries.<get-entries>|<get-entries>#static(){}[0]
+    final val retryOperation // io.dataloom.runtime.retry/AssetCircuitOperation.retryOperation|{}retryOperation[0]
+        final fun <get-retryOperation>(): io.dataloom.api.retry/RetryOperation // io.dataloom.runtime.retry/AssetCircuitOperation.retryOperation.<get-retryOperation>|<get-retryOperation>(){}[0]
+
+    final fun valueOf(kotlin/String): io.dataloom.runtime.retry/AssetCircuitOperation // io.dataloom.runtime.retry/AssetCircuitOperation.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.dataloom.runtime.retry/AssetCircuitOperation> // io.dataloom.runtime.retry/AssetCircuitOperation.values|values#static(){}[0]
+}
+
 final enum class io.dataloom.runtime.retry/CircuitBreakerFailureDisposition : kotlin/Enum<io.dataloom.runtime.retry/CircuitBreakerFailureDisposition> { // io.dataloom.runtime.retry/CircuitBreakerFailureDisposition|null[0]
     enum entry RECORD_FAILURE // io.dataloom.runtime.retry/CircuitBreakerFailureDisposition.RECORD_FAILURE|null[0]
     enum entry RECORD_SUCCESS // io.dataloom.runtime.retry/CircuitBreakerFailureDisposition.RECORD_SUCCESS|null[0]
@@ -3439,6 +3459,25 @@ final class io.dataloom.runtime.execution.protection/ProviderProtectedSynchroniz
     final fun toString(): kotlin/String // io.dataloom.runtime.execution.protection/ProviderProtectedSynchronizationResult.toString|toString(){}[0]
 }
 
+final class io.dataloom.runtime.execution.protection/ProviderProtectionAssetBridge : io.dataloom.assets/AssetProvider { // io.dataloom.runtime.execution.protection/ProviderProtectionAssetBridge|null[0]
+    constructor <init>(io.dataloom.runtime.retry/ProtectedAssetOperations, io.dataloom.assets/AssetChunkSizeBounds) // io.dataloom.runtime.execution.protection/ProviderProtectionAssetBridge.<init>|<init>(io.dataloom.runtime.retry.ProtectedAssetOperations;io.dataloom.assets.AssetChunkSizeBounds){}[0]
+
+    final val chunkSizeBounds // io.dataloom.runtime.execution.protection/ProviderProtectionAssetBridge.chunkSizeBounds|{}chunkSizeBounds[0]
+        final fun <get-chunkSizeBounds>(): io.dataloom.assets/AssetChunkSizeBounds // io.dataloom.runtime.execution.protection/ProviderProtectionAssetBridge.chunkSizeBounds.<get-chunkSizeBounds>|<get-chunkSizeBounds>(){}[0]
+    final val descriptor // io.dataloom.runtime.execution.protection/ProviderProtectionAssetBridge.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.runtime.execution.protection/ProviderProtectionAssetBridge.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    final suspend fun abortUpload(io.dataloom.assets/AssetTransferSessionId): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.execution.protection/ProviderProtectionAssetBridge.abortUpload|abortUpload(io.dataloom.assets.AssetTransferSessionId){}[0]
+    final suspend fun close(): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.execution.protection/ProviderProtectionAssetBridge.close|close(){}[0]
+    final suspend fun completeUpload(io.dataloom.assets/AssetTransferSessionId): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.asset/AssetManifest> // io.dataloom.runtime.execution.protection/ProviderProtectionAssetBridge.completeUpload|completeUpload(io.dataloom.assets.AssetTransferSessionId){}[0]
+    final suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.runtime.execution.protection/ProviderProtectionAssetBridge.health|health(){}[0]
+    final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.runtime.execution.protection/ProviderProtectionAssetBridge.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
+    final suspend fun openUpload(io.dataloom.assets/AssetUploadRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.assets/AssetUploadStatus> // io.dataloom.runtime.execution.protection/ProviderProtectionAssetBridge.openUpload|openUpload(io.dataloom.assets.AssetUploadRequest){}[0]
+    final suspend fun readChunk(io.dataloom.api.identifier/AssetId, kotlin/Long, kotlin/Int): io.dataloom.api.provider/ProviderOperationResult<kotlin/ByteArray> // io.dataloom.runtime.execution.protection/ProviderProtectionAssetBridge.readChunk|readChunk(io.dataloom.api.identifier.AssetId;kotlin.Long;kotlin.Int){}[0]
+    final suspend fun readManifest(io.dataloom.api.identifier/AssetId, kotlin/Long?): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.asset/AssetManifest> // io.dataloom.runtime.execution.protection/ProviderProtectionAssetBridge.readManifest|readManifest(io.dataloom.api.identifier.AssetId;kotlin.Long?){}[0]
+    final suspend fun uploadChunk(io.dataloom.assets/AssetChunkUpload): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.assets/AssetUploadStatus> // io.dataloom.runtime.execution.protection/ProviderProtectionAssetBridge.uploadChunk|uploadChunk(io.dataloom.assets.AssetChunkUpload){}[0]
+}
+
 final class io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence { // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence|null[0]
     constructor <init>(io.dataloom.api.provider/ProviderId, io.dataloom.api.retry/RetryOperation, io.dataloom.runtime.execution.protection/ProviderProtectionInvocation, io.dataloom.runtime.execution.protection/ProviderProtectionPreExecutionReason? = ..., io.dataloom.runtime.retry/CircuitBreakerRejectionReason? = ..., io.dataloom.api.time/DataLoomInstant? = ..., io.dataloom.api.error/DataLoomError? = ..., io.dataloom.runtime.retry/CircuitBreakerRecordResult? = ...) // io.dataloom.runtime.execution.protection/ProviderProtectionOperationEvidence.<init>|<init>(io.dataloom.api.provider.ProviderId;io.dataloom.api.retry.RetryOperation;io.dataloom.runtime.execution.protection.ProviderProtectionInvocation;io.dataloom.runtime.execution.protection.ProviderProtectionPreExecutionReason?;io.dataloom.runtime.retry.CircuitBreakerRejectionReason?;io.dataloom.api.time.DataLoomInstant?;io.dataloom.api.error.DataLoomError?;io.dataloom.runtime.retry.CircuitBreakerRecordResult?){}[0]
 
@@ -3504,6 +3543,21 @@ final class io.dataloom.runtime.execution/SynchronizationPipelineRegistry { // i
     final fun toString(): kotlin/String // io.dataloom.runtime.execution/SynchronizationPipelineRegistry.toString|toString(){}[0]
 }
 
+final class io.dataloom.runtime.facade/DataLoomAssetProviderProtectionSpec { // io.dataloom.runtime.facade/DataLoomAssetProviderProtectionSpec|null[0]
+    constructor <init>(io.dataloom.runtime.retry/CircuitBreakerConfiguration, io.dataloom.api.circuit/CircuitBreakerStateStore, io.dataloom.runtime.retry/AssetCircuitScopes, io.dataloom.runtime.retry/CircuitBreakerFailureClassifier = ...) // io.dataloom.runtime.facade/DataLoomAssetProviderProtectionSpec.<init>|<init>(io.dataloom.runtime.retry.CircuitBreakerConfiguration;io.dataloom.api.circuit.CircuitBreakerStateStore;io.dataloom.runtime.retry.AssetCircuitScopes;io.dataloom.runtime.retry.CircuitBreakerFailureClassifier){}[0]
+
+    final val circuitBreakerConfiguration // io.dataloom.runtime.facade/DataLoomAssetProviderProtectionSpec.circuitBreakerConfiguration|{}circuitBreakerConfiguration[0]
+        final fun <get-circuitBreakerConfiguration>(): io.dataloom.runtime.retry/CircuitBreakerConfiguration // io.dataloom.runtime.facade/DataLoomAssetProviderProtectionSpec.circuitBreakerConfiguration.<get-circuitBreakerConfiguration>|<get-circuitBreakerConfiguration>(){}[0]
+    final val circuitBreakerStateStore // io.dataloom.runtime.facade/DataLoomAssetProviderProtectionSpec.circuitBreakerStateStore|{}circuitBreakerStateStore[0]
+        final fun <get-circuitBreakerStateStore>(): io.dataloom.api.circuit/CircuitBreakerStateStore // io.dataloom.runtime.facade/DataLoomAssetProviderProtectionSpec.circuitBreakerStateStore.<get-circuitBreakerStateStore>|<get-circuitBreakerStateStore>(){}[0]
+    final val failureClassifier // io.dataloom.runtime.facade/DataLoomAssetProviderProtectionSpec.failureClassifier|{}failureClassifier[0]
+        final fun <get-failureClassifier>(): io.dataloom.runtime.retry/CircuitBreakerFailureClassifier // io.dataloom.runtime.facade/DataLoomAssetProviderProtectionSpec.failureClassifier.<get-failureClassifier>|<get-failureClassifier>(){}[0]
+    final val scopes // io.dataloom.runtime.facade/DataLoomAssetProviderProtectionSpec.scopes|{}scopes[0]
+        final fun <get-scopes>(): io.dataloom.runtime.retry/AssetCircuitScopes // io.dataloom.runtime.facade/DataLoomAssetProviderProtectionSpec.scopes.<get-scopes>|<get-scopes>(){}[0]
+
+    final fun toString(): kotlin/String // io.dataloom.runtime.facade/DataLoomAssetProviderProtectionSpec.toString|toString(){}[0]
+}
+
 final class io.dataloom.runtime.facade/DataLoomAssetTransferOperationalEventOutboxSpec { // io.dataloom.runtime.facade/DataLoomAssetTransferOperationalEventOutboxSpec|null[0]
     constructor <init>(io.dataloom.api.state/DurableStateStore<io.dataloom.api.operational/OperationalEventOutboxScope, io.dataloom.api.operational/OperationalEventOutboxState>, io.dataloom.api.operational/OperationalEventOutboxScope = ..., kotlin/Int = ..., kotlin/Int = ...) // io.dataloom.runtime.facade/DataLoomAssetTransferOperationalEventOutboxSpec.<init>|<init>(io.dataloom.api.state.DurableStateStore<io.dataloom.api.operational.OperationalEventOutboxScope,io.dataloom.api.operational.OperationalEventOutboxState>;io.dataloom.api.operational.OperationalEventOutboxScope;kotlin.Int;kotlin.Int){}[0]
 
@@ -3545,6 +3599,7 @@ final class io.dataloom.runtime.facade/DataLoomBuildException : kotlin/IllegalSt
 final class io.dataloom.runtime.facade/DataLoomBuilder { // io.dataloom.runtime.facade/DataLoomBuilder|null[0]
     constructor <init>() // io.dataloom.runtime.facade/DataLoomBuilder.<init>|<init>(){}[0]
 
+    final fun assetProviderProtectionConfiguration(io.dataloom.runtime.facade/DataLoomAssetProviderProtectionSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.assetProviderProtectionConfiguration|assetProviderProtectionConfiguration(io.dataloom.runtime.facade.DataLoomAssetProviderProtectionSpec){}[0]
     final fun assetTransferConfiguration(io.dataloom.runtime.facade/DataLoomAssetTransferSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.assetTransferConfiguration|assetTransferConfiguration(io.dataloom.runtime.facade.DataLoomAssetTransferSpec){}[0]
     final fun assetTransferHealthTracker(io.dataloom.runtime.observation.health/AssetTransferHealthTracker): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.assetTransferHealthTracker|assetTransferHealthTracker(io.dataloom.runtime.observation.health.AssetTransferHealthTracker){}[0]
     final fun assetTransferOperationalEventOutboxConfiguration(io.dataloom.runtime.facade/DataLoomAssetTransferOperationalEventOutboxSpec): io.dataloom.runtime.facade/DataLoomBuilder // io.dataloom.runtime.facade/DataLoomBuilder.assetTransferOperationalEventOutboxConfiguration|assetTransferOperationalEventOutboxConfiguration(io.dataloom.runtime.facade.DataLoomAssetTransferOperationalEventOutboxSpec){}[0]
@@ -5068,10 +5123,64 @@ final class io.dataloom.runtime.retry/AppleFileRetryAdministrationStateStore : i
     }
 }
 
+final class io.dataloom.runtime.retry/AssetCircuitScopes { // io.dataloom.runtime.retry/AssetCircuitScopes|null[0]
+    constructor <init>(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.circuit/CircuitBreakerScope) // io.dataloom.runtime.retry/AssetCircuitScopes.<init>|<init>(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope){}[0]
+
+    final val abortUpload // io.dataloom.runtime.retry/AssetCircuitScopes.abortUpload|{}abortUpload[0]
+        final fun <get-abortUpload>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/AssetCircuitScopes.abortUpload.<get-abortUpload>|<get-abortUpload>(){}[0]
+    final val close // io.dataloom.runtime.retry/AssetCircuitScopes.close|{}close[0]
+        final fun <get-close>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/AssetCircuitScopes.close.<get-close>|<get-close>(){}[0]
+    final val completeUpload // io.dataloom.runtime.retry/AssetCircuitScopes.completeUpload|{}completeUpload[0]
+        final fun <get-completeUpload>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/AssetCircuitScopes.completeUpload.<get-completeUpload>|<get-completeUpload>(){}[0]
+    final val health // io.dataloom.runtime.retry/AssetCircuitScopes.health|{}health[0]
+        final fun <get-health>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/AssetCircuitScopes.health.<get-health>|<get-health>(){}[0]
+    final val initialization // io.dataloom.runtime.retry/AssetCircuitScopes.initialization|{}initialization[0]
+        final fun <get-initialization>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/AssetCircuitScopes.initialization.<get-initialization>|<get-initialization>(){}[0]
+    final val openUpload // io.dataloom.runtime.retry/AssetCircuitScopes.openUpload|{}openUpload[0]
+        final fun <get-openUpload>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/AssetCircuitScopes.openUpload.<get-openUpload>|<get-openUpload>(){}[0]
+    final val readChunk // io.dataloom.runtime.retry/AssetCircuitScopes.readChunk|{}readChunk[0]
+        final fun <get-readChunk>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/AssetCircuitScopes.readChunk.<get-readChunk>|<get-readChunk>(){}[0]
+    final val readManifest // io.dataloom.runtime.retry/AssetCircuitScopes.readManifest|{}readManifest[0]
+        final fun <get-readManifest>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/AssetCircuitScopes.readManifest.<get-readManifest>|<get-readManifest>(){}[0]
+    final val uploadChunk // io.dataloom.runtime.retry/AssetCircuitScopes.uploadChunk|{}uploadChunk[0]
+        final fun <get-uploadChunk>(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/AssetCircuitScopes.uploadChunk.<get-uploadChunk>|<get-uploadChunk>(){}[0]
+
+    final fun component1(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/AssetCircuitScopes.component1|component1(){}[0]
+    final fun component2(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/AssetCircuitScopes.component2|component2(){}[0]
+    final fun component3(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/AssetCircuitScopes.component3|component3(){}[0]
+    final fun component4(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/AssetCircuitScopes.component4|component4(){}[0]
+    final fun component5(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/AssetCircuitScopes.component5|component5(){}[0]
+    final fun component6(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/AssetCircuitScopes.component6|component6(){}[0]
+    final fun component7(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/AssetCircuitScopes.component7|component7(){}[0]
+    final fun component8(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/AssetCircuitScopes.component8|component8(){}[0]
+    final fun component9(): io.dataloom.api.circuit/CircuitBreakerScope // io.dataloom.runtime.retry/AssetCircuitScopes.component9|component9(){}[0]
+    final fun copy(io.dataloom.api.circuit/CircuitBreakerScope = ..., io.dataloom.api.circuit/CircuitBreakerScope = ..., io.dataloom.api.circuit/CircuitBreakerScope = ..., io.dataloom.api.circuit/CircuitBreakerScope = ..., io.dataloom.api.circuit/CircuitBreakerScope = ..., io.dataloom.api.circuit/CircuitBreakerScope = ..., io.dataloom.api.circuit/CircuitBreakerScope = ..., io.dataloom.api.circuit/CircuitBreakerScope = ..., io.dataloom.api.circuit/CircuitBreakerScope = ...): io.dataloom.runtime.retry/AssetCircuitScopes // io.dataloom.runtime.retry/AssetCircuitScopes.copy|copy(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.circuit.CircuitBreakerScope){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.dataloom.runtime.retry/AssetCircuitScopes.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.dataloom.runtime.retry/AssetCircuitScopes.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.dataloom.runtime.retry/AssetCircuitScopes.toString|toString(){}[0]
+}
+
 final class io.dataloom.runtime.retry/CircuitAdministrationCoordinator { // io.dataloom.runtime.retry/CircuitAdministrationCoordinator|null[0]
     constructor <init>(io.dataloom.api.time/DataLoomClock, io.dataloom.api.circuit/CircuitAdministrationAuthorizer, io.dataloom.api.circuit/CircuitAdministrationStateStore, io.dataloom.api.circuit/CircuitAdministrationExecutor, kotlin/Int = ...) // io.dataloom.runtime.retry/CircuitAdministrationCoordinator.<init>|<init>(io.dataloom.api.time.DataLoomClock;io.dataloom.api.circuit.CircuitAdministrationAuthorizer;io.dataloom.api.circuit.CircuitAdministrationStateStore;io.dataloom.api.circuit.CircuitAdministrationExecutor;kotlin.Int){}[0]
 
     final suspend fun execute(io.dataloom.api.circuit/CircuitAdministrationRequest): io.dataloom.runtime.retry/CircuitAdministrationResult // io.dataloom.runtime.retry/CircuitAdministrationCoordinator.execute|execute(io.dataloom.api.circuit.CircuitAdministrationRequest){}[0]
+}
+
+final class io.dataloom.runtime.retry/CircuitBreakerAssetOperationAdapter { // io.dataloom.runtime.retry/CircuitBreakerAssetOperationAdapter|null[0]
+    constructor <init>(io.dataloom.assets/AssetProvider, io.dataloom.runtime.retry/CircuitBreakerExecutionGate, io.dataloom.runtime.retry/CircuitBreakerFailureClassifier = ...) // io.dataloom.runtime.retry/CircuitBreakerAssetOperationAdapter.<init>|<init>(io.dataloom.assets.AssetProvider;io.dataloom.runtime.retry.CircuitBreakerExecutionGate;io.dataloom.runtime.retry.CircuitBreakerFailureClassifier){}[0]
+
+    final val descriptor // io.dataloom.runtime.retry/CircuitBreakerAssetOperationAdapter.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.runtime.retry/CircuitBreakerAssetOperationAdapter.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    final suspend fun abortUpload(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.assets/AssetTransferSessionId): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> // io.dataloom.runtime.retry/CircuitBreakerAssetOperationAdapter.abortUpload|abortUpload(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.assets.AssetTransferSessionId){}[0]
+    final suspend fun close(io.dataloom.api.circuit/CircuitBreakerScope): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> // io.dataloom.runtime.retry/CircuitBreakerAssetOperationAdapter.close|close(io.dataloom.api.circuit.CircuitBreakerScope){}[0]
+    final suspend fun completeUpload(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.assets/AssetTransferSessionId): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.api.asset/AssetManifest> // io.dataloom.runtime.retry/CircuitBreakerAssetOperationAdapter.completeUpload|completeUpload(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.assets.AssetTransferSessionId){}[0]
+    final suspend fun health(io.dataloom.api.circuit/CircuitBreakerScope): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.runtime.retry/CircuitBreakerAssetOperationAdapter.health|health(io.dataloom.api.circuit.CircuitBreakerScope){}[0]
+    final suspend fun initialize(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> // io.dataloom.runtime.retry/CircuitBreakerAssetOperationAdapter.initialize|initialize(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.provider.ProviderInitializationContext){}[0]
+    final suspend fun openUpload(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.assets/AssetUploadRequest): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.assets/AssetUploadStatus> // io.dataloom.runtime.retry/CircuitBreakerAssetOperationAdapter.openUpload|openUpload(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.assets.AssetUploadRequest){}[0]
+    final suspend fun readChunk(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.identifier/AssetId, kotlin/Long, kotlin/Int): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/ByteArray> // io.dataloom.runtime.retry/CircuitBreakerAssetOperationAdapter.readChunk|readChunk(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.identifier.AssetId;kotlin.Long;kotlin.Int){}[0]
+    final suspend fun readManifest(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.api.identifier/AssetId, kotlin/Long?): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.api.asset/AssetManifest> // io.dataloom.runtime.retry/CircuitBreakerAssetOperationAdapter.readManifest|readManifest(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.api.identifier.AssetId;kotlin.Long?){}[0]
+    final suspend fun uploadChunk(io.dataloom.api.circuit/CircuitBreakerScope, io.dataloom.assets/AssetChunkUpload): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.assets/AssetUploadStatus> // io.dataloom.runtime.retry/CircuitBreakerAssetOperationAdapter.uploadChunk|uploadChunk(io.dataloom.api.circuit.CircuitBreakerScope;io.dataloom.assets.AssetChunkUpload){}[0]
 }
 
 final class io.dataloom.runtime.retry/CircuitBreakerConfiguration { // io.dataloom.runtime.retry/CircuitBreakerConfiguration|null[0]
@@ -5197,6 +5306,23 @@ final class io.dataloom.runtime.retry/CoroutineRetryTimeoutExecutor : io.dataloo
     constructor <init>() // io.dataloom.runtime.retry/CoroutineRetryTimeoutExecutor.<init>|<init>(){}[0]
 
     final suspend fun <#A1: kotlin/Any?> execute(io.dataloom.runtime.retry/RetryTimeoutExecutionRequest, kotlin.coroutines/SuspendFunction0<#A1>): io.dataloom.runtime.retry/RetryTimeoutExecutionResult<#A1> // io.dataloom.runtime.retry/CoroutineRetryTimeoutExecutor.execute|execute(io.dataloom.runtime.retry.RetryTimeoutExecutionRequest;kotlin.coroutines.SuspendFunction0<0:0>){0§<kotlin.Any?>}[0]
+}
+
+final class io.dataloom.runtime.retry/ProtectedAssetOperations { // io.dataloom.runtime.retry/ProtectedAssetOperations|null[0]
+    final val descriptor // io.dataloom.runtime.retry/ProtectedAssetOperations.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.runtime.retry/ProtectedAssetOperations.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+    final val scopes // io.dataloom.runtime.retry/ProtectedAssetOperations.scopes|{}scopes[0]
+        final fun <get-scopes>(): io.dataloom.runtime.retry/AssetCircuitScopes // io.dataloom.runtime.retry/ProtectedAssetOperations.scopes.<get-scopes>|<get-scopes>(){}[0]
+
+    final suspend fun abortUpload(io.dataloom.assets/AssetTransferSessionId): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> // io.dataloom.runtime.retry/ProtectedAssetOperations.abortUpload|abortUpload(io.dataloom.assets.AssetTransferSessionId){}[0]
+    final suspend fun close(): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> // io.dataloom.runtime.retry/ProtectedAssetOperations.close|close(){}[0]
+    final suspend fun completeUpload(io.dataloom.assets/AssetTransferSessionId): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.api.asset/AssetManifest> // io.dataloom.runtime.retry/ProtectedAssetOperations.completeUpload|completeUpload(io.dataloom.assets.AssetTransferSessionId){}[0]
+    final suspend fun health(): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.runtime.retry/ProtectedAssetOperations.health|health(){}[0]
+    final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/Unit> // io.dataloom.runtime.retry/ProtectedAssetOperations.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
+    final suspend fun openUpload(io.dataloom.assets/AssetUploadRequest): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.assets/AssetUploadStatus> // io.dataloom.runtime.retry/ProtectedAssetOperations.openUpload|openUpload(io.dataloom.assets.AssetUploadRequest){}[0]
+    final suspend fun readChunk(io.dataloom.api.identifier/AssetId, kotlin/Long, kotlin/Int): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<kotlin/ByteArray> // io.dataloom.runtime.retry/ProtectedAssetOperations.readChunk|readChunk(io.dataloom.api.identifier.AssetId;kotlin.Long;kotlin.Int){}[0]
+    final suspend fun readManifest(io.dataloom.api.identifier/AssetId, kotlin/Long?): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.api.asset/AssetManifest> // io.dataloom.runtime.retry/ProtectedAssetOperations.readManifest|readManifest(io.dataloom.api.identifier.AssetId;kotlin.Long?){}[0]
+    final suspend fun uploadChunk(io.dataloom.assets/AssetChunkUpload): io.dataloom.runtime.retry/CircuitBreakerExecutionResult<io.dataloom.assets/AssetUploadStatus> // io.dataloom.runtime.retry/ProtectedAssetOperations.uploadChunk|uploadChunk(io.dataloom.assets.AssetChunkUpload){}[0]
 }
 
 final class io.dataloom.runtime.retry/ProtectedStorageOperations { // io.dataloom.runtime.retry/ProtectedStorageOperations|null[0]
@@ -5750,6 +5876,10 @@ final object io.dataloom.runtime.observation.operational/StrategyDecisionOperati
 
 final object io.dataloom.runtime.observation.operational/SynchronizationOperationalEventBridge { // io.dataloom.runtime.observation.operational/SynchronizationOperationalEventBridge|null[0]
     final fun toEnvelope(io.dataloom.api.synchronization/SynchronizationEvent): io.dataloom.api.operational/OperationalEventEnvelope // io.dataloom.runtime.observation.operational/SynchronizationOperationalEventBridge.toEnvelope|toEnvelope(io.dataloom.api.synchronization.SynchronizationEvent){}[0]
+}
+
+final object io.dataloom.runtime.retry/AssetCircuitProtectionRuntime { // io.dataloom.runtime.retry/AssetCircuitProtectionRuntime|null[0]
+    final fun create(io.dataloom.assets/AssetProvider, io.dataloom.api.time/DataLoomClock, io.dataloom.runtime.retry/CircuitBreakerConfiguration, io.dataloom.api.circuit/CircuitBreakerStateStore, io.dataloom.runtime.retry/AssetCircuitScopes, io.dataloom.runtime.retry/CircuitBreakerFailureClassifier = ...): io.dataloom.runtime.retry/ProtectedAssetOperations // io.dataloom.runtime.retry/AssetCircuitProtectionRuntime.create|create(io.dataloom.assets.AssetProvider;io.dataloom.api.time.DataLoomClock;io.dataloom.runtime.retry.CircuitBreakerConfiguration;io.dataloom.api.circuit.CircuitBreakerStateStore;io.dataloom.runtime.retry.AssetCircuitScopes;io.dataloom.runtime.retry.CircuitBreakerFailureClassifier){}[0]
 }
 
 final object io.dataloom.runtime.retry/DefaultCircuitBreakerFailureClassifier : io.dataloom.runtime.retry/CircuitBreakerFailureClassifier { // io.dataloom.runtime.retry/DefaultCircuitBreakerFailureClassifier|null[0]

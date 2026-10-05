@@ -149,7 +149,7 @@ abstract interface io.dataloom.assets/AssetContentPolicy { // io.dataloom.assets
     abstract suspend fun evaluate(io.dataloom.assets/AssetContentPolicyContext, kotlin/ByteArray): io.dataloom.assets/AssetContentPolicyDecision // io.dataloom.assets/AssetContentPolicy.evaluate|evaluate(io.dataloom.assets.AssetContentPolicyContext;kotlin.ByteArray){}[0]
 }
 
-abstract interface io.dataloom.assets/AssetProvider { // io.dataloom.assets/AssetProvider|null[0]
+abstract interface io.dataloom.assets/AssetProvider : io.dataloom.api.provider/DataLoomProvider { // io.dataloom.assets/AssetProvider|null[0]
     abstract val chunkSizeBounds // io.dataloom.assets/AssetProvider.chunkSizeBounds|{}chunkSizeBounds[0]
         abstract fun <get-chunkSizeBounds>(): io.dataloom.assets/AssetChunkSizeBounds // io.dataloom.assets/AssetProvider.chunkSizeBounds.<get-chunkSizeBounds>|<get-chunkSizeBounds>(){}[0]
 
@@ -581,9 +581,14 @@ final class io.dataloom.assets.file/AppleFileAssetProvider : io.dataloom.assets/
 
     final val chunkSizeBounds // io.dataloom.assets.file/AppleFileAssetProvider.chunkSizeBounds|{}chunkSizeBounds[0]
         final fun <get-chunkSizeBounds>(): io.dataloom.assets/AssetChunkSizeBounds // io.dataloom.assets.file/AppleFileAssetProvider.chunkSizeBounds.<get-chunkSizeBounds>|<get-chunkSizeBounds>(){}[0]
+    final val descriptor // io.dataloom.assets.file/AppleFileAssetProvider.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.assets.file/AppleFileAssetProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
 
     final suspend fun abortUpload(io.dataloom.assets/AssetTransferSessionId): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.assets.file/AppleFileAssetProvider.abortUpload|abortUpload(io.dataloom.assets.AssetTransferSessionId){}[0]
+    final suspend fun close(): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.assets.file/AppleFileAssetProvider.close|close(){}[0]
     final suspend fun completeUpload(io.dataloom.assets/AssetTransferSessionId): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.asset/AssetManifest> // io.dataloom.assets.file/AppleFileAssetProvider.completeUpload|completeUpload(io.dataloom.assets.AssetTransferSessionId){}[0]
+    final suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.assets.file/AppleFileAssetProvider.health|health(){}[0]
+    final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.assets.file/AppleFileAssetProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
     final suspend fun openUpload(io.dataloom.assets/AssetUploadRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.assets/AssetUploadStatus> // io.dataloom.assets.file/AppleFileAssetProvider.openUpload|openUpload(io.dataloom.assets.AssetUploadRequest){}[0]
     final suspend fun readChunk(io.dataloom.api.identifier/AssetId, kotlin/Long, kotlin/Int): io.dataloom.api.provider/ProviderOperationResult<kotlin/ByteArray> // io.dataloom.assets.file/AppleFileAssetProvider.readChunk|readChunk(io.dataloom.api.identifier.AssetId;kotlin.Long;kotlin.Int){}[0]
     final suspend fun readManifest(io.dataloom.api.identifier/AssetId, kotlin/Long?): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.asset/AssetManifest> // io.dataloom.assets.file/AppleFileAssetProvider.readManifest|readManifest(io.dataloom.api.identifier.AssetId;kotlin.Long?){}[0]
@@ -615,9 +620,14 @@ final class io.dataloom.assets.memory/InMemoryAssetProvider : io.dataloom.assets
 
     final val chunkSizeBounds // io.dataloom.assets.memory/InMemoryAssetProvider.chunkSizeBounds|{}chunkSizeBounds[0]
         final fun <get-chunkSizeBounds>(): io.dataloom.assets/AssetChunkSizeBounds // io.dataloom.assets.memory/InMemoryAssetProvider.chunkSizeBounds.<get-chunkSizeBounds>|<get-chunkSizeBounds>(){}[0]
+    final val descriptor // io.dataloom.assets.memory/InMemoryAssetProvider.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): io.dataloom.api.provider/ProviderDescriptor // io.dataloom.assets.memory/InMemoryAssetProvider.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
 
     final suspend fun abortUpload(io.dataloom.assets/AssetTransferSessionId): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.assets.memory/InMemoryAssetProvider.abortUpload|abortUpload(io.dataloom.assets.AssetTransferSessionId){}[0]
+    final suspend fun close(): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.assets.memory/InMemoryAssetProvider.close|close(){}[0]
     final suspend fun completeUpload(io.dataloom.assets/AssetTransferSessionId): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.asset/AssetManifest> // io.dataloom.assets.memory/InMemoryAssetProvider.completeUpload|completeUpload(io.dataloom.assets.AssetTransferSessionId){}[0]
+    final suspend fun health(): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.provider/ProviderHealth> // io.dataloom.assets.memory/InMemoryAssetProvider.health|health(){}[0]
+    final suspend fun initialize(io.dataloom.api.provider/ProviderInitializationContext): io.dataloom.api.provider/ProviderOperationResult<kotlin/Unit> // io.dataloom.assets.memory/InMemoryAssetProvider.initialize|initialize(io.dataloom.api.provider.ProviderInitializationContext){}[0]
     final suspend fun openUpload(io.dataloom.assets/AssetUploadRequest): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.assets/AssetUploadStatus> // io.dataloom.assets.memory/InMemoryAssetProvider.openUpload|openUpload(io.dataloom.assets.AssetUploadRequest){}[0]
     final suspend fun readChunk(io.dataloom.api.identifier/AssetId, kotlin/Long, kotlin/Int): io.dataloom.api.provider/ProviderOperationResult<kotlin/ByteArray> // io.dataloom.assets.memory/InMemoryAssetProvider.readChunk|readChunk(io.dataloom.api.identifier.AssetId;kotlin.Long;kotlin.Int){}[0]
     final suspend fun readManifest(io.dataloom.api.identifier/AssetId, kotlin/Long?): io.dataloom.api.provider/ProviderOperationResult<io.dataloom.api.asset/AssetManifest> // io.dataloom.assets.memory/InMemoryAssetProvider.readManifest|readManifest(io.dataloom.api.identifier.AssetId;kotlin.Long?){}[0]
