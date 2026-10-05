@@ -1,6 +1,7 @@
 package io.dataloom.runtime.facade
 
 import io.dataloom.api.plugin.DataLoomPlugin
+import io.dataloom.plugin.PluginFailureCircuitPolicy
 import io.dataloom.plugin.PluginLifecycleAdministrationAuthorizer
 
 /**
@@ -16,7 +17,10 @@ import io.dataloom.plugin.PluginLifecycleAdministrationAuthorizer
  * [io.dataloom.api.plugin.PluginLifecycleState.LOADED]. The only way to change
  * lifecycle state through [DataLoomPluginEngine] is
  * [DataLoomPluginEngine.transition], and every transition it attempts is gated
- * by [lifecycleAuthorizer]. There is no authorizer-free path.
+ * by [lifecycleAuthorizer]. There is no authorizer-free path to *more*
+ * capability. The one automatic transition, `ACTIVE` -> `DEGRADED` under an
+ * opt-in [failureCircuit], only ever removes capability (a `DEGRADED` plugin
+ * refuses new invocations) and recovery stays an authorized manual transition.
  *
  * ## Validation
  *
@@ -33,6 +37,13 @@ public class DataLoomPluginSpec(
 
     /** Host-owned, deny-by-default authorization boundary for lifecycle transitions. */
     public val lifecycleAuthorizer: PluginLifecycleAdministrationAuthorizer,
+
+    /**
+     * Opt-in automatic degradation of a repeatedly failing plugin; see
+     * [PluginFailureCircuitPolicy]. `null` (the default) leaves behavior
+     * unchanged: failures are reported but never change lifecycle state.
+     */
+    public val failureCircuit: PluginFailureCircuitPolicy? = null,
 ) {
     /** Immutable snapshot of the plugins supplied at construction. */
     public val plugins: List<DataLoomPlugin> = plugins.toList()

@@ -2,6 +2,8 @@ package io.dataloom.plugin
 
 import io.dataloom.api.plugin.PluginId
 import io.dataloom.api.plugin.PluginLifecycleState
+import kotlin.concurrent.atomics.AtomicInt
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
@@ -21,11 +23,14 @@ public sealed interface PluginExecutionBoundsResult<out T> {
 
     /**
      * `operation` was cancelled because it did not complete within
-     * [maximumExecutionMillis].
+     * [maximumExecutionMillis]. [degradedPlugin] is `true` only when this very
+     * timeout tripped the enforcer's [PluginFailureCircuitPolicy] and moved the
+     * plugin to `DEGRADED`.
      */
     public data class TimedOut(
         public val pluginId: PluginId,
         public val maximumExecutionMillis: Long,
+        public val degradedPlugin: Boolean = false,
     ) : PluginExecutionBoundsResult<Nothing>
 
     /**
@@ -57,10 +62,14 @@ public sealed interface PluginExecutionBoundsResult<out T> {
      *
      * [cause] may carry plugin-produced content in its message, so the audit
      * bridge records the event type only and never reads [cause].
+     * [degradedPlugin] is `true` only when this very failure tripped the
+     * enforcer's [PluginFailureCircuitPolicy] and moved the plugin to
+     * `DEGRADED`.
      */
     public data class Failed(
         public val pluginId: PluginId,
         public val cause: Exception,
+        public val degradedPlugin: Boolean = false,
     ) : PluginExecutionBoundsResult<Nothing>
 }
 
@@ -178,9 +187,29 @@ public sealed interface PluginExecutionBoundsResult<out T> {
  *   plugin behaviour, e.g. a leaked inner `withTimeout`); when the caller
  *   itself has been cancelled it propagates so structured cancellation keeps
  *   working.
- * - **Does not count failures or move a plugin to `DEGRADED`.** Each failure
- *   is reported once, to its own caller; there is no failure-count circuit,
- *   automatic lifecycle transition, or recovery policy yet.
+ * - **Does not count failures unless a [PluginFailureCircuitPolicy] is
+ *   supplied.** With none, each failure is reported once, to its own caller,
+ *   and the plugin's lifecycle state never changes automatically.
+ * - **Does not recover a degraded plugin.** See "Failure circuit" below.
+ *
+ * ## Failure circuit (opt-in)
+ *
+ * When constructed with a [PluginFailureCircuitPolicy], the enforcer keeps one
+ * atomic consecutive-failure counter per plugin. A
+ * [PluginExecutionBoundsResult.Failed] or [PluginExecutionBoundsResult.TimedOut]
+ * increments it, a [PluginExecutionBoundsResult.Completed] resets it, and
+ * [PluginExecutionBoundsResult.ConcurrencyLimitExceeded] and
+ * [PluginExecutionBoundsResult.NotActive] touch nothing (back-pressure and
+ * gating are not plugin faults). When the count reaches the threshold the
+ * counter is reset and the plugin is moved `ACTIVE` -> `DEGRADED` through
+ * [PluginLifecycleStateTracker.degradeIfActive], a compare-and-set that is a
+ * no-op if a manual transition (or another invocation's failure) already
+ * changed the state, so the automatic transition can never overwrite a newer
+ * one even though manual transitions are caller-serialized and `execute` is
+ * concurrent. Exactly one result carries `degradedPlugin = true` per trip. An
+ * invocation that fails while its plugin is no longer `ACTIVE` is not counted.
+ * Recovery is only the existing authorized, manual transition back to `ACTIVE`.
+ * Without a policy (the default) none of this runs.
  *
  * ## Thread-safety
  *
@@ -195,8 +224,32 @@ public sealed interface PluginExecutionBoundsResult<out T> {
  * @param lifecycle the tracker whose [PluginLifecycleStateTracker.registry]'s
  *   registered plugins' declared [io.dataloom.api.plugin.PluginExecutionBounds]
  *   this enforcer enforces, and whose tracked state gates new invocations.
+ * @param failureCircuit when non-null, automatically degrades a plugin after
+ *   repeated failures; see "Failure circuit". `null` (the default) disables it.
  */
-public class PluginExecutionBoundsEnforcer(private val lifecycle: PluginLifecycleStateTracker) {
+@OptIn(ExperimentalAtomicApi::class)
+public class PluginExecutionBoundsEnforcer(
+    private val lifecycle: PluginLifecycleStateTracker,
+    private val failureCircuit: PluginFailureCircuitPolicy? = null,
+) {
+
+    private val failureCounters: Map<PluginId, AtomicInt> =
+        lifecycle.registry.plugins.associate { it.manifest.id to AtomicInt(0) }
+
+    private fun recordSuccess(id: PluginId) {
+        if (failureCircuit == null) return
+        failureCounters.getValue(id).store(0)
+    }
+
+    /** Counts one failure for [id]; returns `true` iff this call degraded the plugin. */
+    private fun recordFailure(id: PluginId): Boolean {
+        val policy = failureCircuit ?: return false
+        if (lifecycle.stateOf(id) != PluginLifecycleState.ACTIVE) return false
+        val counter = failureCounters.getValue(id)
+        if (counter.addAndFetch(1) < policy.consecutiveFailureThreshold) return false
+        counter.store(0)
+        return lifecycle.degradeIfActive(id)
+    }
 
     private val registry: PluginRegistry = lifecycle.registry
 
@@ -272,8 +325,10 @@ public class PluginExecutionBoundsEnforcer(private val lifecycle: PluginLifecycl
                 PluginExecutionBoundsResult.TimedOut(
                     pluginId = id,
                     maximumExecutionMillis = bounds.maximumExecutionMillis,
+                    degradedPlugin = recordFailure(id),
                 )
             } else {
+                recordSuccess(id)
                 PluginExecutionBoundsResult.Completed(completed.value)
             }
         } catch (cancellation: CancellationException) {
@@ -281,9 +336,17 @@ public class PluginExecutionBoundsEnforcer(private val lifecycle: PluginLifecycl
             // raised while the caller is still live (a leaked inner withTimeout, an explicit
             // throw) is plugin behaviour and is contained like any other failure.
             if (!currentCoroutineContext().isActive) throw cancellation
-            return PluginExecutionBoundsResult.Failed(pluginId = id, cause = cancellation)
+            return PluginExecutionBoundsResult.Failed(
+                pluginId = id,
+                cause = cancellation,
+                degradedPlugin = recordFailure(id),
+            )
         } catch (failure: Exception) {
-            return PluginExecutionBoundsResult.Failed(pluginId = id, cause = failure)
+            return PluginExecutionBoundsResult.Failed(
+                pluginId = id,
+                cause = failure,
+                degradedPlugin = recordFailure(id),
+            )
         } finally {
             semaphore.release()
         }

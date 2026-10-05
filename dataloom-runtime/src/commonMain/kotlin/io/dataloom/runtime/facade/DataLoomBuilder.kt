@@ -1674,7 +1674,7 @@ public class DataLoomBuilder {
             DefaultDataLoomPluginEngine(
                 registry = pluginRegistry,
                 tracker = pluginTracker,
-                enforcer = PluginExecutionBoundsEnforcer(pluginTracker),
+                enforcer = PluginExecutionBoundsEnforcer(pluginTracker, spec.failureCircuit),
                 authorizer = spec.lifecycleAuthorizer,
                 operationalEventOutbox = pluginOperationalEventOutbox,
                 operationalEventOutboxScope = pluginOperationalEventOutboxSpec?.scope,

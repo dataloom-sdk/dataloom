@@ -77,13 +77,30 @@ internal class DefaultDataLoomPluginEngine(
         operation: suspend () -> T,
     ): PluginExecutionBoundsResult<T> {
         val result = enforcer.execute(id, operation)
+        // Both events of one invocation (its outcome, and the automatic degradation it may
+        // have caused) share one invocation id so they correlate; each is recorded on its own
+        // so a failure to append one never loses the other.
+        var invocationId: PluginExecutionInvocationId? = null
         record { clockReading ->
+            val minted = nextInvocationId(id, clockReading.epochMilliseconds)
+            invocationId = minted
             PluginExecutionBoundsOperationalEventBridge.toEnvelope(
                 pluginId = id,
-                invocationId = nextInvocationId(id, clockReading.epochMilliseconds),
+                invocationId = minted,
                 result = result,
                 occurredAt = clockReading,
             )
+        }
+        if (result.degradedPlugin()) {
+            invocationId?.let { minted ->
+                record { clockReading ->
+                    PluginExecutionBoundsOperationalEventBridge.toDegradedEnvelope(
+                        pluginId = id,
+                        invocationId = minted,
+                        occurredAt = clockReading,
+                    )
+                }
+            }
         }
         return result
     }
@@ -103,6 +120,12 @@ internal class DefaultDataLoomPluginEngine(
         } catch (ordinary: Exception) {
             // Intentionally swallowed -- see class doc above.
         }
+    }
+
+    private fun PluginExecutionBoundsResult<*>.degradedPlugin(): Boolean = when (this) {
+        is PluginExecutionBoundsResult.Failed -> degradedPlugin
+        is PluginExecutionBoundsResult.TimedOut -> degradedPlugin
+        else -> false
     }
 
     private suspend fun nextInvocationId(id: PluginId, epochMilliseconds: Long): PluginExecutionInvocationId {

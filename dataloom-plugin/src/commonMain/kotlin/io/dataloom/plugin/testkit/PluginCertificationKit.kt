@@ -18,6 +18,7 @@ import io.dataloom.api.time.DataLoomInstant
 import io.dataloom.plugin.PluginDependencyIssueReason
 import io.dataloom.plugin.PluginExecutionBoundsEnforcer
 import io.dataloom.plugin.PluginExecutionBoundsResult
+import io.dataloom.plugin.PluginFailureCircuitPolicy
 import io.dataloom.plugin.PluginLifecycleAdministrationAuthorizationDecision
 import io.dataloom.plugin.PluginLifecycleAdministrationAuthorizer
 import io.dataloom.plugin.PluginLifecycleAdministrationCommandId
@@ -84,7 +85,10 @@ import kotlinx.coroutines.launch
  *   the operation; an operation that overruns its declared timeout is
  *   cancelled and reported, not left to hang; an operation that throws is
  *   contained as [PluginExecutionBoundsResult.Failed], frees its slot, and
- *   does not affect another plugin.
+ *   does not affect another plugin; with an opt-in
+ *   [io.dataloom.plugin.PluginFailureCircuitPolicy], consecutive failures
+ *   degrade the plugin (a completed invocation resets the count) and it
+ *   recovers only through a manual transition.
  * - Authorized-transition gating: an authorized request applies a
  *   structurally legal transition; a denied request leaves tracked state
  *   unchanged and reports the authorizer's own reason code; a structurally
@@ -451,6 +455,53 @@ public class PluginCertificationKit(
             }
             require(tracker.stateOf(failingId) == PluginLifecycleState.ACTIVE) {
                 "a contained failure changed the failing plugin's lifecycle state"
+            }
+        },
+
+        "a failure circuit degrades a repeatedly failing plugin, refuses it, and recovers only through a manual transition" to { f ->
+            val id = PluginId("circuit-trips")
+            val tracker = f.trackerOver(f.plugin(f.manifest(id.value), f.bounds(maximumConcurrentInvocations = 1)))
+            f.driveTo(tracker, id, PluginLifecycleState.ACTIVE)
+            val enforcer = PluginExecutionBoundsEnforcer(tracker, PluginFailureCircuitPolicy(consecutiveFailureThreshold = 2))
+
+            val first = enforcer.execute<Unit>(id) { throw IllegalStateException("plugin failure") }
+            require(first is PluginExecutionBoundsResult.Failed && !first.degradedPlugin) {
+                "the first failure should be reported without degrading the plugin: $first"
+            }
+            require(tracker.stateOf(id) == PluginLifecycleState.ACTIVE) { "the plugin was degraded below its threshold" }
+
+            val second = enforcer.execute<Unit>(id) { throw IllegalStateException("plugin failure") }
+            require(second is PluginExecutionBoundsResult.Failed && second.degradedPlugin) {
+                "the failure reaching the threshold did not report the degradation: $second"
+            }
+            require(tracker.stateOf(id) == PluginLifecycleState.DEGRADED) { "the plugin was not degraded: ${tracker.stateOf(id)}" }
+
+            var invoked = false
+            val refused = enforcer.execute(id) { invoked = true }
+            require(refused is PluginExecutionBoundsResult.NotActive && !invoked) {
+                "a degraded plugin was not refused without running: $refused"
+            }
+
+            val recovery = tracker.transition(id, PluginLifecycleState.ACTIVE)
+            require(recovery is PluginLifecycleTransitionResult.Allowed) { "manual recovery was refused: $recovery" }
+            val afterRecovery = enforcer.execute(id) { "again" }
+            require(afterRecovery is PluginExecutionBoundsResult.Completed && afterRecovery.value == "again") {
+                "a recovered plugin was not admitted again: $afterRecovery"
+            }
+        },
+
+        "a failure circuit counts only consecutive failures: a completed invocation resets the count" to { f ->
+            val id = PluginId("circuit-resets")
+            val tracker = f.trackerOver(f.plugin(f.manifest(id.value), f.bounds(maximumConcurrentInvocations = 1)))
+            f.driveTo(tracker, id, PluginLifecycleState.ACTIVE)
+            val enforcer = PluginExecutionBoundsEnforcer(tracker, PluginFailureCircuitPolicy(consecutiveFailureThreshold = 2))
+
+            enforcer.execute<Unit>(id) { throw IllegalStateException("plugin failure") }
+            enforcer.execute(id) { "ok" }
+            enforcer.execute<Unit>(id) { throw IllegalStateException("plugin failure") }
+
+            require(tracker.stateOf(id) == PluginLifecycleState.ACTIVE) {
+                "non-consecutive failures degraded the plugin: ${tracker.stateOf(id)}"
             }
         },
 
