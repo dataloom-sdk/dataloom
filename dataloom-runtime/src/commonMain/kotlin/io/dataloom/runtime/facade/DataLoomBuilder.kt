@@ -19,6 +19,7 @@ import io.dataloom.core.provider.ProviderResolutionResult
 import io.dataloom.api.provider.SynchronizationProviderBindings
 import io.dataloom.core.provider.SynchronizationProviderResolver
 import io.dataloom.core.provider.StrategyProviderResolver
+import io.dataloom.api.retry.RetryOperation
 import io.dataloom.api.runtime.RuntimeDependencies
 import io.dataloom.plugin.PluginExecutionBoundsEnforcer
 import io.dataloom.plugin.PluginLifecycleStateTracker
@@ -61,8 +62,11 @@ import io.dataloom.runtime.observation.health.QueueWorkerHealthTracker
 import io.dataloom.runtime.observation.operational.AssetTransferOperationalEventRecorder
 import io.dataloom.runtime.observation.operational.QueueLifecycleOperationalEventRecorder
 import io.dataloom.runtime.queue.DurableQueueExecutionProcessor
+import io.dataloom.runtime.queue.ProviderProtectedQueuedSynchronizationExecutionHandler
+import io.dataloom.runtime.queue.QueueEntryExecutionHandler
 import io.dataloom.runtime.queue.QueueEntryTransitionObserver
 import io.dataloom.runtime.queue.QueuedSynchronizationExecutionHandler
+import io.dataloom.runtime.queue.QueuedSynchronizationWorkResolver
 import io.dataloom.runtime.retry.AssetCircuitProtectionRuntime
 import io.dataloom.runtime.retry.CircuitAdministrationCoordinator
 import io.dataloom.runtime.retry.CircuitBreakerCoordinator
@@ -833,6 +837,17 @@ public class DataLoomBuilder {
      *
      * The historical [DataLoom.synchronize] path is not redirected. Callers use
      * [DataLoom.protectedSynchronization] explicitly.
+     *
+     * When a queue worker ([queueWorkerConfiguration] or
+     * [circuitQueueWorkerConfiguration]) is also configured, queued replay runs
+     * through this same protection (transport/storage circuit breaker and
+     * timeout) instead of the unprotected execution coordinator: a failing
+     * transport opens the circuit and later queued entries are rejected by the
+     * gate before reaching the provider, each rescheduled by the queue worker's
+     * retry policy. Durably admitted strategy plans additionally need
+     * [strategyProviderProtectionConfiguration]; without it such entries fail
+     * non-recoverably with a configuration error. Without this method queued
+     * replay is unchanged.
      */
     public fun providerProtectionConfiguration(
         spec: DataLoomProviderProtectionSpec,
@@ -1528,6 +1543,8 @@ public class DataLoomBuilder {
                 executionCoordinator = executionCoordinator,
                 acceptedStrategyPlanCoordinator = acceptedStrategyPlanCoordinator,
                 queueLifecycleTransitionObserver = queueLifecycleTransitionObserver,
+                protectedSynchronization = protectedSynchronization,
+                protectedStrategySynchronization = protectedStrategySynchronization,
             )
         }
 
@@ -1547,6 +1564,8 @@ public class DataLoomBuilder {
                 acceptedStrategyPlanCoordinator = acceptedStrategyPlanCoordinator,
                 schedulerCircuitSpec = circuitQueueWorkerSchedulerSpec,
                 queueLifecycleTransitionObserver = queueLifecycleTransitionObserver,
+                protectedSynchronization = protectedSynchronization,
+                protectedStrategySynchronization = protectedStrategySynchronization,
             )
         }
 
@@ -2004,6 +2023,8 @@ public class DataLoomBuilder {
         executionCoordinator: SynchronizationExecutionCoordinator,
         acceptedStrategyPlanCoordinator: AcceptedStrategyPlanExecutionCoordinator,
         queueLifecycleTransitionObserver: QueueEntryTransitionObserver?,
+        protectedSynchronization: DataLoomProtectedSynchronization?,
+        protectedStrategySynchronization: DataLoomProtectedStrategySynchronization?,
     ): DataLoomQueueWorker {
         // Validate queue provider binding.
         val queueProviderId = bindings.queueProviderId
@@ -2047,15 +2068,15 @@ public class DataLoomBuilder {
             clock = deps.clock,
         )
 
-        val executionHandler = QueuedSynchronizationExecutionHandler(
+        val executionHandler = buildQueueEntryExecutionHandler(
             workResolver = spec.workResolver,
-            executionCoordinator = executionCoordinator,
             retryEvaluator = retryEvaluator,
             retryOperation = spec.retryOperation,
-            connectivityConfiguration = connectivityConfiguration,
-            clock = if (connectivityConfiguration != null) deps.clock else null,
-            workflowTimeoutExecutor = WorkflowTimeoutStateExecutor(deps.clock),
+            deps = deps,
+            executionCoordinator = executionCoordinator,
             acceptedStrategyPlanCoordinator = acceptedStrategyPlanCoordinator,
+            protectedSynchronization = protectedSynchronization,
+            protectedStrategySynchronization = protectedStrategySynchronization,
         )
 
         val queueProviderTimeout = spec.queueProviderTimeout
@@ -2088,6 +2109,57 @@ public class DataLoomBuilder {
     }
 
     /**
+     * Chooses the per-entry execution handler shared by both queue-worker
+     * assemblies.
+     *
+     * Without [providerProtectionConfiguration] ([protectedSynchronization]
+     * `null`) this is the historical unprotected
+     * [QueuedSynchronizationExecutionHandler]. With it, queued replay runs
+     * through the same circuit/timeout-protected facade direct calls use
+     * ([ProviderProtectedQueuedSynchronizationExecutionHandler]), so a failing
+     * transport opens the circuit and later entries are rejected by the gate
+     * before reaching it. Durably admitted strategy plans additionally require
+     * [strategyProviderProtectionConfiguration]; without it such entries fail
+     * non-recoverably with an explicit configuration error rather than
+     * bypassing protection.
+     */
+    private fun buildQueueEntryExecutionHandler(
+        workResolver: QueuedSynchronizationWorkResolver,
+        retryEvaluator: SynchronizationRetryEvaluator,
+        retryOperation: RetryOperation,
+        deps: RuntimeDependencies,
+        executionCoordinator: SynchronizationExecutionCoordinator,
+        acceptedStrategyPlanCoordinator: AcceptedStrategyPlanExecutionCoordinator,
+        protectedSynchronization: DataLoomProtectedSynchronization?,
+        protectedStrategySynchronization: DataLoomProtectedStrategySynchronization?,
+    ): QueueEntryExecutionHandler {
+        val queueClock = if (connectivityConfiguration != null) deps.clock else null
+        if (protectedSynchronization == null) {
+            return QueuedSynchronizationExecutionHandler(
+                workResolver = workResolver,
+                executionCoordinator = executionCoordinator,
+                retryEvaluator = retryEvaluator,
+                retryOperation = retryOperation,
+                connectivityConfiguration = connectivityConfiguration,
+                clock = queueClock,
+                workflowTimeoutExecutor = WorkflowTimeoutStateExecutor(deps.clock),
+                acceptedStrategyPlanCoordinator = acceptedStrategyPlanCoordinator,
+            )
+        }
+        val protectedHandler = ProviderProtectedQueuedSynchronizationExecutionHandler(
+            workResolver = workResolver,
+            protectedSynchronization = protectedSynchronization,
+            retryEvaluator = retryEvaluator,
+            retryOperation = retryOperation,
+            connectivityConfiguration = connectivityConfiguration,
+            clock = queueClock,
+            workflowTimeoutExecutor = WorkflowTimeoutStateExecutor(deps.clock),
+            protectedStrategySynchronization = protectedStrategySynchronization,
+        )
+        return QueueEntryExecutionHandler { entry -> protectedHandler.execute(entry).outcome }
+    }
+
+    /**
      * Assembles the explicit circuit-aware queue-worker capability.
      *
      * The queue-provider timeout is applied before circuit adaptation so
@@ -2103,6 +2175,8 @@ public class DataLoomBuilder {
         acceptedStrategyPlanCoordinator: AcceptedStrategyPlanExecutionCoordinator,
         schedulerCircuitSpec: DataLoomCircuitQueueWorkerSchedulerSpec?,
         queueLifecycleTransitionObserver: QueueEntryTransitionObserver?,
+        protectedSynchronization: DataLoomProtectedSynchronization?,
+        protectedStrategySynchronization: DataLoomProtectedStrategySynchronization?,
     ): DataLoomCircuitQueueWorker {
         val queueProviderId = bindings.queueProviderId
             ?: throw DataLoomBuildException(
@@ -2203,15 +2277,15 @@ public class DataLoomBuilder {
             retryPolicy = workerSpec.retryPolicy,
             clock = deps.clock,
         )
-        val executionHandler = QueuedSynchronizationExecutionHandler(
+        val executionHandler = buildQueueEntryExecutionHandler(
             workResolver = workerSpec.workResolver,
-            executionCoordinator = executionCoordinator,
             retryEvaluator = retryEvaluator,
             retryOperation = workerSpec.retryOperation,
-            connectivityConfiguration = connectivityConfiguration,
-            clock = if (connectivityConfiguration != null) deps.clock else null,
-            workflowTimeoutExecutor = WorkflowTimeoutStateExecutor(deps.clock),
+            deps = deps,
+            executionCoordinator = executionCoordinator,
             acceptedStrategyPlanCoordinator = acceptedStrategyPlanCoordinator,
+            protectedSynchronization = protectedSynchronization,
+            protectedStrategySynchronization = protectedStrategySynchronization,
         )
         val protectedQueueProvider = assembleQueueWorkerQueueProvider(
             queueProvider = queueProvider,
