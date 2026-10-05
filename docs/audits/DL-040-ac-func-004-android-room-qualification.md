@@ -98,8 +98,9 @@ strongest mechanism currently available here. Neither test exercises
 cross-process *contention* (for the half-open probe lease, or for queue
 acquisition) -- **the half-open-probe half of that gap is now covered by
 `AndroidCircuitBreakerProbeContentionInstrumentedTest` (`#346`, 2026-08-24,
-see "Remaining Android acceptance work" below); queue-lease contention is
-still uncovered**, and neither runs the full retry-scheduling/transport-provider
+see "Remaining Android acceptance work" below); queue-lease contention was
+uncovered until 2026-10-05 and is now covered by
+`AndroidQueueLeaseContentionInstrumentedTest`, same section**, and neither runs the full retry-scheduling/transport-provider
 AC-FUNC-004 flow through a composed `DataLoomBuilder` instance -- **the
 provider-flow half of that is now covered, with residuals, by
 `AndroidReferenceConsumerRetryCircuitQualificationInstrumentedTest` (`#369`,
@@ -115,12 +116,26 @@ provider-flow half of that is now covered, with residuals, by
   drives two genuinely separate `:circuitprobea`/`:circuitprobeb` processes to
   race for the probe lease on a real Gradle Managed Device
   (`android-validation.yml`, no `continue-on-error`); exactly one wins,
-  the other is rejected `PROBE_IN_FLIGHT` or `CLOCK_REGRESSION`. Still open:
-  no equivalent test exists for cross-process **queue-lease** acquisition (a
-  `RETRY_WAITING` entry's `acquire`) -- `dataloom-queue-room/src/androidTest`
-  has only the in-process `concurrentConsumersDoNotAcquireTheSameEntry`
-  (`RoomQueueProviderInstrumentedTest`), and no "document the single-process
-  topology instead" statement was written for it either.
+  the other is rejected `PROBE_IN_FLIGHT` or `CLOCK_REGRESSION`.
+
+  **Resolved 2026-10-05 for the queue lease (a `RETRY_WAITING` entry's
+  `acquire`).** `AndroidQueueLeaseContentionInstrumentedTest` (`#94`) drives two
+  genuinely separate `:queueleasea`/`:queueleaseb` processes, each with its own
+  Room connection to one on-disk database, to `RoomQueueProvider.acquire` the
+  same single entry over 25 rounds: exactly one process wins (with the
+  persisted retry attempt and retry budget intact), the other deterministically
+  gets `NoEntries`, the loser's own lease id is rejected `QUEUE_STALE_LEASE` by
+  `complete`, and the loser's process then reads back the winner's rescheduled
+  retry state. Both processes are released on a shared wall-clock instant so the
+  two `acquire` calls overlap to within about a millisecond. Executed locally
+  on the `Pixel_8_Pro` AVD (API 36 image): 5 consecutive passes. Mutation
+  check: removing *both* the `@Transaction` on `QueueEntryDao.acquireEntries`
+  and the `state IN ('PENDING','RETRY_WAITING')` guard in `updateToLeased`
+  makes the test fail with both processes `WON`; removing either one alone
+  does not (they are two independent layers, so the test is a proof of the
+  combined behavior, not of each layer). It has not yet run in
+  `android-validation.yml`'s Gradle Managed Device job, which picks it up
+  automatically because that job runs the module's whole `androidTest` set.
 - run the full retry scheduling and transport-provider reference flow on both
   native Android and KMP Android consumer paths; and
 
