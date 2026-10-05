@@ -147,10 +147,12 @@ import platform.Foundation.NSUUID
  *   `StrategyLocalFallbackProvider` check is gated on
  *   `continuation.fallbackPlan != null`). No `RECONCILE` is ever present
  *   either (only offline-first's and hybrid's continuations can carry it),
- *   so `StrategyReconciliationProvider` is never required. `dataloom
- *   -storage-sqldelight`'s `SqlDelightStorageProvider` implements only
- *   `StorageProvider` (confirmed directly against its class declaration),
- *   which is all this branch's replay needs (`STORAGE`/`TRANSPORT`).
+ *   so `StrategyReconciliationProvider` is never required. (At the time this
+ *   was written `SqlDelightStorageProvider` implemented only `StorageProvider`;
+ *   it now also implements `StrategyLocalFallbackProvider`/
+ *   `StrategyReconciliationProvider`, which does not change this branch --
+ *   see [IosReferenceConsumerRemoteFirstFallbackQueueTest] for the
+ *   non-empty-`fallbackOn` branch.)
  *
  * This is therefore the same commonMain planner branch the Android proof
  * exercises, re-verified against current source for this session rather
@@ -193,10 +195,8 @@ import platform.Foundation.NSUUID
  *
  * ## What this does not prove
  *
- * Remote-first's own `fallbackOn`-carrying durable branch (requires
- * `StrategyLocalFallbackProvider`, which `SqlDelightStorageProvider` does
- * not implement -- confirmed above, mirroring the Android proof's own
- * finding); the remaining built-in strategies' iOS admission proofs not
+ * Remote-first's own `fallbackOn`-carrying durable branch (proven separately
+ * by [IosReferenceConsumerRemoteFirstFallbackQueueTest]); the remaining built-in strategies' iOS admission proofs not
  * covered by this session (hybrid's connectivity-`UNKNOWN`/`DEFER` branch
  * is proven on Android only; hybrid's explicit-fallback branch and network
  * -only cannot admit durable work at all or remain blocked on both
