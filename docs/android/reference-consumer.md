@@ -210,8 +210,19 @@ managed-device tests.
   strategies eligible for durable admission (remote-first, hybrid) remain
   unexercised at this layer on either platform; and retry, circuit-breaker,
   and conflict-detection behavior during queue replay itself remain
-  unproven even for the two slices covered — each proven entry always
-  succeeds on its first attempt.
+  unproven for the slices above — each of those proven entries always
+  succeeds on its first attempt. Retry is now proven separately, through a
+  real `DataLoomBuilder`-assembled queue worker over real Room, by
+  `RetryQueueRobolectricTest` (offline-first durable admission; first replay
+  attempt fails with a recoverable transport error, is rescheduled with the
+  retry attempt persisted and the `availableAt` honored by the next `acquire`
+  under real wall-clock time, then completes on a later attempt; a second
+  scenario ends `FAILED` once the policy's attempt limit is exceeded). The
+  builder-assembled queue worker still replays through the unprotected
+  execution coordinator, so a transport circuit breaker is not exercised
+  through it; that composition is proven only by the hand-assembled
+  `ComposedQueueCircuitRobolectricTest`. Conflict detection during replay
+  remains unproven.
 - Native Android and KMP Android+iOS consumers resolving staged/published
   artifacts rather than project includes — the same bar
   `runtime-external-consumer` also does not yet meet for the JVM path.
