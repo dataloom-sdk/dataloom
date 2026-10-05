@@ -10,6 +10,7 @@
 // happens directly in `application(_:didFinishLaunchingWithOptions:)` below,
 // with no separate SceneDelegate. This keeps the whole app to one file.
 
+import Foundation
 import UIKit
 import DataLoomProcessTerminationProof
 
@@ -26,17 +27,36 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
         // Idempotent by design: this app is launched twice by the CI proof
         // (once before `simctl terminate`, once after, as a genuinely new OS
-        // process). Only the *first* launch against a given container may
-        // perform the real production write -- AppleCircuitBreakerProcessTerminationProof
-        // .openCircuitAndPersist expects to create the record from scratch
-        // (expectedVersion == null) and would otherwise report a conflict on
-        // the second launch. The CI proof's own verification -- comparing the
-        // circuit-breaker state file's content, read directly from the
-        // Simulator's app-container filesystem from *outside* this process,
-        // before the kill and after the relaunch -- does not depend on this
-        // app doing anything differently between the two launches.
+        // process).
+        //
+        // - The *first* launch against a given container performs the real
+        //   production write -- AppleCircuitBreakerProcessTerminationProof
+        //   .openCircuitAndPersist expects to create the record from
+        //   scratch (expectedVersion == null) and would otherwise report a
+        //   conflict on a second call.
+        // - The *second* launch (the genuine relaunch, after a real
+        //   `xcrun simctl terminate`) re-drives the real
+        //   `CircuitBreakerCoordinator` gate against that already-persisted
+        //   record via `redriveGateAfterRelaunch` -- not just a raw-row
+        //   read -- and writes its outcome to a second, separate result
+        //   file the apple-gate-redrive-proof.yml CI job reads and asserts
+        //   on, but ONLY when launched with the `--dataloom-gate-redrive`
+        //   argument. `apple-validation.yml`'s own `apple-process-termination-proof`
+        //   job launches this same app binary WITHOUT that argument, and
+        //   its byte-diff requires the persisted state file to be
+        //   unchanged across the kill/relaunch -- calling `recordSuccess`/
+        //   `acquire` on the real gate can itself mutate persisted state
+        //   (e.g. granting a probe bumps the generation), which would
+        //   silently break that already-required check if run
+        //   unconditionally on every second launch. Gating on the launch
+        //   argument keeps that job's relaunch exactly as inert as before
+        //   this change -- see `docs/apple/process-termination-proof.md`.
+        let shouldRedriveGate = CommandLine.arguments.contains("--dataloom-gate-redrive")
         if AppleCircuitBreakerProcessTerminationProof.shared.readPersistedState(directoryPath: proofDirectory) == nil {
             _ = AppleCircuitBreakerProcessTerminationProof.shared.openCircuitAndPersist(directoryPath: proofDirectory)
+        } else if shouldRedriveGate {
+            let redrive = AppleCircuitBreakerProcessTerminationProof.shared.redriveGateAfterRelaunch(directoryPath: proofDirectory)
+            Self.writeGateRedriveResult(redrive, proofDirectory: proofDirectory)
         }
 
         window = UIWindow(frame: UIScreen.main.bounds)
@@ -54,4 +74,32 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         return documents.appendingPathComponent("CircuitProof", isDirectory: true).path
     }
+
+    /// Serializes the real gate re-drive's three decisions (reject-before-
+    /// deadline / probe-granted-at-deadline / recovery-after-success) to a
+    /// plain tab-separated file alongside the circuit-state file, for
+    /// `.github/workflows/apple-gate-redrive-proof.yml` to read directly
+    /// from the Simulator's app-container filesystem, the same way the
+    /// existing proof reads `dataloom-circuit-state-v1.tsv`. Field order:
+    /// beforeDeadlineOutcome, beforeDeadlineRejectionReason,
+    /// probeAtDeadlineOutcome, probeGeneration, recoveryOutcome.
+    private static func writeGateRedriveResult(
+        _ result: CircuitBreakerGateRedriveProofState,
+        proofDirectory: String
+    ) {
+        let line = [
+            result.beforeDeadlineOutcome,
+            result.beforeDeadlineRejectionReason,
+            result.probeAtDeadlineOutcome,
+            String(result.probeGeneration),
+            result.recoveryOutcome,
+        ].joined(separator: "\t")
+        let path = proofDirectory + "/" + gateRedriveResultFileName
+        try? line.write(toFile: path, atomically: true, encoding: .utf8)
+    }
 }
+
+/// Shared with `.github/workflows/apple-gate-redrive-proof.yml`, which
+/// resolves this exact file name beneath the same `CircuitProof` directory
+/// `apple-validation.yml`'s own job already uses for `dataloom-circuit-state-v1.tsv`.
+let gateRedriveResultFileName = "dataloom-circuit-gate-redrive-v1.tsv"

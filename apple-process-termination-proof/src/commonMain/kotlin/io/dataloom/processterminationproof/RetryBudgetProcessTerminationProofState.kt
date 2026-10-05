@@ -37,12 +37,20 @@ package io.dataloom.processterminationproof
  *   [io.dataloom.api.retry.RetryBudgetState.lastEvaluatedAt] in epoch milliseconds.
  * @property retryCumulativeDelayMillis the persisted
  *   [io.dataloom.api.retry.RetryBudgetState.cumulativeDelay] in milliseconds.
+ * @property availableAtEpochMillis the acquired entry's
+ *   `io.dataloom.api.queue.QueueEntry.availableAt` in epoch milliseconds --
+ *   added alongside [AppleRetryBudgetProcessTerminationProof.redriveAcquireGateAfterRelaunch]
+ *   so a caller can assert `availableAt` equality explicitly rather than
+ *   relying only on the CI proof's own raw on-disk byte diff, mirroring
+ *   `RetryBudgetProcessTerminationContract.KEY_AVAILABLE_AT_MILLIS` on
+ *   Android.
  */
 public class RetryBudgetProcessTerminationProofState(
     public val retryAttemptNumber: Int,
     public val retryWindowStartedAtEpochMillis: Long,
     public val retryLastEvaluatedAtEpochMillis: Long,
     public val retryCumulativeDelayMillis: Long,
+    public val availableAtEpochMillis: Long,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -50,7 +58,8 @@ public class RetryBudgetProcessTerminationProofState(
         return retryAttemptNumber == other.retryAttemptNumber &&
             retryWindowStartedAtEpochMillis == other.retryWindowStartedAtEpochMillis &&
             retryLastEvaluatedAtEpochMillis == other.retryLastEvaluatedAtEpochMillis &&
-            retryCumulativeDelayMillis == other.retryCumulativeDelayMillis
+            retryCumulativeDelayMillis == other.retryCumulativeDelayMillis &&
+            availableAtEpochMillis == other.availableAtEpochMillis
     }
 
     override fun hashCode(): Int {
@@ -58,6 +67,7 @@ public class RetryBudgetProcessTerminationProofState(
         result = 31 * result + retryWindowStartedAtEpochMillis.hashCode()
         result = 31 * result + retryLastEvaluatedAtEpochMillis.hashCode()
         result = 31 * result + retryCumulativeDelayMillis.hashCode()
+        result = 31 * result + availableAtEpochMillis.hashCode()
         return result
     }
 
@@ -65,5 +75,6 @@ public class RetryBudgetProcessTerminationProofState(
         "retryAttemptNumber=$retryAttemptNumber, " +
         "retryWindowStartedAtEpochMillis=$retryWindowStartedAtEpochMillis, " +
         "retryLastEvaluatedAtEpochMillis=$retryLastEvaluatedAtEpochMillis, " +
-        "retryCumulativeDelayMillis=$retryCumulativeDelayMillis)"
+        "retryCumulativeDelayMillis=$retryCumulativeDelayMillis, " +
+        "availableAtEpochMillis=$availableAtEpochMillis)"
 }

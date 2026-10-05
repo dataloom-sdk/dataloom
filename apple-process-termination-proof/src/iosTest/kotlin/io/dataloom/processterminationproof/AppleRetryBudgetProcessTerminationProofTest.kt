@@ -44,8 +44,28 @@ class AppleRetryBudgetProcessTerminationProofTest {
         assertEquals(1_100L, written.retryWindowStartedAtEpochMillis)
         assertEquals(1_200L, written.retryLastEvaluatedAtEpochMillis)
         assertEquals(750L, written.retryCumulativeDelayMillis)
+        assertEquals(1_300L, written.availableAtEpochMillis)
 
         assertTrue(AppleRetryBudgetProcessTerminationProof.hasPersistedRetryBudgetState(directory))
+    }
+
+    @Test
+    fun `redrive acquire gate after relaunch re-drives the real gate against the persisted entry`() = runTest {
+        val directory = uniqueDirectory()
+        val written = AppleRetryBudgetProcessTerminationProof.writeRetryBudgetAndPersist(directory)
+
+        val redriven = AppleRetryBudgetProcessTerminationProof.redriveAcquireGateAfterRelaunch(directory)
+
+        assertEquals(written.retryAttemptNumber, redriven.retryAttemptNumber)
+        assertEquals(written.retryWindowStartedAtEpochMillis, redriven.retryWindowStartedAtEpochMillis)
+        assertEquals(written.retryLastEvaluatedAtEpochMillis, redriven.retryLastEvaluatedAtEpochMillis)
+        assertEquals(written.retryCumulativeDelayMillis, redriven.retryCumulativeDelayMillis)
+        assertEquals(
+            written.availableAtEpochMillis,
+            redriven.availableAtEpochMillis,
+            "redriveAcquireGateAfterRelaunch must re-drive the real acquire gate against the " +
+                "exact availableAt writeRetryBudgetAndPersist persisted.",
+        )
     }
 
     private fun uniqueDirectory(): String =

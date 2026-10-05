@@ -102,6 +102,20 @@ import platform.posix.access
  * reduction versus `CircuitBreakerExecutionGate`/`CircuitBreakerCoordinator`.
  * `QueueProvider` has no coordinator/execution-gate layer of its own that
  * this proof would otherwise need to bypass.
+ *
+ * ## Gate re-drive after relaunch
+ *
+ * [redriveAcquireGateAfterRelaunch] closes the gap named in
+ * `docs/status/market-readiness.md`'s `#94` row ("Apple's circuit-breaker
+ * and retry-budget kill/relaunch proofs still only check raw persisted
+ * state and never re-drive the real gate"): it mirrors
+ * `RetryBudgetProcessTerminationContentProvider.readRetryBudget`'s own
+ * post-relaunch gate-check exactly -- one real [AppleFileQueueProvider.acquire]
+ * call one millisecond *before* the persisted `availableAt` (asserting the
+ * real gate still reports [QueueAcquireResult.NoEntries]), followed by a
+ * real acquire *at* `availableAt` whose returned entry's fields -- including
+ * `availableAt` itself -- are returned for the caller to assert equal to
+ * what [writeRetryBudgetAndPersist] originally persisted.
  */
 public object AppleRetryBudgetProcessTerminationProof {
 
@@ -191,6 +205,70 @@ public object AppleRetryBudgetProcessTerminationProof {
         return access(path, F_OK) == 0
     }
 
+    /**
+     * Re-drives the real [AppleFileQueueProvider.acquire] gate against the
+     * entry [writeRetryBudgetAndPersist] already persisted at
+     * [directoryPath] -- not just a raw on-disk file diff -- mirroring
+     * `RetryBudgetProcessTerminationContentProvider.readRetryBudget`'s own
+     * two steps exactly:
+     *
+     * 1. One real `acquire` call one millisecond *before* the persisted
+     *    `availableAt`, asserting the real gate still reports
+     *    [QueueAcquireResult.NoEntries] -- proof that the relaunched
+     *    process's persisted retry-budget/`availableAt` state is genuinely
+     *    honored by production acquisition logic post-relaunch, not merely
+     *    present on disk and never re-checked.
+     * 2. A real `acquire` *at* `availableAt`, which must find the entry
+     *    eligible; its fields (including `availableAt` itself) are returned
+     *    for the caller to assert equal to what was persisted before the
+     *    kill.
+     *
+     * Must be called only after [writeRetryBudgetAndPersist] has already
+     * persisted retry-budget state for [directoryPath] -- in the Simulator
+     * proof app this is the app's *second* launch (post-relaunch);
+     * [writeRetryBudgetAndPersist] itself only ever runs on the first (see
+     * [hasPersistedRetryBudgetState]'s own idempotency-guard role). Throws
+     * (via Kotlin `error`/`check`) if either step does not hold, matching
+     * this repository's "fail loudly rather than assume success" testing
+     * discipline.
+     *
+     * Unlike [writeRetryBudgetAndPersist] this never calls `defer`: Android's
+     * own `readRetryBudget` content-provider method leaves the entry leased
+     * under its `lease-after-relaunch` id too, and this mirrors that
+     * exactly rather than adding an extra round-trip Android's own proof
+     * does not make.
+     */
+    public fun redriveAcquireGateAfterRelaunch(
+        directoryPath: String,
+    ): RetryBudgetProcessTerminationProofState = runBlocking {
+        val provider = AppleFileQueueProvider(directoryPath)
+
+        val gateCheck = provider.acquire(
+            QueueAcquireRequest(
+                consumerId = QueueConsumerId("$CONSUMER_ID-gate-check"),
+                leaseId = QueueLeaseId("lease-gate-check"),
+                acquiredAt = DataLoomInstant(RESCHEDULE_AVAILABLE_AT_MS - 1L),
+                leaseExpiresAt = DataLoomInstant(RESCHEDULE_AVAILABLE_AT_MS - 1L + LEASE_DURATION_MS),
+                maxEntries = 1,
+            ),
+        )
+        val gateCheckResult = (gateCheck as? ProviderOperationResult.Success<QueueAcquireResult>)
+            ?: error("Retry-budget gate-check acquire failed unexpectedly: $gateCheck")
+        check(gateCheckResult.value is QueueAcquireResult.NoEntries) {
+            "Expected the relaunched process's real acquire gate to still report the " +
+                "retry-budget process-termination-proof entry as ineligible one millisecond " +
+                "before its persisted availableAt, but found: ${gateCheckResult.value}"
+        }
+
+        val entry = acquireSingle(
+            provider,
+            "lease-after-relaunch",
+            RESCHEDULE_AVAILABLE_AT_MS,
+            RESCHEDULE_AVAILABLE_AT_MS + LEASE_DURATION_MS,
+        )
+        entry.toProofState()
+    }
+
     private suspend fun acquireSingle(
         provider: AppleFileQueueProvider,
         leaseId: String,
@@ -252,6 +330,7 @@ public object AppleRetryBudgetProcessTerminationProof {
             retryWindowStartedAtEpochMillis = budget.windowStartedAt.epochMilliseconds,
             retryLastEvaluatedAtEpochMillis = budget.lastEvaluatedAt.epochMilliseconds,
             retryCumulativeDelayMillis = budget.cumulativeDelay.milliseconds,
+            availableAtEpochMillis = availableAt.epochMilliseconds,
         )
     }
 
