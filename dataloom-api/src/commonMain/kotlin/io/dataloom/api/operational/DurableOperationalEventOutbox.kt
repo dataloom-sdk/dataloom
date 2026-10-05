@@ -9,6 +9,7 @@ import io.dataloom.api.state.DurableStateScopeKeyEncoder
 import io.dataloom.api.state.DurableStateStore
 import io.dataloom.api.time.DataLoomClock
 import io.dataloom.api.time.DataLoomInstant
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.jvm.JvmInline
 import kotlin.time.Duration
 
@@ -227,9 +228,15 @@ public sealed interface DurableOperationalEventOutboxReplayOutcome {
  *   "Acknowledgement and replay").
  * - [acknowledgedEntries] / [replay] read and reopen acknowledged history.
  *
- * Not provided: subscription delivery, and enumeration across scopes -- a
- * caller must already know which [OperationalEventOutboxScope] to read. Both
- * are separately-scoped follow-up work, not oversights.
+ * - [enumerate] reads a bounded, cursor-paginated page across a caller-named
+ *   set of scopes, and [replayBatch] reopens a bounded, authorizer-approved
+ *   selection of acknowledged entries across them.
+ *
+ * Not provided: subscription delivery, and *discovery* of scopes. The
+ * [DurableStateStore] contract can only load a scope it is handed and cannot
+ * list the scopes it holds, so [enumerate] and [replayBatch] fan out over
+ * scopes the caller names; they cannot find scopes the caller does not know.
+ * Both are separately-scoped follow-up work, not oversights.
  *
  * ## Ordering (FR-EVENT-003)
  *
@@ -325,7 +332,10 @@ public sealed interface DurableOperationalEventOutboxReplayOutcome {
  * [replay] is an explicit operation on one entry id. It has no authorization
  * concept of its own, exactly like [acknowledge]: authorizing an operator is
  * the caller's responsibility, and a caller exposing replay to operators
- * should gate it accordingly.
+ * should gate it accordingly. [replayBatch] is different: it requires an
+ * [OperationalEventOutboxReplayAuthorizer], with no default, because a bulk
+ * reopen is the operation most worth refusing by omission; a throwing
+ * authorizer denies.
  *
  * Replaying never-acknowledged entries a consumer skipped or failed needs no
  * API at all: they are still pending, so the next pass of the runtime
@@ -580,6 +590,178 @@ public class DurableOperationalEventOutbox(
         )
     }
 
+    /**
+     * Reads one page of the entries of [OperationalEventOutboxEntryQuery.scopes]
+     * that match [query], strictly after [after] when it is non-null. Read-only
+     * and bounded: it never returns more than [OperationalEventOutboxEntryQuery.pageSize]
+     * entries, and loads each named scope at most once per call, stopping as
+     * soon as the page is full.
+     *
+     * The order is `(scope value, ordering key value, sequence)`, compared as
+     * strings and numbers. Within one scope and ordering key that is exactly
+     * append and sequence order; it is *not* the scope's append order across
+     * different ordering keys, because only the intrinsic triple is stable
+     * enough to resume from (see [OperationalEventOutboxCursor]). A scope with
+     * no stored state contributes nothing.
+     *
+     * Any scope that fails to load fails the whole call -- no partial page is
+     * returned, so a page is never silently missing a scope.
+     */
+    public suspend fun enumerate(
+        query: OperationalEventOutboxEntryQuery,
+        after: OperationalEventOutboxCursor? = null,
+    ): ProviderOperationResult<OperationalEventOutboxEntryPage> {
+        val limit = query.pageSize + 1
+        val collected = ArrayList<OperationalEventOutboxScopedEntry>()
+        for (scope in query.scopes.sortedBy { it.value }) {
+            if (after != null && scope.value < after.scope.value) continue
+            val loaded = when (val result = store.load(scope)) {
+                is ProviderOperationResult.Failure -> return ProviderOperationResult.Failure(result.error)
+                is ProviderOperationResult.Success -> result.value
+            }
+            val state = loaded.stateOrEmpty()
+            observe(scope, state, loaded.versionOrNull())
+            state.entries
+                .filter { query.matches(it) && (after == null || it.isAfter(scope, after)) }
+                .sortedWith(ENUMERATION_ORDER)
+                .take(limit - collected.size)
+                .mapTo(collected) { OperationalEventOutboxScopedEntry(scope, it) }
+            if (collected.size >= limit) break
+        }
+        val page = collected.take(query.pageSize)
+        val next = if (collected.size > query.pageSize) {
+            page.last().let { OperationalEventOutboxCursor(it.scope, it.entry.orderingKey, it.entry.sequence) }
+        } else {
+            null
+        }
+        return ProviderOperationResult.Success(OperationalEventOutboxEntryPage(page, next))
+    }
+
+    /**
+     * Reopens, for every scope of [request], up to
+     * [OperationalEventOutboxBatchReplayRequest.maximumEntries] acknowledged
+     * entries that [authorizer] approves -- [replay] applied to a selection,
+     * with replay authorization made explicit. Scopes are visited in scope
+     * value order and candidates in ordering-key then sequence order, so the
+     * selection is deterministic.
+     *
+     * Each scope is reopened in one compare-and-set, so a scope's selection is
+     * applied atomically or not at all; entries keep their original position
+     * and sequence exactly as with [replay]. [authorizer] is consulted once
+     * per candidate, before any write and outside the retry loop. Per-scope
+     * trouble is reported in [OperationalEventOutboxBatchReplayResult.failures]
+     * instead of aborting the batch, because replay is idempotent and
+     * partial progress is safe to keep.
+     *
+     * Single-entry [replay] is unchanged and still has no authorization of its
+     * own: a host exposing it to operators must gate it.
+     */
+    public suspend fun replayBatch(
+        request: OperationalEventOutboxBatchReplayRequest,
+        authorizer: OperationalEventOutboxReplayAuthorizer,
+    ): OperationalEventOutboxBatchReplayResult {
+        var remaining = request.maximumEntries
+        var denied = 0
+        var notReplayable = 0
+        var budgetExhausted = false
+        val replayed = ArrayList<OperationalEventOutboxScopedEntry>()
+        val failures = ArrayList<OperationalEventOutboxBatchReplayFailure>()
+        for (scope in request.scopes.sortedBy { it.value }) {
+            if (remaining == 0) {
+                budgetExhausted = true
+                break
+            }
+            val loaded = when (val result = store.load(scope)) {
+                is ProviderOperationResult.Failure -> {
+                    failures += OperationalEventOutboxBatchReplayFailure.PersistenceFailure(scope, result.error)
+                    continue
+                }
+                is ProviderOperationResult.Success -> result.value
+            }
+            val state = loaded.stateOrEmpty()
+            observe(scope, state, loaded.versionOrNull())
+            val candidates = state.entries
+                .filter { it.isAcknowledged && (request.workflowId == null || it.envelope.workflowId == request.workflowId) }
+                .sortedWith(ENUMERATION_ORDER)
+            val approved = ArrayList<OperationalEventOutboxEntry>()
+            for (candidate in candidates) {
+                if (remaining == 0) {
+                    budgetExhausted = true
+                    break
+                }
+                if (isAuthorized(authorizer, scope, candidate)) {
+                    approved += candidate
+                    remaining--
+                } else {
+                    denied++
+                }
+            }
+            if (approved.isEmpty()) continue
+            val ids = approved.mapTo(HashSet()) { it.envelope.id }
+            when (
+                val outcome = update(
+                    scope = scope,
+                    onPersistenceFailure = { BatchScopeOutcome.Failed(it) },
+                    onContentionLimit = BatchScopeOutcome.Contended,
+                ) { current ->
+                    val reopened = current.entries
+                        .filter { it.isAcknowledged && it.envelope.id in ids }
+                        .map { it.copy(acknowledgedAt = null) }
+                    if (reopened.isEmpty()) {
+                        return@update Plan.Done(BatchScopeOutcome.Applied(emptyList()))
+                    }
+                    val reopenedById = reopened.associateBy { it.envelope.id }
+                    Plan.Write(
+                        current.copy(entries = current.entries.map { reopenedById[it.envelope.id] ?: it }),
+                        BatchScopeOutcome.Applied(reopened),
+                    )
+                }
+            ) {
+                is BatchScopeOutcome.Applied -> {
+                    outcome.reopened.mapTo(replayed) { OperationalEventOutboxScopedEntry(scope, it) }
+                    notReplayable += approved.size - outcome.reopened.size
+                }
+                is BatchScopeOutcome.Failed -> {
+                    remaining += approved.size
+                    failures += OperationalEventOutboxBatchReplayFailure.PersistenceFailure(scope, outcome.error)
+                }
+                BatchScopeOutcome.Contended -> {
+                    remaining += approved.size
+                    failures += OperationalEventOutboxBatchReplayFailure.ContentionLimitReached(scope)
+                }
+            }
+        }
+        return OperationalEventOutboxBatchReplayResult(replayed, denied, notReplayable, failures, budgetExhausted)
+    }
+
+    /** Fails closed: a throwing authorizer denies, but cancellation still propagates. */
+    private suspend fun isAuthorized(
+        authorizer: OperationalEventOutboxReplayAuthorizer,
+        scope: OperationalEventOutboxScope,
+        entry: OperationalEventOutboxEntry,
+    ): Boolean = try {
+        authorizer.authorize(scope, entry)
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (ignored: Exception) {
+        false
+    }
+
+    private sealed interface BatchScopeOutcome {
+        class Applied(val reopened: List<OperationalEventOutboxEntry>) : BatchScopeOutcome
+        class Failed(val error: DataLoomError) : BatchScopeOutcome
+        data object Contended : BatchScopeOutcome
+    }
+
+    /** `true` if this entry, read from [scope], sorts strictly after [cursor] in [ENUMERATION_ORDER]. */
+    private fun OperationalEventOutboxEntry.isAfter(scope: OperationalEventOutboxScope, cursor: OperationalEventOutboxCursor): Boolean {
+        val byScope = scope.value.compareTo(cursor.scope.value)
+        if (byScope != 0) return byScope > 0
+        val byKey = orderingKey.value.compareTo(cursor.orderingKey.value)
+        if (byKey != 0) return byKey > 0
+        return sequence > cursor.sequence
+    }
+
     /** What one attempt of [update] decided, given the state it loaded. */
     private sealed interface Plan<out O> {
         /** Nothing to persist; report [outcome]. */
@@ -756,5 +938,9 @@ public class DurableOperationalEventOutbox(
 
         /** Same bound [OperationalEventOutboxStateCodec] enforces on persisted high-water marks. */
         internal const val MAXIMUM_TRACKED_ORDERING_KEYS: Int = 10_000
+
+        /** Within one scope: ordering key value, then sequence -- the in-scope part of [enumerate]'s order. */
+        private val ENUMERATION_ORDER: Comparator<OperationalEventOutboxEntry> =
+            compareBy<OperationalEventOutboxEntry> { it.orderingKey.value }.thenBy { it.sequence }
     }
 }
