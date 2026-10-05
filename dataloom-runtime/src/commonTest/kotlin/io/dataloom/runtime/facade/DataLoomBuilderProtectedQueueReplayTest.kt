@@ -78,7 +78,7 @@ import io.dataloom.api.synchronization.CheckpointWriteRequest
 import io.dataloom.api.synchronization.OutboundChangeAcknowledgementRequest
 import io.dataloom.api.synchronization.SynchronizationCheckpoint
 import io.dataloom.api.time.DataLoomInstant
-import io.dataloom.api.time.SystemDataLoomClock
+import io.dataloom.api.time.DataLoomClock
 import io.dataloom.api.transport.PullChangesRequest
 import io.dataloom.api.transport.PullChangesResult
 import io.dataloom.api.transport.PushChangesRequest
@@ -106,6 +106,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import kotlin.time.TimeSource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 
@@ -183,7 +184,7 @@ class DataLoomBuilderProtectedQueueReplayTest {
         // the same cycle is rejected by the gate before reaching the transport.
         f.queue.enqueue("e2")
         val c2 = f.cycle("c2")
-        val openedAt = System.currentTimeMillis()
+        val openedAt = testClock.now().epochMilliseconds
         assertEquals(2, c2.rescheduled)
         assertEquals(0, c2.failed)
         assertEquals(2, f.transport.pullCalls, "e2 must be rejected by the gate, not reach the transport")
@@ -195,7 +196,7 @@ class DataLoomBuilderProtectedQueueReplayTest {
         // Cycle 3: still inside the open window (checked against the real clock).
         val c3 = f.cycle("c3")
         assertTrue(
-            System.currentTimeMillis() < openedAt + openDurationMillis,
+            testClock.now().epochMilliseconds < openedAt + openDurationMillis,
             "cycle 3 must run inside the circuit's open window",
         )
         assertEquals(2, c3.rescheduled)
@@ -228,7 +229,7 @@ class DataLoomBuilderProtectedQueueReplayTest {
         val kind: WorkerKind,
     ) {
         suspend fun cycle(tag: String): CycleSummary {
-            val acquiredAt = System.currentTimeMillis()
+            val acquiredAt = testClock.now().epochMilliseconds
             val request = QueueWorkerRunRequest(
                 processingRequest = QueueProcessingRequest(
                     acquireRequest = QueueAcquireRequest(
@@ -352,7 +353,7 @@ class DataLoomBuilderProtectedQueueReplayTest {
         CircuitBreakerScope.providerOperation(providerId, operation.retryOperation)
 
     private fun runtimeDependencies() = RuntimeDependencies(
-        clock = SystemDataLoomClock(),
+        clock = testClock,
         identifiers = RuntimeIdentifierGenerators(
             synchronizationEventIds = generator { SynchronizationEventId("event-1") },
             queueEntryIds = generator { QueueEntryId("queue-1") },
@@ -443,7 +444,7 @@ class DataLoomBuilderProtectedQueueReplayTest {
         )
 
         fun enqueue(id: String) {
-            val now = DataLoomInstant(System.currentTimeMillis())
+            val now = testClock.now()
             val entry = QueueEntry(
                 id = QueueEntryId(id),
                 synchronizationRequest = SynchronizationRequest(
@@ -626,3 +627,22 @@ class DataLoomBuilderProtectedQueueReplayTest {
         const val INJECTED = "PROTECTED-REPLAY-NETWORK-DOWN"
     }
 }
+
+/**
+ * Real elapsed-time [DataLoomClock] built on [TimeSource.Monotonic], so the
+ * circuit's open duration genuinely elapses (no virtual time) while staying
+ * in multiplatform common code: this source set is also compiled for iOS, so
+ * JVM-only clocks such as `SystemDataLoomClock` or `System` are unavailable.
+ */
+private class MonotonicTestClock : DataLoomClock {
+    private val origin = TimeSource.Monotonic.markNow()
+
+    override fun now(): DataLoomInstant =
+        DataLoomInstant(BASE_MILLIS + origin.elapsedNow().inWholeMilliseconds)
+
+    private companion object {
+        const val BASE_MILLIS = 1_700_000_000_000L
+    }
+}
+
+private val testClock: DataLoomClock = MonotonicTestClock()
