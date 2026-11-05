@@ -71,7 +71,7 @@ the strategy engine is complete.
 
 ## Market-readiness dashboard
 
-- **Last reconciled:** 2026-10-05 (round 9)
+- **Last reconciled:** 2026-10-22 (round 10)
 - **Recorded V1 target:** 2026-08-27
 - **Current verdict:** **NO-GO — not production-ready or market-ready**
 - **Accepted engineering/release gates:** **0 of 10** (`#93`–`#102` all open)
