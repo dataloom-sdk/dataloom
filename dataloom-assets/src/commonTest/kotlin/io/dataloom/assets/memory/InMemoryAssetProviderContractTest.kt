@@ -15,7 +15,15 @@ import io.dataloom.assets.sessionId
 import io.dataloom.assets.testAsset
 import io.dataloom.assets.testkit.AssetProviderContractKit
 import io.dataloom.assets.testkit.AssetProviderContractReport
+import io.dataloom.api.provider.ProviderDescriptor
+import io.dataloom.api.provider.ProviderHealth
+import io.dataloom.api.provider.ProviderHealthStatus
+import io.dataloom.api.provider.ProviderId
+import io.dataloom.api.provider.ProviderInitializationContext
+import io.dataloom.api.provider.ProviderName
 import io.dataloom.api.provider.ProviderOperationResult
+import io.dataloom.api.provider.ProviderType
+import io.dataloom.api.provider.ProviderVersion
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -51,6 +59,82 @@ class InMemoryAssetProviderContractTest {
     private class NeverCompletes(private val delegate: AssetProvider) : AssetProvider by delegate {
         override suspend fun completeUpload(sessionId: AssetTransferSessionId): ProviderOperationResult<AssetManifest> =
             ProviderOperationResult.Failure(AssetTransferError(AssetErrorKind.PROVIDER_REJECTED, "never completes"))
+    }
+
+    /** A broken provider: declares the wrong provider type. */
+    private class WrongType(private val delegate: AssetProvider) : AssetProvider by delegate {
+        override val descriptor: ProviderDescriptor = ProviderDescriptor(
+            id = ProviderId("test.wrong-type"),
+            name = ProviderName("WrongType"),
+            type = ProviderType.TRANSPORT,
+            version = ProviderVersion("1.0.0"),
+        )
+    }
+
+    /** A broken provider: initialization fails. */
+    private class InitializeFails(private val delegate: AssetProvider) : AssetProvider by delegate {
+        override suspend fun initialize(context: ProviderInitializationContext): ProviderOperationResult<Unit> =
+            ProviderOperationResult.Failure(AssetTransferError(AssetErrorKind.PROVIDER_REJECTED, "init failed"))
+    }
+
+    /** A broken provider: initialize "succeeds" but the provider then rejects every upload. */
+    private class InitializeBreaksProvider(private val delegate: AssetProvider) : AssetProvider by delegate {
+        override suspend fun initialize(context: ProviderInitializationContext): ProviderOperationResult<Unit> =
+            ProviderOperationResult.Success(Unit)
+
+        override suspend fun openUpload(request: AssetUploadRequest): ProviderOperationResult<AssetUploadStatus> =
+            ProviderOperationResult.Failure(AssetTransferError(AssetErrorKind.PROVIDER_REJECTED, "not initialized"))
+    }
+
+    /** A broken provider: health evaluation always fails. */
+    private class HealthFails(private val delegate: AssetProvider) : AssetProvider by delegate {
+        override suspend fun health(): ProviderOperationResult<ProviderHealth> =
+            ProviderOperationResult.Failure(AssetTransferError(AssetErrorKind.PROVIDER_REJECTED, "no health"))
+    }
+
+    /** A broken provider: claims UNHEALTHY although every operation succeeds. */
+    private class AlwaysUnhealthy(private val delegate: AssetProvider) : AssetProvider by delegate {
+        override suspend fun health(): ProviderOperationResult<ProviderHealth> =
+            ProviderOperationResult.Success(ProviderHealth(status = ProviderHealthStatus.UNHEALTHY))
+    }
+
+    /** A broken provider: close fails. */
+    private class CloseFails(private val delegate: AssetProvider) : AssetProvider by delegate {
+        override suspend fun close(): ProviderOperationResult<Unit> =
+            ProviderOperationResult.Failure(AssetTransferError(AssetErrorKind.PROVIDER_REJECTED, "close failed"))
+    }
+
+    private suspend fun failingScenarios(wrap: (AssetProvider) -> AssetProvider): List<String> =
+        kit { wrap(InMemoryAssetProvider(platformDigests(), it)) }.run().failures.map { it.name }
+
+    @Test
+    fun `the kit reports each broken lifecycle behaviour by its own scenario`() = runTest {
+        assertEquals(
+            listOf("the descriptor identifies an asset provider and is stable"),
+            failingScenarios(::WrongType),
+        )
+        assertEquals(
+            listOf("initialize succeeds and leaves the provider fully usable"),
+            failingScenarios(::InitializeBreaksProvider).filter { it.startsWith("initialize") },
+        )
+        assertTrue(
+            "initialize succeeds and leaves the provider fully usable" in failingScenarios(::InitializeFails),
+            "a failing initialize must be reported",
+        )
+        assertTrue(
+            "health reports a result before and after traffic, never UNHEALTHY while operations succeed" in
+                failingScenarios(::HealthFails),
+            "a failing health evaluation must be reported",
+        )
+        assertTrue(
+            "health reports a result before and after traffic, never UNHEALTHY while operations succeed" in
+                failingScenarios(::AlwaysUnhealthy),
+            "an UNHEALTHY report despite successful operations must be reported",
+        )
+        assertEquals(
+            listOf("close succeeds, including with an upload session left open"),
+            failingScenarios(::CloseFails),
+        )
     }
 
     @Test

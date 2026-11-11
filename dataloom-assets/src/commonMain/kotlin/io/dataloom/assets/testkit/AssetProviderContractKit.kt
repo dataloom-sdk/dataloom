@@ -5,7 +5,10 @@ import io.dataloom.api.asset.AssetCompressionMetadata
 import io.dataloom.api.asset.AssetManifest
 import io.dataloom.api.asset.AssetMediaType
 import io.dataloom.api.identifier.AssetId
+import io.dataloom.api.provider.ProviderHealthStatus
+import io.dataloom.api.provider.ProviderInitializationContext
 import io.dataloom.api.provider.ProviderOperationResult
+import io.dataloom.api.provider.ProviderType
 import io.dataloom.api.security.DataLoomIncrementalDigestCalculator
 import io.dataloom.api.security.DigestAlgorithm
 import io.dataloom.assets.AssetChunkPlan
@@ -37,6 +40,17 @@ import kotlinx.coroutines.CancellationException
  * conflicts, and read visibility. Both directions are exercised: upload
  * through the upload operations and download through
  * [AssetProvider.readManifest]/[AssetProvider.readChunk].
+ *
+ * Because [AssetProvider] is a [io.dataloom.api.provider.DataLoomProvider],
+ * the kit also covers the lifecycle half of the contract: the descriptor is an
+ * [ProviderType.ASSET] descriptor and stable, `initialize` succeeds and leaves
+ * the provider usable, `health` returns a result and does not report
+ * `UNHEALTHY` while operations succeed, and `close` succeeds even with an
+ * upload session left open. Lifecycle scenarios deliberately do not assert
+ * behaviour the interface leaves open (idempotent `initialize`, use after
+ * `close`), so providers that differ there still conform. Circuit and retry
+ * protection around a provider are builder-level behaviour and are proven
+ * there, not by this kit.
  *
  * @param digests digest calculator the kit uses to build valid manifests.
  * @param providerFactory creates a *fresh, empty* provider enforcing
@@ -368,6 +382,62 @@ public class AssetProviderContractKit(
             for (i in 0 until asset.chunkCount) p.uploadChunk(AssetChunkUpload(session, i, asset.chunk(i))).success("chunk $i")
             p.readManifest(asset.manifest.assetId, null).expectFailure(AssetErrorKind.ASSET_NOT_FOUND, "visible before completion")
             p.readChunk(asset.manifest.assetId, 1, 0).expectFailure(AssetErrorKind.ASSET_NOT_FOUND, "chunk visible before completion")
+        },
+
+        // --- DataLoomProvider lifecycle conformance (initialize / health / close) ---
+
+        "the descriptor identifies an asset provider and is stable" to { f ->
+            val p = f.provider()
+            require(p.descriptor.type == ProviderType.ASSET) {
+                "descriptor type was ${p.descriptor.type}, expected ${ProviderType.ASSET}"
+            }
+            require(p.descriptor.id == p.descriptor.id && p.descriptor.version == p.descriptor.version) {
+                "descriptor identity changed between reads"
+            }
+        },
+
+        "initialize succeeds and leaves the provider fully usable" to { f ->
+            val p = f.provider()
+            p.initialize(ProviderInitializationContext()).success("initialize")
+            val asset = f.asset(p, "after-init")
+            val session = AssetTransferSessionId("s-after-init")
+            p.openUpload(AssetUploadRequest(session, asset.manifest)).success("open after initialize")
+            for (i in 0 until asset.chunkCount) p.uploadChunk(AssetChunkUpload(session, i, asset.chunk(i))).success("chunk $i")
+            require(p.completeUpload(session).success("complete after initialize") == asset.manifest) {
+                "completed manifest differs after initialize"
+            }
+            require(p.readChunk(asset.manifest.assetId, 1, 0).success("read after initialize").contentEquals(asset.chunk(0))) {
+                "downloaded chunk differs after initialize"
+            }
+        },
+
+        "health reports a result before and after traffic, never UNHEALTHY while operations succeed" to { f ->
+            val p = f.provider()
+            p.initialize(ProviderInitializationContext()).success("initialize")
+            p.health().success("health before traffic")
+            val asset = f.asset(p, "health")
+            val session = AssetTransferSessionId("s-health")
+            p.openUpload(AssetUploadRequest(session, asset.manifest)).success("open")
+            for (i in 0 until asset.chunkCount) p.uploadChunk(AssetChunkUpload(session, i, asset.chunk(i))).success("chunk $i")
+            p.completeUpload(session).success("complete")
+            val status = p.health().success("health after traffic").status
+            require(status != ProviderHealthStatus.UNHEALTHY) {
+                "health reported $status although every operation just succeeded"
+            }
+        },
+
+        "close succeeds, including with an upload session left open" to { f ->
+            val idle = f.provider()
+            idle.initialize(ProviderInitializationContext()).success("initialize idle")
+            idle.close().success("close idle provider")
+
+            val busy = f.provider()
+            busy.initialize(ProviderInitializationContext()).success("initialize busy")
+            val asset = f.asset(busy, "close-open")
+            val session = AssetTransferSessionId("s-close-open")
+            busy.openUpload(AssetUploadRequest(session, asset.manifest)).success("open")
+            busy.uploadChunk(AssetChunkUpload(session, 0, asset.chunk(0))).success("chunk 0")
+            busy.close().success("close with an open upload session")
         },
     )
 
